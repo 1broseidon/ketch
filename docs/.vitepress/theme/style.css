@@ -1,0 +1,136 @@
+/* Chain.sh design language — cool steel palette, dark only */
+:root {
+  --vp-c-bg: #0d1117;
+  --vp-c-bg-alt: #161b22;
+  --vp-c-bg-soft: #161b22;
+  --vp-c-bg-elv: #1c2128;
+
+  --vp-c-text-1: #c9d1d9;
+  --vp-c-text-2: #9198a1;
+  --vp-c-text-3: #7d8590;
+
+  --vp-c-divider: #21262d;
+  --vp-c-border: #21262d;
+  --vp-c-gutter: #21262d;
+
+  --vp-c-brand-1: #8b949e;
+  --vp-c-brand-2: #9198a1;
+  --vp-c-brand-3: #c9d1d9;
+
+  --vp-c-tip-1: #8b949e;
+  --vp-c-tip-bg: rgba(139, 148, 158, 0.08);
+
+  --vp-code-bg: #161b22;
+  --vp-code-block-bg: #0d1117;
+
+  --vp-nav-bg-color: rgba(13, 17, 23, 0.8);
+  --vp-sidebar-bg-color: #0d1117;
+
+  --vp-font-family-base: 'Work Sans', sans-serif;
+  --vp-font-family-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  text-rendering: geometricPrecision;
+}
+
+/* Nav styling */
+.VPNav .title {
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-weight: 700;
+  font-size: 0.8125rem;
+}
+
+/* Hero overrides */
+.VPHero .name {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.VPHero .text {
+  color: var(--vp-c-text-2) !important;
+  background: none !important;
+  -webkit-text-fill-color: var(--vp-c-text-2) !important;
+}
+
+.VPHero .tagline {
+  color: var(--vp-c-text-3) !important;
+}
+
+/* Button styling */
+.VPButton.medium.brand {
+  background-color: #21262d;
+  border-color: #30363d;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.VPButton.medium.brand:hover {
+  background-color: #30363d;
+  border-color: #8b949e;
+}
+
+.VPButton.medium.alt {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Feature cards */
+.VPFeature {
+  border-color: #21262d !important;
+  background-color: rgba(22, 27, 34, 0.5) !important;
+}
+
+.VPFeature:hover {
+  border-color: #30363d !important;
+}
+
+.VPFeature .title {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.875rem !important;
+}
+
+/* Sidebar */
+.VPSidebar .group .title {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--vp-c-text-3);
+}
+
+/* Content headings */
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3 {
+  letter-spacing: -0.01em;
+}
+
+.vp-doc h1 {
+  font-weight: 700;
+}
+
+/* Inline code */
+.vp-doc :not(pre) > code {
+  background-color: rgba(139, 148, 158, 0.1);
+  color: var(--vp-c-text-1);
+}
+
+/* Footer link back to chain.sh */
+.VPDoc .content-container::after {
+  content: '← chain.sh';
+  display: block;
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--vp-c-divider);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--vp-c-text-3);
+}

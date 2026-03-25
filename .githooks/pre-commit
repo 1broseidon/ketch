@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+
+echo "==> gofmt"
+UNFMT=$(gofmt -l . 2>&1)
+if [ -n "$UNFMT" ]; then
+    echo "gofmt needed on:"
+    echo "$UNFMT"
+    exit 1
+fi
+
+echo "==> go vet"
+go vet ./...
+
+echo "==> golangci-lint"
+golangci-lint run
+
+echo "==> tests"
+go test ./...

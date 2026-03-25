@@ -1,0 +1,21 @@
+# Binary
+ketch
+ketch.exe
+/dist
+
+# Test
+coverage.out
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Docs
+docs/node_modules
+docs/.vitepress/dist
+docs/.vitepress/cache
+
+# OS
+.DS_Store
+Thumbs.db
