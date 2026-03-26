@@ -17,10 +17,12 @@ import (
 
 // Options configures the crawl behavior.
 type Options struct {
-	Depth       int      // max BFS depth, default 3
-	Concurrency int      // worker pool size, default 8
-	Allow       []string // path substrings that URLs must contain (any match passes)
-	Deny        []string // regex patterns to reject URLs
+	Depth       int             // max BFS depth, default 3
+	Concurrency int             // worker pool size, default 8
+	Allow       []string        // path substrings that URLs must contain (any match passes)
+	Deny        []string        // regex patterns to reject URLs
+	BrowserBin  string          // browser binary for JS-rendered page fallback; empty = disabled
+	StopCh      <-chan struct{} // closed to signal graceful stop; nil = no external stop
 }
 
 // Result represents a single crawled page.
@@ -39,6 +41,12 @@ type queueItem struct {
 	source string
 }
 
+// hostJSStats tracks JS shell detection frequency per host.
+type hostJSStats struct {
+	total  int
+	shells int
+}
+
 // Crawl performs a BFS crawl from the seed URL, calling fn for each page.
 func Crawl(seed string, opts Options, pc *cache.Cache, sitemap bool, fn func(Result)) error {
 	seedURL, err := url.Parse(seed)
@@ -51,14 +59,23 @@ func Crawl(seed string, opts Options, pc *cache.Cache, sitemap bool, fn func(Res
 		return err
 	}
 
+	var s *scrape.Scraper
+	if opts.BrowserBin != "" {
+		s = scrape.NewWithBrowser(opts.BrowserBin)
+	} else {
+		s = scrape.New()
+	}
+	defer s.Close()
+
 	c := &crawler{
-		scraper:  scrape.New(),
-		pc:       pc,
-		opts:     opts,
-		seedHost: seedURL.Hostname(),
-		deny:     denyRegexps,
-		visited:  make(map[string]bool),
-		fn:       fn,
+		scraper:   s,
+		pc:        pc,
+		opts:      opts,
+		seedHost:  seedURL.Hostname(),
+		deny:      denyRegexps,
+		visited:   make(map[string]bool),
+		fn:        fn,
+		hostStats: make(map[string]*hostJSStats),
 	}
 
 	return c.run(seed, sitemap)
@@ -80,10 +97,21 @@ type crawler struct {
 	active  int  // items currently being processed by workers
 	done    bool // set when all work is complete
 	fn      func(Result)
+
+	hostStatsMu sync.Mutex
+	hostStats   map[string]*hostJSStats
 }
 
 func (c *crawler) run(seed string, sitemap bool) error {
 	c.cond = sync.NewCond(&c.queueMu)
+
+	// Watch for external stop signal
+	if c.opts.StopCh != nil {
+		go func() {
+			<-c.opts.StopCh
+			c.shutdown()
+		}()
+	}
 
 	// Start workers
 	var workerWg sync.WaitGroup
@@ -126,6 +154,7 @@ func (c *crawler) run(seed string, sitemap bool) error {
 func (c *crawler) shutdown() {
 	c.queueMu.Lock()
 	c.done = true
+	c.queue = nil
 	c.queueMu.Unlock()
 	c.cond.Broadcast()
 }
@@ -166,6 +195,10 @@ func (c *crawler) enqueue(rawURL string, depth int, source string) {
 		return
 	}
 	c.queueMu.Lock()
+	if c.done {
+		c.queueMu.Unlock()
+		return
+	}
 	c.queue = append(c.queue, queueItem{url: norm, depth: depth, source: source})
 	c.queueMu.Unlock()
 	c.cond.Signal()
@@ -183,14 +216,38 @@ func (c *crawler) tryVisit(u string) bool {
 
 func (c *crawler) processItem(item queueItem) {
 	cached := c.pc.Get(item.url)
-	var oldHash string
+
+	// Cache hit: use cached page, skip fetch entirely.
+	// Use --no-cache to force re-fetch for change detection.
 	if cached != nil {
-		oldHash = cached.ContentHash
+		c.fn(Result{
+			Page:   cached,
+			Depth:  item.depth,
+			Status: "unchanged",
+			Source: item.source,
+			URL:    item.url,
+		})
+		return
 	}
 
-	// Crawl always does a full fetch — we need the HTML for link extraction.
-	// Change detection uses content hash comparison, not HTTP 304.
-	page, rawHTML, _, err := c.scraper.ScrapeConditional(item.url, "", "")
+	var page *scrape.Page
+	var rawHTML string
+	var err error
+
+	// If >80% of pages on this host are JS shells (after 10+ samples),
+	// skip detection and go straight to browser rendering.
+	if c.shouldForceBrowser(item.url) && c.scraper.HasBrowser() {
+		page, rawHTML, err = c.scraper.BrowserScrape(item.url)
+	} else {
+		var result *scrape.FetchResult
+		result, err = c.scraper.ScrapeConditional(item.url, "", "")
+		if err == nil {
+			page = result.Page
+			rawHTML = result.RawHTML
+			c.recordJSDetection(item.url, result.JSDetection)
+		}
+	}
+
 	if err != nil {
 		c.fn(Result{
 			URL:    item.url,
@@ -201,12 +258,11 @@ func (c *crawler) processItem(item queueItem) {
 		return
 	}
 
-	status := determineStatus(oldHash, page.ContentHash)
 	c.pc.Put(item.url, page)
 	c.fn(Result{
 		Page:   page,
 		Depth:  item.depth,
-		Status: status,
+		Status: "new",
 		Source: item.source,
 		URL:    item.url,
 	})
@@ -216,21 +272,43 @@ func (c *crawler) processItem(item queueItem) {
 	}
 }
 
+func (c *crawler) recordJSDetection(rawURL, detection string) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return
+	}
+	host := u.Hostname()
+	c.hostStatsMu.Lock()
+	defer c.hostStatsMu.Unlock()
+	if c.hostStats[host] == nil {
+		c.hostStats[host] = &hostJSStats{}
+	}
+	c.hostStats[host].total++
+	if detection == "likely_shell" {
+		c.hostStats[host].shells++
+	}
+}
+
+func (c *crawler) shouldForceBrowser(rawURL string) bool {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return false
+	}
+	host := u.Hostname()
+	c.hostStatsMu.Lock()
+	defer c.hostStatsMu.Unlock()
+	s := c.hostStats[host]
+	if s == nil || s.total < 10 {
+		return false
+	}
+	return float64(s.shells)/float64(s.total) > 0.8
+}
+
 func (c *crawler) enqueueLinksFromHTML(parent queueItem, html string) {
 	links := extractLinksFromHTML(parent.url, html)
 	for _, link := range links {
 		c.enqueue(link, parent.depth+1, "link")
 	}
-}
-
-func determineStatus(oldHash, newHash string) string {
-	if oldHash == "" {
-		return "new"
-	}
-	if oldHash == newHash {
-		return "unchanged"
-	}
-	return "changed"
 }
 
 // normalizeURL strips fragment, utm_ params, and trailing slash.

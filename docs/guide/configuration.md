@@ -20,7 +20,8 @@ The discovery payload:
   "backend": "brave",
   "searxng_url": "http://localhost:8081",
   "limit": 5,
-  "cache_ttl": "1h",
+  "cache_ttl": "72h",
+  "browser": "chrome",
   "available_backends": ["brave", "ddg", "searxng"]
 }
 ```
@@ -33,6 +34,7 @@ ketch config set brave_api_key BSA...
 ketch config set searxng_url http://my-searxng:8080
 ketch config set limit 10
 ketch config set cache_ttl 4h
+ketch config set browser chrome
 ```
 
 ## Config Keys
@@ -43,17 +45,38 @@ ketch config set cache_ttl 4h
 | `brave_api_key` | — | Brave Search API key ([get one free](https://brave.com/search/api/)) |
 | `searxng_url` | `http://localhost:8081` | SearXNG instance URL |
 | `limit` | `5` | Default max search results |
-| `cache_ttl` | `1h` | How long scraped pages stay cached |
+| `cache_ttl` | `72h` | How long scraped pages stay cached |
+| `browser` | — | Browser for JS-rendered pages: `chrome`, `chromium`, or absolute path |
+
+## Browser Rendering
+
+JS-rendered pages are automatically detected and re-fetched via headless Chrome. Configure once, then scrape and crawl commands use it transparently.
+
+```sh
+# Use Chrome from PATH
+ketch config set browser chrome
+
+# Or use an absolute path
+ketch config set browser /usr/bin/google-chrome-stable
+
+# Download Chromium to ketch's cache dir
+ketch browser install
+
+# Check browser config and availability
+ketch browser status
+```
+
+When a browser is configured, ketch automatically detects JS-rendered pages (React SPAs, Angular apps, Salesforce Lightning, etc.) and falls back to headless rendering. Static pages are always fetched via plain HTTP for speed.
 
 ## Page Cache
 
-Scraped pages are cached locally to avoid redundant fetches. The cache uses platform-appropriate directories:
+Scraped and crawled pages are cached in a single bbolt database at the platform cache directory:
 
 | OS | Path |
 |----|------|
-| Linux | `~/.cache/ketch/pages/` |
-| macOS | `~/Library/Caches/ketch/pages/` |
-| Windows | `%LocalAppData%/ketch/pages/` |
+| Linux | `~/.cache/ketch/cache.db` |
+| macOS | `~/Library/Caches/ketch/cache.db` |
+| Windows | `%LocalAppData%/ketch/cache.db` |
 
 ```sh
 # View cache stats
@@ -64,4 +87,7 @@ ketch cache clear
 
 # Bypass cache for a single scrape
 ketch scrape https://example.com --no-cache
+
+# Bypass cache for a crawl (force re-fetch everything)
+ketch crawl https://example.com --no-cache
 ```

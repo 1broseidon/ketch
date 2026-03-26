@@ -82,6 +82,25 @@ func TestDetectJSShell(t *testing.T) {
 			want: "ambiguous",
 		},
 		{
+			name: "js loading page with fallback description is likely shell",
+			html: `
+				<!doctype html>
+				<html>
+					<head><title>Flowchart Maker</title></head>
+					<body>
+						<div id="geInfo">
+							<h1>Flowchart Maker and Online Diagram Software</h1>
+							<p>draw.io is free online diagram software. You can use it as a flowchart maker, network diagram software, to create UML online, as an ER diagram tool, to design database schema, and more.</p>
+							<h2>Loading... <img src="spin.gif"/></h2>
+							<p>Please ensure JavaScript is enabled.</p>
+						</div>
+						<script src="js/main.js"></script>
+					</body>
+				</html>
+			`,
+			want: "likely_shell",
+		},
+		{
 			name: "ssr next page with real content is static",
 			html: `
 				<!doctype html>

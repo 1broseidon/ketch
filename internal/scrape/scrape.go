@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
+	"os"
+	"sync"
 
 	"github.com/1broseidon/ketch/internal/extract"
 )
@@ -21,10 +22,21 @@ type Page struct {
 	ContentHash  string `json:"content_hash,omitempty"`
 }
 
+// FetchResult holds the output of a conditional scrape.
+type FetchResult struct {
+	Page        *Page
+	RawHTML     string
+	NotModified bool
+	JSDetection string // "static", "likely_shell", "ambiguous"
+}
+
 // Scraper fetches web pages and extracts content as markdown.
 type Scraper struct {
-	client    *http.Client
-	extractor *extract.Extractor
+	client     *http.Client
+	extractor  *extract.Extractor
+	browserBin string
+	browserMu  sync.Mutex
+	browser    BrowserConn
 }
 
 // New creates a Scraper with defaults.
@@ -35,12 +47,65 @@ func New() *Scraper {
 	}
 }
 
+// NewWithBrowser creates a Scraper with browser fallback for JS-rendered pages.
+func NewWithBrowser(browserBin string) *Scraper {
+	return &Scraper{
+		client:     &http.Client{},
+		extractor:  extract.New(),
+		browserBin: browserBin,
+	}
+}
+
+// HasBrowser reports whether this scraper has browser fallback configured.
+func (s *Scraper) HasBrowser() bool {
+	return s.browserBin != ""
+}
+
+// Close releases browser resources if any.
+func (s *Scraper) Close() {
+	s.browserMu.Lock()
+	defer s.browserMu.Unlock()
+	if s.browser != nil {
+		s.browser.Close()
+		s.browser = nil
+	}
+}
+
+func (s *Scraper) getBrowser() BrowserConn {
+	if s.browserBin == "" {
+		return nil
+	}
+	s.browserMu.Lock()
+	defer s.browserMu.Unlock()
+	if s.browser != nil {
+		return s.browser
+	}
+	bin, err := ResolveBrowserBin(s.browserBin)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warn: cannot resolve browser %q: %v\n", s.browserBin, err)
+		s.browserBin = ""
+		return nil
+	}
+	conn, err := NewBrowserConn(bin)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warn: browser init failed: %v\n", err)
+		s.browserBin = ""
+		return nil
+	}
+	s.browser = conn
+	return s.browser
+}
+
 // Scrape fetches a URL and returns extracted markdown content.
+// If the page appears JS-rendered and a browser is configured, automatically
+// retries with the browser for full content extraction.
 func (s *Scraper) Scrape(rawURL string) (*Page, error) {
 	body, err := s.fetch(rawURL)
 	if err != nil {
 		return nil, err
 	}
+
+	body = s.maybeBrowserFetch(rawURL, body)
 
 	result, err := s.extractor.Extract(rawURL, body)
 	if err != nil {
@@ -54,13 +119,11 @@ func (s *Scraper) Scrape(rawURL string) (*Page, error) {
 	}, nil
 }
 
-// ScrapeConditional fetches a URL with conditional headers.
-// Returns (page, rawHTML, notModified, error). If the server returns 304,
-// page and rawHTML are empty and notModified is true.
-func (s *Scraper) ScrapeConditional(rawURL, etag, lastModified string) (*Page, string, bool, error) {
+// ScrapeConditional fetches a URL with conditional headers and JS detection.
+func (s *Scraper) ScrapeConditional(rawURL, etag, lastModified string) (*FetchResult, error) {
 	req, err := http.NewRequest("GET", rawURL, nil)
 	if err != nil {
-		return nil, "", false, err
+		return nil, err
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; ketch/1.0)")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml")
@@ -73,37 +136,92 @@ func (s *Scraper) ScrapeConditional(rawURL, etag, lastModified string) (*Page, s
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return nil, "", false, fmt.Errorf("fetch failed: %w", err)
+		return nil, fmt.Errorf("fetch failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotModified {
-		return nil, "", true, nil
+		return &FetchResult{NotModified: true}, nil
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, "", false, fmt.Errorf("HTTP %d for %s", resp.StatusCode, rawURL)
+		return nil, fmt.Errorf("HTTP %d for %s", resp.StatusCode, rawURL)
 	}
 
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, "", false, fmt.Errorf("read body failed: %w", err)
+		return nil, fmt.Errorf("read body failed: %w", err)
 	}
 
 	html := string(b)
-	result, err := s.extractor.Extract(rawURL, html)
-	if err != nil {
-		return nil, "", false, fmt.Errorf("extraction failed for %s: %w", rawURL, err)
+	detection := extract.DetectJSShell(html)
+
+	if detection == "likely_shell" {
+		html = s.browserFetchOrWarn(rawURL, html)
 	}
 
-	page := &Page{
-		URL:          rawURL,
-		Title:        result.Title,
-		Markdown:     result.Markdown,
-		ETag:         resp.Header.Get("ETag"),
-		LastModified: resp.Header.Get("Last-Modified"),
-		ContentHash:  ContentHash(result.Markdown),
+	result, err := s.extractor.Extract(rawURL, html)
+	if err != nil {
+		return nil, fmt.Errorf("extraction failed for %s: %w", rawURL, err)
 	}
-	return page, html, false, nil
+
+	return &FetchResult{
+		Page: &Page{
+			URL:          rawURL,
+			Title:        result.Title,
+			Markdown:     result.Markdown,
+			ETag:         resp.Header.Get("ETag"),
+			LastModified: resp.Header.Get("Last-Modified"),
+			ContentHash:  ContentHash(result.Markdown),
+		},
+		RawHTML:     html,
+		JSDetection: detection,
+	}, nil
+}
+
+// BrowserScrape fetches a URL using the browser directly.
+// Used when a host is known to require browser rendering.
+func (s *Scraper) BrowserScrape(rawURL string) (*Page, string, error) {
+	browser := s.getBrowser()
+	if browser == nil {
+		return nil, "", ErrNoBrowser
+	}
+	html, err := browser.Fetch(rawURL)
+	if err != nil {
+		return nil, "", fmt.Errorf("browser fetch failed for %s: %w", rawURL, err)
+	}
+	result, err := s.extractor.Extract(rawURL, html)
+	if err != nil {
+		return nil, "", fmt.Errorf("extraction failed for %s: %w", rawURL, err)
+	}
+	page := &Page{
+		URL:         rawURL,
+		Title:       result.Title,
+		Markdown:    result.Markdown,
+		ContentHash: ContentHash(result.Markdown),
+	}
+	return page, html, nil
+}
+
+func (s *Scraper) maybeBrowserFetch(rawURL, html string) string {
+	detection := extract.DetectJSShell(html)
+	if detection != "likely_shell" {
+		return html
+	}
+	return s.browserFetchOrWarn(rawURL, html)
+}
+
+func (s *Scraper) browserFetchOrWarn(rawURL, html string) string {
+	browser := s.getBrowser()
+	if browser != nil {
+		rendered, err := browser.Fetch(rawURL)
+		if err == nil {
+			return rendered
+		}
+		fmt.Fprintf(os.Stderr, "warn: browser fallback failed for %s: %v\n", rawURL, err)
+	} else if s.browserBin == "" {
+		fmt.Fprintf(os.Stderr, "warn: %s appears JS-rendered; configure browser for full content\n", rawURL)
+	}
+	return html
 }
 
 // ContentHash returns the first 16 hex chars of the sha256 of s.
@@ -135,13 +253,5 @@ func (s *Scraper) fetch(rawURL string) (string, error) {
 		return "", fmt.Errorf("read body failed: %w", err)
 	}
 
-	html := string(b)
-
-	// Fast path check: if body looks JS-rendered (tiny or framework shell), log it.
-	// Browser backend (rod) would be invoked here in the future.
-	if len(strings.TrimSpace(html)) < 512 {
-		return html, nil // Return what we have; browser fallback is a future extension
-	}
-
-	return html, nil
+	return string(b), nil
 }

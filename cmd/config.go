@@ -18,6 +18,7 @@ type configInfo struct {
 	SearxngURL        string   `json:"searxng_url"`
 	Limit             int      `json:"limit"`
 	CacheTTL          string   `json:"cache_ttl"`
+	Browser           string   `json:"browser,omitempty"`
 	AvailableBackends []string `json:"available_backends"`
 }
 
@@ -64,6 +65,7 @@ func runConfigShow(_ *cobra.Command, _ []string) error {
 		SearxngURL:        c.SearxngURL,
 		Limit:             c.Limit,
 		CacheTTL:          c.CacheTTL,
+		Browser:           c.Browser,
 		AvailableBackends: config.AvailableBackends(),
 	}
 
@@ -112,8 +114,10 @@ func runConfigSet(_ *cobra.Command, args []string) error {
 			return fmt.Errorf("cache_ttl must be a duration (e.g. 1h, 30m): %w", err)
 		}
 		c.CacheTTL = value
+	case "browser":
+		c.Browser = value
 	default:
-		return fmt.Errorf("unknown key: %s (valid: backend, searxng_url, brave_api_key, limit, cache_ttl)", key)
+		return fmt.Errorf("unknown key: %s (valid: backend, searxng_url, brave_api_key, limit, cache_ttl, browser)", key)
 	}
 
 	if err := config.Save(c); err != nil {

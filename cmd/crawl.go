@@ -29,9 +29,21 @@ func init() {
 	crawlCmd.Flags().StringSlice("deny", nil, "regex deny patterns")
 	crawlCmd.Flags().Bool("sitemap", false, "treat seed URL as sitemap")
 	crawlCmd.Flags().Bool("no-cache", false, "bypass the page cache")
+	crawlCmd.Flags().Bool("background", false, "run crawl in background, return immediately with crawl ID")
 }
 
 func runCrawl(cmd *cobra.Command, args []string) error {
+	// Background worker mode (re-executed child process)
+	if workerID := os.Getenv("KETCH_CRAWL_WORKER"); workerID != "" {
+		return runCrawlWorker(cmd, args, workerID)
+	}
+
+	// Background launch mode
+	background, _ := cmd.Flags().GetBool("background")
+	if background {
+		return runCrawlBackground(args)
+	}
+
 	seed := args[0]
 	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
 	depth, _ := cmd.Flags().GetInt("depth")
@@ -42,12 +54,14 @@ func runCrawl(cmd *cobra.Command, args []string) error {
 	noCache, _ := cmd.Flags().GetBool("no-cache")
 
 	pc := newCrawlCache(noCache)
+	defer pc.Close()
 
 	opts := crawl.Options{
 		Depth:       depth,
 		Concurrency: concurrency,
 		Allow:       allow,
 		Deny:        deny,
+		BrowserBin:  cfg.Browser,
 	}
 
 	var (
@@ -157,13 +171,10 @@ func printCrawlSummary(seed string, total, newC, changed, unchanged, errors int,
 	fmt.Fprintln(os.Stderr, "---")
 }
 
-// newCrawlCache creates a cache suitable for crawl operations.
-// Crawl always refetches but uses cache for conditional headers and hash comparison.
+// newCrawlCache creates a cache for crawl operations using the configured TTL.
 func newCrawlCache(noCache bool) *cache.Cache {
 	if noCache {
 		return nil
 	}
-	// Use a very long TTL for crawl cache reads - we always refetch anyway,
-	// but we want to read cached ETag/LastModified/ContentHash for comparison.
-	return cache.New(24 * 365 * time.Hour)
+	return newPageCache(false)
 }

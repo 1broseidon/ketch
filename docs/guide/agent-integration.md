@@ -14,9 +14,10 @@ Use `ketch` CLI for web search and page fetching.
 - Search + full content: `ketch search "query" --scrape` — fetches and extracts each result
 - Scrape: `ketch scrape <url>` — fetches a URL and returns clean markdown
 - Batch scrape: `ketch scrape <url1> <url2> ...` — concurrent fetch
+- Crawl: `ketch crawl <url> --sitemap --background` — crawl a site, poll with `ketch crawl status`
 - All commands support `--json` for structured output.
 - Discovery: `ketch config` — returns effective config and available backends as JSON.
-- The operator has already configured the default search backend. Do not pass `--backend` unless you have a specific reason to override it.
+- The operator has already configured the default search backend and browser. Do not override unless you have a specific reason.
 ```
 
 ## Why This Works
@@ -26,6 +27,8 @@ An agent calling a web search API typically needs to know which provider to use,
 1. The operator runs `ketch config set backend searxng` once
 2. Every agent invocation uses the right backend automatically
 3. The agent's system prompt doesn't mention backends at all
+
+The same applies to browser rendering — the operator runs `ketch config set browser chrome` once, and JS-rendered pages are handled transparently.
 
 ## Output Format
 
@@ -44,6 +47,23 @@ If you have written any Go code...
 
 An agent can read the frontmatter to decide whether to consume the full body, or skip to the next result.
 
+## Crawl Workflow
+
+For large sites, use background crawl + status polling:
+
+```sh
+# Agent starts a crawl
+ketch crawl https://help.example.com/sitemap --sitemap --background
+# → crawl_id: c_a1b2c3d4
+
+# Agent polls for completion
+ketch crawl status c_a1b2c3d4 --json
+# → {"status": "running", "pages": 847, ...}
+
+# Once complete, scrape individual pages from cache (instant)
+ketch scrape https://help.example.com/s/article/1234
+```
+
 ## Discovery
 
 `ketch config` returns the full discovery payload as JSON, so an agent that needs to inspect capabilities can do so in one call:
@@ -54,7 +74,8 @@ An agent can read the frontmatter to decide whether to consume the full body, or
   "backend": "searxng",
   "searxng_url": "http://localhost:8081",
   "limit": 5,
-  "cache_ttl": "1h",
+  "cache_ttl": "72h",
+  "browser": "chrome",
   "available_backends": ["brave", "ddg", "searxng"]
 }
 ```

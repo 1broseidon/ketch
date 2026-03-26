@@ -13,6 +13,7 @@ type Config struct {
 	BraveAPIKey string `json:"brave_api_key,omitempty"`
 	Limit       int    `json:"limit"`
 	CacheTTL    string `json:"cache_ttl"`
+	Browser     string `json:"browser,omitempty"` // "chrome", "chromium", or absolute path; empty = disabled
 }
 
 // Defaults returns the built-in default configuration.
@@ -21,7 +22,7 @@ func Defaults() Config {
 		Backend:    "brave",
 		SearxngURL: "http://localhost:8081",
 		Limit:      5,
-		CacheTTL:   "1h",
+		CacheTTL:   "72h",
 	}
 }
 

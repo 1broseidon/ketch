@@ -33,6 +33,12 @@ ketch scrape https://go.dev/doc/effective_go
 # Scrape multiple URLs concurrently
 ketch scrape https://example.com https://go.dev
 
+# Crawl a site
+ketch crawl https://docs.example.com --depth 2
+
+# Crawl a sitemap in the background
+ketch crawl https://example.com/sitemap.xml --sitemap --background
+
 # JSON output for piping
 ketch search "query" --json
 ketch scrape https://example.com --json
@@ -42,22 +48,68 @@ ketch scrape https://example.com --json
 
 | Command | What it does |
 |---------|-------------|
-| `search` | Web search via DuckDuckGo or SearXNG, optional `--scrape` for full content |
+| `search` | Web search via Brave, DuckDuckGo, or SearXNG, optional `--scrape` for full content |
 | `scrape` | Fetch URLs and extract clean markdown, concurrent batch support |
+| `crawl` | BFS or sitemap crawl with background execution and status tracking |
+| `browser` | Manage headless Chrome for JS-rendered pages |
 | `config` | Show effective configuration and available backends as JSON |
+| `cache` | Show cache stats or clear cached pages |
 
 All commands support `--json` for structured output.
+
+## Browser rendering
+
+JS-rendered pages (React SPAs, Salesforce Lightning, etc.) are automatically detected and re-fetched via headless Chrome. No extra setup if Chrome is already installed:
+
+```sh
+# Point ketch to your Chrome installation
+ketch config set browser chrome
+
+# Or install Chromium to ketch's cache dir
+ketch browser install
+
+# Check browser status
+ketch browser status
+```
+
+Once configured, browser rendering is transparent — `ketch scrape` and `ketch crawl` automatically detect JS-rendered pages and use the browser when needed. Static pages are always fetched via plain HTTP (fast path).
+
+## Crawling
+
+Crawl entire sites via BFS link discovery or sitemaps:
+
+```sh
+# BFS crawl from a seed URL
+ketch crawl https://docs.example.com --depth 3
+
+# Sitemap-based crawl
+ketch crawl https://example.com/sitemap.xml --sitemap
+
+# Run in background with status tracking
+ketch crawl https://example.com/sitemap.xml --sitemap --background
+ketch crawl status              # list all crawls
+ketch crawl status c_a1b2c3d4   # check specific crawl
+ketch crawl stop c_a1b2c3d4     # stop a running crawl
+```
+
+Crawled pages are cached — re-running the same crawl returns instantly from cache. Use `--no-cache` to force re-fetch.
 
 ## Flags
 
 | Flag | Scope | Default | Description |
 |------|-------|---------|-------------|
 | `--json` | global | false | JSON output |
-| `--backend, -b` | global | ddg | Search backend (`ddg`, `searxng`) |
+| `--backend, -b` | global | brave | Search backend (`brave`, `ddg`, `searxng`) |
 | `--limit, -l` | search | 5 | Max results |
 | `--scrape` | search | false | Fetch full content from each result |
-| `--searxng-url` | search | http://localhost:8081 | SearXNG instance URL |
 | `--raw` | scrape | false | Raw HTML instead of markdown |
+| `--no-cache` | scrape, crawl | false | Bypass page cache |
+| `--depth` | crawl | 3 | Max BFS depth |
+| `--concurrency` | crawl | 8 | Worker pool size |
+| `--sitemap` | crawl | false | Treat seed URL as sitemap |
+| `--background` | crawl | false | Run in background, return crawl ID |
+| `--allow` | crawl | — | Path substring filters (any match passes) |
+| `--deny` | crawl | — | Regex deny patterns |
 
 ## Configuration
 
@@ -73,6 +125,9 @@ ketch config set backend searxng
 # Set your SearXNG URL
 ketch config set searxng_url http://my-searxng:8080
 
+# Configure browser for JS-rendered pages
+ketch config set browser chrome
+
 # View effective config + available backends
 ketch config
 ```
@@ -80,10 +135,12 @@ ketch config
 ```json
 {
   "config_path": "/home/user/.config/ketch/config.json",
-  "backend": "searxng",
-  "searxng_url": "http://my-searxng:8080",
+  "backend": "brave",
+  "searxng_url": "http://localhost:8081",
   "limit": 5,
-  "available_backends": ["ddg", "searxng"]
+  "cache_ttl": "72h",
+  "browser": "chrome",
+  "available_backends": ["brave", "ddg", "searxng"]
 }
 ```
 
@@ -91,8 +148,9 @@ ketch config
 
 | Backend | Description | Setup |
 |---------|-------------|-------|
-| `ddg` | DuckDuckGo HTML scraping (default, zero config) | None |
-| `searxng` | SearXNG JSON API (self-hosted, more reliable) | Run a [SearXNG](https://docs.searxng.org/) instance with JSON format enabled |
+| `brave` | Brave Search JSON API (default) | Free API key from [brave.com/search/api](https://brave.com/search/api/) |
+| `ddg` | DuckDuckGo HTML scraping (zero config) | None |
+| `searxng` | SearXNG JSON API (self-hosted, most reliable) | Run a [SearXNG](https://docs.searxng.org/) instance |
 
 ## Agent integration
 
@@ -108,9 +166,10 @@ Use `ketch` CLI for web search and page fetching.
 - Search + full content: `ketch search "query" --scrape` — fetches and extracts each result
 - Scrape: `ketch scrape <url>` — fetches a URL and returns clean markdown
 - Batch scrape: `ketch scrape <url1> <url2> ...` — concurrent fetch
+- Crawl: `ketch crawl <url> --sitemap --background` — crawl a site, poll with `ketch crawl status`
 - All commands support `--json` for structured output.
 - Discovery: `ketch config` — returns effective config and available backends as JSON.
-- The operator has already configured the default search backend. Do not pass `--backend` unless you have a specific reason to override it.
+- The operator has already configured the default search backend and browser. Do not override unless you have a specific reason.
 ```
 
 ### Why this works

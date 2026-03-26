@@ -22,6 +22,11 @@ func DetectJSShell(rawHTML string) string {
 
 	visibleText := collectVisibleText(doc)
 	if len(visibleText) >= 200 {
+		// Override: loading pages with JS requirement text are shells
+		// even when they include a fallback description (e.g. draw.io)
+		if isJSLoadingPage(visibleText) {
+			return "likely_shell"
+		}
 		return "static"
 	}
 
@@ -65,8 +70,8 @@ func hasCorroborator(doc *goquery.Document, rawHTML, visibleText string) bool {
 }
 
 func hasJavaScriptNoscript(doc *goquery.Document) bool {
+	// Check noscript tags
 	found := false
-
 	doc.Find("noscript").EachWithBreak(func(_ int, selection *goquery.Selection) bool {
 		text := strings.ToLower(normalizeWhitespace(selection.Text()))
 		if strings.Contains(text, "javascript") {
@@ -75,8 +80,28 @@ func hasJavaScriptNoscript(doc *goquery.Document) bool {
 		}
 		return true
 	})
+	if found {
+		return true
+	}
 
-	return found
+	// Also check body text for explicit JS requirement messages
+	return requiresJavaScript(strings.ToLower(doc.Find("body").Text()))
+}
+
+// isJSLoadingPage detects pages that have fallback content but are actually
+// JS loading screens (e.g. draw.io's splash with marketing blurb).
+// Requires BOTH a loading indicator AND an explicit JS requirement.
+func isJSLoadingPage(text string) bool {
+	lower := strings.ToLower(text)
+	return strings.Contains(lower, "loading") && requiresJavaScript(lower)
+}
+
+func requiresJavaScript(lower string) bool {
+	return strings.Contains(lower, "enable javascript") ||
+		strings.Contains(lower, "requires javascript") ||
+		strings.Contains(lower, "ensure javascript") ||
+		strings.Contains(lower, "javascript is required") ||
+		strings.Contains(lower, "javascript is disabled")
 }
 
 func hasSPAShellMarker(rawHTML string) bool {

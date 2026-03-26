@@ -31,8 +31,16 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
 	noCache, _ := cmd.Flags().GetBool("no-cache")
 
-	scraper := scrape.New()
+	var scraper *scrape.Scraper
+	if cfg.Browser != "" {
+		scraper = scrape.NewWithBrowser(cfg.Browser)
+	} else {
+		scraper = scrape.New()
+	}
+	defer scraper.Close()
+
 	pc := newPageCache(noCache)
+	defer pc.Close()
 
 	if len(args) == 1 {
 		return scrapeSingle(scraper, pc, args[0], asJSON)

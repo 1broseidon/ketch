@@ -59,6 +59,24 @@ If you have written any Go code you have probably encountered the built-in
 `error` type...
 ```
 
+## Crawl
+
+```sh
+# BFS crawl from a seed URL
+ketch crawl https://docs.example.com --depth 2
+
+# Sitemap-based crawl
+ketch crawl https://example.com/sitemap.xml --sitemap
+
+# Run in background
+ketch crawl https://example.com/sitemap.xml --sitemap --background
+ketch crawl status              # list all crawls
+ketch crawl status c_a1b2c3d4   # check progress
+ketch crawl stop c_a1b2c3d4     # stop a running crawl
+```
+
+Re-running a crawl uses cached pages and completes instantly. Use `--no-cache` to force re-fetch.
+
 ## Search + Scrape
 
 Combine both in one call:
@@ -69,6 +87,16 @@ ketch search "golang testing" --scrape
 
 This searches, then scrapes each result — returning per-page frontmatter and full markdown content.
 
+## Browser Rendering
+
+For JS-rendered pages, configure a browser:
+
+```sh
+ketch config set browser chrome
+```
+
+Once set, ketch automatically detects JS-rendered pages and uses headless Chrome. No changes needed to your scrape or crawl commands.
+
 ## JSON Output
 
 All commands support `--json` for structured output:
@@ -76,10 +104,11 @@ All commands support `--json` for structured output:
 ```sh
 ketch search "query" --json
 ketch scrape https://example.com --json
+ketch crawl status c_a1b2c3d4 --json
 ```
 
 ## Next Steps
 
-- [Configure your backend](/guide/configuration) — set a default search backend
+- [Configure your backend](/guide/configuration) — set a default search backend and browser
 - [Agent integration](/guide/agent-integration) — add ketch to your agent's system prompt
 - [Command reference](/reference/commands) — full flag and usage details
