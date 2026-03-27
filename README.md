@@ -167,9 +167,10 @@ Use `ketch` CLI for web search and page fetching.
 - Scrape: `ketch scrape <url>` — fetches a URL and returns clean markdown
 - Batch scrape: `ketch scrape <url1> <url2> ...` — concurrent fetch
 - Crawl: `ketch crawl <url> --sitemap --background` — crawl a site, poll with `ketch crawl status`
+- JS-rendered pages are handled automatically — if a page returns a loading shell, ketch re-fetches it with a headless browser.
 - All commands support `--json` for structured output.
 - Discovery: `ketch config` — returns effective config and available backends as JSON.
-- The operator has already configured the default search backend and browser. Do not override unless you have a specific reason.
+- The operator has already configured the search backend and browser. Do not override unless you have a specific reason.
 ```
 
 ### Why this works
