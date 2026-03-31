@@ -15,7 +15,7 @@ import (
 var searchCmd = &cobra.Command{
 	Use:   "search <query>",
 	Short: "Search the web and return results",
-	Long:  `Search the web using Brave (default), DuckDuckGo, or SearXNG. Add --scrape to fetch and extract full content from results.`,
+	Long:  `Search the web using Brave (default), DuckDuckGo, SearXNG, or Tavily. Add --scrape to fetch and extract full content from results.`,
 	Args:  cobra.MinimumNArgs(1),
 	RunE:  runSearch,
 }
@@ -115,6 +115,11 @@ func newSearcher(cmd *cobra.Command, backend string) (search.Searcher, error) {
 		return search.NewSearXNG(url), nil
 	case "ddg":
 		return search.NewDDG(), nil
+	case "tavily":
+		if cfg.TavilyAPIKey == "" {
+			return nil, fmt.Errorf("tavily: API key not set (get one at https://app.tavily.com then: ketch config set tavily_api_key <key>)")
+		}
+		return search.NewTavily(cfg.TavilyAPIKey), nil
 	default:
 		return nil, fmt.Errorf("unknown backend: %s", backend)
 	}
