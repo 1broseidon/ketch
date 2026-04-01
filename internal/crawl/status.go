@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/1broseidon/ketch/internal/appdirs"
 )
 
 // CrawlStatus tracks the progress of a background crawl.
@@ -27,11 +29,7 @@ type CrawlStatus struct {
 
 // StatusDir returns the directory for crawl status files.
 func StatusDir() (string, error) {
-	dir, err := os.UserCacheDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "ketch", "crawls"), nil
+	return appdirs.StatusDir()
 }
 
 // StatusPath returns the file path for a crawl status by ID.

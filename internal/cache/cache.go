@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/1broseidon/ketch/internal/appdirs"
 	"github.com/1broseidon/ketch/internal/scrape"
 )
 
@@ -25,6 +26,13 @@ type Store interface {
 type Cache struct {
 	store Store
 	ttl   time.Duration
+}
+
+// LookupResult describes a cached page and whether it is still fresh.
+type LookupResult struct {
+	Page     *scrape.Page
+	CachedAt time.Time
+	Fresh    bool
 }
 
 type cacheEntry struct {
@@ -62,19 +70,27 @@ func NewReadOnly() *Cache {
 
 // DBPath returns the default cache database path.
 func DBPath() (string, error) {
-	base, err := os.UserCacheDir()
+	base, err := appdirs.CacheDir()
 	if err != nil {
 		return "", err
 	}
-	dir := filepath.Join(base, "ketch")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(base, 0o755); err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "cache.db"), nil
+	return filepath.Join(base, "cache.db"), nil
 }
 
 // Get looks up a cached page by URL. Returns nil if missing or expired.
 func (c *Cache) Get(url string) *scrape.Page {
+	lookup := c.Lookup(url)
+	if lookup == nil || !lookup.Fresh {
+		return nil
+	}
+	return lookup.Page
+}
+
+// Lookup returns a cached page regardless of freshness along with its cache metadata.
+func (c *Cache) Lookup(url string) *LookupResult {
 	if c == nil {
 		return nil
 	}
@@ -86,10 +102,13 @@ func (c *Cache) Get(url string) *scrape.Page {
 	if err := json.Unmarshal(data, &e); err != nil {
 		return nil
 	}
-	if time.Since(time.Unix(e.CachedAt, 0)) > c.ttl {
-		return nil
+	cachedAt := time.Unix(e.CachedAt, 0)
+	pageCopy := e.Page
+	return &LookupResult{
+		Page:     &pageCopy,
+		CachedAt: cachedAt,
+		Fresh:    time.Since(cachedAt) <= c.ttl,
 	}
-	return &e.Page
 }
 
 // Put writes a page to the cache.

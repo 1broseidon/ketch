@@ -10,6 +10,7 @@ import (
 
 	"github.com/1broseidon/ketch/internal/cache"
 	"github.com/1broseidon/ketch/internal/crawl"
+	"github.com/1broseidon/ketch/internal/extract"
 	"github.com/spf13/cobra"
 )
 
@@ -82,6 +83,10 @@ func runCrawl(cmd *cobra.Command, args []string) error {
 
 		if r.Error != "" {
 			errCount++
+			if asJSON {
+				printCrawlJSON(r)
+				return
+			}
 			fmt.Fprintf(os.Stderr, "warn: %s: %s\n", r.URL, r.Error)
 			return
 		}
@@ -134,28 +139,100 @@ func printCrawlPage(r crawl.Result) {
 }
 
 type crawlJSONResult struct {
-	URL    string `json:"url"`
-	Title  string `json:"title"`
-	Words  int    `json:"words"`
-	Status string `json:"status"`
-	Source string `json:"source"`
-	Body   string `json:"body"`
+	URL    string         `json:"url"`
+	Depth  int            `json:"depth"`
+	Status string         `json:"status"`
+	Source string         `json:"source,omitempty"`
+	Error  string         `json:"error,omitempty"`
+	Page   *crawlJSONPage `json:"page,omitempty"`
+}
+
+type crawlJSONPage struct {
+	URL              string            `json:"url"`
+	FinalURL         string            `json:"final_url,omitempty"`
+	Title            string            `json:"title"`
+	Summary          string            `json:"summary,omitempty"`
+	CanonicalURL     string            `json:"canonical_url,omitempty"`
+	Headings         []extract.Heading `json:"headings,omitempty"`
+	Links            []string          `json:"links,omitempty"`
+	Quality          *extract.Quality  `json:"quality,omitempty"`
+	ExtractionSource string            `json:"extraction_source,omitempty"`
+	Words            int               `json:"words"`
+	Markdown         string            `json:"markdown"`
+	ETag             string            `json:"etag,omitempty"`
+	LastModified     string            `json:"last_modified,omitempty"`
+	ContentHash      string            `json:"content_hash,omitempty"`
 }
 
 func printCrawlJSON(r crawl.Result) {
-	obj := crawlJSONResult{
-		URL:    r.Page.URL,
-		Title:  r.Page.Title,
-		Words:  len(strings.Fields(r.Page.Markdown)),
-		Status: r.Status,
-		Source: r.Source,
-		Body:   r.Page.Markdown,
-	}
+	obj := buildCrawlJSONResult(r)
 	data, err := json.Marshal(obj)
 	if err != nil {
 		return
 	}
 	fmt.Println(string(data))
+}
+
+func buildCrawlJSONResult(r crawl.Result) crawlJSONResult {
+	obj := crawlJSONResult{
+		URL:    r.URL,
+		Depth:  r.Depth,
+		Status: r.Status,
+		Source: r.Source,
+		Error:  r.Error,
+	}
+	if obj.Status == "" && obj.Error != "" {
+		obj.Status = "error"
+	}
+	if r.Page == nil {
+		return obj
+	}
+	summary := strings.TrimSpace(r.Page.Summary)
+	if summary == "" {
+		summary = summarizeMarkdown(r.Page.Markdown)
+	}
+	obj.URL = r.Page.URL
+	obj.Page = &crawlJSONPage{
+		URL:              r.Page.URL,
+		FinalURL:         r.Page.FinalURL,
+		Title:            r.Page.Title,
+		Summary:          summary,
+		CanonicalURL:     r.Page.CanonicalURL,
+		Headings:         r.Page.Headings,
+		Links:            r.Page.Links,
+		Quality:          r.Page.Quality,
+		ExtractionSource: r.Page.ExtractionSource,
+		Words:            len(strings.Fields(r.Page.Markdown)),
+		Markdown:         r.Page.Markdown,
+		ETag:             r.Page.ETag,
+		LastModified:     r.Page.LastModified,
+		ContentHash:      r.Page.ContentHash,
+	}
+	return obj
+}
+
+func summarizeMarkdown(markdown string) string {
+	trimmed := strings.TrimSpace(markdown)
+	if trimmed == "" {
+		return ""
+	}
+	parts := strings.Split(trimmed, "\n\n")
+	for _, part := range parts {
+		candidate := strings.TrimSpace(part)
+		if candidate == "" || strings.HasPrefix(candidate, "#") {
+			continue
+		}
+		candidate = strings.Join(strings.Fields(candidate), " ")
+		if len(candidate) > 280 {
+			return strings.TrimSpace(candidate[:280])
+		}
+		return candidate
+	}
+	trimmed = strings.Join(strings.Fields(trimmed), " ")
+	if len(trimmed) > 280 {
+		return strings.TrimSpace(trimmed[:280])
+	}
+	return trimmed
 }
 
 func printCrawlSummary(seed string, total, newC, changed, unchanged, errors int, d time.Duration) {

@@ -72,6 +72,7 @@ func Crawl(seed string, opts Options, pc *cache.Cache, sitemap bool, fn func(Res
 		pc:        pc,
 		opts:      opts,
 		seedHost:  seedURL.Hostname(),
+		profile:   profileForSeed(seed),
 		deny:      denyRegexps,
 		visited:   make(map[string]bool),
 		fn:        fn,
@@ -86,6 +87,7 @@ type crawler struct {
 	pc       *cache.Cache
 	opts     Options
 	seedHost string
+	profile  *hostProfile
 	deny     []*regexp.Regexp
 
 	visitMu sync.Mutex
@@ -113,9 +115,17 @@ func (c *crawler) run(seed string, sitemap bool) error {
 		}()
 	}
 
+	workerCount := c.opts.Concurrency
+	if c.profile != nil && c.profile.MaxConcurrency > 0 && workerCount > c.profile.MaxConcurrency {
+		workerCount = c.profile.MaxConcurrency
+	}
+	if workerCount < 1 {
+		workerCount = 1
+	}
+
 	// Start workers
 	var workerWg sync.WaitGroup
-	for i := 0; i < c.opts.Concurrency; i++ {
+	for i := 0; i < workerCount; i++ {
 		workerWg.Add(1)
 		go func() {
 			defer workerWg.Done()
@@ -136,6 +146,7 @@ func (c *crawler) run(seed string, sitemap bool) error {
 		}
 	} else {
 		c.enqueue(seed, 0, "seed")
+		c.enqueueProfileSeeds(seed)
 	}
 
 	// Wait until there are no queued items and no active workers
@@ -191,7 +202,7 @@ func (c *crawler) enqueue(rawURL string, depth int, source string) {
 	if !c.tryVisit(norm) {
 		return
 	}
-	if !passesFilters(norm, c.seedHost, c.opts.Allow, c.deny) {
+	if !c.allowsURL(norm) {
 		return
 	}
 	c.queueMu.Lock()
@@ -215,11 +226,16 @@ func (c *crawler) tryVisit(u string) bool {
 }
 
 func (c *crawler) processItem(item queueItem) {
-	cached := c.pc.Get(item.url)
+	lookup := c.pc.Lookup(item.url)
+	var cached *scrape.Page
+	if lookup != nil {
+		cached = lookup.Page
+	}
 
 	// Cache hit: use cached page, skip fetch entirely.
 	// Use --no-cache to force re-fetch for change detection.
-	if cached != nil {
+	if lookup != nil && lookup.Fresh && cached != nil {
+		c.enqueueLinksFromPage(item, cached)
 		c.fn(Result{
 			Page:   cached,
 			Depth:  item.depth,
@@ -235,16 +251,43 @@ func (c *crawler) processItem(item queueItem) {
 	var err error
 
 	// If >80% of pages on this host are JS shells (after 10+ samples),
-	// skip detection and go straight to browser rendering.
-	if c.shouldForceBrowser(item.url) && c.scraper.HasBrowser() {
+	// skip detection and go straight to browser rendering for uncached pages.
+	if cached == nil && c.shouldForceBrowser(item.url) && c.scraper.HasBrowser() {
 		page, rawHTML, err = c.scraper.BrowserScrape(item.url)
 	} else {
 		var result *scrape.FetchResult
-		result, err = c.scraper.ScrapeConditional(item.url, "", "")
+		etag := ""
+		lastModified := ""
+		if cached != nil {
+			etag = cached.ETag
+			lastModified = cached.LastModified
+		}
+		result, err = c.scraper.ScrapeConditional(item.url, etag, lastModified)
 		if err == nil {
+			if result.NotModified && cached != nil {
+				c.pc.Put(item.url, cached)
+				c.enqueueLinksFromPage(item, cached)
+				c.fn(Result{
+					Page:   cached,
+					Depth:  item.depth,
+					Status: "unchanged",
+					Source: item.source,
+					URL:    item.url,
+				})
+				return
+			}
 			page = result.Page
 			rawHTML = result.RawHTML
 			c.recordJSDetection(item.url, result.JSDetection)
+			if shouldRejectPlaceholder(result, c.scraper.HasBrowser()) {
+				c.fn(Result{
+					URL:    item.url,
+					Depth:  item.depth,
+					Source: item.source,
+					Error:  "page requires browser rendering for useful content",
+				})
+				return
+			}
 		}
 	}
 
@@ -259,17 +302,132 @@ func (c *crawler) processItem(item queueItem) {
 	}
 
 	c.pc.Put(item.url, page)
+	status := "new"
+	if cached != nil {
+		if cached.ContentHash == page.ContentHash {
+			status = "unchanged"
+		} else {
+			status = "changed"
+		}
+	}
 	c.fn(Result{
 		Page:   page,
 		Depth:  item.depth,
-		Status: "new",
+		Status: status,
 		Source: item.source,
 		URL:    item.url,
 	})
+	if redirectTarget := redirectTargetForPage(item.url, page); redirectTarget != "" {
+		c.enqueue(redirectTarget, item.depth, "redirect")
+		return
+	}
 
 	if item.depth < c.opts.Depth && rawHTML != "" {
 		c.enqueueLinksFromHTML(item, rawHTML)
+		if c.profile != nil && c.profile.DiscoverHTML != nil {
+			for _, discovered := range c.profile.DiscoverHTML(rawHTML) {
+				c.enqueue(discovered, item.depth+1, "profile")
+			}
+		}
 	}
+}
+
+func redirectTargetForPage(currentURL string, page *scrape.Page) string {
+	if page == nil || page.Quality == nil || page.Quality.ContentType != "soft_redirect" {
+		return ""
+	}
+	target := normalizeURL(page.Quality.RedirectTarget)
+	if target == "" || target == normalizeURL(currentURL) {
+		return ""
+	}
+	return target
+}
+
+func shouldRejectPlaceholder(result *scrape.FetchResult, hasBrowser bool) bool {
+	if result == nil || result.Page == nil || hasBrowser {
+		return false
+	}
+	if result.JSDetection != "likely_shell" {
+		return false
+	}
+	markdown := strings.TrimSpace(result.Page.Markdown)
+	if markdown == "" {
+		return true
+	}
+	words := strings.Fields(markdown)
+	if len(words) > 5 {
+		return false
+	}
+	combined := strings.ToLower(strings.TrimSpace(strings.Join([]string{
+		result.Page.Title,
+		result.Page.Summary,
+		markdown,
+	}, " ")))
+	return strings.Contains(combined, "loading") || strings.Contains(combined, "javascript")
+}
+
+func (c *crawler) enqueueProfileSeeds(seed string) {
+	if c.profile == nil {
+		return
+	}
+	for _, candidate := range c.profile.DefaultSeeds {
+		if candidate == seed {
+			continue
+		}
+		c.enqueue(candidate, 0, "profile")
+	}
+	for _, sitemapURL := range c.profile.SitemapSeedURLs {
+		urls, err := fetchSitemap(sitemapURL)
+		if err != nil {
+			continue
+		}
+		for _, candidate := range urls {
+			c.enqueue(candidate, 0, "sitemap")
+		}
+	}
+	if c.profile.TOCURL != "" {
+		body, err := fetchBody(c.profile.TOCURL)
+		if err == nil {
+			base := seed
+			if len(c.profile.DefaultSeeds) > 0 {
+				base = c.profile.DefaultSeeds[0]
+			}
+			if !strings.HasSuffix(base, "/") {
+				base += "/"
+			}
+			for _, candidate := range discoverTOCURLs(string(body), base) {
+				c.enqueue(candidate, 0, "profile")
+			}
+		}
+	}
+}
+
+func (c *crawler) allowsURL(rawURL string) bool {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return false
+	}
+	for _, re := range c.deny {
+		if re.MatchString(rawURL) {
+			return false
+		}
+	}
+	if len(c.opts.Allow) > 0 {
+		matched := false
+		for _, sub := range c.opts.Allow {
+			if strings.Contains(strings.ToLower(u.Path), strings.ToLower(sub)) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			return false
+		}
+	}
+	if c.profile != nil && c.profile.AllowURL != nil {
+		return c.profile.AllowURL(u)
+	}
+	return u.Hostname() == c.seedHost
 }
 
 func (c *crawler) recordJSDetection(rawURL, detection string) {
@@ -307,8 +465,38 @@ func (c *crawler) shouldForceBrowser(rawURL string) bool {
 func (c *crawler) enqueueLinksFromHTML(parent queueItem, html string) {
 	links := extractLinksFromHTML(parent.url, html)
 	for _, link := range links {
+		if !c.allowsDiscoveredLink(parent.url, link) {
+			continue
+		}
 		c.enqueue(link, parent.depth+1, "link")
 	}
+}
+
+func (c *crawler) enqueueLinksFromPage(parent queueItem, page *scrape.Page) {
+	if page == nil || parent.depth >= c.opts.Depth {
+		return
+	}
+	for _, link := range page.Links {
+		if !c.allowsDiscoveredLink(parent.url, link) {
+			continue
+		}
+		c.enqueue(link, parent.depth+1, "link")
+	}
+}
+
+func (c *crawler) allowsDiscoveredLink(parentURL, childURL string) bool {
+	if c.profile == nil || c.profile.AllowDiscovered == nil {
+		return true
+	}
+	parent, err := url.Parse(parentURL)
+	if err != nil {
+		return false
+	}
+	child, err := url.Parse(childURL)
+	if err != nil {
+		return false
+	}
+	return c.profile.AllowDiscovered(parent, child)
 }
 
 // normalizeURL strips fragment, utm_ params, and trailing slash.
@@ -330,35 +518,6 @@ func normalizeURL(raw string) string {
 	s := u.String()
 	s = strings.TrimRight(s, "/")
 	return s
-}
-
-// passesFilters checks domain, allow, and deny filters.
-func passesFilters(rawURL, seedHost string, allow []string, deny []*regexp.Regexp) bool {
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		return false
-	}
-	if u.Hostname() != seedHost {
-		return false
-	}
-	for _, re := range deny {
-		if re.MatchString(rawURL) {
-			return false
-		}
-	}
-	if len(allow) > 0 {
-		matched := false
-		for _, sub := range allow {
-			if strings.Contains(u.Path, sub) {
-				matched = true
-				break
-			}
-		}
-		if !matched {
-			return false
-		}
-	}
-	return true
 }
 
 func compileDeny(patterns []string) ([]*regexp.Regexp, error) {
@@ -477,7 +636,14 @@ func fetchSitemapIndex(idx sitemapIndex) ([]string, error) {
 }
 
 func fetchBody(rawURL string) ([]byte, error) {
-	resp, err := http.Get(rawURL) //nolint:errcheck
+	req, err := http.NewRequest(http.MethodGet, rawURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; ketch/1.0)")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml,application/json")
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

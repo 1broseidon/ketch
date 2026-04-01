@@ -74,6 +74,26 @@ ketch browser status
 
 Once configured, browser rendering is transparent — `ketch scrape` and `ketch crawl` automatically detect JS-rendered pages and use the browser when needed. Static pages are always fetched via plain HTTP (fast path).
 
+## Portable runtime
+
+For no-install packaged workflows, ketch can keep all writable state under an app-local root instead of user profile directories.
+
+Set `KETCH_PORTABLE_ROOT` before launch to relocate config, cache, browser downloads, and crawl status files together:
+
+```powershell
+$env:KETCH_PORTABLE_ROOT = "C:\apps\ketch-data"
+ketch config --json
+```
+
+You can also override each writable location independently:
+
+- `KETCH_CONFIG_DIR`
+- `KETCH_CACHE_DIR`
+- `KETCH_BROWSER_DIR`
+- `KETCH_STATUS_DIR`
+
+`ketch config --json` reports the effective resolved paths.
+
 ## Crawling
 
 Crawl entire sites via BFS link discovery or sitemaps:
@@ -135,6 +155,10 @@ ketch config
 ```json
 {
   "config_path": "/home/user/.config/ketch/config.json",
+  "portable_root": "/portable/ketch",
+  "cache_path": "/portable/ketch/cache/cache.db",
+  "crawl_status_dir": "/portable/ketch/cache/crawls",
+  "browser_install_dir": "/portable/ketch/cache/browser",
   "backend": "brave",
   "searxng_url": "http://localhost:8081",
   "limit": 5,

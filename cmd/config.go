@@ -7,13 +7,20 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/1broseidon/ketch/internal/appdirs"
+	"github.com/1broseidon/ketch/internal/cache"
 	"github.com/1broseidon/ketch/internal/config"
+	"github.com/1broseidon/ketch/internal/crawl"
 	"github.com/spf13/cobra"
 )
 
 // configInfo is the discovery payload returned by `ketch config`.
 type configInfo struct {
 	ConfigPath        string   `json:"config_path"`
+	PortableRoot      string   `json:"portable_root,omitempty"`
+	CachePath         string   `json:"cache_path,omitempty"`
+	CrawlStatusDir    string   `json:"crawl_status_dir,omitempty"`
+	BrowserInstallDir string   `json:"browser_install_dir,omitempty"`
 	Backend           string   `json:"backend"`
 	SearxngURL        string   `json:"searxng_url"`
 	Limit             int      `json:"limit"`
@@ -58,9 +65,16 @@ func init() {
 func runConfigShow(_ *cobra.Command, _ []string) error {
 	c := config.Load()
 	path, _ := config.Path()
+	cachePath, _ := cache.DBPath()
+	statusDir, _ := crawl.StatusDir()
+	browserDir, _ := appdirs.BrowserDir()
 
 	info := configInfo{
 		ConfigPath:        path,
+		PortableRoot:      appdirs.PortableRoot(),
+		CachePath:         cachePath,
+		CrawlStatusDir:    statusDir,
+		BrowserInstallDir: browserDir,
 		Backend:           c.Backend,
 		SearxngURL:        c.SearxngURL,
 		Limit:             c.Limit,

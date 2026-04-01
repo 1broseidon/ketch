@@ -2,10 +2,9 @@ package scrape
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"time"
 
+	"github.com/1broseidon/ketch/internal/appdirs"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
 	"github.com/go-rod/rod/lib/proto"
@@ -59,12 +58,12 @@ func (r *rodConn) Close() {
 
 // InstallBrowser downloads Chromium to the ketch cache directory.
 func InstallBrowser() (string, error) {
-	cacheDir, err := os.UserCacheDir()
+	browserDir, err := appdirs.BrowserDir()
 	if err != nil {
 		return "", fmt.Errorf("cache dir: %w", err)
 	}
 	b := launcher.NewBrowser()
-	b.RootDir = filepath.Join(cacheDir, "ketch", "browser")
+	b.RootDir = browserDir
 	if err := b.Download(); err != nil {
 		return "", err
 	}

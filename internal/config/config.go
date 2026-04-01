@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+
+	"github.com/1broseidon/ketch/internal/appdirs"
 )
 
 // Config holds user-configurable defaults for ketch.
@@ -33,11 +35,11 @@ func AvailableBackends() []string {
 
 // Path returns the config file path (~/.config/ketch/config.json).
 func Path() (string, error) {
-	dir, err := os.UserConfigDir()
+	dir, err := appdirs.ConfigDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "ketch", "config.json"), nil
+	return filepath.Join(dir, "config.json"), nil
 }
 
 // Load reads the config file, falling back to defaults for missing fields.
