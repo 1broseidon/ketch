@@ -15,7 +15,6 @@ import (
 	"github.com/1broseidon/ketch/internal/cache"
 	"github.com/1broseidon/ketch/internal/extract"
 	"github.com/1broseidon/ketch/internal/scrape"
-	"github.com/PuerkitoBio/goquery"
 	"github.com/spf13/cobra"
 )
 
@@ -176,6 +175,10 @@ func scrapeWithSelector(s *scrape.Scraper, rawURL string, asJSON bool, trim bool
 		return fmt.Errorf("fetch failed: %w", err)
 	}
 
+	// Apply browser fallback for JS-rendered pages before running the selector,
+	// otherwise the selector matches against the empty shell, not the real content.
+	html = s.MaybeBrowserFetch(rawURL, html)
+
 	markdown, err := extract.ExtractSelector(html, selector)
 	if err != nil {
 		return fmt.Errorf("selector extraction failed: %w", err)
@@ -184,7 +187,7 @@ func scrapeWithSelector(s *scrape.Scraper, rawURL string, asJSON bool, trim bool
 		return fmt.Errorf("no elements matched selector %q", selector)
 	}
 
-	title := extractTitleFromHTML(html)
+	title := extract.Title(html)
 	page := &scrape.Page{URL: rawURL, Title: title, Markdown: markdown}
 	page.Markdown = postProcess(page.Markdown, trim, maxChars)
 
@@ -193,15 +196,6 @@ func scrapeWithSelector(s *scrape.Scraper, rawURL string, asJSON bool, trim bool
 	}
 	printPage(page)
 	return nil
-}
-
-// extractTitleFromHTML pulls the <title> tag from raw HTML.
-func extractTitleFromHTML(html string) string {
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(doc.Find("title").First().Text())
 }
 
 // fetchLLMSTxt attempts to fetch /llms.txt from the given base URL.

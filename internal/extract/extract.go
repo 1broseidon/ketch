@@ -57,7 +57,7 @@ func (e *Extractor) Extract(pageURL, html string) (*Result, error) {
 // extractRaw converts the full HTML to markdown without readability.
 // Noisier output (includes nav, footer, etc.) but never fails on valid HTML.
 func extractRaw(html string) (*Result, error) {
-	title := extractTitle(html)
+	title := Title(html)
 
 	markdown, err := md.ConvertString(html)
 	if err != nil {
@@ -114,8 +114,8 @@ func ExtractSelector(rawHTML, selector string) (string, error) {
 	return strings.TrimSpace(markdown), nil
 }
 
-// extractTitle pulls the <title> tag content from raw HTML.
-func extractTitle(html string) string {
+// Title pulls the <title> tag content from raw HTML.
+func Title(html string) string {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
 		return ""

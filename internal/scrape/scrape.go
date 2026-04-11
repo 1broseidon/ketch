@@ -105,7 +105,7 @@ func (s *Scraper) Scrape(rawURL string) (*Page, error) {
 		return nil, err
 	}
 
-	body = s.maybeBrowserFetch(rawURL, body)
+	body = s.MaybeBrowserFetch(rawURL, body)
 
 	result, err := s.extractor.Extract(rawURL, body)
 	if err != nil {
@@ -202,7 +202,9 @@ func (s *Scraper) BrowserScrape(rawURL string) (*Page, string, error) {
 	return page, html, nil
 }
 
-func (s *Scraper) maybeBrowserFetch(rawURL, html string) string {
+// MaybeBrowserFetch re-fetches rawURL via the browser if html looks JS-rendered.
+// Returns the original html if no browser is needed or available.
+func (s *Scraper) MaybeBrowserFetch(rawURL, html string) string {
 	detection := extract.DetectJSShell(html)
 	if detection != "likely_shell" {
 		return html
