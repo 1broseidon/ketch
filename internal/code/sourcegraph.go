@@ -2,6 +2,7 @@ package code
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -53,12 +54,12 @@ type sseLineMatch struct {
 }
 
 // Search queries Sourcegraph and returns up to limit code results.
-func (s *Sourcegraph) Search(query, lang string, limit int) ([]Result, error) {
+func (s *Sourcegraph) Search(ctx context.Context, query, lang string, limit int) ([]Result, error) {
 	full := s.buildQuery(query, lang)
 	u := fmt.Sprintf("%s/.api/search/stream?q=%s&display=%d",
 		s.baseURL, url.QueryEscape(full), limit)
 
-	req, err := http.NewRequest("GET", u, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -38,7 +38,7 @@ func runCode(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	results, err := searcher.Search(query, lang, limit)
+	results, err := searcher.Search(cmd.Context(), query, lang, limit)
 	if err != nil {
 		return fmt.Errorf("code search failed: %w", err)
 	}

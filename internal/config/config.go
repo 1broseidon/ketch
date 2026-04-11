@@ -1,11 +1,13 @@
 package config
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // Config holds user-configurable defaults for ketch.
@@ -37,7 +39,9 @@ func (c Config) ResolveGithubToken() (token, source string) {
 		return t, "env"
 	}
 	if _, err := exec.LookPath("gh"); err == nil {
-		out, err := exec.Command("gh", "auth", "token").Output()
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		out, err := exec.CommandContext(ctx, "gh", "auth", "token").Output()
 		if err == nil {
 			if t := strings.TrimSpace(string(out)); t != "" {
 				return t, "gh-cli"

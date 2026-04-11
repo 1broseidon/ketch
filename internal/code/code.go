@@ -1,5 +1,7 @@
 package code
 
+import "context"
+
 // Result is a single code search result.
 type Result struct {
 	Repo     string `json:"repo"`
@@ -16,5 +18,5 @@ type Result struct {
 // own query dialect — language filtering and safety qualifiers (archived/fork
 // exclusion) are applied internally so that callers pass plain user input.
 type Searcher interface {
-	Search(query, lang string, limit int) ([]Result, error)
+	Search(ctx context.Context, query, lang string, limit int) ([]Result, error)
 }

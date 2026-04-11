@@ -1,6 +1,8 @@
 package code
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -40,6 +42,7 @@ type ghItem struct {
 type ghRepo struct {
 	FullName string `json:"full_name"`
 	HTMLURL  string `json:"html_url"`
+	NodeID   string `json:"node_id"`
 }
 
 type ghTextMatch struct {
@@ -53,13 +56,53 @@ type ghMatchRange struct {
 }
 
 // Search queries GitHub Code Search and returns up to limit results.
-func (g *GitHub) Search(query, lang string, limit int) ([]Result, error) {
+func (g *GitHub) Search(ctx context.Context, query, lang string, limit int) ([]Result, error) {
 	if g.token == "" {
 		return nil, fmt.Errorf("github: token required")
 	}
 
-	full := g.buildQuery(query, lang)
+	sr, err := g.searchCode(ctx, g.buildQuery(query, lang), limit)
+	if err != nil {
+		return nil, err
+	}
 
+	results := make([]Result, 0, len(sr.Items))
+	nodeIDs := make([]string, 0, len(sr.Items))
+	for _, item := range sr.Items {
+		snippet := ""
+		if len(item.TextMatches) > 0 {
+			tm := item.TextMatches[0]
+			snippet = extractMatchedLine(tm.Fragment, tm.Matches)
+		}
+		results = append(results, Result{
+			Repo:    item.Repository.FullName,
+			Path:    item.Path,
+			Snippet: snippet,
+			URL:     item.HTMLURL,
+			Source:  "github",
+		})
+		if item.Repository.NodeID != "" {
+			nodeIDs = append(nodeIDs, item.Repository.NodeID)
+		}
+		if len(results) >= limit {
+			break
+		}
+	}
+
+	// Stars are not present in /search/code responses; fetch them in one
+	// GraphQL batch call. Failure here is non-fatal — results stay usable.
+	if stars, err := g.fetchStars(ctx, nodeIDs); err == nil {
+		for i := range results {
+			if n, ok := stars[sr.Items[i].Repository.NodeID]; ok {
+				results[i].Stars = n
+			}
+		}
+	}
+	return results, nil
+}
+
+// searchCode performs the raw /search/code REST call and decodes the response.
+func (g *GitHub) searchCode(ctx context.Context, full string, limit int) (*ghSearchResponse, error) {
 	perPage := limit
 	if perPage <= 0 || perPage > 100 {
 		perPage = 30
@@ -68,7 +111,7 @@ func (g *GitHub) Search(query, lang string, limit int) ([]Result, error) {
 	u := fmt.Sprintf("https://api.github.com/search/code?q=%s&per_page=%d",
 		url.QueryEscape(full), perPage)
 
-	req, err := http.NewRequest("GET", u, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -97,26 +140,64 @@ func (g *GitHub) Search(query, lang string, limit int) ([]Result, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&sr); err != nil {
 		return nil, fmt.Errorf("failed to decode github response: %w", err)
 	}
+	return &sr, nil
+}
 
-	results := make([]Result, 0, len(sr.Items))
-	for _, item := range sr.Items {
-		snippet := ""
-		if len(item.TextMatches) > 0 {
-			tm := item.TextMatches[0]
-			snippet = extractMatchedLine(tm.Fragment, tm.Matches)
-		}
-		results = append(results, Result{
-			Repo:    item.Repository.FullName,
-			Path:    item.Path,
-			Snippet: snippet,
-			URL:     item.HTMLURL,
-			Source:  "github",
-		})
-		if len(results) >= limit {
-			break
+// fetchStars batch-fetches stargazer counts for the given repo node IDs
+// via a single GraphQL call. Returns a map keyed by node ID.
+func (g *GitHub) fetchStars(ctx context.Context, nodeIDs []string) (map[string]int, error) {
+	if len(nodeIDs) == 0 {
+		return nil, nil
+	}
+
+	body, _ := json.Marshal(map[string]any{
+		"query": `query($ids: [ID!]!) {
+  nodes(ids: $ids) {
+    ... on Repository {
+      id
+      stargazerCount
+    }
+  }
+}`,
+		"variables": map[string]any{"ids": nodeIDs},
+	})
+
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.github.com/graphql", bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+g.token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := g.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("graphql status %d", resp.StatusCode)
+	}
+
+	var gr struct {
+		Data struct {
+			Nodes []struct {
+				ID             string `json:"id"`
+				StargazerCount int    `json:"stargazerCount"`
+			} `json:"nodes"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&gr); err != nil {
+		return nil, err
+	}
+
+	stars := make(map[string]int, len(gr.Data.Nodes))
+	for _, n := range gr.Data.Nodes {
+		if n.ID != "" {
+			stars[n.ID] = n.StargazerCount
 		}
 	}
-	return results, nil
+	return stars, nil
 }
 
 // extractMatchedLine returns the single line within fragment that contains
