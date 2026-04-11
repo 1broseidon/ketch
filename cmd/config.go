@@ -13,13 +13,18 @@ import (
 
 // configInfo is the discovery payload returned by `ketch config`.
 type configInfo struct {
-	ConfigPath        string   `json:"config_path"`
-	Backend           string   `json:"backend"`
-	SearxngURL        string   `json:"searxng_url"`
-	Limit             int      `json:"limit"`
-	CacheTTL          string   `json:"cache_ttl"`
-	Browser           string   `json:"browser,omitempty"`
-	AvailableBackends []string `json:"available_backends"`
+	ConfigPath            string   `json:"config_path"`
+	Backend               string   `json:"backend"`
+	SearxngURL            string   `json:"searxng_url"`
+	Limit                 int      `json:"limit"`
+	CacheTTL              string   `json:"cache_ttl"`
+	Browser               string   `json:"browser,omitempty"`
+	CodeBackend           string   `json:"code_backend"`
+	DocsBackend           string   `json:"docs_backend"`
+	SourcegraphURL        string   `json:"sourcegraph_url"`
+	AvailableBackends     []string `json:"available_backends"`
+	AvailableCodeBackends []string `json:"available_code_backends"`
+	AvailableDocBackends  []string `json:"available_doc_backends"`
 }
 
 var configCmd = &cobra.Command{
@@ -60,13 +65,18 @@ func runConfigShow(_ *cobra.Command, _ []string) error {
 	path, _ := config.Path()
 
 	info := configInfo{
-		ConfigPath:        path,
-		Backend:           c.Backend,
-		SearxngURL:        c.SearxngURL,
-		Limit:             c.Limit,
-		CacheTTL:          c.CacheTTL,
-		Browser:           c.Browser,
-		AvailableBackends: config.AvailableBackends(),
+		ConfigPath:            path,
+		Backend:               c.Backend,
+		SearxngURL:            c.SearxngURL,
+		Limit:                 c.Limit,
+		CacheTTL:              c.CacheTTL,
+		Browser:               c.Browser,
+		CodeBackend:           c.CodeBackend,
+		DocsBackend:           c.DocsBackend,
+		SourcegraphURL:        c.SourcegraphURL,
+		AvailableBackends:     config.AvailableBackends(),
+		AvailableCodeBackends: config.AvailableCodeBackends(),
+		AvailableDocBackends:  config.AvailableDocBackends(),
 	}
 
 	enc := json.NewEncoder(os.Stdout)
@@ -116,8 +126,16 @@ func runConfigSet(_ *cobra.Command, args []string) error {
 		c.CacheTTL = value
 	case "browser":
 		c.Browser = value
+	case "code_backend":
+		c.CodeBackend = value
+	case "docs_backend":
+		c.DocsBackend = value
+	case "context7_api_key":
+		c.Context7APIKey = value
+	case "sourcegraph_url":
+		c.SourcegraphURL = value
 	default:
-		return fmt.Errorf("unknown key: %s (valid: backend, searxng_url, brave_api_key, limit, cache_ttl, browser)", key)
+		return fmt.Errorf("unknown key: %s (valid: backend, searxng_url, brave_api_key, limit, cache_ttl, browser, code_backend, docs_backend, context7_api_key, sourcegraph_url)", key)
 	}
 
 	if err := config.Save(c); err != nil {
