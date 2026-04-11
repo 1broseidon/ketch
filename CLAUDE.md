@@ -37,6 +37,8 @@ Default output uses YAML frontmatter + markdown (cymbal style):
 | `--max-chars N` | scrape, search --scrape | 0 (off) | Truncate markdown output to N chars, appends `[truncated]` |
 | `--trim` | scrape, search --scrape | false | Strip markdown formatting syntax, keep content text only (~30-40% token reduction) |
 | `--minimal` | search, code, docs | false | One result per line, tab-separated url/title/snippet, no frontmatter |
+| `--select <css>` | scrape | — | Extract only elements matching CSS selector (skips readability) |
+| `--no-llms-txt` | scrape | false | Disable automatic /llms.txt detection for bare domains |
 
 ### Search Backends (ketch search)
 

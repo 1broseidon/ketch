@@ -3,6 +3,9 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -29,6 +32,8 @@ func init() {
 	scrapeCmd.Flags().Bool("no-cache", false, "bypass the page cache")
 	scrapeCmd.Flags().Int("max-chars", 0, "truncate markdown output to N chars (0 = disabled)")
 	scrapeCmd.Flags().Bool("trim", false, "strip markdown formatting, keep content text only")
+	scrapeCmd.Flags().String("select", "", "CSS selector to extract specific elements (skips readability)")
+	scrapeCmd.Flags().Bool("no-llms-txt", false, "disable automatic /llms.txt detection for bare domains")
 }
 
 func runScrape(cmd *cobra.Command, args []string) error {
@@ -36,6 +41,8 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	noCache, _ := cmd.Flags().GetBool("no-cache")
 	maxChars, _ := cmd.Flags().GetInt("max-chars")
 	trim, _ := cmd.Flags().GetBool("trim")
+	selector, _ := cmd.Flags().GetString("select")
+	noLLMSTxt, _ := cmd.Flags().GetBool("no-llms-txt")
 
 	var scraper *scrape.Scraper
 	if cfg.Browser != "" {
@@ -49,7 +56,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	defer pc.Close()
 
 	if len(args) == 1 {
-		return scrapeSingle(scraper, pc, args[0], asJSON, trim, maxChars)
+		return scrapeSingle(scraper, pc, args[0], asJSON, trim, maxChars, selector, noLLMSTxt)
 	}
 	return scrapeMultiple(scraper, pc, args, asJSON, trim, maxChars)
 }
@@ -81,8 +88,26 @@ func cachedScrape(s *scrape.Scraper, pc *cache.Cache, url string) (*scrape.Page,
 	return page, nil
 }
 
-func scrapeSingle(s *scrape.Scraper, pc *cache.Cache, url string, asJSON bool, trim bool, maxChars int) error {
-	page, err := cachedScrape(s, pc, url)
+func scrapeSingle(s *scrape.Scraper, pc *cache.Cache, rawURL string, asJSON bool, trim bool, maxChars int, selector string, noLLMSTxt bool) error {
+	// --select: direct fetch + CSS extraction, bypasses cache
+	if selector != "" {
+		return scrapeWithSelector(s, rawURL, asJSON, trim, maxChars, selector)
+	}
+
+	// llms.txt auto-detection for bare domains
+	if !noLLMSTxt {
+		if content, ok := fetchLLMSTxt(rawURL); ok {
+			page := &scrape.Page{URL: rawURL, Title: "llms.txt", Markdown: content}
+			page.Markdown = postProcess(page.Markdown, trim, maxChars)
+			if asJSON {
+				return json.NewEncoder(os.Stdout).Encode(page)
+			}
+			printPage(page)
+			return nil
+		}
+	}
+
+	page, err := cachedScrape(s, pc, rawURL)
 	if err != nil {
 		return fmt.Errorf("scrape failed: %w", err)
 	}
@@ -142,6 +167,70 @@ func scrapeMultiple(s *scrape.Scraper, pc *cache.Cache, urls []string, asJSON bo
 		printPage(r.page)
 	}
 	return nil
+}
+
+func scrapeWithSelector(s *scrape.Scraper, rawURL string, asJSON bool, trim bool, maxChars int, selector string) error {
+	html, err := s.Fetch(rawURL)
+	if err != nil {
+		return fmt.Errorf("fetch failed: %w", err)
+	}
+
+	// Apply browser fallback for JS-rendered pages before running the selector,
+	// otherwise the selector matches against the empty shell, not the real content.
+	html = s.MaybeBrowserFetch(rawURL, html)
+
+	markdown, err := extract.ExtractSelector(html, selector)
+	if err != nil {
+		return fmt.Errorf("selector extraction failed: %w", err)
+	}
+	if markdown == "" {
+		return fmt.Errorf("no elements matched selector %q", selector)
+	}
+
+	title := extract.Title(html)
+	page := &scrape.Page{URL: rawURL, Title: title, Markdown: markdown}
+	page.Markdown = postProcess(page.Markdown, trim, maxChars)
+
+	if asJSON {
+		return json.NewEncoder(os.Stdout).Encode(page)
+	}
+	printPage(page)
+	return nil
+}
+
+// fetchLLMSTxt attempts to fetch /llms.txt from the given base URL.
+// Returns the content and true if successful, empty string and false otherwise.
+// All errors are silently swallowed — this is a best-effort check.
+func fetchLLMSTxt(baseURL string) (string, bool) {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return "", false
+	}
+	if u.Path != "" && u.Path != "/" {
+		return "", false
+	}
+
+	llmsURL := u.Scheme + "://" + u.Host + "/llms.txt"
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(llmsURL) //nolint:noctx
+	if err != nil {
+		return "", false
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", false
+	}
+	ct := resp.Header.Get("Content-Type")
+	if !strings.Contains(ct, "text/plain") {
+		return "", false
+	}
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", false
+	}
+	return string(b), true
 }
 
 func printPage(p *scrape.Page) {
