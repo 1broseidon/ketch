@@ -1,6 +1,7 @@
 package search
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -21,8 +22,8 @@ func NewDDG() *DDG {
 }
 
 // Search queries DuckDuckGo and returns up to limit results.
-func (d *DDG) Search(query string, limit int) ([]Result, error) {
-	resp, err := d.fetchResults(query)
+func (d *DDG) Search(ctx context.Context, query string, limit int) ([]Result, error) {
+	resp, err := d.fetchResults(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -62,10 +63,10 @@ func (d *DDG) Search(query string, limit int) ([]Result, error) {
 
 const ddgUA = "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0"
 
-func (d *DDG) fetchResults(query string) (*http.Response, error) {
+func (d *DDG) fetchResults(ctx context.Context, query string) (*http.Response, error) {
 	u := fmt.Sprintf("https://html.duckduckgo.com/html/?q=%s", url.QueryEscape(query))
 	for range 3 {
-		req, err := http.NewRequest("GET", u, nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
 		if err != nil {
 			return nil, err
 		}

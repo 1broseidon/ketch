@@ -40,11 +40,11 @@ func runDocs(cmd *cobra.Command, args []string) error {
 	minimal, _ := cmd.Flags().GetBool("minimal")
 
 	if resolve {
-		return runDocsResolve(query, asJSON)
+		return runDocsResolve(cmd, query, asJSON)
 	}
 
 	if library != "" && backend == "context7" {
-		return runDocsWithLibrary(query, library, tokens, asJSON, minimal)
+		return runDocsWithLibrary(cmd, query, library, tokens, asJSON, minimal)
 	}
 
 	searcher, err := newDocSearcher(backend)
@@ -52,7 +52,7 @@ func runDocs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	results, err := searcher.Search(query, limit)
+	results, err := searcher.Search(cmd.Context(), query, limit)
 	if err != nil {
 		return fmt.Errorf("docs search failed: %w", err)
 	}
@@ -65,13 +65,13 @@ func runDocs(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runDocsResolve(query string, asJSON bool) error {
+func runDocsResolve(cmd *cobra.Command, query string, asJSON bool) error {
 	if cfg.Context7APIKey == "" {
 		return fmt.Errorf("context7: API key not set (get one then: ketch config set context7_api_key <key>)")
 	}
 
 	c7 := docs.NewContext7(cfg.Context7APIKey)
-	matches, err := c7.ResolveLibrary(query)
+	matches, err := c7.ResolveLibrary(cmd.Context(), query)
 	if err != nil {
 		return fmt.Errorf("resolve failed: %w", err)
 	}
@@ -86,13 +86,13 @@ func runDocsResolve(query string, asJSON bool) error {
 	return nil
 }
 
-func runDocsWithLibrary(query, library string, tokens int, asJSON bool, minimal bool) error {
+func runDocsWithLibrary(cmd *cobra.Command, query, library string, tokens int, asJSON bool, minimal bool) error {
 	if cfg.Context7APIKey == "" {
 		return fmt.Errorf("context7: API key not set (get one then: ketch config set context7_api_key <key>)")
 	}
 
 	c7 := docs.NewContext7(cfg.Context7APIKey)
-	results, err := c7.GetDocs(library, query, tokens)
+	results, err := c7.GetDocs(cmd.Context(), library, query, tokens)
 	if err != nil {
 		return fmt.Errorf("docs fetch failed: %w", err)
 	}

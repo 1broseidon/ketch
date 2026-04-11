@@ -1,5 +1,7 @@
 package docs
 
+import "context"
+
 // Result is a single docs search result.
 type Result struct {
 	Library    string `json:"library"`
@@ -13,5 +15,5 @@ type Result struct {
 
 // Searcher is the interface for docs backends.
 type Searcher interface {
-	Search(query string, limit int) ([]Result, error)
+	Search(ctx context.Context, query string, limit int) ([]Result, error)
 }

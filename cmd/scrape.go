@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,11 +20,17 @@ import (
 )
 
 var scrapeCmd = &cobra.Command{
-	Use:   "scrape <url> [urls...]",
+	Use:   "scrape [url...] | [file] | [json-array]",
 	Short: "Scrape URLs and extract clean markdown",
-	Long:  `Fetch one or more URLs, extract the main content, and convert to clean markdown. Multiple URLs are scraped concurrently.`,
-	Args:  cobra.MinimumNArgs(1),
-	RunE:  runScrape,
+	Long: `Fetch one or more URLs, extract the main content, and convert to clean markdown.
+
+Input is detected automatically:
+  Multiple args:  ketch scrape url1 url2 url3
+  JSON array:     ketch scrape '["url1","url2"]'
+  File:           ketch scrape urls.txt
+  Stdin pipe:     echo "url1\nurl2" | ketch scrape
+  Single URL:     ketch scrape url`,
+	RunE: runScrape,
 }
 
 func init() {
@@ -34,6 +41,7 @@ func init() {
 	scrapeCmd.Flags().Bool("trim", false, "strip markdown formatting, keep content text only")
 	scrapeCmd.Flags().String("select", "", "CSS selector to extract specific elements (skips readability)")
 	scrapeCmd.Flags().Bool("no-llms-txt", false, "disable automatic /llms.txt detection for bare domains")
+	scrapeCmd.Flags().Int("concurrency", 5, "max concurrent requests for multi-URL scraping")
 }
 
 func runScrape(cmd *cobra.Command, args []string) error {
@@ -43,6 +51,12 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	trim, _ := cmd.Flags().GetBool("trim")
 	selector, _ := cmd.Flags().GetString("select")
 	noLLMSTxt, _ := cmd.Flags().GetBool("no-llms-txt")
+	concurrency, _ := cmd.Flags().GetInt("concurrency")
+
+	urls, err := resolveURLs(args)
+	if err != nil {
+		return err
+	}
 
 	var scraper *scrape.Scraper
 	if cfg.Browser != "" {
@@ -55,10 +69,84 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	pc := newPageCache(noCache)
 	defer pc.Close()
 
-	if len(args) == 1 {
-		return scrapeSingle(scraper, pc, args[0], asJSON, trim, maxChars, selector, noLLMSTxt)
+	if len(urls) == 1 {
+		return scrapeSingle(scraper, pc, urls[0], asJSON, trim, maxChars, selector, noLLMSTxt)
 	}
-	return scrapeMultiple(scraper, pc, args, asJSON, trim, maxChars)
+	return scrapeMultiple(scraper, pc, urls, asJSON, trim, maxChars, selector, noLLMSTxt, concurrency)
+}
+
+// resolveURLs detects the input mode and returns a list of URLs.
+func resolveURLs(args []string) ([]string, error) {
+	if len(args) > 1 {
+		return args, nil
+	}
+
+	if stdinIsPipe() {
+		urls := readLines(os.Stdin)
+		if len(urls) > 0 {
+			return urls, nil
+		}
+	}
+
+	if len(args) == 1 {
+		arg := args[0]
+		if strings.HasPrefix(strings.TrimSpace(arg), "[") {
+			var urls []string
+			if err := json.Unmarshal([]byte(arg), &urls); err != nil {
+				return nil, fmt.Errorf("failed to parse JSON array: %w", err)
+			}
+			if len(urls) == 0 {
+				return nil, fmt.Errorf("JSON array is empty")
+			}
+			return urls, nil
+		}
+		if _, err := os.Stat(arg); err == nil {
+			urls, err := readLinesFromFile(arg)
+			if err != nil {
+				return nil, err
+			}
+			if len(urls) == 0 {
+				return nil, fmt.Errorf("file %q contains no URLs", arg)
+			}
+			return urls, nil
+		}
+		return []string{arg}, nil
+	}
+
+	return nil, fmt.Errorf("provide a URL, file path, JSON array, or pipe URLs via stdin")
+}
+
+// stdinIsPipe returns true when stdin is a pipe (not a terminal).
+func stdinIsPipe() bool {
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		return false
+	}
+	return (stat.Mode() & os.ModeCharDevice) == 0
+}
+
+// readLines reads all non-empty, non-comment lines from r.
+func readLines(r io.Reader) []string {
+	var lines []string
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		lines = append(lines, line)
+	}
+	return lines
+}
+
+// readLinesFromFile opens a file and returns non-empty, non-comment lines.
+func readLinesFromFile(path string) ([]string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open %s: %w", path, err)
+	}
+	defer func() { _ = f.Close() }()
+	return readLines(f), nil
 }
 
 // newPageCache creates a cache from config, or nil if disabled.
@@ -122,7 +210,7 @@ func scrapeSingle(s *scrape.Scraper, pc *cache.Cache, rawURL string, asJSON bool
 	return nil
 }
 
-func scrapeMultiple(s *scrape.Scraper, pc *cache.Cache, urls []string, asJSON bool, trim bool, maxChars int) error {
+func scrapeMultiple(s *scrape.Scraper, pc *cache.Cache, urls []string, asJSON, trim bool, maxChars int, selector string, noLLMSTxt bool, concurrency int) error {
 	type indexedPage struct {
 		idx  int
 		page *scrape.Page
@@ -131,12 +219,16 @@ func scrapeMultiple(s *scrape.Scraper, pc *cache.Cache, urls []string, asJSON bo
 
 	results := make([]indexedPage, len(urls))
 	var wg sync.WaitGroup
+	sem := make(chan struct{}, concurrency)
 
 	for i, u := range urls {
 		wg.Add(1)
-		go func(idx int, url string) {
+		sem <- struct{}{}
+		go func(idx int, rawURL string) {
 			defer wg.Done()
-			page, err := cachedScrape(s, pc, url)
+			defer func() { <-sem }()
+
+			page, err := scrapeOneURL(s, pc, rawURL, selector, noLLMSTxt)
 			results[idx] = indexedPage{idx: idx, page: page, err: err}
 		}(i, u)
 	}
@@ -167,6 +259,39 @@ func scrapeMultiple(s *scrape.Scraper, pc *cache.Cache, urls []string, asJSON bo
 		printPage(r.page)
 	}
 	return nil
+}
+
+// scrapeOneURL handles a single URL within scrapeMultiple, applying selector
+// and llms.txt detection the same way scrapeSingle does.
+func scrapeOneURL(s *scrape.Scraper, pc *cache.Cache, rawURL, selector string, noLLMSTxt bool) (*scrape.Page, error) {
+	if selector != "" {
+		return scrapeURLWithSelector(s, rawURL, selector)
+	}
+	if !noLLMSTxt {
+		if content, ok := fetchLLMSTxt(rawURL); ok {
+			return &scrape.Page{URL: rawURL, Title: "llms.txt", Markdown: content}, nil
+		}
+	}
+	return cachedScrape(s, pc, rawURL)
+}
+
+// scrapeURLWithSelector fetches a URL and extracts content matching a CSS selector.
+// Returns a Page without post-processing (caller applies trim/maxChars).
+func scrapeURLWithSelector(s *scrape.Scraper, rawURL, selector string) (*scrape.Page, error) {
+	html, err := s.Fetch(rawURL)
+	if err != nil {
+		return nil, fmt.Errorf("fetch failed: %w", err)
+	}
+	html = s.MaybeBrowserFetch(rawURL, html)
+	markdown, err := extract.ExtractSelector(html, selector)
+	if err != nil {
+		return nil, fmt.Errorf("selector extraction failed: %w", err)
+	}
+	if markdown == "" {
+		return nil, fmt.Errorf("no elements matched selector %q", selector)
+	}
+	title := extract.Title(html)
+	return &scrape.Page{URL: rawURL, Title: title, Markdown: markdown}, nil
 }
 
 func scrapeWithSelector(s *scrape.Scraper, rawURL string, asJSON bool, trim bool, maxChars int, selector string) error {
