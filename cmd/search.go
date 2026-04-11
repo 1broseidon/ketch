@@ -25,6 +25,9 @@ func init() {
 	searchCmd.Flags().IntP("limit", "l", cfg.Limit, "max number of results")
 	searchCmd.Flags().Bool("scrape", false, "scrape full content from each result")
 	searchCmd.Flags().String("searxng-url", cfg.SearxngURL, "SearXNG instance URL")
+	searchCmd.Flags().Int("max-chars", 0, "truncate markdown output to N chars (0 = disabled)")
+	searchCmd.Flags().Bool("trim", false, "strip markdown formatting, keep content text only")
+	searchCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/title/snippet)")
 }
 
 func runSearch(cmd *cobra.Command, args []string) error {
@@ -33,6 +36,9 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	doScrape, _ := cmd.Flags().GetBool("scrape")
 	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
 	backend, _ := cmd.Root().PersistentFlags().GetString("backend")
+	maxChars, _ := cmd.Flags().GetInt("max-chars")
+	trim, _ := cmd.Flags().GetBool("trim")
+	minimal, _ := cmd.Flags().GetBool("minimal")
 
 	searcher, err := newSearcher(cmd, backend)
 	if err != nil {
@@ -46,11 +52,18 @@ func runSearch(cmd *cobra.Command, args []string) error {
 
 	if doScrape {
 		pc := newPageCache(false)
-		return searchScrape(results, pc, asJSON)
+		return searchScrape(results, pc, asJSON, trim, maxChars, minimal)
 	}
 
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(results)
+	}
+
+	if minimal {
+		for _, r := range results {
+			fmt.Printf("%s\t%s\t%s\n", r.URL, r.Title, r.Description)
+		}
+		return nil
 	}
 
 	fmt.Println("---")
@@ -68,7 +81,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func searchScrape(results []search.Result, pc *cache.Cache, asJSON bool) error {
+func searchScrape(results []search.Result, pc *cache.Cache, asJSON bool, trim bool, maxChars int, minimal bool) error {
 	scraper := scrape.New()
 
 	if asJSON {
@@ -78,9 +91,23 @@ func searchScrape(results []search.Result, pc *cache.Cache, asJSON bool) error {
 				fmt.Fprintf(os.Stderr, "warn: failed to scrape %s: %v\n", r.URL, err)
 				continue
 			}
-			results[i].Content = page.Markdown
+			results[i].Content = postProcess(page.Markdown, trim, maxChars)
 		}
 		return json.NewEncoder(os.Stdout).Encode(results)
+	}
+
+	if minimal {
+		for _, r := range results {
+			page, err := cachedScrape(scraper, pc, r.URL)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "warn: failed to scrape %s: %v\n", r.URL, err)
+				continue
+			}
+			content := postProcess(page.Markdown, trim, maxChars)
+			snippet := firstLine(content)
+			fmt.Printf("%s\t%s\t%s\n", r.URL, page.Title, snippet)
+		}
+		return nil
 	}
 
 	for i, r := range results {
@@ -89,16 +116,17 @@ func searchScrape(results []search.Result, pc *cache.Cache, asJSON bool) error {
 			fmt.Fprintf(os.Stderr, "warn: failed to scrape %s: %v\n", r.URL, err)
 			continue
 		}
+		content := postProcess(page.Markdown, trim, maxChars)
 		if i > 0 {
 			fmt.Println()
 		}
-		words := len(strings.Fields(page.Markdown))
+		words := len(strings.Fields(content))
 		fmt.Println("---")
 		fmt.Printf("url: %s\n", r.URL)
 		fmt.Printf("title: %s\n", page.Title)
 		fmt.Printf("words: %d\n", words)
 		fmt.Println("---")
-		fmt.Println(page.Markdown)
+		fmt.Println(content)
 	}
 	return nil
 }
