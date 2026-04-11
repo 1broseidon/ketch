@@ -144,13 +144,45 @@ ketch config
 }
 ```
 
-### Search backends
+### Search Backends (ketch search)
 
-| Backend | Description | Setup |
-|---------|-------------|-------|
-| `brave` | Brave Search JSON API (default) | Free API key from [brave.com/search/api](https://brave.com/search/api/) |
-| `ddg` | DuckDuckGo HTML scraping (zero config) | None |
-| `searxng` | SearXNG JSON API (self-hosted, most reliable) | Run a [SearXNG](https://docs.searxng.org/) instance |
+| Backend | Setup | Notes |
+|---------|-------|-------|
+| `brave` (default) | Free API key from brave.com/search/api | Stable JSON API |
+| `ddg` | Zero config | Rate-limited by DDG currently |
+| `searxng` | Self-hosted instance | Most reliable for heavy use |
+
+### Code Backends (ketch code)
+
+| Backend | Setup | Notes |
+|---------|-------|-------|
+| `sourcegraph` (default) | Zero config | Grep-style, ~1M OSS repos, exact line matches, SSE stream |
+
+```bash
+ketch code "http.NewRequestWithContext" --lang go
+ketch code "rate limit middleware" --lang go --limit 10
+ketch config set sourcegraph_url https://sourcegraph.com  # optional, for self-hosted
+```
+
+### Docs Backends (ketch docs)
+
+| Backend | Setup | Notes |
+|---------|-------|-------|
+| `context7` (default) | Free key: `ketch config set context7_api_key <key>` | Curated snippets + prose, version-aware |
+| `local` | `ketch docs index <source>` | FTS5 SQLite, offline/private docs (planned) |
+
+```bash
+ketch config set context7_api_key ctx7sk_...
+ketch docs "how to render with word wrap" --library /charmbracelet/glamour
+ketch docs "middleware authentication"          # context7 auto-resolves library
+ketch docs --resolve "glamour"                 # list matching library IDs
+```
+
+### What's Next
+
+1. Unit tests for extract, search, code, docs, and cache packages
+2. `--raw` flag implementation in scrape command
+3. Local FTS5 SQLite docs backend (`ketch docs index`) for offline/private docs
 
 ## Agent integration
 

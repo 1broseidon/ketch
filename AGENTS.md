@@ -12,6 +12,8 @@ cmd/
   scrape.go                  Scrape command: URLs → markdown, concurrent batch
   crawl.go                   Crawl command: BFS/sitemap crawl with streaming output
   crawl_bg.go                Background crawl: status, stop subcommands, worker mode
+  code.go                    Code search command: query → snippet results, --lang qualifier
+  docs.go                    Docs search command: query → docs/snippet results, --library, --resolve
   config.go                  Config command: discovery, init, set, path
   cache.go                   Cache command: stats, clear
   browser.go                 Browser command: install, status
@@ -23,6 +25,13 @@ internal/
     brave.go                 Brave Search API backend (default)
     ddg.go                   DuckDuckGo HTML backend
     searxng.go               SearXNG JSON API backend
+  code/
+    code.go                  code.Searcher interface + Result type
+    sourcegraph.go           Sourcegraph SSE streaming backend (no auth required)
+  docs/
+    docs.go                  docs.Searcher interface + Result type
+    context7.go              Context7 two-step resolve+fetch backend (API key required)
+    fts5.go                  Local FTS5 SQLite backend stub (planned)
   scrape/
     scrape.go                HTTP fetch chain + Page type, JS detection fallback
     browser_iface.go         BrowserConn interface + ResolveBrowserBin
@@ -47,6 +56,7 @@ internal/
 - **Interface-driven backends**: `Searcher` for search engines, `Store` for cache backends, `BrowserConn` for browser rendering.
 - **Concurrent by default**: multiple URLs scraped in parallel via goroutines.
 - **Operator configures, agent consumes**: config sets defaults (backend, browser, cache TTL) so agents don't need to know infrastructure.
+- **Three search surfaces**: `ketch search` finds web pages, `ketch code` greps real OSS code, `ketch docs` fetches library documentation. Each has its own backend interface and Result type — they never share backends.
 
 ## Quality Standards
 
@@ -70,6 +80,11 @@ ketch crawl status [id]                     # check crawl progress
 ketch crawl stop <id>                       # stop a background crawl
 ketch browser status                        # check browser config
 ketch browser install                       # download Chromium
+ketch code "query"                          # code search (sourcegraph)
+ketch code "query" --lang go               # with language filter
+ketch docs "query"                          # docs search (context7)
+ketch docs "query" --library /org/repo     # skip resolve, fetch directly
+ketch docs --resolve "library name"        # resolve library name → Context7 IDs
 ketch config                                # show effective config + backends
 ketch cache                                 # show cache stats
 ```
@@ -91,3 +106,8 @@ ketch cache                                 # show cache stats
 | --background | crawl | false | Run in background |
 | --allow | crawl | — | Path substring filters |
 | --deny | crawl | — | Regex deny patterns |
+| --backend, -b | code, docs | cfg value | Code/docs backend |
+| --lang | code | — | Language qualifier (appended to query) |
+| --library | docs | — | Context7 library ID, skips resolve |
+| --tokens | docs | 4000 | Context7 token budget |
+| --resolve | docs | false | Resolve library name instead of searching |
