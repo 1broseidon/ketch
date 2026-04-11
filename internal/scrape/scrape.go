@@ -100,7 +100,7 @@ func (s *Scraper) getBrowser() BrowserConn {
 // If the page appears JS-rendered and a browser is configured, automatically
 // retries with the browser for full content extraction.
 func (s *Scraper) Scrape(rawURL string) (*Page, error) {
-	body, err := s.fetch(rawURL)
+	body, err := s.Fetch(rawURL)
 	if err != nil {
 		return nil, err
 	}
@@ -230,7 +230,8 @@ func ContentHash(s string) string {
 	return hex.EncodeToString(h[:])[:16]
 }
 
-func (s *Scraper) fetch(rawURL string) (string, error) {
+// Fetch fetches the raw HTML for a URL without extraction or browser fallback.
+func (s *Scraper) Fetch(rawURL string) (string, error) {
 	req, err := http.NewRequest("GET", rawURL, nil)
 	if err != nil {
 		return "", err

@@ -35,6 +35,7 @@ internal/
     fts5.go                  Local FTS5 SQLite backend stub (planned)
   scrape/
     scrape.go                HTTP fetch chain + Page type, JS detection fallback
+                             Scraper.Fetch() is exported — returns raw HTML before extraction pipeline
     browser_iface.go         BrowserConn interface + ResolveBrowserBin
     browser.go               Rod-based headless Chrome fetch
   extract/
@@ -115,3 +116,5 @@ ketch cache                                 # show cache stats
 | --max-chars N | scrape, search --scrape | 0 (off) | Truncate markdown output to N chars, appends `[truncated]` |
 | --trim | scrape, search --scrape | false | Strip markdown formatting syntax, keep content text only |
 | --minimal | search, code, docs | false | One result per line, tab-separated, no frontmatter |
+| --select \<css\> | scrape | — | Extract only elements matching CSS selector (skips readability) |
+| --no-llms-txt | scrape | false | Disable automatic /llms.txt detection for bare domains |
