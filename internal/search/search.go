@@ -1,5 +1,7 @@
 package search
 
+import "context"
+
 // Result represents a single search result.
 type Result struct {
 	Title       string `json:"title"`
@@ -10,5 +12,5 @@ type Result struct {
 
 // Searcher is the interface for search backends.
 type Searcher interface {
-	Search(query string, limit int) ([]Result, error)
+	Search(ctx context.Context, query string, limit int) ([]Result, error)
 }

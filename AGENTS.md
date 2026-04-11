@@ -59,6 +59,8 @@ internal/
 - **Concurrent by default**: multiple URLs scraped in parallel via goroutines.
 - **Operator configures, agent consumes**: config sets defaults (backend, browser, cache TTL) so agents don't need to know infrastructure.
 - **Three search surfaces**: `ketch search` finds web pages, `ketch code` greps real OSS code, `ketch docs` fetches library documentation. Each has its own backend interface and Result type — they never share backends.
+- **Smart input detection on scrape**: single URL, multiple positional args, JSON array string, file path, or stdin pipe all work — ketch routes automatically. No --batch flag needed.
+- **Context-aware interfaces**: all three Searcher interfaces (`search`, `code`, `docs`) take `context.Context` as first param for cancellation and timeout propagation.
 
 ## Quality Standards
 
@@ -75,6 +77,9 @@ ketch search "query" --scrape               # search + fetch full content
 ketch search "query" -b searxng             # use SearXNG backend
 ketch scrape <url>                          # single URL → markdown
 ketch scrape <url1> <url2> <url3>           # concurrent batch scrape
+ketch scrape urls.txt                       # file with one URL per line
+ketch scrape '["url1","url2"]'              # JSON array of URLs
+echo "url1\nurl2" | ketch scrape            # stdin pipe
 ketch crawl <url>                           # BFS crawl
 ketch crawl <url> --sitemap                 # sitemap-based crawl
 ketch crawl <url> --background              # run in background
@@ -118,3 +123,4 @@ ketch cache                                 # show cache stats
 | --minimal | search, code, docs | false | One result per line, tab-separated, no frontmatter |
 | --select \<css\> | scrape | — | Extract only elements matching CSS selector (skips readability) |
 | --no-llms-txt | scrape | false | Disable automatic /llms.txt detection for bare domains |
+| --concurrency | scrape | 5 | Max concurrent requests for multi-URL scraping |

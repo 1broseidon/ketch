@@ -1,6 +1,7 @@
 package docs
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -56,8 +57,8 @@ type context7InfoSnippet struct {
 }
 
 // Search resolves a library from the query and fetches documentation.
-func (c *Context7) Search(query string, limit int) ([]Result, error) {
-	libs, err := c.ResolveLibrary(query)
+func (c *Context7) Search(ctx context.Context, query string, limit int) ([]Result, error) {
+	libs, err := c.ResolveLibrary(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("context7 resolve failed: %w", err)
 	}
@@ -65,14 +66,14 @@ func (c *Context7) Search(query string, limit int) ([]Result, error) {
 		return nil, fmt.Errorf("context7: no library found for %q", query)
 	}
 
-	return c.GetDocs(libs[0].ID, query, 4000)
+	return c.GetDocs(ctx, libs[0].ID, query, 4000)
 }
 
 // ResolveLibrary searches Context7 for libraries matching the given name.
-func (c *Context7) ResolveLibrary(name string) ([]LibraryMatch, error) {
+func (c *Context7) ResolveLibrary(ctx context.Context, name string) ([]LibraryMatch, error) {
 	u := fmt.Sprintf("https://context7.com/api/v1/search?q=%s", url.QueryEscape(name))
 
-	req, err := http.NewRequest("GET", u, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -100,11 +101,11 @@ func (c *Context7) ResolveLibrary(name string) ([]LibraryMatch, error) {
 }
 
 // GetDocs fetches documentation snippets for a resolved library ID.
-func (c *Context7) GetDocs(libraryID, query string, tokens int) ([]Result, error) {
+func (c *Context7) GetDocs(ctx context.Context, libraryID, query string, tokens int) ([]Result, error) {
 	u := fmt.Sprintf("https://context7.com/api/v2/context?libraryId=%s&query=%s&type=json&tokens=%d",
 		url.QueryEscape(libraryID), url.QueryEscape(query), tokens)
 
-	req, err := http.NewRequest("GET", u, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
 	if err != nil {
 		return nil, err
 	}

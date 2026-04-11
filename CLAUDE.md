@@ -40,6 +40,16 @@ Default output uses YAML frontmatter + markdown (cymbal style):
 | `--select <css>` | scrape | — | Extract only elements matching CSS selector (skips readability) |
 | `--no-llms-txt` | scrape | false | Disable automatic /llms.txt detection for bare domains |
 
+### Multi-URL Scraping
+ketch scrape detects input mode automatically — no flags needed:
+- Multiple args:  ketch scrape url1 url2 url3
+- JSON array:     ketch scrape '["url1","url2"]'
+- File:           ketch scrape urls.txt
+- Stdin pipe:     echo "url1\nurl2" | ketch scrape
+- Single:         ketch scrape url
+
+Use --concurrency N (default 5) to control parallel request limit.
+
 ### Search Backends (ketch search)
 
 | Backend | Setup | Notes |

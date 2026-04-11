@@ -1,6 +1,7 @@
 package search
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -32,10 +33,10 @@ type searxngResult struct {
 }
 
 // Search queries SearXNG and returns up to limit results.
-func (s *SearXNG) Search(query string, limit int) ([]Result, error) {
+func (s *SearXNG) Search(ctx context.Context, query string, limit int) ([]Result, error) {
 	u := fmt.Sprintf("%s/search?q=%s&format=json&pageno=1", s.baseURL, url.QueryEscape(query))
 
-	req, err := http.NewRequest("GET", u, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
 	if err != nil {
 		return nil, err
 	}

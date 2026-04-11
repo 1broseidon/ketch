@@ -1,6 +1,7 @@
 package search
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -34,11 +35,11 @@ type braveResult struct {
 }
 
 // Search queries Brave and returns up to limit results.
-func (b *Brave) Search(query string, limit int) ([]Result, error) {
+func (b *Brave) Search(ctx context.Context, query string, limit int) ([]Result, error) {
 	u := fmt.Sprintf("https://api.search.brave.com/res/v1/web/search?q=%s&count=%d&text_decorations=false&result_filter=web",
 		url.QueryEscape(query), limit)
 
-	req, err := http.NewRequest("GET", u, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
 	if err != nil {
 		return nil, err
 	}

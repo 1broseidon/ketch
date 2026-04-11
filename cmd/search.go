@@ -45,7 +45,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	results, err := searcher.Search(query, limit)
+	results, err := searcher.Search(cmd.Context(), query, limit)
 	if err != nil {
 		return fmt.Errorf("search failed: %w", err)
 	}
