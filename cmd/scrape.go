@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/1broseidon/ketch/internal/cache"
 	"github.com/1broseidon/ketch/internal/extract"
@@ -153,12 +154,13 @@ func printPage(p *scrape.Page) {
 	fmt.Println(p.Markdown)
 }
 
-// truncateContent caps s at maxChars characters, appending a truncation marker.
+// truncateContent caps s at maxChars Unicode code points, appending a truncation marker.
 func truncateContent(s string, maxChars int) string {
-	if maxChars <= 0 || len(s) <= maxChars {
+	if maxChars <= 0 || utf8.RuneCountInString(s) <= maxChars {
 		return s
 	}
-	return s[:maxChars] + "\n\n[truncated]"
+	runes := []rune(s)
+	return string(runes[:maxChars]) + "\n\n[truncated]"
 }
 
 // postProcess applies trim then truncate to markdown content.
