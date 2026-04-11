@@ -112,3 +112,6 @@ ketch cache                                 # show cache stats
 | --library | docs | — | Context7 library ID, skips resolve |
 | --tokens | docs | 4000 | Context7 token budget |
 | --resolve | docs | false | Resolve library name instead of searching |
+| --max-chars N | scrape, search --scrape | 0 (off) | Truncate markdown output to N chars, appends `[truncated]` |
+| --trim | scrape, search --scrape | false | Strip markdown formatting syntax, keep content text only |
+| --minimal | search, code, docs | false | One result per line, tab-separated, no frontmatter |

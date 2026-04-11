@@ -24,6 +24,7 @@ func init() {
 	codeCmd.Flags().StringP("backend", "b", cfg.CodeBackend, "code search backend: "+strings.Join(config.AvailableCodeBackends(), ", "))
 	codeCmd.Flags().String("lang", "", "language filter (appended to query)")
 	codeCmd.Flags().IntP("limit", "l", cfg.Limit, "max number of results")
+	codeCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/repo/snippet)")
 }
 
 func runCode(cmd *cobra.Command, args []string) error {
@@ -32,6 +33,7 @@ func runCode(cmd *cobra.Command, args []string) error {
 	lang, _ := cmd.Flags().GetString("lang")
 	limit, _ := cmd.Flags().GetInt("limit")
 	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
+	minimal, _ := cmd.Flags().GetBool("minimal")
 
 	searcher, err := newCodeSearcher(backend)
 	if err != nil {
@@ -45,6 +47,14 @@ func runCode(cmd *cobra.Command, args []string) error {
 
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(results)
+	}
+
+	if minimal {
+		for _, r := range results {
+			snippet := firstLine(r.Snippet)
+			fmt.Printf("%s\t%s\t%s\n", r.URL, r.Repo, snippet)
+		}
+		return nil
 	}
 
 	fmt.Println("---")

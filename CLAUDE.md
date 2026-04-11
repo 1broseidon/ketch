@@ -31,6 +31,13 @@ Default output uses YAML frontmatter + markdown (cymbal style):
 - `ketch search` — frontmatter (query, backend, result_count) + result list
 - `--json` flag available on all commands for structured JSON output
 
+### Output Flags (all commands)
+| Flag | Scope | Default | Description |
+|------|-------|---------|-------------|
+| `--max-chars N` | scrape, search --scrape | 0 (off) | Truncate markdown output to N chars, appends `[truncated]` |
+| `--trim` | scrape, search --scrape | false | Strip markdown formatting syntax, keep content text only (~30-40% token reduction) |
+| `--minimal` | search, code, docs | false | One result per line, tab-separated url/title/snippet, no frontmatter |
+
 ### Search Backends (ketch search)
 
 | Backend | Setup | Notes |

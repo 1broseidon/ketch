@@ -26,6 +26,7 @@ func init() {
 	docsCmd.Flags().Int("tokens", 4000, "Context7 token budget")
 	docsCmd.Flags().IntP("limit", "l", cfg.Limit, "max number of results")
 	docsCmd.Flags().Bool("resolve", false, "resolve library name instead of searching")
+	docsCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/library/snippet)")
 }
 
 func runDocs(cmd *cobra.Command, args []string) error {
@@ -36,13 +37,14 @@ func runDocs(cmd *cobra.Command, args []string) error {
 	limit, _ := cmd.Flags().GetInt("limit")
 	resolve, _ := cmd.Flags().GetBool("resolve")
 	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
+	minimal, _ := cmd.Flags().GetBool("minimal")
 
 	if resolve {
 		return runDocsResolve(query, asJSON)
 	}
 
 	if library != "" && backend == "context7" {
-		return runDocsWithLibrary(query, library, tokens, asJSON)
+		return runDocsWithLibrary(query, library, tokens, asJSON, minimal)
 	}
 
 	searcher, err := newDocSearcher(backend)
@@ -59,7 +61,7 @@ func runDocs(cmd *cobra.Command, args []string) error {
 		return json.NewEncoder(os.Stdout).Encode(results)
 	}
 
-	printDocsResults(query, backend, "", results)
+	printDocsResults(query, backend, "", results, minimal)
 	return nil
 }
 
@@ -84,7 +86,7 @@ func runDocsResolve(query string, asJSON bool) error {
 	return nil
 }
 
-func runDocsWithLibrary(query, library string, tokens int, asJSON bool) error {
+func runDocsWithLibrary(query, library string, tokens int, asJSON bool, minimal bool) error {
 	if cfg.Context7APIKey == "" {
 		return fmt.Errorf("context7: API key not set (get one then: ketch config set context7_api_key <key>)")
 	}
@@ -99,11 +101,19 @@ func runDocsWithLibrary(query, library string, tokens int, asJSON bool) error {
 		return json.NewEncoder(os.Stdout).Encode(results)
 	}
 
-	printDocsResults(query, "context7", library, results)
+	printDocsResults(query, "context7", library, results, minimal)
 	return nil
 }
 
-func printDocsResults(query, backend, library string, results []docs.Result) {
+func printDocsResults(query, backend, library string, results []docs.Result, minimal bool) {
+	if minimal {
+		for _, r := range results {
+			snippet := firstLine(r.Snippet)
+			fmt.Printf("%s\t%s\t%s\n", r.URL, r.Library, snippet)
+		}
+		return
+	}
+
 	fmt.Println("---")
 	fmt.Printf("query: %s\n", query)
 	fmt.Printf("backend: %s\n", backend)
