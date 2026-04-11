@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var cfg config.Config
+var cfg = config.Load()
 
 var rootCmd = &cobra.Command{
 	Use:   "ketch",
@@ -21,7 +21,6 @@ func Execute() error {
 }
 
 func init() {
-	cfg = config.Load()
 	rootCmd.PersistentFlags().Bool("json", false, "output as JSON")
 	rootCmd.PersistentFlags().StringP("backend", "b", cfg.Backend,
 		fmt.Sprintf("search backend: %s", strings.Join(config.AvailableBackends(), ", ")))
