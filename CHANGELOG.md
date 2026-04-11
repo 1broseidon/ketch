@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-04-11
+
+### Added
+- `ketch scrape` smart input detection: multiple positional args, JSON array (`'["url1","url2"]'`), file (one URL per line), or stdin pipe — input mode is auto-detected, no extra flags needed.
+- `--concurrency N` flag on `ketch scrape` (default 5) — replaces unbounded goroutine-per-URL with a semaphore-based worker pool.
+- `--select` and `--no-llms-txt` flags now propagate to multi-URL scraping (previously only worked for single URL).
+- Pipe chain support: `ketch search "query" --json | jq -r '.[].url' | ketch scrape --trim --max-chars 2000`.
+
+### Fixed
+- `resolveURLs` now checks explicit args before stdin — `ketch scrape url < file` uses the URL, not the pipe.
+- `scrapeWithSelector` deduped: delegates to `scrapeURLWithSelector` instead of duplicating the fetch/browser-fallback/selector logic.
+- `search_feature_test.go` updated for `search.Searcher.Search(ctx, ...)` interface change.
+
+### Changed
+- `search.Searcher.Search` and `docs.Searcher.Search` now take `context.Context` as first param, consistent with `code.Searcher`. All HTTP backends use `http.NewRequestWithContext` for proper cancellation propagation.
+
 ## [0.5.0] - 2026-04-11
 
 ### Added
