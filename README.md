@@ -1,6 +1,6 @@
 # ketch
 
-Fast, stateless CLI for web search and scrape. Search the web, fetch pages, extract clean markdown — all from one binary. Designed to be called by AI agents or directly from your terminal.
+Fast, stateless CLI for web search, code search, library docs, and scraping. Three search surfaces (web, code, docs), one binary, no daemon. Designed to be called by AI agents or directly from your terminal.
 
 ## Install
 
@@ -27,6 +27,13 @@ ketch search "golang error handling"
 # Search and fetch full content from each result
 ketch search "golang error handling" --scrape
 
+# Search real OSS code (Sourcegraph by default, or GitHub)
+ketch code "http.NewRequestWithContext" --lang go
+ketch code "rate limit middleware" --lang go -b github
+
+# Search library docs (Context7)
+ketch docs "how to render with word wrap" --library /charmbracelet/glamour
+
 # Scrape a URL to clean markdown
 ketch scrape https://go.dev/doc/effective_go
 
@@ -41,6 +48,7 @@ ketch crawl https://example.com/sitemap.xml --sitemap --background
 
 # JSON output for piping
 ketch search "query" --json
+ketch code "query" --json
 ketch scrape https://example.com --json
 ```
 
@@ -49,6 +57,8 @@ ketch scrape https://example.com --json
 | Command | What it does |
 |---------|-------------|
 | `search` | Web search via Brave, DuckDuckGo, or SearXNG, optional `--scrape` for full content |
+| `code` | Code search across OSS via Sourcegraph (default) or GitHub Code Search |
+| `docs` | Library/framework docs via Context7 (curated, version-aware snippets) |
 | `scrape` | Fetch URLs and extract clean markdown, concurrent batch support |
 | `crawl` | BFS or sitemap crawl with background execution and status tracking |
 | `browser` | Manage headless Chrome for JS-rendered pages |
@@ -94,6 +104,39 @@ ketch crawl stop c_a1b2c3d4     # stop a running crawl
 
 Crawled pages are cached — re-running the same crawl returns instantly from cache. Use `--no-cache` to force re-fetch.
 
+## Code search
+
+`ketch code` searches real source code across open-source repositories. Two backends:
+
+```sh
+# Sourcegraph (default) — zero config, ~1M OSS repos, exact line matches
+ketch code "http.NewRequestWithContext" --lang go
+
+# GitHub Code Search — uses your gh CLI token automatically if installed
+ketch code "rate limit middleware" --lang go -b github --limit 10
+```
+
+Each result shows the matched line, repo, file path, star count, and a permalink. Results are filtered to non-archived, non-fork repos by default (Sourcegraph).
+
+**GitHub auth resolution chain** (for `-b github`): explicit config (`ketch config set github_token <tok>`) → `$GITHUB_TOKEN` → `$GH_TOKEN` → `gh auth token` (if `gh` CLI is installed). Run `ketch config` to see which source is active. Stargazer counts come from a single batched GraphQL call after the REST search.
+
+## Library docs
+
+`ketch docs` fetches curated, version-aware documentation snippets from Context7:
+
+```sh
+ketch config set context7_api_key ctx7sk_...
+
+# Auto-resolve library from query
+ketch docs "middleware authentication"
+
+# Skip resolve, fetch directly from a known library ID
+ketch docs "how to render with word wrap" --library /charmbracelet/glamour
+
+# List matching library IDs without fetching docs
+ketch docs --resolve "glamour"
+```
+
 ## Flags
 
 | Flag | Scope | Default | Description |
@@ -110,6 +153,11 @@ Crawled pages are cached — re-running the same crawl returns instantly from ca
 | `--background` | crawl | false | Run in background, return crawl ID |
 | `--allow` | crawl | — | Path substring filters (any match passes) |
 | `--deny` | crawl | — | Regex deny patterns |
+| `--backend, -b` | code, docs | cfg value | Code/docs backend |
+| `--lang` | code | — | Language qualifier (appended to query) |
+| `--library` | docs | — | Context7 library ID, skips resolve |
+| `--tokens` | docs | 4000 | Context7 token budget |
+| `--resolve` | docs | false | Resolve library name instead of searching |
 
 ## Configuration
 
@@ -156,12 +204,14 @@ ketch config
 
 | Backend | Setup | Notes |
 |---------|-------|-------|
-| `sourcegraph` (default) | Zero config | Grep-style, ~1M OSS repos, exact line matches, SSE stream |
+| `sourcegraph` (default) | Zero config | Grep-style, ~1M OSS repos, exact line matches, SSE stream, archived/fork filters |
+| `github` | `gh auth login` _or_ `ketch config set github_token <tok>` _or_ `$GITHUB_TOKEN` | REST `/search/code` + GraphQL stars batch. 30 req/min cap. Token must have `repo` scope. |
 
 ```bash
 ketch code "http.NewRequestWithContext" --lang go
-ketch code "rate limit middleware" --lang go --limit 10
+ketch code "rate limit middleware" --lang go -b github --limit 10
 ketch config set sourcegraph_url https://sourcegraph.com  # optional, for self-hosted
+ketch config set github_token ghp_xxx                     # explicit token
 ```
 
 ### Docs Backends (ketch docs)
@@ -191,25 +241,27 @@ ketch is built to be called by AI agents. The operator configures the backend on
 Add this to your agent's system prompt (`CLAUDE.md`, `AGENTS.md`, or equivalent):
 
 ```markdown
-## Web Search and Scrape
+## Web, Code, and Docs Research
 
-Use `ketch` CLI for web search and page fetching.
-- Search: `ketch search "query"` — returns titles, URLs, and snippets
-- Search + full content: `ketch search "query" --scrape` — fetches and extracts each result
+Use `ketch` CLI for all external research — web pages, OSS code, library docs.
+- Web search: `ketch search "query"` — titles, URLs, snippets
+- Web search + full content: `ketch search "query" --scrape`
 - Scrape: `ketch scrape <url>` — fetches a URL and returns clean markdown
 - Batch scrape: `ketch scrape <url1> <url2> ...` — concurrent fetch
 - Crawl: `ketch crawl <url> --sitemap --background` — crawl a site, poll with `ketch crawl status`
+- Code search: `ketch code "query" --lang go` — real OSS code with line + repo + stars
+- Library docs: `ketch docs "query" --library /org/repo` — version-aware curated snippets
 - JS-rendered pages are handled automatically — if a page returns a loading shell, ketch re-fetches it with a headless browser.
 - All commands support `--json` for structured output.
 - Discovery: `ketch config` — returns effective config and available backends as JSON.
-- The operator has already configured the search backend and browser. Do not override unless you have a specific reason.
+- The operator has already configured the search/code/docs backends and browser. Do not override unless you have a specific reason.
 ```
 
 ### Why this works
 
-An agent calling a web search API typically needs to know which provider to use, manage API keys, and handle provider-specific response formats. ketch collapses that: the operator runs `ketch config set backend searxng` once, and every agent invocation uses the right backend automatically. The agent's system prompt doesn't mention backends at all — it just says "use ketch."
+An agent calling a web search API typically needs to know which provider to use, manage API keys, and handle provider-specific response formats. ketch collapses that: the operator runs `ketch config set backend searxng` (or `code_backend github`, `docs_backend context7`) once, and every agent invocation uses the right backend automatically. The agent's system prompt doesn't mention backends at all — it just says "use ketch."
 
-`ketch config` returns the full discovery payload as JSON, so an agent that needs to inspect capabilities can do so in one call without parsing help text.
+`ketch config` returns the full discovery payload as JSON — including which search, code, and docs backends are active and which token source is in effect — so an agent that needs to inspect capabilities can do so in one call without parsing help text.
 
 ## License
 

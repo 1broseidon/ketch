@@ -28,6 +28,7 @@ internal/
   code/
     code.go                  code.Searcher interface + Result type
     sourcegraph.go           Sourcegraph SSE streaming backend (no auth required)
+    github.go                GitHub Code Search REST + GraphQL stars batch (token required)
   docs/
     docs.go                  docs.Searcher interface + Result type
     context7.go              Context7 two-step resolve+fetch backend (API key required)
