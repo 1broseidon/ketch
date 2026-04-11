@@ -3,7 +3,9 @@ package config
 import (
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 // Config holds user-configurable defaults for ketch.
@@ -18,6 +20,31 @@ type Config struct {
 	DocsBackend    string `json:"docs_backend,omitempty"`
 	Context7APIKey string `json:"context7_api_key,omitempty"`
 	SourcegraphURL string `json:"sourcegraph_url,omitempty"`
+	GithubToken    string `json:"github_token,omitempty"`
+}
+
+// ResolveGithubToken returns a token and the source it came from, walking the
+// resolution chain: explicit config → $GITHUB_TOKEN → $GH_TOKEN → `gh auth token`.
+// Source is one of: "config", "env", "gh-cli", "none". The token is never logged.
+func (c Config) ResolveGithubToken() (token, source string) {
+	if c.GithubToken != "" {
+		return c.GithubToken, "config"
+	}
+	if t := os.Getenv("GITHUB_TOKEN"); t != "" {
+		return t, "env"
+	}
+	if t := os.Getenv("GH_TOKEN"); t != "" {
+		return t, "env"
+	}
+	if _, err := exec.LookPath("gh"); err == nil {
+		out, err := exec.Command("gh", "auth", "token").Output()
+		if err == nil {
+			if t := strings.TrimSpace(string(out)); t != "" {
+				return t, "gh-cli"
+			}
+		}
+	}
+	return "", "none"
 }
 
 // Defaults returns the built-in default configuration.
@@ -39,7 +66,7 @@ func AvailableBackends() []string {
 }
 
 // AvailableCodeBackends returns the list of known code search backends.
-func AvailableCodeBackends() []string { return []string{"sourcegraph"} }
+func AvailableCodeBackends() []string { return []string{"sourcegraph", "github"} }
 
 // AvailableDocBackends returns the list of known docs backends.
 func AvailableDocBackends() []string { return []string{"context7", "local"} }

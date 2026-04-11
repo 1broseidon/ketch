@@ -7,11 +7,14 @@ type Result struct {
 	Line     int    `json:"line,omitempty"`
 	Snippet  string `json:"snippet"`
 	Language string `json:"language,omitempty"`
+	Stars    int    `json:"stars,omitempty"`
 	URL      string `json:"url"`
-	Source   string `json:"source"` // "sourcegraph"
+	Source   string `json:"source"` // "sourcegraph" | "github"
 }
 
-// Searcher is the interface for code search backends.
+// Searcher is the interface for code search backends. Each backend owns its
+// own query dialect — language filtering and safety qualifiers (archived/fork
+// exclusion) are applied internally so that callers pass plain user input.
 type Searcher interface {
-	Search(query string, limit int) ([]Result, error)
+	Search(query, lang string, limit int) ([]Result, error)
 }

@@ -14,7 +14,7 @@ import (
 var codeCmd = &cobra.Command{
 	Use:   "code <query>",
 	Short: "Search code across open-source repositories",
-	Long:  `Search code using Sourcegraph. Supports language filtering and Sourcegraph query qualifiers.`,
+	Long:  `Search code using Sourcegraph (default) or GitHub Code Search. Supports language filtering and per-backend query qualifiers.`,
 	Args:  cobra.MinimumNArgs(1),
 	RunE:  runCode,
 }
@@ -33,16 +33,12 @@ func runCode(cmd *cobra.Command, args []string) error {
 	limit, _ := cmd.Flags().GetInt("limit")
 	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
 
-	if lang != "" {
-		query += " lang:" + lang
-	}
-
 	searcher, err := newCodeSearcher(backend)
 	if err != nil {
 		return err
 	}
 
-	results, err := searcher.Search(query, limit)
+	results, err := searcher.Search(query, lang, limit)
 	if err != nil {
 		return fmt.Errorf("code search failed: %w", err)
 	}
@@ -53,12 +49,25 @@ func runCode(cmd *cobra.Command, args []string) error {
 
 	fmt.Println("---")
 	fmt.Printf("query: %s\n", query)
+	if lang != "" {
+		fmt.Printf("lang: %s\n", lang)
+	}
 	fmt.Printf("backend: %s\n", backend)
 	fmt.Printf("result_count: %d\n", len(results))
 	fmt.Println("---")
 	for _, r := range results {
-		fmt.Printf("%s  %s  (line %d)\n", r.Repo, r.Path, r.Line)
-		fmt.Printf("  %s\n", r.Snippet)
+		header := r.Repo + "  " + r.Path
+		if r.Line > 0 {
+			header = fmt.Sprintf("%s  (line %d)", header, r.Line)
+		}
+		if r.Stars > 0 {
+			header = fmt.Sprintf("%s  ★ %d", header, r.Stars)
+		}
+		fmt.Println(header)
+		if r.Snippet != "" {
+			fmt.Printf("  %s\n", r.Snippet)
+		}
+		fmt.Printf("  %s\n", r.URL)
 		fmt.Println()
 	}
 	return nil
@@ -68,6 +77,16 @@ func newCodeSearcher(backend string) (code.Searcher, error) {
 	switch backend {
 	case "sourcegraph":
 		return code.NewSourcegraph(cfg.SourcegraphURL), nil
+	case "github":
+		token, source := cfg.ResolveGithubToken()
+		if token == "" {
+			return nil, fmt.Errorf(`github code search: no token found.
+  - explicit:   ketch config set github_token <token>
+  - env var:    export GITHUB_TOKEN=<token>
+  - or run:     gh auth login`)
+		}
+		_ = source
+		return code.NewGitHub(token), nil
 	default:
 		return nil, fmt.Errorf("unknown code backend: %s", backend)
 	}

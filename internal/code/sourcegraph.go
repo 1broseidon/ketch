@@ -23,6 +23,21 @@ func NewSourcegraph(baseURL string) *Sourcegraph {
 	}
 }
 
+// buildQuery applies Sourcegraph's query dialect: lang: filter and the
+// archived/fork safety qualifiers, unless the user already specified them.
+func (s *Sourcegraph) buildQuery(query, lang string) string {
+	if lang != "" {
+		query += " lang:" + lang
+	}
+	if !strings.Contains(query, "archived:") {
+		query += " archived:no"
+	}
+	if !strings.Contains(query, "fork:") {
+		query += " fork:no"
+	}
+	return query
+}
+
 type sseContentMatch struct {
 	Type        string         `json:"type"`
 	Repository  string         `json:"repository"`
@@ -38,9 +53,10 @@ type sseLineMatch struct {
 }
 
 // Search queries Sourcegraph and returns up to limit code results.
-func (s *Sourcegraph) Search(query string, limit int) ([]Result, error) {
+func (s *Sourcegraph) Search(query, lang string, limit int) ([]Result, error) {
+	full := s.buildQuery(query, lang)
 	u := fmt.Sprintf("%s/.api/search/stream?q=%s&display=%d",
-		s.baseURL, url.QueryEscape(query), limit)
+		s.baseURL, url.QueryEscape(full), limit)
 
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
@@ -101,6 +117,7 @@ func (s *Sourcegraph) parseSSE(resp *http.Response, limit int) ([]Result, error)
 				Line:     lm.LineNumber,
 				Snippet:  lm.Line,
 				Language: m.Language,
+				Stars:    m.RepoStars,
 				URL:      fmt.Sprintf("%s/%s/-/blob/%s#L%d", s.baseURL, m.Repository, m.Path, lm.LineNumber),
 				Source:   "sourcegraph",
 			})

@@ -22,6 +22,7 @@ type configInfo struct {
 	CodeBackend           string   `json:"code_backend"`
 	DocsBackend           string   `json:"docs_backend"`
 	SourcegraphURL        string   `json:"sourcegraph_url"`
+	GithubTokenSource     string   `json:"github_token_source"`
 	AvailableBackends     []string `json:"available_backends"`
 	AvailableCodeBackends []string `json:"available_code_backends"`
 	AvailableDocBackends  []string `json:"available_doc_backends"`
@@ -63,6 +64,7 @@ func init() {
 func runConfigShow(_ *cobra.Command, _ []string) error {
 	c := config.Load()
 	path, _ := config.Path()
+	_, ghSource := c.ResolveGithubToken()
 
 	info := configInfo{
 		ConfigPath:            path,
@@ -74,6 +76,7 @@ func runConfigShow(_ *cobra.Command, _ []string) error {
 		CodeBackend:           c.CodeBackend,
 		DocsBackend:           c.DocsBackend,
 		SourcegraphURL:        c.SourcegraphURL,
+		GithubTokenSource:     ghSource,
 		AvailableBackends:     config.AvailableBackends(),
 		AvailableCodeBackends: config.AvailableCodeBackends(),
 		AvailableDocBackends:  config.AvailableDocBackends(),
@@ -134,8 +137,10 @@ func runConfigSet(_ *cobra.Command, args []string) error {
 		c.Context7APIKey = value
 	case "sourcegraph_url":
 		c.SourcegraphURL = value
+	case "github_token":
+		c.GithubToken = value
 	default:
-		return fmt.Errorf("unknown key: %s (valid: backend, searxng_url, brave_api_key, limit, cache_ttl, browser, code_backend, docs_backend, context7_api_key, sourcegraph_url)", key)
+		return fmt.Errorf("unknown key: %s (valid: backend, searxng_url, brave_api_key, limit, cache_ttl, browser, code_backend, docs_backend, context7_api_key, sourcegraph_url, github_token)", key)
 	}
 
 	if err := config.Save(c); err != nil {
