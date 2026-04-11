@@ -76,16 +76,11 @@ func runScrape(cmd *cobra.Command, args []string) error {
 }
 
 // resolveURLs detects the input mode and returns a list of URLs.
+// Explicit args always take priority over stdin so that
+// `ketch scrape url < file` uses the URL, not the file.
 func resolveURLs(args []string) ([]string, error) {
 	if len(args) > 1 {
 		return args, nil
-	}
-
-	if stdinIsPipe() {
-		urls := readLines(os.Stdin)
-		if len(urls) > 0 {
-			return urls, nil
-		}
 	}
 
 	if len(args) == 1 {
@@ -111,6 +106,14 @@ func resolveURLs(args []string) ([]string, error) {
 			return urls, nil
 		}
 		return []string{arg}, nil
+	}
+
+	// No args — fall back to stdin if it's a pipe.
+	if stdinIsPipe() {
+		urls := readLines(os.Stdin)
+		if len(urls) > 0 {
+			return urls, nil
+		}
 	}
 
 	return nil, fmt.Errorf("provide a URL, file path, JSON array, or pipe URLs via stdin")
@@ -295,27 +298,11 @@ func scrapeURLWithSelector(s *scrape.Scraper, rawURL, selector string) (*scrape.
 }
 
 func scrapeWithSelector(s *scrape.Scraper, rawURL string, asJSON bool, trim bool, maxChars int, selector string) error {
-	html, err := s.Fetch(rawURL)
+	page, err := scrapeURLWithSelector(s, rawURL, selector)
 	if err != nil {
-		return fmt.Errorf("fetch failed: %w", err)
+		return err
 	}
-
-	// Apply browser fallback for JS-rendered pages before running the selector,
-	// otherwise the selector matches against the empty shell, not the real content.
-	html = s.MaybeBrowserFetch(rawURL, html)
-
-	markdown, err := extract.ExtractSelector(html, selector)
-	if err != nil {
-		return fmt.Errorf("selector extraction failed: %w", err)
-	}
-	if markdown == "" {
-		return fmt.Errorf("no elements matched selector %q", selector)
-	}
-
-	title := extract.Title(html)
-	page := &scrape.Page{URL: rawURL, Title: title, Markdown: markdown}
 	page.Markdown = postProcess(page.Markdown, trim, maxChars)
-
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(page)
 	}
