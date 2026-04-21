@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-04-21
+
+### Added
+- `ketch version` command and `--version` flag. Reports build version, commit, and date injected by goreleaser; falls back to `debug.ReadBuildInfo()` for `go install` builds.
+- Passive update reminder: when a newer release exists, a two-line hint is printed to stderr after command output. Cached for 24h; throttled so the same version is only announced once per 24h. Honors `KETCH_NO_UPDATE_NOTIFIER=1`, `CI`, `--json`, and non-TTY stderr. Install-type detection selects the right upgrade command (homebrew / `go install` / release URL).
+- Ctrl+C (SIGINT) and SIGTERM now cancel the root context, so foreground `ketch crawl` drains gracefully: workers stop, in-flight HTTP aborts, summary prints, exit 0. Previously the default signal handler hard-killed the process.
+
+### Changed
+- HTTP stack tuned for crawling: shared `*http.Transport` with a 30s request Timeout, `MaxIdleConnsPerHost=16`, HTTP/2, and a keep-alive dialer (new `internal/httpx`). Every backend (brave, ddg, searxng, context7, sourcegraph, github, scraper) reuses it. Measured: 50 requests to one host in ~385ms; 20 mixed-host URLs at c=10 in ~300ms (down from ~9.7s at c=1).
+- `context.Context` is now plumbed through `Scraper.Scrape/Fetch/ScrapeConditional/BrowserScrape/MaybeBrowserFetch`, `BrowserConn.Fetch` (via rod `Page.Context(ctx)`), `crawl.Crawl`, `fetchSitemap`, and `fetchLLMSTxt`. Cancellation reaches all the way into rod and `http.Client.Do`.
+- `crawl.Options.StopCh` removed — cancellation is via the ctx passed to `crawl.Crawl`. `ketch crawl stop <id>` sends SIGTERM, which cancels the worker ctx and aborts in-flight requests mid-fetch.
+- `DetectJSShell` rewritten: single DOM traversal for the static-page fast path, lazy corroborator phase. `DetectJSShellFromDoc` accepts a pre-parsed document so callers don't pay twice. `ScrapeConditional` parses HTML once and exposes the `*goquery.Document` via `FetchResult.Doc`; the crawler reuses it for link extraction instead of re-parsing.
+- Crawl scheduler replaced: `sync.Cond` + growing slice → `chan queueItem` + `sync.WaitGroup` with goroutine-per-enqueue. The old pop pattern (`queue = queue[1:]`) never reclaimed the backing array.
+- All HTTP response bodies are capped at 20 MiB via `io.LimitReader` so a misbehaving server cannot OOM the process.
+
 ## [0.6.0] - 2026-04-11
 
 ### Added
