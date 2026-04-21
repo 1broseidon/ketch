@@ -16,7 +16,10 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -s -w -X main.version={{ .Version }}
+      - -s -w
+      - -X github.com/1broseidon/ketch/cmd.version=v{{ .Version }}
+      - -X github.com/1broseidon/ketch/cmd.commit={{ .ShortCommit }}
+      - -X github.com/1broseidon/ketch/cmd.date={{ .Date }}
 
 archives:
   - id: ketch

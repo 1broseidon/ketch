@@ -12,9 +12,15 @@ import (
 var cfg = config.Load()
 
 var rootCmd = &cobra.Command{
-	Use:          "ketch",
-	Short:        "Fast web search and scrape for agents",
-	Long:         `ketch is a blazing fast CLI for agentic search and scrape workflows. Search the web, scrape pages to clean markdown, or do both in one shot.`,
+	Use:   "ketch",
+	Short: "Fast web search and scrape for agents",
+	Long:  `ketch is a blazing fast CLI for agentic search and scrape workflows. Search the web, scrape pages to clean markdown, or do both in one shot.`,
+	PersistentPreRun: func(cmd *cobra.Command, _ []string) {
+		prepareUpdateNotice(cmd)
+	},
+	PersistentPostRun: func(cmd *cobra.Command, _ []string) {
+		emitUpdateNotice(cmd)
+	},
 	RunE:         runRoot,
 	SilenceUsage: true,
 }
