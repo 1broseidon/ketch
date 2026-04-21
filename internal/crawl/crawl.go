@@ -240,6 +240,7 @@ func (c *crawler) processItem(item queueItem) {
 
 	var page *scrape.Page
 	var rawHTML string
+	var doc *goquery.Document
 	var err error
 
 	// If >80% of pages on this host are JS shells (after 10+ samples),
@@ -252,6 +253,7 @@ func (c *crawler) processItem(item queueItem) {
 		if err == nil {
 			page = result.Page
 			rawHTML = result.RawHTML
+			doc = result.Doc // may be nil when the page was re-fetched via browser
 			c.recordJSDetection(item.url, result.JSDetection)
 		}
 	}
@@ -276,7 +278,7 @@ func (c *crawler) processItem(item queueItem) {
 	})
 
 	if item.depth < c.opts.Depth && rawHTML != "" {
-		c.enqueueLinksFromHTML(item, rawHTML)
+		c.enqueueLinks(item, doc, rawHTML)
 	}
 }
 
@@ -312,8 +314,10 @@ func (c *crawler) shouldForceBrowser(rawURL string) bool {
 	return float64(s.shells)/float64(s.total) > 0.8
 }
 
-func (c *crawler) enqueueLinksFromHTML(parent queueItem, html string) {
-	links := extractLinksFromHTML(parent.url, html)
+// enqueueLinks reuses doc if non-nil (shared from ScrapeConditional) and
+// otherwise parses html. Crawls of static pages skip the re-parse entirely.
+func (c *crawler) enqueueLinks(parent queueItem, doc *goquery.Document, html string) {
+	links := extractLinks(parent.url, doc, html)
 	for _, link := range links {
 		c.enqueue(link, parent.depth+1, "link")
 	}
@@ -381,16 +385,20 @@ func compileDeny(patterns []string) ([]*regexp.Regexp, error) {
 	return regexps, nil
 }
 
-// extractLinksFromHTML parses HTML and returns all resolved href links.
-func extractLinksFromHTML(pageURL, html string) []string {
+// extractLinks returns all resolved href links on the page. If doc is
+// non-nil, it is reused (shared from upstream parsing); otherwise html
+// is parsed fresh.
+func extractLinks(pageURL string, doc *goquery.Document, html string) []string {
 	base, err := url.Parse(pageURL)
 	if err != nil {
 		return nil
 	}
 
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
-	if err != nil {
-		return nil
+	if doc == nil {
+		doc, err = goquery.NewDocumentFromReader(strings.NewReader(html))
+		if err != nil {
+			return nil
+		}
 	}
 
 	var links []string

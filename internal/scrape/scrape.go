@@ -8,10 +8,12 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/1broseidon/ketch/internal/extract"
 	"github.com/1broseidon/ketch/internal/httpx"
+	"github.com/PuerkitoBio/goquery"
 )
 
 // MaxBodyBytes caps how much of an HTTP response body we will read.
@@ -34,6 +36,13 @@ type FetchResult struct {
 	RawHTML     string
 	NotModified bool
 	JSDetection string // "static", "likely_shell", "ambiguous"
+
+	// Doc is the parsed document that ScrapeConditional used for JS-shell
+	// detection. Downstream callers (e.g. link extraction during a crawl)
+	// can reuse it to avoid re-parsing the same HTML. Nil when the page
+	// was re-fetched via the browser — in that case RawHTML is the
+	// rendered HTML and needs a fresh parse.
+	Doc *goquery.Document
 }
 
 // Scraper fetches web pages and extracts content as markdown.
@@ -159,10 +168,20 @@ func (s *Scraper) ScrapeConditional(ctx context.Context, rawURL, etag, lastModif
 	}
 
 	html := string(b)
-	detection := extract.DetectJSShell(html)
+
+	// Parse once for JS-shell detection; downstream callers can reuse this
+	// doc via FetchResult.Doc instead of paying to re-parse the same HTML.
+	doc, parseErr := goquery.NewDocumentFromReader(strings.NewReader(html))
+	var detection string
+	if parseErr != nil {
+		detection = "ambiguous"
+	} else {
+		detection = extract.DetectJSShellFromDoc(doc, html)
+	}
 
 	if detection == "likely_shell" {
 		html = s.browserFetchOrWarn(ctx, rawURL, html)
+		doc = nil // rendered HTML needs a fresh parse downstream
 	}
 
 	result, err := s.extractor.Extract(rawURL, html)
@@ -171,6 +190,7 @@ func (s *Scraper) ScrapeConditional(ctx context.Context, rawURL, etag, lastModif
 	}
 
 	return &FetchResult{
+		Doc: doc,
 		Page: &Page{
 			URL:          rawURL,
 			Title:        result.Title,

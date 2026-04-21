@@ -136,7 +136,7 @@ func TestFeatureExtractLinksFromHTML(t *testing.T) {
 		<a href="https://external.com/page">External</a>
 	</body></html>`
 
-	links := extractLinksFromHTML("https://example.com/docs/page", html)
+	links := extractLinks("https://example.com/docs/page", nil, html)
 
 	// Should resolve relative URLs
 	found := make(map[string]bool)
