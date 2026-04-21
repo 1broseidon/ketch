@@ -96,46 +96,40 @@ type crawler struct {
 	visitMu sync.Mutex
 	visited map[string]bool
 
-	queueMu sync.Mutex
-	queue   []queueItem
-	cond    *sync.Cond
-	active  int  // items currently being processed by workers
-	done    bool // set when all work is complete
-	fn      func(Result)
+	// work carries queue items to workers. Producers spawn a goroutine
+	// per send so recursive enqueue from inside processItem can't deadlock.
+	work chan queueItem
+	// wg counts in-flight items: incremented before spawning an enqueue
+	// goroutine, decremented by the worker after processItem completes
+	// (or by the enqueue goroutine itself if ctx cancels first).
+	wg sync.WaitGroup
+	fn func(Result)
 
 	hostStatsMu sync.Mutex
 	hostStats   map[string]*hostJSStats
 }
 
 func (c *crawler) run(seed string, sitemap bool) error {
-	c.cond = sync.NewCond(&c.queueMu)
+	// Small buffer lets producer goroutines unblock promptly when a
+	// worker is about to become free. Size doesn't affect correctness.
+	c.work = make(chan queueItem, c.opts.Concurrency)
 
-	// ctx cancellation triggers graceful shutdown.
-	stopWatch := make(chan struct{})
-	go func() {
-		select {
-		case <-c.ctx.Done():
-			c.shutdown()
-		case <-stopWatch:
-		}
-	}()
-	defer close(stopWatch)
-
-	// Start workers
 	var workerWg sync.WaitGroup
 	for i := 0; i < c.opts.Concurrency; i++ {
 		workerWg.Add(1)
 		go func() {
 			defer workerWg.Done()
-			c.workerLoop()
+			for item := range c.work {
+				c.processItem(item)
+				c.wg.Done()
+			}
 		}()
 	}
 
-	// Enqueue seeds
 	if sitemap {
 		urls, sErr := fetchSitemap(c.ctx, seed)
 		if sErr != nil {
-			c.shutdown()
+			close(c.work)
 			workerWg.Wait()
 			return fmt.Errorf("sitemap fetch failed: %w", sErr)
 		}
@@ -146,49 +140,16 @@ func (c *crawler) run(seed string, sitemap bool) error {
 		c.enqueue(seed, 0, "seed")
 	}
 
-	// Wait until there are no queued items and no active workers
-	c.queueMu.Lock()
-	for len(c.queue) > 0 || c.active > 0 {
-		c.cond.Wait()
-	}
-	c.done = true
-	c.queueMu.Unlock()
-	c.cond.Broadcast()
-
+	// wg.Add for a child runs inside its parent's processItem, before the
+	// parent's wg.Done — so the counter never drops to 0 while there's
+	// work still in flight.
+	c.wg.Wait()
+	close(c.work)
 	workerWg.Wait()
-	return nil
-}
-
-func (c *crawler) shutdown() {
-	c.queueMu.Lock()
-	c.done = true
-	c.queue = nil
-	c.queueMu.Unlock()
-	c.cond.Broadcast()
-}
-
-func (c *crawler) workerLoop() {
-	for {
-		c.queueMu.Lock()
-		for len(c.queue) == 0 && !c.done {
-			c.cond.Wait()
-		}
-		if c.done && len(c.queue) == 0 {
-			c.queueMu.Unlock()
-			return
-		}
-		item := c.queue[0]
-		c.queue = c.queue[1:]
-		c.active++
-		c.queueMu.Unlock()
-
-		c.processItem(item)
-
-		c.queueMu.Lock()
-		c.active--
-		c.queueMu.Unlock()
-		c.cond.Broadcast()
+	if c.ctx.Err() != nil {
+		return c.ctx.Err()
 	}
+	return nil
 }
 
 func (c *crawler) enqueue(rawURL string, depth int, source string) {
@@ -202,14 +163,21 @@ func (c *crawler) enqueue(rawURL string, depth int, source string) {
 	if !passesFilters(norm, c.seedHost, c.opts.Allow, c.deny) {
 		return
 	}
-	c.queueMu.Lock()
-	if c.done {
-		c.queueMu.Unlock()
+	if c.ctx.Err() != nil {
 		return
 	}
-	c.queue = append(c.queue, queueItem{url: norm, depth: depth, source: source})
-	c.queueMu.Unlock()
-	c.cond.Signal()
+
+	item := queueItem{url: norm, depth: depth, source: source}
+	c.wg.Add(1)
+	go func() {
+		select {
+		case c.work <- item:
+			// Worker will call wg.Done after processItem.
+		case <-c.ctx.Done():
+			// Ctx cancelled before any worker received — balance the Add.
+			c.wg.Done()
+		}
+	}()
 }
 
 func (c *crawler) tryVisit(u string) bool {

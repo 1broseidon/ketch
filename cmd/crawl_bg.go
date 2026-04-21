@@ -137,14 +137,17 @@ func runCrawlWorker(cmd *cobra.Command, args []string, crawlID string) error {
 
 	crawlErr := crawl.Crawl(ctx, seed, opts, pc, sitemap, fn)
 
-	// Write final status
+	// Write final status. Cancellation wins over the returned error: a
+	// ctx-cancelled crawl returns context.Canceled, which is "stopped",
+	// not "failed".
 	mu.Lock()
-	if crawlErr != nil {
+	switch {
+	case ctx.Err() != nil:
+		status.Status = "stopped"
+	case crawlErr != nil:
 		status.Status = "failed"
 		status.Error = crawlErr.Error()
-	} else if ctx.Err() != nil {
-		status.Status = "stopped"
-	} else {
+	default:
 		status.Status = "completed"
 	}
 	_ = crawl.WriteStatus(status)

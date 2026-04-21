@@ -3,12 +3,15 @@ package crawl
 import (
 	"context"
 	"encoding/xml"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 )
 
 func TestFeatureNormalizeURL(t *testing.T) {
@@ -300,5 +303,91 @@ func TestFeatureNormalizeURLPreservesSchemeHost(t *testing.T) {
 	got := normalizeURL("https://example.com/path?key=value")
 	if got != "https://example.com/path?key=value" {
 		t.Errorf("normalizeURL should preserve scheme/host/path/query, got %q", got)
+	}
+}
+
+// TestCrawlSchedulerEndToEnd stands up a small site where every page links
+// to every other, then verifies the scheduler visits each page exactly
+// once and terminates cleanly. Also exercises context cancellation.
+func TestCrawlSchedulerEndToEnd(t *testing.T) {
+	t.Parallel()
+
+	pages := []string{"/", "/a", "/b", "/c", "/d"}
+	pageSet := map[string]bool{}
+	for _, p := range pages {
+		pageSet[p] = true
+	}
+
+	mux := http.NewServeMux()
+	for _, p := range pages {
+		mux.HandleFunc(p, func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/html")
+			var b strings.Builder
+			b.WriteString(`<!doctype html><html><body><main><article>`)
+			b.WriteString(`<h1>Page</h1><p>content content content content content content content content content content content content content content content content content content content content content content content content</p>`)
+			for _, q := range pages {
+				b.WriteString(`<a href="` + q + `">link</a>`)
+			}
+			b.WriteString(`</article></main></body></html>`)
+			_, _ = w.Write([]byte(b.String()))
+		})
+	}
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	var mu sync.Mutex
+	seen := map[string]int{}
+	fn := func(r Result) {
+		if r.Error != "" {
+			return
+		}
+		mu.Lock()
+		seen[r.URL]++
+		mu.Unlock()
+	}
+
+	opts := Options{Depth: 5, Concurrency: 4}
+	// Use exported entry point to exercise the full wiring.
+	if err := Crawl(t.Context(), server.URL, opts, nil, false, fn); err != nil {
+		t.Fatalf("Crawl error: %v", err)
+	}
+
+	if len(seen) != len(pages) {
+		t.Fatalf("visited %d pages, want %d: %v", len(seen), len(pages), seen)
+	}
+	for u, n := range seen {
+		if n != 1 {
+			t.Errorf("URL %s visited %d times, want 1", u, n)
+		}
+	}
+}
+
+func TestCrawlSchedulerCancels(t *testing.T) {
+	t.Parallel()
+
+	// Server that blocks until the test releases it — simulates slow peers.
+	release := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-release:
+		case <-r.Context().Done():
+			return
+		}
+		_, _ = w.Write([]byte(`<html><body><main><article><p>` + strings.Repeat("x", 300) + `</p></article></main></body></html>`))
+	}))
+	defer server.Close()
+	defer close(release)
+
+	ctx, cancel := context.WithCancel(t.Context())
+	// Cancel soon after the crawl starts so in-flight requests abort.
+	time.AfterFunc(50*time.Millisecond, cancel)
+
+	opts := Options{Depth: 3, Concurrency: 4}
+	err := Crawl(ctx, server.URL, opts, nil, false, func(Result) {})
+	if err == nil {
+		t.Fatal("expected context error, got nil")
+	}
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("expected context.Canceled, got %v", err)
 	}
 }
