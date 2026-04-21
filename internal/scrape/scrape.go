@@ -1,6 +1,7 @@
 package scrape
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -10,7 +11,12 @@ import (
 	"sync"
 
 	"github.com/1broseidon/ketch/internal/extract"
+	"github.com/1broseidon/ketch/internal/httpx"
 )
+
+// MaxBodyBytes caps how much of an HTTP response body we will read.
+// Prevents a malicious or misconfigured server from OOMing the process.
+const MaxBodyBytes = 20 << 20 // 20 MiB
 
 // Page represents a scraped web page.
 type Page struct {
@@ -42,7 +48,7 @@ type Scraper struct {
 // New creates a Scraper with defaults.
 func New() *Scraper {
 	return &Scraper{
-		client:    &http.Client{},
+		client:    httpx.Default(),
 		extractor: extract.New(),
 	}
 }
@@ -50,7 +56,7 @@ func New() *Scraper {
 // NewWithBrowser creates a Scraper with browser fallback for JS-rendered pages.
 func NewWithBrowser(browserBin string) *Scraper {
 	return &Scraper{
-		client:     &http.Client{},
+		client:     httpx.Default(),
 		extractor:  extract.New(),
 		browserBin: browserBin,
 	}
@@ -99,13 +105,13 @@ func (s *Scraper) getBrowser() BrowserConn {
 // Scrape fetches a URL and returns extracted markdown content.
 // If the page appears JS-rendered and a browser is configured, automatically
 // retries with the browser for full content extraction.
-func (s *Scraper) Scrape(rawURL string) (*Page, error) {
-	body, err := s.Fetch(rawURL)
+func (s *Scraper) Scrape(ctx context.Context, rawURL string) (*Page, error) {
+	body, err := s.Fetch(ctx, rawURL)
 	if err != nil {
 		return nil, err
 	}
 
-	body = s.MaybeBrowserFetch(rawURL, body)
+	body = s.MaybeBrowserFetch(ctx, rawURL, body)
 
 	result, err := s.extractor.Extract(rawURL, body)
 	if err != nil {
@@ -120,8 +126,8 @@ func (s *Scraper) Scrape(rawURL string) (*Page, error) {
 }
 
 // ScrapeConditional fetches a URL with conditional headers and JS detection.
-func (s *Scraper) ScrapeConditional(rawURL, etag, lastModified string) (*FetchResult, error) {
-	req, err := http.NewRequest("GET", rawURL, nil)
+func (s *Scraper) ScrapeConditional(ctx context.Context, rawURL, etag, lastModified string) (*FetchResult, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", rawURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +153,7 @@ func (s *Scraper) ScrapeConditional(rawURL, etag, lastModified string) (*FetchRe
 		return nil, fmt.Errorf("HTTP %d for %s", resp.StatusCode, rawURL)
 	}
 
-	b, err := io.ReadAll(resp.Body)
+	b, err := io.ReadAll(io.LimitReader(resp.Body, MaxBodyBytes))
 	if err != nil {
 		return nil, fmt.Errorf("read body failed: %w", err)
 	}
@@ -156,7 +162,7 @@ func (s *Scraper) ScrapeConditional(rawURL, etag, lastModified string) (*FetchRe
 	detection := extract.DetectJSShell(html)
 
 	if detection == "likely_shell" {
-		html = s.browserFetchOrWarn(rawURL, html)
+		html = s.browserFetchOrWarn(ctx, rawURL, html)
 	}
 
 	result, err := s.extractor.Extract(rawURL, html)
@@ -180,12 +186,12 @@ func (s *Scraper) ScrapeConditional(rawURL, etag, lastModified string) (*FetchRe
 
 // BrowserScrape fetches a URL using the browser directly.
 // Used when a host is known to require browser rendering.
-func (s *Scraper) BrowserScrape(rawURL string) (*Page, string, error) {
+func (s *Scraper) BrowserScrape(ctx context.Context, rawURL string) (*Page, string, error) {
 	browser := s.getBrowser()
 	if browser == nil {
 		return nil, "", ErrNoBrowser
 	}
-	html, err := browser.Fetch(rawURL)
+	html, err := browser.Fetch(ctx, rawURL)
 	if err != nil {
 		return nil, "", fmt.Errorf("browser fetch failed for %s: %w", rawURL, err)
 	}
@@ -204,18 +210,18 @@ func (s *Scraper) BrowserScrape(rawURL string) (*Page, string, error) {
 
 // MaybeBrowserFetch re-fetches rawURL via the browser if html looks JS-rendered.
 // Returns the original html if no browser is needed or available.
-func (s *Scraper) MaybeBrowserFetch(rawURL, html string) string {
+func (s *Scraper) MaybeBrowserFetch(ctx context.Context, rawURL, html string) string {
 	detection := extract.DetectJSShell(html)
 	if detection != "likely_shell" {
 		return html
 	}
-	return s.browserFetchOrWarn(rawURL, html)
+	return s.browserFetchOrWarn(ctx, rawURL, html)
 }
 
-func (s *Scraper) browserFetchOrWarn(rawURL, html string) string {
+func (s *Scraper) browserFetchOrWarn(ctx context.Context, rawURL, html string) string {
 	browser := s.getBrowser()
 	if browser != nil {
-		rendered, err := browser.Fetch(rawURL)
+		rendered, err := browser.Fetch(ctx, rawURL)
 		if err == nil {
 			return rendered
 		}
@@ -233,8 +239,8 @@ func ContentHash(s string) string {
 }
 
 // Fetch fetches the raw HTML for a URL without extraction or browser fallback.
-func (s *Scraper) Fetch(rawURL string) (string, error) {
-	req, err := http.NewRequest("GET", rawURL, nil)
+func (s *Scraper) Fetch(ctx context.Context, rawURL string) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", rawURL, nil)
 	if err != nil {
 		return "", err
 	}
@@ -251,7 +257,7 @@ func (s *Scraper) Fetch(rawURL string) (string, error) {
 		return "", fmt.Errorf("HTTP %d for %s", resp.StatusCode, rawURL)
 	}
 
-	b, err := io.ReadAll(resp.Body)
+	b, err := io.ReadAll(io.LimitReader(resp.Body, MaxBodyBytes))
 	if err != nil {
 		return "", fmt.Errorf("read body failed: %w", err)
 	}

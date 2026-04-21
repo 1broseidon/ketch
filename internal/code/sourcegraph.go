@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/1broseidon/ketch/internal/httpx"
 )
 
 // Sourcegraph searches code via the Sourcegraph streaming search API.
@@ -17,10 +19,14 @@ type Sourcegraph struct {
 }
 
 // NewSourcegraph creates a new Sourcegraph code search backend.
+// Streaming results can run long, so use a dedicated client without the
+// default request timeout (context is the only bound).
+var sourcegraphClient = httpx.New(0, httpx.DefaultMaxIdleConnsPerHost)
+
 func NewSourcegraph(baseURL string) *Sourcegraph {
 	return &Sourcegraph{
 		baseURL: baseURL,
-		client:  &http.Client{},
+		client:  sourcegraphClient,
 	}
 }
 

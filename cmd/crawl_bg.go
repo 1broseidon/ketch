@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -91,13 +92,14 @@ func runCrawlWorker(cmd *cobra.Command, args []string, crawlID string) error {
 	}
 	_ = crawl.WriteStatus(status)
 
-	// Signal handling for graceful stop
-	stopCh := make(chan struct{})
+	// Signal handling for graceful stop: SIGTERM/SIGINT cancels the crawl ctx.
+	ctx, cancel := context.WithCancel(cmd.Context())
+	defer cancel()
 	sigCh := make(chan os.Signal, 1)
 	notifyStop(sigCh)
 	go func() {
 		<-sigCh
-		close(stopCh)
+		cancel()
 	}()
 
 	pc := newCrawlCache(noCache)
@@ -108,7 +110,6 @@ func runCrawlWorker(cmd *cobra.Command, args []string, crawlID string) error {
 		Allow:       allow,
 		Deny:        deny,
 		BrowserBin:  cfg.Browser,
-		StopCh:      stopCh,
 	}
 
 	var mu sync.Mutex
@@ -134,20 +135,17 @@ func runCrawlWorker(cmd *cobra.Command, args []string, crawlID string) error {
 		}
 	}
 
-	crawlErr := crawl.Crawl(seed, opts, pc, sitemap, fn)
+	crawlErr := crawl.Crawl(ctx, seed, opts, pc, sitemap, fn)
 
 	// Write final status
 	mu.Lock()
 	if crawlErr != nil {
 		status.Status = "failed"
 		status.Error = crawlErr.Error()
+	} else if ctx.Err() != nil {
+		status.Status = "stopped"
 	} else {
-		select {
-		case <-stopCh:
-			status.Status = "stopped"
-		default:
-			status.Status = "completed"
-		}
+		status.Status = "completed"
 	}
 	_ = crawl.WriteStatus(status)
 	mu.Unlock()

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/1broseidon/ketch/internal/httpx"
 )
 
 // Context7 searches library documentation via the Context7 API.
@@ -18,7 +20,7 @@ type Context7 struct {
 func NewContext7(apiKey string) *Context7 {
 	return &Context7{
 		apiKey: apiKey,
-		client: &http.Client{},
+		client: httpx.Default(),
 	}
 }
 

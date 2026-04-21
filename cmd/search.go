@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -52,7 +53,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 
 	if doScrape {
 		pc := newPageCache(false)
-		return searchScrape(results, pc, asJSON, trim, maxChars, minimal)
+		return searchScrape(cmd.Context(), results, pc, asJSON, trim, maxChars, minimal)
 	}
 
 	if asJSON {
@@ -81,12 +82,12 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func searchScrape(results []search.Result, pc *cache.Cache, asJSON bool, trim bool, maxChars int, minimal bool) error {
+func searchScrape(ctx context.Context, results []search.Result, pc *cache.Cache, asJSON bool, trim bool, maxChars int, minimal bool) error {
 	scraper := scrape.New()
 
 	if asJSON {
 		for i, r := range results {
-			page, err := cachedScrape(scraper, pc, r.URL)
+			page, err := cachedScrape(ctx, scraper, pc, r.URL)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "warn: failed to scrape %s: %v\n", r.URL, err)
 				continue
@@ -98,7 +99,7 @@ func searchScrape(results []search.Result, pc *cache.Cache, asJSON bool, trim bo
 
 	if minimal {
 		for _, r := range results {
-			page, err := cachedScrape(scraper, pc, r.URL)
+			page, err := cachedScrape(ctx, scraper, pc, r.URL)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "warn: failed to scrape %s: %v\n", r.URL, err)
 				continue
@@ -111,7 +112,7 @@ func searchScrape(results []search.Result, pc *cache.Cache, asJSON bool, trim bo
 	}
 
 	for i, r := range results {
-		page, err := cachedScrape(scraper, pc, r.URL)
+		page, err := cachedScrape(ctx, scraper, pc, r.URL)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "warn: failed to scrape %s: %v\n", r.URL, err)
 			continue

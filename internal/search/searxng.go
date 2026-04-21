@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/1broseidon/ketch/internal/httpx"
 )
 
 // SearXNG searches a SearXNG instance via its JSON API.
@@ -18,7 +20,7 @@ type SearXNG struct {
 func NewSearXNG(baseURL string) *SearXNG {
 	return &SearXNG{
 		baseURL: baseURL,
-		client:  &http.Client{},
+		client:  httpx.Default(),
 	}
 }
 

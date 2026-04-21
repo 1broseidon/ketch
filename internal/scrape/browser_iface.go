@@ -1,6 +1,7 @@
 package scrape
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -13,8 +14,9 @@ var ErrNoBrowser = errors.New("no browser configured (set with: ketch config set
 
 // BrowserConn represents a connection to a headless browser for JS rendering.
 type BrowserConn interface {
-	// Fetch navigates to a URL and returns the rendered HTML.
-	Fetch(url string) (html string, err error)
+	// Fetch navigates to a URL and returns the rendered HTML. The context
+	// bounds navigation and JS settling; cancellation unblocks the caller.
+	Fetch(ctx context.Context, url string) (html string, err error)
 	// Close releases browser resources.
 	Close()
 }

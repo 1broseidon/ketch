@@ -1,6 +1,7 @@
 package scrape
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -32,14 +33,15 @@ func NewBrowserConn(binPath string) (BrowserConn, error) {
 }
 
 // Fetch navigates to a URL in a new tab and returns the rendered HTML.
-func (r *rodConn) Fetch(rawURL string) (string, error) {
-	page, err := r.browser.Page(proto.TargetCreateTarget{URL: rawURL})
+// The context bounds navigation and JS settling; if it's cancelled, the
+// underlying Rod operations unblock with the ctx error.
+func (r *rodConn) Fetch(ctx context.Context, rawURL string) (string, error) {
+	page, err := r.browser.Context(ctx).Page(proto.TargetCreateTarget{URL: rawURL})
 	if err != nil {
 		return "", fmt.Errorf("create page: %w", err)
 	}
 	defer func() { _ = page.Close() }()
 
-	// Wait for page load and JS execution with timeout
 	timedPage := page.Timeout(30 * time.Second)
 	_ = timedPage.WaitLoad()
 	_ = timedPage.WaitStable(time.Second)

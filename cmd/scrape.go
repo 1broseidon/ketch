@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/1broseidon/ketch/internal/cache"
 	"github.com/1broseidon/ketch/internal/extract"
+	"github.com/1broseidon/ketch/internal/httpx"
 	"github.com/1broseidon/ketch/internal/scrape"
 	"github.com/spf13/cobra"
 )
@@ -69,10 +71,11 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	pc := newPageCache(noCache)
 	defer pc.Close()
 
+	ctx := cmd.Context()
 	if len(urls) == 1 {
-		return scrapeSingle(scraper, pc, urls[0], asJSON, trim, maxChars, selector, noLLMSTxt)
+		return scrapeSingle(ctx, scraper, pc, urls[0], asJSON, trim, maxChars, selector, noLLMSTxt)
 	}
-	return scrapeMultiple(scraper, pc, urls, asJSON, trim, maxChars, selector, noLLMSTxt, concurrency)
+	return scrapeMultiple(ctx, scraper, pc, urls, asJSON, trim, maxChars, selector, noLLMSTxt, concurrency)
 }
 
 // resolveURLs detects the input mode and returns a list of URLs.
@@ -165,12 +168,12 @@ func newPageCache(noCache bool) *cache.Cache {
 }
 
 // cachedScrape checks the cache first, falls back to fetch+extract.
-func cachedScrape(s *scrape.Scraper, pc *cache.Cache, url string) (*scrape.Page, error) {
+func cachedScrape(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, url string) (*scrape.Page, error) {
 	if page := pc.Get(url); page != nil {
 		return page, nil
 	}
 
-	page, err := s.Scrape(url)
+	page, err := s.Scrape(ctx, url)
 	if err != nil {
 		return nil, err
 	}
@@ -179,15 +182,15 @@ func cachedScrape(s *scrape.Scraper, pc *cache.Cache, url string) (*scrape.Page,
 	return page, nil
 }
 
-func scrapeSingle(s *scrape.Scraper, pc *cache.Cache, rawURL string, asJSON bool, trim bool, maxChars int, selector string, noLLMSTxt bool) error {
+func scrapeSingle(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, rawURL string, asJSON bool, trim bool, maxChars int, selector string, noLLMSTxt bool) error {
 	// --select: direct fetch + CSS extraction, bypasses cache
 	if selector != "" {
-		return scrapeWithSelector(s, rawURL, asJSON, trim, maxChars, selector)
+		return scrapeWithSelector(ctx, s, rawURL, asJSON, trim, maxChars, selector)
 	}
 
 	// llms.txt auto-detection for bare domains
 	if !noLLMSTxt {
-		if content, ok := fetchLLMSTxt(rawURL); ok {
+		if content, ok := fetchLLMSTxt(ctx, rawURL); ok {
 			page := &scrape.Page{URL: rawURL, Title: "llms.txt", Markdown: content}
 			page.Markdown = postProcess(page.Markdown, trim, maxChars)
 			if asJSON {
@@ -198,7 +201,7 @@ func scrapeSingle(s *scrape.Scraper, pc *cache.Cache, rawURL string, asJSON bool
 		}
 	}
 
-	page, err := cachedScrape(s, pc, rawURL)
+	page, err := cachedScrape(ctx, s, pc, rawURL)
 	if err != nil {
 		return fmt.Errorf("scrape failed: %w", err)
 	}
@@ -213,7 +216,7 @@ func scrapeSingle(s *scrape.Scraper, pc *cache.Cache, rawURL string, asJSON bool
 	return nil
 }
 
-func scrapeMultiple(s *scrape.Scraper, pc *cache.Cache, urls []string, asJSON, trim bool, maxChars int, selector string, noLLMSTxt bool, concurrency int) error {
+func scrapeMultiple(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, urls []string, asJSON, trim bool, maxChars int, selector string, noLLMSTxt bool, concurrency int) error {
 	type indexedPage struct {
 		idx  int
 		page *scrape.Page
@@ -231,7 +234,7 @@ func scrapeMultiple(s *scrape.Scraper, pc *cache.Cache, urls []string, asJSON, t
 			defer wg.Done()
 			defer func() { <-sem }()
 
-			page, err := scrapeOneURL(s, pc, rawURL, selector, noLLMSTxt)
+			page, err := scrapeOneURL(ctx, s, pc, rawURL, selector, noLLMSTxt)
 			results[idx] = indexedPage{idx: idx, page: page, err: err}
 		}(i, u)
 	}
@@ -266,26 +269,26 @@ func scrapeMultiple(s *scrape.Scraper, pc *cache.Cache, urls []string, asJSON, t
 
 // scrapeOneURL handles a single URL within scrapeMultiple, applying selector
 // and llms.txt detection the same way scrapeSingle does.
-func scrapeOneURL(s *scrape.Scraper, pc *cache.Cache, rawURL, selector string, noLLMSTxt bool) (*scrape.Page, error) {
+func scrapeOneURL(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, rawURL, selector string, noLLMSTxt bool) (*scrape.Page, error) {
 	if selector != "" {
-		return scrapeURLWithSelector(s, rawURL, selector)
+		return scrapeURLWithSelector(ctx, s, rawURL, selector)
 	}
 	if !noLLMSTxt {
-		if content, ok := fetchLLMSTxt(rawURL); ok {
+		if content, ok := fetchLLMSTxt(ctx, rawURL); ok {
 			return &scrape.Page{URL: rawURL, Title: "llms.txt", Markdown: content}, nil
 		}
 	}
-	return cachedScrape(s, pc, rawURL)
+	return cachedScrape(ctx, s, pc, rawURL)
 }
 
 // scrapeURLWithSelector fetches a URL and extracts content matching a CSS selector.
 // Returns a Page without post-processing (caller applies trim/maxChars).
-func scrapeURLWithSelector(s *scrape.Scraper, rawURL, selector string) (*scrape.Page, error) {
-	html, err := s.Fetch(rawURL)
+func scrapeURLWithSelector(ctx context.Context, s *scrape.Scraper, rawURL, selector string) (*scrape.Page, error) {
+	html, err := s.Fetch(ctx, rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("fetch failed: %w", err)
 	}
-	html = s.MaybeBrowserFetch(rawURL, html)
+	html = s.MaybeBrowserFetch(ctx, rawURL, html)
 	markdown, err := extract.ExtractSelector(html, selector)
 	if err != nil {
 		return nil, fmt.Errorf("selector extraction failed: %w", err)
@@ -297,8 +300,8 @@ func scrapeURLWithSelector(s *scrape.Scraper, rawURL, selector string) (*scrape.
 	return &scrape.Page{URL: rawURL, Title: title, Markdown: markdown}, nil
 }
 
-func scrapeWithSelector(s *scrape.Scraper, rawURL string, asJSON bool, trim bool, maxChars int, selector string) error {
-	page, err := scrapeURLWithSelector(s, rawURL, selector)
+func scrapeWithSelector(ctx context.Context, s *scrape.Scraper, rawURL string, asJSON bool, trim bool, maxChars int, selector string) error {
+	page, err := scrapeURLWithSelector(ctx, s, rawURL, selector)
 	if err != nil {
 		return err
 	}
@@ -313,7 +316,7 @@ func scrapeWithSelector(s *scrape.Scraper, rawURL string, asJSON bool, trim bool
 // fetchLLMSTxt attempts to fetch /llms.txt from the given base URL.
 // Returns the content and true if successful, empty string and false otherwise.
 // All errors are silently swallowed — this is a best-effort check.
-func fetchLLMSTxt(baseURL string) (string, bool) {
+func fetchLLMSTxt(ctx context.Context, baseURL string) (string, bool) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		return "", false
@@ -322,9 +325,16 @@ func fetchLLMSTxt(baseURL string) (string, bool) {
 		return "", false
 	}
 
+	// Cap llms.txt probes at 5s — they're best-effort and shouldn't delay
+	// the real scrape if a host ignores the request.
+	probeCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	llmsURL := u.Scheme + "://" + u.Host + "/llms.txt"
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get(llmsURL) //nolint:noctx
+	req, err := http.NewRequestWithContext(probeCtx, "GET", llmsURL, nil)
+	if err != nil {
+		return "", false
+	}
+	resp, err := httpx.Default().Do(req)
 	if err != nil {
 		return "", false
 	}
@@ -338,7 +348,7 @@ func fetchLLMSTxt(baseURL string) (string, bool) {
 		return "", false
 	}
 
-	b, err := io.ReadAll(resp.Body)
+	b, err := io.ReadAll(io.LimitReader(resp.Body, scrape.MaxBodyBytes))
 	if err != nil {
 		return "", false
 	}

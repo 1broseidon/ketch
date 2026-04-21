@@ -1,6 +1,7 @@
 package crawl
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -11,18 +12,18 @@ import (
 	"sync"
 
 	"github.com/1broseidon/ketch/internal/cache"
+	"github.com/1broseidon/ketch/internal/httpx"
 	"github.com/1broseidon/ketch/internal/scrape"
 	"github.com/PuerkitoBio/goquery"
 )
 
 // Options configures the crawl behavior.
 type Options struct {
-	Depth       int             // max BFS depth, default 3
-	Concurrency int             // worker pool size, default 8
-	Allow       []string        // path substrings that URLs must contain (any match passes)
-	Deny        []string        // regex patterns to reject URLs
-	BrowserBin  string          // browser binary for JS-rendered page fallback; empty = disabled
-	StopCh      <-chan struct{} // closed to signal graceful stop; nil = no external stop
+	Depth       int      // max BFS depth, default 3
+	Concurrency int      // worker pool size, default 8
+	Allow       []string // path substrings that URLs must contain (any match passes)
+	Deny        []string // regex patterns to reject URLs
+	BrowserBin  string   // browser binary for JS-rendered page fallback; empty = disabled
 }
 
 // Result represents a single crawled page.
@@ -48,7 +49,9 @@ type hostJSStats struct {
 }
 
 // Crawl performs a BFS crawl from the seed URL, calling fn for each page.
-func Crawl(seed string, opts Options, pc *cache.Cache, sitemap bool, fn func(Result)) error {
+// The context bounds the entire crawl: cancelling it stops workers promptly
+// and aborts in-flight HTTP/browser requests.
+func Crawl(ctx context.Context, seed string, opts Options, pc *cache.Cache, sitemap bool, fn func(Result)) error {
 	seedURL, err := url.Parse(seed)
 	if err != nil {
 		return fmt.Errorf("invalid seed URL: %w", err)
@@ -68,6 +71,7 @@ func Crawl(seed string, opts Options, pc *cache.Cache, sitemap bool, fn func(Res
 	defer s.Close()
 
 	c := &crawler{
+		ctx:       ctx,
 		scraper:   s,
 		pc:        pc,
 		opts:      opts,
@@ -82,6 +86,7 @@ func Crawl(seed string, opts Options, pc *cache.Cache, sitemap bool, fn func(Res
 }
 
 type crawler struct {
+	ctx      context.Context
 	scraper  *scrape.Scraper
 	pc       *cache.Cache
 	opts     Options
@@ -105,13 +110,16 @@ type crawler struct {
 func (c *crawler) run(seed string, sitemap bool) error {
 	c.cond = sync.NewCond(&c.queueMu)
 
-	// Watch for external stop signal
-	if c.opts.StopCh != nil {
-		go func() {
-			<-c.opts.StopCh
+	// ctx cancellation triggers graceful shutdown.
+	stopWatch := make(chan struct{})
+	go func() {
+		select {
+		case <-c.ctx.Done():
 			c.shutdown()
-		}()
-	}
+		case <-stopWatch:
+		}
+	}()
+	defer close(stopWatch)
 
 	// Start workers
 	var workerWg sync.WaitGroup
@@ -125,7 +133,7 @@ func (c *crawler) run(seed string, sitemap bool) error {
 
 	// Enqueue seeds
 	if sitemap {
-		urls, sErr := fetchSitemap(seed)
+		urls, sErr := fetchSitemap(c.ctx, seed)
 		if sErr != nil {
 			c.shutdown()
 			workerWg.Wait()
@@ -237,10 +245,10 @@ func (c *crawler) processItem(item queueItem) {
 	// If >80% of pages on this host are JS shells (after 10+ samples),
 	// skip detection and go straight to browser rendering.
 	if c.shouldForceBrowser(item.url) && c.scraper.HasBrowser() {
-		page, rawHTML, err = c.scraper.BrowserScrape(item.url)
+		page, rawHTML, err = c.scraper.BrowserScrape(c.ctx, item.url)
 	} else {
 		var result *scrape.FetchResult
-		result, err = c.scraper.ScrapeConditional(item.url, "", "")
+		result, err = c.scraper.ScrapeConditional(c.ctx, item.url, "", "")
 		if err == nil {
 			page = result.Page
 			rawHTML = result.RawHTML
@@ -437,19 +445,17 @@ type urlLoc struct {
 
 // fetchSitemap fetches a sitemap URL and returns all page URLs.
 // Supports both sitemap index files and regular sitemaps.
-func fetchSitemap(sitemapURL string) ([]string, error) {
-	body, err := fetchBody(sitemapURL)
+func fetchSitemap(ctx context.Context, sitemapURL string) ([]string, error) {
+	body, err := fetchBody(ctx, sitemapURL)
 	if err != nil {
 		return nil, err
 	}
 
-	// Try as sitemap index first
 	var idx sitemapIndex
 	if xml.Unmarshal(body, &idx) == nil && len(idx.Sitemaps) > 0 {
-		return fetchSitemapIndex(idx)
+		return fetchSitemapIndex(ctx, idx)
 	}
 
-	// Try as regular urlset
 	var us urlSet
 	if err := xml.Unmarshal(body, &us); err != nil {
 		return nil, fmt.Errorf("failed to parse sitemap XML: %w", err)
@@ -464,10 +470,10 @@ func fetchSitemap(sitemapURL string) ([]string, error) {
 	return urls, nil
 }
 
-func fetchSitemapIndex(idx sitemapIndex) ([]string, error) {
+func fetchSitemapIndex(ctx context.Context, idx sitemapIndex) ([]string, error) {
 	var all []string
 	for _, sm := range idx.Sitemaps {
-		urls, err := fetchSitemap(sm.Loc)
+		urls, err := fetchSitemap(ctx, sm.Loc)
 		if err != nil {
 			continue
 		}
@@ -476,8 +482,12 @@ func fetchSitemapIndex(idx sitemapIndex) ([]string, error) {
 	return all, nil
 }
 
-func fetchBody(rawURL string) ([]byte, error) {
-	resp, err := http.Get(rawURL) //nolint:errcheck
+func fetchBody(ctx context.Context, rawURL string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", rawURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := httpx.Default().Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -485,5 +495,5 @@ func fetchBody(rawURL string) ([]byte, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("HTTP %d for %s", resp.StatusCode, rawURL)
 	}
-	return io.ReadAll(resp.Body)
+	return io.ReadAll(io.LimitReader(resp.Body, scrape.MaxBodyBytes))
 }

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/1broseidon/ketch/internal/httpx"
 )
 
 // Brave searches via the Brave Search API.
@@ -18,7 +20,7 @@ type Brave struct {
 func NewBrave(apiKey string) *Brave {
 	return &Brave{
 		apiKey: apiKey,
-		client: &http.Client{},
+		client: httpx.Default(),
 	}
 }
 

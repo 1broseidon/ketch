@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/1broseidon/ketch/internal/httpx"
 	"github.com/PuerkitoBio/goquery"
 )
 
@@ -18,7 +19,7 @@ type DDG struct {
 
 // NewDDG creates a new DuckDuckGo search backend.
 func NewDDG() *DDG {
-	return &DDG{client: &http.Client{}}
+	return &DDG{client: httpx.Default()}
 }
 
 // Search queries DuckDuckGo and returns up to limit results.

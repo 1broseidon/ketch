@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/1broseidon/ketch/internal/httpx"
 )
 
 // GitHub searches code via the GitHub Code Search REST API.
@@ -23,7 +25,7 @@ type GitHub struct {
 func NewGitHub(token string) *GitHub {
 	return &GitHub{
 		token:  token,
-		client: &http.Client{Timeout: 30 * time.Second},
+		client: httpx.Default(),
 	}
 }
 

@@ -110,7 +110,7 @@ func runCrawl(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	err := crawl.Crawl(seed, opts, pc, sitemap, fn)
+	err := crawl.Crawl(cmd.Context(), seed, opts, pc, sitemap, fn)
 
 	duration := time.Since(start)
 	printCrawlSummary(seed, count, newCount, changed, unchanged, errCount, duration)
