@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -20,6 +21,13 @@ var rootCmd = &cobra.Command{
 
 func Execute() error {
 	return rootCmd.Execute()
+}
+
+// ExecuteContext runs the root command with a caller-supplied context.
+// main.go passes a context that cancels on SIGINT/SIGTERM so foreground
+// commands (notably crawl) can shut down gracefully.
+func ExecuteContext(ctx context.Context) error {
+	return rootCmd.ExecuteContext(ctx)
 }
 
 func init() {

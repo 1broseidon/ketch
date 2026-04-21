@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -115,6 +117,11 @@ func runCrawl(cmd *cobra.Command, args []string) error {
 	duration := time.Since(start)
 	printCrawlSummary(seed, count, newCount, changed, unchanged, errCount, duration)
 
+	// Ctrl+C is a deliberate user action, not a crawl failure. The summary
+	// above already reports what was collected before shutdown.
+	if err != nil && errors.Is(err, context.Canceled) {
+		return nil
+	}
 	if err != nil {
 		return fmt.Errorf("crawl failed: %w", err)
 	}
