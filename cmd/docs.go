@@ -81,7 +81,7 @@ func runDocsResolve(cmd *cobra.Command, query string, asJSON bool) error {
 	}
 
 	for _, m := range matches {
-		fmt.Printf("%s  %s  (snippets: %d)\n", m.ID, m.Name, m.CodeSnippets)
+		fmt.Printf("%s  %s  (snippets: %d, trust: %.1f)\n", m.ID, m.Title, m.TotalSnippets, m.TrustScore)
 	}
 	return nil
 }

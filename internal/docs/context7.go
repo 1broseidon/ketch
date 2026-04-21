@@ -25,13 +25,20 @@ func NewContext7(apiKey string) *Context7 {
 }
 
 // LibraryMatch is a resolved library from Context7's search endpoint.
+// Field names track the upstream schema: "title" (not "name"),
+// "totalSnippets" (not "codeSnippets"), and "trustScore" (numeric, not
+// the older string "trust").
 type LibraryMatch struct {
-	ID           string   `json:"id"`
-	Name         string   `json:"name"`
-	Description  string   `json:"description"`
-	CodeSnippets int      `json:"codeSnippets"`
-	Trust        string   `json:"trust"`
-	Versions     []string `json:"versions"`
+	ID            string   `json:"id"`
+	Title         string   `json:"title"`
+	Description   string   `json:"description"`
+	TotalSnippets int      `json:"totalSnippets"`
+	TrustScore    float64  `json:"trustScore"`
+	Versions      []string `json:"versions"`
+}
+
+type context7SearchResponse struct {
+	Results []LibraryMatch `json:"results"`
 }
 
 type context7DocsResponse struct {
@@ -73,7 +80,9 @@ func (c *Context7) Search(ctx context.Context, query string, limit int) ([]Resul
 
 // ResolveLibrary searches Context7 for libraries matching the given name.
 func (c *Context7) ResolveLibrary(ctx context.Context, name string) ([]LibraryMatch, error) {
-	u := fmt.Sprintf("https://context7.com/api/v1/search?q=%s", url.QueryEscape(name))
+	// Upstream param is `query` (was `q` on an older revision — API returns
+	// 400 "Query is required" if we send `q`).
+	u := fmt.Sprintf("https://context7.com/api/v1/search?query=%s", url.QueryEscape(name))
 
 	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
 	if err != nil {
@@ -94,12 +103,11 @@ func (c *Context7) ResolveLibrary(ctx context.Context, name string) ([]LibraryMa
 		return nil, fmt.Errorf("context7 resolve returned status %d", resp.StatusCode)
 	}
 
-	var matches []LibraryMatch
-	if err := json.NewDecoder(resp.Body).Decode(&matches); err != nil {
+	var body context7SearchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
 		return nil, fmt.Errorf("failed to decode context7 resolve response: %w", err)
 	}
-
-	return matches, nil
+	return body.Results, nil
 }
 
 // GetDocs fetches documentation snippets for a resolved library ID.
