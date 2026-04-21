@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-04-21
+
+### Fixed
+- `ketch docs --resolve <name>` was returning HTTP 400 "Query is required" after an upstream context7 API change. The query parameter was renamed (`?q=` → `?query=`), results moved into a `{"results": [...]}` envelope, and field names changed (`name`→`title`, `codeSnippets`→`totalSnippets`, `trust` string → `trustScore` float). `LibraryMatch` and the CLI print now track the current schema. `ketch docs <query>` and `--library` were unaffected.
+
 ## [0.7.0] - 2026-04-21
 
 ### Added
