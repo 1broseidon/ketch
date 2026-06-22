@@ -158,6 +158,7 @@ ketch docs --resolve "glamour"
 | `--trim` | search, scrape | false | Strip markdown formatting, keep text |
 | `--max-chars` | search, scrape | 0 | Truncate markdown to N chars (0 = off) |
 | `--no-llms-txt` | scrape | false | Disable `/llms.txt` detection for bare domains |
+| `--force-browser` | scrape | false | Always render via the configured browser (skips JS-shell detection; composes with `--raw`/`--select`) |
 | `--concurrency` | scrape | 5 | Max concurrent requests (multi-URL scrape) |
 | `--no-cache` | scrape, crawl | false | Bypass page cache |
 | `--depth` | crawl | 3 | Max BFS depth |

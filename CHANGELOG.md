@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `exa` web search backend via Exa's hosted MCP endpoint, with optional `exa_api_key` config for authenticated usage.
+- `ketch scrape --force-browser` — a deterministic escape hatch for JS-rendered pages whose meaningful content (e.g. pricing tables) is injected at runtime but whose static HTML still trips the "static" auto-detection (#12). Always renders via the configured browser, skipping JS-shell detection entirely; errors with `ExitPrecondition` when no browser is configured rather than silently falling back to HTTP. Composes with `--raw` (dump the rendered HTML) and `--select` (run the CSS selector against the rendered DOM), and skips the `/llms.txt` probe. A cache hit is honored only for a prior browser render (`source == browser`); HTTP/shell/markdown-only entries never satisfy a forced request. JS-shell *auto-detection* tuning is tracked separately. Documents the previously-undocumented `--raw` flag alongside it (#11).
 
 ## [0.9.3] - 2026-05-29
 

@@ -108,12 +108,13 @@ Explicit args take priority over stdin, so `ketch scrape url < file` uses the UR
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--raw` | `false` | Output raw HTML instead of markdown |
+| `--raw` | `false` | Output raw HTML instead of markdown. Renders via the canonical fetch path (browser only if the page already needed it), is cached lazily, skips `/llms.txt`, and cannot be combined with `--select` or `--trim` |
 | `--select` | — | CSS selector to extract (skips readability) |
 | `--trim` | `false` | Strip markdown formatting, keep text |
 | `--max-chars` | `0` | Truncate markdown to N chars (0 = off) |
 | `--concurrency` | `5` | Max concurrent requests (multi-URL) |
 | `--no-llms-txt` | `false` | Disable `/llms.txt` detection for bare domains |
+| `--force-browser` | `false` | Always render via the configured browser, skipping JS-shell auto-detection. Errors if no browser is configured. Composes with `--raw` (dump rendered HTML) and `--select` (run the selector against the rendered DOM); skips `/llms.txt` |
 | `--no-cache` | `false` | Bypass the page cache |
 
 If a browser is configured and the page is detected as JS-rendered, ketch automatically re-fetches via headless Chrome.

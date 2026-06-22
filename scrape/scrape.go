@@ -93,6 +93,16 @@ func New() *Scraper { return NewWithRewriter("", nil) }
 // NewWithBrowser creates a Scraper with browser fallback for JS-rendered pages.
 func NewWithBrowser(browserBin string) *Scraper { return NewWithRewriter(browserBin, nil) }
 
+// NewWithBrowserConn creates a Scraper backed by a pre-supplied BrowserConn,
+// bypassing binary resolution. HasBrowser reports true and getBrowser returns
+// conn directly. Used to drive browser code paths (e.g. --force-browser)
+// without a real Chrome install.
+func NewWithBrowserConn(conn BrowserConn, rw *urlrewrite.Rewriter) *Scraper {
+	s := NewWithRewriter("chrome", rw)
+	s.browser = conn
+	return s
+}
+
 // HasBrowser reports whether this scraper has browser fallback configured.
 func (s *Scraper) HasBrowser() bool {
 	return s.browserBin != ""

@@ -41,6 +41,8 @@ Default output uses YAML frontmatter + markdown (cymbal style):
 | `--minimal` | search, code, docs | false | One result per line, tab-separated url/title/snippet, no frontmatter |
 | `--select <css>` | scrape | — | Extract only elements matching CSS selector (skips readability) |
 | `--no-llms-txt` | scrape | false | Disable automatic /llms.txt detection for bare domains |
+| `--raw` | scrape | false | Output raw HTML instead of markdown (skips `/llms.txt`; incompatible with `--select`/`--trim`) |
+| `--force-browser` | scrape | false | Always render via the configured browser, skipping JS-shell auto-detection (errors without a browser); composes with `--raw` and `--select` |
 
 ### Multi-URL Scraping
 ketch scrape detects input mode automatically — no flags needed:

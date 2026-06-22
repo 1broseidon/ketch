@@ -109,3 +109,4 @@ ketch cache                                 # show cache stats
 | --select \<css\> | scrape | — | Extract only elements matching CSS selector (skips readability) |
 | --no-llms-txt | scrape | false | Disable automatic /llms.txt detection for bare domains |
 | --concurrency | scrape | 5 | Max concurrent requests for multi-URL scraping |
+| --force-browser | scrape | false | Always render via the configured browser, skipping JS-shell auto-detection (composes with --raw/--select; errors without a browser) |
