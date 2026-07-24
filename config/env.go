@@ -133,6 +133,7 @@ func envSpecs() []envSpec {
 		},
 		stringSpec("sourcegraph_url", func(c *Config) *string { return &c.SourcegraphURL }),
 		stringSpec("cookie_file", func(c *Config) *string { return &c.CookieFile }),
+		stringSpec("user_agent", func(c *Config) *string { return &c.UserAgent }),
 		stringSpec("external_pdf_to_md_converter_command",
 			func(c *Config) *string { return &c.ExternalPDFToMDConverterCommand }),
 		{

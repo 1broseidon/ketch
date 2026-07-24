@@ -88,7 +88,7 @@ keeps the full environment — it *is* ketch and needs the same config.
 
 ## Consequences
 
-- Sixteen keys are env-overridable; the full set is the `config set` key list
+- Seventeen keys are env-overridable; the full set is the `config set` key list
   minus `url_rewrites`, `spa_markers`, the four `*_api_keys` plurals, and
   `github_token`.
 - `ketch config set` round-trips the file untouched by the environment.

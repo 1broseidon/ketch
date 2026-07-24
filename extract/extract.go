@@ -50,6 +50,7 @@ func (e *Extractor) Extract(pageURL, html string) (*Result, error) {
 	if err != nil {
 		return nil, err
 	}
+	origin := originOf(u)
 
 	// Try readability first — clean article extraction
 	parser := readability.NewParser()
@@ -60,7 +61,7 @@ func (e *Extractor) Extract(pageURL, html string) (*Result, error) {
 			markdown, convErr := markdownConverter.ConvertString(buf.String())
 			markdown = strings.TrimSpace(markdown)
 			if convErr == nil && markdown != "" {
-				if raw, ok := rawTableFallback(html, markdown); ok {
+				if raw, ok := rawTableFallback(origin, html, buf.String()); ok {
 					if title := article.Title(); title != "" {
 						raw.Title = title
 					}
@@ -75,33 +76,113 @@ func (e *Extractor) Extract(pageURL, html string) (*Result, error) {
 	}
 
 	// Fallback: convert full HTML to markdown directly
-	return extractRaw(html)
+	return extractRaw(origin, html)
 }
 
-func rawTableFallback(html, markdown string) (*Result, bool) {
-	if !strings.Contains(strings.ToLower(html), "<table") || hasPipeTable(markdown) {
+// originOf renders the scheme://host prefix used to absolutize relative links
+// on conversion paths that don't go through readability.
+func originOf(u *url.URL) string {
+	if u == nil || u.Host == "" {
+		return ""
+	}
+	scheme := u.Scheme
+	if scheme == "" {
+		scheme = "https"
+	}
+	return scheme + "://" + u.Host
+}
+
+// rawTableFallback swaps readability's output for the noisier full-page
+// conversion when readability dropped data tables the page actually carries.
+// Readability is inconsistent about tables: it keeps some (a Wikipedia
+// infobox) while stripping the main data table on the same page, so a
+// presence check is not enough — we compare counts. See issue #28.
+func rawTableFallback(origin, html, readabilityHTML string) (*Result, bool) {
+	if !strings.Contains(strings.ToLower(html), "<table") {
 		return nil, false
 	}
-	raw, err := extractRaw(html)
-	if err != nil || !hasPipeTable(raw.Markdown) {
+	// Counting on the DOM rather than on rendered pipe tables lets us ignore
+	// navigation and layout tables, which would otherwise buy a page full of
+	// site chrome in exchange for a prev/next bar.
+	if countDataTables(html) <= countDataTables(readabilityHTML) {
+		return nil, false
+	}
+	raw, err := extractRaw(origin, html)
+	if err != nil {
 		return nil, false
 	}
 	return raw, true
 }
 
-func hasPipeTable(markdown string) bool {
-	return strings.HasPrefix(markdown, "|---") ||
-		strings.HasPrefix(markdown, "|:--") ||
-		strings.Contains(markdown, "\n|---") ||
-		strings.Contains(markdown, "\n|:--")
+// countDataTables counts tables carrying real tabular content, ignoring
+// layout and navigation tables.
+func countDataTables(rawHTML string) int {
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(rawHTML))
+	if err != nil {
+		return 0
+	}
+	n := 0
+	doc.Find("table").Each(func(_ int, t *goquery.Selection) {
+		if isLayoutTable(t) {
+			return
+		}
+		if t.Find("tr").Length() >= 2 && maxCols(t) >= 2 {
+			n++
+		}
+	})
+	return n
+}
+
+func isLayoutTable(t *goquery.Selection) bool {
+	if role, _ := t.Attr("role"); role == "presentation" || role == "none" {
+		return true
+	}
+	if datatable, _ := t.Attr("datatable"); datatable == "0" {
+		return true
+	}
+	if t.Closest("nav, header, footer").Length() > 0 {
+		return true
+	}
+	// A table the reader can't see isn't page content — e.g. pkg.go.dev keeps
+	// its keyboard-shortcut grid in a closed <dialog>.
+	if t.Closest("dialog, template, [hidden], [aria-hidden='true']").Length() > 0 {
+		return true
+	}
+	// DocBook-style generators label their prev/next chrome explicitly rather
+	// than wrapping it in <nav>, e.g. <table summary="Navigation header">.
+	summary, _ := t.Attr("summary")
+	class, _ := t.Attr("class")
+	return hasNavToken(summary) || hasNavToken(class)
+}
+
+func hasNavToken(s string) bool {
+	s = strings.ToLower(s)
+	for _, tok := range []string{"navigation", "navbar", "navbox", "navheader", "navfooter"} {
+		if strings.Contains(s, tok) {
+			return true
+		}
+	}
+	return false
+}
+
+func maxCols(t *goquery.Selection) int {
+	n := 0
+	t.Find("tr").Each(func(_ int, tr *goquery.Selection) {
+		if cols := tr.Find("td, th").Length(); cols > n {
+			n = cols
+		}
+	})
+	return n
 }
 
 // extractRaw converts the full HTML to markdown without readability.
 // Noisier output (includes nav, footer, etc.) but never fails on valid HTML.
-func extractRaw(html string) (*Result, error) {
+// origin absolutizes relative links, which readability would otherwise have
+// resolved for us.
+func extractRaw(origin, html string) (*Result, error) {
 	title := Title(html)
 
-	markdown, err := markdownConverter.ConvertString(html)
+	markdown, err := markdownConverter.ConvertString(html, converter.WithDomain(origin))
 	if err != nil {
 		return nil, err
 	}

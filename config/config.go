@@ -35,6 +35,7 @@ type Config struct {
 	URLRewrites                        []urlrewrite.Rule `json:"url_rewrites,omitempty"`
 	SPAMarkers                         []string          `json:"spa_markers,omitempty"`
 	CookieFile                         string            `json:"cookie_file,omitempty"` // Netscape cookies.txt path; empty = disabled
+	UserAgent                          string            `json:"user_agent,omitempty"`  // HTTP User-Agent override; empty = built-in honest default
 	ExternalPDFToMDConverterCommand    string            `json:"external_pdf_to_md_converter_command,omitempty"`
 	ExternalPDFToMDConverterTimeoutSec int               `json:"external_pdf_to_md_converter_timeout_sec"`
 }

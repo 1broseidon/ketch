@@ -56,6 +56,11 @@ func NewFromConfig(cfg *config.Config) (*Scraper, error) {
 		return nil, fmt.Errorf("invalid url_rewrites: %w", err)
 	}
 	scraper := NewWithConfig(cfg.Browser, rw, cfg.SPAMarkers)
+	ua, err := normalizeUserAgent(cfg.UserAgent)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user_agent: %w", err)
+	}
+	scraper.userAgent = ua
 	if cfg.CookieFile != "" {
 		jar, err := cookies.Load(cfg.CookieFile)
 		if err != nil {
@@ -151,11 +156,11 @@ func (s *Scraper) CachedScrapeRaw(ctx context.Context, pc PageCache, url string)
 func (s *Scraper) CachedScrapeForce(ctx context.Context, pc PageCache, url string) (*Page, error) {
 	fetchURL := s.Rewrite(url)
 	key := s.CacheKey(fetchURL)
-	content, err := s.FetchContent(ctx, fetchURL)
+	content, isPDF, err := s.classifyForForcedRender(ctx, fetchURL)
 	if err != nil {
 		return nil, err
 	}
-	if effectiveContentType(content.ContentType, content.Body) == "application/pdf" {
+	if isPDF {
 		markdown, err := s.pdfExtractor.Extract(ctx, content.Body)
 		if err != nil {
 			return nil, fmt.Errorf("PDF extraction failed for %s: %w", fetchURL, err)
@@ -193,11 +198,11 @@ func (s *Scraper) CachedScrapeForce(ctx context.Context, pc PageCache, url strin
 func (s *Scraper) CachedScrapeRawForce(ctx context.Context, pc PageCache, url string) (*Page, string, string, error) {
 	fetchURL := s.Rewrite(url)
 	key := s.CacheKey(fetchURL)
-	content, err := s.FetchContent(ctx, fetchURL)
+	_, isPDF, err := s.classifyForForcedRender(ctx, fetchURL)
 	if err != nil {
 		return nil, "", "", err
 	}
-	if effectiveContentType(content.ContentType, content.Body) == "application/pdf" {
+	if isPDF {
 		return nil, "", "", ErrPDFRawUnsupported
 	}
 	if !s.HasBrowser() {
@@ -268,6 +273,18 @@ func (s *Scraper) ScrapeSelector(ctx context.Context, rawURL, selector string, f
 // cannot turn a PDF into Chromium viewer HTML. rawURL is passed to
 // BrowserScrape, which rewrites internally; fetchURL is already rewritten.
 func (s *Scraper) fetchHTMLForSelector(ctx context.Context, rawURL, fetchURL string, forceBrowser bool) (string, error) {
+	if forceBrowser {
+		if _, isPDF, err := s.classifyForForcedRender(ctx, fetchURL); err != nil {
+			return "", fmt.Errorf("fetch failed: %w", err)
+		} else if isPDF {
+			return "", ErrPDFSelectorUnsupported
+		}
+		_, html, err := s.BrowserScrape(ctx, rawURL)
+		if err != nil {
+			return "", fmt.Errorf("browser fetch failed: %w", err)
+		}
+		return html, nil
+	}
 	content, err := s.FetchContent(ctx, fetchURL)
 	if err != nil {
 		return "", fmt.Errorf("fetch failed: %w", err)
@@ -275,15 +292,26 @@ func (s *Scraper) fetchHTMLForSelector(ctx context.Context, rawURL, fetchURL str
 	if effectiveContentType(content.ContentType, content.Body) == "application/pdf" {
 		return "", ErrPDFSelectorUnsupported
 	}
-	if forceBrowser {
-		_, html, err := s.BrowserScrape(ctx, rawURL)
-		if err != nil {
-			return "", fmt.Errorf("browser fetch failed: %w", err)
-		}
-		return html, nil
-	}
 	html, _ := s.MaybeBrowserFetch(ctx, fetchURL, string(content.Body))
 	return html, nil
+}
+
+// classifyForForcedRender probes the URL over plain HTTP purely to detect PDFs
+// before a forced browser render, so Chromium's PDF viewer chrome never
+// reaches the extractor. A failed probe is deliberately not fatal:
+// --force-browser exists to get past walls that reject ketch's HTTP client
+// (bot filters commonly answer 403), so a blocked probe falls through to the
+// browser instead of aborting the scrape. Without a browser to fall through
+// to, the probe error is the real error and is returned.
+func (s *Scraper) classifyForForcedRender(ctx context.Context, fetchURL string) (*FetchedContent, bool, error) {
+	content, err := s.FetchContent(ctx, fetchURL)
+	if err != nil {
+		if !s.HasBrowser() {
+			return nil, false, err
+		}
+		return nil, false, nil
+	}
+	return content, effectiveContentType(content.ContentType, content.Body) == "application/pdf", nil
 }
 
 // FetchLLMSTxt attempts to fetch /llms.txt anonymously. It is kept for

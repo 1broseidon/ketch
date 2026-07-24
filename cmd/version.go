@@ -6,8 +6,10 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
+	"strings"
 	"time"
 
+	"github.com/1broseidon/ketch/scrape"
 	"github.com/1broseidon/ketch/updatecheck"
 	"github.com/spf13/cobra"
 )
@@ -109,4 +111,64 @@ func init() {
 	// Cobra emits "ketch version X" for --version by default; keep it short.
 	rootCmd.SetVersionTemplate("ketch {{.Version}}\n")
 	rootCmd.AddCommand(versionCmd)
+
+	// Seed the scrape package's User-Agent version from build-time info so
+	// the honest default UA stays in sync with the binary without scrape
+	// depending on cmd. Local/dirty builds collapse to "dev" — the long
+	// module pseudo-version is honest but uselessly noisy in a UA.
+	scrape.Version = userAgentVersion()
+}
+
+// userAgentVersion returns the version token embedded in the default HTTP
+// User-Agent. Release builds (ldflags) and clean tagged `go install`s get a
+// semver; everything else is "dev".
+func userAgentVersion() string {
+	if version != "" && version != "dev" {
+		return strings.TrimPrefix(version, "v")
+	}
+	bi, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "dev"
+	}
+	mv := bi.Main.Version
+	if mv == "" || mv == "(devel)" || strings.Contains(mv, "+") {
+		return "dev"
+	}
+	// Go pseudo-versions look like vX.Y.Z-0.<timestamp>-<rev> (or
+	// vX.0.0-<timestamp>-<rev>); real pre-releases like v1.2.3-rc.1 keep
+	// their hyphenated form.
+	trimmed := strings.TrimPrefix(mv, "v")
+	if isPseudoVersion(trimmed) {
+		return "dev"
+	}
+	return trimmed
+}
+
+func isPseudoVersion(v string) bool {
+	_, rest, ok := strings.Cut(v, "-")
+	if !ok {
+		return false
+	}
+	// After the first hyphen a pseudo-version has either "0.<14 digits>" or
+	// a bare 14-digit timestamp, then another hyphen and a revision.
+	parts := strings.SplitN(rest, "-", 2)
+	if len(parts) != 2 {
+		return false
+	}
+	ts := parts[0]
+	if head, tail, cut := strings.Cut(ts, "."); cut {
+		if head != "0" {
+			return false
+		}
+		ts = tail
+	}
+	if len(ts) != 14 {
+		return false
+	}
+	for _, c := range ts {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
 }

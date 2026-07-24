@@ -11,6 +11,7 @@ import (
 	"github.com/1broseidon/ketch/config"
 	"github.com/1broseidon/ketch/cookies"
 	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/devices"
 	"github.com/go-rod/rod/lib/launcher"
 	"github.com/go-rod/rod/lib/proto"
 )
@@ -37,7 +38,12 @@ func NewBrowserConnWithCookies(binPath string, jar *cookies.Jar) (BrowserConn, e
 	if err != nil {
 		return nil, fmt.Errorf("launch browser: %w", err)
 	}
-	b := rod.New().ControlURL(u)
+	// Rod emulates devices.LaptopWithMDPIScreen by default, which overrides the
+	// user agent with a hardcoded macOS Chrome 114 string. That advertises a
+	// stale, widely-blocklisted build on a platform we're usually not running,
+	// and bot filters answer 403. Clear the emulation so pages see the real
+	// browser instead.
+	b := rod.New().ControlURL(u).DefaultDevice(devices.Clear)
 	if err := b.Connect(); err != nil {
 		l.Kill()
 		return nil, fmt.Errorf("connect browser: %w", err)

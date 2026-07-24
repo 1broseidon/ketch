@@ -11,6 +11,7 @@ import (
 	"github.com/1broseidon/ketch/config"
 	"github.com/1broseidon/ketch/cookies"
 	"github.com/1broseidon/ketch/extract"
+	"github.com/1broseidon/ketch/scrape"
 	"github.com/1broseidon/ketch/urlrewrite"
 	"github.com/spf13/cobra"
 )
@@ -36,6 +37,7 @@ type configInfo struct {
 	CacheTTL                           string            `json:"cache_ttl"`
 	Browser                            string            `json:"browser,omitempty"`
 	CookieFile                         string            `json:"cookie_file,omitempty"`
+	UserAgent                          string            `json:"user_agent,omitempty"`
 	CodeBackend                        string            `json:"code_backend"`
 	DocsBackend                        string            `json:"docs_backend"`
 	Context7APIKeySet                  bool              `json:"context7_api_key_set"`
@@ -119,6 +121,7 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 		CacheTTL:                           c.CacheTTL,
 		Browser:                            c.Browser,
 		CookieFile:                         c.CookieFile,
+		UserAgent:                          effectiveUserAgent(c),
 		CodeBackend:                        c.CodeBackend,
 		DocsBackend:                        c.DocsBackend,
 		Context7APIKeySet:                  c.Context7APIKey != "",
@@ -257,12 +260,14 @@ func applyConfigSet(c *config.Config, key, value string) error {
 		return setSPAMarkers(c, value)
 	case "cookie_file":
 		return setCookieFile(c, value)
+	case "user_agent":
+		return setUserAgent(c, value)
 	case "external_pdf_to_md_converter_command":
 		return setExternalPDFConverterCommand(c, value)
 	case "external_pdf_to_md_converter_timeout_sec":
 		return setExternalPDFConverterTimeout(c, value)
 	default:
-		return exitErrf(ExitValidation, "unknown key: %s (valid: backend, searxng_url, brave_api_key, brave_api_keys, exa_api_key, exa_api_keys, firecrawl_api_key, firecrawl_api_keys, keenable_api_key, keenable_api_keys, limit, cache_ttl, browser, code_backend, docs_backend, context7_api_key, sourcegraph_url, github_token, url_rewrites, spa_markers, cookie_file, external_pdf_to_md_converter_command, external_pdf_to_md_converter_timeout_sec)", key)
+		return exitErrf(ExitValidation, "unknown key: %s (valid: backend, searxng_url, brave_api_key, brave_api_keys, exa_api_key, exa_api_keys, firecrawl_api_key, firecrawl_api_keys, keenable_api_key, keenable_api_keys, limit, cache_ttl, browser, code_backend, docs_backend, context7_api_key, sourcegraph_url, github_token, url_rewrites, spa_markers, cookie_file, user_agent, external_pdf_to_md_converter_command, external_pdf_to_md_converter_timeout_sec)", key)
 	}
 	return nil
 }
@@ -328,6 +333,27 @@ func setCookieFile(c *config.Config, value string) error {
 	}
 	c.CookieFile = value
 	return nil
+}
+
+// setUserAgent persists an HTTP User-Agent override. Empty clears it so the
+// built-in honest default is used. Control characters are rejected — they
+// cannot appear in an HTTP header value.
+func setUserAgent(c *config.Config, value string) error {
+	if strings.ContainsAny(value, "\r\n\x00") {
+		return exitErrf(ExitValidation, "user_agent must not contain control characters")
+	}
+	c.UserAgent = strings.TrimSpace(value)
+	return nil
+}
+
+// effectiveUserAgent returns the User-Agent ketch will send: an operator
+// override when set, otherwise the built-in honest default. Surfaced in
+// `ketch config` so agents can diagnose bot-filter 403s without guessing.
+func effectiveUserAgent(c config.Config) string {
+	if ua := strings.TrimSpace(c.UserAgent); ua != "" {
+		return ua
+	}
+	return scrape.DefaultUserAgent()
 }
 
 func setURLRewrites(c *config.Config, value string) error {

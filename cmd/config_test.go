@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/1broseidon/ketch/config"
+	"github.com/1broseidon/ketch/scrape"
 )
 
 func TestApplyConfigSetAPIKeysRoundTrip(t *testing.T) {
@@ -254,6 +255,62 @@ func TestBuildConfigInfoShowsCookieFilePathNoValues(t *testing.T) {
 	if !strings.Contains(string(data), "cookie_file") {
 		t.Fatal("discovery payload should carry the cookie_file path")
 	}
+}
+
+func TestApplyConfigSetUserAgent(t *testing.T) {
+	t.Run("sets override", func(t *testing.T) {
+		c := config.Defaults()
+		if err := applyConfigSet(&c, "user_agent", "ketch-test/1 (+https://example.com)"); err != nil {
+			t.Fatalf("unexpected err: %v", err)
+		}
+		if c.UserAgent != "ketch-test/1 (+https://example.com)" {
+			t.Fatalf("UserAgent = %q", c.UserAgent)
+		}
+	})
+
+	t.Run("rejects control characters", func(t *testing.T) {
+		c := config.Defaults()
+		err := applyConfigSet(&c, "user_agent", "ketch/1\nX-Injected: 1")
+		if err == nil {
+			t.Fatal("expected validation error")
+		}
+		var exitErr *ExitError
+		if !errors.As(err, &exitErr) || exitErr.Code != ExitValidation {
+			t.Fatalf("error = %v, want exit %d", err, ExitValidation)
+		}
+		if c.UserAgent != "" {
+			t.Fatalf("bad value changed config to %q", c.UserAgent)
+		}
+	})
+
+	t.Run("empty clears", func(t *testing.T) {
+		c := config.Defaults()
+		c.UserAgent = "custom/1"
+		if err := applyConfigSet(&c, "user_agent", ""); err != nil {
+			t.Fatalf("unexpected err: %v", err)
+		}
+		if c.UserAgent != "" {
+			t.Fatalf("UserAgent = %q, want empty", c.UserAgent)
+		}
+	})
+}
+
+func TestBuildConfigInfoShowsEffectiveUserAgent(t *testing.T) {
+	t.Run("default when unset", func(t *testing.T) {
+		info := buildConfigInfo(config.Defaults(), "/tmp/config.json")
+		if info.UserAgent != scrape.DefaultUserAgent() {
+			t.Fatalf("UserAgent = %q, want %q", info.UserAgent, scrape.DefaultUserAgent())
+		}
+	})
+
+	t.Run("override when set", func(t *testing.T) {
+		c := config.Defaults()
+		c.UserAgent = "custom/1"
+		info := buildConfigInfo(c, "/tmp/config.json")
+		if info.UserAgent != "custom/1" {
+			t.Fatalf("UserAgent = %q, want custom/1", info.UserAgent)
+		}
+	})
 }
 
 func TestApplyConfigSetUnknownKey(t *testing.T) {

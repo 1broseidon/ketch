@@ -45,6 +45,7 @@ func init() {
 		"random provider with fallback: comma-separated list, or bare/=all for every usable backend (use the = form, e.g. --random=brave,exa)")
 	searchCmd.Flags().Lookup("random").NoOptDefVal = "all"
 	searchCmd.Flags().String("cookie-file", "", "Netscape cookies.txt jar for --scrape fetches; matching cookies are sent with each fetch (overrides config cookie_file)")
+	searchCmd.Flags().String("user-agent", "", "HTTP User-Agent override for --scrape fetches (overrides config user_agent; empty falls back to the built-in default)")
 }
 
 func runSearch(cmd *cobra.Command, args []string) error {

@@ -42,6 +42,7 @@ func init() {
 	scrapeCmd.Flags().Int("concurrency", 5, "max concurrent requests for multi-URL scraping")
 	scrapeCmd.Flags().Bool("force-browser", false, "always render via the configured browser, skipping JS-shell auto-detection")
 	scrapeCmd.Flags().String("cookie-file", "", "Netscape cookies.txt jar; matching cookies are sent with each fetch (overrides config cookie_file)")
+	scrapeCmd.Flags().String("user-agent", "", "HTTP User-Agent override (overrides config user_agent; empty falls back to the built-in default)")
 }
 
 func runScrape(cmd *cobra.Command, args []string) error {
@@ -164,15 +165,19 @@ func readLinesFromFile(path string) ([]string, error) {
 	return readLines(f), nil
 }
 
-// newScraper builds a Scraper from cfg, honoring a --cookie-file flag when the
-// invoking command defines one (flag overrides config; an explicit empty value
-// disables cookies for the run). Construction failures — including a bad jar
-// path — classify as precondition errors. Returned scraper must be Closed by
-// the caller.
+// newScraper builds a Scraper from cfg, honoring --cookie-file / --user-agent
+// flags when the invoking command defines them (flag overrides config; an
+// explicit empty --cookie-file disables cookies for the run, an explicit
+// empty --user-agent falls back to the built-in default). Construction
+// failures — including a bad jar path — classify as precondition errors.
+// Returned scraper must be Closed by the caller.
 func newScraper(cmd *cobra.Command) (*scrape.Scraper, error) {
-	c := cfg // shallow copy; only CookieFile is overridden
+	c := cfg // shallow copy; only CookieFile / UserAgent are overridden
 	if f := cmd.Flags().Lookup("cookie-file"); f != nil && f.Changed {
 		c.CookieFile = f.Value.String()
+	}
+	if f := cmd.Flags().Lookup("user-agent"); f != nil && f.Changed {
+		c.UserAgent = f.Value.String()
 	}
 	s, err := scrape.NewFromConfig(&c)
 	if err != nil {

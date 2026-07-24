@@ -86,6 +86,7 @@ type Scraper struct {
 	browser      BrowserConn
 	rewriter     *urlrewrite.Rewriter
 	jar          *cookies.Jar
+	userAgent    string
 }
 
 // NewWithRewriter creates a Scraper with an optional browser binary and
@@ -100,6 +101,7 @@ func NewWithRewriter(browserBin string, rw *urlrewrite.Rewriter) *Scraper {
 		detector:     extract.NewDetector(nil),
 		browserBin:   browserBin,
 		rewriter:     rw,
+		userAgent:    DefaultUserAgent(),
 	}
 }
 
@@ -478,7 +480,11 @@ func (s *Scraper) fetchContent(ctx context.Context, rawURL, etag, lastModified s
 	if err != nil {
 		return nil, nil, false, err
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; ketch/1.0)")
+	ua := s.userAgent
+	if ua == "" {
+		ua = DefaultUserAgent()
+	}
+	req.Header.Set("User-Agent", ua)
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/pdf")
 	if etag != "" {
 		req.Header.Set("If-None-Match", etag)
