@@ -290,6 +290,12 @@ ketch browser install
 # → Installed to: /home/user/.cache/ketch/browser/...
 ```
 
+If an install fails partway through, rerun it — the download directory is cleared
+on each attempt. On older versions a partial download had to be removed by hand
+(`rm -rf ~/.cache/ketch/browser`, or `~/Library/Caches/ketch/browser` on macOS).
+If the download is blocked entirely, point ketch at an existing Chrome instead:
+`ketch config set browser <path>`.
+
 ## ketch config
 
 Show or manage configuration.

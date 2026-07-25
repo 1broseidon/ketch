@@ -131,6 +131,14 @@ func (r *rodConn) Close() {
 }
 
 // InstallBrowser downloads Chromium to the ketch cache directory.
+//
+// The revision directory is removed before downloading. Extraction is not
+// atomic: an interrupted download leaves a partial tree behind, and the next
+// attempt fails on it rather than replacing it — either because the unzip hits
+// existing symlinks ("file exists") or because the leftover confuses the
+// single-directory check during extraction. Both surface as errors that look
+// unrelated to the real cause, so retries appear to fail differently each time.
+// Clearing first makes every install start from a known state.
 func InstallBrowser() (string, error) {
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
@@ -138,8 +146,14 @@ func InstallBrowser() (string, error) {
 	}
 	b := launcher.NewBrowser()
 	b.RootDir = filepath.Join(cacheDir, "ketch", "browser")
+
+	if err := os.RemoveAll(b.Dir()); err != nil {
+		return "", fmt.Errorf("clear browser cache %s: %w", b.Dir(), err)
+	}
+
 	if err := b.Download(); err != nil {
-		return "", err
+		return "", fmt.Errorf("download browser to %s: %w (remove that directory and retry, "+
+			"or point ketch at an existing Chrome with: ketch config set browser <path>)", b.RootDir, err)
 	}
 	return b.BinPath(), nil
 }
