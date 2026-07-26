@@ -16,6 +16,7 @@ import (
 type Config struct {
 	Backend                            string            `json:"backend"`
 	SearxngURL                         string            `json:"searxng_url"`
+	DegoogURL                          string            `json:"degoog_url"`
 	BraveAPIKey                        string            `json:"brave_api_key,omitempty"`
 	BraveAPIKeys                       []string          `json:"brave_api_keys,omitempty"`
 	ExaAPIKey                          string            `json:"exa_api_key,omitempty"`
@@ -110,6 +111,7 @@ func Defaults() Config {
 	return Config{
 		Backend:                            "brave",
 		SearxngURL:                         "http://localhost:8081",
+		DegoogURL:                          "http://localhost:4444",
 		Limit:                              5,
 		CacheTTL:                           "72h",
 		CodeBackend:                        "grepapp",
@@ -121,7 +123,7 @@ func Defaults() Config {
 
 // AvailableBackends returns the list of known search backends.
 func AvailableBackends() []string {
-	return []string{"brave", "ddg", "searxng", "exa", "firecrawl", "keenable"}
+	return []string{"brave", "ddg", "searxng", "degoog", "exa", "firecrawl", "keenable"}
 }
 
 // AvailableCodeBackends returns the list of known code search backends.

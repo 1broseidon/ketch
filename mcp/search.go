@@ -14,11 +14,12 @@ import (
 // default backend/limit) stay operator-configured.
 type SearchInput struct {
 	Query      string   `json:"query" jsonschema:"the search query"`
-	Backend    string   `json:"backend,omitempty" jsonschema:"search backend: brave, ddg, searxng, exa, firecrawl, or keenable (default: the configured backend)"`
+	Backend    string   `json:"backend,omitempty" jsonschema:"search backend: brave, ddg, searxng, degoog, exa, firecrawl, or keenable (default: the configured backend)"`
 	Multi      []string `json:"multi,omitempty" jsonschema:"federated search: backends to query and rank-fuse (reciprocal rank fusion), e.g. [\"brave\",\"ddg\"]; use [\"all\"] for every usable backend; mutually exclusive with backend and random; results gain a backends field showing which engines returned each"`
 	Random     []string `json:"random,omitempty" jsonschema:"random provider selection with sequential fallback on errors, e.g. [\"brave\",\"ddg\"]; use [\"all\"] for every usable backend; mutually exclusive with backend and multi"`
 	Limit      int      `json:"limit,omitempty" jsonschema:"max number of results (default: the configured limit)"`
 	SearxngURL string   `json:"searxng_url,omitempty" jsonschema:"override the configured SearXNG instance URL (searxng backend only)"`
+	DegoogURL  string   `json:"degoog_url,omitempty" jsonschema:"override the configured degoog instance URL (degoog backend only)"`
 	Scrape     bool     `json:"scrape,omitempty" jsonschema:"also fetch each result URL and fill its content field with extracted markdown"`
 	Trim       bool     `json:"trim,omitempty" jsonschema:"strip markdown formatting from scraped content, keep text only (with scrape)"`
 	MaxChars   int      `json:"max_chars,omitempty" jsonschema:"truncate each result's scraped content to N characters (with scrape; 0 = disabled)"`
@@ -74,7 +75,7 @@ func (s *Server) runSearch(ctx context.Context, in SearchInput) (SearchOutput, e
 	if backend == "" {
 		backend = s.cfg.Backend
 	}
-	searcher, err := search.NewFromConfig(s.cfg, backend, in.SearxngURL)
+	searcher, err := search.NewFromConfig(s.cfg, backend, in.SearxngURL, in.DegoogURL)
 	if err != nil {
 		return SearchOutput{}, backendErrf(err, search.ErrUnknownBackend)
 	}
@@ -109,7 +110,7 @@ func (s *Server) runMultiSearch(ctx context.Context, in SearchInput, limit int) 
 		names = []string{"all"}
 	}
 
-	m, err := search.NewMultiFromConfig(s.cfg, names, in.SearxngURL)
+	m, err := search.NewMultiFromConfig(s.cfg, names, in.SearxngURL, in.DegoogURL)
 	if err != nil {
 		return SearchOutput{}, backendErrf(err, search.ErrUnknownBackend)
 	}
@@ -152,7 +153,7 @@ func (s *Server) runRandomSearch(ctx context.Context, in SearchInput, limit int)
 		names = []string{"all"}
 	}
 
-	randomSearch, err := search.NewRandomFromConfig(s.cfg, names, in.SearxngURL)
+	randomSearch, err := search.NewRandomFromConfig(s.cfg, names, in.SearxngURL, in.DegoogURL)
 	if err != nil {
 		return SearchOutput{}, backendErrf(err, search.ErrUnknownBackend)
 	}

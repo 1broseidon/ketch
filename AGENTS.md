@@ -22,7 +22,7 @@ cmd/
   mcp.go                     MCP command: `mcp serve` runs the MCP server over stdio
   proc_unix.go               Unix process management (detach, signals)
   proc_windows.go            Windows process management stub
-search/                      Searcher interface + Brave/DDG/SearXNG/EXA/Firecrawl/Keenable backends; NewFromConfig owns the backend switch for cmd/ and mcp/. multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), canonical.go the URL dedup keys
+search/                      Searcher interface + Brave/DDG/SearXNG/Degoog/EXA/Firecrawl/Keenable backends; NewFromConfig owns the backend switch for cmd/ and mcp/. multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), canonical.go the URL dedup keys
 code/                        code.Searcher interface + GrepApp/Sourcegraph/GitHub backends; NewFromConfig owns the backend switch
 docs/                        docs.Searcher interface + Context7 backend (FTS5 local is an unimplemented stub); NewFromConfig owns the backend switch
 mcp/                         MCP server (search/code/docs/scrape/crawl tools) over the go-sdk mcp package; Server struct holds the shared scraper + cache, tools call the same NewFromConfig constructors as the CLI
@@ -56,7 +56,7 @@ Reusable packages live at the module root so external programs can `import "gith
 `ketch mcp serve` runs an MCP (Model Context Protocol) server over stdio, exposing five tools: `search`, `code`, `docs`, `scrape`, and `crawl`. Tool handlers call the same packages as the Cobra commands, through the same config-driven constructors (`search.NewFromConfig` etc.), and resolve backends/API keys from the same `~/.config/ketch/` config — an agent talking MCP sees exactly what a human using the CLI sees.
 
 - **Lifecycle**: the go-sdk dispatches tool calls concurrently, so process-lifetime resources — the headless-browser scraper, the bbolt page-cache handle, the compiled URL rewriter — are constructed once in `mcp.NewServer`, shared by all calls, and released by `Server.Close` when `serve` exits. Never construct these per call.
-- **Option parity**: each tool exposes the per-invocation options of its CLI command (`scrape` gets `selector`/`raw`/`force_browser`/`no_llms_txt`/`trim`/`max_chars`/`no_cache` plus a `urls` batch input; `search` gets `searxng_url`, `scrape`, and `multi` (federated RRF search, with an additive `errors` map for per-backend failures); `crawl` gets `depth`/`sitemap`/`allow`/`deny`/`max_pages`). Config-level settings (API keys, cache TTL, browser binary) stay operator-configured and are never tool params.
+- **Option parity**: each tool exposes the per-invocation options of its CLI command (`scrape` gets `selector`/`raw`/`force_browser`/`no_llms_txt`/`trim`/`max_chars`/`no_cache` plus a `urls` batch input; `search` gets `searxng_url`, `degoog_url`, `scrape`, and `multi` (federated RRF search, with an additive `errors` map for per-backend failures); `crawl` gets `depth`/`sitemap`/`allow`/`deny`/`max_pages`). Config-level settings (API keys, cache TTL, browser binary) stay operator-configured and are never tool params.
 - **Error taxonomy**: every tool error starts with a stable machine-readable prefix mirroring the CLI exit codes — `[validation]` (exit 2), `[not_found]` (3), `[upstream]` (4), `[precondition]` (5), `[cancelled]` (6) — so agents can tell "fix your input" from "retry later". MCP has no structured tool-error field; the prefix is the contract.
 - **Bounded crawl**: the `crawl` tool is synchronous and capped (`max_pages` default 30, hard cap 100, 3-minute wall clock); partial results return with `stopped: "max_pages" | "timeout"`. Detached background crawls (`ketch crawl --background`, status/stop) remain CLI-only.
 - **CLI-only operator commands**: `config`, `cache`, and `doctor` are deliberately not MCP tools. They are operator actions (change credentials, clear state, diagnose the installation), not research surfaces — an agent that needs to know whether a backend is ready reads `ketch config`'s `*_set` booleans or the operator runs `ketch doctor`. Don't add them to the server.
@@ -77,6 +77,7 @@ Reusable packages live at the module root so external programs can `import "gith
 ketch search "query"                        # search, return results
 ketch search "query" --scrape               # search + fetch full content
 ketch search "query" -b searxng             # use SearXNG backend
+ketch search "query" -b degoog              # use degoog backend
 ketch search "query" -b exa                 # use Exa hosted MCP backend
 ketch search "query" -b firecrawl           # use Firecrawl v2 search API
 ketch search "query" -b keenable            # use Keenable backend (keyless by default)
@@ -109,13 +110,14 @@ ketch mcp serve                             # run as an MCP server over stdio (s
 ## Flags
 
 | Flag | Scope | Default | Description |
-|------|-------|---------|-------------|
+| ------ | ------- | --------- | ------------- |
 | --json | global | false | JSON output |
-| --backend, -b | search | brave | Search backend (brave/ddg/searxng/exa/firecrawl/keenable) |
+| --backend, -b | search | brave | Search backend (brave/ddg/searxng/degoog/exa/firecrawl/keenable) |
 | --multi | search | — | Federated search: comma list or bare/`=all` for every usable backend; RRF-fused, dedup'd, mutually exclusive with --backend (use the `=` form for a list) |
 | --limit, -l | search | 5 | Max results |
 | --scrape | search | false | Fetch full content |
-| --searxng-url | search | http://localhost:8081 | SearXNG URL |
+| --searxng-url | search | <http://localhost:8081> | SearXNG URL |
+| --degoog-url | search | <http://localhost:4444> | degoog URL |
 | --raw | scrape | false | Raw HTML output |
 | --no-cache | scrape, crawl | false | Bypass page cache |
 | --depth | crawl | 3 | Max BFS depth |

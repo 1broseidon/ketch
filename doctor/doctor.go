@@ -108,6 +108,7 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 	keenableKeys := cfg.KeenableKeys()
 	c7Key := cfg.Context7APIKey
 	searxngURL := cfg.SearxngURL
+	degoogURL := cfg.DegoogURL
 	sourcegraphURL := cfg.SourcegraphURL
 	browser := cfg.Browser
 	cookieFile := cfg.CookieFile
@@ -124,6 +125,9 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 		}},
 		{"search", "searxng", cfg.Backend == "searxng", func(ctx context.Context) (Status, string) {
 			return probeSearxng(ctx, client, searxngURL)
+		}},
+		{"search", "degoog", cfg.Backend == "degoog", func(ctx context.Context) (Status, string) {
+			return probeDegoog(ctx, client, degoogURL)
 		}},
 		{"search", "exa", cfg.Backend == "exa" || len(exaKeys) > 0, func(ctx context.Context) (Status, string) {
 			return probeKeyPool(exaKeys, func(key string) (Status, string) {

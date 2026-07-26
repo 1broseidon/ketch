@@ -10,7 +10,7 @@ func TestNewFromConfigBraveKeyCompatibility(t *testing.T) {
 	t.Run("singular only", func(t *testing.T) {
 		cfg := config.Defaults()
 		cfg.BraveAPIKey = "legacy"
-		searcher, err := NewFromConfig(&cfg, "brave", "")
+		searcher, err := NewFromConfig(&cfg, "brave", "", "")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -23,7 +23,7 @@ func TestNewFromConfigBraveKeyCompatibility(t *testing.T) {
 	t.Run("plural only", func(t *testing.T) {
 		cfg := config.Defaults()
 		cfg.BraveAPIKeys = []string{"one", "two"}
-		searcher, err := NewFromConfig(&cfg, "brave", "")
+		searcher, err := NewFromConfig(&cfg, "brave", "", "")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -35,7 +35,7 @@ func TestNewFromConfigBraveKeyCompatibility(t *testing.T) {
 
 	t.Run("neither", func(t *testing.T) {
 		cfg := config.Defaults()
-		if _, err := NewFromConfig(&cfg, "brave", ""); err == nil {
+		if _, err := NewFromConfig(&cfg, "brave", "", ""); err == nil {
 			t.Fatal("expected a missing-key precondition error")
 		}
 	})
@@ -49,7 +49,7 @@ func TestNewFromConfigBuildsEveryEffectiveKeyPool(t *testing.T) {
 	cfg.KeenableAPIKey, cfg.KeenableAPIKeys = "keenable-legacy", []string{"keenable-new"}
 
 	for _, backend := range []string{"brave", "exa", "firecrawl", "keenable"} {
-		searcher, err := NewFromConfig(&cfg, backend, "")
+		searcher, err := NewFromConfig(&cfg, backend, "", "")
 		if err != nil {
 			t.Fatalf("%s: %v", backend, err)
 		}
