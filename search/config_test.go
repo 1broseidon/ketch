@@ -90,3 +90,63 @@ func TestExportedBackendConstructorsKeepSingleKeyCompatibility(t *testing.T) {
 		}
 	}
 }
+
+func TestNewFromConfigFirecrawlURL(t *testing.T) {
+	t.Run("cloud requires key", func(t *testing.T) {
+		cfg := config.Defaults()
+		if _, err := NewFromConfig(&cfg, "firecrawl", ""); err == nil {
+			t.Fatal("expected missing-key error for hosted Firecrawl")
+		}
+	})
+
+	t.Run("self-hosted allows empty key", func(t *testing.T) {
+		cfg := config.Defaults()
+		cfg.FirecrawlURL = "http://localhost:3002"
+		searcher, err := NewFromConfig(&cfg, "firecrawl", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		backend, ok := searcher.(*Firecrawl)
+		if !ok {
+			t.Fatalf("unexpected type %T", searcher)
+		}
+		if backend.keys.size() != 0 {
+			t.Fatalf("keys = %d, want 0", backend.keys.size())
+		}
+		if got := backend.endpoint; got != "http://localhost:3002/v2/search" {
+			t.Fatalf("endpoint = %q, want local /v2/search", got)
+		}
+	})
+
+	t.Run("custom base with key", func(t *testing.T) {
+		cfg := config.Defaults()
+		cfg.FirecrawlURL = "https://fc.example.com/"
+		cfg.FirecrawlAPIKey = "k"
+		searcher, err := NewFromConfig(&cfg, "firecrawl", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		backend := searcher.(*Firecrawl)
+		if got := backend.endpoint; got != "https://fc.example.com/v2/search" {
+			t.Fatalf("endpoint = %q", got)
+		}
+	})
+}
+
+func TestFirecrawlSearchURL(t *testing.T) {
+	tests := []struct {
+		base string
+		want string
+	}{
+		{"", config.DefaultFirecrawlURL + "/v2/search"},
+		{"https://api.firecrawl.dev", config.DefaultFirecrawlURL + "/v2/search"},
+		{"https://api.firecrawl.dev/", config.DefaultFirecrawlURL + "/v2/search"},
+		{"http://localhost:3002", "http://localhost:3002/v2/search"},
+		{"  http://fc.local/  ", "http://fc.local/v2/search"},
+	}
+	for _, tc := range tests {
+		if got := firecrawlSearchURL(tc.base); got != tc.want {
+			t.Errorf("firecrawlSearchURL(%q) = %q, want %q", tc.base, got, tc.want)
+		}
+	}
+}

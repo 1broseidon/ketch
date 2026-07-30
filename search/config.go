@@ -37,10 +37,12 @@ func NewFromConfig(cfg *config.Config, backend, searxngURL string) (Searcher, er
 		return newEXAWithKeys(cfg.ExaKeys()), nil
 	case "firecrawl":
 		keys := cfg.FirecrawlKeys()
-		if len(keys) == 0 {
+		// Hosted Firecrawl requires a key; self-hosted instances often run
+		// without auth, so a custom firecrawl_url may omit the key.
+		if len(keys) == 0 && cfg.IsDefaultFirecrawlURL() {
 			return nil, fmt.Errorf("firecrawl: API key not set (get one free at https://firecrawl.dev then: ketch config set firecrawl_api_key <key>)")
 		}
-		return newFirecrawlWithKeys(keys), nil
+		return newFirecrawlWithKeys(keys, cfg.EffectiveFirecrawlURL()), nil
 	case "keenable":
 		return newKeenableWithKeys(cfg.KeenableKeys()), nil
 	default:

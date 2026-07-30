@@ -28,7 +28,7 @@ The two transports expose the same options under different spellings. Both direc
 
 ## search
 
-- Backends: `brave` (default when unconfigured; free API key), `ddg` (zero setup; rate-limits readily under fan-out), `searxng` (self-hosted; needs a JSON-enabled instance — see the setup verb), `exa` (zero config), `firecrawl` (Firecrawl v2 search API; needs `firecrawl_api_key`), `keenable` (keyless by default; optional `keenable_api_key` lifts the rate limit).
+- Backends: `brave` (default when unconfigured; free API key), `ddg` (zero setup; rate-limits readily under fan-out), `searxng` (self-hosted; needs a JSON-enabled instance — see the setup verb), `exa` (zero config), `firecrawl` (Firecrawl v2 search API; hosted needs `firecrawl_api_key`, self-hosted via `firecrawl_url`), `keenable` (keyless by default; optional `keenable_api_key` lifts the rate limit).
 - The effective default backend is operator-configured: **omit `backend` to use it**; `ketch config` shows which it is.
 - `--scrape` / `scrape: true` fetches each result's full content — budget it exactly like a scrape (`max_chars`, `trim`).
 - `--minimal` (CLI): one result per line, tab-separated url/title/snippet (a 4th backends column is appended under `--multi` for plain search; `--scrape --minimal` keeps 3 columns).
@@ -86,7 +86,7 @@ A missing-key call fails with `[precondition]` / exit 5 and an error message tha
 - File: `~/.config/ketch/config.json`. Flags always override config values.
 - `ketch config` is the one discovery call: effective settings plus `available_backends`, `available_code_backends`, `available_doc_backends`, as JSON. Never probe env vars instead.
 - **Blind spots:** older builds do not report whether search/docs API keys are set (`github_token_source` is the exception; newer builds add key-presence booleans like `brave_api_key_set`), and no build reports reachability. To know a surface works, probe it — `ketch doctor` when available, else the setup verb's probe table.
-- Keys (from README and `ketch config` output): `backend`, `code_backend`, `docs_backend`, `limit`, `searxng_url`, `sourcegraph_url`, `brave_api_key`, `context7_api_key`, `github_token`, `exa_api_key`, `firecrawl_api_key`, `keenable_api_key`, `browser`, `cache_ttl`, `url_rewrites`, `spa_markers`.
+- Keys (from README and `ketch config` output): `backend`, `code_backend`, `docs_backend`, `limit`, `searxng_url`, `sourcegraph_url`, `brave_api_key`, `context7_api_key`, `github_token`, `exa_api_key`, `firecrawl_api_key`, `firecrawl_url`, `keenable_api_key`, `browser`, `cache_ttl`, `url_rewrites`, `spa_markers`.
 - `KETCH_CONFIG` is **not** supported. For test isolation, override `HOME` / `XDG_CONFIG_HOME`.
 
 ## Cache

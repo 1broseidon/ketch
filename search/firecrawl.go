@@ -9,26 +9,38 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/1broseidon/ketch/config"
 	"github.com/1broseidon/ketch/httpx"
 )
 
-// firecrawlSearchEndpoint is the Firecrawl v2 search API. See
-// https://docs.firecrawl.dev/api-reference/endpoint/search.
-const firecrawlSearchEndpoint = "https://api.firecrawl.dev/v2/search"
-
 // Firecrawl searches the web via the Firecrawl v2 search API.
 type Firecrawl struct {
-	keys   keyPool
-	client *http.Client
+	keys     keyPool
+	client   *http.Client
+	endpoint string // full POST URL (base + /v2/search)
 }
 
-// NewFirecrawl creates a new Firecrawl search backend.
+// NewFirecrawl creates a new Firecrawl search backend against the hosted API.
 func NewFirecrawl(apiKey string) *Firecrawl {
-	return newFirecrawlWithKeys([]string{apiKey})
+	return newFirecrawlWithKeys([]string{apiKey}, config.DefaultFirecrawlURL)
 }
 
-func newFirecrawlWithKeys(keys []string) *Firecrawl {
-	return &Firecrawl{keys: newKeyPool(keys), client: httpx.Default()}
+func newFirecrawlWithKeys(keys []string, baseURL string) *Firecrawl {
+	return &Firecrawl{
+		keys:     newKeyPool(keys),
+		client:   httpx.Default(),
+		endpoint: firecrawlSearchURL(baseURL),
+	}
+}
+
+// firecrawlSearchURL joins a Firecrawl API base with the v2 search path.
+// Trailing slashes on base are stripped; an empty base uses the hosted default.
+func firecrawlSearchURL(base string) string {
+	base = strings.TrimRight(strings.TrimSpace(base), "/")
+	if base == "" {
+		base = config.DefaultFirecrawlURL
+	}
+	return base + "/v2/search"
 }
 
 type firecrawlRequest struct {
@@ -117,12 +129,18 @@ func (f *Firecrawl) Search(ctx context.Context, query string, limit int) ([]Resu
 }
 
 func (f *Firecrawl) request(ctx context.Context, body []byte, key string) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, firecrawlSearchEndpoint, bytes.NewReader(body))
+	endpoint := f.endpoint
+	if endpoint == "" {
+		endpoint = firecrawlSearchURL("")
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+key)
+	if key != "" {
+		req.Header.Set("Authorization", "Bearer "+key)
+	}
 	resp, err := f.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("firecrawl request failed: %w", err)

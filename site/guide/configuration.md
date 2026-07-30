@@ -25,6 +25,7 @@ The discovery payload:
   "exa_api_keys_count": 0,
   "firecrawl_api_key_set": false,
   "firecrawl_api_keys_count": 0,
+  "firecrawl_url": "https://api.firecrawl.dev",
   "keenable_api_key_set": false,
   "keenable_api_keys_count": 0,
   "limit": 5,
@@ -62,6 +63,7 @@ ketch config set brave_api_keys '["BSA-key-1","BSA-key-2"]'   # multi-key pool (
 ketch config set searxng_url http://my-searxng:8080
 ketch config set exa_api_key exa...
 ketch config set firecrawl_api_key fc-...
+ketch config set firecrawl_url http://localhost:3002
 ketch config set keenable_api_key keen_...
 ketch config set limit 10
 ketch config set cache_ttl 4h
@@ -86,8 +88,9 @@ ketch config set github_token ghp_...
 | `brave_api_keys` | — | Additional Brave keys (JSON array) — see [multiple keys](#multiple-api-keys-per-provider) |
 | `exa_api_key` | — | Optional Exa API key for authenticated hosted MCP usage |
 | `exa_api_keys` | — | Additional Exa keys (JSON array) |
-| `firecrawl_api_key` | — | [Firecrawl](https://docs.firecrawl.dev) API key (required for `-b firecrawl`) |
+| `firecrawl_api_key` | — | [Firecrawl](https://docs.firecrawl.dev) API key (required for hosted `-b firecrawl`; optional for self-hosted) |
 | `firecrawl_api_keys` | — | Additional Firecrawl keys (JSON array) |
+| `firecrawl_url` | `https://api.firecrawl.dev` | Firecrawl API base URL (self-hosted override; ketch appends `/v2/search`) |
 | `keenable_api_key` | — | Optional Keenable API key; keyless by default, a key lifts the rate limit ([console](https://keenable.ai/console)) |
 | `keenable_api_keys` | — | Additional Keenable keys (JSON array) |
 | `searxng_url` | `http://localhost:8081` | SearXNG instance URL |

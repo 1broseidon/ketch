@@ -187,7 +187,7 @@ Precedence is **CLI flag > `KETCH_*` env > config file > built-in default**. Not
 - Invalid env values (e.g. `KETCH_LIMIT=abc`) fail loudly on commands that use config, naming the offending variable; `ketch version` and `ketch config set/path` still work.
 - Secret `KETCH_*` vars are stripped from the environment of spawned subprocesses (headless browser, external PDF converter).
 
-Other configurable keys include per-backend API keys (`brave_api_key`, `brave_api_keys` for multi-key rotation, `exa_api_key`, `firecrawl_api_key`, `keenable_api_key`, `context7_api_key`, `github_token`), `sourcegraph_url`, `cache_ttl`, `url_rewrites` (regex rewrite rules applied before fetch), `spa_markers` (extra JS-shell detection tokens), `cookie_file` (see below), and the optional external PDF converter command/timeout. Multiple keys per provider are picked randomly per request to spread rate limits. See the [config reference](https://1broseidon.github.io/ketch/) for the full list.
+Other configurable keys include per-backend API keys (`brave_api_key`, `brave_api_keys` for multi-key rotation, `exa_api_key`, `firecrawl_api_key`, `keenable_api_key`, `context7_api_key`, `github_token`), `firecrawl_url` / `sourcegraph_url` (self-hosted overrides), `cache_ttl`, `url_rewrites` (regex rewrite rules applied before fetch), `spa_markers` (extra JS-shell detection tokens), `cookie_file` (see below), and the optional external PDF converter command/timeout. Multiple keys per provider are picked randomly per request to spread rate limits. See the [config reference](https://1broseidon.github.io/ketch/) for the full list.
 
 ### Cookies (BYO cookies.txt)
 

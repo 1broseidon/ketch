@@ -64,7 +64,7 @@ Use --concurrency N (default 5) to control parallel request limit.
 | `ddg` | Zero config | Rate-limited by DDG currently |
 | `searxng` | Self-hosted instance | Most reliable for heavy use |
 | `exa` | Zero config via hosted MCP; optional `ketch config set exa_api_key <key>` | AI-oriented search with snippets/content from Exa |
-| `firecrawl` | API key: `ketch config set firecrawl_api_key <key>` | Firecrawl v2 search API; same provider as scrape/crawl workflows |
+| `firecrawl` | API key: `ketch config set firecrawl_api_key <key>` (hosted); optional `firecrawl_url` for self-hosted | Firecrawl v2 search API; same provider as scrape/crawl workflows |
 | `keenable` | Zero config (keyless public endpoint); optional `ketch config set keenable_api_key <key>` | Agent-oriented web search over the Keenable index; key lifts the rate limit |
 
 ### Code Backends (ketch code)
@@ -80,6 +80,7 @@ ketch code "http.NewRequestWithContext" --lang go
 ketch code "NewRequestWith.*Context" --regex
 ketch code "rate limit middleware" --lang go -b github --limit 10
 ketch config set sourcegraph_url https://sourcegraph.com  # optional, for self-hosted
+ketch config set firecrawl_url http://localhost:3002      # optional, self-hosted Firecrawl
 ```
 
 ### Docs Backends (ketch docs)

@@ -84,6 +84,7 @@ ketch scrape https://help.example.com/s/article/1234
   "exa_api_keys_count": 0,
   "firecrawl_api_key_set": false,
   "firecrawl_api_keys_count": 0,
+  "firecrawl_url": "https://api.firecrawl.dev",
   "keenable_api_key_set": false,
   "keenable_api_keys_count": 0,
   "limit": 5,

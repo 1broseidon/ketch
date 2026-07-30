@@ -163,6 +163,20 @@ func TestApplyConfigSetURLRewritesValidJSON(t *testing.T) {
 	}
 }
 
+func TestApplyConfigSetFirecrawlURL(t *testing.T) {
+	c := config.Defaults()
+	if err := applyConfigSet(&c, "firecrawl_url", "http://localhost:3002"); err != nil {
+		t.Fatal(err)
+	}
+	if c.FirecrawlURL != "http://localhost:3002" {
+		t.Fatalf("FirecrawlURL = %q", c.FirecrawlURL)
+	}
+	info := buildConfigInfo(c, "/tmp/config.json")
+	if info.FirecrawlURL != "http://localhost:3002" {
+		t.Fatalf("discovery firecrawl_url = %q", info.FirecrawlURL)
+	}
+}
+
 func TestApplyConfigSetURLRewritesInvalidJSON(t *testing.T) {
 	c := config.Defaults()
 	err := applyConfigSet(&c, "url_rewrites", `not json`)
