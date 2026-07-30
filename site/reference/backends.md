@@ -65,13 +65,24 @@ ketch config set backend exa
 
 ## Firecrawl
 
-Web search via the [Firecrawl](https://firecrawl.dev) v2 [search API](https://docs.firecrawl.dev/api-reference/endpoint/search) — proper JSON API, no scraping. Requires an API key.
+Web search via the [Firecrawl](https://firecrawl.dev) v2 [search API](https://docs.firecrawl.dev/api-reference/endpoint/search) — proper JSON API, no scraping. The hosted cloud API requires an API key; self-hosted instances often run without one.
 
-**Setup:**
+**Setup (hosted):**
 
 1. Get an API key at [firecrawl.dev](https://firecrawl.dev)
 2. Set it: `ketch config set firecrawl_api_key <your-key>`
 3. Make it the default: `ketch config set backend firecrawl`
+
+**Setup (self-hosted):**
+
+```sh
+ketch config set firecrawl_url http://localhost:3002
+ketch config set backend firecrawl
+# optional if your instance requires auth:
+# ketch config set firecrawl_api_key <your-key>
+```
+
+`firecrawl_url` is the API base (ketch appends `/v2/search`). Default is `https://api.firecrawl.dev`.
 
 **Recommended for:** operators already using Firecrawl for scraping who want a single provider for both search and page extraction. Pair with `--scrape` to fetch full content per result.
 

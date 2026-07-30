@@ -93,6 +93,7 @@ func envSpecs() []envSpec {
 		keyPoolSpec("firecrawl_api_key",
 			func(c *Config) *string { return &c.FirecrawlAPIKey },
 			func(c *Config) *[]string { return &c.FirecrawlAPIKeys }),
+		stringSpec("firecrawl_url", func(c *Config) *string { return &c.FirecrawlURL }),
 		keyPoolSpec("keenable_api_key",
 			func(c *Config) *string { return &c.KeenableAPIKey },
 			func(c *Config) *[]string { return &c.KeenableAPIKeys }),

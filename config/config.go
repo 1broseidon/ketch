@@ -22,6 +22,7 @@ type Config struct {
 	ExaAPIKeys                         []string          `json:"exa_api_keys,omitempty"`
 	FirecrawlAPIKey                    string            `json:"firecrawl_api_key,omitempty"`
 	FirecrawlAPIKeys                   []string          `json:"firecrawl_api_keys,omitempty"`
+	FirecrawlURL                       string            `json:"firecrawl_url,omitempty"` // base URL; empty = DefaultFirecrawlURL
 	KeenableAPIKey                     string            `json:"keenable_api_key,omitempty"`
 	KeenableAPIKeys                    []string          `json:"keenable_api_keys,omitempty"`
 	Limit                              int               `json:"limit"`
@@ -105,11 +106,16 @@ func (c Config) ResolveGithubToken() (token, source string) {
 	return "", "none"
 }
 
+// DefaultFirecrawlURL is the hosted Firecrawl API base. Self-hosted
+// instances override it via firecrawl_url (ketch appends /v2/search).
+const DefaultFirecrawlURL = "https://api.firecrawl.dev"
+
 // Defaults returns the built-in default configuration.
 func Defaults() Config {
 	return Config{
 		Backend:                            "brave",
 		SearxngURL:                         "http://localhost:8081",
+		FirecrawlURL:                       DefaultFirecrawlURL,
 		Limit:                              5,
 		CacheTTL:                           "72h",
 		CodeBackend:                        "grepapp",
@@ -117,6 +123,21 @@ func Defaults() Config {
 		SourcegraphURL:                     "https://sourcegraph.com",
 		ExternalPDFToMDConverterTimeoutSec: 300,
 	}
+}
+
+// EffectiveFirecrawlURL returns the Firecrawl API base URL, falling back to
+// DefaultFirecrawlURL when unset.
+func (c Config) EffectiveFirecrawlURL() string {
+	if u := strings.TrimSpace(c.FirecrawlURL); u != "" {
+		return strings.TrimRight(u, "/")
+	}
+	return DefaultFirecrawlURL
+}
+
+// IsDefaultFirecrawlURL reports whether the effective Firecrawl base is the
+// hosted cloud API (which requires an API key).
+func (c Config) IsDefaultFirecrawlURL() bool {
+	return strings.EqualFold(c.EffectiveFirecrawlURL(), DefaultFirecrawlURL)
 }
 
 // AvailableBackends returns the list of known search backends.

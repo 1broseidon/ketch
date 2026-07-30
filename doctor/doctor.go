@@ -108,6 +108,7 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 	keenableKeys := cfg.KeenableKeys()
 	c7Key := cfg.Context7APIKey
 	searxngURL := cfg.SearxngURL
+	firecrawlURL := cfg.EffectiveFirecrawlURL()
 	sourcegraphURL := cfg.SourcegraphURL
 	browser := cfg.Browser
 	cookieFile := cfg.CookieFile
@@ -131,8 +132,9 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 			})
 		}},
 		{"search", "firecrawl", cfg.Backend == "firecrawl" || len(firecrawlKeys) > 0, func(ctx context.Context) (Status, string) {
+			endpoint := firecrawlSearchURL(firecrawlURL)
 			return probeKeyPool(firecrawlKeys, func(key string) (Status, string) {
-				return probeFirecrawl(ctx, client, firecrawlSearch, key)
+				return probeFirecrawl(ctx, client, endpoint, key)
 			})
 		}},
 		{"search", "keenable", cfg.Backend == "keenable" || len(keenableKeys) > 0, func(ctx context.Context) (Status, string) {

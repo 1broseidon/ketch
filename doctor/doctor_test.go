@@ -118,12 +118,31 @@ func TestProbeFirecrawlNoKey(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	status, detail := probeFirecrawl(testCtx(t), ts.Client(), ts.URL, "")
+	status, detail := probeFirecrawl(testCtx(t), ts.Client(), firecrawlSearchURL(config.DefaultFirecrawlURL), "")
 	if status != StatusNoKey {
 		t.Fatalf("status = %q, want no_key", status)
 	}
 	if !strings.Contains(detail, "firecrawl_api_key") {
 		t.Errorf("detail %q should carry the config hint", detail)
+	}
+}
+
+func TestProbeFirecrawlSelfHostedNoKey(t *testing.T) {
+	var sawAuth bool
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "" {
+			sawAuth = true
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer ts.Close()
+
+	status, _ := probeFirecrawl(testCtx(t), ts.Client(), ts.URL, "")
+	if status != StatusOK {
+		t.Fatalf("status = %q, want ok", status)
+	}
+	if sawAuth {
+		t.Fatal("self-hosted keyless probe must omit Authorization")
 	}
 }
 

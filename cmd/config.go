@@ -31,6 +31,7 @@ type configInfo struct {
 	ExaAPIKeysCount                    int               `json:"exa_api_keys_count"`
 	FirecrawlAPIKeySet                 bool              `json:"firecrawl_api_key_set"`
 	FirecrawlAPIKeysCount              int               `json:"firecrawl_api_keys_count"`
+	FirecrawlURL                       string            `json:"firecrawl_url"`
 	KeenableAPIKeySet                  bool              `json:"keenable_api_key_set"`
 	KeenableAPIKeysCount               int               `json:"keenable_api_keys_count"`
 	Limit                              int               `json:"limit"`
@@ -115,6 +116,7 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 		ExaAPIKeysCount:                    len(exaKeys),
 		FirecrawlAPIKeySet:                 len(firecrawlKeys) > 0,
 		FirecrawlAPIKeysCount:              len(firecrawlKeys),
+		FirecrawlURL:                       c.EffectiveFirecrawlURL(),
 		KeenableAPIKeySet:                  len(keenableKeys) > 0,
 		KeenableAPIKeysCount:               len(keenableKeys),
 		Limit:                              c.Limit,
@@ -234,6 +236,8 @@ func applyConfigSet(c *config.Config, key, value string) error {
 		c.FirecrawlAPIKey = value
 	case "firecrawl_api_keys":
 		return setAPIKeys(&c.FirecrawlAPIKeys, key, value)
+	case "firecrawl_url":
+		c.FirecrawlURL = value
 	case "keenable_api_key":
 		c.KeenableAPIKey = value
 	case "keenable_api_keys":
@@ -267,7 +271,7 @@ func applyConfigSet(c *config.Config, key, value string) error {
 	case "external_pdf_to_md_converter_timeout_sec":
 		return setExternalPDFConverterTimeout(c, value)
 	default:
-		return exitErrf(ExitValidation, "unknown key: %s (valid: backend, searxng_url, brave_api_key, brave_api_keys, exa_api_key, exa_api_keys, firecrawl_api_key, firecrawl_api_keys, keenable_api_key, keenable_api_keys, limit, cache_ttl, browser, code_backend, docs_backend, context7_api_key, sourcegraph_url, github_token, url_rewrites, spa_markers, cookie_file, user_agent, external_pdf_to_md_converter_command, external_pdf_to_md_converter_timeout_sec)", key)
+		return exitErrf(ExitValidation, "unknown key: %s (valid: backend, searxng_url, brave_api_key, brave_api_keys, exa_api_key, exa_api_keys, firecrawl_api_key, firecrawl_api_keys, firecrawl_url, keenable_api_key, keenable_api_keys, limit, cache_ttl, browser, code_backend, docs_backend, context7_api_key, sourcegraph_url, github_token, url_rewrites, spa_markers, cookie_file, user_agent, external_pdf_to_md_converter_command, external_pdf_to_md_converter_timeout_sec)", key)
 	}
 	return nil
 }
