@@ -98,7 +98,7 @@ ketch scrape https://help.example.com/s/article/1234
   "sourcegraph_url": "https://sourcegraph.com",
   "github_token_source": "none",
   "github_token_set": false,
-  "available_backends": ["brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily"],
+  "available_backends": ["brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily", "parallel"],
   "available_code_backends": ["grepapp", "sourcegraph", "github"],
   "available_doc_backends": ["context7"]
 }

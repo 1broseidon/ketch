@@ -4,7 +4,7 @@ ketch has three search surfaces, each with its own backends: web search (`ketch 
 
 ## Web Search Backends
 
-ketch supports seven web-search backends. Set the default with `ketch config set backend <name>`. To query several at once, use `ketch search --multi` (rank-fused federation) or `--random` (one shuffled provider with fallback) — see the [command reference](/reference/commands#ketch-search).
+ketch supports eight web-search backends. Set the default with `ketch config set backend <name>`. To query several at once, use `ketch search --multi` (rank-fused federation) or `--random` (one shuffled provider with fallback) — see the [command reference](/reference/commands#ketch-search).
 
 Every keyed backend also accepts a pool of keys (`brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`, `keenable_api_keys`, `tavily_api_keys`); ketch picks one at random per request and retries once with a different key on `401`/`429` (`402` for Firecrawl). See [multiple API keys](/guide/configuration#multiple-api-keys-per-provider).
 
@@ -112,6 +112,18 @@ Agent-oriented web search via the [Tavily](https://tavily.com) Search API. Retur
 3. Make it the default: `ketch config set backend tavily`
 
 **Recommended for:** agent workflows that want richer extracted content in search results without a separate scrape step.
+
+## Parallel
+
+Current web search through Parallel's hosted Search MCP endpoint. Ketch maps result titles, URLs, and excerpts into its standard search result fields.
+
+**Setup:** None — the default endpoint is keyless. Select it explicitly:
+
+```sh
+ketch config set backend parallel
+```
+
+**Recommended for:** agent workflows that want a setup-free search backend with excerpt content.
 
 ## Code Search Backends
 

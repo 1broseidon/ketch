@@ -51,6 +51,8 @@ func NewFromConfig(cfg *config.Config, backend, searxngURL string) (Searcher, er
 			return nil, fmt.Errorf("tavily: API key not set (get one free at https://app.tavily.com then: ketch config set tavily_api_key <key>)")
 		}
 		return newTavilyWithKeys(keys), nil
+	case "parallel":
+		return NewParallel(), nil
 	default:
 		return nil, fmt.Errorf("%w %q (available: %s)", ErrUnknownBackend, backend, strings.Join(config.AvailableBackends(), ", "))
 	}

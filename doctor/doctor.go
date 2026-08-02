@@ -164,6 +164,9 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 				return probeTavily(ctx, client, tavilyEndpoint, key)
 			})
 		}},
+		{"search", "parallel", cfg.Backend == "parallel", func(ctx context.Context) (Status, string) {
+			return probeMCP(ctx, client, parallelEndpoint, "parallel")
+		}},
 		{"code", "grepapp", cfg.CodeBackend == "grepapp", func(ctx context.Context) (Status, string) {
 			return probeMCP(ctx, client, grepAppEndpoint, "grep.app")
 		}},

@@ -12,7 +12,7 @@ ketch search <query> [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--backend, -b` | `brave` | Search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily` |
+| `--backend, -b` | `brave` | Search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel` |
 | `--multi` | — | Federated search across backends: comma-separated list, or bare/`=all` for every usable backend. Mutually exclusive with `--backend` and `--random`. |
 | `--random` | — | Random provider with fallback: comma-separated list, or bare/`=all` for every usable backend. Mutually exclusive with `--backend` and `--multi`. |
 | `--limit, -l` | `5` | Max number of results |
@@ -35,8 +35,8 @@ deduplicated by URL canonicalization, and each result gains a `backends` list
 naming the engines that returned it.
 
 - Bare `ketch search --multi "query"` (or `--multi=all`) uses every *usable*
-  backend — the same key-presence rule ketch uses everywhere: `ddg`, `exa`, and
-  `keenable` always; `brave`, `firecrawl`, and `tavily` only with a key; `searxng`
+  backend — the same key-presence rule ketch uses everywhere: `ddg`, `exa`,
+  `keenable`, and `parallel` always; `brave`, `firecrawl`, and `tavily` only with a key; `searxng`
   always (a dead instance just fails fast and is skipped).
 - `ketch search --multi=brave,exa "query"` queries exactly those, in that order.
   An unknown name is a validation error (exit 2); a named-but-unconfigured
@@ -76,6 +76,7 @@ ketch search "query" --backend exa
 ketch search "query" --backend firecrawl
 ketch search "query" --backend keenable
 ketch search "query" --backend tavily
+ketch search "query" --backend parallel
 ketch search "rrf rank fusion" --multi                # every usable backend, rank-fused
 ketch search "rrf rank fusion" --multi=brave,ddg,exa  # a specific set
 ketch search "query" --random                         # one random usable backend, fallback on failure
@@ -325,7 +326,7 @@ ketch cache clear         # remove all cached pages
 ## ketch doctor
 
 Run live health checks against every surface: search backends
-(brave/ddg/searxng/exa/firecrawl/keenable), code backends (grepapp/sourcegraph/github), docs
+(brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel), code backends (grepapp/sourcegraph/github), docs
 (context7), the configured browser binary, and the page cache. Probes run
 concurrently with a per-check timeout and are read-only (nothing is written
 to the cache).

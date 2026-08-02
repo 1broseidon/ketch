@@ -9,7 +9,7 @@ See [AGENTS.md](AGENTS.md) for full module layout and design principles.
 - `cmd/` — Cobra CLI (root, search, code, docs, scrape, extract, crawl, config, cache, browser, doctor, mcp, version)
 - `code/` — `code.Searcher` interface with Grep (built-in default), Sourcegraph, and GitHub backends
 - `docs/` — `docs.Searcher` interface with Context7 backend (local FTS5 planned)
-- `search/` — `Searcher` interface with Brave (built-in default), DDG, SearXNG, Exa, Firecrawl, Keenable, and Tavily backends
+- `search/` — `Searcher` interface with Brave (built-in default), DDG, SearXNG, Exa, Firecrawl, Keenable, Tavily, and Parallel backends
 - `scrape/` — HTTP fetch + browser fallback via Rod for JS-rendered pages
 - `extract/` — readability + html-to-markdown pipeline, JS shell detection heuristic
 - `crawl/` — BFS/sitemap crawler with background execution and status tracking
@@ -67,6 +67,7 @@ Use --concurrency N (default 5) to control parallel request limit.
 | `firecrawl` | API key: `ketch config set firecrawl_api_key <key>` (hosted); optional `firecrawl_url` for self-hosted | Firecrawl v2 search API; same provider as scrape/crawl workflows |
 | `keenable` | Zero config (keyless public endpoint); optional `ketch config set keenable_api_key <key>` | Agent-oriented web search over the Keenable index; key lifts the rate limit |
 | `tavily` | API key: `ketch config set tavily_api_key <key>` | Agent-oriented search; fills Content from extracted text; basic depth (1 credit) by default |
+| `parallel` | Zero config | Current web search through Parallel's hosted Search MCP endpoint |
 
 ### Code Backends (ketch code)
 
