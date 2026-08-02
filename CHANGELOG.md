@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Self-hosted Firecrawl** (#31). `firecrawl_url` (default `https://api.firecrawl.dev`) overrides the Firecrawl API base; ketch appends `/v2/search`. Hosted cloud still requires `firecrawl_api_key`; a non-default base allows keyless self-hosted instances. Wired through config set/discovery, `KETCH_FIRECRAWL_URL`, search `NewFromConfig`, and `ketch doctor`. A pasted full endpoint is normalized back to its base, so `.../v2/search` is neither doubled into `.../v2/search/v2/search` nor mistaken for a self-hosted instance when it points at the hosted API.
 
+### Fixed
+- `ketch doctor` no longer reports healthy self-hosted search instances as `unreachable`. Both offenders answer more slowly than a hosted API because they run the search themselves: self-hosted Firecrawl spends about eight seconds on a one-result query, and SearXNG about three — landing exactly on doctor's 3s per-probe budget. A self-hosted Firecrawl is now probed for liveness instead of results (a request its validation rejects still proves `/v2/search` answers, distinguishes a base URL pointing elsewhere via 404, and surfaces an instance that demands a key), which also drops that check from a timeout to milliseconds. SearXNG keeps its real `format=json` search — that probe is what detects the blocked-JSON trap — on a 10s budget. Wrong-base 404s now name `firecrawl_url` in the fix hint.
+
 ## [0.13.0] - 2026-07-25
 
 ### Added

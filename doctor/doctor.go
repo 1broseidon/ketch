@@ -65,6 +65,22 @@ type spec struct {
 // whole run is bounded by roughly one timeout, not the sum.
 const DefaultTimeout = 3 * time.Second
 
+// SelfHostedSearchTimeout is the budget for probes that make the instance run a
+// real federated search rather than answer a single API call. SearXNG spends
+// about three seconds on its own upstream engines, landing right on
+// DefaultTimeout, so the default budget reports healthy instances as timed out.
+const SelfHostedSearchTimeout = 10 * time.Second
+
+// probeTimeout returns the budget for one probe. Backends that query hosted
+// APIs answer well inside the run timeout; searxng runs the search itself, so
+// it gets the longer budget unless the caller already asked for more.
+func probeTimeout(s spec, runTimeout time.Duration) time.Duration {
+	if s.surface == "search" && s.backend == "searxng" && runTimeout < SelfHostedSearchTimeout {
+		return SelfHostedSearchTimeout
+	}
+	return runTimeout
+}
+
 // Run executes every check concurrently, each bounded by timeout
 // (DefaultTimeout if <= 0), and returns results in stable surface order.
 func Run(ctx context.Context, cfg *config.Config, timeout time.Duration) []Check {
@@ -79,7 +95,7 @@ func Run(ctx context.Context, cfg *config.Config, timeout time.Duration) []Check
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			pctx, cancel := context.WithTimeout(ctx, timeout)
+			pctx, cancel := context.WithTimeout(ctx, probeTimeout(s, timeout))
 			defer cancel()
 			start := time.Now()
 			status, detail := s.probe(pctx)

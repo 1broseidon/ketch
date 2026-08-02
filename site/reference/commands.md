@@ -334,6 +334,11 @@ ketch doctor              # aligned human report, one line per check
 ketch doctor --json       # stable schema: [{surface, backend, status, detail, latency_ms}]
 ```
 
+Self-hosted backends are probed on their own terms: a self-hosted Firecrawl
+instance is checked for liveness only — that `/v2/search` answers and whether it
+demands a key — because running a real search through it takes seconds, and
+SearXNG gets a longer budget for the same reason.
+
 Each check reports `ok`, `no_key`, `unreachable`, `misconfigured` (with a fix
 hint — e.g. a SearXNG instance that blocks `format=json` until settings.yml
 enables it), or `skipped`. Exit code `0` means every applicable check is ok or

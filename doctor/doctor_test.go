@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -143,6 +144,57 @@ func TestProbeFirecrawlSelfHostedNoKey(t *testing.T) {
 	}
 	if sawAuth {
 		t.Fatal("self-hosted keyless probe must omit Authorization")
+	}
+}
+
+func TestProbeTimeout(t *testing.T) {
+	searxng := spec{surface: "search", backend: "searxng"}
+	brave := spec{surface: "search", backend: "brave"}
+
+	if got := probeTimeout(searxng, DefaultTimeout); got != SelfHostedSearchTimeout {
+		t.Errorf("searxng budget = %v, want %v: a healthy instance needs ~3s", got, SelfHostedSearchTimeout)
+	}
+	if got := probeTimeout(brave, DefaultTimeout); got != DefaultTimeout {
+		t.Errorf("brave budget = %v, want the run timeout %v", got, DefaultTimeout)
+	}
+	if got := probeTimeout(searxng, time.Minute); got != time.Minute {
+		t.Errorf("searxng budget = %v, want the caller's longer %v", got, time.Minute)
+	}
+}
+
+func TestProbeFirecrawlSelfHostedLiveness(t *testing.T) {
+	var body string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, _ := io.ReadAll(r.Body)
+		body = string(b)
+		w.WriteHeader(http.StatusBadRequest)
+	}))
+	defer ts.Close()
+
+	status, detail := probeFirecrawl(testCtx(t), ts.Client(), ts.URL, "")
+	if status != StatusOK {
+		t.Fatalf("status = %q, want ok: a rejected body still proves /v2/search answers", status)
+	}
+	if !strings.Contains(detail, "liveness") {
+		t.Errorf("detail %q should say no real search ran", detail)
+	}
+	if strings.Contains(body, "query") {
+		t.Errorf("self-hosted probe body = %q, want one that never starts a search", body)
+	}
+}
+
+func TestProbeFirecrawlSelfHostedWrongBase(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer ts.Close()
+
+	status, detail := probeFirecrawl(testCtx(t), ts.Client(), ts.URL, "")
+	if status != StatusUnreachable {
+		t.Fatalf("status = %q, want unreachable", status)
+	}
+	if !strings.Contains(detail, "firecrawl_url") {
+		t.Errorf("detail %q should point at firecrawl_url", detail)
 	}
 }
 

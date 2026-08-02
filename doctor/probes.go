@@ -159,16 +159,37 @@ func probeBrave(ctx context.Context, client *http.Client, endpoint, apiKey strin
 	}
 }
 
-// probeFirecrawl checks the Firecrawl v2 search API with a minimal one-result
-// query. The hosted cloud API requires a key (missing key → no_key without a
-// network call). Self-hosted instances often run without auth, so an empty key
-// against a non-default base probes without an Authorization header.
+// Firecrawl probe bodies. The hosted API answers a minimal real search fast
+// enough to be worth running, and the answer also proves the key works. A
+// self-hosted instance runs that whole search pipeline itself and takes several
+// seconds to reply — past any timeout that keeps doctor quick — so it gets a
+// body its request validation rejects immediately instead.
+const (
+	firecrawlSearchBody   = `{"query":"ketch","limit":1}`
+	firecrawlLivenessBody = `{}`
+)
+
+// probeFirecrawl checks the Firecrawl v2 search API. The hosted cloud API
+// requires a key (missing key → no_key without a network call) and is probed
+// with a real one-result search.
+//
+// Self-hosted instances are probed for liveness only: a rejected request still
+// separates a live /v2/search from a base URL that points somewhere else (404)
+// and from an instance that demands a key (401/403), which is everything doctor
+// can establish about an instance it has no credentials for. Instances running
+// without auth are probed without an Authorization header.
 func probeFirecrawl(ctx context.Context, client *http.Client, endpoint, apiKey string) (Status, string) {
 	key := strings.TrimSpace(apiKey)
-	if key == "" && strings.EqualFold(endpoint, config.FirecrawlSearchURL(config.DefaultFirecrawlURL)) {
+	hosted := strings.EqualFold(endpoint, config.FirecrawlSearchURL(config.DefaultFirecrawlURL))
+	if key == "" && hosted {
 		return StatusNoKey, "API key not set (get one free at https://firecrawl.dev then: ketch config set firecrawl_api_key <key>)"
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(`{"query":"ketch","limit":1}`))
+
+	body := firecrawlSearchBody
+	if !hosted {
+		body = firecrawlLivenessBody
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(body))
 	if err != nil {
 		return StatusUnreachable, probeErrDetail(err)
 	}
@@ -183,18 +204,39 @@ func probeFirecrawl(ctx context.Context, client *http.Client, endpoint, apiKey s
 	}
 	defer drain(resp)
 
+	if !hosted {
+		return firecrawlLivenessStatus(resp.StatusCode, key)
+	}
 	switch resp.StatusCode {
 	case http.StatusOK:
 		return StatusOK, ""
+	case http.StatusUnauthorized, http.StatusForbidden, http.StatusPaymentRequired:
+		return StatusMisconfigured, "API key rejected (ketch config set firecrawl_api_key <key>)"
+	case http.StatusTooManyRequests:
+		return StatusOK, "reachable, key accepted (rate limited)"
+	default:
+		return StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
+	}
+}
+
+// firecrawlLivenessStatus classifies a self-hosted instance's answer to the
+// liveness body. A validation error (400) is the expected healthy reply; 200
+// counts too, since an instance is free to accept a defaulted search.
+func firecrawlLivenessStatus(code int, key string) (Status, string) {
+	switch code {
+	case http.StatusOK, http.StatusBadRequest:
+		return StatusOK, "reachable (liveness only — a real search is not run)"
 	case http.StatusUnauthorized, http.StatusForbidden, http.StatusPaymentRequired:
 		if key == "" {
 			return StatusMisconfigured, "instance requires an API key (ketch config set firecrawl_api_key <key>)"
 		}
 		return StatusMisconfigured, "API key rejected (ketch config set firecrawl_api_key <key>)"
 	case http.StatusTooManyRequests:
-		return StatusOK, "reachable, key accepted (rate limited)"
+		return StatusOK, "reachable (rate limited)"
+	case http.StatusNotFound:
+		return StatusUnreachable, "returned status 404 — firecrawl_url should be the API base (e.g. http://localhost:3002)"
 	default:
-		return StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
+		return StatusUnreachable, fmt.Sprintf("returned status %d", code)
 	}
 }
 
