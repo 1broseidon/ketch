@@ -132,7 +132,7 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 			})
 		}},
 		{"search", "firecrawl", cfg.Backend == "firecrawl" || len(firecrawlKeys) > 0, func(ctx context.Context) (Status, string) {
-			endpoint := firecrawlSearchURL(firecrawlURL)
+			endpoint := config.FirecrawlSearchURL(firecrawlURL)
 			return probeKeyPool(firecrawlKeys, func(key string) (Status, string) {
 				return probeFirecrawl(ctx, client, endpoint, key)
 			})

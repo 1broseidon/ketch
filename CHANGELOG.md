@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Self-hosted Firecrawl** (#31). `firecrawl_url` (default `https://api.firecrawl.dev`) overrides the Firecrawl API base; ketch appends `/v2/search`. Hosted cloud still requires `firecrawl_api_key`; a non-default base allows keyless self-hosted instances. Wired through config set/discovery, `KETCH_FIRECRAWL_URL`, search `NewFromConfig`, and `ketch doctor`.
+- **Self-hosted Firecrawl** (#31). `firecrawl_url` (default `https://api.firecrawl.dev`) overrides the Firecrawl API base; ketch appends `/v2/search`. Hosted cloud still requires `firecrawl_api_key`; a non-default base allows keyless self-hosted instances. Wired through config set/discovery, `KETCH_FIRECRAWL_URL`, search `NewFromConfig`, and `ketch doctor`. A pasted full endpoint is normalized back to its base, so `.../v2/search` is neither doubled into `.../v2/search/v2/search` nor mistaken for a self-hosted instance when it points at the hosted API.
 
 ## [0.13.0] - 2026-07-25
 

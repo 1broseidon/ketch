@@ -118,7 +118,7 @@ func TestProbeFirecrawlNoKey(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	status, detail := probeFirecrawl(testCtx(t), ts.Client(), firecrawlSearchURL(config.DefaultFirecrawlURL), "")
+	status, detail := probeFirecrawl(testCtx(t), ts.Client(), config.FirecrawlSearchURL(config.DefaultFirecrawlURL), "")
 	if status != StatusNoKey {
 		t.Fatalf("status = %q, want no_key", status)
 	}

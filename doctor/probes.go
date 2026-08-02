@@ -159,27 +159,14 @@ func probeBrave(ctx context.Context, client *http.Client, endpoint, apiKey strin
 	}
 }
 
-// firecrawlSearchURL joins a Firecrawl API base with /v2/search. Empty base
-// falls back to the hosted default. Mirrors search.firecrawlSearchURL.
-func firecrawlSearchURL(base string) string {
-	base = strings.TrimRight(strings.TrimSpace(base), "/")
-	if base == "" {
-		base = config.DefaultFirecrawlURL
-	}
-	return base + "/v2/search"
-}
-
 // probeFirecrawl checks the Firecrawl v2 search API with a minimal one-result
 // query. The hosted cloud API requires a key (missing key → no_key without a
 // network call). Self-hosted instances often run without auth, so an empty key
 // against a non-default base probes without an Authorization header.
 func probeFirecrawl(ctx context.Context, client *http.Client, endpoint, apiKey string) (Status, string) {
 	key := strings.TrimSpace(apiKey)
-	if key == "" {
-		cloud := firecrawlSearchURL(config.DefaultFirecrawlURL)
-		if strings.EqualFold(strings.TrimRight(endpoint, "/"), strings.TrimRight(cloud, "/")) {
-			return StatusNoKey, "API key not set (get one free at https://firecrawl.dev then: ketch config set firecrawl_api_key <key>)"
-		}
+	if key == "" && strings.EqualFold(endpoint, config.FirecrawlSearchURL(config.DefaultFirecrawlURL)) {
+		return StatusNoKey, "API key not set (get one free at https://firecrawl.dev then: ketch config set firecrawl_api_key <key>)"
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(`{"query":"ketch","limit":1}`))
 	if err != nil {

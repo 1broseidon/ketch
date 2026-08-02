@@ -90,7 +90,7 @@ ketch config set github_token ghp_...
 | `exa_api_keys` | — | Additional Exa keys (JSON array) |
 | `firecrawl_api_key` | — | [Firecrawl](https://docs.firecrawl.dev) API key (required for hosted `-b firecrawl`; optional for self-hosted) |
 | `firecrawl_api_keys` | — | Additional Firecrawl keys (JSON array) |
-| `firecrawl_url` | `https://api.firecrawl.dev` | Firecrawl API base URL (self-hosted override; ketch appends `/v2/search`) |
+| `firecrawl_url` | `https://api.firecrawl.dev` | Firecrawl API base URL (self-hosted override; ketch appends `/v2/search`, and strips it if you paste the full endpoint) |
 | `keenable_api_key` | — | Optional Keenable API key; keyless by default, a key lifts the rate limit ([console](https://keenable.ai/console)) |
 | `keenable_api_keys` | — | Additional Keenable keys (JSON array) |
 | `searxng_url` | `http://localhost:8081` | SearXNG instance URL |

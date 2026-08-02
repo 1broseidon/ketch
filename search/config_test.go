@@ -132,21 +132,3 @@ func TestNewFromConfigFirecrawlURL(t *testing.T) {
 		}
 	})
 }
-
-func TestFirecrawlSearchURL(t *testing.T) {
-	tests := []struct {
-		base string
-		want string
-	}{
-		{"", config.DefaultFirecrawlURL + "/v2/search"},
-		{"https://api.firecrawl.dev", config.DefaultFirecrawlURL + "/v2/search"},
-		{"https://api.firecrawl.dev/", config.DefaultFirecrawlURL + "/v2/search"},
-		{"http://localhost:3002", "http://localhost:3002/v2/search"},
-		{"  http://fc.local/  ", "http://fc.local/v2/search"},
-	}
-	for _, tc := range tests {
-		if got := firecrawlSearchURL(tc.base); got != tc.want {
-			t.Errorf("firecrawlSearchURL(%q) = %q, want %q", tc.base, got, tc.want)
-		}
-	}
-}

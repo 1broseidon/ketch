@@ -110,6 +110,10 @@ func (c Config) ResolveGithubToken() (token, source string) {
 // instances override it via firecrawl_url (ketch appends /v2/search).
 const DefaultFirecrawlURL = "https://api.firecrawl.dev"
 
+// firecrawlSearchPath is appended to the Firecrawl API base to reach the v2
+// search endpoint. See https://docs.firecrawl.dev/api-reference/endpoint/search.
+const firecrawlSearchPath = "/v2/search"
+
 // Defaults returns the built-in default configuration.
 func Defaults() Config {
 	return Config{
@@ -125,11 +129,21 @@ func Defaults() Config {
 	}
 }
 
+// normalizeFirecrawlBase reduces a configured firecrawl_url to a bare API
+// base. A trailing /v2/search is stripped: operators reasonably paste the full
+// endpoint they call, and appending the search path to that would request
+// .../v2/search/v2/search.
+func normalizeFirecrawlBase(base string) string {
+	base = strings.TrimRight(strings.TrimSpace(base), "/")
+	base = strings.TrimSuffix(base, firecrawlSearchPath)
+	return strings.TrimRight(base, "/")
+}
+
 // EffectiveFirecrawlURL returns the Firecrawl API base URL, falling back to
 // DefaultFirecrawlURL when unset.
 func (c Config) EffectiveFirecrawlURL() string {
-	if u := strings.TrimSpace(c.FirecrawlURL); u != "" {
-		return strings.TrimRight(u, "/")
+	if u := normalizeFirecrawlBase(c.FirecrawlURL); u != "" {
+		return u
 	}
 	return DefaultFirecrawlURL
 }
@@ -138,6 +152,17 @@ func (c Config) EffectiveFirecrawlURL() string {
 // hosted cloud API (which requires an API key).
 func (c Config) IsDefaultFirecrawlURL() bool {
 	return strings.EqualFold(c.EffectiveFirecrawlURL(), DefaultFirecrawlURL)
+}
+
+// FirecrawlSearchURL joins a Firecrawl API base with the v2 search path. The
+// base is normalized first, and an empty base uses the hosted default, so
+// callers can pass a raw config value straight through.
+func FirecrawlSearchURL(base string) string {
+	base = normalizeFirecrawlBase(base)
+	if base == "" {
+		base = DefaultFirecrawlURL
+	}
+	return base + firecrawlSearchPath
 }
 
 // AvailableBackends returns the list of known search backends.

@@ -82,7 +82,7 @@ ketch config set backend firecrawl
 # ketch config set firecrawl_api_key <your-key>
 ```
 
-`firecrawl_url` is the API base (ketch appends `/v2/search`). Default is `https://api.firecrawl.dev`.
+`firecrawl_url` is the API base (ketch appends `/v2/search`). Default is `https://api.firecrawl.dev`. Pasting the full endpoint works too — a trailing `/v2/search` is stripped rather than doubled.
 
 **Recommended for:** operators already using Firecrawl for scraping who want a single provider for both search and page extraction. Pair with `--scrape` to fetch full content per result.
 

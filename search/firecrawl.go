@@ -29,18 +29,8 @@ func newFirecrawlWithKeys(keys []string, baseURL string) *Firecrawl {
 	return &Firecrawl{
 		keys:     newKeyPool(keys),
 		client:   httpx.Default(),
-		endpoint: firecrawlSearchURL(baseURL),
+		endpoint: config.FirecrawlSearchURL(baseURL),
 	}
-}
-
-// firecrawlSearchURL joins a Firecrawl API base with the v2 search path.
-// Trailing slashes on base are stripped; an empty base uses the hosted default.
-func firecrawlSearchURL(base string) string {
-	base = strings.TrimRight(strings.TrimSpace(base), "/")
-	if base == "" {
-		base = config.DefaultFirecrawlURL
-	}
-	return base + "/v2/search"
 }
 
 type firecrawlRequest struct {
@@ -129,11 +119,7 @@ func (f *Firecrawl) Search(ctx context.Context, query string, limit int) ([]Resu
 }
 
 func (f *Firecrawl) request(ctx context.Context, body []byte, key string) (*http.Response, error) {
-	endpoint := f.endpoint
-	if endpoint == "" {
-		endpoint = firecrawlSearchURL("")
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, f.endpoint, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
