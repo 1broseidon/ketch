@@ -261,8 +261,8 @@ ketch browser status
 
 If `ketch browser install` fails, just rerun it — each attempt clears the download
 directory first. When the download can't succeed at all (restricted network, no
-disk space), configure an already-installed Chrome with `ketch config set browser
-<path>` and verify with `ketch browser status`.
+disk space), configure an already-installed Chrome with
+`ketch config set browser <path>` and verify with `ketch browser status`.
 
 When a browser is configured, ketch automatically detects JS-rendered pages (React SPAs, Angular apps, Salesforce Lightning, etc.) and falls back to headless rendering. Static pages are always fetched via plain HTTP for speed.
 
