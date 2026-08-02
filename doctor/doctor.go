@@ -122,6 +122,7 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 	exaKeys := cfg.ExaKeys()
 	firecrawlKeys := cfg.FirecrawlKeys()
 	keenableKeys := cfg.KeenableKeys()
+	tavilyKeys := cfg.TavilyKeys()
 	c7Key := cfg.Context7APIKey
 	searxngURL := cfg.SearxngURL
 	firecrawlURL := cfg.EffectiveFirecrawlURL()
@@ -156,6 +157,11 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 		{"search", "keenable", cfg.Backend == "keenable" || len(keenableKeys) > 0, func(ctx context.Context) (Status, string) {
 			return probeKeyPool(keenableKeys, func(key string) (Status, string) {
 				return probeKeenable(ctx, client, keenableEndpoint, key)
+			})
+		}},
+		{"search", "tavily", cfg.Backend == "tavily" || len(tavilyKeys) > 0, func(ctx context.Context) (Status, string) {
+			return probeKeyPool(tavilyKeys, func(key string) (Status, string) {
+				return probeTavily(ctx, client, tavilyEndpoint, key)
 			})
 		}},
 		{"code", "grepapp", cfg.CodeBackend == "grepapp", func(ctx context.Context) (Status, string) {

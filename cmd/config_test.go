@@ -92,6 +92,8 @@ func TestRunConfigSetNeverEchoesSecrets(t *testing.T) {
 		{key: "firecrawl_api_keys", value: `["firecrawl-one","firecrawl-two"]`, secrets: []string{"firecrawl-one", "firecrawl-two"}, want: "set firecrawl_api_keys (2 keys)\n"},
 		{key: "keenable_api_key", value: "keenable-secret", secrets: []string{"keenable-secret"}, want: "set keenable_api_key (1 key)\n"},
 		{key: "keenable_api_keys", value: `["keenable-one","keenable-two"]`, secrets: []string{"keenable-one", "keenable-two"}, want: "set keenable_api_keys (2 keys)\n"},
+		{key: "tavily_api_key", value: "tavily-secret", secrets: []string{"tavily-secret"}, want: "set tavily_api_key (1 key)\n"},
+		{key: "tavily_api_keys", value: `["tavily-one","tavily-two"]`, secrets: []string{"tavily-one", "tavily-two"}, want: "set tavily_api_keys (2 keys)\n"},
 		{key: "context7_api_key", value: "context7-secret", secrets: []string{"context7-secret"}, want: "set context7_api_key (1 key)\n"},
 		{key: "github_token", value: "github-secret", secrets: []string{"github-secret"}, want: "set github_token (1 token)\n"},
 	}

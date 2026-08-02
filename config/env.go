@@ -97,6 +97,9 @@ func envSpecs() []envSpec {
 		keyPoolSpec("keenable_api_key",
 			func(c *Config) *string { return &c.KeenableAPIKey },
 			func(c *Config) *[]string { return &c.KeenableAPIKeys }),
+		keyPoolSpec("tavily_api_key",
+			func(c *Config) *string { return &c.TavilyAPIKey },
+			func(c *Config) *[]string { return &c.TavilyAPIKeys }),
 		{
 			key:  "limit",
 			prev: func(c *Config) string { return strconv.Itoa(c.Limit) },

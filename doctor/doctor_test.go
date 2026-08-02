@@ -379,6 +379,66 @@ func TestProbeKeenableKeyRejected(t *testing.T) {
 	}
 }
 
+// --- tavily ---
+
+func TestProbeTavilyNoKey(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Error("no-key probe must not hit the network")
+	}))
+	defer ts.Close()
+
+	status, detail := probeTavily(testCtx(t), ts.Client(), ts.URL, "")
+	if status != StatusNoKey {
+		t.Fatalf("status = %q, want no_key", status)
+	}
+	if !strings.Contains(detail, "tavily_api_key") {
+		t.Errorf("detail %q should name tavily_api_key", detail)
+	}
+}
+
+func TestProbeTavilyStatuses(t *testing.T) {
+	cases := []struct {
+		name   string
+		code   int
+		want   Status
+		detail string
+	}{
+		{"ok", http.StatusOK, StatusOK, ""},
+		{"401", http.StatusUnauthorized, StatusMisconfigured, "tavily_api_key"},
+		{"429", http.StatusTooManyRequests, StatusOK, "rate limited"},
+		{"432", 432, StatusOK, "plan limit"},
+		{"433", 433, StatusOK, "pay-as-you-go"},
+		{"500", http.StatusInternalServerError, StatusUnreachable, "500"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var gotAuth string
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				gotAuth = r.Header.Get("Authorization")
+				if strings.Contains(r.URL.RawQuery, "tvly") || strings.Contains(r.URL.String(), "tvly-secret") {
+					t.Error("key must not appear in the request URL")
+				}
+				w.WriteHeader(tc.code)
+			}))
+			defer ts.Close()
+
+			status, detail := probeTavily(testCtx(t), ts.Client(), ts.URL, "tvly-secret")
+			if status != tc.want {
+				t.Fatalf("status = %q (detail %q), want %q", status, detail, tc.want)
+			}
+			if gotAuth != "Bearer tvly-secret" {
+				t.Errorf("Authorization = %q, want Bearer tvly-secret", gotAuth)
+			}
+			if tc.detail != "" && !strings.Contains(detail, tc.detail) {
+				t.Errorf("detail %q should contain %q", detail, tc.detail)
+			}
+			if strings.Contains(detail, "tvly-secret") {
+				t.Errorf("detail leaked key: %q", detail)
+			}
+		})
+	}
+}
+
 // --- sourcegraph reachability ---
 
 func TestProbeReachable(t *testing.T) {

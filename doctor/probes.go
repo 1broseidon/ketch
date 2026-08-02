@@ -30,8 +30,15 @@ const (
 	grepAppEndpoint  = "https://mcp.grep.app"
 	exaMCPEndpoint   = "https://mcp.exa.ai/mcp"
 	keenableEndpoint = "https://api.keenable.ai"
+	tavilyEndpoint   = "https://api.tavily.com/search"
 	githubAPIBase    = "https://api.github.com"
 	context7APIBase  = "https://context7.com"
+)
+
+// Tavily plan/paygo limit statuses (provider-specific; not in net/http).
+const (
+	tavilyStatusPlanLimit  = 432
+	tavilyStatusPaygoLimit = 433
 )
 
 // ddgUA mirrors the search backend's user agent — DDG's HTML endpoint rejects
@@ -273,6 +280,47 @@ func probeKeenable(ctx context.Context, client *http.Client, base, apiKey string
 		return StatusMisconfigured, "API key rejected (ketch config set keenable_api_key <key>)"
 	case http.StatusTooManyRequests:
 		return StatusOK, "reachable (rate limited; set a key to lift the cap)"
+	default:
+		return StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
+	}
+}
+
+// tavilyProbeBody is a one-credit basic search — enough to prove the key works
+// without spending advanced-depth credits.
+const tavilyProbeBody = `{"query":"ketch","max_results":1,"search_depth":"basic"}`
+
+// probeTavily checks the Tavily search API with a minimal query. Auth is
+// Bearer-only in the Authorization header — never a query param — so doctor
+// details never echo the key via a URL (unlike Exa).
+func probeTavily(ctx context.Context, client *http.Client, endpoint, apiKey string) (Status, string) {
+	key := strings.TrimSpace(apiKey)
+	if key == "" {
+		return StatusNoKey, "API key not set (get one free at https://app.tavily.com then: ketch config set tavily_api_key <key>)"
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(tavilyProbeBody))
+	if err != nil {
+		return StatusUnreachable, probeErrDetail(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+key)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return StatusUnreachable, probeErrDetail(err)
+	}
+	defer drain(resp)
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return StatusOK, ""
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return StatusMisconfigured, "API key rejected (ketch config set tavily_api_key <key>)"
+	case http.StatusTooManyRequests:
+		return StatusOK, "reachable, key accepted (rate limited)"
+	case tavilyStatusPlanLimit:
+		return StatusOK, "reachable, key accepted (plan limit)"
+	case tavilyStatusPaygoLimit:
+		return StatusOK, "reachable, key accepted (pay-as-you-go limit)"
 	default:
 		return StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
 	}

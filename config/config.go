@@ -25,6 +25,8 @@ type Config struct {
 	FirecrawlURL                       string            `json:"firecrawl_url,omitempty"` // base URL; empty = DefaultFirecrawlURL
 	KeenableAPIKey                     string            `json:"keenable_api_key,omitempty"`
 	KeenableAPIKeys                    []string          `json:"keenable_api_keys,omitempty"`
+	TavilyAPIKey                       string            `json:"tavily_api_key,omitempty"`
+	TavilyAPIKeys                      []string          `json:"tavily_api_keys,omitempty"`
 	Limit                              int               `json:"limit"`
 	CacheTTL                           string            `json:"cache_ttl"`
 	Browser                            string            `json:"browser,omitempty"` // "chrome", "chromium", or absolute path; empty = disabled
@@ -74,6 +76,9 @@ func (c Config) FirecrawlKeys() []string {
 
 // KeenableKeys returns an immutable copy of the effective Keenable API key pool.
 func (c Config) KeenableKeys() []string { return mergeKeys(c.KeenableAPIKey, c.KeenableAPIKeys) }
+
+// TavilyKeys returns an immutable copy of the effective Tavily API key pool.
+func (c Config) TavilyKeys() []string { return mergeKeys(c.TavilyAPIKey, c.TavilyAPIKeys) }
 
 // ResolveGithubToken returns a token and the source it came from, walking the
 // resolution chain: $KETCH_GITHUB_TOKEN → explicit config → $GITHUB_TOKEN →
@@ -167,7 +172,7 @@ func FirecrawlSearchURL(base string) string {
 
 // AvailableBackends returns the list of known search backends.
 func AvailableBackends() []string {
-	return []string{"brave", "ddg", "searxng", "exa", "firecrawl", "keenable"}
+	return []string{"brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily"}
 }
 
 // AvailableCodeBackends returns the list of known code search backends.

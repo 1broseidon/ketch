@@ -4,9 +4,9 @@ ketch has three search surfaces, each with its own backends: web search (`ketch 
 
 ## Web Search Backends
 
-ketch supports six web-search backends. Set the default with `ketch config set backend <name>`. To query several at once, use `ketch search --multi` (rank-fused federation) or `--random` (one shuffled provider with fallback) — see the [command reference](/reference/commands#ketch-search).
+ketch supports seven web-search backends. Set the default with `ketch config set backend <name>`. To query several at once, use `ketch search --multi` (rank-fused federation) or `--random` (one shuffled provider with fallback) — see the [command reference](/reference/commands#ketch-search).
 
-Every keyed backend also accepts a pool of keys (`brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`, `keenable_api_keys`); ketch picks one at random per request and retries once with a different key on `401`/`429` (`402` for Firecrawl). See [multiple API keys](/guide/configuration#multiple-api-keys-per-provider).
+Every keyed backend also accepts a pool of keys (`brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`, `keenable_api_keys`, `tavily_api_keys`); ketch picks one at random per request and retries once with a different key on `401`/`429` (`402` for Firecrawl). See [multiple API keys](/guide/configuration#multiple-api-keys-per-provider).
 
 ## Brave (default)
 
@@ -100,6 +100,18 @@ ketch config set backend keenable
 Create a key at [keenable.ai/console](https://keenable.ai/console).
 
 **Recommended for:** agent workflows that want a zero-config, agent-oriented search backend without provisioning a provider key up front.
+
+## Tavily
+
+Agent-oriented web search via the [Tavily](https://tavily.com) Search API. Returns extracted page text (not just SERP snippets), so ketch fills both `description` and `content` on each result. Requires an API key — no keyless mode. Uses `search_depth: basic` by default (1 credit per request).
+
+**Setup:**
+
+1. Get a free API key at [app.tavily.com](https://app.tavily.com) (1,000 credits/month, no credit card)
+2. Set it: `ketch config set tavily_api_key <your-key>`
+3. Make it the default: `ketch config set backend tavily`
+
+**Recommended for:** agent workflows that want richer extracted content in search results without a separate scrape step.
 
 ## Code Search Backends
 

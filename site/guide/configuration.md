@@ -28,6 +28,8 @@ The discovery payload:
   "firecrawl_url": "https://api.firecrawl.dev",
   "keenable_api_key_set": false,
   "keenable_api_keys_count": 0,
+  "tavily_api_key_set": false,
+  "tavily_api_keys_count": 0,
   "limit": 5,
   "cache_ttl": "72h",
   "code_backend": "grepapp",
@@ -37,7 +39,7 @@ The discovery payload:
   "github_token_source": "none",
   "github_token_set": false,
   "external_pdf_to_md_converter_timeout_sec": 300,
-  "available_backends": ["brave", "ddg", "searxng", "exa", "firecrawl", "keenable"],
+  "available_backends": ["brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily"],
   "available_code_backends": ["grepapp", "sourcegraph", "github"],
   "available_doc_backends": ["context7"]
 }
@@ -65,6 +67,7 @@ ketch config set exa_api_key exa...
 ketch config set firecrawl_api_key fc-...
 ketch config set firecrawl_url http://localhost:3002
 ketch config set keenable_api_key keen_...
+ketch config set tavily_api_key tvly-...
 ketch config set limit 10
 ketch config set cache_ttl 4h
 ketch config set browser chrome
@@ -83,7 +86,7 @@ ketch config set github_token ghp_...
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `backend` | `brave` | Default search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable` |
+| `backend` | `brave` | Default search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily` |
 | `brave_api_key` | — | Brave Search API key ([get one free](https://brave.com/search/api/)) |
 | `brave_api_keys` | — | Additional Brave keys (JSON array) — see [multiple keys](#multiple-api-keys-per-provider) |
 | `exa_api_key` | — | Optional Exa API key for authenticated hosted MCP usage |
@@ -93,6 +96,8 @@ ketch config set github_token ghp_...
 | `firecrawl_url` | `https://api.firecrawl.dev` | Firecrawl API base URL (self-hosted override; ketch appends `/v2/search`, and strips it if you paste the full endpoint) |
 | `keenable_api_key` | — | Optional Keenable API key; keyless by default, a key lifts the rate limit ([console](https://keenable.ai/console)) |
 | `keenable_api_keys` | — | Additional Keenable keys (JSON array) |
+| `tavily_api_key` | — | [Tavily](https://app.tavily.com) API key (required for `-b tavily`) |
+| `tavily_api_keys` | — | Additional Tavily keys (JSON array) |
 | `searxng_url` | `http://localhost:8081` | SearXNG instance URL |
 | `limit` | `5` | Default max results (shared by `search`, `code`, `docs`) |
 
@@ -100,7 +105,7 @@ ketch config set github_token ghp_...
 
 Each keyed search provider takes an optional plural key pool alongside its
 singular key: `brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`,
-`keenable_api_keys`. The effective pool is the singular key plus the list,
+`keenable_api_keys`, `tavily_api_keys`. The effective pool is the singular key plus the list,
 trimmed and de-duplicated. Per request, ketch picks one key from the pool at
 random to spread rate limits; when the pool holds more than one key, a
 `401`/`429` response (`402` for Firecrawl) gets one retry with a different key.

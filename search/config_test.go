@@ -47,8 +47,9 @@ func TestNewFromConfigBuildsEveryEffectiveKeyPool(t *testing.T) {
 	cfg.ExaAPIKey, cfg.ExaAPIKeys = "exa-legacy", []string{"exa-new"}
 	cfg.FirecrawlAPIKey, cfg.FirecrawlAPIKeys = "firecrawl-legacy", []string{"firecrawl-new"}
 	cfg.KeenableAPIKey, cfg.KeenableAPIKeys = "keenable-legacy", []string{"keenable-new"}
+	cfg.TavilyAPIKey, cfg.TavilyAPIKeys = "tavily-legacy", []string{"tavily-new"}
 
-	for _, backend := range []string{"brave", "exa", "firecrawl", "keenable"} {
+	for _, backend := range []string{"brave", "exa", "firecrawl", "keenable", "tavily"} {
 		searcher, err := NewFromConfig(&cfg, backend, "")
 		if err != nil {
 			t.Fatalf("%s: %v", backend, err)
@@ -62,6 +63,8 @@ func TestNewFromConfigBuildsEveryEffectiveKeyPool(t *testing.T) {
 		case *Firecrawl:
 			size = candidate.keys.size()
 		case *Keenable:
+			size = candidate.keys.size()
+		case *Tavily:
 			size = candidate.keys.size()
 		default:
 			t.Fatalf("%s: unexpected searcher %T", backend, searcher)
@@ -83,11 +86,19 @@ func TestExportedBackendConstructorsKeepSingleKeyCompatibility(t *testing.T) {
 		{name: "exa", size: NewEXA(&exaKey).keys.size()},
 		{name: "firecrawl", size: NewFirecrawl("firecrawl").keys.size()},
 		{name: "keenable", size: NewKeenable(&keenableKey).keys.size()},
+		{name: "tavily", size: NewTavily("tavily").keys.size()},
 	}
 	for _, tc := range tests {
 		if tc.size != 1 {
 			t.Errorf("%s constructor pool size = %d, want 1", tc.name, tc.size)
 		}
+	}
+}
+
+func TestNewFromConfigTavilyRequiresKey(t *testing.T) {
+	cfg := config.Defaults()
+	if _, err := NewFromConfig(&cfg, "tavily", ""); err == nil {
+		t.Fatal("expected missing-key error for tavily")
 	}
 }
 

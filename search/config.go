@@ -45,6 +45,12 @@ func NewFromConfig(cfg *config.Config, backend, searxngURL string) (Searcher, er
 		return newFirecrawlWithKeys(keys, cfg.EffectiveFirecrawlURL()), nil
 	case "keenable":
 		return newKeenableWithKeys(cfg.KeenableKeys()), nil
+	case "tavily":
+		keys := cfg.TavilyKeys()
+		if len(keys) == 0 {
+			return nil, fmt.Errorf("tavily: API key not set (get one free at https://app.tavily.com then: ketch config set tavily_api_key <key>)")
+		}
+		return newTavilyWithKeys(keys), nil
 	default:
 		return nil, fmt.Errorf("%w %q (available: %s)", ErrUnknownBackend, backend, strings.Join(config.AvailableBackends(), ", "))
 	}

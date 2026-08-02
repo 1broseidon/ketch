@@ -80,6 +80,7 @@ ketch search "query" -b searxng             # use SearXNG backend
 ketch search "query" -b exa                 # use Exa hosted MCP backend
 ketch search "query" -b firecrawl           # use Firecrawl v2 search API
 ketch search "query" -b keenable            # use Keenable backend (keyless by default)
+ketch search "query" -b tavily              # use Tavily search API (keyed; basic depth)
 ketch search "query" --multi                # federate across every usable backend, RRF-fused
 ketch search "query" --multi=brave,ddg,exa  # federate across a specific set (use the = form)
 ketch scrape <url>                          # single URL → markdown
@@ -111,7 +112,7 @@ ketch mcp serve                             # run as an MCP server over stdio (s
 | Flag | Scope | Default | Description |
 |------|-------|---------|-------------|
 | --json | global | false | JSON output |
-| --backend, -b | search | brave | Search backend (brave/ddg/searxng/exa/firecrawl/keenable) |
+| --backend, -b | search | brave | Search backend (brave/ddg/searxng/exa/firecrawl/keenable/tavily) |
 | --multi | search | — | Federated search: comma list or bare/`=all` for every usable backend; RRF-fused, dedup'd, mutually exclusive with --backend (use the `=` form for a list) |
 | --limit, -l | search | 5 | Max results |
 | --scrape | search | false | Fetch full content |

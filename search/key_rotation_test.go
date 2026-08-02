@@ -235,6 +235,28 @@ func TestBackendsRetryEveryCredentialStatus(t *testing.T) {
 			},
 			requestKey: func(r *http.Request) string { return r.Header.Get("X-API-Key") },
 		},
+		{
+			name:        "tavily 401",
+			status:      http.StatusUnauthorized,
+			successBody: `{"results":[]}`,
+			newBackend: func(client *http.Client) Searcher {
+				return &Tavily{keys: deterministicPool("first", "second"), client: client}
+			},
+			requestKey: func(r *http.Request) string {
+				return strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+			},
+		},
+		{
+			name:        "tavily 429",
+			status:      http.StatusTooManyRequests,
+			successBody: `{"results":[]}`,
+			newBackend: func(client *http.Client) Searcher {
+				return &Tavily{keys: deterministicPool("first", "second"), client: client}
+			},
+			requestKey: func(r *http.Request) string {
+				return strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+			},
+		},
 	}
 
 	for _, tc := range tests {
