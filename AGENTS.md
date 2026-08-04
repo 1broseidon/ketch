@@ -2,6 +2,34 @@
 
 Fast, stateless CLI for agentic web search and scrape.
 
+## Intent & design docs
+
+This file is the *what and where* — module layout and the terse principle list.
+Before making a non-trivial change, read the *why*:
+
+- [`docs/DESIGN.md`](docs/DESIGN.md) — the mental model, core abstractions, and
+  the reasoning behind each design principle. **Start here**, and read its
+  [Non-Goals & Scope](docs/DESIGN.md#non-goals--scope) section before adding a
+  feature — it's what keeps a change from pulling ketch in a direction it
+  deliberately avoids (a server, a browser-automation framework, a scale
+  crawler, an LLM wrapper).
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) — possible directions, in dependency
+  order. Non-committal; use it to keep independent work compatible.
+- [`docs/adr/`](docs/adr/) — Architecture Decision Records for choices already
+  made (config overlay, error taxonomy, fast-path scraping).
+
+**Workflow for any change:** read `DESIGN.md` (+ Non-Goals) → make the change
+behind the right interface → run the verify loop before you're done:
+
+```bash
+make build && make lint && make test
+```
+
+`make lint` is `golangci-lint` (gocyclo max 15) and `make test` is
+`go test ./...`; the pre-commit hook enforces both, so run them yourself first.
+If a change genuinely needs to cross a Non-Goal boundary, that's an
+[ADR](docs/adr/)-worthy decision — write down the context and trade-off.
+
 ## Module Layout
 
 ```

@@ -2,6 +2,16 @@
 
 Fast, stateless CLI for agentic web search and scrape. Single Go binary, no daemon.
 
+### Design intent (read first)
+
+Before a non-trivial change, read the *why*, not just the *where*:
+
+- [docs/DESIGN.md](docs/DESIGN.md) — mental model, core abstractions, and the reasoning behind each principle. Its [Non-Goals & Scope](docs/DESIGN.md#non-goals--scope) section is the guardrail: ketch is deliberately **not** a server, a browser-automation framework, a scale crawler, or an LLM wrapper.
+- [docs/ROADMAP.md](docs/ROADMAP.md) — non-committal possible directions, dependency-ordered.
+- [docs/adr/](docs/adr/) — decisions already made (config overlay, error taxonomy, fast-path scraping).
+
+Workflow: read DESIGN + Non-Goals → change behind the right interface → run `make build && make lint && make test` before finishing (the pre-commit hook enforces lint+test anyway).
+
 ### Architecture
 
 See [AGENTS.md](AGENTS.md) for full module layout and design principles.
