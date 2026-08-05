@@ -123,6 +123,7 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 	firecrawlKeys := cfg.FirecrawlKeys()
 	keenableKeys := cfg.KeenableKeys()
 	tavilyKeys := cfg.TavilyKeys()
+	serpbaseKeys := cfg.SerpBaseKeys()
 	c7Key := cfg.Context7APIKey
 	searxngURL := cfg.SearxngURL
 	firecrawlURL := cfg.EffectiveFirecrawlURL()
@@ -162,6 +163,11 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 		{"search", "tavily", cfg.Backend == "tavily" || len(tavilyKeys) > 0, func(ctx context.Context) (Status, string) {
 			return probeKeyPool(tavilyKeys, func(key string) (Status, string) {
 				return probeTavily(ctx, client, tavilyEndpoint, key)
+			})
+		}},
+		{"search", "serpbase", cfg.Backend == "serpbase" || len(serpbaseKeys) > 0, func(ctx context.Context) (Status, string) {
+			return probeKeyPool(serpbaseKeys, func(key string) (Status, string) {
+				return probeSerpBase(ctx, client, serpbaseEndpoint, key)
 			})
 		}},
 		{"code", "grepapp", cfg.CodeBackend == "grepapp", func(ctx context.Context) (Status, string) {
