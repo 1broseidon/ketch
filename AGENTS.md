@@ -51,6 +51,8 @@ Reusable packages live at the module root so external programs can `import "gith
 - **Smart input detection on scrape**: single URL, multiple positional args, JSON array string, file path, or stdin pipe all work — ketch routes automatically. No --batch flag needed.
 - **Context-aware interfaces**: all three Searcher interfaces (`search`, `code`, `docs`) take `context.Context` as first param for cancellation and timeout propagation.
 
+The reasoning behind each principle — and what ketch deliberately does *not* do — is in [docs/DESIGN.md](docs/DESIGN.md) ([Non-Goals & Scope](docs/DESIGN.md#non-goals--scope)). Possible directions: [docs/ROADMAP.md](docs/ROADMAP.md). Decisions already made: [docs/adr/](docs/adr/).
+
 ## MCP Server
 
 `ketch mcp serve` runs an MCP (Model Context Protocol) server over stdio, exposing five tools: `search`, `code`, `docs`, `scrape`, and `crawl`. Tool handlers call the same packages as the Cobra commands, through the same config-driven constructors (`search.NewFromConfig` etc.), and resolve backends/API keys from the same `~/.config/ketch/` config — an agent talking MCP sees exactly what a human using the CLI sees.

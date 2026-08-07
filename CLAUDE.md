@@ -4,7 +4,7 @@ Fast, stateless CLI for agentic web search and scrape. Single Go binary, no daem
 
 ### Architecture
 
-See [AGENTS.md](AGENTS.md) for full module layout and design principles.
+See [AGENTS.md](AGENTS.md) for full module layout and design principles, and [docs/DESIGN.md](docs/DESIGN.md) for the reasoning behind them — read its [Non-Goals & Scope](docs/DESIGN.md#non-goals--scope) before adding a feature.
 
 - `cmd/` — Cobra CLI (root, search, code, docs, scrape, extract, crawl, config, cache, browser, doctor, mcp, version)
 - `code/` — `code.Searcher` interface with Grep (built-in default), Sourcegraph, and GitHub backends
