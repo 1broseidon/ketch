@@ -1,6 +1,8 @@
 # Binary
 /ketch
 /ketch.exe
+/ketch-local
+/readtest
 /dist
 
 # Test
@@ -19,3 +21,9 @@ site/.vitepress/cache
 # OS
 .DS_Store
 Thumbs.db
+
+# Local working state (agent tooling, scratch output, local design notes)
+.recoil/
+.familiar/
+artifacts/
+specs/
