@@ -106,6 +106,21 @@ func TestNewFromConfigTavilyRequiresKey(t *testing.T) {
 	}
 }
 
+func TestNewFromConfigParallelIsKeyless(t *testing.T) {
+	cfg := config.Defaults()
+	searcher, err := NewFromConfig(&cfg, "parallel", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	backend, ok := searcher.(*Parallel)
+	if !ok {
+		t.Fatalf("unexpected type %T", searcher)
+	}
+	if backend.endpoint != parallelEndpoint {
+		t.Fatalf("endpoint = %q, want %q", backend.endpoint, parallelEndpoint)
+	}
+}
+
 func TestNewFromConfigSerpBaseRequiresKey(t *testing.T) {
 	cfg := config.Defaults()
 	if _, err := NewFromConfig(&cfg, "serpbase", ""); err == nil {

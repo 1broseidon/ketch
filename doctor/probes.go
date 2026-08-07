@@ -31,6 +31,7 @@ const (
 	exaMCPEndpoint   = "https://mcp.exa.ai/mcp"
 	keenableEndpoint = "https://api.keenable.ai"
 	tavilyEndpoint   = "https://api.tavily.com/search"
+	parallelEndpoint = "https://search.parallel.ai/mcp"
 	serpbaseEndpoint = "https://api.serpbase.dev/google/search"
 	githubAPIBase    = "https://api.github.com"
 	context7APIBase  = "https://context7.com"

@@ -18,7 +18,7 @@ import (
 var searchCmd = &cobra.Command{
 	Use:   "search <query>",
 	Short: "Search the web and return results",
-	Long: `Search the web using Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, Keenable, Tavily, or SerpBase (default: the configured backend; brave if unset).
+	Long: `Search the web using Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, Keenable, Tavily, Parallel, or SerpBase (default: the configured backend; brave if unset).
 
 Add --scrape to fetch and extract full content from results. Use --multi to query and rank-fuse several providers, or --random to shuffle providers and stop at the first successful response. --multi, --random, and --backend are mutually exclusive.`,
 	Args: exitArgs(cobra.MinimumNArgs(1)),

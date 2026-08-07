@@ -177,7 +177,7 @@ func FirecrawlSearchURL(base string) string {
 
 // AvailableBackends returns the list of known search backends.
 func AvailableBackends() []string {
-	return []string{"brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily", "serpbase"}
+	return []string{"brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily", "parallel", "serpbase"}
 }
 
 // AvailableCodeBackends returns the list of known code search backends.

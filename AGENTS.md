@@ -22,7 +22,7 @@ cmd/
   mcp.go                     MCP command: `mcp serve` runs the MCP server over stdio
   proc_unix.go               Unix process management (detach, signals)
   proc_windows.go            Windows process management stub
-search/                      Searcher interface + Brave/DDG/SearXNG/EXA/Firecrawl/Keenable backends; NewFromConfig owns the backend switch for cmd/ and mcp/. multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), canonical.go the URL dedup keys
+search/                      Searcher interface + Brave/DDG/SearXNG/EXA/Firecrawl/Keenable/Tavily/Parallel/SerpBase backends; NewFromConfig owns the backend switch for cmd/ and mcp/. multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), canonical.go the URL dedup keys
 code/                        code.Searcher interface + GrepApp/Sourcegraph/GitHub backends; NewFromConfig owns the backend switch
 docs/                        docs.Searcher interface + Context7 backend (FTS5 local is an unimplemented stub); NewFromConfig owns the backend switch
 mcp/                         MCP server (search/code/docs/scrape/crawl tools) over the go-sdk mcp package; Server struct holds the shared scraper + cache, tools call the same NewFromConfig constructors as the CLI
@@ -81,6 +81,8 @@ ketch search "query" -b exa                 # use Exa hosted MCP backend
 ketch search "query" -b firecrawl           # use Firecrawl v2 search API
 ketch search "query" -b keenable            # use Keenable backend (keyless by default)
 ketch search "query" -b tavily              # use Tavily search API (keyed; basic depth)
+ketch search "query" -b parallel            # use Parallel Search MCP (keyless)
+ketch search "query" -b serpbase            # use SerpBase Google Search API (keyed)
 ketch search "query" --multi                # federate across every usable backend, RRF-fused
 ketch search "query" --multi=brave,ddg,exa  # federate across a specific set (use the = form)
 ketch scrape <url>                          # single URL → markdown
@@ -112,7 +114,7 @@ ketch mcp serve                             # run as an MCP server over stdio (s
 | Flag | Scope | Default | Description |
 |------|-------|---------|-------------|
 | --json | global | false | JSON output |
-| --backend, -b | search | brave | Search backend (brave/ddg/searxng/exa/firecrawl/keenable/tavily) |
+| --backend, -b | search | brave | Search backend (brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase) |
 | --multi | search | — | Federated search: comma list or bare/`=all` for every usable backend; RRF-fused, dedup'd, mutually exclusive with --backend (use the `=` form for a list) |
 | --limit, -l | search | 5 | Max results |
 | --scrape | search | false | Fetch full content |

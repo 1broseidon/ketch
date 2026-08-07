@@ -165,6 +165,9 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 				return probeTavily(ctx, client, tavilyEndpoint, key)
 			})
 		}},
+		{"search", "parallel", cfg.Backend == "parallel", func(ctx context.Context) (Status, string) {
+			return probeMCP(ctx, client, parallelEndpoint, "parallel")
+		}},
 		{"search", "serpbase", cfg.Backend == "serpbase" || len(serpbaseKeys) > 0, func(ctx context.Context) (Status, string) {
 			return probeKeyPool(serpbaseKeys, func(key string) (Status, string) {
 				return probeSerpBase(ctx, client, serpbaseEndpoint, key)

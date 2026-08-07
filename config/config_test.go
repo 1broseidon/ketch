@@ -7,6 +7,16 @@ import (
 	"testing"
 )
 
+func TestParallelBackendIsAppendedWithoutChangingDefault(t *testing.T) {
+	if got := Defaults().Backend; got != "brave" {
+		t.Fatalf("default backend = %q, want brave", got)
+	}
+	want := []string{"brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily", "parallel", "serpbase"}
+	if got := AvailableBackends(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("available backends = %v, want %v", got, want)
+	}
+}
+
 func TestMergeKeys(t *testing.T) {
 	tests := []struct {
 		name   string

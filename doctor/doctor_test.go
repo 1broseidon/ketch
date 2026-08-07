@@ -729,6 +729,9 @@ func TestBuildSpecsRequiredGating(t *testing.T) {
 	if s := findSpec(t, specs, "search", "keenable"); s.required {
 		t.Error("keenable without a key and not default must be informational")
 	}
+	if s := findSpec(t, specs, "search", "parallel"); s.required {
+		t.Error("parallel not default must be informational")
+	}
 	if s := findSpec(t, specs, "code", "grepapp"); !s.required {
 		t.Error("default code backend must be required")
 	}
@@ -743,6 +746,14 @@ func TestBuildSpecsRequiredGating(t *testing.T) {
 	}
 	if s := findSpec(t, specs, "browser", "none"); s.required {
 		t.Error("unconfigured browser must not gate the exit code")
+	}
+}
+
+func TestBuildSpecsParallelDefaultIsRequired(t *testing.T) {
+	cfg := config.Defaults()
+	cfg.Backend = "parallel"
+	if candidate := findSpec(t, buildSpecs(&cfg, http.DefaultClient), "search", "parallel"); !candidate.required {
+		t.Error("parallel must be required when configured as the default")
 	}
 }
 
