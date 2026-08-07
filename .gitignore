@@ -23,6 +23,7 @@ site/.vitepress/cache
 Thumbs.db
 
 # Local working state (agent tooling, scratch output, local design notes)
+.brainfile/
 .recoil/
 .familiar/
 artifacts/
