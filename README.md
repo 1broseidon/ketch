@@ -10,7 +10,7 @@ A stateless CLI for web search, code search, library docs, and scraping — one 
 
 Most research tooling for agents means wiring up several provider SDKs, each with its own auth and response shape. ketch collapses that into one binary with three research surfaces:
 
-- `ketch search` — web search (Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, or Keenable)
+- `ketch search` — web search (Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, Keenable, Tavily, or SerpBase)
 - `ketch code` — grep real OSS source across public repos (Grep, Sourcegraph, or GitHub Code Search)
 - `ketch docs` — curated, version-aware library documentation (Context7)
 
@@ -123,7 +123,7 @@ When configured, the external converter is authoritative: failures are returned 
 
 | Command | What it does |
 |---|---|
-| `search` | Web search — Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, or Keenable |
+| `search` | Web search — Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, Keenable, Tavily, or SerpBase |
 | `code` | Grep real OSS source — Grep (default), Sourcegraph, or GitHub Code Search |
 | `docs` | Library/framework docs — Context7 (curated, version-aware snippets) |
 | `scrape` | Fetch HTML or PDF URL(s) and extract clean markdown; concurrent batch, JSON array, file, or stdin input |
@@ -142,7 +142,7 @@ Every command supports `-h/--help` for its full flag list; `--json` is the only 
 
 | Surface | Default | Also available | Setup |
 |---|---|---|---|
-| `search` | `brave` | `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily` | Brave, Firecrawl, and Tavily need a free key (`ketch config set brave_api_key <key>` / `firecrawl_api_key` / `tavily_api_key`); `ddg`, `searxng`, `exa`, and `keenable` work with zero config |
+| `search` | `brave` | `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `serpbase` | Brave, Firecrawl, Tavily, and SerpBase need a free key (`ketch config set brave_api_key <key>` / `firecrawl_api_key` / `tavily_api_key` / `serpbase_api_key`); `ddg`, `searxng`, `exa`, and `keenable` work with zero config |
 | `code` | `grepapp` | `sourcegraph`, `github` | Grep and Sourcegraph need nothing; GitHub uses `gh auth login`, `$GITHUB_TOKEN`, or `ketch config set github_token <tok>` |
 | `docs` | `context7` | `local` (planned, not yet implemented) | Free key: `ketch config set context7_api_key <key>` |
 

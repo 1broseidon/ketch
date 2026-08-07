@@ -31,6 +31,7 @@ const (
 	exaMCPEndpoint   = "https://mcp.exa.ai/mcp"
 	keenableEndpoint = "https://api.keenable.ai"
 	tavilyEndpoint   = "https://api.tavily.com/search"
+	serpbaseEndpoint = "https://api.serpbase.dev/google/search"
 	githubAPIBase    = "https://api.github.com"
 	context7APIBase  = "https://context7.com"
 )
@@ -321,6 +322,43 @@ func probeTavily(ctx context.Context, client *http.Client, endpoint, apiKey stri
 		return StatusOK, "reachable, key accepted (plan limit)"
 	case tavilyStatusPaygoLimit:
 		return StatusOK, "reachable, key accepted (pay-as-you-go limit)"
+	default:
+		return StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
+	}
+}
+
+// probeSerpBase checks the SerpBase Google Search API with a minimal query.
+// Auth is a query-param api_key (the provider's documented contract).
+func probeSerpBase(ctx context.Context, client *http.Client, endpoint, apiKey string) (Status, string) {
+	key := strings.TrimSpace(apiKey)
+	if key == "" {
+		return StatusNoKey, "API key not set (get a free key at https://serpbase.dev then: ketch config set serpbase_api_key <key>)"
+	}
+	params := url.Values{}
+	params.Set("q", "ketch")
+	params.Set("num", "1")
+	params.Set("api_key", key)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint+"?"+params.Encode(), nil)
+	if err != nil {
+		return StatusUnreachable, probeErrDetail(err)
+	}
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return StatusUnreachable, probeErrDetail(err)
+	}
+	defer drain(resp)
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return StatusOK, ""
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return StatusMisconfigured, "API key rejected (ketch config set serpbase_api_key <key>)"
+	case http.StatusTooManyRequests:
+		return StatusOK, "reachable, key accepted (rate limited)"
+	case http.StatusPaymentRequired:
+		return StatusOK, "reachable, key accepted (search credits exhausted)"
 	default:
 		return StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
 	}

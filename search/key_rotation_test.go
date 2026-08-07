@@ -257,6 +257,24 @@ func TestBackendsRetryEveryCredentialStatus(t *testing.T) {
 				return strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 			},
 		},
+		{
+			name:        "serpbase 401",
+			status:      http.StatusUnauthorized,
+			successBody: `{"organic_results":[]}`,
+			newBackend: func(client *http.Client) Searcher {
+				return &SerpBase{keys: deterministicPool("first", "second"), client: client}
+			},
+			requestKey: func(r *http.Request) string { return r.URL.Query().Get("api_key") },
+		},
+		{
+			name:        "serpbase 429",
+			status:      http.StatusTooManyRequests,
+			successBody: `{"organic_results":[]}`,
+			newBackend: func(client *http.Client) Searcher {
+				return &SerpBase{keys: deterministicPool("first", "second"), client: client}
+			},
+			requestKey: func(r *http.Request) string { return r.URL.Query().Get("api_key") },
+		},
 	}
 
 	for _, tc := range tests {
