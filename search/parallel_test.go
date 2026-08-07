@@ -119,6 +119,49 @@ func TestParallelSearchBoundsDescriptionWithoutTruncatingContent(t *testing.T) {
 	}
 }
 
+func TestParallelSearchCollapsesWhitespaceInTitleAndDescription(t *testing.T) {
+	t.Parallel()
+	rawTitle := "\n         How to Handle Errors in Go\n    "
+	rawExcerpt := "First line.\n\n* bullet\t\ttabbed\n  indented tail"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		writeParallelResponse(t, w, fmt.Sprintf(
+			`{"results":[{"url":"https://example.com","title":%q,"excerpts":[%q]}]}`,
+			rawTitle, rawExcerpt,
+		))
+	}))
+	defer server.Close()
+
+	backend := &Parallel{client: server.Client(), endpoint: server.URL}
+	results, err := backend.Search(context.Background(), "q", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// --minimal prints "url\ttitle\tdescription\n", so neither field may carry
+	// a newline or tab without breaking the one-result-per-line contract.
+	for _, field := range []struct{ name, value string }{
+		{"title", results[0].Title},
+		{"description", results[0].Description},
+	} {
+		if strings.ContainsAny(field.value, "\n\t") {
+			t.Errorf("%s = %q, want no newline or tab", field.name, field.value)
+		}
+		if field.value != strings.TrimSpace(field.value) {
+			t.Errorf("%s = %q, want no leading/trailing space", field.name, field.value)
+		}
+	}
+	if want := "How to Handle Errors in Go"; results[0].Title != want {
+		t.Errorf("title = %q, want %q", results[0].Title, want)
+	}
+	if want := "First line. * bullet tabbed indented tail"; results[0].Description != want {
+		t.Errorf("description = %q, want %q", results[0].Description, want)
+	}
+	// Content keeps the full, unflattened excerpt text.
+	if results[0].Content != rawExcerpt {
+		t.Errorf("content = %q, want the raw excerpt preserved", results[0].Content)
+	}
+}
+
 func TestParallelSearchZeroLimitSkipsRequest(t *testing.T) {
 	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
