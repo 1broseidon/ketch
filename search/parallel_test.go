@@ -92,6 +92,33 @@ func TestParallelSearchAppliesLimitAndSkipsInvalidResults(t *testing.T) {
 	}
 }
 
+func TestParallelSearchBoundsDescriptionWithoutTruncatingContent(t *testing.T) {
+	t.Parallel()
+	excerpt := strings.Repeat("界", parallelDescriptionMaxRunes+1)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		writeParallelResponse(t, w, fmt.Sprintf(
+			`{"results":[{"url":"https://example.com","title":"example","excerpts":[%q]}]}`,
+			excerpt,
+		))
+	}))
+	defer server.Close()
+
+	backend := &Parallel{client: server.Client(), endpoint: server.URL}
+	results, err := backend.Search(context.Background(), "q", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := len([]rune(results[0].Description)); got != parallelDescriptionMaxRunes {
+		t.Fatalf("description length = %d runes, want %d", got, parallelDescriptionMaxRunes)
+	}
+	if !strings.HasSuffix(results[0].Description, "…") {
+		t.Errorf("description = %q, want ellipsis suffix", results[0].Description)
+	}
+	if results[0].Content != excerpt {
+		t.Errorf("content was truncated: got %d runes, want %d", len([]rune(results[0].Content)), len([]rune(excerpt)))
+	}
+}
+
 func TestParallelSearchZeroLimitSkipsRequest(t *testing.T) {
 	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {

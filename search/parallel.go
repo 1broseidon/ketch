@@ -12,7 +12,10 @@ import (
 	"github.com/1broseidon/ketch/httpx"
 )
 
-const parallelEndpoint = "https://search.parallel.ai/mcp"
+const (
+	parallelEndpoint            = "https://search.parallel.ai/mcp"
+	parallelDescriptionMaxRunes = 300
+)
 
 type Parallel struct {
 	client   *http.Client
@@ -105,28 +108,9 @@ func (p *Parallel) Search(ctx context.Context, query string, limit int) ([]Resul
 			continue
 		}
 		foundText = true
-		var payload parallelSearchPayload
-		if err := json.Unmarshal([]byte(content.Text), &payload); err != nil {
-			return nil, fmt.Errorf("failed to decode parallel search results: %w", err)
-		}
-		for _, raw := range payload.Results {
-			if len(results) >= limit {
-				break
-			}
-			if strings.TrimSpace(raw.Title) == "" || strings.TrimSpace(raw.URL) == "" {
-				continue
-			}
-			excerpts := nonEmptyStrings(raw.Excerpts)
-			description := ""
-			if len(excerpts) > 0 {
-				description = excerpts[0]
-			}
-			results = append(results, Result{
-				Title:       raw.Title,
-				URL:         raw.URL,
-				Description: description,
-				Content:     strings.Join(excerpts, "\n"),
-			})
+		results, err = appendParallelResults(results, content.Text, limit)
+		if err != nil {
+			return nil, err
 		}
 		if len(results) >= limit {
 			break
@@ -136,6 +120,44 @@ func (p *Parallel) Search(ctx context.Context, query string, limit int) ([]Resul
 		return nil, fmt.Errorf("parallel response contained no text results")
 	}
 	return results, nil
+}
+
+// appendParallelResults decodes one MCP text block and maps its valid results.
+// Parallel can return full excerpts, so Description is bounded for listings
+// while Content retains the complete normalized text.
+func appendParallelResults(results []Result, text string, limit int) ([]Result, error) {
+	var payload parallelSearchPayload
+	if err := json.Unmarshal([]byte(text), &payload); err != nil {
+		return nil, fmt.Errorf("failed to decode parallel search results: %w", err)
+	}
+	for _, raw := range payload.Results {
+		if len(results) >= limit {
+			break
+		}
+		if strings.TrimSpace(raw.Title) == "" || strings.TrimSpace(raw.URL) == "" {
+			continue
+		}
+		excerpts := nonEmptyStrings(raw.Excerpts)
+		description := ""
+		if len(excerpts) > 0 {
+			description = boundedParallelDescription(excerpts[0])
+		}
+		results = append(results, Result{
+			Title:       raw.Title,
+			URL:         raw.URL,
+			Description: description,
+			Content:     strings.Join(excerpts, "\n"),
+		})
+	}
+	return results, nil
+}
+
+func boundedParallelDescription(excerpt string) string {
+	runes := []rune(excerpt)
+	if len(runes) <= parallelDescriptionMaxRunes {
+		return excerpt
+	}
+	return string(runes[:parallelDescriptionMaxRunes-1]) + "…"
 }
 
 func nonEmptyStrings(values []string) []string {

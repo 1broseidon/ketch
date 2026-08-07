@@ -14,7 +14,7 @@ var doctorCmd = &cobra.Command{
 	Use:   "doctor",
 	Short: "Check the health of every backend, the browser, and the cache",
 	Long: `Run cheap live health checks against every ketch surface: search backends
-(brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel), code backends
+(brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase), code backends
 (grepapp/sourcegraph/github), docs (context7), the configured browser binary,
 and the page cache.
 

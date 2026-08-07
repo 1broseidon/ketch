@@ -10,7 +10,7 @@ A stateless CLI for web search, code search, library docs, and scraping — one 
 
 Most research tooling for agents means wiring up several provider SDKs, each with its own auth and response shape. ketch collapses that into one binary with three research surfaces:
 
-- `ketch search` — web search (Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, or Keenable)
+- `ketch search` — web search (Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, Keenable, Tavily, Parallel, or SerpBase)
 - `ketch code` — grep real OSS source across public repos (Grep, Sourcegraph, or GitHub Code Search)
 - `ketch docs` — curated, version-aware library documentation (Context7)
 
@@ -123,7 +123,7 @@ When configured, the external converter is authoritative: failures are returned 
 
 | Command | What it does |
 |---|---|
-| `search` | Web search — Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, Keenable, Tavily, or Parallel |
+| `search` | Web search — Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, Keenable, Tavily, Parallel, or SerpBase |
 | `code` | Grep real OSS source — Grep (default), Sourcegraph, or GitHub Code Search |
 | `docs` | Library/framework docs — Context7 (curated, version-aware snippets) |
 | `scrape` | Fetch HTML or PDF URL(s) and extract clean markdown; concurrent batch, JSON array, file, or stdin input |
@@ -142,7 +142,7 @@ Every command supports `-h/--help` for its full flag list; `--json` is the only 
 
 | Surface | Default | Also available | Setup |
 |---|---|---|---|
-| `search` | `brave` | `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel` | Brave, Firecrawl, and Tavily need a free key (`ketch config set brave_api_key <key>` / `firecrawl_api_key` / `tavily_api_key`); `ddg`, `searxng`, `exa`, `keenable`, and `parallel` work with zero config |
+| `search` | `brave` | `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase` | Brave, Firecrawl, Tavily, and SerpBase need a free key (`ketch config set brave_api_key <key>` / `firecrawl_api_key` / `tavily_api_key` / `serpbase_api_key`); `ddg`, `searxng`, `exa`, `keenable`, and `parallel` work with zero config |
 | `code` | `grepapp` | `sourcegraph`, `github` | Grep and Sourcegraph need nothing; GitHub uses `gh auth login`, `$GITHUB_TOKEN`, or `ketch config set github_token <tok>` |
 | `docs` | `context7` | `local` (planned, not yet implemented) | Free key: `ketch config set context7_api_key <key>` |
 
@@ -187,7 +187,7 @@ Precedence is **CLI flag > `KETCH_*` env > config file > built-in default**. Not
 - Invalid env values (e.g. `KETCH_LIMIT=abc`) fail loudly on commands that use config, naming the offending variable; `ketch version` and `ketch config set/path` still work.
 - Secret `KETCH_*` vars are stripped from the environment of spawned subprocesses (headless browser, external PDF converter).
 
-Other configurable keys include per-backend API keys (`brave_api_key`, `brave_api_keys` for multi-key rotation, `exa_api_key`, `firecrawl_api_key`, `keenable_api_key`, `tavily_api_key`, `context7_api_key`, `github_token`), `firecrawl_url` / `sourcegraph_url` (self-hosted overrides), `cache_ttl`, `url_rewrites` (regex rewrite rules applied before fetch), `spa_markers` (extra JS-shell detection tokens), `cookie_file` (see below), and the optional external PDF converter command/timeout. Multiple keys per provider are picked randomly per request to spread rate limits. See the [config reference](https://1broseidon.github.io/ketch/) for the full list.
+Other configurable keys include per-backend API keys (`brave_api_key`, `brave_api_keys` for multi-key rotation, `exa_api_key`, `firecrawl_api_key`, `keenable_api_key`, `tavily_api_key`, `serpbase_api_key`, `context7_api_key`, `github_token`), `firecrawl_url` / `sourcegraph_url` (self-hosted overrides), `cache_ttl`, `url_rewrites` (regex rewrite rules applied before fetch), `spa_markers` (extra JS-shell detection tokens), `cookie_file` (see below), and the optional external PDF converter command/timeout. Multiple keys per provider are picked randomly per request to spread rate limits. See the [config reference](https://1broseidon.github.io/ketch/) for the full list.
 
 ### Cookies (BYO cookies.txt)
 

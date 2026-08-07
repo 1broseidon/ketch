@@ -36,6 +36,8 @@ type configInfo struct {
 	KeenableAPIKeysCount               int               `json:"keenable_api_keys_count"`
 	TavilyAPIKeySet                    bool              `json:"tavily_api_key_set"`
 	TavilyAPIKeysCount                 int               `json:"tavily_api_keys_count"`
+	SerpBaseAPIKeySet                  bool              `json:"serpbase_api_key_set"`
+	SerpBaseAPIKeysCount               int               `json:"serpbase_api_keys_count"`
 	Limit                              int               `json:"limit"`
 	CacheTTL                           string            `json:"cache_ttl"`
 	Browser                            string            `json:"browser,omitempty"`
@@ -109,6 +111,7 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 	firecrawlKeys := c.FirecrawlKeys()
 	keenableKeys := c.KeenableKeys()
 	tavilyKeys := c.TavilyKeys()
+	serpbaseKeys := c.SerpBaseKeys()
 	return configInfo{
 		ConfigPath:                         path,
 		Backend:                            c.Backend,
@@ -124,6 +127,8 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 		KeenableAPIKeysCount:               len(keenableKeys),
 		TavilyAPIKeySet:                    len(tavilyKeys) > 0,
 		TavilyAPIKeysCount:                 len(tavilyKeys),
+		SerpBaseAPIKeySet:                  len(serpbaseKeys) > 0,
+		SerpBaseAPIKeysCount:               len(serpbaseKeys),
 		Limit:                              c.Limit,
 		CacheTTL:                           c.CacheTTL,
 		Browser:                            c.Browser,
@@ -205,6 +210,8 @@ func configSecretCount(c config.Config, key string) (int, string, bool) {
 		return len(c.KeenableKeys()), "key", true
 	case "tavily_api_key", "tavily_api_keys":
 		return len(c.TavilyKeys()), "key", true
+	case "serpbase_api_key", "serpbase_api_keys":
+		return len(c.SerpBaseKeys()), "key", true
 	case "context7_api_key":
 		return boolCount(c.Context7APIKey != ""), "key", true
 	case "github_token":
@@ -253,6 +260,10 @@ func applyConfigSet(c *config.Config, key, value string) error {
 		c.TavilyAPIKey = value
 	case "tavily_api_keys":
 		return setAPIKeys(&c.TavilyAPIKeys, key, value)
+	case "serpbase_api_key":
+		c.SerpBaseAPIKey = value
+	case "serpbase_api_keys":
+		return setAPIKeys(&c.SerpBaseAPIKeys, key, value)
 	case "limit":
 		return setLimit(c, value)
 	case "cache_ttl":

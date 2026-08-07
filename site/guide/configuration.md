@@ -39,7 +39,7 @@ The discovery payload:
   "github_token_source": "none",
   "github_token_set": false,
   "external_pdf_to_md_converter_timeout_sec": 300,
-  "available_backends": ["brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily", "parallel"],
+  "available_backends": ["brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily", "parallel", "serpbase"],
   "available_code_backends": ["grepapp", "sourcegraph", "github"],
   "available_doc_backends": ["context7"]
 }
@@ -86,7 +86,7 @@ ketch config set github_token ghp_...
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `backend` | `brave` | Default search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel` |
+| `backend` | `brave` | Default search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase` |
 | `brave_api_key` | — | Brave Search API key ([get one free](https://brave.com/search/api/)) |
 | `brave_api_keys` | — | Additional Brave keys (JSON array) — see [multiple keys](#multiple-api-keys-per-provider) |
 | `exa_api_key` | — | Optional Exa API key for authenticated hosted MCP usage |
@@ -98,6 +98,8 @@ ketch config set github_token ghp_...
 | `keenable_api_keys` | — | Additional Keenable keys (JSON array) |
 | `tavily_api_key` | — | [Tavily](https://app.tavily.com) API key (required for `-b tavily`) |
 | `tavily_api_keys` | — | Additional Tavily keys (JSON array) |
+| `serpbase_api_key` | — | [SerpBase](https://serpbase.dev) API key (required for `-b serpbase`) |
+| `serpbase_api_keys` | — | Additional SerpBase keys (JSON array) |
 | `searxng_url` | `http://localhost:8081` | SearXNG instance URL |
 | `limit` | `5` | Default max results (shared by `search`, `code`, `docs`) |
 

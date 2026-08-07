@@ -439,6 +439,63 @@ func TestProbeTavilyStatuses(t *testing.T) {
 	}
 }
 
+// --- serpbase ---
+
+func TestProbeSerpBaseNoKey(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Error("no-key probe must not hit the network")
+	}))
+	defer ts.Close()
+
+	status, detail := probeSerpBase(testCtx(t), ts.Client(), ts.URL, "")
+	if status != StatusNoKey {
+		t.Fatalf("status = %q, want no_key", status)
+	}
+	if !strings.Contains(detail, "serpbase_api_key") {
+		t.Errorf("detail %q should name serpbase_api_key", detail)
+	}
+}
+
+func TestProbeSerpBaseStatuses(t *testing.T) {
+	cases := []struct {
+		name   string
+		code   int
+		want   Status
+		detail string
+	}{
+		{"ok", http.StatusOK, StatusOK, ""},
+		{"401", http.StatusUnauthorized, StatusMisconfigured, "serpbase_api_key"},
+		{"403", http.StatusForbidden, StatusMisconfigured, "serpbase_api_key"},
+		{"429", http.StatusTooManyRequests, StatusOK, "rate limited"},
+		{"402", http.StatusPaymentRequired, StatusOK, "credits"},
+		{"500", http.StatusInternalServerError, StatusUnreachable, "500"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var gotKey string
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				gotKey = r.URL.Query().Get("api_key")
+				w.WriteHeader(tc.code)
+			}))
+			defer ts.Close()
+
+			status, detail := probeSerpBase(testCtx(t), ts.Client(), ts.URL, "serpbase-secret")
+			if status != tc.want {
+				t.Fatalf("status = %q (detail %q), want %q", status, detail, tc.want)
+			}
+			if gotKey != "serpbase-secret" {
+				t.Errorf("api_key query param = %q, want serpbase-secret", gotKey)
+			}
+			if tc.detail != "" && !strings.Contains(detail, tc.detail) {
+				t.Errorf("detail %q should contain %q", detail, tc.detail)
+			}
+			if strings.Contains(detail, "serpbase-secret") {
+				t.Errorf("detail leaked key: %q", detail)
+			}
+		})
+	}
+}
+
 // --- sourcegraph reachability ---
 
 func TestProbeReachable(t *testing.T) {
