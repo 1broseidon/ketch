@@ -143,7 +143,7 @@ func appendParallelResults(results []Result, text string, limit int) ([]Result, 
 			description = boundedParallelDescription(excerpts[0])
 		}
 		results = append(results, Result{
-			Title:       raw.Title,
+			Title:       collapseParallelWhitespace(raw.Title),
 			URL:         raw.URL,
 			Description: description,
 			Content:     strings.Join(excerpts, "\n"),
@@ -152,12 +152,22 @@ func appendParallelResults(results []Result, text string, limit int) ([]Result, 
 	return results, nil
 }
 
+// collapseParallelWhitespace flattens a value onto a single line, collapsing
+// every run of whitespace to one space. Parallel returns extracted page text,
+// so titles and excerpts can carry newlines and indentation. Results are
+// printed one per line — `--minimal` emits "url\ttitle\tdescription\n" — so an
+// embedded newline or tab in either field would break that row contract.
+func collapseParallelWhitespace(s string) string {
+	return strings.Join(strings.Fields(s), " ")
+}
+
 func boundedParallelDescription(excerpt string) string {
+	excerpt = collapseParallelWhitespace(excerpt)
 	runes := []rune(excerpt)
 	if len(runes) <= parallelDescriptionMaxRunes {
 		return excerpt
 	}
-	return string(runes[:parallelDescriptionMaxRunes-1]) + "…"
+	return strings.TrimSpace(string(runes[:parallelDescriptionMaxRunes-1])) + "…"
 }
 
 func nonEmptyStrings(values []string) []string {
