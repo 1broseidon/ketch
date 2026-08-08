@@ -2,6 +2,24 @@
 
 This page mirrors the canonical [`CHANGELOG.md`](https://github.com/1broseidon/ketch/blob/main/CHANGELOG.md) in the repo root. Versions follow [Semantic Versioning](https://semver.org/) and match the published git tags.
 
+## v0.14.0 — 2026-08-07
+
+**Added**
+
+- **Parallel search backend**: keyless current-web search through Parallel's hosted Search MCP endpoint. Wired through `NewFromConfig`, config discovery, CLI/MCP selection, multi/random search, and `ketch doctor` without changing the Brave default or adding authentication configuration.
+- **SerpBase search backend**: Google search results via the SerpBase REST API with query-param `api_key` auth (`serpbase_api_key` / `serpbase_api_keys`, `KETCH_SERPBASE_API_KEY`). Keyed only — no keyless mode. Wired through config set/discovery, `NewFromConfig`, multi/random (`--multi=all` includes it when a key is set), MCP, and `ketch doctor`.
+- **Tavily search backend**: agent-oriented web search with Bearer auth (`tavily_api_key` / `tavily_api_keys`, `KETCH_TAVILY_API_KEY`). Keyed only. Default `search_depth` is `basic` (1 credit); results fill both `Description` and `Content` from Tavily's extracted text. Wired through config set/discovery, `NewFromConfig`, multi/random, MCP, and `ketch doctor`.
+- **Self-hosted Firecrawl** (#31): `firecrawl_url` (default `https://api.firecrawl.dev`) overrides the Firecrawl API base; ketch appends `/v2/search`. Hosted cloud still requires `firecrawl_api_key`; a non-default base allows keyless self-hosted instances. A pasted full endpoint is normalized back to its base.
+
+**Changed**
+
+- Contributor-facing design documentation now lives in `design/`: `DESIGN.md` (mental model, core abstractions, and an explicit Non-Goals & Scope section), `ROADMAP.md` (non-committal directions), and `adr/` (Architecture Decision Records).
+
+**Fixed**
+
+- Parallel search results no longer break the one-result-per-line output contract. Titles and excerpts from extracted page text could carry newlines, so a 3-result `--minimal` query emitted 30 lines and corrupted row parsing. Both fields now collapse whitespace to a single space before bounding; `Content` keeps the complete text.
+- `ketch doctor` no longer reports healthy self-hosted search instances as `unreachable`. Self-hosted Firecrawl is now probed for liveness instead of results, and SearXNG keeps its real `format=json` search on a 10s budget.
+
 ## v0.13.0 — 2026-07-25
 
 **Added**

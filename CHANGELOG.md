@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-08-07
+
 ### Added
 - **Parallel search backend.** Keyless current-web search through Parallel's hosted Search MCP endpoint. Wired through `NewFromConfig`, config discovery, CLI/MCP selection, multi/random search, and `ketch doctor` without changing the Brave default or adding authentication configuration.
 - **SerpBase search backend.** Google search results via `GET https://api.serpbase.dev/google/search` with query-param `api_key` auth (`serpbase_api_key` / `serpbase_api_keys`, `KETCH_SERPBASE_API_KEY`). Keyed only — no keyless mode. Wired through config set/discovery, `NewFromConfig`, multi/random (`--multi=all` includes it when a key is set), MCP, and `ketch doctor` (401 → misconfigured; 402 → ok with credits detail; 429 → ok rate limited).
@@ -14,7 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Self-hosted Firecrawl** (#31). `firecrawl_url` (default `https://api.firecrawl.dev`) overrides the Firecrawl API base; ketch appends `/v2/search`. Hosted cloud still requires `firecrawl_api_key`; a non-default base allows keyless self-hosted instances. Wired through config set/discovery, `KETCH_FIRECRAWL_URL`, search `NewFromConfig`, and `ketch doctor`. A pasted full endpoint is normalized back to its base, so `.../v2/search` is neither doubled into `.../v2/search/v2/search` nor mistaken for a self-hosted instance when it points at the hosted API.
 
 ### Fixed
+- Parallel search results no longer break the one-result-per-line output contract. Parallel returns extracted page text, so titles and excerpts can carry newlines, tabs, and indentation; bounding the description by rune count capped its length but not its shape, and titles were passed through raw. Because results print one per line — `--minimal` emits `url\ttitle\tdescription\n` — an embedded newline split a single result across many lines (a 3-result query emitted 30 lines) and corrupted row parsing for scripted callers. Both fields now collapse runs of whitespace to a single space before bounding; `Content` still keeps the complete, unflattened excerpt text. Scoped to the Parallel backend — other providers return short single-line snippets natively.
 - `ketch doctor` no longer reports healthy self-hosted search instances as `unreachable`. Both offenders answer more slowly than a hosted API because they run the search themselves: self-hosted Firecrawl spends about eight seconds on a one-result query, and SearXNG about three — landing exactly on doctor's 3s per-probe budget. A self-hosted Firecrawl is now probed for liveness instead of results (a request its validation rejects still proves `/v2/search` answers, distinguishes a base URL pointing elsewhere via 404, and surfaces an instance that demands a key), which also drops that check from a timeout to milliseconds. SearXNG keeps its real `format=json` search — that probe is what detects the blocked-JSON trap — on a 10s budget. Wrong-base 404s now name `firecrawl_url` in the fix hint.
+
+### Changed
+- Contributor-facing design documentation now lives in `design/`: `DESIGN.md` (the mental model, core abstractions, and the reasoning behind each design principle, including an explicit Non-Goals & Scope section), `ROADMAP.md` (non-committal, dependency-ordered directions), and `adr/` (Architecture Decision Records, including new records for the exit-code/error-prefix taxonomy and fast-path-first scraping). Previously the ADR directory sat inside `docs/`, which is the Go package `github.com/1broseidon/ketch/docs`; the prose has moved out so that directory holds only package source.
 
 ## [0.13.0] - 2026-07-25
 
