@@ -179,7 +179,7 @@ func TestLooksLikeBackendList(t *testing.T) {
 	}{
 		{"brave,exa", true},
 		{"brave, exa", true},
-		{"brave,ddg,searxng,exa,firecrawl,keenable,tavily,parallel,serpbase", true},
+		{"brave,ddg,searxng,exa,firecrawl,keenable,tavily,parallel,serpbase,synthetic", true},
 		{"brave", false},             // single name: no comma, plausible query
 		{"brave,notabackend", false}, // unknown member: real query
 		{"go generics, explained", false},

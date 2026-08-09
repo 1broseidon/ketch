@@ -28,3 +28,4 @@ Thumbs.db
 .familiar/
 artifacts/
 specs/
+vendor/

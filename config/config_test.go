@@ -11,7 +11,7 @@ func TestParallelBackendIsAppendedWithoutChangingDefault(t *testing.T) {
 	if got := Defaults().Backend; got != "brave" {
 		t.Fatalf("default backend = %q, want brave", got)
 	}
-	want := []string{"brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily", "parallel", "serpbase"}
+	want := []string{"brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily", "parallel", "serpbase", "synthetic"}
 	if got := AvailableBackends(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("available backends = %v, want %v", got, want)
 	}

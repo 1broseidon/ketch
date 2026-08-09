@@ -20,7 +20,7 @@ var ErrUnknownBackend = errors.New("unknown search backend")
 // single owner of the backend switch.
 func NewFromConfig(cfg *config.Config, backend, searxngURL string) (Searcher, error) {
 	switch backend {
-	case "brave", "exa", "firecrawl", "keenable", "tavily", "serpbase":
+	case "brave", "exa", "firecrawl", "keenable", "tavily", "serpbase", "synthetic":
 		return newCredentialAwareBackend(cfg, backend)
 	case "searxng":
 		if searxngURL == "" {
@@ -71,6 +71,12 @@ func newCredentialAwareBackend(cfg *config.Config, backend string) (Searcher, er
 			return nil, fmt.Errorf("serpbase: API key not set (get a free key at https://serpbase.dev then: ketch config set serpbase_api_key <key>)")
 		}
 		return newSerpBaseWithKeys(keys), nil
+	case "synthetic":
+		keys := cfg.SyntheticKeys()
+		if len(keys) == 0 {
+			return nil, fmt.Errorf("synthetic: API key not set (get one at https://synthetic.new then: ketch config set synthetic_api_key <key>)")
+		}
+		return newSyntheticWithKeys(keys), nil
 	default:
 		return nil, fmt.Errorf("%w %q (available: %s)", ErrUnknownBackend, backend, strings.Join(config.AvailableBackends(), ", "))
 	}

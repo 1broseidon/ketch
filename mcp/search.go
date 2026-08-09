@@ -14,7 +14,7 @@ import (
 // default backend/limit) stay operator-configured.
 type SearchInput struct {
 	Query      string   `json:"query" jsonschema:"the search query"`
-	Backend    string   `json:"backend,omitempty" jsonschema:"search backend: brave, ddg, searxng, exa, firecrawl, keenable, tavily, parallel, or serpbase (default: the configured backend)"`
+	Backend    string   `json:"backend,omitempty" jsonschema:"search backend: brave, ddg, searxng, exa, firecrawl, keenable, tavily, parallel, serpbase, or synthetic (default: the configured backend)"`
 	Multi      []string `json:"multi,omitempty" jsonschema:"federated search: backends to query and rank-fuse (reciprocal rank fusion), e.g. [\"brave\",\"ddg\"]; use [\"all\"] for every usable backend; mutually exclusive with backend and random; results gain a backends field showing which engines returned each"`
 	Random     []string `json:"random,omitempty" jsonschema:"random provider selection with sequential fallback on errors, e.g. [\"brave\",\"ddg\"]; use [\"all\"] for every usable backend; mutually exclusive with backend and multi"`
 	Limit      int      `json:"limit,omitempty" jsonschema:"max number of results (default: the configured limit)"`

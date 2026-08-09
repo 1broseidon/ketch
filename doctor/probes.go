@@ -1,6 +1,7 @@
 package doctor
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -32,8 +33,9 @@ const (
 	keenableEndpoint = "https://api.keenable.ai"
 	tavilyEndpoint   = "https://api.tavily.com/search"
 	parallelEndpoint = "https://search.parallel.ai/mcp"
-	serpbaseEndpoint = "https://api.serpbase.dev/google/search"
-	githubAPIBase    = "https://api.github.com"
+	serpbaseEndpoint   = "https://api.serpbase.dev/google/search"
+	syntheticEndpoint  = "https://api.synthetic.new/v2/search"
+	githubAPIBase     = "https://api.github.com"
 	context7APIBase  = "https://context7.com"
 )
 
@@ -360,6 +362,40 @@ func probeSerpBase(ctx context.Context, client *http.Client, endpoint, apiKey st
 		return StatusOK, "reachable, key accepted (rate limited)"
 	case http.StatusPaymentRequired:
 		return StatusOK, "reachable, key accepted (search credits exhausted)"
+	default:
+		return StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
+	}
+}
+
+// probeSynthetic checks the Synthetic zero-data-retention web search API
+// with a minimal query. Synthetic uses a POST + Bearer auth shape.
+func probeSynthetic(ctx context.Context, client *http.Client, endpoint, apiKey string) (Status, string) {
+	key := strings.TrimSpace(apiKey)
+	if key == "" {
+		return StatusNoKey, "API key not set (get one at https://synthetic.new then: ketch config set synthetic_api_key <key>)"
+	}
+	body := []byte(`{"query":"ketch"}`)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
+	if err != nil {
+		return StatusUnreachable, probeErrDetail(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+key)
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return StatusUnreachable, probeErrDetail(err)
+	}
+	defer drain(resp)
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return StatusOK, ""
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return StatusMisconfigured, "API key rejected (ketch config set synthetic_api_key <key>)"
+	case http.StatusTooManyRequests:
+		return StatusOK, "reachable, key accepted (rate limited)"
 	default:
 		return StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
 	}

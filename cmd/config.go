@@ -38,6 +38,8 @@ type configInfo struct {
 	TavilyAPIKeysCount                 int               `json:"tavily_api_keys_count"`
 	SerpBaseAPIKeySet                  bool              `json:"serpbase_api_key_set"`
 	SerpBaseAPIKeysCount               int               `json:"serpbase_api_keys_count"`
+	SyntheticAPIKeySet                 bool              `json:"synthetic_api_key_set"`
+	SyntheticAPIKeysCount              int               `json:"synthetic_api_keys_count"`
 	Limit                              int               `json:"limit"`
 	CacheTTL                           string            `json:"cache_ttl"`
 	Browser                            string            `json:"browser,omitempty"`
@@ -112,6 +114,7 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 	keenableKeys := c.KeenableKeys()
 	tavilyKeys := c.TavilyKeys()
 	serpbaseKeys := c.SerpBaseKeys()
+	syntheticKeys := c.SyntheticKeys()
 	return configInfo{
 		ConfigPath:                         path,
 		Backend:                            c.Backend,
@@ -129,6 +132,8 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 		TavilyAPIKeysCount:                 len(tavilyKeys),
 		SerpBaseAPIKeySet:                  len(serpbaseKeys) > 0,
 		SerpBaseAPIKeysCount:               len(serpbaseKeys),
+		SyntheticAPIKeySet:                 len(syntheticKeys) > 0,
+		SyntheticAPIKeysCount:              len(syntheticKeys),
 		Limit:                              c.Limit,
 		CacheTTL:                           c.CacheTTL,
 		Browser:                            c.Browser,
@@ -212,6 +217,8 @@ func configSecretCount(c config.Config, key string) (int, string, bool) {
 		return len(c.TavilyKeys()), "key", true
 	case "serpbase_api_key", "serpbase_api_keys":
 		return len(c.SerpBaseKeys()), "key", true
+	case "synthetic_api_key", "synthetic_api_keys":
+		return len(c.SyntheticKeys()), "key", true
 	case "context7_api_key":
 		return boolCount(c.Context7APIKey != ""), "key", true
 	case "github_token":
@@ -264,6 +271,10 @@ func applyConfigSet(c *config.Config, key, value string) error {
 		c.SerpBaseAPIKey = value
 	case "serpbase_api_keys":
 		return setAPIKeys(&c.SerpBaseAPIKeys, key, value)
+	case "synthetic_api_key":
+		c.SyntheticAPIKey = value
+	case "synthetic_api_keys":
+		return setAPIKeys(&c.SyntheticAPIKeys, key, value)
 	case "limit":
 		return setLimit(c, value)
 	case "cache_ttl":
@@ -293,7 +304,7 @@ func applyConfigSet(c *config.Config, key, value string) error {
 	case "external_pdf_to_md_converter_timeout_sec":
 		return setExternalPDFConverterTimeout(c, value)
 	default:
-		return exitErrf(ExitValidation, "unknown key: %s (valid: backend, searxng_url, brave_api_key, brave_api_keys, exa_api_key, exa_api_keys, firecrawl_api_key, firecrawl_api_keys, firecrawl_url, keenable_api_key, keenable_api_keys, tavily_api_key, tavily_api_keys, limit, cache_ttl, browser, code_backend, docs_backend, context7_api_key, sourcegraph_url, github_token, url_rewrites, spa_markers, cookie_file, user_agent, external_pdf_to_md_converter_command, external_pdf_to_md_converter_timeout_sec)", key)
+		return exitErrf(ExitValidation, "unknown key: %s (valid: backend, searxng_url, brave_api_key, brave_api_keys, exa_api_key, exa_api_keys, firecrawl_api_key, firecrawl_api_keys, firecrawl_url, keenable_api_key, keenable_api_keys, tavily_api_key, tavily_api_keys, serpbase_api_key, serpbase_api_keys, synthetic_api_key, synthetic_api_keys, limit, cache_ttl, browser, code_backend, docs_backend, context7_api_key, sourcegraph_url, github_token, url_rewrites, spa_markers, cookie_file, user_agent, external_pdf_to_md_converter_command, external_pdf_to_md_converter_timeout_sec)", key)
 	}
 	return nil
 }
