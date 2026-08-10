@@ -14,7 +14,7 @@ import (
 // default backend/limit) stay operator-configured.
 type SearchInput struct {
 	Query      string   `json:"query" jsonschema:"the search query"`
-	Backend    string   `json:"backend,omitempty" jsonschema:"search backend: brave, ddg, searxng, degoog, exa, firecrawl, or keenable (default: the configured backend)"`
+	Backend    string   `json:"backend,omitempty" jsonschema:"search backend: brave, ddg, searxng, degoog, exa, firecrawl, keenable, tavily, parallel, or serpbase (default: the configured backend)"`
 	Multi      []string `json:"multi,omitempty" jsonschema:"federated search: backends to query and rank-fuse (reciprocal rank fusion), e.g. [\"brave\",\"ddg\"]; use [\"all\"] for every usable backend; mutually exclusive with backend and random; results gain a backends field showing which engines returned each"`
 	Random     []string `json:"random,omitempty" jsonschema:"random provider selection with sequential fallback on errors, e.g. [\"brave\",\"ddg\"]; use [\"all\"] for every usable backend; mutually exclusive with backend and multi"`
 	Limit      int      `json:"limit,omitempty" jsonschema:"max number of results (default: the configured limit)"`
@@ -40,7 +40,7 @@ type SearchOutput struct {
 func (s *Server) registerSearchTool() {
 	mcpsdk.AddTool(s.mcp, &mcpsdk.Tool{
 		Name: "search",
-		Description: "Search the web using Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, or Keenable (default: the configured backend) and return results (title, url, description). " +
+		Description: "Search the web using Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, Keenable, Tavily, Parallel, or SerpBase (default: the configured backend) and return results (title, url, description). " +
 			"Set scrape=true to also fetch each result and include its content as markdown. " +
 			"Set multi to query several backends at once and rank-fuse the results, or random to shuffle providers and fall back sequentially on errors." + errTaxonomy,
 		Annotations: readOnlyOpenWorld(),

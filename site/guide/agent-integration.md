@@ -84,8 +84,11 @@ ketch scrape https://help.example.com/s/article/1234
   "exa_api_keys_count": 0,
   "firecrawl_api_key_set": false,
   "firecrawl_api_keys_count": 0,
+  "firecrawl_url": "https://api.firecrawl.dev",
   "keenable_api_key_set": false,
   "keenable_api_keys_count": 0,
+  "tavily_api_key_set": false,
+  "tavily_api_keys_count": 0,
   "limit": 5,
   "cache_ttl": "72h",
   "browser": "chrome",
@@ -95,7 +98,7 @@ ketch scrape https://help.example.com/s/article/1234
   "sourcegraph_url": "https://sourcegraph.com",
   "github_token_source": "none",
   "github_token_set": false,
-  "available_backends": ["brave", "ddg", "searxng", "exa", "firecrawl", "keenable"],
+  "available_backends": ["brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily", "parallel", "serpbase"],
   "available_code_backends": ["grepapp", "sourcegraph", "github"],
   "available_doc_backends": ["context7"]
 }

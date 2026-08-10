@@ -47,8 +47,10 @@ func TestNewFromConfigBuildsEveryEffectiveKeyPool(t *testing.T) {
 	cfg.ExaAPIKey, cfg.ExaAPIKeys = "exa-legacy", []string{"exa-new"}
 	cfg.FirecrawlAPIKey, cfg.FirecrawlAPIKeys = "firecrawl-legacy", []string{"firecrawl-new"}
 	cfg.KeenableAPIKey, cfg.KeenableAPIKeys = "keenable-legacy", []string{"keenable-new"}
+	cfg.TavilyAPIKey, cfg.TavilyAPIKeys = "tavily-legacy", []string{"tavily-new"}
+	cfg.SerpBaseAPIKey, cfg.SerpBaseAPIKeys = "serpbase-legacy", []string{"serpbase-new"}
 
-	for _, backend := range []string{"brave", "exa", "firecrawl", "keenable"} {
+	for _, backend := range []string{"brave", "exa", "firecrawl", "keenable", "tavily", "serpbase"} {
 		searcher, err := NewFromConfig(&cfg, backend, "", "")
 		if err != nil {
 			t.Fatalf("%s: %v", backend, err)
@@ -62,6 +64,10 @@ func TestNewFromConfigBuildsEveryEffectiveKeyPool(t *testing.T) {
 		case *Firecrawl:
 			size = candidate.keys.size()
 		case *Keenable:
+			size = candidate.keys.size()
+		case *Tavily:
+			size = candidate.keys.size()
+		case *SerpBase:
 			size = candidate.keys.size()
 		default:
 			t.Fatalf("%s: unexpected searcher %T", backend, searcher)
@@ -83,10 +89,83 @@ func TestExportedBackendConstructorsKeepSingleKeyCompatibility(t *testing.T) {
 		{name: "exa", size: NewEXA(&exaKey).keys.size()},
 		{name: "firecrawl", size: NewFirecrawl("firecrawl").keys.size()},
 		{name: "keenable", size: NewKeenable(&keenableKey).keys.size()},
+		{name: "tavily", size: NewTavily("tavily").keys.size()},
+		{name: "serpbase", size: NewSerpBase("serpbase").keys.size()},
 	}
 	for _, tc := range tests {
 		if tc.size != 1 {
 			t.Errorf("%s constructor pool size = %d, want 1", tc.name, tc.size)
 		}
 	}
+}
+
+func TestNewFromConfigTavilyRequiresKey(t *testing.T) {
+	cfg := config.Defaults()
+	if _, err := NewFromConfig(&cfg, "tavily", "", ""); err == nil {
+		t.Fatal("expected missing-key error for tavily")
+	}
+}
+
+func TestNewFromConfigParallelIsKeyless(t *testing.T) {
+	cfg := config.Defaults()
+	searcher, err := NewFromConfig(&cfg, "parallel", "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	backend, ok := searcher.(*Parallel)
+	if !ok {
+		t.Fatalf("unexpected type %T", searcher)
+	}
+	if backend.endpoint != parallelEndpoint {
+		t.Fatalf("endpoint = %q, want %q", backend.endpoint, parallelEndpoint)
+	}
+}
+
+func TestNewFromConfigSerpBaseRequiresKey(t *testing.T) {
+	cfg := config.Defaults()
+	if _, err := NewFromConfig(&cfg, "serpbase", "", ""); err == nil {
+		t.Fatal("expected missing-key error for serpbase")
+	}
+}
+
+func TestNewFromConfigFirecrawlURL(t *testing.T) {
+	t.Run("cloud requires key", func(t *testing.T) {
+		cfg := config.Defaults()
+		if _, err := NewFromConfig(&cfg, "firecrawl", "", ""); err == nil {
+			t.Fatal("expected missing-key error for hosted Firecrawl")
+		}
+	})
+
+	t.Run("self-hosted allows empty key", func(t *testing.T) {
+		cfg := config.Defaults()
+		cfg.FirecrawlURL = "http://localhost:3002"
+		searcher, err := NewFromConfig(&cfg, "firecrawl", "", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		backend, ok := searcher.(*Firecrawl)
+		if !ok {
+			t.Fatalf("unexpected type %T", searcher)
+		}
+		if backend.keys.size() != 0 {
+			t.Fatalf("keys = %d, want 0", backend.keys.size())
+		}
+		if got := backend.endpoint; got != "http://localhost:3002/v2/search" {
+			t.Fatalf("endpoint = %q, want local /v2/search", got)
+		}
+	})
+
+	t.Run("custom base with key", func(t *testing.T) {
+		cfg := config.Defaults()
+		cfg.FirecrawlURL = "https://fc.example.com/"
+		cfg.FirecrawlAPIKey = "k"
+		searcher, err := NewFromConfig(&cfg, "firecrawl", "", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		backend := searcher.(*Firecrawl)
+		if got := backend.endpoint; got != "https://fc.example.com/v2/search" {
+			t.Fatalf("endpoint = %q", got)
+		}
+	})
 }

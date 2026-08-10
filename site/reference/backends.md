@@ -4,9 +4,9 @@ ketch has three search surfaces, each with its own backends: web search (`ketch 
 
 ## Web Search Backends
 
-ketch supports six web-search backends. Set the default with `ketch config set backend <name>`. To query several at once, use `ketch search --multi` (rank-fused federation) or `--random` (one shuffled provider with fallback) — see the [command reference](/reference/commands#ketch-search).
+ketch supports nine web-search backends. Set the default with `ketch config set backend <name>`. To query several at once, use `ketch search --multi` (rank-fused federation) or `--random` (one shuffled provider with fallback) — see the [command reference](/reference/commands#ketch-search).
 
-Every keyed backend also accepts a pool of keys (`brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`, `keenable_api_keys`); ketch picks one at random per request and retries once with a different key on `401`/`429` (`402` for Firecrawl). See [multiple API keys](/guide/configuration#multiple-api-keys-per-provider).
+Every keyed backend also accepts a pool of keys (`brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`, `keenable_api_keys`, `tavily_api_keys`, `serpbase_api_keys`); ketch picks one at random per request and retries once with a different key on `401`/`429` (`402` for Firecrawl). See [multiple API keys](/guide/configuration#multiple-api-keys-per-provider).
 
 ## Brave (default)
 
@@ -65,13 +65,24 @@ ketch config set backend exa
 
 ## Firecrawl
 
-Web search via the [Firecrawl](https://firecrawl.dev) v2 [search API](https://docs.firecrawl.dev/api-reference/endpoint/search) — proper JSON API, no scraping. Requires an API key.
+Web search via the [Firecrawl](https://firecrawl.dev) v2 [search API](https://docs.firecrawl.dev/api-reference/endpoint/search) — proper JSON API, no scraping. The hosted cloud API requires an API key; self-hosted instances often run without one.
 
-**Setup:**
+**Setup (hosted):**
 
 1. Get an API key at [firecrawl.dev](https://firecrawl.dev)
 2. Set it: `ketch config set firecrawl_api_key <your-key>`
 3. Make it the default: `ketch config set backend firecrawl`
+
+**Setup (self-hosted):**
+
+```sh
+ketch config set firecrawl_url http://localhost:3002
+ketch config set backend firecrawl
+# optional if your instance requires auth:
+# ketch config set firecrawl_api_key <your-key>
+```
+
+`firecrawl_url` is the API base (ketch appends `/v2/search`). Default is `https://api.firecrawl.dev`. Pasting the full endpoint works too — a trailing `/v2/search` is stripped rather than doubled.
 
 **Recommended for:** operators already using Firecrawl for scraping who want a single provider for both search and page extraction. Pair with `--scrape` to fetch full content per result.
 
@@ -89,6 +100,42 @@ ketch config set backend keenable
 Create a key at [keenable.ai/console](https://keenable.ai/console).
 
 **Recommended for:** agent workflows that want a zero-config, agent-oriented search backend without provisioning a provider key up front.
+
+## Tavily
+
+Agent-oriented web search via the [Tavily](https://tavily.com) Search API. Returns extracted page text (not just SERP snippets), so ketch fills both `description` and `content` on each result. Requires an API key — no keyless mode. Uses `search_depth: basic` by default (1 credit per request).
+
+**Setup:**
+
+1. Get a free API key at [app.tavily.com](https://app.tavily.com) (1,000 credits/month, no credit card)
+2. Set it: `ketch config set tavily_api_key <your-key>`
+3. Make it the default: `ketch config set backend tavily`
+
+**Recommended for:** agent workflows that want richer extracted content in search results without a separate scrape step.
+
+## Parallel
+
+Current web search through Parallel's hosted Search MCP endpoint. Ketch maps result titles, URLs, and excerpts into its standard search result fields.
+
+**Setup:** None — the default endpoint is keyless. Select it explicitly:
+
+```sh
+ketch config set backend parallel
+```
+
+**Recommended for:** agent workflows that want a setup-free search backend with excerpt content.
+
+## SerpBase
+
+Google search results through the [SerpBase](https://serpbase.dev) REST API. Ketch maps organic result titles, links, and snippets into its standard search result fields.
+
+**Setup:**
+
+1. Get an API key at [serpbase.dev](https://serpbase.dev)
+2. Set it: `ketch config set serpbase_api_key <your-key>`
+3. Make it the default: `ketch config set backend serpbase`
+
+**Recommended for:** agent workflows that need keyed Google search results through a structured API.
 
 ## Code Search Backends
 

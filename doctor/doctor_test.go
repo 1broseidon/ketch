@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -118,12 +119,82 @@ func TestProbeFirecrawlNoKey(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	status, detail := probeFirecrawl(testCtx(t), ts.Client(), ts.URL, "")
+	status, detail := probeFirecrawl(testCtx(t), ts.Client(), config.FirecrawlSearchURL(config.DefaultFirecrawlURL), "")
 	if status != StatusNoKey {
 		t.Fatalf("status = %q, want no_key", status)
 	}
 	if !strings.Contains(detail, "firecrawl_api_key") {
 		t.Errorf("detail %q should carry the config hint", detail)
+	}
+}
+
+func TestProbeFirecrawlSelfHostedNoKey(t *testing.T) {
+	var sawAuth bool
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "" {
+			sawAuth = true
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer ts.Close()
+
+	status, _ := probeFirecrawl(testCtx(t), ts.Client(), ts.URL, "")
+	if status != StatusOK {
+		t.Fatalf("status = %q, want ok", status)
+	}
+	if sawAuth {
+		t.Fatal("self-hosted keyless probe must omit Authorization")
+	}
+}
+
+func TestProbeTimeout(t *testing.T) {
+	searxng := spec{surface: "search", backend: "searxng"}
+	brave := spec{surface: "search", backend: "brave"}
+
+	if got := probeTimeout(searxng, DefaultTimeout); got != SelfHostedSearchTimeout {
+		t.Errorf("searxng budget = %v, want %v: a healthy instance needs ~3s", got, SelfHostedSearchTimeout)
+	}
+	if got := probeTimeout(brave, DefaultTimeout); got != DefaultTimeout {
+		t.Errorf("brave budget = %v, want the run timeout %v", got, DefaultTimeout)
+	}
+	if got := probeTimeout(searxng, time.Minute); got != time.Minute {
+		t.Errorf("searxng budget = %v, want the caller's longer %v", got, time.Minute)
+	}
+}
+
+func TestProbeFirecrawlSelfHostedLiveness(t *testing.T) {
+	var body string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, _ := io.ReadAll(r.Body)
+		body = string(b)
+		w.WriteHeader(http.StatusBadRequest)
+	}))
+	defer ts.Close()
+
+	status, detail := probeFirecrawl(testCtx(t), ts.Client(), ts.URL, "")
+	if status != StatusOK {
+		t.Fatalf("status = %q, want ok: a rejected body still proves /v2/search answers", status)
+	}
+	if !strings.Contains(detail, "liveness") {
+		t.Errorf("detail %q should say no real search ran", detail)
+	}
+	if strings.Contains(body, "query") {
+		t.Errorf("self-hosted probe body = %q, want one that never starts a search", body)
+	}
+}
+
+func TestProbeFirecrawlSelfHostedWrongBase(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer ts.Close()
+
+	status, detail := probeFirecrawl(testCtx(t), ts.Client(), ts.URL, "")
+	if status != StatusUnreachable {
+		t.Fatalf("status = %q, want unreachable", status)
+	}
+	if !strings.Contains(detail, "firecrawl_url") {
+		t.Errorf("detail %q should point at firecrawl_url", detail)
 	}
 }
 
@@ -305,6 +376,123 @@ func TestProbeKeenableKeyRejected(t *testing.T) {
 	status, _ := probeKeenable(testCtx(t), ts.Client(), ts.URL, "bad-key")
 	if status != StatusMisconfigured {
 		t.Fatalf("status = %q, want misconfigured", status)
+	}
+}
+
+// --- tavily ---
+
+func TestProbeTavilyNoKey(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Error("no-key probe must not hit the network")
+	}))
+	defer ts.Close()
+
+	status, detail := probeTavily(testCtx(t), ts.Client(), ts.URL, "")
+	if status != StatusNoKey {
+		t.Fatalf("status = %q, want no_key", status)
+	}
+	if !strings.Contains(detail, "tavily_api_key") {
+		t.Errorf("detail %q should name tavily_api_key", detail)
+	}
+}
+
+func TestProbeTavilyStatuses(t *testing.T) {
+	cases := []struct {
+		name   string
+		code   int
+		want   Status
+		detail string
+	}{
+		{"ok", http.StatusOK, StatusOK, ""},
+		{"401", http.StatusUnauthorized, StatusMisconfigured, "tavily_api_key"},
+		{"429", http.StatusTooManyRequests, StatusOK, "rate limited"},
+		{"432", 432, StatusOK, "plan limit"},
+		{"433", 433, StatusOK, "pay-as-you-go"},
+		{"500", http.StatusInternalServerError, StatusUnreachable, "500"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var gotAuth string
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				gotAuth = r.Header.Get("Authorization")
+				if strings.Contains(r.URL.RawQuery, "tvly") || strings.Contains(r.URL.String(), "tvly-secret") {
+					t.Error("key must not appear in the request URL")
+				}
+				w.WriteHeader(tc.code)
+			}))
+			defer ts.Close()
+
+			status, detail := probeTavily(testCtx(t), ts.Client(), ts.URL, "tvly-secret")
+			if status != tc.want {
+				t.Fatalf("status = %q (detail %q), want %q", status, detail, tc.want)
+			}
+			if gotAuth != "Bearer tvly-secret" {
+				t.Errorf("Authorization = %q, want Bearer tvly-secret", gotAuth)
+			}
+			if tc.detail != "" && !strings.Contains(detail, tc.detail) {
+				t.Errorf("detail %q should contain %q", detail, tc.detail)
+			}
+			if strings.Contains(detail, "tvly-secret") {
+				t.Errorf("detail leaked key: %q", detail)
+			}
+		})
+	}
+}
+
+// --- serpbase ---
+
+func TestProbeSerpBaseNoKey(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Error("no-key probe must not hit the network")
+	}))
+	defer ts.Close()
+
+	status, detail := probeSerpBase(testCtx(t), ts.Client(), ts.URL, "")
+	if status != StatusNoKey {
+		t.Fatalf("status = %q, want no_key", status)
+	}
+	if !strings.Contains(detail, "serpbase_api_key") {
+		t.Errorf("detail %q should name serpbase_api_key", detail)
+	}
+}
+
+func TestProbeSerpBaseStatuses(t *testing.T) {
+	cases := []struct {
+		name   string
+		code   int
+		want   Status
+		detail string
+	}{
+		{"ok", http.StatusOK, StatusOK, ""},
+		{"401", http.StatusUnauthorized, StatusMisconfigured, "serpbase_api_key"},
+		{"403", http.StatusForbidden, StatusMisconfigured, "serpbase_api_key"},
+		{"429", http.StatusTooManyRequests, StatusOK, "rate limited"},
+		{"402", http.StatusPaymentRequired, StatusOK, "credits"},
+		{"500", http.StatusInternalServerError, StatusUnreachable, "500"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var gotKey string
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				gotKey = r.URL.Query().Get("api_key")
+				w.WriteHeader(tc.code)
+			}))
+			defer ts.Close()
+
+			status, detail := probeSerpBase(testCtx(t), ts.Client(), ts.URL, "serpbase-secret")
+			if status != tc.want {
+				t.Fatalf("status = %q (detail %q), want %q", status, detail, tc.want)
+			}
+			if gotKey != "serpbase-secret" {
+				t.Errorf("api_key query param = %q, want serpbase-secret", gotKey)
+			}
+			if tc.detail != "" && !strings.Contains(detail, tc.detail) {
+				t.Errorf("detail %q should contain %q", detail, tc.detail)
+			}
+			if strings.Contains(detail, "serpbase-secret") {
+				t.Errorf("detail leaked key: %q", detail)
+			}
+		})
 	}
 }
 
@@ -541,6 +729,9 @@ func TestBuildSpecsRequiredGating(t *testing.T) {
 	if s := findSpec(t, specs, "search", "keenable"); s.required {
 		t.Error("keenable without a key and not default must be informational")
 	}
+	if s := findSpec(t, specs, "search", "parallel"); s.required {
+		t.Error("parallel not default must be informational")
+	}
 	if s := findSpec(t, specs, "code", "grepapp"); !s.required {
 		t.Error("default code backend must be required")
 	}
@@ -555,6 +746,14 @@ func TestBuildSpecsRequiredGating(t *testing.T) {
 	}
 	if s := findSpec(t, specs, "browser", "none"); s.required {
 		t.Error("unconfigured browser must not gate the exit code")
+	}
+}
+
+func TestBuildSpecsParallelDefaultIsRequired(t *testing.T) {
+	cfg := config.Defaults()
+	cfg.Backend = "parallel"
+	if candidate := findSpec(t, buildSpecs(&cfg, http.DefaultClient), "search", "parallel"); !candidate.required {
+		t.Error("parallel must be required when configured as the default")
 	}
 }
 

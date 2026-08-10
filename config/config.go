@@ -23,8 +23,13 @@ type Config struct {
 	ExaAPIKeys                         []string          `json:"exa_api_keys,omitempty"`
 	FirecrawlAPIKey                    string            `json:"firecrawl_api_key,omitempty"`
 	FirecrawlAPIKeys                   []string          `json:"firecrawl_api_keys,omitempty"`
+	FirecrawlURL                       string            `json:"firecrawl_url,omitempty"` // base URL; empty = DefaultFirecrawlURL
 	KeenableAPIKey                     string            `json:"keenable_api_key,omitempty"`
 	KeenableAPIKeys                    []string          `json:"keenable_api_keys,omitempty"`
+	TavilyAPIKey                       string            `json:"tavily_api_key,omitempty"`
+	TavilyAPIKeys                      []string          `json:"tavily_api_keys,omitempty"`
+	SerpBaseAPIKey                     string            `json:"serpbase_api_key,omitempty"`
+	SerpBaseAPIKeys                    []string          `json:"serpbase_api_keys,omitempty"`
 	Limit                              int               `json:"limit"`
 	CacheTTL                           string            `json:"cache_ttl"`
 	Browser                            string            `json:"browser,omitempty"` // "chrome", "chromium", or absolute path; empty = disabled
@@ -75,6 +80,12 @@ func (c Config) FirecrawlKeys() []string {
 // KeenableKeys returns an immutable copy of the effective Keenable API key pool.
 func (c Config) KeenableKeys() []string { return mergeKeys(c.KeenableAPIKey, c.KeenableAPIKeys) }
 
+// TavilyKeys returns an immutable copy of the effective Tavily API key pool.
+func (c Config) TavilyKeys() []string { return mergeKeys(c.TavilyAPIKey, c.TavilyAPIKeys) }
+
+// SerpBaseKeys returns an immutable copy of the effective SerpBase API key pool.
+func (c Config) SerpBaseKeys() []string { return mergeKeys(c.SerpBaseAPIKey, c.SerpBaseAPIKeys) }
+
 // ResolveGithubToken returns a token and the source it came from, walking the
 // resolution chain: $KETCH_GITHUB_TOKEN → explicit config → $GITHUB_TOKEN →
 // $GH_TOKEN → `gh auth token`. github_token is deliberately excluded from the
@@ -106,12 +117,21 @@ func (c Config) ResolveGithubToken() (token, source string) {
 	return "", "none"
 }
 
+// DefaultFirecrawlURL is the hosted Firecrawl API base. Self-hosted
+// instances override it via firecrawl_url (ketch appends /v2/search).
+const DefaultFirecrawlURL = "https://api.firecrawl.dev"
+
+// firecrawlSearchPath is appended to the Firecrawl API base to reach the v2
+// search endpoint. See https://docs.firecrawl.dev/api-reference/endpoint/search.
+const firecrawlSearchPath = "/v2/search"
+
 // Defaults returns the built-in default configuration.
 func Defaults() Config {
 	return Config{
 		Backend:                            "brave",
 		SearxngURL:                         "http://localhost:8081",
 		DegoogURL:                          "http://localhost:4444",
+		FirecrawlURL:                       DefaultFirecrawlURL,
 		Limit:                              5,
 		CacheTTL:                           "72h",
 		CodeBackend:                        "grepapp",
@@ -121,9 +141,45 @@ func Defaults() Config {
 	}
 }
 
+// normalizeFirecrawlBase reduces a configured firecrawl_url to a bare API
+// base. A trailing /v2/search is stripped: operators reasonably paste the full
+// endpoint they call, and appending the search path to that would request
+// .../v2/search/v2/search.
+func normalizeFirecrawlBase(base string) string {
+	base = strings.TrimRight(strings.TrimSpace(base), "/")
+	base = strings.TrimSuffix(base, firecrawlSearchPath)
+	return strings.TrimRight(base, "/")
+}
+
+// EffectiveFirecrawlURL returns the Firecrawl API base URL, falling back to
+// DefaultFirecrawlURL when unset.
+func (c Config) EffectiveFirecrawlURL() string {
+	if u := normalizeFirecrawlBase(c.FirecrawlURL); u != "" {
+		return u
+	}
+	return DefaultFirecrawlURL
+}
+
+// IsDefaultFirecrawlURL reports whether the effective Firecrawl base is the
+// hosted cloud API (which requires an API key).
+func (c Config) IsDefaultFirecrawlURL() bool {
+	return strings.EqualFold(c.EffectiveFirecrawlURL(), DefaultFirecrawlURL)
+}
+
+// FirecrawlSearchURL joins a Firecrawl API base with the v2 search path. The
+// base is normalized first, and an empty base uses the hosted default, so
+// callers can pass a raw config value straight through.
+func FirecrawlSearchURL(base string) string {
+	base = normalizeFirecrawlBase(base)
+	if base == "" {
+		base = DefaultFirecrawlURL
+	}
+	return base + firecrawlSearchPath
+}
+
 // AvailableBackends returns the list of known search backends.
 func AvailableBackends() []string {
-	return []string{"brave", "ddg", "searxng", "degoog", "exa", "firecrawl", "keenable"}
+	return []string{"brave", "ddg", "searxng", "degoog", "exa", "firecrawl", "keenable", "tavily", "parallel", "serpbase"}
 }
 
 // AvailableCodeBackends returns the list of known code search backends.

@@ -25,8 +25,11 @@ The discovery payload:
   "exa_api_keys_count": 0,
   "firecrawl_api_key_set": false,
   "firecrawl_api_keys_count": 0,
+  "firecrawl_url": "https://api.firecrawl.dev",
   "keenable_api_key_set": false,
   "keenable_api_keys_count": 0,
+  "tavily_api_key_set": false,
+  "tavily_api_keys_count": 0,
   "limit": 5,
   "cache_ttl": "72h",
   "code_backend": "grepapp",
@@ -36,7 +39,7 @@ The discovery payload:
   "github_token_source": "none",
   "github_token_set": false,
   "external_pdf_to_md_converter_timeout_sec": 300,
-  "available_backends": ["brave", "ddg", "searxng", "exa", "firecrawl", "keenable"],
+  "available_backends": ["brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily", "parallel", "serpbase"],
   "available_code_backends": ["grepapp", "sourcegraph", "github"],
   "available_doc_backends": ["context7"]
 }
@@ -62,7 +65,9 @@ ketch config set brave_api_keys '["BSA-key-1","BSA-key-2"]'   # multi-key pool (
 ketch config set searxng_url http://my-searxng:8080
 ketch config set exa_api_key exa...
 ketch config set firecrawl_api_key fc-...
+ketch config set firecrawl_url http://localhost:3002
 ketch config set keenable_api_key keen_...
+ketch config set tavily_api_key tvly-...
 ketch config set limit 10
 ketch config set cache_ttl 4h
 ketch config set browser chrome
@@ -81,15 +86,20 @@ ketch config set github_token ghp_...
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `backend` | `brave` | Default search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable` |
+| `backend` | `brave` | Default search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase` |
 | `brave_api_key` | — | Brave Search API key ([get one free](https://brave.com/search/api/)) |
 | `brave_api_keys` | — | Additional Brave keys (JSON array) — see [multiple keys](#multiple-api-keys-per-provider) |
 | `exa_api_key` | — | Optional Exa API key for authenticated hosted MCP usage |
 | `exa_api_keys` | — | Additional Exa keys (JSON array) |
-| `firecrawl_api_key` | — | [Firecrawl](https://docs.firecrawl.dev) API key (required for `-b firecrawl`) |
+| `firecrawl_api_key` | — | [Firecrawl](https://docs.firecrawl.dev) API key (required for hosted `-b firecrawl`; optional for self-hosted) |
 | `firecrawl_api_keys` | — | Additional Firecrawl keys (JSON array) |
+| `firecrawl_url` | `https://api.firecrawl.dev` | Firecrawl API base URL (self-hosted override; ketch appends `/v2/search`, and strips it if you paste the full endpoint) |
 | `keenable_api_key` | — | Optional Keenable API key; keyless by default, a key lifts the rate limit ([console](https://keenable.ai/console)) |
 | `keenable_api_keys` | — | Additional Keenable keys (JSON array) |
+| `tavily_api_key` | — | [Tavily](https://app.tavily.com) API key (required for `-b tavily`) |
+| `tavily_api_keys` | — | Additional Tavily keys (JSON array) |
+| `serpbase_api_key` | — | [SerpBase](https://serpbase.dev) API key (required for `-b serpbase`) |
+| `serpbase_api_keys` | — | Additional SerpBase keys (JSON array) |
 | `searxng_url` | `http://localhost:8081` | SearXNG instance URL |
 | `limit` | `5` | Default max results (shared by `search`, `code`, `docs`) |
 
@@ -97,7 +107,7 @@ ketch config set github_token ghp_...
 
 Each keyed search provider takes an optional plural key pool alongside its
 singular key: `brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`,
-`keenable_api_keys`. The effective pool is the singular key plus the list,
+`keenable_api_keys`, `tavily_api_keys`. The effective pool is the singular key plus the list,
 trimmed and de-duplicated. Per request, ketch picks one key from the pool at
 random to spread rate limits; when the pool holds more than one key, a
 `401`/`429` response (`402` for Firecrawl) gets one retry with a different key.
@@ -258,8 +268,8 @@ ketch browser status
 
 If `ketch browser install` fails, just rerun it — each attempt clears the download
 directory first. When the download can't succeed at all (restricted network, no
-disk space), configure an already-installed Chrome with `ketch config set browser
-<path>` and verify with `ketch browser status`.
+disk space), configure an already-installed Chrome with
+`ketch config set browser <path>` and verify with `ketch browser status`.
 
 When a browser is configured, ketch automatically detects JS-rendered pages (React SPAs, Angular apps, Salesforce Lightning, etc.) and falls back to headless rendering. Static pages are always fetched via plain HTTP for speed.
 

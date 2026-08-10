@@ -2,6 +2,42 @@
 
 This page mirrors the canonical [`CHANGELOG.md`](https://github.com/1broseidon/ketch/blob/main/CHANGELOG.md) in the repo root. Versions follow [Semantic Versioning](https://semver.org/) and match the published git tags.
 
+## v0.14.0 — 2026-08-07
+
+**Added**
+
+- **Parallel search backend**: keyless current-web search through Parallel's hosted Search MCP endpoint. Wired through `NewFromConfig`, config discovery, CLI/MCP selection, multi/random search, and `ketch doctor` without changing the Brave default or adding authentication configuration.
+- **SerpBase search backend**: Google search results via the SerpBase REST API with query-param `api_key` auth (`serpbase_api_key` / `serpbase_api_keys`, `KETCH_SERPBASE_API_KEY`). Keyed only — no keyless mode. Wired through config set/discovery, `NewFromConfig`, multi/random (`--multi=all` includes it when a key is set), MCP, and `ketch doctor`.
+- **Tavily search backend**: agent-oriented web search with Bearer auth (`tavily_api_key` / `tavily_api_keys`, `KETCH_TAVILY_API_KEY`). Keyed only. Default `search_depth` is `basic` (1 credit); results fill both `Description` and `Content` from Tavily's extracted text. Wired through config set/discovery, `NewFromConfig`, multi/random, MCP, and `ketch doctor`.
+- **Self-hosted Firecrawl** (#31): `firecrawl_url` (default `https://api.firecrawl.dev`) overrides the Firecrawl API base; ketch appends `/v2/search`. Hosted cloud still requires `firecrawl_api_key`; a non-default base allows keyless self-hosted instances. A pasted full endpoint is normalized back to its base.
+
+**Changed**
+
+- Contributor-facing design documentation now lives in `design/`: `DESIGN.md` (mental model, core abstractions, and an explicit Non-Goals & Scope section), `ROADMAP.md` (non-committal directions), and `adr/` (Architecture Decision Records).
+
+**Fixed**
+
+- Parallel search results no longer break the one-result-per-line output contract. Titles and excerpts from extracted page text could carry newlines, so a 3-result `--minimal` query emitted 30 lines and corrupted row parsing. Both fields now collapse whitespace to a single space before bounding; `Content` keeps the complete text.
+- `ketch doctor` no longer reports healthy self-hosted search instances as `unreachable`. Self-hosted Firecrawl is now probed for liveness instead of results, and SearXNG keeps its real `format=json` search on a 10s budget.
+
+## v0.13.0 — 2026-07-25
+
+**Added**
+
+- **Environment-variable configuration** (#26): nearly every config key now has a `KETCH_*` env override (mechanical `KETCH_` + upper-snake naming, e.g. `KETCH_BRAVE_API_KEY`, `KETCH_LIMIT`), with precedence CLI flag > env > config file > default. Singular `*_API_KEY` vars accept comma-separated lists that replace the provider's key pool. `KETCH_CONFIG=<path>` selects an alternate config file (read and write); `KETCH_GITHUB_TOKEN` slots above the config file in the token chain. Invalid env values fail loud — listing every bad variable — but only on commands that consume config; `version`, `help`, `completion`, and `config init/set/path` keep working under a broken environment. `ketch config` gains an `env_overrides` provenance section (previous secret values redacted), `config set` never persists env-derived values, and `KETCH_*` secrets are scrubbed from browser and PDF-converter subprocess environments. `url_rewrites`, `spa_markers`, and the plural `*_api_keys` fields remain file-only.
+- **Configurable HTTP User-Agent** for scrape fetches: override via `ketch config set user_agent <ua>`, `KETCH_USER_AGENT`, or `--user-agent` on `scrape` / `search` / `crawl` (flag > env > config > default). Empty clears back to the built-in default. `ketch config` always reports the effective UA so agents can diagnose bot-filter 403s without guessing.
+
+**Changed**
+
+- Default scrape `User-Agent` is now an honest `ketch/<version> (+https://github.com/1broseidon/ketch)` instead of `Mozilla/5.0 (compatible; ketch/1.0)`. The old string matched Shield Security and similar fake-crawler rules (e.g. `https://jenson.org/ma/` returned HTTP 403 while bare `curl` succeeded). No browser impersonation — operators who need a custom UA set one explicitly. Release builds embed the semver; local/dirty builds collapse to `ketch/dev`.
+- Headless browser fetches no longer inherit Rod's default `LaptopWithMDPIScreen` device emulation (a hardcoded macOS Chrome 114 UA that bot filters also blocklist). Cleared via `devices.Clear`, so the browser presents as the real installed Chrome, including `sec-ch-ua` client hints.
+
+**Fixed**
+
+- Readability no longer silently drops data tables when a smaller table (e.g. a Wikipedia infobox) survives extraction (#28). The raw-table fallback now compares DOM data-table counts between the raw HTML and readability's output — ignoring layout/nav/footer/presentation/hidden tables — and only swaps to the noisier full-page conversion when readability actually lost tables. Relative links on the raw path are absolutized, so recovered tables don't ship bare `/wiki/...` hrefs.
+- `ketch browser install` no longer wedges after an interrupted download (#27). Extraction is not atomic, so a partial tree left by a cancelled or failed download broke every subsequent attempt — and broke it *differently* each time, surfacing as Rod's misleading "can't find a browser binary for your OS". The revision directory is now cleared before download, so each install starts from a known state, and a failed download reports the cache path plus the `ketch config set browser <path>` escape hatch instead of a bare Rod error. Affected macOS most visibly, where `Chromium.app` ships symlink-heavy frameworks.
+- `--force-browser` no longer aborts when the preliminary HTTP classification probe is blocked (HTTP 403 and similar). The probe exists only to detect PDFs before a forced render; a failed probe now falls through to the browser instead of failing the scrape — which is the point of the flag against bot walls. Without a configured browser the probe error is still returned.
+
 ## v0.12.0 — 2026-07-15
 
 **Added**

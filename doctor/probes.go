@@ -17,6 +17,7 @@ import (
 	"sync"
 
 	"github.com/1broseidon/ketch/cache"
+	"github.com/1broseidon/ketch/config"
 	"github.com/1broseidon/ketch/cookies"
 	"github.com/1broseidon/ketch/scrape"
 )
@@ -28,10 +29,18 @@ const (
 	ddgEndpoint      = "https://html.duckduckgo.com/html/"
 	grepAppEndpoint  = "https://mcp.grep.app"
 	exaMCPEndpoint   = "https://mcp.exa.ai/mcp"
-	firecrawlSearch  = "https://api.firecrawl.dev/v2/search"
 	keenableEndpoint = "https://api.keenable.ai"
+	tavilyEndpoint   = "https://api.tavily.com/search"
+	parallelEndpoint = "https://search.parallel.ai/mcp"
+	serpbaseEndpoint = "https://api.serpbase.dev/google/search"
 	githubAPIBase    = "https://api.github.com"
 	context7APIBase  = "https://context7.com"
+)
+
+// Tavily plan/paygo limit statuses (provider-specific; not in net/http).
+const (
+	tavilyStatusPlanLimit  = 432
+	tavilyStatusPaygoLimit = 433
 )
 
 // ddgUA mirrors the search backend's user agent — DDG's HTML endpoint rejects
@@ -159,18 +168,44 @@ func probeBrave(ctx context.Context, client *http.Client, endpoint, apiKey strin
 	}
 }
 
-// probeFirecrawl checks the Firecrawl v2 search API with a minimal one-result
-// query. Firecrawl requires an API key, so a missing key is a clean no_key.
+// Firecrawl probe bodies. The hosted API answers a minimal real search fast
+// enough to be worth running, and the answer also proves the key works. A
+// self-hosted instance runs that whole search pipeline itself and takes several
+// seconds to reply — past any timeout that keeps doctor quick — so it gets a
+// body its request validation rejects immediately instead.
+const (
+	firecrawlSearchBody   = `{"query":"ketch","limit":1}`
+	firecrawlLivenessBody = `{}`
+)
+
+// probeFirecrawl checks the Firecrawl v2 search API. The hosted cloud API
+// requires a key (missing key → no_key without a network call) and is probed
+// with a real one-result search.
+//
+// Self-hosted instances are probed for liveness only: a rejected request still
+// separates a live /v2/search from a base URL that points somewhere else (404)
+// and from an instance that demands a key (401/403), which is everything doctor
+// can establish about an instance it has no credentials for. Instances running
+// without auth are probed without an Authorization header.
 func probeFirecrawl(ctx context.Context, client *http.Client, endpoint, apiKey string) (Status, string) {
-	if apiKey == "" {
+	key := strings.TrimSpace(apiKey)
+	hosted := strings.EqualFold(endpoint, config.FirecrawlSearchURL(config.DefaultFirecrawlURL))
+	if key == "" && hosted {
 		return StatusNoKey, "API key not set (get one free at https://firecrawl.dev then: ketch config set firecrawl_api_key <key>)"
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(`{"query":"ketch","limit":1}`))
+
+	body := firecrawlSearchBody
+	if !hosted {
+		body = firecrawlLivenessBody
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(body))
 	if err != nil {
 		return StatusUnreachable, probeErrDetail(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+apiKey)
+	if key != "" {
+		req.Header.Set("Authorization", "Bearer "+key)
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -178,6 +213,9 @@ func probeFirecrawl(ctx context.Context, client *http.Client, endpoint, apiKey s
 	}
 	defer drain(resp)
 
+	if !hosted {
+		return firecrawlLivenessStatus(resp.StatusCode, key)
+	}
 	switch resp.StatusCode {
 	case http.StatusOK:
 		return StatusOK, ""
@@ -187,6 +225,27 @@ func probeFirecrawl(ctx context.Context, client *http.Client, endpoint, apiKey s
 		return StatusOK, "reachable, key accepted (rate limited)"
 	default:
 		return StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
+	}
+}
+
+// firecrawlLivenessStatus classifies a self-hosted instance's answer to the
+// liveness body. A validation error (400) is the expected healthy reply; 200
+// counts too, since an instance is free to accept a defaulted search.
+func firecrawlLivenessStatus(code int, key string) (Status, string) {
+	switch code {
+	case http.StatusOK, http.StatusBadRequest:
+		return StatusOK, "reachable (liveness only — a real search is not run)"
+	case http.StatusUnauthorized, http.StatusForbidden, http.StatusPaymentRequired:
+		if key == "" {
+			return StatusMisconfigured, "instance requires an API key (ketch config set firecrawl_api_key <key>)"
+		}
+		return StatusMisconfigured, "API key rejected (ketch config set firecrawl_api_key <key>)"
+	case http.StatusTooManyRequests:
+		return StatusOK, "reachable (rate limited)"
+	case http.StatusNotFound:
+		return StatusUnreachable, "returned status 404 — firecrawl_url should be the API base (e.g. http://localhost:3002)"
+	default:
+		return StatusUnreachable, fmt.Sprintf("returned status %d", code)
 	}
 }
 
@@ -223,6 +282,84 @@ func probeKeenable(ctx context.Context, client *http.Client, base, apiKey string
 		return StatusMisconfigured, "API key rejected (ketch config set keenable_api_key <key>)"
 	case http.StatusTooManyRequests:
 		return StatusOK, "reachable (rate limited; set a key to lift the cap)"
+	default:
+		return StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
+	}
+}
+
+// tavilyProbeBody is a one-credit basic search — enough to prove the key works
+// without spending advanced-depth credits.
+const tavilyProbeBody = `{"query":"ketch","max_results":1,"search_depth":"basic"}`
+
+// probeTavily checks the Tavily search API with a minimal query. Auth is
+// Bearer-only in the Authorization header — never a query param — so doctor
+// details never echo the key via a URL (unlike Exa).
+func probeTavily(ctx context.Context, client *http.Client, endpoint, apiKey string) (Status, string) {
+	key := strings.TrimSpace(apiKey)
+	if key == "" {
+		return StatusNoKey, "API key not set (get one free at https://app.tavily.com then: ketch config set tavily_api_key <key>)"
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(tavilyProbeBody))
+	if err != nil {
+		return StatusUnreachable, probeErrDetail(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+key)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return StatusUnreachable, probeErrDetail(err)
+	}
+	defer drain(resp)
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return StatusOK, ""
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return StatusMisconfigured, "API key rejected (ketch config set tavily_api_key <key>)"
+	case http.StatusTooManyRequests:
+		return StatusOK, "reachable, key accepted (rate limited)"
+	case tavilyStatusPlanLimit:
+		return StatusOK, "reachable, key accepted (plan limit)"
+	case tavilyStatusPaygoLimit:
+		return StatusOK, "reachable, key accepted (pay-as-you-go limit)"
+	default:
+		return StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
+	}
+}
+
+// probeSerpBase checks the SerpBase Google Search API with a minimal query.
+// Auth is a query-param api_key (the provider's documented contract).
+func probeSerpBase(ctx context.Context, client *http.Client, endpoint, apiKey string) (Status, string) {
+	key := strings.TrimSpace(apiKey)
+	if key == "" {
+		return StatusNoKey, "API key not set (get a free key at https://serpbase.dev then: ketch config set serpbase_api_key <key>)"
+	}
+	params := url.Values{}
+	params.Set("q", "ketch")
+	params.Set("num", "1")
+	params.Set("api_key", key)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint+"?"+params.Encode(), nil)
+	if err != nil {
+		return StatusUnreachable, probeErrDetail(err)
+	}
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return StatusUnreachable, probeErrDetail(err)
+	}
+	defer drain(resp)
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return StatusOK, ""
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return StatusMisconfigured, "API key rejected (ketch config set serpbase_api_key <key>)"
+	case http.StatusTooManyRequests:
+		return StatusOK, "reachable, key accepted (rate limited)"
+	case http.StatusPaymentRequired:
+		return StatusOK, "reachable, key accepted (search credits exhausted)"
 	default:
 		return StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
 	}

@@ -64,8 +64,11 @@ On older ketch versions without `doctor`, configured-state detection is imperfec
 
    Right for: self-hosting preference, heavy volume, privacy.
 4. **exa — hosted alternative.** Works with zero config; `exa_api_key` exists for keyed use.
-5. **firecrawl — same provider as scrape/crawl.** Needs a key: `ketch config set firecrawl_api_key <key>` (get one at firecrawl.dev), then `ketch config set backend firecrawl`.
+5. **firecrawl — same provider as scrape/crawl.** Hosted needs a key: `ketch config set firecrawl_api_key <key>` (get one at firecrawl.dev), then `ketch config set backend firecrawl`. Self-hosted: `ketch config set firecrawl_url http://localhost:3002` (key optional if your instance skips auth).
 6. **keenable — keyless by default.** Works with no key against the public endpoint (rate-limited); an optional `ketch config set keenable_api_key <key>` lifts the cap. Select with `ketch config set backend keenable`.
+7. **tavily — agent search with extracted content.** Needs a key: `ketch config set tavily_api_key <key>` (get one free at app.tavily.com), then `ketch config set backend tavily`. Results include richer extracted text in `content` (basic depth by default).
+8. **parallel — hosted Search MCP.** Works with zero config. Select with `ketch config set backend parallel`; results include excerpts in Ketch's standard description and content fields.
+9. **serpbase — keyed Google search.** Needs a key: `ketch config set serpbase_api_key <key>` (get one at serpbase.dev), then `ketch config set backend serpbase`.
 
 ---
 

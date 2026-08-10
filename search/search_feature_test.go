@@ -564,6 +564,34 @@ func TestFeatureFirecrawlRequestShape(t *testing.T) {
 	}
 }
 
+func TestFeatureFirecrawlSelfHostedEndpoint(t *testing.T) {
+	t.Parallel()
+	var gotPath string
+	var gotAuth string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotAuth = r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"success":true,"data":{"web":[{"url":"https://example.com","title":"Ex","description":"d"}]}}`)
+	}))
+	defer server.Close()
+
+	f := newFirecrawlWithKeys(nil, server.URL)
+	results, err := f.Search(context.Background(), "q", 1)
+	if err != nil {
+		t.Fatalf("Search error: %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("got %d results, want 1", len(results))
+	}
+	if gotPath != "/v2/search" {
+		t.Errorf("path = %q, want /v2/search", gotPath)
+	}
+	if gotAuth != "" {
+		t.Errorf("Authorization = %q, want empty for keyless self-host", gotAuth)
+	}
+}
+
 func TestFeatureFirecrawlLimitRespected(t *testing.T) {
 	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

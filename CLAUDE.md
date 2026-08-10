@@ -4,12 +4,12 @@ Fast, stateless CLI for agentic web search and scrape. Single Go binary, no daem
 
 ### Architecture
 
-See [AGENTS.md](AGENTS.md) for full module layout and design principles.
+See [AGENTS.md](AGENTS.md) for full module layout and design principles, and [design/DESIGN.md](design/DESIGN.md) for the reasoning behind them — read its [Non-Goals & Scope](design/DESIGN.md#non-goals--scope) before adding a feature.
 
 - `cmd/` — Cobra CLI (root, search, code, docs, scrape, extract, crawl, config, cache, browser, doctor, mcp, version)
 - `code/` — `code.Searcher` interface with Grep (built-in default), Sourcegraph, and GitHub backends
 - `docs/` — `docs.Searcher` interface with Context7 backend (local FTS5 planned)
-- `search/` — `Searcher` interface with Brave (built-in default), DDG, SearXNG, Exa, Firecrawl, and Keenable backends
+- `search/` — `Searcher` interface with Brave (built-in default), DDG, SearXNG, Exa, Firecrawl, Keenable, Tavily, Parallel, and SerpBase backends
 - `scrape/` — HTTP fetch + browser fallback via Rod for JS-rendered pages
 - `extract/` — readability + html-to-markdown pipeline, JS shell detection heuristic
 - `crawl/` — BFS/sitemap crawler with background execution and status tracking
@@ -64,8 +64,11 @@ Use --concurrency N (default 5) to control parallel request limit.
 | `ddg` | Zero config | Rate-limited by DDG currently |
 | `searxng` | Self-hosted instance | Most reliable for heavy use |
 | `exa` | Zero config via hosted MCP; optional `ketch config set exa_api_key <key>` | AI-oriented search with snippets/content from Exa |
-| `firecrawl` | API key: `ketch config set firecrawl_api_key <key>` | Firecrawl v2 search API; same provider as scrape/crawl workflows |
+| `firecrawl` | API key: `ketch config set firecrawl_api_key <key>` (hosted); optional `firecrawl_url` for self-hosted | Firecrawl v2 search API; same provider as scrape/crawl workflows |
 | `keenable` | Zero config (keyless public endpoint); optional `ketch config set keenable_api_key <key>` | Agent-oriented web search over the Keenable index; key lifts the rate limit |
+| `tavily` | API key: `ketch config set tavily_api_key <key>` | Agent-oriented search; fills Content from extracted text; basic depth (1 credit) by default |
+| `parallel` | Zero config | Current web search through Parallel's hosted Search MCP endpoint |
+| `serpbase` | API key: `ketch config set serpbase_api_key <key>` | Google search results through the SerpBase REST API |
 
 ### Code Backends (ketch code)
 
@@ -80,6 +83,7 @@ ketch code "http.NewRequestWithContext" --lang go
 ketch code "NewRequestWith.*Context" --regex
 ketch code "rate limit middleware" --lang go -b github --limit 10
 ketch config set sourcegraph_url https://sourcegraph.com  # optional, for self-hosted
+ketch config set firecrawl_url http://localhost:3002      # optional, self-hosted Firecrawl
 ```
 
 ### Docs Backends (ketch docs)

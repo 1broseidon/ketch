@@ -22,7 +22,7 @@ cmd/
   mcp.go                     MCP command: `mcp serve` runs the MCP server over stdio
   proc_unix.go               Unix process management (detach, signals)
   proc_windows.go            Windows process management stub
-search/                      Searcher interface + Brave/DDG/SearXNG/Degoog/EXA/Firecrawl/Keenable backends; NewFromConfig owns the backend switch for cmd/ and mcp/. multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), canonical.go the URL dedup keys
+search/                      Searcher interface + Brave/DDG/SearXNG/Degoog/EXA/Firecrawl/Keenable/Tavily/Parallel/SerpBase backends; NewFromConfig owns the backend switch for cmd/ and mcp/. multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), canonical.go the URL dedup keys
 code/                        code.Searcher interface + GrepApp/Sourcegraph/GitHub backends; NewFromConfig owns the backend switch
 docs/                        docs.Searcher interface + Context7 backend (FTS5 local is an unimplemented stub); NewFromConfig owns the backend switch
 mcp/                         MCP server (search/code/docs/scrape/crawl tools) over the go-sdk mcp package; Server struct holds the shared scraper + cache, tools call the same NewFromConfig constructors as the CLI
@@ -50,6 +50,8 @@ Reusable packages live at the module root so external programs can `import "gith
 - **Three search surfaces**: `ketch search` finds web pages, `ketch code` greps real OSS code, `ketch docs` fetches library documentation. Each has its own backend interface and Result type — they never share backends.
 - **Smart input detection on scrape**: single URL, multiple positional args, JSON array string, file path, or stdin pipe all work — ketch routes automatically. No --batch flag needed.
 - **Context-aware interfaces**: all three Searcher interfaces (`search`, `code`, `docs`) take `context.Context` as first param for cancellation and timeout propagation.
+
+The reasoning behind each principle — and what ketch deliberately does *not* do — is in [design/DESIGN.md](design/DESIGN.md) ([Non-Goals & Scope](design/DESIGN.md#non-goals--scope)). Possible directions: [design/ROADMAP.md](design/ROADMAP.md). Decisions already made: [design/adr/](design/adr/).
 
 ## MCP Server
 
@@ -81,6 +83,9 @@ ketch search "query" -b degoog              # use degoog backend
 ketch search "query" -b exa                 # use Exa hosted MCP backend
 ketch search "query" -b firecrawl           # use Firecrawl v2 search API
 ketch search "query" -b keenable            # use Keenable backend (keyless by default)
+ketch search "query" -b tavily              # use Tavily search API (keyed; basic depth)
+ketch search "query" -b parallel            # use Parallel Search MCP (keyless)
+ketch search "query" -b serpbase            # use SerpBase Google Search API (keyed)
 ketch search "query" --multi                # federate across every usable backend, RRF-fused
 ketch search "query" --multi=brave,ddg,exa  # federate across a specific set (use the = form)
 ketch scrape <url>                          # single URL → markdown
@@ -112,7 +117,7 @@ ketch mcp serve                             # run as an MCP server over stdio (s
 | Flag | Scope | Default | Description |
 | ------ | ------- | --------- | ------------- |
 | --json | global | false | JSON output |
-| --backend, -b | search | brave | Search backend (brave/ddg/searxng/degoog/exa/firecrawl/keenable) |
+| --backend, -b | search | brave | Search backend (brave/ddg/searxng/degoog/exa/firecrawl/keenable/tavily/parallel/serpbase) |
 | --multi | search | — | Federated search: comma list or bare/`=all` for every usable backend; RRF-fused, dedup'd, mutually exclusive with --backend (use the `=` form for a list) |
 | --limit, -l | search | 5 | Max results |
 | --scrape | search | false | Fetch full content |
