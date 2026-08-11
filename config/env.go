@@ -84,6 +84,7 @@ func envSpecs() []envSpec {
 	return []envSpec{
 		stringSpec("backend", func(c *Config) *string { return &c.Backend }),
 		stringSpec("searxng_url", func(c *Config) *string { return &c.SearxngURL }),
+		stringSpec("degoog_url", func(c *Config) *string { return &c.DegoogURL }),
 		keyPoolSpec("brave_api_key",
 			func(c *Config) *string { return &c.BraveAPIKey },
 			func(c *Config) *[]string { return &c.BraveAPIKeys }),
