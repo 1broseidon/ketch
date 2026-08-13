@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/1broseidon/ketch/internal/testutil"
 )
 
 // clearKetchEnv unsets every KETCH_* variable for the test so ambient
@@ -28,7 +30,7 @@ func TestEnvVarNaming(t *testing.T) {
 
 func TestLoadEnvOverlay(t *testing.T) {
 	clearKetchEnv(t)
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	testutil.SetIsolatedConfigHome(t)
 	t.Setenv("KETCH_BACKEND", "ddg")
 	t.Setenv("KETCH_LIMIT", "9")
 	t.Setenv("KETCH_CACHE_TTL", "30m")
@@ -94,7 +96,7 @@ func TestLoadEnvOverridesFile(t *testing.T) {
 
 func TestLoadInvalidEnvIsLoudButBestEffort(t *testing.T) {
 	clearKetchEnv(t)
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	testutil.SetIsolatedConfigHome(t)
 	t.Setenv("KETCH_LIMIT", "abc")
 	t.Setenv("KETCH_CACHE_TTL", "nope")
 	t.Setenv("KETCH_BACKEND", "ddg")
@@ -116,7 +118,7 @@ func TestLoadInvalidEnvIsLoudButBestEffort(t *testing.T) {
 
 func TestLoadEmptyEnvValueIsUnset(t *testing.T) {
 	clearKetchEnv(t)
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	testutil.SetIsolatedConfigHome(t)
 	t.Setenv("KETCH_LIMIT", "")
 
 	res, err := Load()

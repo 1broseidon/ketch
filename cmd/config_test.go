@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/1broseidon/ketch/config"
+	"github.com/1broseidon/ketch/internal/testutil"
 	"github.com/1broseidon/ketch/scrape"
 )
 
@@ -100,7 +101,7 @@ func TestRunConfigSetNeverEchoesSecrets(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.key, func(t *testing.T) {
-			t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+			testutil.SetIsolatedConfigHome(t)
 			output, err := captureStderr(t, func() error {
 				return runConfigSet(nil, []string{test.key, test.value})
 			})
