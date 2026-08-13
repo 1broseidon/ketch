@@ -44,7 +44,13 @@ jobs:
           version: latest
 
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-26
+
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
 
