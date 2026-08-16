@@ -7,8 +7,8 @@
 //
 //	go test -tags mcpsmoke ./mcp/... -run TestMCPServerSmoke -v
 //
-// The server subprocess runs with XDG_CACHE_HOME/XDG_CONFIG_HOME pointed at
-// a temp dir, so it sees default config (grepapp needs no key) and a fresh
+// The server subprocess runs with HOME/XDG_CACHE_HOME/XDG_CONFIG_HOME pointed
+// at a temp dir, so it sees default config (grepapp needs no key) and a fresh
 // page cache — which lets the scrape subtest prove shared-cache reuse.
 package mcp_test
 
@@ -41,6 +41,7 @@ func TestMCPServerSmoke(t *testing.T) {
 	isolated := t.TempDir()
 	serve := exec.Command(bin, "mcp", "serve")
 	serve.Env = append(os.Environ(),
+		"HOME="+isolated,
 		"XDG_CACHE_HOME="+isolated,
 		"XDG_CONFIG_HOME="+isolated,
 	)
@@ -152,7 +153,7 @@ func TestMCPServerSmoke(t *testing.T) {
 		}
 
 		// The server writes through its shared, server-lifetime cache handle;
-		// with XDG_CACHE_HOME isolated, this file exists only if that handle
+		// with HOME/XDG_CACHE_HOME isolated, this file exists only if that handle
 		// was actually opened and used.
 		cachePath := filepath.Join(isolated, "ketch", "cache.db")
 		info, err := os.Stat(cachePath)
