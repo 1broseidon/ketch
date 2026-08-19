@@ -669,7 +669,7 @@ func TestFeatureKeenableSearchParses(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{
 			"results": [
-				{"title": "Go Docs", "url": "https://go.dev/doc/", "description": "Go documentation"},
+				{"title": "Go Docs", "url": "https://go.dev/doc/", "description": "", "snippet": "Go documentation"},
 				{"title": "Go Blog", "url": "https://go.dev/blog/", "description": "The Go Blog"}
 			]
 		}`)
@@ -692,6 +692,37 @@ func TestFeatureKeenableSearchParses(t *testing.T) {
 	}
 	if results[0].Description != "Go documentation" {
 		t.Errorf("description = %q, want %q", results[0].Description, "Go documentation")
+	}
+	// The second result carries only a meta description, which is the fallback.
+	if results[1].Description != "The Go Blog" {
+		t.Errorf("description = %q, want %q", results[1].Description, "The Go Blog")
+	}
+}
+
+func TestFeatureKeenableSnippetIsCollapsedAndCapped(t *testing.T) {
+	t.Parallel()
+	long := strings.Repeat("word ", 400)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, `{
+			"results": [
+				{"title": "Wrapped", "url": "https://go.dev/a", "description": "", "snippet": "line one\n\nline two"},
+				{"title": "Long", "url": "https://go.dev/b", "description": "", "snippet": %q}
+			]
+		}`, long)
+	}))
+	defer server.Close()
+
+	k := &Keenable{client: &http.Client{Transport: &rewriteTransport{base: http.DefaultTransport, target: server.URL}}}
+	results, err := k.Search(context.Background(), "golang", 5)
+	if err != nil {
+		t.Fatalf("Search error: %v", err)
+	}
+	if results[0].Description != "line one line two" {
+		t.Errorf("description = %q, want %q", results[0].Description, "line one line two")
+	}
+	if got := len([]rune(results[1].Description)); got != keenableSnippetMaxChars {
+		t.Errorf("description length = %d, want %d", got, keenableSnippetMaxChars)
 	}
 }
 
