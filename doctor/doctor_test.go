@@ -496,6 +496,62 @@ func TestProbeSerpBaseStatuses(t *testing.T) {
 	}
 }
 
+// --- synthetic ---
+
+func TestProbeSyntheticNoKey(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Error("no-key probe must not hit the network")
+	}))
+	defer ts.Close()
+
+	status, detail := probeSynthetic(testCtx(t), ts.Client(), ts.URL, "")
+	if status != StatusNoKey {
+		t.Fatalf("status = %q, want no_key", status)
+	}
+	if !strings.Contains(detail, "synthetic_api_key") {
+		t.Errorf("detail %q should name synthetic_api_key", detail)
+	}
+}
+
+func TestProbeSyntheticStatuses(t *testing.T) {
+	cases := []struct {
+		name   string
+		code   int
+		want   Status
+		detail string
+	}{
+		{"ok", http.StatusOK, StatusOK, ""},
+		{"401", http.StatusUnauthorized, StatusMisconfigured, "synthetic_api_key"},
+		{"403", http.StatusForbidden, StatusMisconfigured, "synthetic_api_key"},
+		{"429", http.StatusTooManyRequests, StatusOK, "rate limited"},
+		{"500", http.StatusInternalServerError, StatusUnreachable, "500"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var gotAuth string
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				gotAuth = r.Header.Get("Authorization")
+				w.WriteHeader(tc.code)
+			}))
+			defer ts.Close()
+
+			status, detail := probeSynthetic(testCtx(t), ts.Client(), ts.URL, "syn-secret")
+			if status != tc.want {
+				t.Fatalf("status = %q (detail %q), want %q", status, detail, tc.want)
+			}
+			if gotAuth != "Bearer syn-secret" {
+				t.Errorf("Authorization header = %q, want Bearer syn-secret", gotAuth)
+			}
+			if tc.detail != "" && !strings.Contains(detail, tc.detail) {
+				t.Errorf("detail %q should contain %q", detail, tc.detail)
+			}
+			if strings.Contains(detail, "syn-secret") {
+				t.Errorf("detail leaked key: %q", detail)
+			}
+		})
+	}
+}
+
 // --- sourcegraph reachability ---
 
 func TestProbeReachable(t *testing.T) {
@@ -731,6 +787,9 @@ func TestBuildSpecsRequiredGating(t *testing.T) {
 	}
 	if s := findSpec(t, specs, "search", "parallel"); s.required {
 		t.Error("parallel not default must be informational")
+	}
+	if s := findSpec(t, specs, "search", "synthetic"); s.required {
+		t.Error("synthetic without a key and not default must be informational")
 	}
 	if s := findSpec(t, specs, "code", "grepapp"); !s.required {
 		t.Error("default code backend must be required")
