@@ -21,6 +21,11 @@ const keenableBaseURL = "https://api.keenable.ai"
 // by. Sent on every request so ketch usage is visible in adoption dashboards.
 const keenableTitle = "Ketch"
 
+// keenableSnippetMaxChars caps the text kept per result. Keenable returns the
+// whole page on every search result, an order of magnitude more than the other
+// backends here return.
+const keenableSnippetMaxChars = 500
+
 // Keenable searches via the Keenable web search API, a search index built for
 // AI agents. It is keyless by default (rate-limited); an optional API key lifts
 // the hourly cap and switches to the authenticated endpoint.
@@ -47,9 +52,26 @@ type keenableResponse struct {
 }
 
 type keenableResult struct {
-	Title       string `json:"title"`
-	URL         string `json:"url"`
+	Title string `json:"title"`
+	URL   string `json:"url"`
+	// Snippet carries the page text. Description is the page's meta
+	// description and is empty for most pages, so it is only a fallback.
+	Snippet     string `json:"snippet"`
 	Description string `json:"description"`
+}
+
+// text returns the result's page text, collapsed to one line and capped at
+// keenableSnippetMaxChars.
+func (r keenableResult) text() string {
+	s := r.Snippet
+	if s == "" {
+		s = r.Description
+	}
+	s = strings.Join(strings.Fields(s), " ")
+	if runes := []rune(s); len(runes) > keenableSnippetMaxChars {
+		s = string(runes[:keenableSnippetMaxChars])
+	}
+	return s
 }
 
 // Search queries Keenable and returns up to limit results.
@@ -101,7 +123,7 @@ func (k *Keenable) Search(ctx context.Context, query string, limit int) ([]Resul
 		results = append(results, Result{
 			Title:       r.Title,
 			URL:         r.URL,
-			Description: r.Description,
+			Description: r.text(),
 		})
 	}
 
