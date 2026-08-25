@@ -115,11 +115,11 @@ func TestRandomSearchPreservesCancellation(t *testing.T) {
 
 func TestNewRandomFromConfigAllUsesEveryUsableBackend(t *testing.T) {
 	cfg := config.Defaults()
-	random, err := NewRandomFromConfig(&cfg, []string{"all"}, "")
+	random, err := NewRandomFromConfig(&cfg, []string{"all"}, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"ddg", "searxng", "exa", "keenable", "parallel"}
+	want := []string{"ddg", "searxng", "degoog", "exa", "keenable", "parallel"}
 	if got := random.Names(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("resolved backends = %v, want %v", got, want)
 	}

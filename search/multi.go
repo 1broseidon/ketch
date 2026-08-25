@@ -69,8 +69,8 @@ type Multi struct {
 // for an explicit list, an unusable name fails loudly (unknown → wraps
 // ErrUnknownBackend; unconfigured → the constructor's precondition error), so
 // callers can classify with backendErr/backendErrf just like NewFromConfig.
-func NewMultiFromConfig(cfg *config.Config, names []string, searxngURL string) (*Multi, error) {
-	backends, err := resolveCandidates(cfg, names, searxngURL)
+func NewMultiFromConfig(cfg *config.Config, names []string, searxngURL, degoogURL string) (*Multi, error) {
+	backends, err := resolveCandidates(cfg, names, searxngURL, degoogURL)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func NewMultiFromConfig(cfg *config.Config, names []string, searxngURL string) (
 // resolveCandidates constructs the usable providers shared by multi and
 // random search. The "all" sentinel skips providers whose preconditions are
 // not met; explicit names surface unknown/unconfigured errors.
-func resolveCandidates(cfg *config.Config, names []string, searxngURL string) ([]namedSearcher, error) {
+func resolveCandidates(cfg *config.Config, names []string, searxngURL, degoogURL string) ([]namedSearcher, error) {
 	all := len(names) == 1 && names[0] == "all"
 	var candidates []string
 	if all {
@@ -94,7 +94,7 @@ func resolveCandidates(cfg *config.Config, names []string, searxngURL string) ([
 
 	backends := make([]namedSearcher, 0, len(candidates))
 	for _, name := range candidates {
-		searcher, err := NewFromConfig(cfg, name, searxngURL)
+		searcher, err := NewFromConfig(cfg, name, searxngURL, degoogURL)
 		if err != nil {
 			if all {
 				continue

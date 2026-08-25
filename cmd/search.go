@@ -32,6 +32,7 @@ func init() {
 	searchCmd.Flags().IntP("limit", "l", cfg.Limit, "max number of results")
 	searchCmd.Flags().Bool("scrape", false, "scrape full content from each result")
 	searchCmd.Flags().String("searxng-url", cfg.SearxngURL, "SearXNG instance URL")
+	searchCmd.Flags().String("degoog-url", cfg.DegoogURL, "degoog instance URL")
 	searchCmd.Flags().Int("max-chars", 0, "truncate markdown output to N chars (0 = disabled)")
 	searchCmd.Flags().Bool("trim", false, "strip markdown formatting, keep content text only")
 	searchCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/title/snippet)")
@@ -175,7 +176,8 @@ func searchScrape(ctx context.Context, results []search.Result, scraper *scrape.
 // maps constructor errors to CLI exit codes.
 func newSearcher(cmd *cobra.Command, backend string) (search.Searcher, error) {
 	searxngURL, _ := cmd.Flags().GetString("searxng-url")
-	s, err := search.NewFromConfig(&cfg, backend, searxngURL)
+	degoogURL, _ := cmd.Flags().GetString("degoog-url")
+	s, err := search.NewFromConfig(&cfg, backend, searxngURL, degoogURL)
 	if err != nil {
 		return nil, backendErr(err, search.ErrUnknownBackend)
 	}
@@ -230,7 +232,8 @@ func runMultiSearch(cmd *cobra.Command, query string, limit int, doScrape, asJSO
 	}
 
 	searxngURL, _ := cmd.Flags().GetString("searxng-url")
-	m, err := search.NewMultiFromConfig(&cfg, names, searxngURL)
+	degoogURL, _ := cmd.Flags().GetString("degoog-url")
+	m, err := search.NewMultiFromConfig(&cfg, names, searxngURL, degoogURL)
 	if err != nil {
 		return backendErr(err, search.ErrUnknownBackend)
 	}
@@ -278,7 +281,8 @@ func runRandomSearch(cmd *cobra.Command, query string, limit int, doScrape, asJS
 	}
 
 	searxngURL, _ := cmd.Flags().GetString("searxng-url")
-	randomSearch, err := search.NewRandomFromConfig(&cfg, names, searxngURL)
+	degoogURL, _ := cmd.Flags().GetString("degoog-url")
+	randomSearch, err := search.NewRandomFromConfig(&cfg, names, searxngURL, degoogURL)
 	if err != nil {
 		return backendErr(err, search.ErrUnknownBackend)
 	}

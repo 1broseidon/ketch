@@ -25,6 +25,7 @@ type configInfo struct {
 	ConfigPath                         string            `json:"config_path"`
 	Backend                            string            `json:"backend"`
 	SearxngURL                         string            `json:"searxng_url"`
+	DegoogURL                          string            `json:"degoog_url"`
 	BraveAPIKeySet                     bool              `json:"brave_api_key_set"`
 	BraveAPIKeysCount                  int               `json:"brave_api_keys_count"`
 	ExaAPIKeySet                       bool              `json:"exa_api_key_set"`
@@ -116,6 +117,7 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 		ConfigPath:                         path,
 		Backend:                            c.Backend,
 		SearxngURL:                         c.SearxngURL,
+		DegoogURL:                          c.DegoogURL,
 		BraveAPIKeySet:                     len(braveKeys) > 0,
 		BraveAPIKeysCount:                  len(braveKeys),
 		ExaAPIKeySet:                       len(exaKeys) > 0,
@@ -238,6 +240,8 @@ func applyConfigSet(c *config.Config, key, value string) error {
 		c.Backend = value
 	case "searxng_url":
 		c.SearxngURL = value
+	case "degoog_url":
+		c.DegoogURL = value
 	case "brave_api_key":
 		c.BraveAPIKey = value
 	case "brave_api_keys":
@@ -293,7 +297,7 @@ func applyConfigSet(c *config.Config, key, value string) error {
 	case "external_pdf_to_md_converter_timeout_sec":
 		return setExternalPDFConverterTimeout(c, value)
 	default:
-		return exitErrf(ExitValidation, "unknown key: %s (valid: backend, searxng_url, brave_api_key, brave_api_keys, exa_api_key, exa_api_keys, firecrawl_api_key, firecrawl_api_keys, firecrawl_url, keenable_api_key, keenable_api_keys, tavily_api_key, tavily_api_keys, limit, cache_ttl, browser, code_backend, docs_backend, context7_api_key, sourcegraph_url, github_token, url_rewrites, spa_markers, cookie_file, user_agent, external_pdf_to_md_converter_command, external_pdf_to_md_converter_timeout_sec)", key)
+		return exitErrf(ExitValidation, "unknown key: %s (valid: backend, searxng_url, degoog_url, brave_api_key, brave_api_keys, exa_api_key, exa_api_keys, firecrawl_api_key, firecrawl_api_keys, firecrawl_url, keenable_api_key, keenable_api_keys, tavily_api_key, tavily_api_keys, serpbase_api_key, serpbase_api_keys, limit, cache_ttl, browser, code_backend, docs_backend, context7_api_key, sourcegraph_url, github_token, url_rewrites, spa_markers, cookie_file, user_agent, external_pdf_to_md_converter_command, external_pdf_to_md_converter_timeout_sec)", key)
 	}
 	return nil
 }

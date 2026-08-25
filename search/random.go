@@ -20,8 +20,8 @@ type Random struct {
 
 // NewRandomFromConfig resolves the candidate providers using the same
 // "all"/explicit-name rules as NewMultiFromConfig.
-func NewRandomFromConfig(cfg *config.Config, names []string, searxngURL string) (*Random, error) {
-	backends, err := resolveCandidates(cfg, names, searxngURL)
+func NewRandomFromConfig(cfg *config.Config, names []string, searxngURL, degoogURL string) (*Random, error) {
+	backends, err := resolveCandidates(cfg, names, searxngURL, degoogURL)
 	if err != nil {
 		return nil, err
 	}

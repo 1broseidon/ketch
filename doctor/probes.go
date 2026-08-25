@@ -383,6 +383,34 @@ func probeDDG(ctx context.Context, client *http.Client, endpoint string) (Status
 	}
 }
 
+// probeDegoog checks a degoog instance via the same /api/search JSON call
+// ketch uses.
+func probeDegoog(ctx context.Context, client *http.Client, baseURL string) (Status, string) {
+	if baseURL == "" {
+		return StatusMisconfigured, "degoog_url not set (ketch config set degoog_url <url>)"
+	}
+	resp, err := get(ctx, client, baseURL+"/api/search?q=ketch", nil)
+	if err != nil {
+		return StatusUnreachable, probeErrDetail(err)
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		var body struct {
+			Results []json.RawMessage `json:"results"`
+		}
+		if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&body); err != nil {
+			return StatusMisconfigured, fmt.Sprintf("returned non-JSON response — is %s a degoog instance?", baseURL)
+		}
+		return StatusOK, ""
+	case http.StatusTooManyRequests:
+		return StatusMisconfigured, "rate limited (HTTP 429) — the degoog instance is throttling ketch"
+	default:
+		return StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
+	}
+}
+
 // probeSearxng checks a SearXNG instance via the same format=json search call
 // ketch uses. It specifically detects the stock-config trap where the JSON
 // format is disabled: SearXNG returns 403 for format=json unless settings.yml

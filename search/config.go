@@ -18,7 +18,7 @@ var ErrUnknownBackend = errors.New("unknown search backend")
 // overrides cfg.SearxngURL when non-empty (the --searxng-url flag / MCP
 // searxng_url param). Both the CLI and the MCP server call this — it is the
 // single owner of the backend switch.
-func NewFromConfig(cfg *config.Config, backend, searxngURL string) (Searcher, error) {
+func NewFromConfig(cfg *config.Config, backend, searxngURL, degoogURL string) (Searcher, error) {
 	switch backend {
 	case "brave", "exa", "firecrawl", "keenable", "tavily", "serpbase":
 		return newCredentialAwareBackend(cfg, backend)
@@ -27,6 +27,11 @@ func NewFromConfig(cfg *config.Config, backend, searxngURL string) (Searcher, er
 			searxngURL = cfg.SearxngURL
 		}
 		return NewSearXNG(searxngURL), nil
+	case "degoog":
+		if degoogURL == "" {
+			degoogURL = cfg.DegoogURL
+		}
+		return NewDegoog(degoogURL), nil
 	case "ddg":
 		return NewDDG(), nil
 	case "parallel":

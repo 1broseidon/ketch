@@ -10,7 +10,7 @@ func TestNewFromConfigBraveKeyCompatibility(t *testing.T) {
 	t.Run("singular only", func(t *testing.T) {
 		cfg := config.Defaults()
 		cfg.BraveAPIKey = "legacy"
-		searcher, err := NewFromConfig(&cfg, "brave", "")
+		searcher, err := NewFromConfig(&cfg, "brave", "", "")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -23,7 +23,7 @@ func TestNewFromConfigBraveKeyCompatibility(t *testing.T) {
 	t.Run("plural only", func(t *testing.T) {
 		cfg := config.Defaults()
 		cfg.BraveAPIKeys = []string{"one", "two"}
-		searcher, err := NewFromConfig(&cfg, "brave", "")
+		searcher, err := NewFromConfig(&cfg, "brave", "", "")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -35,7 +35,7 @@ func TestNewFromConfigBraveKeyCompatibility(t *testing.T) {
 
 	t.Run("neither", func(t *testing.T) {
 		cfg := config.Defaults()
-		if _, err := NewFromConfig(&cfg, "brave", ""); err == nil {
+		if _, err := NewFromConfig(&cfg, "brave", "", ""); err == nil {
 			t.Fatal("expected a missing-key precondition error")
 		}
 	})
@@ -51,7 +51,7 @@ func TestNewFromConfigBuildsEveryEffectiveKeyPool(t *testing.T) {
 	cfg.SerpBaseAPIKey, cfg.SerpBaseAPIKeys = "serpbase-legacy", []string{"serpbase-new"}
 
 	for _, backend := range []string{"brave", "exa", "firecrawl", "keenable", "tavily", "serpbase"} {
-		searcher, err := NewFromConfig(&cfg, backend, "")
+		searcher, err := NewFromConfig(&cfg, backend, "", "")
 		if err != nil {
 			t.Fatalf("%s: %v", backend, err)
 		}
@@ -101,14 +101,14 @@ func TestExportedBackendConstructorsKeepSingleKeyCompatibility(t *testing.T) {
 
 func TestNewFromConfigTavilyRequiresKey(t *testing.T) {
 	cfg := config.Defaults()
-	if _, err := NewFromConfig(&cfg, "tavily", ""); err == nil {
+	if _, err := NewFromConfig(&cfg, "tavily", "", ""); err == nil {
 		t.Fatal("expected missing-key error for tavily")
 	}
 }
 
 func TestNewFromConfigParallelIsKeyless(t *testing.T) {
 	cfg := config.Defaults()
-	searcher, err := NewFromConfig(&cfg, "parallel", "")
+	searcher, err := NewFromConfig(&cfg, "parallel", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func TestNewFromConfigParallelIsKeyless(t *testing.T) {
 
 func TestNewFromConfigSerpBaseRequiresKey(t *testing.T) {
 	cfg := config.Defaults()
-	if _, err := NewFromConfig(&cfg, "serpbase", ""); err == nil {
+	if _, err := NewFromConfig(&cfg, "serpbase", "", ""); err == nil {
 		t.Fatal("expected missing-key error for serpbase")
 	}
 }
@@ -131,7 +131,7 @@ func TestNewFromConfigSerpBaseRequiresKey(t *testing.T) {
 func TestNewFromConfigFirecrawlURL(t *testing.T) {
 	t.Run("cloud requires key", func(t *testing.T) {
 		cfg := config.Defaults()
-		if _, err := NewFromConfig(&cfg, "firecrawl", ""); err == nil {
+		if _, err := NewFromConfig(&cfg, "firecrawl", "", ""); err == nil {
 			t.Fatal("expected missing-key error for hosted Firecrawl")
 		}
 	})
@@ -139,7 +139,7 @@ func TestNewFromConfigFirecrawlURL(t *testing.T) {
 	t.Run("self-hosted allows empty key", func(t *testing.T) {
 		cfg := config.Defaults()
 		cfg.FirecrawlURL = "http://localhost:3002"
-		searcher, err := NewFromConfig(&cfg, "firecrawl", "")
+		searcher, err := NewFromConfig(&cfg, "firecrawl", "", "")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -159,7 +159,7 @@ func TestNewFromConfigFirecrawlURL(t *testing.T) {
 		cfg := config.Defaults()
 		cfg.FirecrawlURL = "https://fc.example.com/"
 		cfg.FirecrawlAPIKey = "k"
-		searcher, err := NewFromConfig(&cfg, "firecrawl", "")
+		searcher, err := NewFromConfig(&cfg, "firecrawl", "", "")
 		if err != nil {
 			t.Fatal(err)
 		}
