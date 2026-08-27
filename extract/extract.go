@@ -2,6 +2,7 @@ package extract
 
 import (
 	"bytes"
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -46,6 +47,7 @@ func New() *Extractor {
 // and converts it to markdown. Falls back to direct HTML→markdown
 // conversion if readability extraction fails.
 func (e *Extractor) Extract(pageURL, html string) (*Result, error) {
+	html = stripDataURIs(html)
 	u, err := url.Parse(pageURL)
 	if err != nil {
 		return nil, err
@@ -202,6 +204,7 @@ func extractRaw(origin, html string) (*Result, error) {
 // matched elements converted to markdown. If no elements match, returns
 // an empty string and no error.
 func ExtractSelector(rawHTML, selector string) (string, error) {
+	rawHTML = stripDataURIs(rawHTML)
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(rawHTML))
 	if err != nil {
 		return "", err
@@ -244,4 +247,50 @@ func Title(html string) string {
 		return ""
 	}
 	return strings.TrimSpace(doc.Find("title").First().Text())
+}
+
+// stripDataURIs replaces data: URI img sources with compact markers before
+// HTML→markdown conversion, preventing large base64 payloads from reaching
+// markdown output (a single inline image can inject 100k+ tokens into context).
+// The marker preserves MIME type and approximate size for debugging.
+func stripDataURIs(html string) string {
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
+	if err != nil {
+		return html
+	}
+	var replaced int
+	doc.Find("img").Each(func(_ int, s *goquery.Selection) {
+		src, exists := s.Attr("src")
+		if !exists || !strings.HasPrefix(strings.ToLower(src), "data:") {
+			return
+		}
+		mime, size := dataURIInfo(src)
+		s.SetAttr("src", "omitted")
+		s.SetAttr("alt", fmt.Sprintf("data-uri omitted: %s, %d bytes", mime, size))
+		replaced++
+	})
+	if replaced == 0 {
+		return html
+	}
+	out, err := goquery.OuterHtml(doc.Selection)
+	if err != nil {
+		return html
+	}
+	return out
+}
+
+// dataURIInfo extracts the MIME type and approximate decoded byte size from a
+// data: URI. Falls back to "image" and 0 on malformed input.
+func dataURIInfo(src string) (mime string, size int) {
+	mime = "image"
+	rest := strings.TrimPrefix(src, "data:")
+	if i := strings.IndexByte(rest, ';'); i != -1 {
+		mime = rest[:i]
+	} else if i := strings.IndexByte(rest, ','); i != -1 {
+		mime = rest[:i]
+	}
+	if comma := strings.IndexByte(src, ','); comma != -1 {
+		size = len(src[comma+1:]) * 3 / 4
+	}
+	return
 }
