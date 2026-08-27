@@ -204,7 +204,9 @@ func extractRaw(origin, html string) (*Result, error) {
 // matched elements converted to markdown. If no elements match, returns
 // an empty string and no error.
 func ExtractSelector(rawHTML, selector string) (string, error) {
-	rawHTML = stripDataURIs(rawHTML)
+	// Select against the original DOM so attribute-value selectors (e.g.
+	// img[src^="data:"]) still match; strip data URIs from the extracted
+	// fragment afterward, before markdown conversion.
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(rawHTML))
 	if err != nil {
 		return "", err
@@ -232,7 +234,7 @@ func ExtractSelector(rawHTML, selector string) (string, error) {
 		return "", outerErr
 	}
 
-	html := strings.Join(parts, "\n\n")
+	html := stripDataURIs(strings.Join(parts, "\n\n"))
 	markdown, err := markdownConverter.ConvertString(html)
 	if err != nil {
 		return "", err
@@ -288,6 +290,9 @@ func dataURIInfo(src string) (mime string, size int) {
 		mime = rest[:i]
 	} else if i := strings.IndexByte(rest, ','); i != -1 {
 		mime = rest[:i]
+	}
+	if len(mime) > 64 {
+		mime = mime[:64]
 	}
 	if comma := strings.IndexByte(src, ','); comma != -1 {
 		size = len(src[comma+1:]) * 3 / 4
