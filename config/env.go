@@ -141,6 +141,20 @@ func envSpecs() []envSpec {
 		stringSpec("sourcegraph_url", func(c *Config) *string { return &c.SourcegraphURL }),
 		stringSpec("cookie_file", func(c *Config) *string { return &c.CookieFile }),
 		stringSpec("user_agent", func(c *Config) *string { return &c.UserAgent }),
+		{
+			key:  "mcp_tools",
+			prev: func(c *Config) string { return strings.Join(c.MCPTools, ",") },
+			apply: func(c *Config, v string) error {
+				// Unlike the file-only plural keys, tool names are a plain
+				// identifier list, so a comma-separated env value is unambiguous.
+				tools, err := NormalizeMCPTools(splitCommaList(v))
+				if err != nil {
+					return err
+				}
+				c.MCPTools = tools
+				return nil
+			},
+		},
 		stringSpec("external_pdf_to_md_converter_command",
 			func(c *Config) *string { return &c.ExternalPDFToMDConverterCommand }),
 		{

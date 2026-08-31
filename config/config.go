@@ -39,6 +39,7 @@ type Config struct {
 	GithubToken                        string            `json:"github_token,omitempty"`
 	URLRewrites                        []urlrewrite.Rule `json:"url_rewrites,omitempty"`
 	SPAMarkers                         []string          `json:"spa_markers,omitempty"`
+	MCPTools                           []string          `json:"mcp_tools,omitempty"`   // allowlist of tools `ketch mcp serve` publishes; empty = all five
 	CookieFile                         string            `json:"cookie_file,omitempty"` // Netscape cookies.txt path; empty = disabled
 	UserAgent                          string            `json:"user_agent,omitempty"`  // HTTP User-Agent override; empty = built-in honest default
 	ExternalPDFToMDConverterCommand    string            `json:"external_pdf_to_md_converter_command,omitempty"`
