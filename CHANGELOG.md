@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Headless-browser fetches now honor configured `user_agent` and `--user-agent` values; when unset, Chromium's native User-Agent remains unchanged (#45).
+
 ## [0.14.0] - 2026-08-07
 
 ### Added
