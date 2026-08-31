@@ -51,6 +51,7 @@ type configInfo struct {
 	GithubTokenSet                     bool              `json:"github_token_set"`
 	URLRewrites                        []urlrewrite.Rule `json:"url_rewrites,omitempty"`
 	SPAMarkers                         []string          `json:"spa_markers,omitempty"`
+	MCPTools                           []string          `json:"mcp_tools"` // effective set `ketch mcp serve` will publish
 	ExternalPDFToMDConverterCommand    string            `json:"external_pdf_to_md_converter_command,omitempty"`
 	ExternalPDFToMDConverterTimeoutSec int               `json:"external_pdf_to_md_converter_timeout_sec"`
 	EnvOverrides                       []config.Override `json:"env_overrides,omitempty"`
@@ -142,6 +143,7 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 		GithubTokenSet:                     ghSource != "none",
 		URLRewrites:                        c.URLRewrites,
 		SPAMarkers:                         c.SPAMarkers,
+		MCPTools:                           effectiveMCPTools(c),
 		ExternalPDFToMDConverterCommand:    c.ExternalPDFToMDConverterCommand,
 		ExternalPDFToMDConverterTimeoutSec: c.ExternalPDFToMDConverterTimeoutSec,
 		AvailableBackends:                  config.AvailableBackends(),
@@ -284,6 +286,8 @@ func applyConfigSet(c *config.Config, key, value string) error {
 		return setURLRewrites(c, value)
 	case "spa_markers":
 		return setSPAMarkers(c, value)
+	case "mcp_tools":
+		return setMCPTools(c, value)
 	case "cookie_file":
 		return setCookieFile(c, value)
 	case "user_agent":
@@ -293,7 +297,7 @@ func applyConfigSet(c *config.Config, key, value string) error {
 	case "external_pdf_to_md_converter_timeout_sec":
 		return setExternalPDFConverterTimeout(c, value)
 	default:
-		return exitErrf(ExitValidation, "unknown key: %s (valid: backend, searxng_url, brave_api_key, brave_api_keys, exa_api_key, exa_api_keys, firecrawl_api_key, firecrawl_api_keys, firecrawl_url, keenable_api_key, keenable_api_keys, tavily_api_key, tavily_api_keys, limit, cache_ttl, browser, code_backend, docs_backend, context7_api_key, sourcegraph_url, github_token, url_rewrites, spa_markers, cookie_file, user_agent, external_pdf_to_md_converter_command, external_pdf_to_md_converter_timeout_sec)", key)
+		return exitErrf(ExitValidation, "unknown key: %s (valid: backend, searxng_url, brave_api_key, brave_api_keys, exa_api_key, exa_api_keys, firecrawl_api_key, firecrawl_api_keys, firecrawl_url, keenable_api_key, keenable_api_keys, tavily_api_key, tavily_api_keys, serpbase_api_key, serpbase_api_keys, limit, cache_ttl, browser, code_backend, docs_backend, context7_api_key, sourcegraph_url, github_token, url_rewrites, spa_markers, mcp_tools, cookie_file, user_agent, external_pdf_to_md_converter_command, external_pdf_to_md_converter_timeout_sec)", key)
 	}
 	return nil
 }
@@ -382,6 +386,22 @@ func effectiveUserAgent(c config.Config) string {
 	return scrape.DefaultUserAgent()
 }
 
+// effectiveMCPTools returns the tools `ketch mcp serve` will publish: the
+// operator's mcp_tools allowlist when set, otherwise every tool. A list the
+// normalizer rejects is possible only in a hand-edited config file; it is
+// reported as-is — `ketch mcp serve` fails loud on it with the valid names.
+func effectiveMCPTools(c config.Config) []string {
+	tools, err := config.NormalizeMCPTools(c.MCPTools)
+	switch {
+	case err != nil:
+		return c.MCPTools
+	case len(tools) == 0:
+		return config.MCPToolNames() // already a private copy
+	default:
+		return tools
+	}
+}
+
 func setURLRewrites(c *config.Config, value string) error {
 	var rules []urlrewrite.Rule
 	if err := json.Unmarshal([]byte(value), &rules); err != nil {
@@ -409,6 +429,28 @@ func setSPAMarkers(c *config.Config, value string) error {
 		}
 	}
 	c.SPAMarkers = markers
+	return nil
+}
+
+// setMCPTools persists the allowlist of tools `ketch mcp serve` publishes.
+// Accepts a JSON array (e.g. ["search","scrape"]) or a comma-separated list
+// (search, scrape); an empty value or [] clears the key so the server
+// publishes every tool. Names are validated against the known tool set.
+func setMCPTools(c *config.Config, value string) error {
+	trimmed := strings.TrimSpace(value)
+	var raw []string
+	if strings.HasPrefix(trimmed, "[") {
+		if err := json.Unmarshal([]byte(trimmed), &raw); err != nil {
+			return exitErrf(ExitValidation, "mcp_tools must be a JSON array of strings or a comma-separated list: %w", err)
+		}
+	} else if trimmed != "" {
+		raw = strings.Split(trimmed, ",")
+	}
+	tools, err := config.NormalizeMCPTools(raw)
+	if err != nil {
+		return exitErrf(ExitValidation, "invalid mcp_tools: %w", err)
+	}
+	c.MCPTools = tools
 	return nil
 }
 

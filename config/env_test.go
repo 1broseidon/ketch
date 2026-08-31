@@ -184,3 +184,37 @@ func TestScrubbedEnviron(t *testing.T) {
 		t.Fatal("non-secret vars were stripped")
 	}
 }
+
+func TestLoadEnvMCPTools(t *testing.T) {
+	clearKetchEnv(t)
+	testutil.SetIsolatedConfigHome(t)
+	t.Setenv("KETCH_MCP_TOOLS", "Scrape, crawl")
+
+	res, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tools := res.Config.MCPTools; strings.Join(tools, ",") != "scrape,crawl" {
+		t.Fatalf("MCPTools = %v, want [scrape crawl]", tools)
+	}
+	found := false
+	for _, o := range res.Overrides {
+		if o.Key == "mcp_tools" && o.Var == "KETCH_MCP_TOOLS" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("mcp_tools override not recorded: %+v", res.Overrides)
+	}
+}
+
+func TestLoadEnvMCPToolsInvalidIsLoudButBestEffort(t *testing.T) {
+	clearKetchEnv(t)
+	testutil.SetIsolatedConfigHome(t)
+	t.Setenv("KETCH_MCP_TOOLS", "wiki")
+
+	_, err := Load()
+	if err == nil || !strings.Contains(err.Error(), `KETCH_MCP_TOOLS: unknown tool "wiki"`) {
+		t.Fatalf("expected loud unknown-tool error, got: %v", err)
+	}
+}

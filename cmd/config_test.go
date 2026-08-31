@@ -452,3 +452,82 @@ func TestApplyConfigSetExternalPDFConverterRejectsInvalidTimeout(t *testing.T) {
 		})
 	}
 }
+
+func TestApplyConfigSetMCPTools(t *testing.T) {
+	cases := []struct {
+		name  string
+		value string
+		want  []string
+	}{
+		{"JSON array canonicalizes order", `["crawl","search"]`, []string{"search", "crawl"}},
+		{"comma-separated list", "search, scrape", []string{"search", "scrape"}},
+		{"mixed case trimmed", " Search , SCRAPE ", []string{"search", "scrape"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := config.Defaults()
+			if err := applyConfigSet(&cfg, "mcp_tools", tc.value); err != nil {
+				t.Fatal(err)
+			}
+			if strings.Join(cfg.MCPTools, ",") != strings.Join(tc.want, ",") {
+				t.Errorf("MCPTools = %v, want %v", cfg.MCPTools, tc.want)
+			}
+		})
+	}
+}
+
+func TestApplyConfigSetMCPToolsClear(t *testing.T) {
+	for _, value := range []string{``, `[]`} {
+		cfg := config.Defaults()
+		cfg.MCPTools = []string{"search"} // set first, then clear
+		if err := applyConfigSet(&cfg, "mcp_tools", value); err != nil {
+			t.Fatal(err)
+		}
+		if cfg.MCPTools != nil {
+			t.Errorf("value %q: MCPTools = %v, want nil (all tools published)", value, cfg.MCPTools)
+		}
+	}
+}
+
+func TestApplyConfigSetMCPToolsInvalid(t *testing.T) {
+	cases := []struct {
+		name  string
+		value string
+		want  string
+	}{
+		{"unknown tool", `["search","wiki"]`, "unknown tool"},
+		{"duplicate", "search,search", "duplicate tool"},
+		{"bad JSON", `[not-json]`, "must be a JSON array of strings or a comma-separated list"},
+		{"null like spa_markers", `null`, "unknown tool"}, // unmarshals to nil -> "no restriction"
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := config.Defaults()
+			cfg.MCPTools = []string{"search"}
+			if err := applyConfigSet(&cfg, "mcp_tools", tc.value); err == nil {
+				t.Fatalf("value %q: expected validation error", tc.value)
+			} else if !strings.Contains(err.Error(), tc.want) {
+				t.Errorf("error %q does not contain %q", err, tc.want)
+			}
+			if strings.Join(cfg.MCPTools, ",") != "search" {
+				t.Errorf("invalid value modified config: %v", cfg.MCPTools)
+			}
+		})
+	}
+}
+
+func TestEffectiveMCPTools(t *testing.T) {
+	c := config.Defaults()
+	if got := effectiveMCPTools(c); strings.Join(got, ",") != "search,code,docs,scrape,crawl" {
+		t.Errorf("unset: effective = %v, want all five", got)
+	}
+	c.MCPTools = []string{"search"}
+	if got := effectiveMCPTools(c); strings.Join(got, ",") != "search" {
+		t.Errorf("configured: effective = %v, want [search]", got)
+	}
+	c = config.Defaults()
+	c.MCPTools = []string{"wiki"} // hand-edited garbage: reported as-is
+	if got := effectiveMCPTools(c); strings.Join(got, ",") != "wiki" {
+		t.Errorf("invalid: effective = %v, want raw [wiki]", got)
+	}
+}
