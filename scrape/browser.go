@@ -22,18 +22,37 @@ type rodConn struct {
 	jar      *cookies.Jar
 }
 
+// ConnOption customizes a browser connection before the browser launches.
+type ConnOption func(*launcher.Launcher)
+
+// WithUserAgent launches the browser with the given User-Agent (Chrome's
+// --user-agent switch), in effect for every page, frame, and worker the
+// connection serves. An empty value is a no-op: the browser keeps its own
+// User-Agent, which under headless mode advertises the HeadlessChrome token.
+func WithUserAgent(ua string) ConnOption {
+	return func(l *launcher.Launcher) {
+		if ua != "" {
+			l.Set("user-agent", ua)
+		}
+	}
+}
+
 // NewBrowserConn launches a headless browser without cookie injection. This
 // legacy signature is preserved for external package callers.
 func NewBrowserConn(binPath string) (BrowserConn, error) {
 	return NewBrowserConnWithCookies(binPath, nil)
 }
 
-// NewBrowserConnWithCookies launches a headless browser and injects cookies
-// from jar (which may be nil) before each navigation.
-func NewBrowserConnWithCookies(binPath string, jar *cookies.Jar) (BrowserConn, error) {
+// NewBrowserConnWithCookies launches a headless browser, injects cookies from
+// jar (which may be nil) before each navigation, and applies opts to the
+// launcher before launch.
+func NewBrowserConnWithCookies(binPath string, jar *cookies.Jar, opts ...ConnOption) (BrowserConn, error) {
 	// Scrub KETCH_* secret vars (API keys, tokens) from the browser's
 	// environment — the child process has no use for ketch credentials.
 	l := launcher.New().Bin(binPath).Headless(true).Env(config.ScrubbedEnviron()...)
+	for _, opt := range opts {
+		opt(l)
+	}
 	u, err := l.Launch()
 	if err != nil {
 		return nil, fmt.Errorf("launch browser: %w", err)

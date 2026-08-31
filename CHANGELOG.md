@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Headless-browser fetches now honor the operator-configured User-Agent (#45). The browser path wired the cookie jar through but never `user_agent`, so `--force-browser` always sent the headless browser's own UA — whose `HeadlessChrome` token is a hard 403 on some Akamai-fronted sites, exactly the pages the flag exists for. The configured UA (`user_agent` config, overridden by `--user-agent`) now launches the browser via Chrome's `--user-agent` switch, so it applies to every page, frame, and worker without changing the CLI surface. With nothing configured, the browser keeps its own UA — whether that default should stop advertising `HeadlessChrome` is tracked separately on the issue.
+
 ## [0.14.0] - 2026-08-07
 
 ### Added

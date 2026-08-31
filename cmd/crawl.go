@@ -33,7 +33,7 @@ func init() {
 	crawlCmd.Flags().Bool("no-cache", false, "bypass the page cache")
 	crawlCmd.Flags().Bool("background", false, "run crawl in background, return immediately with crawl ID")
 	crawlCmd.Flags().String("cookie-file", "", "Netscape cookies.txt jar; matching cookies are sent with each fetch (overrides config cookie_file)")
-	crawlCmd.Flags().String("user-agent", "", "HTTP User-Agent override (overrides config user_agent; empty falls back to the built-in default)")
+	crawlCmd.Flags().String("user-agent", "", "User-Agent override (overrides config user_agent; applies to HTTP and browser fetches; empty falls back to the built-in default)")
 }
 
 func runCrawl(cmd *cobra.Command, args []string) error {

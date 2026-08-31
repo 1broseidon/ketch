@@ -87,6 +87,11 @@ type Scraper struct {
 	rewriter     *urlrewrite.Rewriter
 	jar          *cookies.Jar
 	userAgent    string
+	// userAgentConfigured records that the operator explicitly set user_agent
+	// (config, env, or flag) instead of riding the built-in default. Only an
+	// explicitly configured UA reaches the headless browser; when unset, the
+	// browser keeps its own User-Agent.
+	userAgentConfigured bool
 }
 
 // NewWithRewriter creates a Scraper with an optional browser binary and
@@ -171,7 +176,7 @@ func (s *Scraper) getBrowser() BrowserConn {
 		s.browserBin = ""
 		return nil
 	}
-	conn, err := NewBrowserConnWithCookies(bin, s.jar)
+	conn, err := NewBrowserConnWithCookies(bin, s.jar, s.browserConnOptions()...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "warn: browser init failed: %v\n", err)
 		s.browserBin = ""
@@ -179,6 +184,17 @@ func (s *Scraper) getBrowser() BrowserConn {
 	}
 	s.browser = conn
 	return s.browser
+}
+
+// browserConnOptions returns the launch-time options for the headless browser.
+// The operator's user_agent (config, env, or --user-agent flag) applies to the
+// browser path exactly like the HTTP path; when nothing is configured, no UA
+// option is passed and the launch keeps the browser's own User-Agent.
+func (s *Scraper) browserConnOptions() []ConnOption {
+	if !s.userAgentConfigured {
+		return nil
+	}
+	return []ConnOption{WithUserAgent(s.userAgent)}
 }
 
 // Scrape fetches a URL and returns extracted markdown content along with the
