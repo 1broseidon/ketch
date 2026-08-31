@@ -43,13 +43,31 @@ func TestBuildServerInstructionsPruned(t *testing.T) {
 			name:   "one tool reads singular",
 			tools:  []string{"search"},
 			want:   "ketch provides one read-only research tool: search (web search).\nPrefer search for the open web.",
-			absent: []string{"scrape", "max_chars"},
+			absent: []string{"scrape (fetch URLs as clean markdown)"},
+		},
+		{
+			name:   "search keeps the max_chars advice: it has a scrape option",
+			tools:  []string{"search"},
+			want:   "set max_chars (and optionally trim) to bound the response size",
+			absent: []string{"scrape (fetch URLs as clean markdown)"},
 		},
 		{
 			name:   "scrape-only keeps the max_chars advice",
 			tools:  []string{"scrape"},
 			want:   "set max_chars (and optionally trim)",
 			absent: []string{"search (web search)"},
+		},
+		{
+			name:   "crawl-only gets max_chars advice without trim",
+			tools:  []string{"crawl"},
+			want:   "When crawling, set max_chars to bound the response size",
+			absent: []string{"trim", "search (web search)", "When scraping"},
+		},
+		{
+			name:   "docs-only gets no advice (bounded output)",
+			tools:  []string{"docs"},
+			want:   "ketch provides one read-only research tool: docs",
+			absent: []string{"max_chars"},
 		},
 	}
 	for _, tc := range cases {
@@ -128,11 +146,15 @@ func TestNewServerPrunesTools(t *testing.T) {
 		// tools/list order is the SDK's, not ours; the contract is the set.
 		t.Errorf("published tools = [%s], want exactly {search, crawl}", joined)
 	}
-	// The instructions must route only to what exists.
+	// The instructions must route only to what exists — and still carry
+	// size advice, since search and crawl both accept max_chars.
 	if !strings.Contains(instructions, "search (web search)") || !strings.Contains(instructions, "crawl (bounded same-host multi-page crawl)") {
 		t.Errorf("instructions missing enabled tools:\n%s", instructions)
 	}
-	for _, absent := range []string{"code", "docs", "scrape", "max_chars"} {
+	if !strings.Contains(instructions, "max_chars") {
+		t.Errorf("instructions lost max_chars guidance for search+crawl:\n%s", instructions)
+	}
+	for _, absent := range []string{"code (", "docs (", "scrape ("} {
 		if strings.Contains(instructions, absent) {
 			t.Errorf("instructions mention pruned tool text %q:\n%s", absent, instructions)
 		}

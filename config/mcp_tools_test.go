@@ -39,3 +39,14 @@ func TestNormalizeMCPTools(t *testing.T) {
 		})
 	}
 }
+
+func TestMCPToolNamesReturnsCopy(t *testing.T) {
+	got := MCPToolNames()
+	if strings.Join(got, ",") != "search,code,docs,scrape,crawl" {
+		t.Fatalf("MCPToolNames = %v", got)
+	}
+	got[0] = "tampered"
+	if MCPToolNames()[0] != "search" {
+		t.Fatal("MCPToolNames exposed mutable internal state")
+	}
+}

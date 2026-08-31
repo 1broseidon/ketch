@@ -396,7 +396,7 @@ func effectiveMCPTools(c config.Config) []string {
 	case err != nil:
 		return c.MCPTools
 	case len(tools) == 0:
-		return append([]string(nil), config.MCPToolNames...)
+		return config.MCPToolNames() // already a private copy
 	default:
 		return tools
 	}

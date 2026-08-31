@@ -16,6 +16,7 @@ package mcp
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/1broseidon/ketch/cache"
@@ -56,14 +57,32 @@ func buildServerInstructions(tools []string) string {
 	b.WriteString(`Backend defaults and API keys come from the operator's ketch config; omit the backend argument to use them (on the CLI, ` + "`ketch config`" + ` shows the effective settings).
 Tool errors start with a stable prefix: [validation] and [not_found] mean fix your input (retrying unchanged will not help); [upstream] is a backend/network failure where retrying may help; [precondition] means the operator must configure something (e.g. an API key or browser); [cancelled] means the call was cancelled or timed out.
 `)
-	for _, name := range tools {
-		if name == "scrape" {
-			b.WriteString(`When scraping unknown or potentially large pages, set max_chars (and optionally trim) to bound the response size.
-`)
-		}
-	}
+	writeSizeAdvice(&b, tools)
 	// The historic static text ended without a trailing newline.
 	return strings.TrimSuffix(b.String(), "\n")
+}
+
+// has reports whether names contains name.
+func has(names []string, name string) bool {
+	return slices.Contains(names, name)
+}
+
+// writeSizeAdvice appends the output-bounding sentence for the enabled
+// tools. scrape and search both fetch page content (scrape directly, search
+// via its scrape option) and take max_chars and trim, so they share the full
+// sentence; crawl takes a per-page max_chars but no trim, so it gets a
+// variant. Tools that return bounded output (code, docs) get nothing — the
+// historic static text did likewise.
+func writeSizeAdvice(b *strings.Builder, tools []string) {
+	if has(tools, "scrape") || has(tools, "search") {
+		b.WriteString(`When scraping unknown or potentially large pages, set max_chars (and optionally trim) to bound the response size.
+`)
+		return
+	}
+	if has(tools, "crawl") {
+		b.WriteString(`When crawling, set max_chars to bound the response size.
+`)
+	}
 }
 
 // writeClauses writes clauses joined English-style: "a, b, and c", "a and b",
@@ -131,7 +150,7 @@ func NewServer(cfg *config.Config, version string) (*Server, error) {
 		return nil, err
 	}
 	if len(tools) == 0 {
-		tools = config.MCPToolNames // no allowlist: publish everything
+		tools = config.MCPToolNames() // no allowlist: publish everything
 	}
 
 	s := &Server{
