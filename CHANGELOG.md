@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **You.com search backend**: web search via the You.com Web Search API (`youcom_api_key` / `youcom_api_keys`, `KETCH_YOUCOM_API_KEY`; `X-API-Key` header auth). Keyed only — no keyless mode. Results fill `Description` from the page summary (first snippet fallback) and `Content` from keyword-centered snippets. Wired through config set/discovery, `NewFromConfig`, multi/random (`--multi=all` includes it when a key is set), MCP, and `ketch doctor`.
 - **MCP tool pruning** (#36). New `mcp_tools` config key — an allowlist of the tools `ketch mcp serve` publishes, in canonical order (`search`, `code`, `docs`, `scrape`, `crawl`). Set it as a JSON array (`ketch config set mcp_tools '["search","scrape"]'`) or a comma-separated list, or via the `KETCH_MCP_TOOLS` env override; unset or `[]` publishes all five. Unlisted tools are never registered, and the initialize `serverInstructions` are generated from the enabled set — a pruned server tells agents exactly what it offers and never routes them to a tool that isn't there; the output-size guidance appears whenever an enabled tool accepts output-bounding arguments (`search`, `scrape`, `crawl`). `ketch config` reports the effective `mcp_tools` set. Validation is fail-loud (listing valid names) at `config set`, on the env override, and at server startup.
 
 ### Fixed

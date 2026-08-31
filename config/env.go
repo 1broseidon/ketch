@@ -103,6 +103,9 @@ func envSpecs() []envSpec {
 		keyPoolSpec("serpbase_api_key",
 			func(c *Config) *string { return &c.SerpBaseAPIKey },
 			func(c *Config) *[]string { return &c.SerpBaseAPIKeys }),
+		keyPoolSpec("youcom_api_key",
+			func(c *Config) *string { return &c.YoucomAPIKey },
+			func(c *Config) *[]string { return &c.YoucomAPIKeys }),
 		{
 			key:  "limit",
 			prev: func(c *Config) string { return strconv.Itoa(c.Limit) },

@@ -86,7 +86,7 @@ ketch config set github_token ghp_...
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `backend` | `brave` | Default search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase` |
+| `backend` | `brave` | Default search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase`, `youcom` |
 | `brave_api_key` | — | Brave Search API key ([get one free](https://brave.com/search/api/)) |
 | `brave_api_keys` | — | Additional Brave keys (JSON array) — see [multiple keys](#multiple-api-keys-per-provider) |
 | `exa_api_key` | — | Optional Exa API key for authenticated hosted MCP usage |
@@ -100,6 +100,8 @@ ketch config set github_token ghp_...
 | `tavily_api_keys` | — | Additional Tavily keys (JSON array) |
 | `serpbase_api_key` | — | [SerpBase](https://serpbase.dev) API key (required for `-b serpbase`) |
 | `serpbase_api_keys` | — | Additional SerpBase keys (JSON array) |
+| `youcom_api_key` | — | [You.com](https://you.com/platform/api-keys) API key (required for `-b youcom`) |
+| `youcom_api_keys` | — | Additional You.com keys (JSON array) |
 | `searxng_url` | `http://localhost:8081` | SearXNG instance URL |
 | `limit` | `5` | Default max results (shared by `search`, `code`, `docs`) |
 

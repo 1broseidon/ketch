@@ -9,7 +9,7 @@ See [AGENTS.md](AGENTS.md) for full module layout and design principles, and [de
 - `cmd/` — Cobra CLI (root, search, code, docs, scrape, extract, crawl, config, cache, browser, doctor, mcp, version)
 - `code/` — `code.Searcher` interface with Grep (built-in default), Sourcegraph, and GitHub backends
 - `docs/` — `docs.Searcher` interface with Context7 backend (local FTS5 planned)
-- `search/` — `Searcher` interface with Brave (built-in default), DDG, SearXNG, Exa, Firecrawl, Keenable, Tavily, Parallel, and SerpBase backends
+- `search/` — `Searcher` interface with Brave (built-in default), DDG, SearXNG, Exa, Firecrawl, Keenable, Tavily, Parallel, SerpBase, and Youcom backends
 - `scrape/` — HTTP fetch + browser fallback via Rod for JS-rendered pages
 - `extract/` — readability + html-to-markdown pipeline, JS shell detection heuristic
 - `crawl/` — BFS/sitemap crawler with background execution and status tracking
@@ -69,6 +69,7 @@ Use --concurrency N (default 5) to control parallel request limit.
 | `tavily` | API key: `ketch config set tavily_api_key <key>` | Agent-oriented search; fills Content from extracted text; basic depth (1 credit) by default |
 | `parallel` | Zero config | Current web search through Parallel's hosted Search MCP endpoint |
 | `serpbase` | API key: `ketch config set serpbase_api_key <key>` | Google search results through the SerpBase REST API |
+| `youcom` | API key: `ketch config set youcom_api_key <key>` | Web search through the You.com Web Search API (`X-API-Key` auth); fills Description and Content from summaries and snippets |
 
 ### Code Backends (ketch code)
 

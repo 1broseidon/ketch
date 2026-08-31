@@ -49,8 +49,9 @@ func TestNewFromConfigBuildsEveryEffectiveKeyPool(t *testing.T) {
 	cfg.KeenableAPIKey, cfg.KeenableAPIKeys = "keenable-legacy", []string{"keenable-new"}
 	cfg.TavilyAPIKey, cfg.TavilyAPIKeys = "tavily-legacy", []string{"tavily-new"}
 	cfg.SerpBaseAPIKey, cfg.SerpBaseAPIKeys = "serpbase-legacy", []string{"serpbase-new"}
+	cfg.YoucomAPIKey, cfg.YoucomAPIKeys = "youcom-legacy", []string{"youcom-new"}
 
-	for _, backend := range []string{"brave", "exa", "firecrawl", "keenable", "tavily", "serpbase"} {
+	for _, backend := range []string{"brave", "exa", "firecrawl", "keenable", "tavily", "serpbase", "youcom"} {
 		searcher, err := NewFromConfig(&cfg, backend, "")
 		if err != nil {
 			t.Fatalf("%s: %v", backend, err)
@@ -68,6 +69,8 @@ func TestNewFromConfigBuildsEveryEffectiveKeyPool(t *testing.T) {
 		case *Tavily:
 			size = candidate.keys.size()
 		case *SerpBase:
+			size = candidate.keys.size()
+		case *Youcom:
 			size = candidate.keys.size()
 		default:
 			t.Fatalf("%s: unexpected searcher %T", backend, searcher)
@@ -91,6 +94,7 @@ func TestExportedBackendConstructorsKeepSingleKeyCompatibility(t *testing.T) {
 		{name: "keenable", size: NewKeenable(&keenableKey).keys.size()},
 		{name: "tavily", size: NewTavily("tavily").keys.size()},
 		{name: "serpbase", size: NewSerpBase("serpbase").keys.size()},
+		{name: "youcom", size: NewYoucom("youcom").keys.size()},
 	}
 	for _, tc := range tests {
 		if tc.size != 1 {
@@ -125,6 +129,13 @@ func TestNewFromConfigSerpBaseRequiresKey(t *testing.T) {
 	cfg := config.Defaults()
 	if _, err := NewFromConfig(&cfg, "serpbase", ""); err == nil {
 		t.Fatal("expected missing-key error for serpbase")
+	}
+}
+
+func TestNewFromConfigYoucomRequiresKey(t *testing.T) {
+	cfg := config.Defaults()
+	if _, err := NewFromConfig(&cfg, "youcom", ""); err == nil {
+		t.Fatal("expected missing-key error for youcom")
 	}
 }
 
