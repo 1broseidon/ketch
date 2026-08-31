@@ -40,13 +40,21 @@ func WithUserAgent(ua string) ConnOption {
 // NewBrowserConn launches a headless browser without cookie injection. This
 // legacy signature is preserved for external package callers.
 func NewBrowserConn(binPath string) (BrowserConn, error) {
-	return NewBrowserConnWithCookies(binPath, nil)
+	return NewBrowserConnOptions(binPath, nil)
 }
 
-// NewBrowserConnWithCookies launches a headless browser, injects cookies from
-// jar (which may be nil) before each navigation, and applies opts to the
-// launcher before launch.
-func NewBrowserConnWithCookies(binPath string, jar *cookies.Jar, opts ...ConnOption) (BrowserConn, error) {
+// NewBrowserConnWithCookies launches a headless browser and injects cookies
+// from jar (which may be nil) before each navigation. The signature is kept
+// exact (not variadic) so existing assignments to the function type keep
+// compiling; use NewBrowserConnOptions for launch-time customization.
+func NewBrowserConnWithCookies(binPath string, jar *cookies.Jar) (BrowserConn, error) {
+	return NewBrowserConnOptions(binPath, jar)
+}
+
+// NewBrowserConnOptions launches a headless browser, injects cookies from jar
+// (which may be nil) before each navigation, and applies opts to the launcher
+// before launch.
+func NewBrowserConnOptions(binPath string, jar *cookies.Jar, opts ...ConnOption) (BrowserConn, error) {
 	// Scrub KETCH_* secret vars (API keys, tokens) from the browser's
 	// environment — the child process has no use for ketch credentials.
 	l := launcher.New().Bin(binPath).Headless(true).Env(config.ScrubbedEnviron()...)

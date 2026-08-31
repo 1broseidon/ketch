@@ -4,12 +4,18 @@ import (
 	"testing"
 
 	"github.com/1broseidon/ketch/config"
+	"github.com/1broseidon/ketch/cookies"
 	"github.com/go-rod/rod/lib/launcher"
 )
 
+// Source compatibility: NewBrowserConnWithCookies's signature was deliberately
+// kept exact (not variadic) so external assignments to the function type keep
+// compiling.
+var _ func(string, *cookies.Jar) (BrowserConn, error) = NewBrowserConnWithCookies
+
 // browserConnOptions must pass the operator's UA to the browser only when one
-// was explicitly configured — the unconfigured case must stay a no-op so the
-// browser keeps its own User-Agent.
+// was explicitly configured — both the presence and the value must survive the
+// option boundary onto a real launcher.
 func TestBrowserConnOptionsFollowConfig(t *testing.T) {
 	s := New()
 	if opts := s.browserConnOptions(); len(opts) != 0 {
@@ -22,8 +28,10 @@ func TestBrowserConnOptionsFollowConfig(t *testing.T) {
 	if len(opts) != 1 {
 		t.Fatalf("configured scraper: browserConnOptions() = %d options, want 1", len(opts))
 	}
-	if opts[0] == nil {
-		t.Fatal("configured scraper: browserConnOptions()[0] = nil, want WithUserAgent")
+	l := launcher.New()
+	opts[0](l)
+	if got := l.Get("user-agent"); got != "custom/1.2" {
+		t.Errorf("configured scraper: option set user-agent = %q, want %q", got, "custom/1.2")
 	}
 }
 

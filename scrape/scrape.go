@@ -176,7 +176,7 @@ func (s *Scraper) getBrowser() BrowserConn {
 		s.browserBin = ""
 		return nil
 	}
-	conn, err := NewBrowserConnWithCookies(bin, s.jar, s.browserConnOptions()...)
+	conn, err := NewBrowserConnOptions(bin, s.jar, s.browserConnOptions()...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "warn: browser init failed: %v\n", err)
 		s.browserBin = ""
