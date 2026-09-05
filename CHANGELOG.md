@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-09-05
+
 ### Added
 - **MCP tool pruning** (#36). New `mcp_tools` config key — an allowlist of the tools `ketch mcp serve` publishes, in canonical order (`search`, `code`, `docs`, `scrape`, `crawl`). Set it as a JSON array (`ketch config set mcp_tools '["search","scrape"]'`) or a comma-separated list, or via the `KETCH_MCP_TOOLS` env override; unset or `[]` publishes all five. Unlisted tools are never registered, and the initialize `serverInstructions` are generated from the enabled set — a pruned server tells agents exactly what it offers and never routes them to a tool that isn't there; the output-size guidance appears whenever an enabled tool accepts output-bounding arguments (`search`, `scrape`, `crawl`). `ketch config` reports the effective `mcp_tools` set. Validation is fail-loud (listing valid names) at `config set`, on the env override, and at server startup.
 
