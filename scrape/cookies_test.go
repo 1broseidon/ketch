@@ -245,6 +245,72 @@ func TestCacheKeyDivergence(t *testing.T) {
 			t.Fatal("configured jar must isolate the cache before a possible authenticated redirect")
 		}
 	})
+
+}
+
+// scraperFromConfig builds a Scraper via NewFromConfig and closes it when the
+// test ends.
+func scraperFromConfig(t *testing.T, cfg *config.Config) *Scraper {
+	t.Helper()
+	s, err := NewFromConfig(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(s.Close)
+	return s
+}
+
+// A configured user_agent must namespace the cache exactly like a cookie jar
+// does: sites answer differently per UA, so an entry fetched under one must
+// never satisfy a request under another.
+func TestCacheKeyUserAgent(t *testing.T) {
+	u := "http://127.0.0.1:9999/page"
+
+	t.Run("default user agent keeps the bare key", func(t *testing.T) {
+		s := scraperFromConfig(t, &config.Config{})
+		if got := s.CacheKey(u); got != u {
+			t.Fatalf("CacheKey = %q, want %q (unconfigured UA must not change the namespace)", got, u)
+		}
+	})
+
+	t.Run("configured user agent diverges, is stable, and never leaks the UA", func(t *testing.T) {
+		s := scraperFromConfig(t, &config.Config{UserAgent: "custom/1.2"})
+		key := s.CacheKey(u)
+		if key == u {
+			t.Fatal("configured UA must change the cache namespace")
+		}
+		if !strings.Contains(key, "\x00ua:") {
+			t.Fatalf("key %q missing ua suffix", key)
+		}
+		if strings.Contains(key, "custom/1.2") {
+			t.Fatalf("key %q carries the UA text; want a digest", key)
+		}
+		if key != s.CacheKey(u) {
+			t.Fatal("key should be stable across calls")
+		}
+	})
+
+	t.Run("switching user agents yields different keys", func(t *testing.T) {
+		s1 := scraperFromConfig(t, &config.Config{UserAgent: "agent-a/1"})
+		s2 := scraperFromConfig(t, &config.Config{UserAgent: "agent-b/1"})
+		if s1.CacheKey(u) == s2.CacheKey(u) {
+			t.Fatal("different UAs must produce different keys")
+		}
+	})
+
+	t.Run("cookie and user agent segments compose", func(t *testing.T) {
+		jarPath := writeJar(t, tabLine("127.0.0.1", "FALSE", "/", "FALSE", "0", "session", "v1"))
+		both := scraperFromConfig(t, &config.Config{CookieFile: jarPath, UserAgent: "custom/1.2"})
+		jarOnly := scraperWithJar(t, jarPath)
+		uaOnly := scraperFromConfig(t, &config.Config{UserAgent: "custom/1.2"})
+		key := both.CacheKey(u)
+		if !strings.Contains(key, "\x00cookies:") || !strings.Contains(key, "\x00ua:") {
+			t.Fatalf("key %q must carry both segments", key)
+		}
+		if key == jarOnly.CacheKey(u) || key == uaOnly.CacheKey(u) {
+			t.Fatal("jar+UA key must differ from either alone")
+		}
+	})
 }
 
 // mapPageCache is an in-memory PageCache for cache-divergence integration.

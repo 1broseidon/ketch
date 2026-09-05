@@ -411,12 +411,22 @@ func ContentHash(s string) string {
 // no cookie matches the initial URL: a redirect may land on another host or
 // path where a cookie does match. This prevents redirected authenticated
 // content from colliding with an anonymous cache entry.
+//
+// An explicitly configured user_agent likewise gets its own namespace: sites
+// serve different content (or a bot wall) per User-Agent, so a page fetched
+// under one UA must not satisfy a request made under another. Only a
+// configured UA is folded in — the built-in default keeps the bare key, so
+// existing cache entries stay valid for operators who never set one — and it
+// is folded in as a short digest so the key never carries the UA text.
 func (s *Scraper) CacheKey(fetchURL string) string {
-	fingerprint := s.jar.Fingerprint()
-	if fingerprint == "" {
-		return fetchURL
+	key := fetchURL
+	if fingerprint := s.jar.Fingerprint(); fingerprint != "" {
+		key += "\x00cookies:" + fingerprint
 	}
-	return fetchURL + "\x00cookies:" + fingerprint
+	if s.userAgentConfigured {
+		key += "\x00ua:" + ContentHash(s.userAgent)
+	}
+	return key
 }
 
 // FetchContent fetches a URL without extraction or browser fallback while
