@@ -31,7 +31,7 @@ Use only these terms in ketch output.
 | --- | --- |
 | **surface** | One of the five research operations: `search`, `code`, `docs`, `scrape`, `crawl` |
 | **transport** | How a surface is called: the CLI binary (default) or the optional MCP tools |
-| **backend** | The provider behind a surface: brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase (search), grepapp/sourcegraph/github (code), context7 (docs) |
+| **backend** | The provider behind a surface: brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase/youcom (search), grepapp/sourcegraph/github (code), context7 (docs) |
 | **operator action** | A system-managing or diagnostic command — `config set`, `cache`, `browser install`, background crawls, `doctor` — CLI-only by design |
 | **error prefix** | The stable class on every ketch error: CLI exit codes 2–6, mirrored as the bracketed prefix opening every MCP tool error — `[validation]`, `[not_found]`, `[upstream]`, `[precondition]`, `[cancelled]` |
 | **fan-out** | How many queries are searched and URLs scraped under one plan |

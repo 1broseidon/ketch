@@ -4,9 +4,9 @@ ketch has three search surfaces, each with its own backends: web search (`ketch 
 
 ## Web Search Backends
 
-ketch supports nine web-search backends. Set the default with `ketch config set backend <name>`. To query several at once, use `ketch search --multi` (rank-fused federation) or `--random` (one shuffled provider with fallback) — see the [command reference](/reference/commands#ketch-search).
+ketch supports ten web-search backends. Set the default with `ketch config set backend <name>`. To query several at once, use `ketch search --multi` (rank-fused federation) or `--random` (one shuffled provider with fallback) — see the [command reference](/reference/commands#ketch-search).
 
-Every keyed backend also accepts a pool of keys (`brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`, `keenable_api_keys`, `tavily_api_keys`, `serpbase_api_keys`); ketch picks one at random per request and retries once with a different key on `401`/`429` (`402` for Firecrawl). See [multiple API keys](/guide/configuration#multiple-api-keys-per-provider).
+Every keyed backend also accepts a pool of keys (`brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`, `keenable_api_keys`, `tavily_api_keys`, `serpbase_api_keys`, `youcom_api_keys`); ketch picks one at random per request and retries once with a different key on `401`/`429` (`402` for Firecrawl). See [multiple API keys](/guide/configuration#multiple-api-keys-per-provider).
 
 ## Brave (default)
 
@@ -136,6 +136,18 @@ Google search results through the [SerpBase](https://serpbase.dev) REST API. Ket
 3. Make it the default: `ketch config set backend serpbase`
 
 **Recommended for:** agent workflows that need keyed Google search results through a structured API.
+
+## You.com
+
+Web search through the [You.com](https://you.com) Web Search API. Ketch maps result titles, URLs, page summaries, and keyword-centered snippets into its standard search result fields. Auth is `X-API-Key` header-only.
+
+**Setup:**
+
+1. Get an API key at [you.com/platform/api-keys](https://you.com/platform/api-keys)
+2. Set it: `ketch config set youcom_api_key <your-key>`
+3. Make it the default: `ketch config set backend youcom`
+
+**Recommended for:** agent workflows that want cited, snippet-rich results from You.com's index alongside other backends in `--multi` federation.
 
 ## Code Search Backends
 

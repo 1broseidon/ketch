@@ -33,6 +33,7 @@ const (
 	tavilyEndpoint   = "https://api.tavily.com/search"
 	parallelEndpoint = "https://search.parallel.ai/mcp"
 	serpbaseEndpoint = "https://api.serpbase.dev/google/search"
+	youcomEndpoint   = "https://ydc-index.io/v1/search"
 	githubAPIBase    = "https://api.github.com"
 	context7APIBase  = "https://context7.com"
 )
@@ -360,6 +361,45 @@ func probeSerpBase(ctx context.Context, client *http.Client, endpoint, apiKey st
 		return StatusOK, "reachable, key accepted (rate limited)"
 	case http.StatusPaymentRequired:
 		return StatusOK, "reachable, key accepted (search credits exhausted)"
+	default:
+		return StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
+	}
+}
+
+// youcomProbeBody is a minimal one-result search — enough to prove the key
+// works without spending meaningful quota.
+const youcomProbeBody = `{"query":"ketch","count":1}`
+
+// probeYoucom checks the You.com Web Search API with a minimal query. Auth
+// is X-API-Key header-only — never a query param — so doctor details never
+// echo the key via a URL.
+func probeYoucom(ctx context.Context, client *http.Client, endpoint, apiKey string) (Status, string) {
+	key := strings.TrimSpace(apiKey)
+	if key == "" {
+		return StatusNoKey, "API key not set (get one at https://you.com/platform/api-keys then: ketch config set youcom_api_key <key>)"
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(youcomProbeBody))
+	if err != nil {
+		return StatusUnreachable, probeErrDetail(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-API-Key", key)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return StatusUnreachable, probeErrDetail(err)
+	}
+	defer drain(resp)
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return StatusOK, ""
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return StatusMisconfigured, "API key rejected (ketch config set youcom_api_key <key>)"
+	case http.StatusTooManyRequests:
+		return StatusOK, "reachable, key accepted (rate limited)"
+	case http.StatusPaymentRequired:
+		return StatusOK, "reachable, key accepted (credits exhausted)"
 	default:
 		return StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
 	}

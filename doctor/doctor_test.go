@@ -496,6 +496,68 @@ func TestProbeSerpBaseStatuses(t *testing.T) {
 	}
 }
 
+// --- youcom ---
+
+func TestProbeYoucomNoKey(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Error("no-key probe must not hit the network")
+	}))
+	defer ts.Close()
+
+	status, detail := probeYoucom(testCtx(t), ts.Client(), ts.URL, "")
+	if status != StatusNoKey {
+		t.Fatalf("status = %q, want no_key", status)
+	}
+	if !strings.Contains(detail, "youcom_api_key") {
+		t.Errorf("detail %q should name youcom_api_key", detail)
+	}
+}
+
+func TestProbeYoucomStatuses(t *testing.T) {
+	cases := []struct {
+		name   string
+		code   int
+		want   Status
+		detail string
+	}{
+		{"ok", http.StatusOK, StatusOK, ""},
+		{"401", http.StatusUnauthorized, StatusMisconfigured, "youcom_api_key"},
+		{"403", http.StatusForbidden, StatusMisconfigured, "youcom_api_key"},
+		{"429", http.StatusTooManyRequests, StatusOK, "rate limited"},
+		{"402", http.StatusPaymentRequired, StatusOK, "credits"},
+		{"500", http.StatusInternalServerError, StatusUnreachable, "500"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var gotKey string
+			var gotMethod string
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				gotKey = r.Header.Get("X-API-Key")
+				gotMethod = r.Method
+				w.WriteHeader(tc.code)
+			}))
+			defer ts.Close()
+
+			status, detail := probeYoucom(testCtx(t), ts.Client(), ts.URL, "youcom-secret")
+			if status != tc.want {
+				t.Fatalf("status = %q (detail %q), want %q", status, detail, tc.want)
+			}
+			if gotKey != "youcom-secret" {
+				t.Errorf("X-API-Key header = %q, want youcom-secret", gotKey)
+			}
+			if gotMethod != http.MethodPost {
+				t.Errorf("method = %q, want POST", gotMethod)
+			}
+			if tc.detail != "" && !strings.Contains(detail, tc.detail) {
+				t.Errorf("detail %q should contain %q", detail, tc.detail)
+			}
+			if strings.Contains(detail, "youcom-secret") {
+				t.Errorf("detail leaked key: %q", detail)
+			}
+		})
+	}
+}
+
 // --- sourcegraph reachability ---
 
 func TestProbeReachable(t *testing.T) {

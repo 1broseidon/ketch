@@ -2,6 +2,12 @@
 
 This page mirrors the canonical [`CHANGELOG.md`](https://github.com/1broseidon/ketch/blob/main/CHANGELOG.md) in the repo root. Versions follow [Semantic Versioning](https://semver.org/) and match the published git tags.
 
+## Unreleased
+
+**Added**
+
+- **You.com search backend**: web search via the You.com Web Search API (`youcom_api_key` / `youcom_api_keys`, `KETCH_YOUCOM_API_KEY`; `X-API-Key` header auth). Keyed only. Results fill `Description` from the page summary (first snippet fallback) and `Content` from keyword-centered snippets. Wired through config set/discovery, `NewFromConfig`, multi/random, MCP, and `ketch doctor`.
+
 ## v0.14.0 — 2026-08-07
 
 **Added**
