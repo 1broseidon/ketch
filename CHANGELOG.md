@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Headless-browser fetches now honor configured `user_agent` and `--user-agent` values; when unset, Chromium's native User-Agent remains unchanged (#45).
+- Headless-browser fetches no longer advertise `HeadlessChrome` by default (#45). With no `user_agent` configured, ketch reads the installed browser's own User-Agent after launch and, when it carries the `HeadlessChrome/` product token, relaunches once with that same string minus the `Headless` prefix. Version, platform, and `sec-ch-ua` client hints stay truthful — the browser presents as itself in normal mode, which is what lets `--force-browser` get past Akamai-style filters that hard-403 the headless token. A configured `user_agent` / `--user-agent` still wins unchanged.
 
 ## [0.14.0] - 2026-08-07
 

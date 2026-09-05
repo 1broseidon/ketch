@@ -90,7 +90,8 @@ type Scraper struct {
 	// userAgentConfigured records that the operator explicitly set user_agent
 	// (config, env, or flag) instead of riding the built-in default. Only an
 	// explicitly configured UA reaches the headless browser; when unset, the
-	// browser keeps its own User-Agent.
+	// browser keeps its own User-Agent minus the HeadlessChrome token (see
+	// NewBrowserConnOptions).
 	userAgentConfigured bool
 }
 
@@ -189,7 +190,8 @@ func (s *Scraper) getBrowser() BrowserConn {
 // browserConnOptions returns the launch-time options for the headless browser.
 // The operator's user_agent (config, env, or --user-agent flag) applies to the
 // browser path exactly like the HTTP path; when nothing is configured, no UA
-// option is passed and the launch keeps the browser's own User-Agent.
+// option is passed and the launch keeps the browser's own User-Agent with the
+// HeadlessChrome token stripped.
 func (s *Scraper) browserConnOptions() []ConnOption {
 	if !s.userAgentConfigured {
 		return nil
