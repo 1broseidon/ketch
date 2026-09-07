@@ -1,6 +1,7 @@
 package extract
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -320,6 +321,77 @@ func chromePage(extra string) string {
 </article>
 ` + extra + `
 </body></html>`
+}
+
+func TestStripDataURIsReplacesBase64ImgSource(t *testing.T) {
+	t.Parallel()
+
+	payload := "iVBORw0KGgo=" // short fake PNG header (base64)
+	html := fmt.Sprintf(`<html><body><img src="data:image/png;base64,%s" alt="chart" /></body></html>`, payload)
+
+	out := stripDataURIs(html)
+
+	if strings.Contains(out, "data:image") {
+		t.Fatalf("data URI not stripped:\n%s", out)
+	}
+	if !strings.Contains(out, "data-uri omitted: image/png") {
+		t.Fatalf("marker not present or wrong format in output:\n%s", out)
+	}
+}
+
+func TestStripDataURIsLeavesNormalImagesAlone(t *testing.T) {
+	t.Parallel()
+
+	html := `<html><body><img src="https://example.com/photo.png" alt="photo" /></body></html>`
+	out := stripDataURIs(html)
+
+	if !strings.Contains(out, "https://example.com/photo.png") {
+		t.Fatalf("normal image src was removed:\n%s", out)
+	}
+}
+
+func TestExtractStripsDataURIsFromMarkdownOutput(t *testing.T) {
+	t.Parallel()
+
+	// A page with enough prose for readability, plus a base64 image.
+	// Readability may drop the empty-src img after stripping, but the
+	// data URI must never leak into the output regardless.
+	html := `<!doctype html><html><head><title>Report</title></head><body>
+<article>
+<p>This paragraph has enough content for readability to extract it as the main article content on this page, along with any embedded images that follow this prose section.</p>
+<img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoH" alt="chart" />
+</article>
+</body></html>`
+
+	result, err := New().Extract("https://example.com/report", html)
+	if err != nil {
+		t.Fatalf("Extract: %v", err)
+	}
+	if strings.Contains(result.Markdown, "data:image") {
+		t.Fatalf("data URI leaked into markdown:\n%s", result.Markdown)
+	}
+}
+
+func TestExtractRawStripsDataURIsAndEmitsMarker(t *testing.T) {
+	t.Parallel()
+
+	// Raw conversion (no readability) preserves the marker alt text.
+	html := `<html><head><title>Report</title></head><body>
+<img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD" alt="chart" />
+<p>Some page content.</p>
+</body></html>`
+
+	stripped := stripDataURIs(html)
+	result, err := extractRaw("", stripped)
+	if err != nil {
+		t.Fatalf("extractRaw: %v", err)
+	}
+	if strings.Contains(result.Markdown, "data:image") {
+		t.Fatalf("data URI leaked into raw markdown:\n%s", result.Markdown)
+	}
+	if !strings.Contains(result.Markdown, "data-uri omitted") {
+		t.Fatalf("marker missing from raw markdown:\n%s", result.Markdown)
+	}
 }
 
 func assertContainsNone(t *testing.T, got string, unwanted ...string) {

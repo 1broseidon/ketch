@@ -61,6 +61,7 @@ func NewFromConfig(cfg *config.Config) (*Scraper, error) {
 		return nil, fmt.Errorf("invalid user_agent: %w", err)
 	}
 	scraper.userAgent = ua
+	scraper.userAgentConfigured = strings.TrimSpace(cfg.UserAgent) != ""
 	if cfg.CookieFile != "" {
 		jar, err := cookies.Load(cfg.CookieFile)
 		if err != nil {

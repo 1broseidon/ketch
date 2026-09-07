@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/1broseidon/ketch/config"
@@ -22,21 +23,103 @@ type rodConn struct {
 	jar      *cookies.Jar
 }
 
+// ConnOption customizes a browser connection before the browser launches.
+type ConnOption func(*launcher.Launcher)
+
+// WithUserAgent launches the browser with the given User-Agent (Chrome's
+// --user-agent switch), in effect for every page, frame, and worker the
+// connection serves. An empty value is a no-op: the browser keeps its own
+// User-Agent with only the Headless token removed (see stripHeadlessUA).
+func WithUserAgent(ua string) ConnOption {
+	return func(l *launcher.Launcher) {
+		if ua != "" {
+			l.Set("user-agent", ua)
+		}
+	}
+}
+
+// headlessToken is the product-name prefix headless Chromium advertises in
+// its User-Agent (e.g. "HeadlessChrome/151.0.0.0"). It is a strong bot
+// signal: Akamai and similar filters answer a hard 403 to it, which made
+// --force-browser unusable on exactly the sites it exists for (#45).
+const headlessToken = "HeadlessChrome/"
+
+// stripHeadlessUA returns the browser's User-Agent as it would read in normal
+// (non-headless) mode: the "Headless" prefix on the Chrome product token is
+// removed and nothing else changes. Version, platform, and the sec-ch-ua
+// client hints all stay truthful — the browser presents as itself, not as
+// some other browser. The second return reports whether anything changed, so
+// a UA without the token (a non-Chromium build, or one already overridden)
+// is left alone.
+func stripHeadlessUA(ua string) (string, bool) {
+	if !strings.Contains(ua, headlessToken) {
+		return ua, false
+	}
+	return strings.Replace(ua, headlessToken, "Chrome/", 1), true
+}
+
 // NewBrowserConn launches a headless browser without cookie injection. This
 // legacy signature is preserved for external package callers.
 func NewBrowserConn(binPath string) (BrowserConn, error) {
-	return NewBrowserConnWithCookies(binPath, nil)
+	return NewBrowserConnOptions(binPath, nil)
 }
 
 // NewBrowserConnWithCookies launches a headless browser and injects cookies
-// from jar (which may be nil) before each navigation.
+// from jar (which may be nil) before each navigation. The signature is kept
+// exact (not variadic) so existing assignments to the function type keep
+// compiling; use NewBrowserConnOptions for launch-time customization.
 func NewBrowserConnWithCookies(binPath string, jar *cookies.Jar) (BrowserConn, error) {
+	return NewBrowserConnOptions(binPath, jar)
+}
+
+// NewBrowserConnOptions launches a headless browser, injects cookies from jar
+// (which may be nil) before each navigation, and applies opts to the launcher
+// before launch.
+//
+// When no option sets a User-Agent, the browser's own UA is read after launch
+// and, if it carries the HeadlessChrome token, the browser is relaunched once
+// with that same UA minus the Headless prefix (stripHeadlessUA). Doing this
+// through the launch switch rather than a per-page CDP override keeps the
+// coverage identical to a configured user_agent: every page, frame, and
+// worker. The extra launch costs a fraction of a second once per process.
+func NewBrowserConnOptions(binPath string, jar *cookies.Jar, opts ...ConnOption) (BrowserConn, error) {
+	l, b, err := launchBrowser(binPath, opts)
+	if err != nil {
+		return nil, err
+	}
+	if l.Has("user-agent") {
+		return &rodConn{browser: b, launcher: l, jar: jar}, nil
+	}
+
+	ua, err := browserUserAgent(b)
+	if err != nil {
+		closeBrowser(b, l)
+		return nil, err
+	}
+	stripped, changed := stripHeadlessUA(ua)
+	if !changed {
+		return &rodConn{browser: b, launcher: l, jar: jar}, nil
+	}
+	closeBrowser(b, l)
+	l, b, err = launchBrowser(binPath, append(opts, WithUserAgent(stripped)))
+	if err != nil {
+		return nil, err
+	}
+	return &rodConn{browser: b, launcher: l, jar: jar}, nil
+}
+
+// launchBrowser starts a headless browser with opts applied and connects to
+// it, returning the launcher and connected browser.
+func launchBrowser(binPath string, opts []ConnOption) (*launcher.Launcher, *rod.Browser, error) {
 	// Scrub KETCH_* secret vars (API keys, tokens) from the browser's
 	// environment — the child process has no use for ketch credentials.
 	l := launcher.New().Bin(binPath).Headless(true).Env(config.ScrubbedEnviron()...)
+	for _, opt := range opts {
+		opt(l)
+	}
 	u, err := l.Launch()
 	if err != nil {
-		return nil, fmt.Errorf("launch browser: %w", err)
+		return nil, nil, fmt.Errorf("launch browser: %w", err)
 	}
 	// Rod emulates devices.LaptopWithMDPIScreen by default, which overrides the
 	// user agent with a hardcoded macOS Chrome 114 string. That advertises a
@@ -46,9 +129,23 @@ func NewBrowserConnWithCookies(binPath string, jar *cookies.Jar) (BrowserConn, e
 	b := rod.New().ControlURL(u).DefaultDevice(devices.Clear)
 	if err := b.Connect(); err != nil {
 		l.Kill()
-		return nil, fmt.Errorf("connect browser: %w", err)
+		return nil, nil, fmt.Errorf("connect browser: %w", err)
 	}
-	return &rodConn{browser: b, launcher: l, jar: jar}, nil
+	return l, b, nil
+}
+
+// browserUserAgent asks the running browser for the User-Agent it will send.
+func browserUserAgent(b *rod.Browser) (string, error) {
+	v, err := b.Version()
+	if err != nil {
+		return "", fmt.Errorf("browser version: %w", err)
+	}
+	return v.UserAgent, nil
+}
+
+func closeBrowser(b *rod.Browser, l *launcher.Launcher) {
+	_ = b.Close()
+	l.Kill()
 }
 
 // Fetch navigates to a URL in a new tab and returns the rendered HTML.

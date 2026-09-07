@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/1broseidon/ketch/internal/testutil"
 )
 
 func TestParallelBackendIsAppendedWithoutChangingDefault(t *testing.T) {
@@ -50,7 +52,7 @@ func TestEffectiveKeysReturnCopies(t *testing.T) {
 }
 
 func TestSaveEnforcesPrivateMode(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	testutil.SetIsolatedConfigHome(t)
 	path, err := Path()
 	if err != nil {
 		t.Fatal(err)

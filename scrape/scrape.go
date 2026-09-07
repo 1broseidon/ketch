@@ -87,6 +87,12 @@ type Scraper struct {
 	rewriter     *urlrewrite.Rewriter
 	jar          *cookies.Jar
 	userAgent    string
+	// userAgentConfigured records that the operator explicitly set user_agent
+	// (config, env, or flag) instead of riding the built-in default. Only an
+	// explicitly configured UA reaches the headless browser; when unset, the
+	// browser keeps its own User-Agent minus the HeadlessChrome token (see
+	// NewBrowserConnOptions).
+	userAgentConfigured bool
 }
 
 // NewWithRewriter creates a Scraper with an optional browser binary and
@@ -171,7 +177,7 @@ func (s *Scraper) getBrowser() BrowserConn {
 		s.browserBin = ""
 		return nil
 	}
-	conn, err := NewBrowserConnWithCookies(bin, s.jar)
+	conn, err := NewBrowserConnOptions(bin, s.jar, s.browserConnOptions()...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "warn: browser init failed: %v\n", err)
 		s.browserBin = ""
@@ -179,6 +185,18 @@ func (s *Scraper) getBrowser() BrowserConn {
 	}
 	s.browser = conn
 	return s.browser
+}
+
+// browserConnOptions returns the launch-time options for the headless browser.
+// The operator's user_agent (config, env, or --user-agent flag) applies to the
+// browser path exactly like the HTTP path; when nothing is configured, no UA
+// option is passed and the launch keeps the browser's own User-Agent with the
+// HeadlessChrome token stripped.
+func (s *Scraper) browserConnOptions() []ConnOption {
+	if !s.userAgentConfigured {
+		return nil
+	}
+	return []ConnOption{WithUserAgent(s.userAgent)}
 }
 
 // Scrape fetches a URL and returns extracted markdown content along with the
@@ -393,12 +411,22 @@ func ContentHash(s string) string {
 // no cookie matches the initial URL: a redirect may land on another host or
 // path where a cookie does match. This prevents redirected authenticated
 // content from colliding with an anonymous cache entry.
+//
+// An explicitly configured user_agent likewise gets its own namespace: sites
+// serve different content (or a bot wall) per User-Agent, so a page fetched
+// under one UA must not satisfy a request made under another. Only a
+// configured UA is folded in — the built-in default keeps the bare key, so
+// existing cache entries stay valid for operators who never set one — and it
+// is folded in as a short digest so the key never carries the UA text.
 func (s *Scraper) CacheKey(fetchURL string) string {
-	fingerprint := s.jar.Fingerprint()
-	if fingerprint == "" {
-		return fetchURL
+	key := fetchURL
+	if fingerprint := s.jar.Fingerprint(); fingerprint != "" {
+		key += "\x00cookies:" + fingerprint
 	}
-	return fetchURL + "\x00cookies:" + fingerprint
+	if s.userAgentConfigured {
+		key += "\x00ua:" + ContentHash(s.userAgent)
+	}
+	return key
 }
 
 // FetchContent fetches a URL without extraction or browser fallback while
