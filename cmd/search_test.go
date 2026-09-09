@@ -59,7 +59,7 @@ func TestRunMultiSearchFlagValidation(t *testing.T) {
 		{"multi and backend conflict", "brave", true, ExitValidation, "mutually exclusive"},
 		{"all combined with a name", "all,brave", false, ExitValidation, `"all" cannot be combined`},
 		{"unknown backend", "bogus", false, ExitValidation, "unknown search backend"},
-		{"named but unconfigured", "firecrawl", false, ExitPrecondition, "firecrawl"},
+		{"named but unconfigured", "tavily", false, ExitPrecondition, "tavily"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -151,7 +151,7 @@ func TestRunRandomSearchBackendValidation(t *testing.T) {
 		wantSubstr string
 	}{
 		{name: "unknown backend", random: "bogus", wantCode: ExitValidation, wantSubstr: "unknown search backend"},
-		{name: "named but unconfigured", random: "firecrawl", wantCode: ExitPrecondition, wantSubstr: "firecrawl"},
+		{name: "named but unconfigured", random: "tavily", wantCode: ExitPrecondition, wantSubstr: "tavily"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

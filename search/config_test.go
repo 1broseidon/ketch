@@ -153,10 +153,21 @@ func TestNewFromConfigSerpBaseRequiresKey(t *testing.T) {
 }
 
 func TestNewFromConfigFirecrawlURL(t *testing.T) {
-	t.Run("cloud requires key", func(t *testing.T) {
+	t.Run("hosted allows empty key", func(t *testing.T) {
 		cfg := config.Defaults()
-		if _, err := NewFromConfig(&cfg, "firecrawl", ""); err == nil {
-			t.Fatal("expected missing-key error for hosted Firecrawl")
+		searcher, err := NewFromConfig(&cfg, "firecrawl", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		backend, ok := searcher.(*Firecrawl)
+		if !ok {
+			t.Fatalf("unexpected type %T", searcher)
+		}
+		if backend.keys.size() != 0 {
+			t.Fatalf("keys = %d, want 0", backend.keys.size())
+		}
+		if got := backend.endpoint; got != config.FirecrawlSearchURL(config.DefaultFirecrawlURL) {
+			t.Fatalf("endpoint = %q, want hosted /v2/search", got)
 		}
 	})
 

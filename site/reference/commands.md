@@ -36,7 +36,7 @@ naming the engines that returned it.
 
 - Bare `ketch search --multi "query"` (or `--multi=all`) uses every *usable*
   backend — the same key-presence rule ketch uses everywhere: `ddg`, `exa`,
-  `keenable`, and `parallel` always; `brave`, `firecrawl`, `tavily`, and `serpbase` only with a key; `searxng`
+  `firecrawl`, `keenable`, and `parallel` always; `brave`, `tavily`, and `serpbase` only with a key; `searxng`
   always (a dead instance just fails fast and is skipped); `degoog` only when
   `degoog_url` is set.
 - `ketch search --multi=brave,exa "query"` queries exactly those, in that order.

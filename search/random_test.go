@@ -119,7 +119,7 @@ func TestNewRandomFromConfigAllUsesEveryUsableBackend(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"ddg", "searxng", "exa", "keenable", "parallel"}
+	want := []string{"ddg", "searxng", "exa", "firecrawl", "keenable", "parallel"}
 	if got := random.Names(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("resolved backends = %v, want %v", got, want)
 	}

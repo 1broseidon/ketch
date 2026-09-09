@@ -564,6 +564,27 @@ func TestFeatureFirecrawlRequestShape(t *testing.T) {
 	}
 }
 
+func TestFeatureFirecrawlHostedKeylessOmitsAuthorization(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("Authorization"); got != "" {
+			t.Errorf("Authorization = %q, want empty for keyless hosted", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"success":true,"data":{"web":[{"url":"https://example.com","title":"Ex","description":"d"}]}}`)
+	}))
+	defer server.Close()
+
+	f := &Firecrawl{keys: newKeyPool(nil), client: &http.Client{Transport: &rewriteTransport{base: http.DefaultTransport, target: server.URL}}}
+	results, err := f.Search(context.Background(), "q", 1)
+	if err != nil {
+		t.Fatalf("Search error: %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("got %d results, want 1", len(results))
+	}
+}
+
 func TestFeatureFirecrawlSelfHostedEndpoint(t *testing.T) {
 	t.Parallel()
 	var gotPath string

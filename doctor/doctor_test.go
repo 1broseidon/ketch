@@ -113,18 +113,64 @@ func TestProbeBraveNoKey(t *testing.T) {
 }
 
 func TestProbeFirecrawlNoKey(t *testing.T) {
-	// Must classify without any network call: the handler fails the test.
-	ts := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
-		t.Error("no-key probe must not hit the network")
-	}))
-	defer ts.Close()
+	var sawAuth bool
+	var gotURL, gotBody string
+	client := &http.Client{Transport: probeRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+		gotURL = req.URL.String()
+		if req.Header.Get("Authorization") != "" {
+			sawAuth = true
+		}
+		b, _ := io.ReadAll(req.Body)
+		gotBody = string(b)
+		return &http.Response{StatusCode: http.StatusOK, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{}`))}, nil
+	})}
 
-	status, detail := probeFirecrawl(testCtx(t), ts.Client(), config.FirecrawlSearchURL(config.DefaultFirecrawlURL), "")
-	if status != StatusNoKey {
-		t.Fatalf("status = %q, want no_key", status)
+	status, detail := probeFirecrawl(testCtx(t), client, config.FirecrawlSearchURL(config.DefaultFirecrawlURL), "")
+	if status != StatusOK {
+		t.Fatalf("status = %q (detail %q), want ok", status, detail)
 	}
-	if !strings.Contains(detail, "firecrawl_api_key") {
-		t.Errorf("detail %q should carry the config hint", detail)
+	if sawAuth {
+		t.Fatal("hosted keyless probe must omit Authorization")
+	}
+	if gotURL != config.FirecrawlSearchURL(config.DefaultFirecrawlURL) {
+		t.Errorf("url = %q, want hosted /v2/search", gotURL)
+	}
+	if !strings.Contains(gotBody, `"integration":"_ketch"`) {
+		t.Errorf("probe body %q must send integration _ketch like Search", gotBody)
+	}
+}
+
+func TestProbeFirecrawlHostedStatuses(t *testing.T) {
+	cases := []struct {
+		name       string
+		key        string
+		code       int
+		want       Status
+		wantDetail string // substring; empty skips the detail check
+	}{
+		{"keyless ok", "", http.StatusOK, StatusOK, ""},
+		{"keyless rate limited", "", http.StatusTooManyRequests, StatusOK, "rate limited"},
+		{"keyless credits", "", http.StatusPaymentRequired, StatusMisconfigured, "credits exhausted"},
+		{"keyless unauthorized", "", http.StatusUnauthorized, StatusMisconfigured, "request rejected"},
+		{"keyless forbidden", "", http.StatusForbidden, StatusOK, "keyless blocked"},
+		{"keyed rate limited", "k", http.StatusTooManyRequests, StatusOK, "key accepted"},
+		{"keyed rejected", "k", http.StatusUnauthorized, StatusMisconfigured, "API key rejected"},
+		{"keyed forbidden", "k", http.StatusForbidden, StatusMisconfigured, "API key rejected"},
+		{"keyed credits", "k", http.StatusPaymentRequired, StatusMisconfigured, "credits exhausted"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := &http.Client{Transport: probeRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				return &http.Response{StatusCode: tc.code, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{}`))}, nil
+			})}
+			status, detail := probeFirecrawl(testCtx(t), client, config.FirecrawlSearchURL(config.DefaultFirecrawlURL), tc.key)
+			if status != tc.want {
+				t.Fatalf("status = %q (detail %q), want %q", status, detail, tc.want)
+			}
+			if tc.wantDetail != "" && !strings.Contains(detail, tc.wantDetail) {
+				t.Errorf("detail = %q, want substring %q", detail, tc.wantDetail)
+			}
+		})
 	}
 }
 
@@ -728,6 +774,9 @@ func TestBuildSpecsRequiredGating(t *testing.T) {
 	}
 	if s := findSpec(t, specs, "search", "keenable"); s.required {
 		t.Error("keenable without a key and not default must be informational")
+	}
+	if s := findSpec(t, specs, "search", "firecrawl"); s.required {
+		t.Error("firecrawl without a key and not default must be informational")
 	}
 	if s := findSpec(t, specs, "search", "parallel"); s.required {
 		t.Error("parallel not default must be informational")

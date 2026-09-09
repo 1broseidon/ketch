@@ -80,7 +80,7 @@ ketch search "query"                        # search, return results
 ketch search "query" --scrape               # search + fetch full content
 ketch search "query" -b searxng             # use SearXNG backend
 ketch search "query" -b exa                 # use Exa hosted MCP backend
-ketch search "query" -b firecrawl           # use Firecrawl v2 search API
+ketch search "query" -b firecrawl           # use Firecrawl v2 search API (keyless by default)
 ketch search "query" -b keenable            # use Keenable backend (keyless by default)
 ketch search "query" -b tavily              # use Tavily search API (keyed; basic depth)
 ketch search "query" -b parallel            # use Parallel Search MCP (keyless)

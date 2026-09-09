@@ -142,7 +142,7 @@ Every command supports `-h/--help` for its full flag list; `--json` is the only 
 
 | Surface | Default | Also available | Setup |
 |---|---|---|---|
-| `search` | `brave` | `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase`, `degoog` | Brave, Firecrawl, Tavily, and SerpBase need a free key (`ketch config set brave_api_key <key>` / `firecrawl_api_key` / `tavily_api_key` / `serpbase_api_key`); `ddg`, `searxng`, `exa`, `keenable`, and `parallel` work with zero config; `degoog` needs a self-hosted instance (`ketch config set degoog_url <url>`) |
+| `search` | `brave` | `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase`, `degoog` | Brave, Tavily, and SerpBase need a free key (`ketch config set brave_api_key <key>` / `tavily_api_key` / `serpbase_api_key`); `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, and `parallel` work with zero config (`firecrawl_api_key` is optional and lifts Firecrawl's hosted cap); `degoog` needs a self-hosted instance (`ketch config set degoog_url <url>`) |
 | `code` | `grepapp` | `sourcegraph`, `github` | Grep and Sourcegraph need nothing; GitHub uses `gh auth login`, `$GITHUB_TOKEN`, or `ketch config set github_token <tok>` |
 | `docs` | `context7` | `local` (planned, not yet implemented) | Free key: `ketch config set context7_api_key <key>` |
 

@@ -28,11 +28,11 @@ The two transports expose the same options under different spellings. Both direc
 
 ## search
 
-- Backends: `brave` (default when unconfigured; free API key), `ddg` (zero setup; rate-limits readily under fan-out), `searxng` (self-hosted; needs a JSON-enabled instance — see the setup verb), `exa` (zero config), `firecrawl` (Firecrawl v2 search API; hosted needs `firecrawl_api_key`, self-hosted via `firecrawl_url`), `keenable` (keyless by default; optional `keenable_api_key` lifts the rate limit), `tavily` (keyed; extracted content in results; `tavily_api_key`), `parallel` (zero config; hosted Search MCP), `serpbase` (keyed Google results; `serpbase_api_key`).
+- Backends: `brave` (default when unconfigured; free API key), `ddg` (zero setup; rate-limits readily under fan-out), `searxng` (self-hosted; needs a JSON-enabled instance — see the setup verb), `exa` (zero config), `firecrawl` (Firecrawl v2 search API; keyless by default, optional `firecrawl_api_key` lifts the cap; self-hosted via `firecrawl_url`), `keenable` (keyless by default; optional `keenable_api_key` lifts the rate limit), `tavily` (keyed; extracted content in results; `tavily_api_key`), `parallel` (zero config; hosted Search MCP), `serpbase` (keyed Google results; `serpbase_api_key`).
 - The effective default backend is operator-configured: **omit `backend` to use it**; `ketch config` shows which it is.
 - `--scrape` / `scrape: true` fetches each result's full content — budget it exactly like a scrape (`max_chars`, `trim`).
 - `--minimal` (CLI): one result per line, tab-separated url/title/snippet (a 4th backends column is appended under `--multi` for plain search; `--scrape --minimal` keeps 3 columns).
-- `--multi` / `multi: [...]`: federated search — query several backends at once and rank-fuse with Reciprocal Rank Fusion (k=60), deduplicating by URL. Bare `--multi` / `["all"]` = every usable backend (key-presence rule); `--multi=brave,exa` / `["brave","exa"]` = a set (use the `=` form on the CLI). Each result gains a `backends` list (the engines that returned it — a consensus signal worth more than any single float). Backends that error or time out (10s each) are dropped: on the CLI they surface as `warn:` stderr lines + a `failed:` frontmatter key; on MCP as an additive `errors` map. The call fails ([upstream]/exit 4) only when every backend fails. Mutually exclusive with `backend`. Keys improve federation reliability (keyless `ddg`/`exa`/`keenable` rate-limit faster under fan-out).
+- `--multi` / `multi: [...]`: federated search — query several backends at once and rank-fuse with Reciprocal Rank Fusion (k=60), deduplicating by URL. Bare `--multi` / `["all"]` = every usable backend (key-presence rule); `--multi=brave,exa` / `["brave","exa"]` = a set (use the `=` form on the CLI). Each result gains a `backends` list (the engines that returned it — a consensus signal worth more than any single float). Backends that error or time out (10s each) are dropped: on the CLI they surface as `warn:` stderr lines + a `failed:` frontmatter key; on MCP as an additive `errors` map. The call fails ([upstream]/exit 4) only when every backend fails. Mutually exclusive with `backend`. Keys improve federation reliability (keyless `ddg`/`exa`/`firecrawl`/`keenable`/`parallel` rate-limit faster under fan-out).
 
 ## code
 
@@ -73,7 +73,7 @@ The two transports expose the same options under different spellings. Both direc
 
 | Surface | Keyless | Keyed | Set with |
 | --- | --- | --- | --- |
-| search | ddg, searxng (self-hosted), exa, keenable, parallel | brave, firecrawl, tavily, serpbase | `ketch config set brave_api_key <key>` / `firecrawl_api_key` / `tavily_api_key` / `serpbase_api_key` |
+| search | ddg, searxng (self-hosted), exa, firecrawl, keenable, parallel | brave, tavily, serpbase | `ketch config set brave_api_key <key>` / `tavily_api_key` / `serpbase_api_key` (optional `firecrawl_api_key` lifts Firecrawl's hosted cap) |
 | code | grepapp, sourcegraph | github | `gh auth login` / `$GITHUB_TOKEN` / `ketch config set github_token <tok>` |
 | docs | — | context7 (free key) | `ketch config set context7_api_key <key>` |
 

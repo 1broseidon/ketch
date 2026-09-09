@@ -27,8 +27,7 @@
   {
     "surface": "search",
     "backend": "firecrawl",
-    "status": "no_key",
-    "detail": "API key not set (get one free at https://firecrawl.dev then: ketch config set firecrawl_api_key \u003ckey\u003e)",
+    "status": "ok",
     "latency_ms": 0
   },
   {

@@ -91,7 +91,7 @@ ketch config set github_token ghp_...
 | `brave_api_keys` | — | Additional Brave keys (JSON array) — see [multiple keys](#multiple-api-keys-per-provider) |
 | `exa_api_key` | — | Optional Exa API key for authenticated hosted MCP usage |
 | `exa_api_keys` | — | Additional Exa keys (JSON array) |
-| `firecrawl_api_key` | — | [Firecrawl](https://docs.firecrawl.dev) API key (required for hosted `-b firecrawl`; optional for self-hosted) |
+| `firecrawl_api_key` | — | Optional [Firecrawl](https://docs.firecrawl.dev) API key; keyless by default, a key lifts the hosted rate limit / credits (also used if a self-hosted instance requires auth) |
 | `firecrawl_api_keys` | — | Additional Firecrawl keys (JSON array) |
 | `firecrawl_url` | `https://api.firecrawl.dev` | Firecrawl API base URL (self-hosted override; ketch appends `/v2/search`, and strips it if you paste the full endpoint) |
 | `keenable_api_key` | — | Optional Keenable API key; keyless by default, a key lifts the rate limit ([console](https://keenable.ai/console)) |
