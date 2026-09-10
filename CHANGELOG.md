@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Hosted Firecrawl search is keyless by default. `ketch search -b firecrawl` no longer requires `firecrawl_api_key`; the same `POST /v2/search` call omits `Authorization` when no key is set, and `--multi=all` / `--random=all` include Firecrawl on a zero-config install. An optional key still lifts rate limits and credits, and still rotates on `401`/`429`/`402`. Self-hosted `firecrawl_url` is unchanged. `ketch doctor` probes the hosted endpoint instead of reporting `no_key`; the probe sends `integration: "_ketch"` like search, and a keyless hosted `403` is reported as reachable (same class as `429`) instead of `misconfigured`.
 
+### Fixed
+- Homebrew update notices recommend `brew upgrade ketch` for both tap and core installations, including when release information is cached. Upgrade commands use the current installation and `KETCH_UPDATE_COMMAND` override instead of a cached command.
+- `KETCH_NO_UPDATE_NOTIFIER` now disables cache access and release requests in the shared update checker, including `ketch version`. Text and JSON version output no longer report an available update when the notifier is disabled.
+
 ## [0.16.1] - 2026-09-07
 
 Version 0.16.0 was published on 2026-09-07 and withdrawn the same day; its Read the Docs backend and Context7 candidate resolution were not ready. The Go module proxy retains it, so this release carries a `retract v0.16.0` directive. 0.16.1 is 0.15.0 plus the fixes below and contains none of the 0.16.0 additions.
