@@ -4,6 +4,8 @@ This page mirrors the canonical [`CHANGELOG.md`](https://github.com/1broseidon/k
 
 ## Unreleased
 
+## v0.16.2 — 2026-09-10
+
 **Changed**
 - Hosted Firecrawl search is keyless by default. `ketch search -b firecrawl` no longer requires `firecrawl_api_key`; the same `POST /v2/search` call omits `Authorization` when no key is set, and `--multi=all` / `--random=all` include Firecrawl on a zero-config install. An optional key still lifts rate limits and credits, and still rotates on `401`/`429`/`402`. Self-hosted `firecrawl_url` is unchanged. `ketch doctor` probes the hosted endpoint instead of reporting `no_key`; the probe sends `integration: "_ketch"` like search, and a keyless hosted `403` is reported as reachable (same class as `429`) instead of `misconfigured`.
 
