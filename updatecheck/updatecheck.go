@@ -91,6 +91,7 @@ func Disabled() bool {
 
 // GetStatus returns the cached or freshly-fetched update status.
 // AllowNetwork=false forces cache-only mode.
+// KETCH_NO_UPDATE_NOTIFIER disables both cache access and network checks.
 func GetStatus(ctx context.Context, opts Options) (Status, error) {
 	if ctx == nil {
 		ctx = context.Background()
@@ -102,7 +103,7 @@ func GetStatus(ctx context.Context, opts Options) (Status, error) {
 		ReleaseURL:  releaseURL,
 		Source:      "none",
 	}
-	if !isVersionCheckable(opts.CurrentVersion) {
+	if Disabled() || !isVersionCheckable(opts.CurrentVersion) {
 		return status, nil
 	}
 
@@ -119,8 +120,6 @@ func GetStatus(ctx context.Context, opts Options) (Status, error) {
 			status.Source = "cache"
 			return status, nil
 		}
-	} else if !opts.AllowNetwork {
-		return status, nil
 	}
 
 	if !opts.AllowNetwork {
@@ -265,9 +264,8 @@ func statusFromState(state cacheState, currentVersion string, installType Instal
 	if status.ReleaseURL == "" {
 		status.ReleaseURL = releaseURL
 	}
-	if state.UpdateCommand != "" && os.Getenv("KETCH_UPDATE_COMMAND") == "" {
-		status.Command = state.UpdateCommand
-	}
+	// Derive the command from the current installation and environment; cached
+	// commands may refer to an old install method or a previously set override.
 	if status.Command == "" {
 		status.Command = renderCommand(installType, status.LatestVersion)
 	}
@@ -391,7 +389,7 @@ func renderCommand(installType InstallType, _ string) string {
 	}
 	switch installType {
 	case InstallHomebrew:
-		return "brew upgrade 1broseidon/tap/ketch"
+		return "brew upgrade ketch"
 	case InstallGo:
 		return "go install github.com/1broseidon/ketch@latest"
 	case InstallManual, InstallUnknown:
