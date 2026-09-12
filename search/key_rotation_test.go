@@ -186,6 +186,7 @@ func TestBackendsRetryEveryCredentialStatus(t *testing.T) {
 	tests := []struct {
 		name        string
 		status      int
+		errorBody   string
 		successBody string
 		newBackend  func(*http.Client) Searcher
 		requestKey  func(*http.Request) string
@@ -258,22 +259,22 @@ func TestBackendsRetryEveryCredentialStatus(t *testing.T) {
 			},
 		},
 		{
-			name:        "serpbase 401",
-			status:      http.StatusUnauthorized,
-			successBody: `{"organic_results":[]}`,
+			name:        "serpbase 1001",
+			errorBody:   `{"status":1001,"error":"unauthorized"}`,
+			successBody: `{"status":0,"organic":[]}`,
 			newBackend: func(client *http.Client) Searcher {
 				return &SerpBase{keys: deterministicPool("first", "second"), client: client}
 			},
-			requestKey: func(r *http.Request) string { return r.URL.Query().Get("api_key") },
+			requestKey: func(r *http.Request) string { return r.Header.Get("X-API-Key") },
 		},
 		{
-			name:        "serpbase 429",
-			status:      http.StatusTooManyRequests,
-			successBody: `{"organic_results":[]}`,
+			name:        "serpbase 1029",
+			errorBody:   `{"status":1029,"error":"rate limited"}`,
+			successBody: `{"status":0,"organic":[]}`,
 			newBackend: func(client *http.Client) Searcher {
 				return &SerpBase{keys: deterministicPool("first", "second"), client: client}
 			},
-			requestKey: func(r *http.Request) string { return r.URL.Query().Get("api_key") },
+			requestKey: func(r *http.Request) string { return r.Header.Get("X-API-Key") },
 		},
 	}
 
@@ -283,6 +284,10 @@ func TestBackendsRetryEveryCredentialStatus(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				got = append(got, tc.requestKey(r))
 				if len(got) == 1 {
+					if tc.errorBody != "" {
+						_, _ = fmt.Fprint(w, tc.errorBody)
+						return
+					}
 					w.WriteHeader(tc.status)
 					return
 				}
