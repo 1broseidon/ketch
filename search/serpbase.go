@@ -243,6 +243,8 @@ func ProbeSerpBase(ctx context.Context, client *http.Client, endpoint, apiKey st
 			return health.StatusOK, "reachable, key accepted (search credits exhausted)"
 		case serpBaseStatusRateLimited:
 			return health.StatusOK, "reachable, key accepted (rate limited)"
+		case serpBaseStatusInvalidRequest:
+			return health.StatusUnreachable, "returned status 1000 (invalid request)"
 		default:
 			return health.StatusUnreachable, fmt.Sprintf("returned status %d", payload.Status)
 		}

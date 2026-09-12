@@ -108,10 +108,11 @@ ketch config set github_token ghp_...
 
 Each keyed search provider takes an optional plural key pool alongside its
 singular key: `brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`,
-`keenable_api_keys`, `tavily_api_keys`. The effective pool is the singular key plus the list,
+`keenable_api_keys`, `tavily_api_keys`, `serpbase_api_keys`. The effective pool is the singular key plus the list,
 trimmed and de-duplicated. Per request, ketch picks one key from the pool at
 random to spread rate limits; when the pool holds more than one key, a
-`401`/`429` response (`402` for Firecrawl) gets one retry with a different key.
+`401`/`429` response (`402` for Firecrawl; SerpBase also rotates on `403` and
+its `1001`/`1029` business codes) gets one retry with a different key.
 
 ```sh
 ketch config set brave_api_keys '["BSA-key-1","BSA-key-2"]'

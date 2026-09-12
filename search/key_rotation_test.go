@@ -187,6 +187,7 @@ func TestSerpBaseErrorMapping(t *testing.T) {
 		{"server", http.StatusOK, `{"status":1500,"error":"boom"}`, "serpbase returned status 1500: boom"},
 		{"http 401", http.StatusUnauthorized, `unauthorized`, "serpbase: invalid API key (key 1 of 1"},
 		{"http 402", http.StatusPaymentRequired, ``, "serpbase: search credits exhausted"},
+		{"http 403", http.StatusForbidden, `forbidden`, "serpbase: invalid API key (key 1 of 1"},
 		{"http 429", http.StatusTooManyRequests, ``, "serpbase: rate limited"},
 		{"http 500", http.StatusInternalServerError, `boom`, "serpbase returned status 500: boom"},
 		{"non-200 with status 0 is not success", http.StatusInternalServerError, `{"status":0}`, "serpbase returned status 500"},
@@ -340,6 +341,15 @@ func TestBackendsRetryEveryCredentialStatus(t *testing.T) {
 		{
 			name:        "serpbase 1029",
 			errorBody:   `{"status":1029,"error":"rate limited"}`,
+			successBody: `{"status":0,"organic":[]}`,
+			newBackend: func(client *http.Client) Searcher {
+				return &SerpBase{keys: deterministicPool("first", "second"), client: client}
+			},
+			requestKey: func(r *http.Request) string { return r.Header.Get("X-API-Key") },
+		},
+		{
+			name:        "serpbase 403",
+			status:      http.StatusForbidden,
 			successBody: `{"status":0,"organic":[]}`,
 			newBackend: func(client *http.Client) Searcher {
 				return &SerpBase{keys: deterministicPool("first", "second"), client: client}
