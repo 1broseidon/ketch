@@ -116,7 +116,7 @@ type serpBaseAttempt struct {
 // the business status are checked so gateway-level 401/429 responses keep
 // rotating keys.
 func (a serpBaseAttempt) retryable() bool {
-	if a.httpStatus == http.StatusUnauthorized || a.httpStatus == http.StatusTooManyRequests {
+	if a.httpStatus == http.StatusUnauthorized || a.httpStatus == http.StatusForbidden || a.httpStatus == http.StatusTooManyRequests {
 		return true
 	}
 	return a.payload.Status == serpBaseStatusUnauthorized || a.payload.Status == serpBaseStatusRateLimited

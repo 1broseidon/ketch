@@ -141,17 +141,35 @@ func TestEXATransportErrorsNeverExposeKeyedURL(t *testing.T) {
 }
 
 func TestSerpBaseTransportErrorsNeverExposeKey(t *testing.T) {
-	const secret = "serpbase-transport-secret"
-	client := &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
-		return nil, errors.New("dial failure")
-	})}
-	backend := &SerpBase{keys: deterministicPool(secret), client: client}
-	_, err := backend.Search(context.Background(), "q", 1)
-	if err == nil {
-		t.Fatal("expected a transport error")
+	tests := []struct {
+		name      string
+		cause     error
+		wantCause error
+	}{
+		{name: "transport", cause: errors.New("dial failure")},
+		{name: "cancelled", cause: context.Canceled, wantCause: context.Canceled},
+		{name: "deadline", cause: context.DeadlineExceeded, wantCause: context.DeadlineExceeded},
 	}
-	if strings.Contains(err.Error(), secret) || strings.Contains(err.Error(), "X-API-Key") {
-		t.Fatalf("SerpBase transport error exposed the API key: %q", err)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			const secret = "serpbase-transport-secret"
+			client := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				return nil, fmt.Errorf("transport failure for %s: %w", req.URL.String(), test.cause)
+			})}
+			backend := &SerpBase{keys: deterministicPool(secret), client: client}
+			_, err := backend.Search(context.Background(), "q", 1)
+			if err == nil {
+				t.Fatal("expected a transport error")
+			}
+			// The key rides in a header, so the URL echoed by the transport error
+			// never carries it — unlike Exa, which needs safeEXARequestError.
+			if strings.Contains(err.Error(), secret) || strings.Contains(err.Error(), "X-API-Key") {
+				t.Fatalf("SerpBase transport error exposed the API key: %q", err)
+			}
+			if test.wantCause != nil && !errors.Is(err, test.wantCause) {
+				t.Fatal("transport error lost the cancellation error class")
+			}
+		})
 	}
 }
 
@@ -171,6 +189,7 @@ func TestSerpBaseErrorMapping(t *testing.T) {
 		{"http 402", http.StatusPaymentRequired, ``, "serpbase: search credits exhausted"},
 		{"http 429", http.StatusTooManyRequests, ``, "serpbase: rate limited"},
 		{"http 500", http.StatusInternalServerError, `boom`, "serpbase returned status 500: boom"},
+		{"non-200 with status 0 is not success", http.StatusInternalServerError, `{"status":0}`, "serpbase returned status 500"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
