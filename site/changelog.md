@@ -5,7 +5,7 @@ This page mirrors the canonical [`CHANGELOG.md`](https://github.com/1broseidon/k
 ## Unreleased
 
 **Fixed**
-- The `serpbase` backend works against the current SerpBase API: `POST /google/search` with the key in the `X-API-Key` header and a JSON body, decoding the `organic` results and the business `status` field (the gateway returns HTTP 200 for errors such as an invalid key or exhausted credits). `ketch doctor`'s SerpBase probe uses the same request and classification.
+- The `serpbase` backend works against the current SerpBase API: `POST /google/search` with the key in the `X-API-Key` header and a JSON body, decoding the `organic` results and the business `status` field (the gateway returns HTTP 200 for errors such as an invalid key or exhausted credits). `ketch doctor`'s SerpBase probe uses the same request and classification. The API returns about ten organic results per page with no page-size parameter, so a `--limit` above ten still yields a single page.
 
 ## v0.16.2 — 2026-09-10
 

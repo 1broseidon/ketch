@@ -195,10 +195,14 @@ func TestProbeFirecrawlSelfHostedNoKey(t *testing.T) {
 
 func TestProbeTimeout(t *testing.T) {
 	searxng := findSpec(t, buildSpecs(&config.Config{}, http.DefaultClient), "search", "searxng")
+	serpbase := findSpec(t, buildSpecs(&config.Config{}, http.DefaultClient), "search", "serpbase")
 	brave := spec{surface: "search", backend: "brave"}
 
 	if got := probeTimeout(searxng, DefaultTimeout); got != SelfHostedSearchTimeout {
 		t.Errorf("searxng budget = %v, want %v: a healthy instance needs ~3s", got, SelfHostedSearchTimeout)
+	}
+	if got := probeTimeout(serpbase, DefaultTimeout); got != SelfHostedSearchTimeout {
+		t.Errorf("serpbase budget = %v, want %v: SerpBase scrapes Google on demand", got, SelfHostedSearchTimeout)
 	}
 	if got := probeTimeout(brave, DefaultTimeout); got != DefaultTimeout {
 		t.Errorf("brave budget = %v, want the run timeout %v", got, DefaultTimeout)

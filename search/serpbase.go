@@ -122,14 +122,14 @@ func (a serpBaseAttempt) retryable() bool {
 	return a.payload.Status == serpBaseStatusUnauthorized || a.payload.Status == serpBaseStatusRateLimited
 }
 
-// err maps the attempt to an actionable error, or nil on success.
+// err maps the attempt to an actionable error, or nil on success. The business
+// status takes precedence when present; otherwise the HTTP status is mapped so
+// gateway-level 401/402/429 keep their friendly messages.
 func (a serpBaseAttempt) err(keyLabel string) error {
-	if a.httpStatus != http.StatusOK {
-		return fmt.Errorf("serpbase returned status %d%s", a.httpStatus, a.bodyDetail())
+	if a.httpStatus == http.StatusOK && a.payload.Status == serpBaseStatusSuccess {
+		return nil
 	}
 	switch a.payload.Status {
-	case serpBaseStatusSuccess:
-		return nil
 	case serpBaseStatusUnauthorized:
 		return fmt.Errorf("serpbase: invalid API key (%s; set via: ketch config set serpbase_api_key <key>)", keyLabel)
 	case serpBaseStatusInsufficientFunds:
@@ -138,8 +138,18 @@ func (a serpBaseAttempt) err(keyLabel string) error {
 		return fmt.Errorf("serpbase: rate limited (%s)", keyLabel)
 	case serpBaseStatusInvalidRequest:
 		return fmt.Errorf("serpbase: invalid request: %s", a.errorText())
-	default:
+	}
+	switch a.httpStatus {
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return fmt.Errorf("serpbase: invalid API key (%s; set via: ketch config set serpbase_api_key <key>)", keyLabel)
+	case http.StatusPaymentRequired:
+		return fmt.Errorf("serpbase: search credits exhausted — top up at https://serpbase.dev (%s)", keyLabel)
+	case http.StatusTooManyRequests:
+		return fmt.Errorf("serpbase: rate limited (%s)", keyLabel)
+	case http.StatusOK:
 		return fmt.Errorf("serpbase returned status %d: %s", a.payload.Status, a.errorText())
+	default:
+		return fmt.Errorf("serpbase returned status %d%s", a.httpStatus, a.bodyDetail())
 	}
 }
 
@@ -184,15 +194,12 @@ func (s *SerpBase) request(ctx context.Context, query, key string) (serpBaseAtte
 
 	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	attempt := serpBaseAttempt{httpStatus: resp.StatusCode, raw: raw}
-	if resp.StatusCode == http.StatusOK {
-		if err := json.Unmarshal(raw, &attempt.payload); err != nil {
-			return serpBaseAttempt{}, fmt.Errorf("failed to decode serpbase response: %w", err)
-		}
+	decodeErr := json.Unmarshal(raw, &attempt.payload)
+	if resp.StatusCode == http.StatusOK && decodeErr != nil {
+		return serpBaseAttempt{}, fmt.Errorf("failed to decode serpbase response: %w", decodeErr)
 	}
 	return attempt, nil
 }
-
-const serpBaseProbeBody = `{"q":"ketch","hl":"en","gl":"us","page":1}`
 
 // ProbeSerpBase checks the provider using a caller-supplied client and endpoint.
 func ProbeSerpBase(ctx context.Context, client *http.Client, endpoint, apiKey string) (health.Status, string) {
@@ -200,7 +207,11 @@ func ProbeSerpBase(ctx context.Context, client *http.Client, endpoint, apiKey st
 	if key == "" {
 		return health.StatusNoKey, "API key not set (get a free key at https://serpbase.dev then: ketch config set serpbase_api_key <key>)"
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(serpBaseProbeBody))
+	body, err := json.Marshal(serpBaseRequest{Query: "ketch", Lang: "en", Region: "us", Page: 1})
+	if err != nil {
+		return health.StatusUnreachable, health.ErrorDetail(err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
 	if err != nil {
 		return health.StatusUnreachable, health.ErrorDetail(err)
 	}

@@ -140,6 +140,57 @@ func TestEXATransportErrorsNeverExposeKeyedURL(t *testing.T) {
 	}
 }
 
+func TestSerpBaseTransportErrorsNeverExposeKey(t *testing.T) {
+	const secret = "serpbase-transport-secret"
+	client := &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+		return nil, errors.New("dial failure")
+	})}
+	backend := &SerpBase{keys: deterministicPool(secret), client: client}
+	_, err := backend.Search(context.Background(), "q", 1)
+	if err == nil {
+		t.Fatal("expected a transport error")
+	}
+	if strings.Contains(err.Error(), secret) || strings.Contains(err.Error(), "X-API-Key") {
+		t.Fatalf("SerpBase transport error exposed the API key: %q", err)
+	}
+}
+
+func TestSerpBaseErrorMapping(t *testing.T) {
+	cases := []struct {
+		name       string
+		httpStatus int
+		body       string
+		want       string
+	}{
+		{"invalid key", http.StatusOK, `{"status":1001,"error":"unauthorized"}`, "serpbase: invalid API key (key 1 of 1"},
+		{"credits", http.StatusOK, `{"status":1020,"error":"insufficient credits"}`, "serpbase: search credits exhausted"},
+		{"rate limited", http.StatusOK, `{"status":1029,"error":"rate limited"}`, "serpbase: rate limited"},
+		{"invalid request", http.StatusOK, `{"status":1000,"error":"invalid request"}`, "serpbase: invalid request: invalid request"},
+		{"server", http.StatusOK, `{"status":1500,"error":"boom"}`, "serpbase returned status 1500: boom"},
+		{"http 401", http.StatusUnauthorized, `unauthorized`, "serpbase: invalid API key (key 1 of 1"},
+		{"http 402", http.StatusPaymentRequired, ``, "serpbase: search credits exhausted"},
+		{"http 429", http.StatusTooManyRequests, ``, "serpbase: rate limited"},
+		{"http 500", http.StatusInternalServerError, `boom`, "serpbase returned status 500: boom"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				if tc.httpStatus != http.StatusOK {
+					w.WriteHeader(tc.httpStatus)
+				}
+				_, _ = fmt.Fprint(w, tc.body)
+			}))
+			defer server.Close()
+
+			backend := &SerpBase{keys: deterministicPool("only"), client: rewrittenClient(server.URL)}
+			_, err := backend.Search(context.Background(), "q", 1)
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("err = %v, want containing %q", err, tc.want)
+			}
+		})
+	}
+}
+
 func TestFirecrawlRotatesKeyOn402(t *testing.T) {
 	var got []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
