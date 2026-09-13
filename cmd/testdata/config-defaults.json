@@ -42,7 +42,8 @@
     "tavily",
     "parallel",
     "serpbase",
-    "degoog"
+    "degoog",
+    "serply"
   ],
   "available_code_backends": [
     "grepapp",
@@ -52,5 +53,7 @@
   "available_doc_backends": [
     "context7"
   ],
-  "degoog_url": ""
+  "degoog_url": "",
+  "serply_api_key_set": false,
+  "serply_api_keys_count": 0
 }

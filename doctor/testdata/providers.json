@@ -64,6 +64,13 @@
     "latency_ms": 0
   },
   {
+    "surface": "search",
+    "backend": "serply",
+    "status": "no_key",
+    "detail": "API key not set (get a free key at https://serply.io then: ketch config set serply_api_key \u003ckey\u003e)",
+    "latency_ms": 0
+  },
+  {
     "surface": "code",
     "backend": "grepapp",
     "status": "ok",
