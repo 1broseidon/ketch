@@ -192,7 +192,10 @@ func (s *SerpBase) request(ctx context.Context, query, key string) (serpBaseAtte
 	}
 	defer resp.Body.Close()
 
-	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return serpBaseAttempt{}, fmt.Errorf("failed to read serpbase response: %w", err)
+	}
 	attempt := serpBaseAttempt{httpStatus: resp.StatusCode, raw: raw}
 	decodeErr := json.Unmarshal(raw, &attempt.payload)
 	if resp.StatusCode == http.StatusOK && decodeErr != nil {
@@ -226,7 +229,10 @@ func ProbeSerpBase(ctx context.Context, client *http.Client, endpoint, apiKey st
 	}
 	defer health.Drain(resp)
 
-	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return health.StatusUnreachable, health.ErrorDetail(err)
+	}
 
 	switch resp.StatusCode {
 	case http.StatusOK:
@@ -234,20 +240,7 @@ func ProbeSerpBase(ctx context.Context, client *http.Client, endpoint, apiKey st
 		if err := json.Unmarshal(raw, &payload); err != nil {
 			return health.StatusUnreachable, "returned an unreadable response"
 		}
-		switch payload.Status {
-		case serpBaseStatusSuccess:
-			return health.StatusOK, ""
-		case serpBaseStatusUnauthorized:
-			return health.StatusMisconfigured, "API key rejected (ketch config set serpbase_api_key <key>)"
-		case serpBaseStatusInsufficientFunds:
-			return health.StatusOK, "reachable, key accepted (search credits exhausted)"
-		case serpBaseStatusRateLimited:
-			return health.StatusOK, "reachable, key accepted (rate limited)"
-		case serpBaseStatusInvalidRequest:
-			return health.StatusUnreachable, "returned status 1000 (invalid request)"
-		default:
-			return health.StatusUnreachable, fmt.Sprintf("returned status %d", payload.Status)
-		}
+		return serpBaseProbeStatus(payload.Status)
 	case http.StatusUnauthorized, http.StatusForbidden:
 		return health.StatusMisconfigured, "API key rejected (ketch config set serpbase_api_key <key>)"
 	case http.StatusTooManyRequests:
@@ -256,6 +249,23 @@ func ProbeSerpBase(ctx context.Context, client *http.Client, endpoint, apiKey st
 		return health.StatusOK, "reachable, key accepted (search credits exhausted)"
 	default:
 		return health.StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
+	}
+}
+
+func serpBaseProbeStatus(status int) (health.Status, string) {
+	switch status {
+	case serpBaseStatusSuccess:
+		return health.StatusOK, ""
+	case serpBaseStatusUnauthorized:
+		return health.StatusMisconfigured, "API key rejected (ketch config set serpbase_api_key <key>)"
+	case serpBaseStatusInsufficientFunds:
+		return health.StatusOK, "reachable, key accepted (search credits exhausted)"
+	case serpBaseStatusRateLimited:
+		return health.StatusOK, "reachable, key accepted (rate limited)"
+	case serpBaseStatusInvalidRequest:
+		return health.StatusUnreachable, "returned status 1000 (invalid request)"
+	default:
+		return health.StatusUnreachable, fmt.Sprintf("returned status %d", status)
 	}
 }
 
