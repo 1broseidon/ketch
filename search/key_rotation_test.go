@@ -140,6 +140,77 @@ func TestEXATransportErrorsNeverExposeKeyedURL(t *testing.T) {
 	}
 }
 
+func TestSerpBaseTransportErrorsNeverExposeKey(t *testing.T) {
+	tests := []struct {
+		name      string
+		cause     error
+		wantCause error
+	}{
+		{name: "transport", cause: errors.New("dial failure")},
+		{name: "cancelled", cause: context.Canceled, wantCause: context.Canceled},
+		{name: "deadline", cause: context.DeadlineExceeded, wantCause: context.DeadlineExceeded},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			const secret = "serpbase-transport-secret"
+			client := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				return nil, fmt.Errorf("transport failure for %s: %w", req.URL.String(), test.cause)
+			})}
+			backend := &SerpBase{keys: deterministicPool(secret), client: client}
+			_, err := backend.Search(context.Background(), "q", 1)
+			if err == nil {
+				t.Fatal("expected a transport error")
+			}
+			// The key rides in a header, so the URL echoed by the transport error
+			// never carries it — unlike Exa, which needs safeEXARequestError.
+			if strings.Contains(err.Error(), secret) || strings.Contains(err.Error(), "X-API-Key") {
+				t.Fatalf("SerpBase transport error exposed the API key: %q", err)
+			}
+			if test.wantCause != nil && !errors.Is(err, test.wantCause) {
+				t.Fatal("transport error lost the cancellation error class")
+			}
+		})
+	}
+}
+
+func TestSerpBaseErrorMapping(t *testing.T) {
+	cases := []struct {
+		name       string
+		httpStatus int
+		body       string
+		want       string
+	}{
+		{"invalid key", http.StatusOK, `{"status":1001,"error":"unauthorized"}`, "serpbase: invalid API key (key 1 of 1"},
+		{"credits", http.StatusOK, `{"status":1020,"error":"insufficient credits"}`, "serpbase: search credits exhausted"},
+		{"rate limited", http.StatusOK, `{"status":1029,"error":"rate limited"}`, "serpbase: rate limited"},
+		{"invalid request", http.StatusOK, `{"status":1000,"error":"invalid request"}`, "serpbase: invalid request: invalid request"},
+		{"server", http.StatusOK, `{"status":1500,"error":"boom"}`, "serpbase returned status 1500: boom"},
+		{"http 401", http.StatusUnauthorized, `unauthorized`, "serpbase: invalid API key (key 1 of 1"},
+		{"http 402", http.StatusPaymentRequired, ``, "serpbase: search credits exhausted"},
+		{"http 403", http.StatusForbidden, `forbidden`, "serpbase: invalid API key (key 1 of 1"},
+		{"http 429", http.StatusTooManyRequests, ``, "serpbase: rate limited"},
+		{"http 500", http.StatusInternalServerError, `boom`, "serpbase returned status 500: boom"},
+		{"non-200 with status 0 is not success", http.StatusInternalServerError, `{"status":0}`, "serpbase returned status 500"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				if tc.httpStatus != http.StatusOK {
+					w.WriteHeader(tc.httpStatus)
+				}
+				_, _ = fmt.Fprint(w, tc.body)
+			}))
+			defer server.Close()
+
+			backend := &SerpBase{keys: deterministicPool("only"), client: rewrittenClient(server.URL)}
+			_, err := backend.Search(context.Background(), "q", 1)
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("err = %v, want containing %q", err, tc.want)
+			}
+		})
+	}
+}
+
 func TestFirecrawlRotatesKeyOn402(t *testing.T) {
 	var got []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -186,6 +257,7 @@ func TestBackendsRetryEveryCredentialStatus(t *testing.T) {
 	tests := []struct {
 		name        string
 		status      int
+		errorBody   string
 		successBody string
 		newBackend  func(*http.Client) Searcher
 		requestKey  func(*http.Request) string
@@ -258,22 +330,31 @@ func TestBackendsRetryEveryCredentialStatus(t *testing.T) {
 			},
 		},
 		{
-			name:        "serpbase 401",
-			status:      http.StatusUnauthorized,
-			successBody: `{"organic_results":[]}`,
+			name:        "serpbase 1001",
+			errorBody:   `{"status":1001,"error":"unauthorized"}`,
+			successBody: `{"status":0,"organic":[]}`,
 			newBackend: func(client *http.Client) Searcher {
 				return &SerpBase{keys: deterministicPool("first", "second"), client: client}
 			},
-			requestKey: func(r *http.Request) string { return r.URL.Query().Get("api_key") },
+			requestKey: func(r *http.Request) string { return r.Header.Get("X-API-Key") },
 		},
 		{
-			name:        "serpbase 429",
-			status:      http.StatusTooManyRequests,
-			successBody: `{"organic_results":[]}`,
+			name:        "serpbase 1029",
+			errorBody:   `{"status":1029,"error":"rate limited"}`,
+			successBody: `{"status":0,"organic":[]}`,
 			newBackend: func(client *http.Client) Searcher {
 				return &SerpBase{keys: deterministicPool("first", "second"), client: client}
 			},
-			requestKey: func(r *http.Request) string { return r.URL.Query().Get("api_key") },
+			requestKey: func(r *http.Request) string { return r.Header.Get("X-API-Key") },
+		},
+		{
+			name:        "serpbase 403",
+			status:      http.StatusForbidden,
+			successBody: `{"status":0,"organic":[]}`,
+			newBackend: func(client *http.Client) Searcher {
+				return &SerpBase{keys: deterministicPool("first", "second"), client: client}
+			},
+			requestKey: func(r *http.Request) string { return r.Header.Get("X-API-Key") },
 		},
 	}
 
@@ -283,6 +364,10 @@ func TestBackendsRetryEveryCredentialStatus(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				got = append(got, tc.requestKey(r))
 				if len(got) == 1 {
+					if tc.errorBody != "" {
+						_, _ = fmt.Fprint(w, tc.errorBody)
+						return
+					}
 					w.WriteHeader(tc.status)
 					return
 				}

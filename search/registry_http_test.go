@@ -23,8 +23,12 @@ func (f providerFixtureTransport) RoundTrip(r *http.Request) (*http.Response, er
 		f.t.Error("registry factory selected the wrong method or endpoint")
 	}
 	if f.backend == "serpbase" {
-		if r.URL.Query().Get("api_key") != "registry-key" || r.URL.Query().Get("q") != "registry query" {
-			f.t.Error("registry settings did not reach SerpBase's request")
+		if r.Header.Get("X-API-Key") != "registry-key" {
+			f.t.Error("registry settings did not reach SerpBase's X-API-Key header")
+		}
+		var body map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body["q"] != "registry query" {
+			f.t.Error("registry factory did not preserve the query")
 		}
 	} else {
 		if r.Header.Get("Authorization") != "Bearer registry-key" {
@@ -44,7 +48,7 @@ func TestRegistryKeyedProvidersThroughHTTP(t *testing.T) {
 	cases := []struct{ backend, method, endpoint, payload string }{
 		{"firecrawl", "POST", "https://api.firecrawl.dev/v2/search", `{"success":true,"data":{"web":[{"title":"Fixture","url":"https://example.com/result","description":"Result text"}]}}`},
 		{"tavily", "POST", "https://api.tavily.com/search", `{"results":[{"title":"Fixture","url":"https://example.com/result","content":"Result text"}]}`},
-		{"serpbase", "GET", "https://api.serpbase.dev/google/search", `{"organic_results":[{"title":"Fixture","link":"https://example.com/result","snippet":"Result text"}]}`},
+		{"serpbase", "POST", "https://api.serpbase.dev/google/search", `{"status":0,"organic":[{"title":"Fixture","link":"https://example.com/result","snippet":"Result text"}]}`},
 	}
 	client := httpx.Default()
 	previous := client.Transport

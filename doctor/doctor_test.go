@@ -195,10 +195,14 @@ func TestProbeFirecrawlSelfHostedNoKey(t *testing.T) {
 
 func TestProbeTimeout(t *testing.T) {
 	searxng := findSpec(t, buildSpecs(&config.Config{}, http.DefaultClient), "search", "searxng")
+	serpbase := findSpec(t, buildSpecs(&config.Config{}, http.DefaultClient), "search", "serpbase")
 	brave := spec{surface: "search", backend: "brave"}
 
 	if got := probeTimeout(searxng, DefaultTimeout); got != SelfHostedSearchTimeout {
 		t.Errorf("searxng budget = %v, want %v: a healthy instance needs ~3s", got, SelfHostedSearchTimeout)
+	}
+	if got := probeTimeout(serpbase, DefaultTimeout); got != SelfHostedSearchTimeout {
+		t.Errorf("serpbase budget = %v, want %v: SerpBase scrapes Google on demand", got, SelfHostedSearchTimeout)
 	}
 	if got := probeTimeout(brave, DefaultTimeout); got != DefaultTimeout {
 		t.Errorf("brave budget = %v, want the run timeout %v", got, DefaultTimeout)
@@ -506,22 +510,30 @@ func TestProbeSerpBaseStatuses(t *testing.T) {
 	cases := []struct {
 		name   string
 		code   int
+		body   string
 		want   Status
 		detail string
 	}{
-		{"ok", http.StatusOK, StatusOK, ""},
-		{"401", http.StatusUnauthorized, StatusMisconfigured, "serpbase_api_key"},
-		{"403", http.StatusForbidden, StatusMisconfigured, "serpbase_api_key"},
-		{"429", http.StatusTooManyRequests, StatusOK, "rate limited"},
-		{"402", http.StatusPaymentRequired, StatusOK, "credits"},
-		{"500", http.StatusInternalServerError, StatusUnreachable, "500"},
+		{"ok", http.StatusOK, `{"status":0}`, StatusOK, ""},
+		{"unauthorized", http.StatusOK, `{"status":1001,"error":"unauthorized"}`, StatusMisconfigured, "serpbase_api_key"},
+		{"insufficient credits", http.StatusOK, `{"status":1020,"error":"insufficient credits"}`, StatusOK, "credits"},
+		{"rate limited", http.StatusOK, `{"status":1029,"error":"rate limited"}`, StatusOK, "rate limited"},
+		{"invalid request", http.StatusOK, `{"status":1000,"error":"invalid request"}`, StatusUnreachable, "1000"},
+		{"http 401", http.StatusUnauthorized, `{}`, StatusMisconfigured, "serpbase_api_key"},
+		{"http 403", http.StatusForbidden, `{}`, StatusMisconfigured, "serpbase_api_key"},
+		{"http 429", http.StatusTooManyRequests, `{}`, StatusOK, "rate limited"},
+		{"http 402", http.StatusPaymentRequired, `{}`, StatusOK, "credits"},
+		{"http 500", http.StatusInternalServerError, ``, StatusUnreachable, "500"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			var gotKey string
+			var gotKey, gotMethod, gotSource string
 			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				gotKey = r.URL.Query().Get("api_key")
+				gotMethod = r.Method
+				gotKey = r.Header.Get("X-API-Key")
+				gotSource = r.Header.Get("X-SerpBase-Source")
 				w.WriteHeader(tc.code)
+				_, _ = fmt.Fprint(w, tc.body)
 			}))
 			defer ts.Close()
 
@@ -529,8 +541,14 @@ func TestProbeSerpBaseStatuses(t *testing.T) {
 			if status != tc.want {
 				t.Fatalf("status = %q (detail %q), want %q", status, detail, tc.want)
 			}
+			if gotMethod != http.MethodPost {
+				t.Errorf("method = %q, want POST", gotMethod)
+			}
 			if gotKey != "serpbase-secret" {
-				t.Errorf("api_key query param = %q, want serpbase-secret", gotKey)
+				t.Errorf("X-API-Key = %q, want serpbase-secret", gotKey)
+			}
+			if gotSource != "ketch" {
+				t.Errorf("X-SerpBase-Source = %q, want ketch", gotSource)
 			}
 			if tc.detail != "" && !strings.Contains(detail, tc.detail) {
 				t.Errorf("detail %q should contain %q", detail, tc.detail)

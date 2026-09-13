@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `serpbase` search works against the current SerpBase API (#58). The provider now requires `POST /google/search` with the key in the `X-API-Key` header and a JSON body (`q`/`hl`/`gl`/`page`); the old GET request returned `405 Method Not Allowed`. The response's `organic` array and business `status` field are decoded — the gateway reports errors with HTTP 200, so `1001` (invalid key), `1020` (credits exhausted), and `1029` (rate limited) are read from the body, and key rotation triggers on `1001`/`1029` (plus HTTP `401`/`403`/`429`). `ketch doctor`'s probe uses the same request and classification. The API exposes no page-size parameter and returns about ten organic results per page, so `--limit` above ten still yields a single page.
+
 ## [0.16.2] - 2026-09-10
 
 ### Changed
