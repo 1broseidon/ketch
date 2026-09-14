@@ -28,8 +28,8 @@ func TestApplyConfigSetAPIKeysRoundTrip(t *testing.T) {
 	if err := json.Unmarshal(data, &loaded); err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(loaded.BraveAPIKeys, []string{"k1", "k2"}) {
-		t.Fatalf("round-tripped keys = %v", loaded.BraveAPIKeys)
+	if !reflect.DeepEqual(loaded.Strings("brave_api_keys"), []string{"k1", "k2"}) {
+		t.Fatalf("round-tripped keys = %v", loaded.Strings("brave_api_keys"))
 	}
 }
 
@@ -37,12 +37,12 @@ func TestApplyConfigSetAPIKeysInvalid(t *testing.T) {
 	for _, value := range []string{`not-json`, `null`, `{"key":"value"}`} {
 		t.Run(value, func(t *testing.T) {
 			cfg := config.Defaults()
-			cfg.BraveAPIKeys = []string{"existing"}
+			cfg.SetProvider("brave_api_keys", []string{"existing"})
 			if err := applyConfigSet(&cfg, "brave_api_keys", value); err == nil {
 				t.Fatal("expected JSON array validation error")
 			}
-			if !reflect.DeepEqual(cfg.BraveAPIKeys, []string{"existing"}) {
-				t.Fatalf("invalid input modified keys: %v", cfg.BraveAPIKeys)
+			if !reflect.DeepEqual(cfg.Strings("brave_api_keys"), []string{"existing"}) {
+				t.Fatalf("invalid input modified keys: %v", cfg.Strings("brave_api_keys"))
 			}
 		})
 	}
@@ -50,22 +50,22 @@ func TestApplyConfigSetAPIKeysInvalid(t *testing.T) {
 
 func TestApplyConfigSetAPIKeysEmptyClears(t *testing.T) {
 	cfg := config.Defaults()
-	cfg.BraveAPIKeys = []string{"existing"}
+	cfg.SetProvider("brave_api_keys", []string{"existing"})
 	if err := applyConfigSet(&cfg, "brave_api_keys", `[]`); err != nil {
 		t.Fatal(err)
 	}
-	if len(cfg.BraveAPIKeys) != 0 {
-		t.Fatalf("keys = %v, want empty", cfg.BraveAPIKeys)
+	if len(cfg.Strings("brave_api_keys")) != 0 {
+		t.Fatalf("keys = %v, want empty", cfg.Strings("brave_api_keys"))
 	}
 }
 
 func TestBuildConfigInfoReportsEffectiveKeyCountsWithoutValues(t *testing.T) {
 	cfg := config.Defaults()
-	cfg.BraveAPIKey = "singular-secret"
-	cfg.BraveAPIKeys = []string{"plural-secret", "singular-secret"}
+	cfg.SetProvider("brave_api_key", "singular-secret")
+	cfg.SetProvider("brave_api_keys", []string{"plural-secret", "singular-secret"})
 	info := buildConfigInfo(cfg, "/tmp/config.json")
-	if !info.BraveAPIKeySet || info.BraveAPIKeysCount != 2 {
-		t.Fatalf("key discovery = set:%v count:%d", info.BraveAPIKeySet, info.BraveAPIKeysCount)
+	if info.Providers["brave_api_key_set"] != true || info.Providers["brave_api_keys_count"] != 2 {
+		t.Fatalf("key discovery = set:%v count:%d", info.Providers["brave_api_key_set"], info.Providers["brave_api_keys_count"])
 	}
 	data, err := json.Marshal(info)
 	if err != nil {
@@ -122,8 +122,8 @@ func TestRunConfigSetNeverEchoesSecrets(t *testing.T) {
 
 func TestConfigSetAcknowledgementUsesEffectiveKeyCount(t *testing.T) {
 	cfg := config.Defaults()
-	cfg.BraveAPIKey = "first"
-	cfg.BraveAPIKeys = []string{"first", "second", " "}
+	cfg.SetProvider("brave_api_key", "first")
+	cfg.SetProvider("brave_api_keys", []string{"first", "second", " "})
 	if got := configSetAcknowledgement(cfg, "brave_api_keys", "unused"); got != "set brave_api_keys (2 keys)" {
 		t.Fatalf("acknowledgement = %q, want effective de-duplicated count", got)
 	}
@@ -171,12 +171,12 @@ func TestApplyConfigSetFirecrawlURL(t *testing.T) {
 	if err := applyConfigSet(&c, "firecrawl_url", "http://localhost:3002"); err != nil {
 		t.Fatal(err)
 	}
-	if c.FirecrawlURL != "http://localhost:3002" {
-		t.Fatalf("FirecrawlURL = %q", c.FirecrawlURL)
+	if c.String("firecrawl_url") != "http://localhost:3002" {
+		t.Fatalf("FirecrawlURL = %q", c.String("firecrawl_url"))
 	}
 	info := buildConfigInfo(c, "/tmp/config.json")
-	if info.FirecrawlURL != "http://localhost:3002" {
-		t.Fatalf("discovery firecrawl_url = %q", info.FirecrawlURL)
+	if info.Providers["firecrawl_url"] != "http://localhost:3002" {
+		t.Fatalf("discovery firecrawl_url = %q", info.Providers["firecrawl_url"])
 	}
 }
 
@@ -529,5 +529,48 @@ func TestEffectiveMCPTools(t *testing.T) {
 	c.MCPTools = []string{"wiki"} // hand-edited garbage: reported as-is
 	if got := effectiveMCPTools(c); strings.Join(got, ",") != "wiki" {
 		t.Errorf("invalid: effective = %v, want raw [wiki]", got)
+	}
+}
+
+// Backend names are checked against the registries at `config set` time so a
+// typo fails loudly instead of persisting a config every command then rejects.
+func TestApplyConfigSetBackendValidatesAgainstRegistry(t *testing.T) {
+	for _, tc := range []struct{ key, value, wantErr string }{
+		{"backend", "ddg", ""},
+		{"backend", " exa ", ""},
+		{"backend", "brve", `unknown search backend "brve"`},
+		{"backend", "Brave", `unknown search backend "Brave"`},
+		{"backend", "", "backend cannot be empty"},
+		{"code_backend", "sourcegraph", ""},
+		{"code_backend", "grep", `unknown code backend "grep"`},
+		{"docs_backend", "context7", ""},
+		{"docs_backend", "local", ""}, // hidden but registered: the command accepts it, so config set must too
+		{"docs_backend", "ctx7", `unknown docs backend "ctx7"`},
+		{"docs_backend", "", "docs_backend cannot be empty"},
+	} {
+		c := config.Defaults()
+		err := applyConfigSet(&c, tc.key, tc.value)
+		if tc.wantErr == "" {
+			if err != nil {
+				t.Errorf("%s=%q: unexpected error %v", tc.key, tc.value, err)
+				continue
+			}
+			got := map[string]string{"backend": c.Backend, "code_backend": c.CodeBackend, "docs_backend": c.DocsBackend}[tc.key]
+			if want := strings.TrimSpace(tc.value); got != want {
+				t.Errorf("%s=%q: stored %q, want %q", tc.key, tc.value, got, want)
+			}
+			continue
+		}
+		if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+			t.Errorf("%s=%q: got %v, want error containing %q", tc.key, tc.value, err, tc.wantErr)
+			continue
+		}
+		var ee *ExitError
+		if !errors.As(err, &ee) || ee.Code != ExitValidation {
+			t.Errorf("%s=%q: want validation exit code, got %v", tc.key, tc.value, err)
+		}
+		if !strings.Contains(err.Error(), "(valid: ") {
+			t.Errorf("%s=%q: error should list valid names: %v", tc.key, tc.value, err)
+		}
 	}
 }

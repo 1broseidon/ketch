@@ -10,28 +10,34 @@ func TestEffectiveFirecrawlURL(t *testing.T) {
 	if !d.IsDefaultFirecrawlURL() {
 		t.Fatal("Defaults should report hosted Firecrawl URL")
 	}
-
-	d.FirecrawlURL = "http://localhost:3002/"
+	d.SetProvider("firecrawl_url", "http://localhost:3002/")
 	if got := d.EffectiveFirecrawlURL(); got != "http://localhost:3002" {
 		t.Fatalf("trimmed = %q", got)
 	}
 	if d.IsDefaultFirecrawlURL() {
 		t.Fatal("custom URL should not be treated as hosted default")
 	}
-
-	d.FirecrawlURL = "  "
+	d.SetProvider("firecrawl_url", "  ")
 	if got := d.EffectiveFirecrawlURL(); got != DefaultFirecrawlURL {
 		t.Fatalf("blank falls back = %q", got)
 	}
+	{
+		providerValue0 :=
 
-	// Pasting the full endpoint must reduce to its base, not double the path.
-	d.FirecrawlURL = "http://localhost:3002/v2/search"
+			// Pasting the full endpoint must reduce to its base, not double the path.
+			"http://localhost:3002/v2/search"
+		d.SetProvider("firecrawl_url", providerValue0)
+	}
 	if got := d.EffectiveFirecrawlURL(); got != "http://localhost:3002" {
 		t.Fatalf("endpoint reduced to base = %q", got)
 	}
+	{
+		providerValue0 :=
 
-	// The hosted endpoint must still count as hosted, so it keeps requiring a key.
-	d.FirecrawlURL = DefaultFirecrawlURL + "/v2/search"
+			// The hosted endpoint must still count as hosted, so it keeps requiring a key.
+			DefaultFirecrawlURL + "/v2/search"
+		d.SetProvider("firecrawl_url", providerValue0)
+	}
 	if !d.IsDefaultFirecrawlURL() {
 		t.Fatalf("hosted endpoint should report as default, got %q", d.EffectiveFirecrawlURL())
 	}

@@ -1,0 +1,18 @@
+{
+  "backend": "brave",
+  "searxng_url": "http://localhost:8081",
+  "brave_api_key": "fixture-one",
+  "brave_api_keys": [
+    "fixture-one",
+    "fixture-two"
+  ],
+  "firecrawl_url": "http://localhost:3002/",
+  "limit": 5,
+  "cache_ttl": "72h",
+  "code_backend": "grepapp",
+  "docs_backend": "context7",
+  "context7_api_key": "fixture-docs",
+  "sourcegraph_url": "https://sourcegraph.com",
+  "github_token": "fixture-github",
+  "external_pdf_to_md_converter_timeout_sec": 300
+}

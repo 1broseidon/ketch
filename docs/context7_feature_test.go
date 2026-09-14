@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -91,5 +92,27 @@ func TestFeatureGetDocs404IsErrNotFound(t *testing.T) {
 	}
 	if !errors.Is(err, ErrNotFound) {
 		t.Fatalf("404 must wrap ErrNotFound so surfaces map it to not-found, got: %v", err)
+	}
+}
+
+// A bare query honours the result limit; it used to return every snippet
+// in the token budget regardless of --limit.
+func TestFeatureSearchRespectsLimit(t *testing.T) {
+	c := newTestContext7(t, func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/v1/search") {
+			resolveHandler(1)(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{ //nolint:errcheck
+			"codeSnippets": []map[string]any{{"codeTitle": "A", "codeId": "a", "codeList": []map[string]string{{"code": "x"}}}, {"codeTitle": "B", "codeId": "b", "codeList": []map[string]string{{"code": "y"}}}},
+			"infoSnippets": []map[string]any{{"pageId": "c", "breadcrumb": "C", "content": "z"}},
+		})
+	})
+	for _, tc := range []struct{ limit, want int }{{0, 3}, {2, 2}, {5, 3}} {
+		results, err := c.Search(context.Background(), "anything", tc.limit)
+		if err != nil || len(results) != tc.want {
+			t.Errorf("limit %d: got %d results, err %v; want %d", tc.limit, len(results), err, tc.want)
+		}
 	}
 }

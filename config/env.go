@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -53,22 +54,6 @@ func stringSpec(key string, field func(c *Config) *string) envSpec {
 // keyPoolSpec maps a singular *_api_key var onto the provider's whole
 // effective key pool: a comma-separated value replaces both the singular
 // field and the plural list.
-func keyPoolSpec(key string, single func(c *Config) *string, list func(c *Config) *[]string) envSpec {
-	return envSpec{
-		key:    key,
-		secret: true,
-		prev:   func(c *Config) string { return "" }, // secret: never reported
-		apply: func(c *Config, v string) error {
-			keys := splitCommaList(v)
-			if len(keys) == 0 {
-				return fmt.Errorf("must contain at least one non-blank key")
-			}
-			*single(c) = keys[0]
-			*list(c) = keys[1:]
-			return nil
-		},
-	}
-}
 
 func splitCommaList(v string) []string {
 	var out []string
@@ -80,32 +65,9 @@ func splitCommaList(v string) []string {
 	return out
 }
 
-func envSpecs() []envSpec {
+func coreEnvSpecs() []envSpec {
 	return []envSpec{
 		stringSpec("backend", func(c *Config) *string { return &c.Backend }),
-		stringSpec("searxng_url", func(c *Config) *string { return &c.SearxngURL }),
-		keyPoolSpec("brave_api_key",
-			func(c *Config) *string { return &c.BraveAPIKey },
-			func(c *Config) *[]string { return &c.BraveAPIKeys }),
-		keyPoolSpec("exa_api_key",
-			func(c *Config) *string { return &c.ExaAPIKey },
-			func(c *Config) *[]string { return &c.ExaAPIKeys }),
-		keyPoolSpec("firecrawl_api_key",
-			func(c *Config) *string { return &c.FirecrawlAPIKey },
-			func(c *Config) *[]string { return &c.FirecrawlAPIKeys }),
-		stringSpec("firecrawl_url", func(c *Config) *string { return &c.FirecrawlURL }),
-		keyPoolSpec("keenable_api_key",
-			func(c *Config) *string { return &c.KeenableAPIKey },
-			func(c *Config) *[]string { return &c.KeenableAPIKeys }),
-		keyPoolSpec("tavily_api_key",
-			func(c *Config) *string { return &c.TavilyAPIKey },
-			func(c *Config) *[]string { return &c.TavilyAPIKeys }),
-		keyPoolSpec("serpbase_api_key",
-			func(c *Config) *string { return &c.SerpBaseAPIKey },
-			func(c *Config) *[]string { return &c.SerpBaseAPIKeys }),
-		keyPoolSpec("youcom_api_key",
-			func(c *Config) *string { return &c.YoucomAPIKey },
-			func(c *Config) *[]string { return &c.YoucomAPIKeys }),
 		{
 			key:  "limit",
 			prev: func(c *Config) string { return strconv.Itoa(c.Limit) },
@@ -132,16 +94,6 @@ func envSpecs() []envSpec {
 		stringSpec("browser", func(c *Config) *string { return &c.Browser }),
 		stringSpec("code_backend", func(c *Config) *string { return &c.CodeBackend }),
 		stringSpec("docs_backend", func(c *Config) *string { return &c.DocsBackend }),
-		{
-			key:    "context7_api_key",
-			secret: true,
-			prev:   func(c *Config) string { return "" }, // secret: never reported
-			apply: func(c *Config, v string) error {
-				c.Context7APIKey = v
-				return nil
-			},
-		},
-		stringSpec("sourcegraph_url", func(c *Config) *string { return &c.SourcegraphURL }),
 		stringSpec("cookie_file", func(c *Config) *string { return &c.CookieFile }),
 		stringSpec("user_agent", func(c *Config) *string { return &c.UserAgent }),
 		{
@@ -203,7 +155,12 @@ func applyEnv(cfg *Config) ([]Override, error) {
 
 // secretEnvVars lists the KETCH_* vars that carry credentials.
 func secretEnvVars() map[string]bool {
-	vars := map[string]bool{EnvVar("github_token"): true}
+	vars := make(map[string]bool)
+	for _, s := range ProviderSettings() {
+		if s.Secret {
+			vars[EnvVar(s.Key)] = true
+		}
+	}
 	for _, spec := range envSpecs() {
 		if spec.secret {
 			vars[EnvVar(spec.key)] = true
@@ -227,4 +184,23 @@ func ScrubbedEnviron() []string {
 		out = append(out, kv)
 	}
 	return out
+}
+
+func envSpecs() []envSpec {
+	specs := coreEnvSpecs()
+	order := map[string]int{"backend": 0, "limit": 9, "cache_ttl": 10, "browser": 11, "code_backend": 12, "docs_backend": 13, "cookie_file": 16, "user_agent": 17, "mcp_tools": 18, "external_pdf_to_md_converter_command": 19, "external_pdf_to_md_converter_timeout_sec": 20}
+	for _, setting := range ProviderSettings() {
+		if setting.ManualEnv {
+			continue
+		}
+		order[setting.Key] = setting.EnvOrder
+		specs = append(specs, envSpec{key: setting.Key, secret: setting.Secret, prev: func(c *Config) string {
+			if setting.Secret {
+				return ""
+			}
+			return c.String(setting.Key)
+		}, apply: setting.ApplyEnv})
+	}
+	sort.SliceStable(specs, func(i, j int) bool { return order[specs[i].key] < order[specs[j].key] })
+	return specs
 }

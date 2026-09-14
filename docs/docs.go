@@ -12,6 +12,16 @@ import (
 // a retryable upstream failure.
 var ErrNotFound = errors.New("not found")
 
+// Truncate returns at most limit results when limit is positive. A zero or
+// negative limit leaves results unbounded; callers use that for the library
+// path, where the token budget is the only bound unless a limit is explicit.
+func Truncate(results []Result, limit int) []Result {
+	if limit > 0 && len(results) > limit {
+		return results[:limit]
+	}
+	return results
+}
+
 // Result is a single docs search result.
 type Result struct {
 	Library    string `json:"library"`

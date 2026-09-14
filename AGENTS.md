@@ -22,9 +22,9 @@ cmd/
   mcp.go                     MCP command: `mcp serve` runs the MCP server over stdio
   proc_unix.go               Unix process management (detach, signals)
   proc_windows.go            Windows process management stub
-search/                      Searcher interface + Brave/DDG/SearXNG/EXA/Firecrawl/Keenable/Tavily/Parallel/SerpBase/Youcom backends; NewFromConfig owns the backend switch for cmd/ and mcp/. multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), canonical.go the URL dedup keys
-code/                        code.Searcher interface + GrepApp/Sourcegraph/GitHub backends; NewFromConfig owns the backend switch
-docs/                        docs.Searcher interface + Context7 backend (FTS5 local is an unimplemented stub); NewFromConfig owns the backend switch
+search/                      Searcher interface + Brave/DDG/SearXNG/EXA/Firecrawl/Keenable/Tavily/Parallel/SerpBase/Degoog/Youcom backends; NewFromConfig resolves the ordered provider registry for cmd/ and mcp/. multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), canonical.go the URL dedup keys
+code/                        code.Searcher interface + GrepApp/Sourcegraph/GitHub backends; NewFromConfig resolves the ordered provider registry
+docs/                        docs.Searcher interface + Context7 backend (FTS5 local is an unimplemented stub); NewFromConfig resolves the ordered provider registry
 mcp/                         MCP server (search/code/docs/scrape/crawl tools; the mcp_tools config key is an allowlist over the published set) over the go-sdk mcp package; Server struct holds the shared scraper + cache, tools call the same NewFromConfig constructors as the CLI
 scrape/                      HTTP fetch + Page type, JS detection fallback, Rod browser; pipeline.go has the cache-aware scrape pipeline (CachedScrape*, ScrapeSelector, FetchLLMSTxt) shared by cmd/ and mcp/
 extract/                     readability + html-to-markdown pipeline, JS shell detection (Detector: built-in + config spa_markers, modern hydration/streaming frameworks)
@@ -38,7 +38,7 @@ updatecheck/                 "new release available" probe + throttled stderr hi
 site/                        VitePress documentation site (deployed to gh-pages)
 ```
 
-Reusable packages live at the module root so external programs can `import "github.com/1broseidon/ketch/<pkg>"`. Nothing is module-private right now — if something becomes CLI-only, move it under `internal/`.
+Reusable packages live at the module root so external programs can `import "github.com/1broseidon/ketch/<pkg>"`. Shared implementation helpers, including the config model used by provider packages, live under `internal/`.
 
 ## Design Principles
 
@@ -80,12 +80,13 @@ ketch search "query"                        # search, return results
 ketch search "query" --scrape               # search + fetch full content
 ketch search "query" -b searxng             # use SearXNG backend
 ketch search "query" -b exa                 # use Exa hosted MCP backend
-ketch search "query" -b firecrawl           # use Firecrawl v2 search API
+ketch search "query" -b firecrawl           # use Firecrawl v2 search API (keyless by default)
 ketch search "query" -b keenable            # use Keenable backend (keyless by default)
 ketch search "query" -b tavily              # use Tavily search API (keyed; basic depth)
 ketch search "query" -b parallel            # use Parallel Search MCP (keyless)
 ketch search "query" -b serpbase            # use SerpBase Google Search API (keyed)
-ketch search "query" -b youcom              # use You.com Web Search API (keyed)
+ketch search "query" -b degoog              # use a self-hosted Degoog instance (degoog_url)
+ketch search "query" -b youcom              # use You.com web search (keyless by default)
 ketch search "query" --multi                # federate across every usable backend, RRF-fused
 ketch search "query" --multi=brave,ddg,exa  # federate across a specific set (use the = form)
 ketch scrape <url>                          # single URL → markdown
@@ -117,7 +118,7 @@ ketch mcp serve                             # run as an MCP server over stdio (s
 | Flag | Scope | Default | Description |
 |------|-------|---------|-------------|
 | --json | global | false | JSON output |
-| --backend, -b | search | brave | Search backend (brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase/youcom) |
+| --backend, -b | search | brave | Search backend (brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase/degoog/youcom) |
 | --multi | search | — | Federated search: comma list or bare/`=all` for every usable backend; RRF-fused, dedup'd, mutually exclusive with --backend (use the `=` form for a list) |
 | --limit, -l | search | 5 | Max results |
 | --scrape | search | false | Fetch full content |
@@ -148,3 +149,46 @@ ketch mcp serve                             # run as an MCP server over stdio (s
 | --concurrency | scrape | 5 | Max concurrent requests for multi-URL scraping |
 | --force-browser | scrape | false | Always render via the configured browser, skipping JS-shell auto-detection (composes with --raw/--select; errors without a browser) |
 | --cookie-file <path> | scrape, search --scrape, crawl | config `cookie_file` or off | Netscape cookies.txt jar; flag overrides config and an explicit empty value disables cookies |
+
+
+## Adding a provider
+
+Use the provider registry for new search, code, and docs backends. Read
+[CONTRIBUTING.md](CONTRIBUTING.md#proposing-a-provider) for admission criteria.
+
+Place the implementation, descriptor, and health probe in one Go file under
+`search/`, `code/`, or `docs/`, with tests alongside it. Append its descriptor
+call to the package's ordered
+`providers` slice in `registry.go`; register explicitly, without `init()`.
+Config discovery, CLI/MCP descriptions, doctor, and search multi/random
+eligibility follow the descriptor. Keep provider-specific branches and config
+fields out of shared consumers.
+
+- Define `ID`, `Name`, `Settings`, `Usable`, `New`, and `Probe`.
+- `Usable` checks configuration without network I/O. `Build` checks it before
+  calling `New`.
+- `New` only constructs a client and must accept empty credentials. `Probe`
+  performs the health check; construction must not contact the service.
+- Import `internal/configbase` as `config` to avoid an import cycle with the
+  public config facade. Read values with `String`/`Strings`; use `SetProvider`
+  for overrides so per-call changes do not mutate shared MCP config.
+- Declare settings on the descriptor: `config.KeyPool` for rotating credentials,
+  `config.Scalar` for URLs, or `config.Setting` for custom secret/token behavior.
+  Keep existing order values; new settings use the helpers' default ordering.
+  Existing provider-specific accessors are compatibility helpers, not a pattern
+  to extend.
+- Doctor checks are required when the provider is selected or a setting marked
+  `GateDoctor` is configured. Missing credentials or an instance URL must fail
+  a selected provider's check. Set `MinProbeTimeout` for slower search probes.
+- Code providers declare regex support in the descriptor. Docs providers can
+  implement `docs.LibraryResolver` for library operations. Keep the unfinished
+  local docs provider hidden.
+
+Test requests, result mapping, authentication, cancellation, and relevant retry
+and error behavior without live services. Run `make lint` and `make test`.
+Regenerate config/doctor fixtures with
+`UPDATE_REGISTRY_GOLDENS=1 go test ./cmd/ ./doctor/`; preserve existing entries
+and add only the new provider's entries. Refactors must leave fixtures unchanged.
+See [the registration test](search/registry_test.go) for a provider flowing
+through shared consumers. Include documentation and changelog updates as
+described in [CONTRIBUTING.md](CONTRIBUTING.md#implementing-a-provider).

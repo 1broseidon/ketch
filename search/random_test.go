@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/1broseidon/ketch/config"
+	config "github.com/1broseidon/ketch/internal/configbase"
 )
 
 func newTestRandom(order []int, backends ...namedSearcher) *Random {
@@ -119,7 +119,7 @@ func TestNewRandomFromConfigAllUsesEveryUsableBackend(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"ddg", "searxng", "exa", "keenable", "parallel"}
+	want := []string{"ddg", "searxng", "exa", "firecrawl", "keenable", "parallel", "youcom"}
 	if got := random.Names(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("resolved backends = %v, want %v", got, want)
 	}

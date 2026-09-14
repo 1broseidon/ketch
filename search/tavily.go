@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/1broseidon/ketch/health"
 	"github.com/1broseidon/ketch/httpx"
+	config "github.com/1broseidon/ketch/internal/configbase"
 )
 
 // tavilyEndpoint is the hosted Tavily search API. Auth is Bearer-only in the
@@ -160,4 +162,57 @@ func tavilyStatusError(resp *http.Response) error {
 		return fmt.Errorf("tavily returned status %d: %s", resp.StatusCode, detail)
 	}
 	return fmt.Errorf("tavily returned status %d", resp.StatusCode)
+}
+
+const tavilyProbeBody = `{"query":"ketch","max_results":1,"search_depth":"basic"}`
+
+// ProbeTavily checks the provider using a caller-supplied client and endpoint.
+func ProbeTavily(ctx context.Context, client *http.Client, endpoint, apiKey string) (health.Status, string) {
+	key := strings.TrimSpace(apiKey)
+	if key == "" {
+		return health.StatusNoKey, "API key not set (get one free at https://app.tavily.com then: ketch config set tavily_api_key <key>)"
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(tavilyProbeBody))
+	if err != nil {
+		return health.StatusUnreachable, health.ErrorDetail(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+key)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return health.StatusUnreachable, health.ErrorDetail(err)
+	}
+	defer health.Drain(resp)
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return health.StatusOK, ""
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return health.StatusMisconfigured, "API key rejected (ketch config set tavily_api_key <key>)"
+	case http.StatusTooManyRequests:
+		return health.StatusOK, "reachable, key accepted (rate limited)"
+	case tavilyStatusPlanLimit:
+		return health.StatusOK, "reachable, key accepted (plan limit)"
+	case tavilyStatusPaygoLimit:
+		return health.StatusOK, "reachable, key accepted (pay-as-you-go limit)"
+	default:
+		return health.StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
+	}
+}
+
+func tavilyProvider() Provider {
+	return Provider{
+		Settings: []config.Setting{config.KeyPool("tavily_api_key", "tavily_api_keys", 11, 12, 7, 11)},
+		ID:       "tavily",
+		Setup:    "tavily: API key not set (get one free at https://app.tavily.com then: ketch config set tavily_api_key <key>)",
+		Name:     "Tavily",
+		Usable:   func(c *config.Config) bool { return len(c.TavilyKeys()) > 0 },
+		New:      func(c *config.Config) (Searcher, error) { return newTavilyWithKeys(c.TavilyKeys()), nil },
+		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
+			return health.ProbeKeyPool(c.TavilyKeys(), func(key string) (health.Status, string) {
+				return ProbeTavily(ctx, client, "https://api.tavily.com/search", key)
+			})
+		},
+	}
 }

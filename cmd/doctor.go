@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/1broseidon/ketch/config"
 	"github.com/1broseidon/ketch/doctor"
 	"github.com/spf13/cobra"
 )
@@ -14,8 +15,8 @@ var doctorCmd = &cobra.Command{
 	Use:   "doctor",
 	Short: "Check the health of every backend, the browser, and the cache",
 	Long: `Run cheap live health checks against every ketch surface: search backends
-(brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase/youcom), code backends
-(grepapp/sourcegraph/github), docs (context7), the configured browser binary,
+(` + strings.Join(config.AvailableBackends(), "/") + `), code backends
+(` + strings.Join(config.AvailableCodeBackends(), "/") + `), docs (` + strings.Join(config.AvailableDocBackends(), "/") + `), the configured browser binary,
 and the page cache.
 
 Probes run concurrently with a per-check timeout, are read-only (nothing is

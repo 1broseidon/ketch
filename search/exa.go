@@ -12,7 +12,9 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/1broseidon/ketch/health"
 	"github.com/1broseidon/ketch/httpx"
+	config "github.com/1broseidon/ketch/internal/configbase"
 )
 
 type EXA struct {
@@ -227,4 +229,75 @@ func parseContent(rawContent string, limit int) []Result {
 		}
 	}
 	return results
+}
+
+const exaMCPEndpoint = "https://mcp.exa.ai/mcp"
+
+// ExaEndpoint checks the provider using a caller-supplied client and endpoint.
+func ExaEndpoint(apiKey string) string {
+	endpoint := exaMCPEndpoint
+	if strings.TrimSpace(apiKey) != "" {
+		v := url.Values{}
+		v.Set("exaApiKey", strings.TrimSpace(apiKey))
+		endpoint += "?" + v.Encode()
+	}
+	return endpoint
+}
+
+// ProbeExa checks the provider using a caller-supplied client and endpoint.
+func ProbeExa(ctx context.Context, client *http.Client, endpoint string, keyed bool) (health.Status, string) {
+	body := strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, body)
+	if err != nil {
+		return health.StatusUnreachable, exaProbeErrDetail(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+	resp, err := client.Do(req)
+	if err != nil {
+		return health.StatusUnreachable, exaProbeErrDetail(err)
+	}
+	defer health.Drain(resp)
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return health.StatusOK, ""
+	case http.StatusUnauthorized, http.StatusForbidden:
+		if keyed {
+			return health.StatusMisconfigured, "API key rejected (ketch config set exa_api_key <key>)"
+		}
+		return health.StatusUnreachable, fmt.Sprintf("exa returned status %d", resp.StatusCode)
+	case http.StatusTooManyRequests:
+		return health.StatusOK, "reachable, key accepted (rate limited)"
+	default:
+		return health.StatusUnreachable, fmt.Sprintf("exa returned status %d", resp.StatusCode)
+	}
+}
+
+// exaProbeErrDetail checks the provider using a caller-supplied client and endpoint.
+func exaProbeErrDetail(err error) string {
+	switch {
+	case errors.Is(err, context.Canceled):
+		return "request failed: cancelled"
+	case errors.Is(err, context.DeadlineExceeded):
+		return "request failed: timed out"
+	}
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return "request failed: timed out"
+	}
+	return "request failed: transport error"
+}
+
+func exaProvider() Provider {
+	return Provider{
+		Settings: []config.Setting{config.KeyPool("exa_api_key", "exa_api_keys", 4, 5, 3, 4)},
+		ID:       "exa",
+		Name:     "Exa",
+		Usable:   func(*config.Config) bool { return true },
+		New:      func(c *config.Config) (Searcher, error) { return newEXAWithKeys(c.ExaKeys()), nil },
+		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
+			return health.ProbeKeyPool(c.ExaKeys(), func(key string) (health.Status, string) { return ProbeExa(ctx, client, ExaEndpoint(key), key != "") })
+		},
+	}
 }

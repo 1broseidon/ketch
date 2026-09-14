@@ -3,13 +3,13 @@ package search
 import (
 	"testing"
 
-	"github.com/1broseidon/ketch/config"
+	config "github.com/1broseidon/ketch/internal/configbase"
 )
 
 func TestNewFromConfigBraveKeyCompatibility(t *testing.T) {
 	t.Run("singular only", func(t *testing.T) {
 		cfg := config.Defaults()
-		cfg.BraveAPIKey = "legacy"
+		cfg.SetProvider("brave_api_key", "legacy")
 		searcher, err := NewFromConfig(&cfg, "brave", "")
 		if err != nil {
 			t.Fatal(err)
@@ -22,7 +22,7 @@ func TestNewFromConfigBraveKeyCompatibility(t *testing.T) {
 
 	t.Run("plural only", func(t *testing.T) {
 		cfg := config.Defaults()
-		cfg.BraveAPIKeys = []string{"one", "two"}
+		cfg.SetProvider("brave_api_keys", []string{"one", "two"})
 		searcher, err := NewFromConfig(&cfg, "brave", "")
 		if err != nil {
 			t.Fatal(err)
@@ -43,13 +43,41 @@ func TestNewFromConfigBraveKeyCompatibility(t *testing.T) {
 
 func TestNewFromConfigBuildsEveryEffectiveKeyPool(t *testing.T) {
 	cfg := config.Defaults()
-	cfg.BraveAPIKey, cfg.BraveAPIKeys = "brave-legacy", []string{"brave-new"}
-	cfg.ExaAPIKey, cfg.ExaAPIKeys = "exa-legacy", []string{"exa-new"}
-	cfg.FirecrawlAPIKey, cfg.FirecrawlAPIKeys = "firecrawl-legacy", []string{"firecrawl-new"}
-	cfg.KeenableAPIKey, cfg.KeenableAPIKeys = "keenable-legacy", []string{"keenable-new"}
-	cfg.TavilyAPIKey, cfg.TavilyAPIKeys = "tavily-legacy", []string{"tavily-new"}
-	cfg.SerpBaseAPIKey, cfg.SerpBaseAPIKeys = "serpbase-legacy", []string{"serpbase-new"}
-	cfg.YoucomAPIKey, cfg.YoucomAPIKeys = "youcom-legacy", []string{"youcom-new"}
+	{
+		providerValue0, providerValue1 := "brave-legacy", []string{"brave-new"}
+		cfg.SetProvider("brave_api_key", providerValue0)
+		cfg.SetProvider("brave_api_keys", providerValue1)
+	}
+	{
+		providerValue0, providerValue1 := "exa-legacy", []string{"exa-new"}
+		cfg.SetProvider("exa_api_key", providerValue0)
+		cfg.SetProvider("exa_api_keys", providerValue1)
+	}
+	{
+		providerValue0, providerValue1 := "firecrawl-legacy", []string{"firecrawl-new"}
+		cfg.SetProvider("firecrawl_api_key", providerValue0)
+		cfg.SetProvider("firecrawl_api_keys", providerValue1)
+	}
+	{
+		providerValue0, providerValue1 := "keenable-legacy", []string{"keenable-new"}
+		cfg.SetProvider("keenable_api_key", providerValue0)
+		cfg.SetProvider("keenable_api_keys", providerValue1)
+	}
+	{
+		providerValue0, providerValue1 := "tavily-legacy", []string{"tavily-new"}
+		cfg.SetProvider("tavily_api_key", providerValue0)
+		cfg.SetProvider("tavily_api_keys", providerValue1)
+	}
+	{
+		providerValue0, providerValue1 := "serpbase-legacy", []string{"serpbase-new"}
+		cfg.SetProvider("serpbase_api_key", providerValue0)
+		cfg.SetProvider("serpbase_api_keys", providerValue1)
+	}
+	{
+		providerValue0, providerValue1 := "youcom-legacy", []string{"youcom-new"}
+		cfg.SetProvider("youcom_api_key", providerValue0)
+		cfg.SetProvider("youcom_api_keys", providerValue1)
+	}
 
 	for _, backend := range []string{"brave", "exa", "firecrawl", "keenable", "tavily", "serpbase", "youcom"} {
 		searcher, err := NewFromConfig(&cfg, backend, "")
@@ -132,24 +160,56 @@ func TestNewFromConfigSerpBaseRequiresKey(t *testing.T) {
 	}
 }
 
-func TestNewFromConfigYoucomRequiresKey(t *testing.T) {
-	cfg := config.Defaults()
-	if _, err := NewFromConfig(&cfg, "youcom", ""); err == nil {
-		t.Fatal("expected missing-key error for youcom")
-	}
+func TestNewFromConfigYoucomIsKeylessByDefault(t *testing.T) {
+	t.Run("empty key pool builds", func(t *testing.T) {
+		cfg := config.Defaults()
+		searcher, err := NewFromConfig(&cfg, "youcom", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		backend, ok := searcher.(*Youcom)
+		if !ok {
+			t.Fatalf("unexpected type %T", searcher)
+		}
+		if backend.keys.size() != 0 {
+			t.Fatalf("keys = %d, want 0 (keyless free profile)", backend.keys.size())
+		}
+	})
+	t.Run("configured keys reach the pool", func(t *testing.T) {
+		cfg := config.Defaults()
+		cfg.SetProvider("youcom_api_keys", []string{"one", "two"})
+		backend, err := NewFromConfig(&cfg, "youcom", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := backend.(*Youcom).keys.size(); got != 2 {
+			t.Fatalf("pool size = %d, want 2", got)
+		}
+	})
 }
 
 func TestNewFromConfigFirecrawlURL(t *testing.T) {
-	t.Run("cloud requires key", func(t *testing.T) {
+	t.Run("hosted allows empty key", func(t *testing.T) {
 		cfg := config.Defaults()
-		if _, err := NewFromConfig(&cfg, "firecrawl", ""); err == nil {
-			t.Fatal("expected missing-key error for hosted Firecrawl")
+		searcher, err := NewFromConfig(&cfg, "firecrawl", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		backend, ok := searcher.(*Firecrawl)
+		if !ok {
+			t.Fatalf("unexpected type %T", searcher)
+		}
+		if backend.keys.size() != 0 {
+			t.Fatalf("keys = %d, want 0", backend.keys.size())
+		}
+		if got := backend.endpoint; got != config.FirecrawlSearchURL(config.DefaultFirecrawlURL) {
+			t.Fatalf("endpoint = %q, want hosted /v2/search", got)
 		}
 	})
 
 	t.Run("self-hosted allows empty key", func(t *testing.T) {
 		cfg := config.Defaults()
-		cfg.FirecrawlURL = "http://localhost:3002"
+		cfg.SetProvider("firecrawl_url", "http://localhost:3002")
 		searcher, err := NewFromConfig(&cfg, "firecrawl", "")
 		if err != nil {
 			t.Fatal(err)
@@ -168,8 +228,8 @@ func TestNewFromConfigFirecrawlURL(t *testing.T) {
 
 	t.Run("custom base with key", func(t *testing.T) {
 		cfg := config.Defaults()
-		cfg.FirecrawlURL = "https://fc.example.com/"
-		cfg.FirecrawlAPIKey = "k"
+		cfg.SetProvider("firecrawl_url", "https://fc.example.com/")
+		cfg.SetProvider("firecrawl_api_key", "k")
 		searcher, err := NewFromConfig(&cfg, "firecrawl", "")
 		if err != nil {
 			t.Fatal(err)

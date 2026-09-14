@@ -12,7 +12,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/1broseidon/ketch/health"
 	"github.com/1broseidon/ketch/httpx"
+	config "github.com/1broseidon/ketch/internal/configbase"
 )
 
 // GitHub searches code via the GitHub Code Search REST API.
@@ -256,4 +258,48 @@ func (g *GitHub) rateLimitError(resp *http.Response) error {
 		}
 	}
 	return fmt.Errorf("github: rate limited (status %d)", resp.StatusCode)
+}
+
+// ProbeGitHub checks the provider using a caller-supplied client and endpoint.
+func ProbeGitHub(ctx context.Context, client *http.Client, apiBase string, resolve func() (token, source string)) (health.Status, string) {
+	token, source := resolve()
+	if token == "" {
+		return health.StatusNoKey, "no token (ketch config set github_token <token>, $GITHUB_TOKEN, or gh auth login)"
+	}
+	resp, err := health.Get(ctx, client, apiBase+"/rate_limit", map[string]string{
+		"Authorization":        "Bearer " + token,
+		"X-GitHub-Api-Version": "2022-11-28",
+	})
+	if err != nil {
+		return health.StatusUnreachable, health.ErrorDetail(err)
+	}
+	defer health.Drain(resp)
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return health.StatusOK, "token via " + source
+	case http.StatusUnauthorized:
+		return health.StatusMisconfigured, fmt.Sprintf("token rejected (source: %s; check: gh auth status)", source)
+	default:
+		return health.StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
+	}
+}
+
+func githubProvider() Provider {
+	return Provider{Setup: `github code search: no token found.
+  - explicit:   ketch config set github_token <token>
+  - env var:    export GITHUB_TOKEN=<token>
+  - or run:     gh auth login`,
+		Settings: []config.Setting{{Key: "github_token", ValidationOrder: 22, Secret: true, Token: true, ManualEnv: true, FileOrder: 22, DiscoveryOrder: 25, Resolve: func(c *config.Config) (string, string) { return c.ResolveGithubToken() }}},
+		ID:       "github",
+		Name:     "GitHub Code Search",
+		Usable:   func(c *config.Config) bool { k, _ := c.ResolveGithubToken(); return k != "" },
+		New: func(c *config.Config) (Searcher, error) {
+			token, _ := c.ResolveGithubToken()
+			return NewGitHub(token), nil
+		},
+		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
+			return ProbeGitHub(ctx, client, "https://api.github.com", c.ResolveGithubToken)
+		},
+	}
 }

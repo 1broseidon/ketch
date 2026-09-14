@@ -87,22 +87,24 @@ This decision has its own record: [ADR-0003](./adr/0003-fast-path-first-scrape.m
 [`search.Searcher`](../search/search.go), [`code.Searcher`](../code/code.go),
 [`docs.Searcher`](../docs/docs.go), [`cache.Store`](../cache/cache.go),
 [`scrape.BrowserConn`](../scrape/browser_iface.go) — and concrete backends
-implement it. A single `NewFromConfig` per package owns the backend switch.
+implement it. Search, code, and docs each have an ordered provider registry;
+`NewFromConfig` selects a descriptor and builds its client.
 
 **Why:** backends are the part of ketch most likely to change. Search providers
-come and go, rate-limit, and change response shapes; the browser could one day
-be something other than Rod; the cache could be Redis instead of bbolt. Pinning
-each to a one- or two-method interface means adding a provider is a local,
-self-contained change that touches one new file and one line of the switch —
-never the command layer, never the output format. The interfaces are
-deliberately *tiny* (`search.Searcher` is a single `Search` method) because a
-small interface is easy to implement correctly and hard to leak provider
-specifics through.
+come and go, rate-limit, and change response shapes. Small interfaces keep
+those differences inside implementations. A provider's descriptor owns its
+settings, construction, and health check, so adding it does not require new
+provider-specific branches in config, CLI, MCP, or doctor code.
 
-**What it asks of you:** when you add a backend, implement the interface and
-register it in `NewFromConfig`. Do not thread provider-specific options up into
-the command or the output. If a provider needs a credential, it comes from
-config, not from a CLI flag (see *Operator configures, agent consumes*).
+**What it asks of you:** follow the
+[provider guide](../AGENTS.md#adding-a-provider): keep the implementation and
+descriptor together, add tests, and register it in `registry.go`. Credentials
+belong in operator config. Provider additions also include fixture and
+documentation updates.
+
+Ketch maintains a curated set of supported providers. The
+[admission criteria](../CONTRIBUTING.md#proposing-a-provider) guide which
+integrations belong in the project.
 
 ### Three research surfaces that never share backends
 

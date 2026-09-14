@@ -47,9 +47,9 @@ func TestRunSearchMultiValidation(t *testing.T) {
 		},
 		{
 			name:       "named but unconfigured backend",
-			in:         SearchInput{Query: "q", Multi: []string{"firecrawl"}},
+			in:         SearchInput{Query: "q", Multi: []string{"tavily"}},
 			wantPrefix: "[precondition]",
-			wantSubstr: "firecrawl",
+			wantSubstr: "tavily",
 		},
 		{
 			name:       "random and backend mutually exclusive",
@@ -77,9 +77,9 @@ func TestRunSearchMultiValidation(t *testing.T) {
 		},
 		{
 			name:       "random named but unconfigured backend",
-			in:         SearchInput{Query: "q", Random: []string{"firecrawl"}},
+			in:         SearchInput{Query: "q", Random: []string{"tavily"}},
 			wantPrefix: "[precondition]",
-			wantSubstr: "firecrawl",
+			wantSubstr: "tavily",
 		},
 	}
 	for _, tc := range cases {

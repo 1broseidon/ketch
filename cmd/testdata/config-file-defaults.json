@@ -1,0 +1,11 @@
+{
+  "backend": "brave",
+  "searxng_url": "http://localhost:8081",
+  "firecrawl_url": "https://api.firecrawl.dev",
+  "limit": 5,
+  "cache_ttl": "72h",
+  "code_backend": "grepapp",
+  "docs_backend": "context7",
+  "sourcegraph_url": "https://sourcegraph.com",
+  "external_pdf_to_md_converter_timeout_sec": 300
+}

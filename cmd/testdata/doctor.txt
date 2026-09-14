@@ -1,0 +1,10 @@
+---
+checks: 4
+ok: 1
+skipped: 1
+problems: 2 (2 blocking)
+---
+search   brave (default)        no_key              0ms  missing fixture key
+code     grepapp (default)      ok                 12ms
+docs     context7 (default)     misconfigured       3ms  fixture rejected
+browser  none                   skipped             0ms  not configured

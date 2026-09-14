@@ -1,0 +1,98 @@
+[
+  {
+    "surface": "search",
+    "backend": "brave",
+    "status": "no_key",
+    "detail": "API key not set (get one free at https://brave.com/search/api/ then: ketch config set brave_api_key \u003ckey\u003e)",
+    "latency_ms": 0
+  },
+  {
+    "surface": "search",
+    "backend": "ddg",
+    "status": "ok",
+    "latency_ms": 0
+  },
+  {
+    "surface": "search",
+    "backend": "searxng",
+    "status": "ok",
+    "latency_ms": 0
+  },
+  {
+    "surface": "search",
+    "backend": "exa",
+    "status": "ok",
+    "latency_ms": 0
+  },
+  {
+    "surface": "search",
+    "backend": "firecrawl",
+    "status": "ok",
+    "latency_ms": 0
+  },
+  {
+    "surface": "search",
+    "backend": "keenable",
+    "status": "ok",
+    "latency_ms": 0
+  },
+  {
+    "surface": "search",
+    "backend": "tavily",
+    "status": "no_key",
+    "detail": "API key not set (get one free at https://app.tavily.com then: ketch config set tavily_api_key \u003ckey\u003e)",
+    "latency_ms": 0
+  },
+  {
+    "surface": "search",
+    "backend": "parallel",
+    "status": "ok",
+    "latency_ms": 0
+  },
+  {
+    "surface": "search",
+    "backend": "serpbase",
+    "status": "no_key",
+    "detail": "API key not set (get a free key at https://serpbase.dev then: ketch config set serpbase_api_key \u003ckey\u003e)",
+    "latency_ms": 0
+  },
+  {
+    "surface": "search",
+    "backend": "degoog",
+    "status": "misconfigured",
+    "detail": "degoog_url not set (ketch config set degoog_url \u003curl\u003e)",
+    "latency_ms": 0
+  },
+  {
+    "surface": "search",
+    "backend": "youcom",
+    "status": "ok",
+    "latency_ms": 0
+  },
+  {
+    "surface": "code",
+    "backend": "grepapp",
+    "status": "ok",
+    "latency_ms": 0
+  },
+  {
+    "surface": "code",
+    "backend": "sourcegraph",
+    "status": "ok",
+    "latency_ms": 0
+  },
+  {
+    "surface": "code",
+    "backend": "github",
+    "status": "no_key",
+    "detail": "no token (ketch config set github_token \u003ctoken\u003e, $GITHUB_TOKEN, or gh auth login)",
+    "latency_ms": 0
+  },
+  {
+    "surface": "docs",
+    "backend": "context7",
+    "status": "no_key",
+    "detail": "API key not set (get one then: ketch config set context7_api_key \u003ckey\u003e)",
+    "latency_ms": 0
+  }
+]

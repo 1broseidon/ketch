@@ -9,8 +9,14 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/1broseidon/ketch/health"
 	"github.com/1broseidon/ketch/httpx"
+	config "github.com/1broseidon/ketch/internal/configbase"
 )
+
+// sourcegraphMaxEventBytes bounds one SSE event; a matches batch for even the
+// most common identifiers is a few megabytes at most.
+const sourcegraphMaxEventBytes = 16 << 20
 
 // Sourcegraph searches code via the Sourcegraph streaming search API.
 type Sourcegraph struct {
@@ -94,6 +100,10 @@ func (s *Sourcegraph) parseSSE(resp *http.Response, limit int) ([]Result, error)
 	var eventType string
 
 	scanner := bufio.NewScanner(resp.Body)
+	// One "matches" event carries every match of a batch on a single data:
+	// line. Popular symbols push that far past the 64KB default token size,
+	// which used to fail the whole query with "token too long".
+	scanner.Buffer(make([]byte, 0, 64*1024), sourcegraphMaxEventBytes)
 	for scanner.Scan() {
 		line := scanner.Text()
 
@@ -141,4 +151,17 @@ func (s *Sourcegraph) parseSSE(resp *http.Response, limit int) ([]Result, error)
 	}
 
 	return results, nil
+}
+
+func sourcegraphProvider() Provider {
+	return Provider{Regexp: true,
+		Settings: []config.Setting{{Key: "sourcegraph_url", ValidationOrder: 21, Default: "https://sourcegraph.com", FileOrder: 21, DiscoveryOrder: 24, EnvOrder: 15}},
+		ID:       "sourcegraph",
+		Name:     "Sourcegraph",
+		Usable:   func(*config.Config) bool { return true },
+		New:      func(c *config.Config) (Searcher, error) { return NewSourcegraph(c.String("sourcegraph_url")), nil },
+		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
+			return health.ProbeReachable(ctx, client, c.String("sourcegraph_url"), "sourcegraph")
+		},
+	}
 }

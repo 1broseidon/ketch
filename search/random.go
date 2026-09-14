@@ -6,7 +6,7 @@ import (
 	rand "math/rand/v2"
 	"time"
 
-	"github.com/1broseidon/ketch/config"
+	config "github.com/1broseidon/ketch/internal/configbase"
 )
 
 // Random tries a freshly shuffled sequence of search providers and returns the

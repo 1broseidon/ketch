@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/1broseidon/ketch/config"
+	config "github.com/1broseidon/ketch/internal/configbase"
 )
 
 const (
@@ -87,7 +87,7 @@ func resolveCandidates(cfg *config.Config, names []string, searxngURL string) ([
 	all := len(names) == 1 && names[0] == "all"
 	var candidates []string
 	if all {
-		candidates = config.AvailableBackends()
+		candidates = AvailableBackends()
 	} else {
 		candidates = uniqueBackendNames(names)
 	}

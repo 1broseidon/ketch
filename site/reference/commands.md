@@ -12,7 +12,7 @@ ketch search <query> [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--backend, -b` | `brave` | Search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase`, `youcom` |
+| `--backend, -b` | `brave` | Search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase`, `degoog`, `youcom` |
 | `--multi` | — | Federated search across backends: comma-separated list, or bare/`=all` for every usable backend. Mutually exclusive with `--backend` and `--random`. |
 | `--random` | — | Random provider with fallback: comma-separated list, or bare/`=all` for every usable backend. Mutually exclusive with `--backend` and `--multi`. |
 | `--limit, -l` | `5` | Max number of results |
@@ -36,8 +36,9 @@ naming the engines that returned it.
 
 - Bare `ketch search --multi "query"` (or `--multi=all`) uses every *usable*
   backend — the same key-presence rule ketch uses everywhere: `ddg`, `exa`,
-  `keenable`, and `parallel` always; `brave`, `firecrawl`, `tavily`, `serpbase`, and `youcom` only with a key; `searxng`
-  always (a dead instance just fails fast and is skipped).
+  `firecrawl`, `keenable`, `parallel`, and `youcom` always; `brave`, `tavily`, and `serpbase` only with a key; `searxng`
+  always (a dead instance just fails fast and is skipped); `degoog` only when
+  `degoog_url` is set.
 - `ketch search --multi=brave,exa "query"` queries exactly those, in that order.
   An unknown name is a validation error (exit 2); a named-but-unconfigured
   backend is a precondition error (exit 5).
@@ -125,10 +126,10 @@ ketch docs <query> [flags]
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--backend, -b` | `context7` | Docs backend: `context7`, `local` (not yet implemented) |
-| `--limit, -l` | `5` | Max number of results |
+| `--limit, -l` | `5` | Max number of results. With `--library`, applied only when passed explicitly |
 | `--library` | — | Context7 library ID (skip resolve step) |
 | `--resolve` | `false` | Resolve library name instead of searching |
-| `--tokens` | `4000` | Context7 token budget |
+| `--tokens` | `4000` | Context7 token budget (the only bound on `--library` output unless `--limit` is given) |
 | `--minimal` | `false` | One result per line, tab-separated |
 
 **Examples:**
@@ -311,6 +312,11 @@ ketch config set <k> <v>  # set a config value
 ketch config path         # print config file path
 ```
 
+`config set` validates values before writing: `backend`, `code_backend`, and
+`docs_backend` must name a registered provider (the error lists the valid
+names), and `mcp_tools`, `limit`, `cache_ttl`, `url_rewrites`, and
+`spa_markers` are checked the same way.
+
 Every config key except `url_rewrites`, `spa_markers`, and the plural
 `*_api_keys` pools can also be set through `KETCH_*` environment variables;
 `ketch config` reports env-sourced values in an `env_overrides` section. See
@@ -328,7 +334,7 @@ ketch cache clear         # remove all cached pages
 ## ketch doctor
 
 Run live health checks against every surface: search backends
-(brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase/youcom), code backends (grepapp/sourcegraph/github), docs
+(brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase/degoog/youcom), code backends (grepapp/sourcegraph/github), docs
 (context7), the configured browser binary, and the page cache. Probes run
 concurrently with a per-check timeout and are read-only (nothing is written
 to the cache).

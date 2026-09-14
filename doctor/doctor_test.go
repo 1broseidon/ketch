@@ -113,18 +113,64 @@ func TestProbeBraveNoKey(t *testing.T) {
 }
 
 func TestProbeFirecrawlNoKey(t *testing.T) {
-	// Must classify without any network call: the handler fails the test.
-	ts := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
-		t.Error("no-key probe must not hit the network")
-	}))
-	defer ts.Close()
+	var sawAuth bool
+	var gotURL, gotBody string
+	client := &http.Client{Transport: probeRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+		gotURL = req.URL.String()
+		if req.Header.Get("Authorization") != "" {
+			sawAuth = true
+		}
+		b, _ := io.ReadAll(req.Body)
+		gotBody = string(b)
+		return &http.Response{StatusCode: http.StatusOK, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{}`))}, nil
+	})}
 
-	status, detail := probeFirecrawl(testCtx(t), ts.Client(), config.FirecrawlSearchURL(config.DefaultFirecrawlURL), "")
-	if status != StatusNoKey {
-		t.Fatalf("status = %q, want no_key", status)
+	status, detail := probeFirecrawl(testCtx(t), client, config.FirecrawlSearchURL(config.DefaultFirecrawlURL), "")
+	if status != StatusOK {
+		t.Fatalf("status = %q (detail %q), want ok", status, detail)
 	}
-	if !strings.Contains(detail, "firecrawl_api_key") {
-		t.Errorf("detail %q should carry the config hint", detail)
+	if sawAuth {
+		t.Fatal("hosted keyless probe must omit Authorization")
+	}
+	if gotURL != config.FirecrawlSearchURL(config.DefaultFirecrawlURL) {
+		t.Errorf("url = %q, want hosted /v2/search", gotURL)
+	}
+	if !strings.Contains(gotBody, `"integration":"_ketch"`) {
+		t.Errorf("probe body %q must send integration _ketch like Search", gotBody)
+	}
+}
+
+func TestProbeFirecrawlHostedStatuses(t *testing.T) {
+	cases := []struct {
+		name       string
+		key        string
+		code       int
+		want       Status
+		wantDetail string // substring; empty skips the detail check
+	}{
+		{"keyless ok", "", http.StatusOK, StatusOK, ""},
+		{"keyless rate limited", "", http.StatusTooManyRequests, StatusOK, "rate limited"},
+		{"keyless credits", "", http.StatusPaymentRequired, StatusMisconfigured, "credits exhausted"},
+		{"keyless unauthorized", "", http.StatusUnauthorized, StatusMisconfigured, "request rejected"},
+		{"keyless forbidden", "", http.StatusForbidden, StatusOK, "keyless blocked"},
+		{"keyed rate limited", "k", http.StatusTooManyRequests, StatusOK, "key accepted"},
+		{"keyed rejected", "k", http.StatusUnauthorized, StatusMisconfigured, "API key rejected"},
+		{"keyed forbidden", "k", http.StatusForbidden, StatusMisconfigured, "API key rejected"},
+		{"keyed credits", "k", http.StatusPaymentRequired, StatusMisconfigured, "credits exhausted"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := &http.Client{Transport: probeRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				return &http.Response{StatusCode: tc.code, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{}`))}, nil
+			})}
+			status, detail := probeFirecrawl(testCtx(t), client, config.FirecrawlSearchURL(config.DefaultFirecrawlURL), tc.key)
+			if status != tc.want {
+				t.Fatalf("status = %q (detail %q), want %q", status, detail, tc.want)
+			}
+			if tc.wantDetail != "" && !strings.Contains(detail, tc.wantDetail) {
+				t.Errorf("detail = %q, want substring %q", detail, tc.wantDetail)
+			}
+		})
 	}
 }
 
@@ -148,11 +194,15 @@ func TestProbeFirecrawlSelfHostedNoKey(t *testing.T) {
 }
 
 func TestProbeTimeout(t *testing.T) {
-	searxng := spec{surface: "search", backend: "searxng"}
+	searxng := findSpec(t, buildSpecs(&config.Config{}, http.DefaultClient), "search", "searxng")
+	serpbase := findSpec(t, buildSpecs(&config.Config{}, http.DefaultClient), "search", "serpbase")
 	brave := spec{surface: "search", backend: "brave"}
 
 	if got := probeTimeout(searxng, DefaultTimeout); got != SelfHostedSearchTimeout {
 		t.Errorf("searxng budget = %v, want %v: a healthy instance needs ~3s", got, SelfHostedSearchTimeout)
+	}
+	if got := probeTimeout(serpbase, DefaultTimeout); got != SelfHostedSearchTimeout {
+		t.Errorf("serpbase budget = %v, want %v: SerpBase scrapes Google on demand", got, SelfHostedSearchTimeout)
 	}
 	if got := probeTimeout(brave, DefaultTimeout); got != DefaultTimeout {
 		t.Errorf("brave budget = %v, want the run timeout %v", got, DefaultTimeout)
@@ -460,22 +510,30 @@ func TestProbeSerpBaseStatuses(t *testing.T) {
 	cases := []struct {
 		name   string
 		code   int
+		body   string
 		want   Status
 		detail string
 	}{
-		{"ok", http.StatusOK, StatusOK, ""},
-		{"401", http.StatusUnauthorized, StatusMisconfigured, "serpbase_api_key"},
-		{"403", http.StatusForbidden, StatusMisconfigured, "serpbase_api_key"},
-		{"429", http.StatusTooManyRequests, StatusOK, "rate limited"},
-		{"402", http.StatusPaymentRequired, StatusOK, "credits"},
-		{"500", http.StatusInternalServerError, StatusUnreachable, "500"},
+		{"ok", http.StatusOK, `{"status":0}`, StatusOK, ""},
+		{"unauthorized", http.StatusOK, `{"status":1001,"error":"unauthorized"}`, StatusMisconfigured, "serpbase_api_key"},
+		{"insufficient credits", http.StatusOK, `{"status":1020,"error":"insufficient credits"}`, StatusOK, "credits"},
+		{"rate limited", http.StatusOK, `{"status":1029,"error":"rate limited"}`, StatusOK, "rate limited"},
+		{"invalid request", http.StatusOK, `{"status":1000,"error":"invalid request"}`, StatusUnreachable, "1000"},
+		{"http 401", http.StatusUnauthorized, `{}`, StatusMisconfigured, "serpbase_api_key"},
+		{"http 403", http.StatusForbidden, `{}`, StatusMisconfigured, "serpbase_api_key"},
+		{"http 429", http.StatusTooManyRequests, `{}`, StatusOK, "rate limited"},
+		{"http 402", http.StatusPaymentRequired, `{}`, StatusOK, "credits"},
+		{"http 500", http.StatusInternalServerError, ``, StatusUnreachable, "500"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			var gotKey string
+			var gotKey, gotMethod, gotSource string
 			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				gotKey = r.URL.Query().Get("api_key")
+				gotMethod = r.Method
+				gotKey = r.Header.Get("X-API-Key")
+				gotSource = r.Header.Get("X-SerpBase-Source")
 				w.WriteHeader(tc.code)
+				_, _ = fmt.Fprint(w, tc.body)
 			}))
 			defer ts.Close()
 
@@ -483,75 +541,19 @@ func TestProbeSerpBaseStatuses(t *testing.T) {
 			if status != tc.want {
 				t.Fatalf("status = %q (detail %q), want %q", status, detail, tc.want)
 			}
+			if gotMethod != http.MethodPost {
+				t.Errorf("method = %q, want POST", gotMethod)
+			}
 			if gotKey != "serpbase-secret" {
-				t.Errorf("api_key query param = %q, want serpbase-secret", gotKey)
+				t.Errorf("X-API-Key = %q, want serpbase-secret", gotKey)
+			}
+			if gotSource != "ketch" {
+				t.Errorf("X-SerpBase-Source = %q, want ketch", gotSource)
 			}
 			if tc.detail != "" && !strings.Contains(detail, tc.detail) {
 				t.Errorf("detail %q should contain %q", detail, tc.detail)
 			}
 			if strings.Contains(detail, "serpbase-secret") {
-				t.Errorf("detail leaked key: %q", detail)
-			}
-		})
-	}
-}
-
-// --- youcom ---
-
-func TestProbeYoucomNoKey(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
-		t.Error("no-key probe must not hit the network")
-	}))
-	defer ts.Close()
-
-	status, detail := probeYoucom(testCtx(t), ts.Client(), ts.URL, "")
-	if status != StatusNoKey {
-		t.Fatalf("status = %q, want no_key", status)
-	}
-	if !strings.Contains(detail, "youcom_api_key") {
-		t.Errorf("detail %q should name youcom_api_key", detail)
-	}
-}
-
-func TestProbeYoucomStatuses(t *testing.T) {
-	cases := []struct {
-		name   string
-		code   int
-		want   Status
-		detail string
-	}{
-		{"ok", http.StatusOK, StatusOK, ""},
-		{"401", http.StatusUnauthorized, StatusMisconfigured, "youcom_api_key"},
-		{"403", http.StatusForbidden, StatusMisconfigured, "youcom_api_key"},
-		{"429", http.StatusTooManyRequests, StatusOK, "rate limited"},
-		{"402", http.StatusPaymentRequired, StatusOK, "credits"},
-		{"500", http.StatusInternalServerError, StatusUnreachable, "500"},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			var gotKey string
-			var gotMethod string
-			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				gotKey = r.Header.Get("X-API-Key")
-				gotMethod = r.Method
-				w.WriteHeader(tc.code)
-			}))
-			defer ts.Close()
-
-			status, detail := probeYoucom(testCtx(t), ts.Client(), ts.URL, "youcom-secret")
-			if status != tc.want {
-				t.Fatalf("status = %q (detail %q), want %q", status, detail, tc.want)
-			}
-			if gotKey != "youcom-secret" {
-				t.Errorf("X-API-Key header = %q, want youcom-secret", gotKey)
-			}
-			if gotMethod != http.MethodPost {
-				t.Errorf("method = %q, want POST", gotMethod)
-			}
-			if tc.detail != "" && !strings.Contains(detail, tc.detail) {
-				t.Errorf("detail %q should contain %q", detail, tc.detail)
-			}
-			if strings.Contains(detail, "youcom-secret") {
 				t.Errorf("detail leaked key: %q", detail)
 			}
 		})
@@ -791,6 +793,9 @@ func TestBuildSpecsRequiredGating(t *testing.T) {
 	if s := findSpec(t, specs, "search", "keenable"); s.required {
 		t.Error("keenable without a key and not default must be informational")
 	}
+	if s := findSpec(t, specs, "search", "firecrawl"); s.required {
+		t.Error("firecrawl without a key and not default must be informational")
+	}
 	if s := findSpec(t, specs, "search", "parallel"); s.required {
 		t.Error("parallel not default must be informational")
 	}
@@ -851,7 +856,7 @@ func TestProbeKeyPoolChecksEveryKeyAndRejectsPool(t *testing.T) {
 func TestBuildSpecsPluralKeyedBackendIsRequired(t *testing.T) {
 	cfg := config.Defaults()
 	cfg.Backend = "ddg"
-	cfg.BraveAPIKeys = []string{"plural-only"}
+	cfg.SetProvider("brave_api_keys", []string{"plural-only"})
 	specs := buildSpecs(&cfg, http.DefaultClient)
 	if candidate := findSpec(t, specs, "search", "brave"); !candidate.required {
 		t.Error("brave with only a plural key must be required")
@@ -861,7 +866,11 @@ func TestBuildSpecsPluralKeyedBackendIsRequired(t *testing.T) {
 func TestBuildSpecsKeyedBackendIsRequired(t *testing.T) {
 	cfg := config.Defaults()
 	cfg.Backend = "ddg"
-	cfg.BraveAPIKey = "k" // explicitly configured → a broken brave should gate
+	{
+		providerValue0 := "k"
+		cfg.SetProvider("brave_api_key", // explicitly configured → a broken brave should gate
+			providerValue0)
+	}
 	cfg.Browser = "chrome"
 	specs := buildSpecs(&cfg, http.DefaultClient)
 

@@ -21,6 +21,7 @@ import (
 
 	"github.com/1broseidon/ketch/cache"
 	"github.com/1broseidon/ketch/config"
+	"github.com/1broseidon/ketch/docs"
 	"github.com/1broseidon/ketch/scrape"
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -36,7 +37,7 @@ type toolMeta struct {
 var toolProse = map[string]toolMeta{
 	"search": {"web search", "search for the open web"},
 	"code":   {"grep public OSS repos for real-world usage", "code for code examples"},
-	"docs":   {"curated library/API documentation via Context7", "docs for library references"},
+	"docs":   {"curated library/API documentation via " + strings.Join(docs.ProviderNames(), ", "), "docs for library references"},
 	"scrape": {"fetch URLs as clean markdown", "scrape when you already have the URL"},
 	"crawl":  {"bounded same-host multi-page crawl", "crawl only when one page is not enough"},
 }

@@ -39,7 +39,7 @@ The discovery payload:
   "github_token_source": "none",
   "github_token_set": false,
   "external_pdf_to_md_converter_timeout_sec": 300,
-  "available_backends": ["brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily", "parallel", "serpbase"],
+  "available_backends": ["brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily", "parallel", "serpbase", "degoog", "youcom"],
   "available_code_backends": ["grepapp", "sourcegraph", "github"],
   "available_doc_backends": ["context7"]
 }
@@ -86,12 +86,12 @@ ketch config set github_token ghp_...
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `backend` | `brave` | Default search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase`, `youcom` |
+| `backend` | `brave` | Default search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase`, `degoog`, `youcom` |
 | `brave_api_key` | — | Brave Search API key ([get one free](https://brave.com/search/api/)) |
 | `brave_api_keys` | — | Additional Brave keys (JSON array) — see [multiple keys](#multiple-api-keys-per-provider) |
 | `exa_api_key` | — | Optional Exa API key for authenticated hosted MCP usage |
 | `exa_api_keys` | — | Additional Exa keys (JSON array) |
-| `firecrawl_api_key` | — | [Firecrawl](https://docs.firecrawl.dev) API key (required for hosted `-b firecrawl`; optional for self-hosted) |
+| `firecrawl_api_key` | — | Optional [Firecrawl](https://docs.firecrawl.dev) API key; keyless by default, a key lifts the hosted rate limit / credits (also used if a self-hosted instance requires auth) |
 | `firecrawl_api_keys` | — | Additional Firecrawl keys (JSON array) |
 | `firecrawl_url` | `https://api.firecrawl.dev` | Firecrawl API base URL (self-hosted override; ketch appends `/v2/search`, and strips it if you paste the full endpoint) |
 | `keenable_api_key` | — | Optional Keenable API key; keyless by default, a key lifts the rate limit ([console](https://keenable.ai/console)) |
@@ -100,19 +100,20 @@ ketch config set github_token ghp_...
 | `tavily_api_keys` | — | Additional Tavily keys (JSON array) |
 | `serpbase_api_key` | — | [SerpBase](https://serpbase.dev) API key (required for `-b serpbase`) |
 | `serpbase_api_keys` | — | Additional SerpBase keys (JSON array) |
-| `youcom_api_key` | — | [You.com](https://you.com/platform/api-keys) API key (required for `-b youcom`) |
-| `youcom_api_keys` | — | Additional You.com keys (JSON array) |
+| `youcom_api_key` | — | Optional [You.com](https://you.com/platform/api-keys) key; the keyless free profile works without it |
 | `searxng_url` | `http://localhost:8081` | SearXNG instance URL |
+| `degoog_url` | — | [Degoog](https://github.com/degoog-org/degoog) instance URL (required for `-b degoog`) |
 | `limit` | `5` | Default max results (shared by `search`, `code`, `docs`) |
 
 #### Multiple API keys per provider
 
 Each keyed search provider takes an optional plural key pool alongside its
 singular key: `brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`,
-`keenable_api_keys`, `tavily_api_keys`. The effective pool is the singular key plus the list,
+`keenable_api_keys`, `tavily_api_keys`, `serpbase_api_keys`, `youcom_api_keys`. The effective pool is the singular key plus the list,
 trimmed and de-duplicated. Per request, ketch picks one key from the pool at
 random to spread rate limits; when the pool holds more than one key, a
-`401`/`429` response (`402` for Firecrawl) gets one retry with a different key.
+`401`/`429` response (`402` for Firecrawl; SerpBase also rotates on `403` and
+its `1001`/`1029` business codes) gets one retry with a different key.
 
 ```sh
 ketch config set brave_api_keys '["BSA-key-1","BSA-key-2"]'

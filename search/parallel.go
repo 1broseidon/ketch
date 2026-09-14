@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/1broseidon/ketch/health"
 	"github.com/1broseidon/ketch/httpx"
+	config "github.com/1broseidon/ketch/internal/configbase"
 )
 
 const (
@@ -186,4 +188,17 @@ func parallelStatusError(resp *http.Response) error {
 		return fmt.Errorf("parallel returned status %d: %s", resp.StatusCode, detail)
 	}
 	return fmt.Errorf("parallel returned status %d", resp.StatusCode)
+}
+
+func parallelProvider() Provider {
+	return Provider{
+		Settings: []config.Setting{},
+		ID:       "parallel",
+		Name:     "Parallel",
+		Usable:   func(*config.Config) bool { return true },
+		New:      func(c *config.Config) (Searcher, error) { return NewParallel(), nil },
+		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
+			return health.ProbeMCP(ctx, client, "https://search.parallel.ai/mcp", "parallel")
+		},
+	}
 }

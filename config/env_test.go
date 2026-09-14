@@ -149,7 +149,7 @@ func TestKetchConfigPathEscapeHatch(t *testing.T) {
 func TestResolveGithubTokenKetchEnvWinsOverConfig(t *testing.T) {
 	t.Setenv("KETCH_GITHUB_TOKEN", "from-ketch-env")
 	t.Setenv("GITHUB_TOKEN", "ambient")
-	c := Config{GithubToken: "from-file"}
+	c := Config{ProviderSettings: map[string]any{"github_token": "from-file"}}
 	token, source := c.ResolveGithubToken()
 	if token != "from-ketch-env" || source != "env" {
 		t.Fatalf("token, source = %q, %q", token, source)
@@ -159,8 +159,7 @@ func TestResolveGithubTokenKetchEnvWinsOverConfig(t *testing.T) {
 	if token, source = c.ResolveGithubToken(); token != "from-file" || source != "config" {
 		t.Fatalf("config should beat ambient GITHUB_TOKEN: %q, %q", token, source)
 	}
-
-	c.GithubToken = ""
+	c.SetProvider("github_token", "")
 	if token, source = c.ResolveGithubToken(); token != "ambient" || source != "env" {
 		t.Fatalf("ambient fallback: %q, %q", token, source)
 	}

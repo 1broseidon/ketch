@@ -4,9 +4,9 @@ ketch has three search surfaces, each with its own backends: web search (`ketch 
 
 ## Web Search Backends
 
-ketch supports ten web-search backends. Set the default with `ketch config set backend <name>`. To query several at once, use `ketch search --multi` (rank-fused federation) or `--random` (one shuffled provider with fallback) — see the [command reference](/reference/commands#ketch-search).
+Set the default with `ketch config set backend <name>`. To query several at once, use `ketch search --multi` (rank-fused federation) or `--random` (one shuffled provider with fallback) — see the [command reference](/reference/commands#ketch-search).
 
-Every keyed backend also accepts a pool of keys (`brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`, `keenable_api_keys`, `tavily_api_keys`, `serpbase_api_keys`, `youcom_api_keys`); ketch picks one at random per request and retries once with a different key on `401`/`429` (`402` for Firecrawl). See [multiple API keys](/guide/configuration#multiple-api-keys-per-provider).
+Every keyed backend also accepts a pool of keys (`brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`, `keenable_api_keys`, `tavily_api_keys`, `serpbase_api_keys`, `youcom_api_keys`); ketch picks one at random per request and retries once with a different key on `401`/`429` (`402` for Firecrawl; SerpBase also rotates on `403` and its HTTP-200 business codes `1001`/`1029`). See [multiple API keys](/guide/configuration#multiple-api-keys-per-provider).
 
 ## Brave (default)
 
@@ -65,13 +65,14 @@ ketch config set backend exa
 
 ## Firecrawl
 
-Web search via the [Firecrawl](https://firecrawl.dev) v2 [search API](https://docs.firecrawl.dev/api-reference/endpoint/search) — proper JSON API, no scraping. The hosted cloud API requires an API key; self-hosted instances often run without one.
+Web search via the [Firecrawl](https://firecrawl.dev) v2 [search API](https://docs.firecrawl.dev/api-reference/endpoint/search) — proper JSON API, no scraping. Hosted cloud is [keyless by default](https://www.firecrawl.dev/blog/firecrawl-keyless-launch) (rate-limited / credit-capped); an optional API key lifts the cap. Self-hosted instances often run without a key.
 
-**Setup (hosted):**
+**Setup:** None. Optional key to lift the rate limit:
 
-1. Get an API key at [firecrawl.dev](https://firecrawl.dev)
-2. Set it: `ketch config set firecrawl_api_key <your-key>`
-3. Make it the default: `ketch config set backend firecrawl`
+```sh
+ketch config set firecrawl_api_key <your-key>
+ketch config set backend firecrawl
+```
 
 **Setup (self-hosted):**
 
@@ -137,17 +138,40 @@ Google search results through the [SerpBase](https://serpbase.dev) REST API. Ket
 
 **Recommended for:** agent workflows that need keyed Google search results through a structured API.
 
-## You.com
+## Degoog
 
-Web search through the [You.com](https://you.com) Web Search API. Ketch maps result titles, URLs, page summaries, and keyword-centered snippets into its standard search result fields. Auth is `X-API-Key` header-only.
+Self-hosted [Degoog](https://github.com/degoog-org/degoog) meta-search aggregator.
+Ketch calls its `/api/search` JSON endpoint and maps titles, URLs, and snippets
+into its standard result fields. Set `degoog_url` to enable it; there is no
+default instance. Without a URL, it is excluded from `--multi=all` and
+`--random=all`. Doctor reports the missing URL as misconfigured; this blocks
+doctor only when degoog is the selected backend.
 
 **Setup:**
 
-1. Get an API key at [you.com/platform/api-keys](https://you.com/platform/api-keys)
-2. Set it: `ketch config set youcom_api_key <your-key>`
-3. Make it the default: `ketch config set backend youcom`
+1. Run a Degoog instance (see the project README; the default port is 4444).
+2. Point ketch to it:
 
-**Recommended for:** agent workflows that want cited, snippet-rich results from You.com's index alongside other backends in `--multi` federation.
+```sh
+ketch config set degoog_url http://localhost:4444
+ketch config set backend degoog
+```
+
+`ketch doctor` reports an instance that requires an API key for `/api/search` as misconfigured.
+
+**Recommended for:** operators who already run Degoog, or who want a self-hosted aggregator with a different engine mix than SearXNG.
+
+## You.com
+
+Web search through [You.com](https://you.com)'s hosted [MCP server](https://api.you.com/mcp). Ketch calls its `you-search` tool and maps result titles, URLs, page summaries, and keyword-centered snippets into its standard search result fields. Keyless by default via the free profile — always usable, rate-limited. An optional API key lifts the rate limit and rotates on `401`/`429`.
+
+**Setup:**
+
+1. Nothing — `ketch search "query" --backend youcom` works with zero config.
+2. Optional: lift the rate limit with a key from [you.com/platform/api-keys](https://you.com/platform/api-keys), then `ketch config set youcom_api_key <your-key>`
+3. Optional: make it the default: `ketch config set backend youcom`
+
+**Recommended for:** agent workflows that want a setup-free, snippet-rich web-search backend to federate alongside the others in `--multi`.
 
 ## Code Search Backends
 
@@ -188,3 +212,10 @@ Curated, version-aware documentation snippets.
 ### Local
 
 A planned FTS5 SQLite backend for offline/private docs. Not yet implemented.
+
+## Proposing a provider
+
+Ketch maintains a curated set of supported providers. See the
+[contribution guide](https://github.com/1broseidon/ketch/blob/main/CONTRIBUTING.md#proposing-a-provider)
+for admission criteria and discuss a new provider in an issue before
+implementing it.

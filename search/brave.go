@@ -9,7 +9,9 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/1broseidon/ketch/health"
 	"github.com/1broseidon/ketch/httpx"
+	config "github.com/1broseidon/ketch/internal/configbase"
 )
 
 // Brave searches via the Brave Search API.
@@ -125,4 +127,46 @@ func braveStatusError(resp *http.Response) error {
 		return fmt.Errorf("brave returned status %d: %s", resp.StatusCode, detail)
 	}
 	return fmt.Errorf("brave returned status %d", resp.StatusCode)
+}
+
+// ProbeBrave checks the provider using a caller-supplied client and endpoint.
+func ProbeBrave(ctx context.Context, client *http.Client, endpoint, apiKey string) (health.Status, string) {
+	if apiKey == "" {
+		return health.StatusNoKey, "API key not set (get one free at https://brave.com/search/api/ then: ketch config set brave_api_key <key>)"
+	}
+	resp, err := health.Get(ctx, client, endpoint+"?q=ketch&count=1&text_decorations=false&result_filter=web", map[string]string{
+		"Accept":               "application/json",
+		"X-Subscription-Token": apiKey,
+	})
+	if err != nil {
+		return health.StatusUnreachable, health.ErrorDetail(err)
+	}
+	defer health.Drain(resp)
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return health.StatusOK, ""
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return health.StatusMisconfigured, "API key rejected (ketch config set brave_api_key <key>)"
+	case http.StatusTooManyRequests:
+		return health.StatusOK, "reachable, key accepted (rate limited)"
+	default:
+		return health.StatusUnreachable, fmt.Sprintf("returned status %d", resp.StatusCode)
+	}
+}
+
+func braveProvider() Provider {
+	return Provider{
+		Settings: []config.Setting{config.KeyPool("brave_api_key", "brave_api_keys", 2, 3, 2, 2)},
+		ID:       "brave",
+		Setup:    "brave: API key not set (get one free at https://brave.com/search/api/ then: ketch config set brave_api_key <key>)",
+		Name:     "Brave",
+		Usable:   func(c *config.Config) bool { return len(c.BraveKeys()) > 0 },
+		New:      func(c *config.Config) (Searcher, error) { return newBraveWithKeys(c.BraveKeys()), nil },
+		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
+			return health.ProbeKeyPool(c.BraveKeys(), func(key string) (health.Status, string) {
+				return ProbeBrave(ctx, client, "https://api.search.brave.com/res/v1/web/search", key)
+			})
+		},
+	}
 }

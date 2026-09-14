@@ -52,16 +52,18 @@ improvements stay arithmetic, not learned ranking (that's a Non-Goal).
 
 *Depends on:* the existing multi-backend and canonicalisation machinery.
 
-### 3. Broader backend coverage across all three surfaces
+### 3. Curated backend coverage across all three surfaces
 
-Because search, code, and docs are all interface-driven, adding a provider is a
-local change. Directions here mean widening the menu — more search engines, more
-code sources, more docs providers — each as a self-contained implementation of
-its `Searcher` interface, registered in that package's `NewFromConfig`. The
-value is optionality for operators without touching the command or output
-layers.
+Additional search, code, and docs providers can give operators useful choices.
+Proposals follow the [admission criteria](../CONTRIBUTING.md#proposing-a-provider),
+with established use, competitive results, and a stable public API.
 
-*Depends on:* nothing structural — this is the interface design paying off.
+Each admitted provider uses its surface's interface and registry, keeping
+provider-specific changes out of shared production consumers. The
+[provider guide](../AGENTS.md#adding-a-provider) covers implementation and tests.
+
+*Depends on:* a provider meeting the admission criteria; the registries are
+already in place.
 
 ### 4. Extraction fidelity on more of the long tail
 

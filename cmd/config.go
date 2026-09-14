@@ -4,14 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/1broseidon/ketch/code"
 	"github.com/1broseidon/ketch/config"
 	"github.com/1broseidon/ketch/cookies"
+	"github.com/1broseidon/ketch/docs"
 	"github.com/1broseidon/ketch/extract"
+	"github.com/1broseidon/ketch/internal/configbase"
 	"github.com/1broseidon/ketch/scrape"
+	"github.com/1broseidon/ketch/search"
 	"github.com/1broseidon/ketch/urlrewrite"
 	"github.com/spf13/cobra"
 )
@@ -22,44 +27,26 @@ import (
 // (config → $GITHUB_TOKEN/$GH_TOKEN → gh CLI): it is true iff the source is
 // not "none".
 type configInfo struct {
-	ConfigPath                         string            `json:"config_path"`
-	Backend                            string            `json:"backend"`
-	SearxngURL                         string            `json:"searxng_url"`
-	BraveAPIKeySet                     bool              `json:"brave_api_key_set"`
-	BraveAPIKeysCount                  int               `json:"brave_api_keys_count"`
-	ExaAPIKeySet                       bool              `json:"exa_api_key_set"`
-	ExaAPIKeysCount                    int               `json:"exa_api_keys_count"`
-	FirecrawlAPIKeySet                 bool              `json:"firecrawl_api_key_set"`
-	FirecrawlAPIKeysCount              int               `json:"firecrawl_api_keys_count"`
-	FirecrawlURL                       string            `json:"firecrawl_url"`
-	KeenableAPIKeySet                  bool              `json:"keenable_api_key_set"`
-	KeenableAPIKeysCount               int               `json:"keenable_api_keys_count"`
-	TavilyAPIKeySet                    bool              `json:"tavily_api_key_set"`
-	TavilyAPIKeysCount                 int               `json:"tavily_api_keys_count"`
-	SerpBaseAPIKeySet                  bool              `json:"serpbase_api_key_set"`
-	SerpBaseAPIKeysCount               int               `json:"serpbase_api_keys_count"`
-	YoucomAPIKeySet                    bool              `json:"youcom_api_key_set"`
-	YoucomAPIKeysCount                 int               `json:"youcom_api_keys_count"`
-	Limit                              int               `json:"limit"`
-	CacheTTL                           string            `json:"cache_ttl"`
-	Browser                            string            `json:"browser,omitempty"`
-	CookieFile                         string            `json:"cookie_file,omitempty"`
-	UserAgent                          string            `json:"user_agent,omitempty"`
-	CodeBackend                        string            `json:"code_backend"`
-	DocsBackend                        string            `json:"docs_backend"`
-	Context7APIKeySet                  bool              `json:"context7_api_key_set"`
-	SourcegraphURL                     string            `json:"sourcegraph_url"`
-	GithubTokenSource                  string            `json:"github_token_source"`
-	GithubTokenSet                     bool              `json:"github_token_set"`
-	URLRewrites                        []urlrewrite.Rule `json:"url_rewrites,omitempty"`
-	SPAMarkers                         []string          `json:"spa_markers,omitempty"`
-	MCPTools                           []string          `json:"mcp_tools"` // effective set `ketch mcp serve` will publish
-	ExternalPDFToMDConverterCommand    string            `json:"external_pdf_to_md_converter_command,omitempty"`
-	ExternalPDFToMDConverterTimeoutSec int               `json:"external_pdf_to_md_converter_timeout_sec"`
-	EnvOverrides                       []config.Override `json:"env_overrides,omitempty"`
-	AvailableBackends                  []string          `json:"available_backends"`
-	AvailableCodeBackends              []string          `json:"available_code_backends"`
-	AvailableDocBackends               []string          `json:"available_doc_backends"`
+	ConfigPath                         string             `json:"config_path" order:"0"`
+	Backend                            string             `json:"backend" order:"1"`
+	Limit                              int                `json:"limit" order:"16"`
+	CacheTTL                           string             `json:"cache_ttl" order:"17"`
+	Browser                            string             `json:"browser,omitempty" order:"18"`
+	CookieFile                         string             `json:"cookie_file,omitempty" order:"19"`
+	UserAgent                          string             `json:"user_agent,omitempty" order:"20"`
+	CodeBackend                        string             `json:"code_backend" order:"21"`
+	DocsBackend                        string             `json:"docs_backend" order:"22"`
+	URLRewrites                        []urlrewrite.Rule  `json:"url_rewrites,omitempty" order:"27"`
+	SPAMarkers                         []string           `json:"spa_markers,omitempty" order:"28"`
+	MCPTools                           []string           `json:"mcp_tools" order:"29"` // effective set `ketch mcp serve` will publish
+	ExternalPDFToMDConverterCommand    string             `json:"external_pdf_to_md_converter_command,omitempty" order:"30"`
+	ExternalPDFToMDConverterTimeoutSec int                `json:"external_pdf_to_md_converter_timeout_sec" order:"31"`
+	EnvOverrides                       []config.Override  `json:"env_overrides,omitempty" order:"32"`
+	AvailableBackends                  []string           `json:"available_backends" order:"33"`
+	AvailableCodeBackends              []string           `json:"available_code_backends" order:"34"`
+	AvailableDocBackends               []string           `json:"available_doc_backends" order:"35"`
+	ProviderFields                     []configbase.Field `json:"-"`
+	Providers                          map[string]any     `json:"-"`
 }
 
 var configCmd = &cobra.Command{
@@ -108,33 +95,9 @@ func runConfigShow(_ *cobra.Command, _ []string) error {
 }
 
 func buildConfigInfo(c config.Config, path string) configInfo {
-	_, ghSource := c.ResolveGithubToken()
-	braveKeys := c.BraveKeys()
-	exaKeys := c.ExaKeys()
-	firecrawlKeys := c.FirecrawlKeys()
-	keenableKeys := c.KeenableKeys()
-	tavilyKeys := c.TavilyKeys()
-	serpbaseKeys := c.SerpBaseKeys()
-	youcomKeys := c.YoucomKeys()
-	return configInfo{
+	info := configInfo{
 		ConfigPath:                         path,
 		Backend:                            c.Backend,
-		SearxngURL:                         c.SearxngURL,
-		BraveAPIKeySet:                     len(braveKeys) > 0,
-		BraveAPIKeysCount:                  len(braveKeys),
-		ExaAPIKeySet:                       len(exaKeys) > 0,
-		ExaAPIKeysCount:                    len(exaKeys),
-		FirecrawlAPIKeySet:                 len(firecrawlKeys) > 0,
-		FirecrawlAPIKeysCount:              len(firecrawlKeys),
-		FirecrawlURL:                       c.EffectiveFirecrawlURL(),
-		KeenableAPIKeySet:                  len(keenableKeys) > 0,
-		KeenableAPIKeysCount:               len(keenableKeys),
-		TavilyAPIKeySet:                    len(tavilyKeys) > 0,
-		TavilyAPIKeysCount:                 len(tavilyKeys),
-		SerpBaseAPIKeySet:                  len(serpbaseKeys) > 0,
-		SerpBaseAPIKeysCount:               len(serpbaseKeys),
-		YoucomAPIKeySet:                    len(youcomKeys) > 0,
-		YoucomAPIKeysCount:                 len(youcomKeys),
 		Limit:                              c.Limit,
 		CacheTTL:                           c.CacheTTL,
 		Browser:                            c.Browser,
@@ -142,10 +105,6 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 		UserAgent:                          effectiveUserAgent(c),
 		CodeBackend:                        c.CodeBackend,
 		DocsBackend:                        c.DocsBackend,
-		Context7APIKeySet:                  c.Context7APIKey != "",
-		SourcegraphURL:                     c.SourcegraphURL,
-		GithubTokenSource:                  ghSource,
-		GithubTokenSet:                     ghSource != "none",
 		URLRewrites:                        c.URLRewrites,
 		SPAMarkers:                         c.SPAMarkers,
 		MCPTools:                           effectiveMCPTools(c),
@@ -155,6 +114,18 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 		AvailableCodeBackends:              config.AvailableCodeBackends(),
 		AvailableDocBackends:               config.AvailableDocBackends(),
 	}
+
+	info.Providers = make(map[string]any)
+	info.ProviderFields = config.ProviderDiscovery(&c)
+	for _, field := range info.ProviderFields {
+		info.Providers[field.Name] = field.Value
+	}
+
+	return info
+}
+
+func (info configInfo) MarshalJSON() ([]byte, error) {
+	return configbase.MarshalFields(append(configbase.StructFields(info), info.ProviderFields...))
 }
 
 func runConfigInit(_ *cobra.Command, _ []string) error {
@@ -206,28 +177,20 @@ func configSetAcknowledgement(c config.Config, key, value string) string {
 // configSecretCount recognizes every secret accepted by config set. API-key
 // counts use the effective de-duplicated pools, not the raw field lengths.
 func configSecretCount(c config.Config, key string) (int, string, bool) {
-	switch key {
-	case "brave_api_key", "brave_api_keys":
-		return len(c.BraveKeys()), "key", true
-	case "exa_api_key", "exa_api_keys":
-		return len(c.ExaKeys()), "key", true
-	case "firecrawl_api_key", "firecrawl_api_keys":
-		return len(c.FirecrawlKeys()), "key", true
-	case "keenable_api_key", "keenable_api_keys":
-		return len(c.KeenableKeys()), "key", true
-	case "tavily_api_key", "tavily_api_keys":
-		return len(c.TavilyKeys()), "key", true
-	case "serpbase_api_key", "serpbase_api_keys":
-		return len(c.SerpBaseKeys()), "key", true
-	case "youcom_api_key", "youcom_api_keys":
-		return len(c.YoucomKeys()), "key", true
-	case "context7_api_key":
-		return boolCount(c.Context7APIKey != ""), "key", true
-	case "github_token":
-		return boolCount(c.GithubToken != ""), "token", true
-	default:
-		return 0, "", false
+	for _, setting := range config.ProviderSettings() {
+		if !setting.Secret || (key != setting.Key && key != setting.Plural) {
+			continue
+		}
+		if setting.Plural != "" {
+			return len(setting.Keys(&c)), "key", true
+		}
+		label := "key"
+		if setting.Token {
+			label = "token"
+		}
+		return boolCount(c.String(setting.Key) != ""), label, true
 	}
+	return 0, "", false
 }
 
 func boolCount(set bool) int {
@@ -242,41 +205,17 @@ func boolCount(set bool) int {
 //
 //nolint:gocyclo // one arm per config key; splitting it would obscure, not clarify
 func applyConfigSet(c *config.Config, key, value string) error {
+	for _, setting := range config.ProviderSettings() {
+		if handled, err := setting.Set(c, key, value); handled {
+			if err != nil {
+				return exitErrf(ExitValidation, "%s", err)
+			}
+			return nil
+		}
+	}
 	switch key {
 	case "backend":
-		c.Backend = value
-	case "searxng_url":
-		c.SearxngURL = value
-	case "brave_api_key":
-		c.BraveAPIKey = value
-	case "brave_api_keys":
-		return setAPIKeys(&c.BraveAPIKeys, key, value)
-	case "exa_api_key":
-		c.ExaAPIKey = value
-	case "exa_api_keys":
-		return setAPIKeys(&c.ExaAPIKeys, key, value)
-	case "firecrawl_api_key":
-		c.FirecrawlAPIKey = value
-	case "firecrawl_api_keys":
-		return setAPIKeys(&c.FirecrawlAPIKeys, key, value)
-	case "firecrawl_url":
-		c.FirecrawlURL = value
-	case "keenable_api_key":
-		c.KeenableAPIKey = value
-	case "keenable_api_keys":
-		return setAPIKeys(&c.KeenableAPIKeys, key, value)
-	case "tavily_api_key":
-		c.TavilyAPIKey = value
-	case "tavily_api_keys":
-		return setAPIKeys(&c.TavilyAPIKeys, key, value)
-	case "serpbase_api_key":
-		c.SerpBaseAPIKey = value
-	case "serpbase_api_keys":
-		return setAPIKeys(&c.SerpBaseAPIKeys, key, value)
-	case "youcom_api_key":
-		c.YoucomAPIKey = value
-	case "youcom_api_keys":
-		return setAPIKeys(&c.YoucomAPIKeys, key, value)
+		return setBackend(&c.Backend, "search", value, func(id string) bool { _, ok := search.Lookup(id); return ok }, config.AvailableBackends())
 	case "limit":
 		return setLimit(c, value)
 	case "cache_ttl":
@@ -284,15 +223,9 @@ func applyConfigSet(c *config.Config, key, value string) error {
 	case "browser":
 		c.Browser = value
 	case "code_backend":
-		c.CodeBackend = value
+		return setBackend(&c.CodeBackend, "code", value, func(id string) bool { _, ok := code.Lookup(id); return ok }, config.AvailableCodeBackends())
 	case "docs_backend":
-		c.DocsBackend = value
-	case "context7_api_key":
-		c.Context7APIKey = value
-	case "sourcegraph_url":
-		c.SourcegraphURL = value
-	case "github_token":
-		c.GithubToken = value
+		return setBackend(&c.DocsBackend, "docs", value, func(id string) bool { _, ok := docs.Lookup(id); return ok }, config.AvailableDocBackends())
 	case "url_rewrites":
 		return setURLRewrites(c, value)
 	case "spa_markers":
@@ -308,20 +241,8 @@ func applyConfigSet(c *config.Config, key, value string) error {
 	case "external_pdf_to_md_converter_timeout_sec":
 		return setExternalPDFConverterTimeout(c, value)
 	default:
-		return exitErrf(ExitValidation, "unknown key: %s (valid: backend, searxng_url, brave_api_key, brave_api_keys, exa_api_key, exa_api_keys, firecrawl_api_key, firecrawl_api_keys, firecrawl_url, keenable_api_key, keenable_api_keys, tavily_api_key, tavily_api_keys, serpbase_api_key, serpbase_api_keys, youcom_api_key, youcom_api_keys, limit, cache_ttl, browser, code_backend, docs_backend, context7_api_key, sourcegraph_url, github_token, url_rewrites, spa_markers, mcp_tools, cookie_file, user_agent, external_pdf_to_md_converter_command, external_pdf_to_md_converter_timeout_sec)", key)
+		return exitErrf(ExitValidation, "unknown key: %s (valid: %s)", key, strings.Join(validConfigKeys(), ", "))
 	}
-	return nil
-}
-
-func setAPIKeys(destination *[]string, key, value string) error {
-	var keys []string
-	if err := json.Unmarshal([]byte(value), &keys); err != nil {
-		return exitErrf(ExitValidation, "%s must be a JSON array of strings: %w", key, err)
-	}
-	if keys == nil {
-		return exitErrf(ExitValidation, "%s must be a JSON array of strings, not null", key)
-	}
-	*destination = keys
 	return nil
 }
 
@@ -443,6 +364,33 @@ func setSPAMarkers(c *config.Config, value string) error {
 	return nil
 }
 
+// setBackend persists a default backend for one surface after checking the
+// name against that surface's registry. The check uses the registry lookup
+// rather than the advertised list so a hidden provider (the planned local
+// docs backend) is accepted exactly when the command itself would accept it;
+// the error lists only advertised names. Names are exact: the commands
+// resolve them case-sensitively, so "Brave" would fail at run time.
+func setBackend(dst *string, surface, value string, known func(string) bool, available []string) error {
+	name := strings.TrimSpace(value)
+	if name == "" {
+		return exitErrf(ExitValidation, "%sbackend cannot be empty (valid: %s)", surfaceKeyPrefix(surface), strings.Join(available, ", "))
+	}
+	if !known(name) {
+		return exitErrf(ExitValidation, "unknown %s backend %q (valid: %s)", surface, name, strings.Join(available, ", "))
+	}
+	*dst = name
+	return nil
+}
+
+// surfaceKeyPrefix maps a surface to its config key stem: the search key is
+// the historical bare "backend", the others carry the surface name.
+func surfaceKeyPrefix(surface string) string {
+	if surface == "search" {
+		return ""
+	}
+	return surface + "_"
+}
+
 // setMCPTools persists the allowlist of tools `ketch mcp serve` publishes.
 // Accepts a JSON array (e.g. ["search","scrape"]) or a comma-separated list
 // (search, scrape); an empty value or [] clears the key so the server
@@ -472,4 +420,20 @@ func runConfigPath(_ *cobra.Command, _ []string) error {
 	}
 	fmt.Println(path)
 	return nil
+}
+
+func validConfigKeys() []string {
+	fields := []configbase.Field{{Name: "backend", Order: 0}, {Name: "limit", Order: 15}, {Name: "cache_ttl", Order: 16}, {Name: "browser", Order: 17}, {Name: "code_backend", Order: 18}, {Name: "docs_backend", Order: 19}, {Name: "url_rewrites", Order: 23}, {Name: "spa_markers", Order: 24}, {Name: "mcp_tools", Order: 25}, {Name: "cookie_file", Order: 26}, {Name: "user_agent", Order: 27}, {Name: "external_pdf_to_md_converter_command", Order: 28}, {Name: "external_pdf_to_md_converter_timeout_sec", Order: 29}}
+	for _, s := range config.ProviderSettings() {
+		fields = append(fields, configbase.Field{Name: s.Key, Order: s.ValidationOrder})
+		if s.Plural != "" {
+			fields = append(fields, configbase.Field{Name: s.Plural, Order: s.ValidationOrder})
+		}
+	}
+	sort.SliceStable(fields, func(i, j int) bool { return fields[i].Order < fields[j].Order })
+	keys := make([]string, len(fields))
+	for i, f := range fields {
+		keys[i] = f.Name
+	}
+	return keys
 }

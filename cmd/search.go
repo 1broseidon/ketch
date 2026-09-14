@@ -18,7 +18,7 @@ import (
 var searchCmd = &cobra.Command{
 	Use:   "search <query>",
 	Short: "Search the web and return results",
-	Long: `Search the web using Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, Keenable, Tavily, Parallel, SerpBase, or You.com (default: the configured backend; brave if unset).
+	Long: `Search the web using ` + search.DescriptionNames() + ` (default: the configured backend; brave if unset).
 
 Add --scrape to fetch and extract full content from results. Use --multi to query and rank-fuse several providers, or --random to shuffle providers and stop at the first successful response. --multi, --random, and --backend are mutually exclusive.`,
 	Args: exitArgs(cobra.MinimumNArgs(1)),
@@ -31,7 +31,7 @@ func init() {
 		"search backend: "+strings.Join(config.AvailableBackends(), ", "))
 	searchCmd.Flags().IntP("limit", "l", cfg.Limit, "max number of results")
 	searchCmd.Flags().Bool("scrape", false, "scrape full content from each result")
-	searchCmd.Flags().String("searxng-url", cfg.SearxngURL, "SearXNG instance URL")
+	searchCmd.Flags().String("searxng-url", cfg.String("searxng_url"), "SearXNG instance URL")
 	searchCmd.Flags().Int("max-chars", 0, "truncate markdown output to N chars (0 = disabled)")
 	searchCmd.Flags().Bool("trim", false, "strip markdown formatting, keep content text only")
 	searchCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/title/snippet)")

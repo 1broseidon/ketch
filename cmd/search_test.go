@@ -59,7 +59,7 @@ func TestRunMultiSearchFlagValidation(t *testing.T) {
 		{"multi and backend conflict", "brave", true, ExitValidation, "mutually exclusive"},
 		{"all combined with a name", "all,brave", false, ExitValidation, `"all" cannot be combined`},
 		{"unknown backend", "bogus", false, ExitValidation, "unknown search backend"},
-		{"named but unconfigured", "firecrawl", false, ExitPrecondition, "firecrawl"},
+		{"named but unconfigured", "tavily", false, ExitPrecondition, "tavily"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -151,7 +151,7 @@ func TestRunRandomSearchBackendValidation(t *testing.T) {
 		wantSubstr string
 	}{
 		{name: "unknown backend", random: "bogus", wantCode: ExitValidation, wantSubstr: "unknown search backend"},
-		{name: "named but unconfigured", random: "firecrawl", wantCode: ExitPrecondition, wantSubstr: "firecrawl"},
+		{name: "named but unconfigured", random: "tavily", wantCode: ExitPrecondition, wantSubstr: "tavily"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -179,7 +179,7 @@ func TestLooksLikeBackendList(t *testing.T) {
 	}{
 		{"brave,exa", true},
 		{"brave, exa", true},
-		{"brave,ddg,searxng,exa,firecrawl,keenable,tavily,parallel,serpbase,youcom", true},
+		{strings.Join(config.AvailableBackends(), ","), true}, // every registered backend, whatever the registry holds
 		{"brave", false},             // single name: no comma, plausible query
 		{"brave,notabackend", false}, // unknown member: real query
 		{"go generics, explained", false},
