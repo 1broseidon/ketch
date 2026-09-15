@@ -12,7 +12,7 @@ ketch search <query> [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--backend, -b` | `brave` | Search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase`, `degoog`, `serply` |
+| `--backend, -b` | `brave` | Search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase`, `degoog`, `serply`, `youcom` |
 | `--multi` | — | Federated search across backends: comma-separated list, or bare/`=all` for every usable backend. Mutually exclusive with `--backend` and `--random`. |
 | `--random` | — | Random provider with fallback: comma-separated list, or bare/`=all` for every usable backend. Mutually exclusive with `--backend` and `--multi`. |
 | `--limit, -l` | `5` | Max number of results |
@@ -36,7 +36,7 @@ naming the engines that returned it.
 
 - Bare `ketch search --multi "query"` (or `--multi=all`) uses every *usable*
   backend — the same key-presence rule ketch uses everywhere: `ddg`, `exa`,
-  `firecrawl`, `keenable`, and `parallel` always; `brave`, `tavily`, `serpbase`, and `serply` only with a key; `searxng`
+  `firecrawl`, `keenable`, `parallel`, and `youcom` always; `brave`, `tavily`, `serpbase`, and `serply` only with a key; `searxng`
   always (a dead instance just fails fast and is skipped); `degoog` only when
   `degoog_url` is set.
 - `ketch search --multi=brave,exa "query"` queries exactly those, in that order.
@@ -80,6 +80,7 @@ ketch search "query" --backend tavily
 ketch search "query" --backend parallel
 ketch search "query" --backend serpbase
 ketch search "query" --backend serply
+ketch search "query" --backend youcom
 ketch search "rrf rank fusion" --multi                # every usable backend, rank-fused
 ketch search "rrf rank fusion" --multi=brave,ddg,exa  # a specific set
 ketch search "query" --random                         # one random usable backend, fallback on failure
@@ -334,7 +335,7 @@ ketch cache clear         # remove all cached pages
 ## ketch doctor
 
 Run live health checks against every surface: search backends
-(brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase/degoog/serply), code backends (grepapp/sourcegraph/github), docs
+(brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase/degoog/serply/youcom), code backends (grepapp/sourcegraph/github), docs
 (context7), the configured browser binary, and the page cache. Probes run
 concurrently with a per-check timeout and are read-only (nothing is written
 to the cache).

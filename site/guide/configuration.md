@@ -39,7 +39,7 @@ The discovery payload:
   "github_token_source": "none",
   "github_token_set": false,
   "external_pdf_to_md_converter_timeout_sec": 300,
-  "available_backends": ["brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily", "parallel", "serpbase", "degoog", "serply"],
+  "available_backends": ["brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily", "parallel", "serpbase", "degoog", "serply", "youcom"],
   "available_code_backends": ["grepapp", "sourcegraph", "github"],
   "available_doc_backends": ["context7"]
 }
@@ -86,7 +86,7 @@ ketch config set github_token ghp_...
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `backend` | `brave` | Default search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase`, `degoog`, `serply` |
+| `backend` | `brave` | Default search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase`, `degoog`, `serply`, `youcom` |
 | `brave_api_key` | — | Brave Search API key ([get one free](https://brave.com/search/api/)) |
 | `brave_api_keys` | — | Additional Brave keys (JSON array) — see [multiple keys](#multiple-api-keys-per-provider) |
 | `exa_api_key` | — | Optional Exa API key for authenticated hosted MCP usage |
@@ -104,13 +104,14 @@ ketch config set github_token ghp_...
 | `degoog_url` | — | [Degoog](https://github.com/degoog-org/degoog) instance URL (required for `-b degoog`) |
 | `serply_api_key` | — | [Serply](https://serply.io) API key (required for `-b serply`) |
 | `serply_api_keys` | — | Additional Serply keys (JSON array) |
+| `youcom_api_key` | — | Optional [You.com](https://you.com/platform/api-keys) key; the keyless free profile works without it |
 | `limit` | `5` | Default max results (shared by `search`, `code`, `docs`) |
 
 #### Multiple API keys per provider
 
 Each keyed search provider takes an optional plural key pool alongside its
 singular key: `brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`,
-`keenable_api_keys`, `tavily_api_keys`, `serpbase_api_keys`, `serply_api_keys`. The effective pool is the singular key plus the list,
+`keenable_api_keys`, `tavily_api_keys`, `serpbase_api_keys`, `serply_api_keys`, `youcom_api_keys`. The effective pool is the singular key plus the list,
 trimmed and de-duplicated. Per request, ketch picks one key from the pool at
 random to spread rate limits; when the pool holds more than one key, a
 `401`/`429` response (`402` for Firecrawl; SerpBase and Serply also rotate on

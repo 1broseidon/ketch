@@ -51,6 +51,7 @@ var providers = []Provider{
 	serpbaseProvider(),
 	degoogProvider(),
 	serplyProvider(),
+	youcomProvider(),
 }
 
 // Providers returns the descriptors in their stable presentation order.
