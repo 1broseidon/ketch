@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Serply search backend** (#60). Google results through the [Serply](https://serply.io) REST API: `GET https://api.serply.io/v1/search/?q=&num=` with the key in the `X-Api-Key` header, never a query param. Keyed only, via `serply_api_key` / `serply_api_keys` / `KETCH_SERPLY_API_KEY`. The response's `results` array maps `title`/`link`/`description` onto ketch's standard result fields. Registered through the provider registry, so config set/discovery, `NewFromConfig`, `--multi` / `--random` (included in `=all` once a key is set), MCP, and `ketch doctor` pick it up. Key rotation retries once on `401`/`403`/`429`, and doctor classifies `401`/`403` as misconfigured, `402` and `429` as reachable with detail. Serply serves at most ten organic results per request, so `--limit` above ten still yields a single page; the doctor probe gets a 10s budget because an uncached query takes about 1-1.5s.
+
 ### Fixed
 - `serpbase` search works against the current SerpBase API (#58). The provider now requires `POST /google/search` with the key in the `X-API-Key` header and a JSON body (`q`/`hl`/`gl`/`page`); the old GET request returned `405 Method Not Allowed`. The response's `organic` array and business `status` field are decoded — the gateway reports errors with HTTP 200, so `1001` (invalid key), `1020` (credits exhausted), and `1029` (rate limited) are read from the body, and key rotation triggers on `1001`/`1029` (plus HTTP `401`/`403`/`429`). `ketch doctor`'s probe uses the same request and classification. The API exposes no page-size parameter and returns about ten organic results per page, so `--limit` above ten still yields a single page.
 

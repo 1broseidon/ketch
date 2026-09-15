@@ -4,6 +4,9 @@ This page mirrors the canonical [`CHANGELOG.md`](https://github.com/1broseidon/k
 
 ## Unreleased
 
+**Added**
+- Serply search backend: Google results through the [Serply](https://serply.io) REST API (`GET /v1/search/`, key in the `X-Api-Key` header). Keyed only, via `serply_api_key` / `serply_api_keys`, and wired through config discovery, `--multi` / `--random`, MCP, and `ketch doctor` like every other provider. Keys rotate once on `401`/`403`/`429`. Serply serves at most ten organic results per request, so a `--limit` above ten still yields a single page.
+
 **Fixed**
 - The `serpbase` backend works against the current SerpBase API: `POST /google/search` with the key in the `X-API-Key` header and a JSON body, decoding the `organic` results and the business `status` field (the gateway returns HTTP 200 for errors such as an invalid key or exhausted credits). `ketch doctor`'s SerpBase probe uses the same request and classification. The API returns about ten organic results per page with no page-size parameter, so a `--limit` above ten still yields a single page.
 

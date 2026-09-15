@@ -50,6 +50,7 @@ var providers = []Provider{
 	parallelProvider(),
 	serpbaseProvider(),
 	degoogProvider(),
+	serplyProvider(),
 }
 
 // Providers returns the descriptors in their stable presentation order.
