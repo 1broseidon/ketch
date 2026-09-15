@@ -100,24 +100,11 @@ func (y *Youcom) Search(ctx context.Context, query string, limit int) ([]Result,
 		return nil, err
 	}
 
-	key := y.keys.pick()
-	resp, err := y.request(ctx, body, key)
+	resp, key, err := y.response(ctx, body)
 	if err != nil {
 		return nil, err
 	}
-	if youcomRetryable(resp.StatusCode) && y.keys.size() > 1 {
-		closeSearchResponse(resp)
-		key = y.keys.pickDifferent(key)
-		resp, err = y.request(ctx, body, key)
-		if err != nil {
-			return nil, err
-		}
-	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, youcomStatusError(resp, y.keys.keyLabel(key))
-	}
 
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, 16<<20))
 	if err != nil {
@@ -127,7 +114,31 @@ func (y *Youcom) Search(ctx context.Context, query string, limit int) ([]Result,
 	if err != nil {
 		return nil, err
 	}
+	return decodeYoucomResults(payload, limit, y.keys.keyLabel(key))
+}
 
+func (y *Youcom) response(ctx context.Context, body []byte) (*http.Response, string, error) {
+	key := y.keys.pick()
+	resp, err := y.request(ctx, body, key)
+	if err != nil {
+		return nil, "", err
+	}
+	if youcomRetryable(resp.StatusCode) && y.keys.size() > 1 {
+		closeSearchResponse(resp)
+		key = y.keys.pickDifferent(key)
+		resp, err = y.request(ctx, body, key)
+		if err != nil {
+			return nil, "", err
+		}
+	}
+	if resp.StatusCode != http.StatusOK {
+		defer resp.Body.Close()
+		return nil, "", youcomStatusError(resp, y.keys.keyLabel(key))
+	}
+	return resp, key, nil
+}
+
+func decodeYoucomResults(payload string, limit int, keyLabel string) ([]Result, error) {
 	var rpc youcomRPCResponse
 	if err := json.Unmarshal([]byte(payload), &rpc); err != nil {
 		return nil, fmt.Errorf("failed to decode youcom response: %w", err)
@@ -135,19 +146,29 @@ func (y *Youcom) Search(ctx context.Context, query string, limit int) ([]Result,
 	if rpc.Error != nil {
 		return nil, fmt.Errorf("youcom JSON-RPC error %d: %s", rpc.Error.Code, rpc.Error.Message)
 	}
-	if rpc.Result.IsError {
-		detail := youcomErrorDetail(rpc.Result.Content)
-		// The hosted MCP server reports a rejected key as a tool-level error
-		// with HTTP 200, so surface it with the same guidance as a 401.
-		if strings.Contains(detail, "401") {
-			return nil, fmt.Errorf("youcom: API key rejected (%s; get one at https://you.com/platform/api-keys then: ketch config set youcom_api_key <key>)", y.keys.keyLabel(key))
-		}
-		if detail != "" {
-			return nil, fmt.Errorf("youcom search tool returned an error: %s", detail)
-		}
-		return nil, errors.New("youcom search tool returned an error")
+	if err := youcomToolError(rpc, keyLabel); err != nil {
+		return nil, err
 	}
+	return collectYoucomResults(rpc, limit)
+}
 
+// The hosted MCP server reports a rejected key as a tool-level error with
+// HTTP 200, so surface it with the same guidance as a 401.
+func youcomToolError(rpc youcomRPCResponse, keyLabel string) error {
+	if !rpc.Result.IsError {
+		return nil
+	}
+	detail := youcomErrorDetail(rpc.Result.Content)
+	if strings.Contains(detail, "401") {
+		return fmt.Errorf("youcom: API key rejected (%s; get one at https://you.com/platform/api-keys then: ketch config set youcom_api_key <key>)", keyLabel)
+	}
+	if detail != "" {
+		return fmt.Errorf("youcom search tool returned an error: %s", detail)
+	}
+	return errors.New("youcom search tool returned an error")
+}
+
+func collectYoucomResults(rpc youcomRPCResponse, limit int) ([]Result, error) {
 	results := make([]Result, 0, limit)
 	foundText := false
 	for _, content := range rpc.Result.Content {
@@ -155,6 +176,7 @@ func (y *Youcom) Search(ctx context.Context, query string, limit int) ([]Result,
 			continue
 		}
 		foundText = true
+		var err error
 		results, err = appendYoucomResults(results, content.Text, limit)
 		if err != nil {
 			return nil, err

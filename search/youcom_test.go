@@ -26,37 +26,7 @@ func quoteJSON(v string) string {
 func TestYoucomKeylessHappyPath(t *testing.T) {
 	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			t.Errorf("method = %q, want POST", r.Method)
-		}
-		if got := r.URL.Query().Get("profile"); got != "free" {
-			t.Errorf("profile param = %q, want free (keyless)", got)
-		}
-		if got := r.Header.Get("Authorization"); got != "" {
-			t.Errorf("Authorization = %q, want empty for keyless", got)
-		}
-		raw, err := io.ReadAll(r.Body)
-		if err != nil {
-			t.Fatalf("read body: %v", err)
-		}
-		var req map[string]any
-		if err := json.Unmarshal(raw, &req); err != nil {
-			t.Fatalf("decode body: %v", err)
-		}
-		params, _ := req["params"].(map[string]any)
-		if req["method"] != "tools/call" {
-			t.Errorf("method field = %v, want tools/call", req["method"])
-		}
-		if params == nil || params["name"] != "you-search" {
-			t.Errorf("tool name = %v, want you-search", params["name"])
-		}
-		arguments, _ := params["arguments"].(map[string]any)
-		if arguments["query"] != "golang" {
-			t.Errorf("query = %v, want golang", arguments["query"])
-		}
-		if arguments["count"] != float64(5) {
-			t.Errorf("count = %v, want 5", arguments["count"])
-		}
+		assertYoucomKeylessCall(t, r, "golang", 5)
 		w.Header().Set("Content-Type", "text/event-stream")
 		_, _ = io.WriteString(w, youcomToolResponse(`{
 			"results": {
@@ -74,6 +44,46 @@ func TestYoucomKeylessHappyPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Search: %v", err)
 	}
+	assertYoucomHappyPathResults(t, results)
+}
+
+func assertYoucomKeylessCall(t *testing.T, r *http.Request, query string, count int) {
+	t.Helper()
+	if r.Method != http.MethodPost {
+		t.Errorf("method = %q, want POST", r.Method)
+	}
+	if got := r.URL.Query().Get("profile"); got != "free" {
+		t.Errorf("profile param = %q, want free (keyless)", got)
+	}
+	if got := r.Header.Get("Authorization"); got != "" {
+		t.Errorf("Authorization = %q, want empty for keyless", got)
+	}
+	raw, err := io.ReadAll(r.Body)
+	if err != nil {
+		t.Fatalf("read body: %v", err)
+	}
+	var req map[string]any
+	if err := json.Unmarshal(raw, &req); err != nil {
+		t.Fatalf("decode body: %v", err)
+	}
+	if req["method"] != "tools/call" {
+		t.Errorf("method field = %v, want tools/call", req["method"])
+	}
+	params, _ := req["params"].(map[string]any)
+	if params == nil || params["name"] != "you-search" {
+		t.Errorf("tool name = %v, want you-search", params["name"])
+	}
+	arguments, _ := params["arguments"].(map[string]any)
+	if arguments["query"] != query {
+		t.Errorf("query = %v, want %s", arguments["query"], query)
+	}
+	if arguments["count"] != float64(count) {
+		t.Errorf("count = %v, want %d", arguments["count"], count)
+	}
+}
+
+func assertYoucomHappyPathResults(t *testing.T, results []Result) {
+	t.Helper()
 	if len(results) != 2 {
 		t.Fatalf("len = %d, want 2", len(results))
 	}
