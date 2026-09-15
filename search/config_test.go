@@ -73,8 +73,13 @@ func TestNewFromConfigBuildsEveryEffectiveKeyPool(t *testing.T) {
 		cfg.SetProvider("serpbase_api_key", providerValue0)
 		cfg.SetProvider("serpbase_api_keys", providerValue1)
 	}
+	{
+		providerValue0, providerValue1 := "youcom-legacy", []string{"youcom-new"}
+		cfg.SetProvider("youcom_api_key", providerValue0)
+		cfg.SetProvider("youcom_api_keys", providerValue1)
+	}
 
-	for _, backend := range []string{"brave", "exa", "firecrawl", "keenable", "tavily", "serpbase"} {
+	for _, backend := range []string{"brave", "exa", "firecrawl", "keenable", "tavily", "serpbase", "youcom"} {
 		searcher, err := NewFromConfig(&cfg, backend, "")
 		if err != nil {
 			t.Fatalf("%s: %v", backend, err)
@@ -92,6 +97,8 @@ func TestNewFromConfigBuildsEveryEffectiveKeyPool(t *testing.T) {
 		case *Tavily:
 			size = candidate.keys.size()
 		case *SerpBase:
+			size = candidate.keys.size()
+		case *Youcom:
 			size = candidate.keys.size()
 		default:
 			t.Fatalf("%s: unexpected searcher %T", backend, searcher)
@@ -115,6 +122,7 @@ func TestExportedBackendConstructorsKeepSingleKeyCompatibility(t *testing.T) {
 		{name: "keenable", size: NewKeenable(&keenableKey).keys.size()},
 		{name: "tavily", size: NewTavily("tavily").keys.size()},
 		{name: "serpbase", size: NewSerpBase("serpbase").keys.size()},
+		{name: "youcom", size: NewYoucom("youcom").keys.size()},
 	}
 	for _, tc := range tests {
 		if tc.size != 1 {
@@ -150,6 +158,34 @@ func TestNewFromConfigSerpBaseRequiresKey(t *testing.T) {
 	if _, err := NewFromConfig(&cfg, "serpbase", ""); err == nil {
 		t.Fatal("expected missing-key error for serpbase")
 	}
+}
+
+func TestNewFromConfigYoucomIsKeylessByDefault(t *testing.T) {
+	t.Run("empty key pool builds", func(t *testing.T) {
+		cfg := config.Defaults()
+		searcher, err := NewFromConfig(&cfg, "youcom", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		backend, ok := searcher.(*Youcom)
+		if !ok {
+			t.Fatalf("unexpected type %T", searcher)
+		}
+		if backend.keys.size() != 0 {
+			t.Fatalf("keys = %d, want 0 (keyless free profile)", backend.keys.size())
+		}
+	})
+	t.Run("configured keys reach the pool", func(t *testing.T) {
+		cfg := config.Defaults()
+		cfg.SetProvider("youcom_api_keys", []string{"one", "two"})
+		backend, err := NewFromConfig(&cfg, "youcom", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := backend.(*Youcom).keys.size(); got != 2 {
+			t.Fatalf("pool size = %d, want 2", got)
+		}
+	})
 }
 
 func TestNewFromConfigFirecrawlURL(t *testing.T) {

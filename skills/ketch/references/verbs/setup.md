@@ -70,6 +70,7 @@ On older ketch versions without `doctor`, configured-state detection is imperfec
 8. **parallel — hosted Search MCP.** Works with zero config. Select with `ketch config set backend parallel`; results include excerpts in Ketch's standard description and content fields.
 9. **serpbase — keyed Google search.** Needs a key: `ketch config set serpbase_api_key <key>` (get one at serpbase.dev), then `ketch config set backend serpbase`.
 10. **serply — keyed Google search.** Needs a key: `ketch config set serply_api_key <key>` (get one at serply.io), then `ketch config set backend serply`. Returns at most ten organic results per request, so a `--limit` above ten still yields one page.
+11. **youcom — You.com web search.** Works with zero config via the keyless free profile; an optional `ketch config set youcom_api_key <key>` (get one at you.com/platform/api-keys) lifts the rate limit.
 
 ---
 

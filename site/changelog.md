@@ -5,6 +5,7 @@ This page mirrors the canonical [`CHANGELOG.md`](https://github.com/1broseidon/k
 ## Unreleased
 
 **Added**
+- New `youcom` search backend: web search through You.com's hosted MCP server (`you-search` tool). Keyless by default via the free profile — always usable and included in `--multi=all` / `--random=all` on a zero-config install, rate-limited like keenable and hosted Firecrawl. An optional `youcom_api_key` / `youcom_api_keys` (Bearer header auth) lifts the rate limit and rotates on `401`/`429`. Results fill `Description` from the page summary (first snippet fallback) and `Content` from the joined keyword-centered snippets.
 - Serply search backend: Google results through the [Serply](https://serply.io) REST API (`GET /v1/search/`, key in the `X-Api-Key` header). Keyed only, via `serply_api_key` / `serply_api_keys`, and wired through config discovery, `--multi` / `--random`, MCP, and `ketch doctor` like every other provider. Keys rotate once on `401`/`403`/`429`. Serply serves at most ten organic results per request, so a `--limit` above ten still yields a single page.
 
 **Fixed**

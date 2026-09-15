@@ -16,6 +16,8 @@
   "serpbase_api_key_set": false,
   "serpbase_api_keys_count": 0,
   "limit": 5,
+  "youcom_api_key_set": false,
+  "youcom_api_keys_count": 0,
   "cache_ttl": "72h",
   "user_agent": "ketch/dev (+https://github.com/1broseidon/ketch)",
   "code_backend": "grepapp",
@@ -43,7 +45,8 @@
     "parallel",
     "serpbase",
     "degoog",
-    "serply"
+    "serply",
+    "youcom"
   ],
   "available_code_backends": [
     "grepapp",

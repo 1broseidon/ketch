@@ -6,7 +6,7 @@ ketch has three search surfaces, each with its own backends: web search (`ketch 
 
 Set the default with `ketch config set backend <name>`. To query several at once, use `ketch search --multi` (rank-fused federation) or `--random` (one shuffled provider with fallback) — see the [command reference](/reference/commands#ketch-search).
 
-Every keyed backend also accepts a pool of keys (`brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`, `keenable_api_keys`, `tavily_api_keys`, `serpbase_api_keys`, `serply_api_keys`); ketch picks one at random per request and retries once with a different key on `401`/`429` (`402` for Firecrawl; SerpBase and Serply also rotate on `403`, and SerpBase on its HTTP-200 business codes `1001`/`1029`). See [multiple API keys](/guide/configuration#multiple-api-keys-per-provider).
+Every keyed backend also accepts a pool of keys (`brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`, `keenable_api_keys`, `tavily_api_keys`, `serpbase_api_keys`, `serply_api_keys`, `youcom_api_keys`); ketch picks one at random per request and retries once with a different key on `401`/`429` (`402` for Firecrawl; SerpBase and Serply also rotate on `403`, and SerpBase on its HTTP-200 business codes `1001`/`1029`). See [multiple API keys](/guide/configuration#multiple-api-keys-per-provider).
 
 ## Brave (default)
 
@@ -177,6 +177,18 @@ returns a single page.
 
 **Recommended for:** agent workflows that want Google's ranking through a
 structured API, without running or maintaining a scraper.
+
+## You.com
+
+Web search through [You.com](https://you.com)'s hosted [MCP server](https://api.you.com/mcp). Ketch calls its `you-search` tool and maps result titles, URLs, page summaries, and keyword-centered snippets into its standard search result fields. Keyless by default via the free profile — always usable, rate-limited. An optional API key lifts the rate limit and rotates on `401`/`429`.
+
+**Setup:**
+
+1. Nothing — `ketch search "query" --backend youcom` works with zero config.
+2. Optional: lift the rate limit with a key from [you.com/platform/api-keys](https://you.com/platform/api-keys), then `ketch config set youcom_api_key <your-key>`
+3. Optional: make it the default: `ketch config set backend youcom`
+
+**Recommended for:** agent workflows that want a setup-free, snippet-rich web-search backend to federate alongside the others in `--multi`.
 
 ## Code Search Backends
 
