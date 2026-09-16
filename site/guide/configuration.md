@@ -17,7 +17,7 @@ The discovery payload:
 ```json
 {
   "config_path": "/home/user/.config/ketch/config.json",
-  "backend": "brave",
+  "backend": "auto",
   "searxng_url": "http://localhost:8081",
   "brave_api_key_set": false,
   "brave_api_keys_count": 0,
@@ -39,7 +39,7 @@ The discovery payload:
   "github_token_source": "none",
   "github_token_set": false,
   "external_pdf_to_md_converter_timeout_sec": 300,
-  "available_backends": ["brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily", "parallel", "serpbase", "degoog", "serply", "youcom"],
+  "available_backends": ["auto", "brave", "ddg", "searxng", "exa", "firecrawl", "keenable", "tavily", "parallel", "serpbase", "degoog", "serply", "youcom"],
   "available_code_backends": ["grepapp", "sourcegraph", "github"],
   "available_doc_backends": ["context7"]
 }
