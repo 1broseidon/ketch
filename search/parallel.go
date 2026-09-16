@@ -193,6 +193,7 @@ func parallelStatusError(resp *http.Response) error {
 func parallelProvider() Provider {
 	return Provider{
 		Settings: []config.Setting{},
+		AutoRank: 70,
 		ID:       "parallel",
 		Name:     "Parallel",
 		Usable:   func(*config.Config) bool { return true },

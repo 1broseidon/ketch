@@ -210,7 +210,12 @@ func FirecrawlSearchURL(base string) string {
 
 func Defaults() Config {
 	return Config{
-		Backend: "brave",
+		// The auto chain, not a single provider: a fresh install must answer
+		// `ketch search` with no API key configured. It prefers whatever the
+		// operator has actually set up and falls back to the keyless
+		// providers, so setting a key still takes precedence without anyone
+		// having to also set `backend`.
+		Backend: "auto",
 
 		Limit:       5,
 		CacheTTL:    "72h",

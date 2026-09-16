@@ -12,8 +12,9 @@ import (
 )
 
 func TestParallelBackendIsAppendedWithoutChangingDefault(t *testing.T) {
-	if got := Defaults().Backend; got != "brave" {
-		t.Fatalf("default backend = %q, want brave", got)
+	// The default is the auto chain, so a fresh install searches with no key.
+	if got := Defaults().Backend; got != search.AutoBackend {
+		t.Fatalf("default backend = %q, want %q", got, search.AutoBackend)
 	}
 	// The list is the registry's, in registry order; this facade must not keep
 	// its own copy. Parallel is appended somewhere after the default.
@@ -22,6 +23,14 @@ func TestParallelBackendIsAppendedWithoutChangingDefault(t *testing.T) {
 	}
 	if got := AvailableBackends(); got[0] != "brave" || !slices.Contains(got, "parallel") {
 		t.Fatalf("available backends = %v, want brave first and parallel present", got)
+	}
+	// AvailableBackends stays provider-only; auto is selectable but is not a
+	// provider, so it must never leak into federation candidate resolution.
+	if slices.Contains(AvailableBackends(), search.AutoBackend) {
+		t.Fatalf("available backends = %v, want no %q entry", AvailableBackends(), search.AutoBackend)
+	}
+	if got := SelectableBackends(); got[0] != search.AutoBackend {
+		t.Fatalf("selectable backends = %v, want %q first", got, search.AutoBackend)
 	}
 }
 

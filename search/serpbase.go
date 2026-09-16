@@ -275,6 +275,7 @@ func serpbaseProvider() Provider {
 		// exceed the default doctor budget, so allow a SearXNG-sized timeout.
 		MinProbeTimeout: 10 * time.Second,
 		Settings:        []config.Setting{config.KeyPool("serpbase_api_key", "serpbase_api_keys", 13, 14, 8, 13)},
+		AutoRank:        50,
 		ID:              "serpbase",
 		Setup:           "serpbase: API key not set (get a free key at https://serpbase.dev then: ketch config set serpbase_api_key <key>)",
 		Name:            "SerpBase",

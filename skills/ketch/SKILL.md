@@ -31,7 +31,7 @@ Use only these terms in ketch output.
 | --- | --- |
 | **surface** | One of the five research operations: `search`, `code`, `docs`, `scrape`, `crawl` |
 | **transport** | How a surface is called: the CLI binary (default) or the optional MCP tools |
-| **backend** | The provider behind a surface: brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase/degoog/serply/youcom (search), grepapp/sourcegraph/github (code), context7 (docs) |
+| **backend** | The provider behind a surface: auto (default; a fallback chain, not a provider)/brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase/degoog/serply/youcom (search), grepapp/sourcegraph/github (code), context7 (docs) |
 | **operator action** | A system-managing or diagnostic command — `config set`, `cache`, `browser install`, background crawls, `doctor` — CLI-only by design |
 | **error prefix** | The stable class on every ketch error: CLI exit codes 2–6, mirrored as the bracketed prefix opening every MCP tool error — `[validation]`, `[not_found]`, `[upstream]`, `[precondition]`, `[cancelled]` |
 | **fan-out** | How many queries are searched and URLs scraped under one plan |
@@ -64,8 +64,9 @@ Transport: operator wired mcp__ketch__* into this session → honor it; research
 Plan: 2 queries · scrape top 3 · max_chars 6000 + trim · ≤8 calls
 
 search {query: "Go iter.Seq real-world experience gotchas", limit: 5}
-  → "[upstream] ddg rate limited" → rotate to next entry in available_backends,
-    retry once: search {query: ..., backend: "brave", limit: 5} → ok
+  → "[upstream] ddg rate limited" → an explicit backend failed; rotate to another
+    usable provider from available_backends, retry once:
+    search {query: ..., backend: "brave", limit: 5} → ok
 search {query: "Go range-over-func adoption production", backend: "brave", limit: 5}
   → 10 results, 8 unique hosts → picked 3: official blog post, one experience
     report, one issue thread (primary sources over aggregators)
@@ -113,7 +114,7 @@ In reverse: `search` finds URLs; `scrape` reads them; `crawl` reads a site; `cod
 | --- | --- | --- | --- |
 | 2 | `[validation]` | Bad input | Fix the call; retrying unchanged can never succeed |
 | 3 | `[not_found]` | Nothing matched | Change the query or selector; not an outage |
-| 4 | `[upstream]` | Backend or network failure | Rotate backend (`available_backends` in `ketch config`) or retry once |
+| 4 | `[upstream]` | Backend or network failure | Explicit backend: rotate to another provider (`available_backends` in `ketch config`) or retry once. `auto` already fell through every usable provider: retry once, then report the outage |
 | 5 | `[precondition]` | Operator config missing | Stop researching; enter `ketch setup` |
 | 6 | `[cancelled]` | Cancelled or timed out | Rerun with smaller scope |
 
@@ -139,7 +140,7 @@ Detail for each lives in `references/surfaces.md`.
 **GOOD:** CLI by default; MCP when the operator wired it — and when `mcp__ketch__*` tools are in your list, use them for research instead of shelling out around the operator's setup.
 
 **BAD:** `[upstream] ddg rate limited` → retry the identical call three times.
-**GOOD:** Rotate — `backend: "brave"` (or the next entry in `available_backends`) — retry once, and note the swap.
+**GOOD:** Rotate — `backend: "brave"` (or another provider from `available_backends`; `auto` is a chain, not a rotation target) — retry once, and note the swap. When `auto` itself failed, it already tried every usable provider: retry once, then report the outage.
 
 **BAD:** Fetch docs from resolve's first match because its trust score is high, even though its name is not the library you asked about.
 **GOOD:** Vet name + snippet count + trust; if no match names the intended library, say so instead of fetching junk docs.

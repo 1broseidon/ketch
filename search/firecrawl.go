@@ -243,6 +243,7 @@ func firecrawlLivenessStatus(code int, key string) (health.Status, string) {
 func firecrawlProvider() Provider {
 	return Provider{
 		Settings: []config.Setting{config.KeyPool("firecrawl_api_key", "firecrawl_api_keys", 6, 7, 4, 6), {Key: "firecrawl_url", ValidationOrder: 8, Default: "https://api.firecrawl.dev", FileOrder: 8, DiscoveryOrder: 9, EnvOrder: 5, Display: func(c *config.Config) string { return c.EffectiveFirecrawlURL() }}},
+		AutoRank: 110,
 		ID:       "firecrawl",
 		Name:     "Firecrawl",
 		Usable:   func(*config.Config) bool { return true },

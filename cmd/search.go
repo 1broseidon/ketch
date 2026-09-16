@@ -28,7 +28,7 @@ Add --scrape to fetch and extract full content from results. Use --multi to quer
 func init() {
 	rootCmd.AddCommand(searchCmd)
 	searchCmd.Flags().StringP("backend", "b", cfg.Backend,
-		"search backend: "+strings.Join(config.AvailableBackends(), ", "))
+		"search backend: "+strings.Join(config.SelectableBackends(), ", "))
 	searchCmd.Flags().IntP("limit", "l", cfg.Limit, "max number of results")
 	searchCmd.Flags().Bool("scrape", false, "scrape full content from each result")
 	searchCmd.Flags().String("searxng-url", cfg.String("searxng_url"), "SearXNG instance URL")
@@ -73,9 +73,12 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	results, err := searcher.Search(cmd.Context(), query, limit)
+	results, served, err := runBackendSearch(cmd.Context(), searcher, query, limit)
 	if err != nil {
 		return exitErrf(ExitUpstream, "search failed: %w", err)
+	}
+	if served != "" {
+		backend = served
 	}
 
 	if doScrape {
@@ -171,6 +174,25 @@ func searchScrape(ctx context.Context, results []search.Result, scraper *scrape.
 	return nil
 }
 
+// runBackendSearch runs a search and reports which provider served it. The auto
+// chain dispatches to one of several providers, so "backend: auto" would name
+// something that never answered; a plain provider returns an empty name and the
+// caller keeps the one it asked for. Failures the chain fell through are warned
+// about on stderr, matching --random.
+func runBackendSearch(ctx context.Context, searcher search.Searcher, query string, limit int) ([]search.Result, string, error) {
+	selecting, ok := searcher.(search.SelectingSearcher)
+	if !ok {
+		results, err := searcher.Search(ctx, query, limit)
+		return results, "", err
+	}
+
+	results, served, failures, err := selecting.SearchSelect(ctx, query, limit)
+	for _, failure := range failures {
+		fmt.Fprintf(os.Stderr, "warn: %s: %v\n", failure.Backend, failure.Err)
+	}
+	return results, served, err
+}
+
 // newSearcher resolves the backend via the shared search.NewFromConfig and
 // maps constructor errors to CLI exit codes.
 func newSearcher(cmd *cobra.Command, backend string) (search.Searcher, error) {
@@ -189,6 +211,8 @@ func looksLikeBackendList(s string) bool {
 	if !strings.Contains(s, ",") {
 		return false
 	}
+	// Providers only: "auto" is never a federation member, so a value
+	// containing it is a query, not a mis-typed --multi list.
 	known := map[string]bool{}
 	for _, b := range config.AvailableBackends() {
 		known[b] = true

@@ -10,7 +10,7 @@ A stateless CLI for web search, code search, library docs, and scraping — one 
 
 Most research tooling for agents means wiring up several provider SDKs, each with its own auth and response shape. ketch collapses that into one binary with three research surfaces:
 
-- `ketch search` — web search (Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, Keenable, Tavily, Parallel, SerpBase, Serply, or You.com)
+- `ketch search` — web search, no API key required (Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, Keenable, Tavily, Parallel, SerpBase, Serply, or You.com)
 - `ketch code` — grep real OSS source across public repos (Grep, Sourcegraph, or GitHub Code Search)
 - `ketch docs` — curated, version-aware library documentation (Context7)
 
@@ -69,14 +69,26 @@ harness/harness  registry/app/remote/clients/registry/client.go  (line 207)
 ...
 ```
 
-Web search needs a backend configured first — the default (`brave`) requires a free API key:
+Web search works with zero configuration too — the default backend (`auto`)
+falls back through the keyless providers, so there is no key to set first:
 
 ```sh
-ketch config set brave_api_key <key>
 ketch search "golang error handling"
 ketch search "golang error handling" --scrape   # fetch + extract full content per result
 ketch search "golang error handling" --multi    # federate across every usable backend, rank-fused
 ketch search "golang error handling" --random  # pick one random backend, fallback to rest on failure
+```
+
+`auto` tries providers in a fixed order and returns the first that answers,
+reporting which one served in the `backend:` field. It prefers whatever you
+have actually configured — your own SearXNG or Degoog instance first, then any
+provider you have set a key for — and only then the keyless hosted providers.
+So setting a key is still how you get a specific provider and higher limits,
+and you do not have to also set `backend` for it to take effect:
+
+```sh
+ketch config set brave_api_key <key>   # auto now prefers Brave
+ketch search "golang error handling" -b ddg   # or pick a provider explicitly
 ```
 
 `--multi` queries several backends at once and fuses their rankings with
@@ -142,7 +154,7 @@ Every command supports `-h/--help` for its full flag list; `--json` is the only 
 
 | Surface | Default | Also available | Setup |
 |---|---|---|---|
-| `search` | `brave` | `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase`, `degoog`, `serply`, `youcom` | Brave, Tavily, SerpBase, and Serply need a free key (`ketch config set brave_api_key <key>` / `tavily_api_key` / `serpbase_api_key` / `serply_api_key`); `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `parallel`, and `youcom` work with zero config (`firecrawl_api_key` and `youcom_api_key` are optional and lift the hosted caps); `degoog` needs a self-hosted instance (`ketch config set degoog_url <url>`) |
+| `search` | `auto` | `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase`, `degoog`, `serply`, `youcom` | Nothing — `auto` falls back through the keyless providers (`parallel` → `exa` → `keenable` → `youcom` → `firecrawl` → `ddg`) and needs no key. Brave, Tavily, SerpBase, and Serply need a free key (`ketch config set brave_api_key <key>` / `tavily_api_key` / `serpbase_api_key` / `serply_api_key`) and `auto` prefers them once set; `firecrawl_api_key`, `exa_api_key`, `keenable_api_key`, and `youcom_api_key` are optional and lift the hosted caps. `degoog` needs a self-hosted instance (`ketch config set degoog_url <url>`), `searxng` an instance URL (`ketch config set searxng_url <url>`); both are preferred over hosted APIs once configured |
 | `code` | `grepapp` | `sourcegraph`, `github` | Grep and Sourcegraph need nothing; GitHub uses `gh auth login`, `$GITHUB_TOKEN`, or `ketch config set github_token <tok>` |
 | `docs` | `context7` | `local` (planned, not yet implemented) | Free key: `ketch config set context7_api_key <key>` |
 

@@ -28,7 +28,7 @@ The two transports expose the same options under different spellings. Both direc
 
 ## search
 
-- Backends: `brave` (default when unconfigured; free API key), `ddg` (zero setup; rate-limits readily under fan-out), `searxng` (self-hosted; needs a JSON-enabled instance — see the setup verb), `exa` (zero config), `firecrawl` (Firecrawl v2 search API; keyless by default, optional `firecrawl_api_key` lifts the cap; self-hosted via `firecrawl_url`), `keenable` (keyless by default; optional `keenable_api_key` lifts the rate limit), `tavily` (keyed; extracted content in results; `tavily_api_key`), `parallel` (zero config; hosted Search MCP), `serpbase` (keyed Google results; `serpbase_api_key`), `serply` (keyed Google results, ten per page; `serply_api_key`), `youcom` (You.com web search; keyless by default, optional `youcom_api_key` lifts the rate limit).
+- Backends: `auto` (**the default**; not a provider but a fallback chain — tries configured instances, then keyed providers, then the keyless ones `parallel` → `exa` → `keenable` → `youcom` → `firecrawl` → `ddg`, returning the first that answers. The reported `backend` names the provider that actually served, and providers that failed on the way appear as `warn:` stderr lines / the MCP `errors` map. Cannot be used inside `--multi`/`--random`), `brave` (free API key), `ddg` (zero setup; rate-limits readily under fan-out), `searxng` (self-hosted; needs a JSON-enabled instance — see the setup verb), `exa` (zero config), `firecrawl` (Firecrawl v2 search API; keyless by default, optional `firecrawl_api_key` lifts the cap; self-hosted via `firecrawl_url`), `keenable` (keyless by default; optional `keenable_api_key` lifts the rate limit), `tavily` (keyed; extracted content in results; `tavily_api_key`), `parallel` (zero config; hosted Search MCP), `serpbase` (keyed Google results; `serpbase_api_key`), `serply` (keyed Google results, ten per page; `serply_api_key`), `youcom` (You.com web search; keyless by default, optional `youcom_api_key` lifts the rate limit).
 - The effective default backend is operator-configured: **omit `backend` to use it**; `ketch config` shows which it is.
 - `--scrape` / `scrape: true` fetches each result's full content — budget it exactly like a scrape (`max_chars`, `trim`).
 - `--minimal` (CLI): one result per line, tab-separated url/title/snippet (a 4th backends column is appended under `--multi` for plain search; `--scrape --minimal` keeps 3 columns).
@@ -73,11 +73,11 @@ The two transports expose the same options under different spellings. Both direc
 
 | Surface | Keyless | Keyed | Set with |
 | --- | --- | --- | --- |
-| search | ddg, searxng (self-hosted), exa, firecrawl, keenable, parallel, youcom | brave, tavily, serpbase, serply | `ketch config set brave_api_key <key>` / `tavily_api_key` / `serpbase_api_key` / `serply_api_key` (optional `firecrawl_api_key` / `youcom_api_key` lift the hosted caps) |
+| search | **auto (default)**, ddg, searxng (self-hosted), exa, firecrawl, keenable, parallel, youcom | brave, tavily, serpbase, serply | `ketch config set brave_api_key <key>` / `tavily_api_key` / `serpbase_api_key` / `serply_api_key` (optional `firecrawl_api_key` / `youcom_api_key` lift the hosted caps) |
 | code | grepapp, sourcegraph | github | `gh auth login` / `$GITHUB_TOKEN` / `ketch config set github_token <tok>` |
 | docs | — | context7 (free key) | `ketch config set context7_api_key <key>` |
 
-A missing-key call fails with `[precondition]` / exit 5 and an error message that names the fix (brave's includes the signup URL and the exact `config set` command).
+Search needs no key at all on the default `auto` backend. Naming a keyed backend explicitly without its key fails with `[precondition]` / exit 5 and an error message that names the fix (brave's includes the signup URL and the exact `config set` command).
 
 ---
 

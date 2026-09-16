@@ -41,7 +41,7 @@ func (s *Server) registerSearchTool() {
 	mcpsdk.AddTool(s.mcp, &mcpsdk.Tool{
 		Name: "search",
 		InputSchema: inputSchema[SearchInput](map[string]string{
-			"backend": "search backend: " + configbase.JoinNames(search.AvailableBackends()) + " (default: the configured backend)",
+			"backend": "search backend: " + configbase.JoinNames(search.SelectableBackends()) + " (default: the configured backend)",
 		}),
 		Description: "Search the web using " + search.DescriptionNames() + " (default: the configured backend) and return results (title, url, description). " +
 			"Set scrape=true to also fetch each result and include its content as markdown. " +
@@ -82,14 +82,34 @@ func (s *Server) runSearch(ctx context.Context, in SearchInput) (SearchOutput, e
 	if err != nil {
 		return SearchOutput{}, backendErrf(err, search.ErrUnknownBackend)
 	}
-	results, err := searcher.Search(ctx, in.Query, limit)
-	if err != nil {
+	var results []search.Result
+	// The auto chain dispatches to one of several providers, so report which
+	// one answered and which ones it fell through — an agent that only sees
+	// "auto" cannot tell a healthy install from one limping on its last
+	// fallback. A plain provider reports neither, leaving its output shape
+	// byte-identical.
+	out := SearchOutput{}
+	if selecting, ok := searcher.(search.SelectingSearcher); ok {
+		var failures []search.BackendError
+		results, out.Backend, failures, err = selecting.SearchSelect(ctx, in.Query, limit)
+		if err != nil {
+			return SearchOutput{}, upstreamErrf(err, "search failed")
+		}
+		if len(failures) > 0 {
+			out.Errors = make(map[string]string, len(failures))
+			for _, failure := range failures {
+				out.Errors[failure.Backend] = failure.Err.Error()
+			}
+		}
+	} else if results, err = searcher.Search(ctx, in.Query, limit); err != nil {
 		return SearchOutput{}, upstreamErrf(err, "search failed")
 	}
+
 	if in.Scrape {
 		s.scrapeSearchResults(ctx, results, in.Trim, in.MaxChars)
 	}
-	return SearchOutput{Results: results}, nil
+	out.Results = results
+	return out, nil
 }
 
 // runMultiSearch handles federated (multi) search: it validates the flag

@@ -110,7 +110,7 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 		MCPTools:                           effectiveMCPTools(c),
 		ExternalPDFToMDConverterCommand:    c.ExternalPDFToMDConverterCommand,
 		ExternalPDFToMDConverterTimeoutSec: c.ExternalPDFToMDConverterTimeoutSec,
-		AvailableBackends:                  config.AvailableBackends(),
+		AvailableBackends:                  config.SelectableBackends(),
 		AvailableCodeBackends:              config.AvailableCodeBackends(),
 		AvailableDocBackends:               config.AvailableDocBackends(),
 	}
@@ -215,7 +215,7 @@ func applyConfigSet(c *config.Config, key, value string) error {
 	}
 	switch key {
 	case "backend":
-		return setBackend(&c.Backend, "search", value, func(id string) bool { _, ok := search.Lookup(id); return ok }, config.AvailableBackends())
+		return setBackend(&c.Backend, "search", value, search.IsBackend, config.SelectableBackends())
 	case "limit":
 		return setLimit(c, value)
 	case "cache_ttl":

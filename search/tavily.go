@@ -204,6 +204,7 @@ func ProbeTavily(ctx context.Context, client *http.Client, endpoint, apiKey stri
 func tavilyProvider() Provider {
 	return Provider{
 		Settings: []config.Setting{config.KeyPool("tavily_api_key", "tavily_api_keys", 11, 12, 7, 11)},
+		AutoRank: 40,
 		ID:       "tavily",
 		Setup:    "tavily: API key not set (get one free at https://app.tavily.com then: ketch config set tavily_api_key <key>)",
 		Name:     "Tavily",
