@@ -16,7 +16,14 @@ type Config = configbase.Config
 
 func Defaults() Config { return configbase.Defaults().WithSettings(ProviderSettings()) }
 
+// AvailableBackends returns the implemented search providers. It excludes the
+// "auto" chain, which selects among these rather than being one of them — use
+// SelectableBackends for anything a user may pass to --backend.
 func AvailableBackends() []string { return search.AvailableBackends() }
+
+// SelectableBackends returns every value --backend and the `backend` config key
+// accept: the auto chain first, then the providers in registry order.
+func SelectableBackends() []string { return search.SelectableBackends() }
 
 // AvailableCodeBackends returns the list of known code search backends.
 func AvailableCodeBackends() []string { return code.AvailableBackends() }

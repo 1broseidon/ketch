@@ -1,5 +1,5 @@
 {
-  "backend": "brave",
+  "backend": "auto",
   "searxng_url": "http://localhost:8081",
   "firecrawl_url": "https://api.firecrawl.dev",
   "limit": 5,

@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/1broseidon/ketch/config"
+	"github.com/1broseidon/ketch/search"
 )
 
 func testCtx(t *testing.T) context.Context {
@@ -893,5 +894,79 @@ func TestCheckBad(t *testing.T) {
 		if got := (Check{Status: status}).Bad(); got != want {
 			t.Errorf("Bad(%q) = %v, want %v", status, got, want)
 		}
+	}
+}
+
+// A fallback chain does its job as long as one provider answers, so doctor
+// must not fail a zero-config install because five of six keyless providers
+// are rate-limited.
+func TestAutoChainCheckIsHealthyWhenAnyProviderAnswers(t *testing.T) {
+	checks := []Check{
+		{Surface: "search", Backend: "parallel", Status: StatusUnreachable},
+		{Surface: "search", Backend: "exa", Status: StatusOK},
+		{Surface: "search", Backend: "ddg", Status: StatusUnreachable},
+	}
+	status, detail := summarizeAutoChain([]string{"parallel", "exa", "ddg"}, checks)
+	if status != StatusOK {
+		t.Fatalf("status = %q, want ok", status)
+	}
+	// The detail has to name the provider that would actually serve; "healthy"
+	// alone hides an install limping on its last fallback.
+	for _, want := range []string{"exa serving", "1 of 3", "parallel → exa → ddg"} {
+		if !strings.Contains(detail, want) {
+			t.Errorf("detail = %q, want it to contain %q", detail, want)
+		}
+	}
+}
+
+func TestAutoChainCheckFailsWhenNoProviderAnswers(t *testing.T) {
+	checks := []Check{
+		{Surface: "search", Backend: "parallel", Status: StatusUnreachable},
+		{Surface: "search", Backend: "ddg", Status: StatusMisconfigured},
+	}
+	status, detail := summarizeAutoChain([]string{"parallel", "ddg"}, checks)
+	if status != StatusUnreachable {
+		t.Fatalf("status = %q, want unreachable", status)
+	}
+	if !strings.Contains(detail, "parallel → ddg") {
+		t.Errorf("detail = %q, want it to name the chain", detail)
+	}
+}
+
+func TestAutoChainCheckReportsAnEmptyChain(t *testing.T) {
+	if status, _ := summarizeAutoChain(nil, nil); status != StatusMisconfigured {
+		t.Fatalf("status = %q, want misconfigured for an empty chain", status)
+	}
+}
+
+// Only a search check of the same name counts: a code backend that happens to
+// share a provider name must not vouch for the search chain.
+func TestAutoChainCheckIgnoresOtherSurfaces(t *testing.T) {
+	checks := []Check{
+		{Surface: "code", Backend: "exa", Status: StatusOK},
+		{Surface: "search", Backend: "exa", Status: StatusUnreachable},
+	}
+	if status, _ := summarizeAutoChain([]string{"exa"}, checks); status != StatusUnreachable {
+		t.Fatalf("status = %q, want unreachable", status)
+	}
+}
+
+// The synthesized row leads the report and gates the exit code, and only
+// appears when auto is the configured backend.
+func TestWithAutoChainCheckOnlyAppliesToTheAutoBackend(t *testing.T) {
+	cfg := config.Defaults()
+	checks := []Check{{Surface: "search", Backend: "parallel", Status: StatusOK}}
+
+	got := withAutoChainCheck(&cfg, checks)
+	if len(got) != len(checks)+1 {
+		t.Fatalf("len(checks) = %d, want one synthesized row added", len(got))
+	}
+	if got[0].Backend != search.AutoBackend || got[0].Surface != "search" || !got[0].Required {
+		t.Fatalf("first check = %+v, want a required search/auto row", got[0])
+	}
+
+	cfg.Backend = "brave"
+	if got := withAutoChainCheck(&cfg, checks); len(got) != len(checks) {
+		t.Fatalf("len(checks) = %d, want no synthesized row for an explicit backend", len(got))
 	}
 }

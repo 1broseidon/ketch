@@ -19,24 +19,47 @@ type Provider struct {
 	Setup           string
 	Name            string
 	Hidden          bool
-	Usable          func(*config.Config) bool
-	Settings        []config.Setting
-	New             func(*config.Config) (Searcher, error)
-	Probe           func(context.Context, *http.Client, *config.Config) (health.Status, string)
+	// AutoRank places the provider in the "auto" backend's fallback chain:
+	// zero keeps it out entirely, and lower non-zero ranks are tried first.
+	// Rank is the tiebreak, not the whole order — AutoChain promotes any
+	// provider with explicitly configured credentials ahead of the rest, so a
+	// keyed provider an operator has set up wins over the keyless defaults.
+	AutoRank int
+	// AutoEligible gates chain membership on configuration that Usable does
+	// not require. Nil leaves Usable as the only gate. SearXNG is the case it
+	// exists for: it answers `-b searxng` on its built-in localhost default,
+	// but must not join a chain until an operator has pointed it somewhere.
+	AutoEligible func(*config.Config) bool
+	Usable       func(*config.Config) bool
+	Settings     []config.Setting
+	New          func(*config.Config) (Searcher, error)
+	Probe        func(context.Context, *http.Client, *config.Config) (health.Status, string)
 }
 
-// Required reports whether a failing health check must fail doctor. Selection
-// and explicitly configured credentials gate health independently of usability.
-func (p Provider) Required(cfg *config.Config) bool {
-	if cfg.Backend == p.ID {
-		return true
-	}
+// Configured reports explicitly set credentials for this provider, which is
+// both what makes a health check required and what promotes the provider
+// within the auto chain.
+func (p Provider) Configured(cfg *config.Config) bool {
 	for _, setting := range p.Settings {
 		if setting.Configured(cfg) {
 			return true
 		}
 	}
 	return false
+}
+
+// InAuto reports whether the provider may serve the "auto" backend for cfg.
+func (p Provider) InAuto(cfg *config.Config) bool {
+	if p.AutoRank == 0 || p.Hidden || !p.Usable(cfg) {
+		return false
+	}
+	return p.AutoEligible == nil || p.AutoEligible(cfg)
+}
+
+// Required reports whether a failing health check must fail doctor. Selection
+// and explicitly configured credentials gate health independently of usability.
+func (p Provider) Required(cfg *config.Config) bool {
+	return cfg.Backend == p.ID || p.Configured(cfg)
 }
 
 var providers = []Provider{

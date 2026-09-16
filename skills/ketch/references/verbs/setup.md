@@ -34,10 +34,9 @@ On older ketch versions without `doctor`, configured-state detection is imperfec
 
 ## Search backend decision tree (present in this order)
 
-1. **ddg — the zero-setup default.** No key, works immediately. Rate-limits readily under research fan-out (`[upstream]` / exit 4). Right for: trying ketch out, light use.
-2. **brave — best quality per unit effort. Recommend for regular use.** Free API key.
+1. **auto — the zero-setup default.** No key, works immediately: it falls back through the keyless providers and returns the first that answers. Right for: trying ketch out, light use. Under heavy research fan-out every keyless provider can rate-limit at once (`[upstream]` / exit 4), which is the signal to add a key.
+2. **brave — best quality per unit effort. Recommend for regular use.** Free API key. Setting the key alone is enough — `auto` promotes a configured provider to the front of the chain, so `backend` only needs setting if the operator wants Brave and *no* fallback.
    ```sh
-   ketch config set backend brave
    ketch config set brave_api_key <key>
    ```
    The missing-key error itself contains the signup URL and the exact fix command — surface it to the operator rather than paraphrasing.

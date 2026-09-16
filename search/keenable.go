@@ -202,6 +202,7 @@ func ProbeKeenable(ctx context.Context, client *http.Client, base, apiKey string
 func keenableProvider() Provider {
 	return Provider{
 		Settings: []config.Setting{config.KeyPool("keenable_api_key", "keenable_api_keys", 9, 10, 6, 9)},
+		AutoRank: 90,
 		ID:       "keenable",
 		Name:     "Keenable",
 		Usable:   func(*config.Config) bool { return true },

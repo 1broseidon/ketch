@@ -124,6 +124,7 @@ func degoogProvider() Provider {
 	instance.GateDoctor = true // an explicitly configured instance must answer doctor
 	return Provider{
 		Settings: []config.Setting{instance},
+		AutoRank: 20,
 		ID:       "degoog",
 		Name:     "Degoog",
 		Setup:    "degoog: instance URL not set (ketch config set degoog_url http://localhost:4444)",

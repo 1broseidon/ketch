@@ -1,5 +1,5 @@
 {
-  "backend": "brave",
+  "backend": "auto",
   "searxng_url": "http://localhost:8081",
   "brave_api_key": "fixture-one",
   "brave_api_keys": [

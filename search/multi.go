@@ -94,6 +94,12 @@ func resolveCandidates(cfg *config.Config, names []string, searxngURL string) ([
 
 	backends := make([]namedSearcher, 0, len(candidates))
 	for _, name := range candidates {
+		// The auto chain dispatches to one provider and stops; nesting it
+		// inside a fan-out would hide which provider answered and double up
+		// on backends the caller already listed. "all" never yields it.
+		if name == AutoBackend {
+			return nil, fmt.Errorf("%q is not a federation member: it already selects a backend for you (drop it, or list providers explicitly)", AutoBackend)
+		}
 		searcher, err := NewFromConfig(cfg, name, searxngURL)
 		if err != nil {
 			if all {

@@ -109,7 +109,7 @@ func runRoot(cmd *cobra.Command, _ []string) error {
 	}
 
 	p("\nBackends:\n")
-	p("  %-10s  %s\n", "search", joinWithDefault(config.AvailableBackends(), cfg.Backend))
+	p("  %-10s  %s\n", "search", joinWithDefault(config.SelectableBackends(), cfg.Backend))
 	p("  %-10s  %s\n", "code", joinWithDefault(config.AvailableCodeBackends(), cfg.CodeBackend))
 	p("  %-10s  %s\n", "docs", joinWithDefault(config.AvailableDocBackends(), cfg.DocsBackend))
 
