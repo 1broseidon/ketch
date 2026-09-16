@@ -12,6 +12,7 @@ This page mirrors the canonical [`CHANGELOG.md`](https://github.com/1broseidon/k
 - Homebrew installs now come from homebrew-core: `brew install ketch`. The `1broseidon/tap` formula is retired, and existing tap installs move to homebrew-core on the next `brew update`.
 
 **Fixed**
+- `--minimal` output keeps one result per line: multi-line or tab-containing titles, descriptions, and snippets are flattened, so results no longer split across lines or shift columns.
 - The `serpbase` backend works against the current SerpBase API: `POST /google/search` with the key in the `X-API-Key` header and a JSON body, decoding the `organic` results and the business `status` field (the gateway returns HTTP 200 for errors such as an invalid key or exhausted credits). `ketch doctor`'s SerpBase probe uses the same request and classification. The API returns about ten organic results per page with no page-size parameter, so a `--limit` above ten still yields a single page.
 
 ## v0.16.2 — 2026-09-10

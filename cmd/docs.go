@@ -128,7 +128,7 @@ func printDocsResults(query, backend, library string, results []docs.Result, min
 	if minimal {
 		for _, r := range results {
 			snippet := firstLine(r.Snippet)
-			fmt.Printf("%s\t%s\t%s\n", r.URL, r.Library, snippet)
+			fmt.Printf("%s\t%s\t%s\n", r.URL, minimalField(r.Library), minimalField(snippet))
 		}
 		return
 	}

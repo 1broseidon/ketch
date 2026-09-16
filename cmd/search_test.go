@@ -191,3 +191,18 @@ func TestLooksLikeBackendList(t *testing.T) {
 		}
 	}
 }
+
+func TestMinimalFieldKeepsOneColumnOnOneLine(t *testing.T) {
+	tests := map[string]string{
+		"plain":                  "plain",
+		"  padded  ":             "padded",
+		"line one\nline two":     "line one line two",
+		"tab\tseparated\r\nrest": "tab separated rest",
+		"":                       "",
+	}
+	for in, want := range tests {
+		if got := minimalField(in); got != want {
+			t.Errorf("minimalField(%q) = %q, want %q", in, got, want)
+		}
+	}
+}

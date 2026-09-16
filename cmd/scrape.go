@@ -445,6 +445,13 @@ func printPage(p *scrape.Page) {
 }
 
 // firstLine returns the first non-empty line of s.
+// minimalField flattens a value for one tab-separated --minimal column:
+// newlines and tabs from upstream text would otherwise split one result
+// across lines or shift its columns.
+func minimalField(s string) string {
+	return strings.Join(strings.Fields(s), " ")
+}
+
 func firstLine(s string) string {
 	for _, line := range strings.Split(s, "\n") {
 		line = strings.TrimSpace(line)

@@ -97,7 +97,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 
 	if minimal {
 		for _, r := range results {
-			fmt.Printf("%s\t%s\t%s\n", r.URL, r.Title, r.Description)
+			fmt.Printf("%s\t%s\t%s\n", r.URL, minimalField(r.Title), minimalField(r.Description))
 		}
 		return nil
 	}
@@ -142,7 +142,7 @@ func searchScrape(ctx context.Context, results []search.Result, scraper *scrape.
 			}
 			content := extract.PostProcess(page.Markdown, trim, maxChars)
 			snippet := firstLine(content)
-			fmt.Printf("%s\t%s\t%s\n", r.URL, page.Title, snippet)
+			fmt.Printf("%s\t%s\t%s\n", r.URL, minimalField(page.Title), minimalField(snippet))
 		}
 		return nil
 	}
@@ -283,7 +283,7 @@ func runMultiSearch(cmd *cobra.Command, query string, limit int, doScrape, asJSO
 
 	if minimal {
 		for _, r := range results {
-			fmt.Printf("%s\t%s\t%s\t%s\n", r.URL, r.Title, r.Description, strings.Join(r.Backends, ","))
+			fmt.Printf("%s\t%s\t%s\t%s\n", r.URL, minimalField(r.Title), minimalField(r.Description), strings.Join(r.Backends, ","))
 		}
 		return nil
 	}
@@ -328,7 +328,7 @@ func runRandomSearch(cmd *cobra.Command, query string, limit int, doScrape, asJS
 	}
 	if minimal {
 		for _, result := range results {
-			fmt.Printf("%s\t%s\t%s\n", result.URL, result.Title, result.Description)
+			fmt.Printf("%s\t%s\t%s\n", result.URL, minimalField(result.Title), minimalField(result.Description))
 		}
 		return nil
 	}
