@@ -59,7 +59,7 @@ const features = [
       <!-- Install -->
       <div class="install-block">
         <span class="install-dollar">$</span>
-        <code>brew install 1broseidon/tap/ketch</code>
+        <code>brew install ketch</code>
       </div>
 
       <!-- Actions -->

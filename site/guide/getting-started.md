@@ -5,7 +5,7 @@
 **Homebrew:**
 
 ```sh
-brew install 1broseidon/tap/ketch
+brew install ketch
 ```
 
 **Go:**

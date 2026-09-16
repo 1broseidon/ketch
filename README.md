@@ -27,7 +27,7 @@ An operator configures the backend once (`ketch config set backend searxng`); ev
 
 ```sh
 # Homebrew
-brew install 1broseidon/tap/ketch
+brew install ketch
 
 # go install
 go install github.com/1broseidon/ketch@latest
@@ -246,7 +246,7 @@ claude plugin marketplace add 1broseidon/ketch
 claude plugin install ketch@ketch
 ```
 
-The plugin registers `ketch mcp serve` as an MCP server and installs the ketch research skill. It does not bundle the binary: `ketch` >= v0.10.0 must be on PATH (`brew install 1broseidon/tap/ketch` or `go install github.com/1broseidon/ketch@latest`).
+The plugin registers `ketch mcp serve` as an MCP server and installs the ketch research skill. It does not bundle the binary: `ketch` >= v0.10.0 must be on PATH (`brew install ketch` or `go install github.com/1broseidon/ketch@latest`).
 
 ## Contributing
 

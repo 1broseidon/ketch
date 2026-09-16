@@ -1,6 +1,6 @@
 {
   "name": "ketch",
-  "description": "Optional Claude Code integration for the ketch CLI: wires up the `ketch mcp serve` MCP server (search, code, docs, scrape, crawl) and installs the bundled ketch research skill. The CLI stays the zero-infrastructure path — this plugin is a convenience, never a prerequisite. Requires the ketch binary >= v0.10.0 on PATH: brew install 1broseidon/tap/ketch or go install github.com/1broseidon/ketch@latest.",
+  "description": "Optional Claude Code integration for the ketch CLI: wires up the `ketch mcp serve` MCP server (search, code, docs, scrape, crawl) and installs the bundled ketch research skill. The CLI stays the zero-infrastructure path — this plugin is a convenience, never a prerequisite. Requires the ketch binary >= v0.10.0 on PATH: brew install ketch or go install github.com/1broseidon/ketch@latest.",
   "author": {
     "name": "1broseidon",
     "url": "https://github.com/1broseidon"

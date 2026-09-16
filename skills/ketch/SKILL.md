@@ -17,7 +17,7 @@ Decide once per session, before the first call:
 1. `which ketch` succeeds → the CLI is your transport: `--json` on every call, exit codes as control flow.
 2. Also check for ketch's five MCP tools in your tool list — `search`, `code`, `docs`, `scrape`, `crawl` from a server named `ketch` (in Claude Code: `mcp__ketch__search`, …). Present → the operator wired them up on purpose, and using them for research calls is correct and good: structured output, per-URL errors, no shell round-trip. Do not shell out around tools the operator set up.
 3. Both live → either transport serves research calls, but know the tradeoff: a running MCP server holds the single-process page-cache lock, so concurrent CLI scrapes silently run cache-disabled.
-4. Neither CLI nor MCP tools → ketch is not installed. Offer `brew install 1broseidon/tap/ketch` or `go install github.com/1broseidon/ketch@latest` — an operator action: propose, wait for confirmation.
+4. Neither CLI nor MCP tools → ketch is not installed. Offer `brew install ketch` or `go install github.com/1broseidon/ketch@latest` — an operator action: propose, wait for confirmation.
 
 The rule: **use the transport the operator gave you** — when both are live, either is fine for research calls, and operator actions are always CLI.
 
