@@ -4,14 +4,18 @@ This page mirrors the canonical [`CHANGELOG.md`](https://github.com/1broseidon/k
 
 ## Unreleased
 
+## v0.17.0 — 2026-09-16
+
 **Added**
 - New `youcom` search backend: web search through You.com's hosted MCP server (`you-search` tool). Keyless by default via the free profile — always usable and included in `--multi=all` / `--random=all` on a zero-config install, rate-limited like keenable and hosted Firecrawl. An optional `youcom_api_key` / `youcom_api_keys` (Bearer header auth) lifts the rate limit and rotates on `401`/`429`. Results fill `Description` from the page summary (first snippet fallback) and `Content` from the joined keyword-centered snippets.
 - Serply search backend: Google results through the [Serply](https://serply.io) REST API (`GET /v1/search/`, key in the `X-Api-Key` header). Keyed only, via `serply_api_key` / `serply_api_keys`, and wired through config discovery, `--multi` / `--random`, MCP, and `ketch doctor` like every other provider. Keys rotate once on `401`/`403`/`429`. Serply serves at most ten organic results per request, so a `--limit` above ten still yields a single page.
 
 **Changed**
+- Web search works with no configuration: the default `backend` is now `auto`, a fallback chain that tries your own SearXNG/Degoog instance, then any provider with a configured key, then the keyless providers (parallel → exa → keenable → youcom → firecrawl → ddg), and returns the first that answers. An explicit `backend` still wins, and setting a provider's key is enough to put it first. Each attempt is capped at 10s and the chain at 30s; the served provider is reported as `backend:` (CLI) or `backend` (MCP), with skipped failures on stderr or in `errors`. `ketch doctor` adds an `auto` row. `auto` is rejected inside `--multi` / `--random`.
 - Homebrew installs now come from homebrew-core: `brew install ketch`. The `1broseidon/tap` formula is retired, and existing tap installs move to homebrew-core on the next `brew update`.
 
 **Fixed**
+- The `exa` backend no longer reports upstream failures (JSON-RPC errors or tool-level `isError`, both served with HTTP 200) as empty result sets.
 - `--minimal` output keeps one result per line: multi-line or tab-containing titles, descriptions, and snippets are flattened, so results no longer split across lines or shift columns.
 - The `serpbase` backend works against the current SerpBase API: `POST /google/search` with the key in the `X-API-Key` header and a JSON body, decoding the `organic` results and the business `status` field (the gateway returns HTTP 200 for errors such as an invalid key or exhausted credits). `ketch doctor`'s SerpBase probe uses the same request and classification. The API returns about ten organic results per page with no page-size parameter, so a `--limit` above ten still yields a single page.
 
