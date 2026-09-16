@@ -4,11 +4,62 @@ ketch has three search surfaces, each with its own backends: web search (`ketch 
 
 ## Web Search Backends
 
-Set the default with `ketch config set backend <name>`. To query several at once, use `ketch search --multi` (rank-fused federation) or `--random` (one shuffled provider with fallback) — see the [command reference](/reference/commands#ketch-search).
+The default is `auto`, which needs no configuration. Set a specific default
+with `ketch config set backend <name>`. To query several at once, use
+`ketch search --multi` (rank-fused federation) or `--random` (one shuffled
+provider with fallback) — see the [command reference](/reference/commands#ketch-search).
 
 Every keyed backend also accepts a pool of keys (`brave_api_keys`, `exa_api_keys`, `firecrawl_api_keys`, `keenable_api_keys`, `tavily_api_keys`, `serpbase_api_keys`, `serply_api_keys`, `youcom_api_keys`); ketch picks one at random per request and retries once with a different key on `401`/`429` (`402` for Firecrawl; SerpBase and Serply also rotate on `403`, and SerpBase on its HTTP-200 business codes `1001`/`1029`). See [multiple API keys](/guide/configuration#multiple-api-keys-per-provider).
 
-## Brave (default)
+## Auto (default)
+
+`auto` is not a provider — it is a fallback chain over the providers below. It
+tries them in a fixed order and returns the first that answers, so a fresh
+install searches with no API key and a rate-limited provider falls through
+instead of failing the command.
+
+**Setup:** None — this is the default.
+
+**Order.** Providers you have deliberately configured come first, because they
+are the ones with your quota and your privacy posture:
+
+1. Your own instances: `searxng` (once `searxng_url` points somewhere other
+   than the built-in localhost default), then `degoog`.
+2. Any provider you have set an API key for.
+3. The keyless hosted providers: `parallel` → `exa` → `keenable` → `youcom` →
+   `firecrawl` → `ddg`.
+
+DuckDuckGo is last on purpose: ketch scrapes its HTML interface, which is the
+most aggressively rate-limited path of the set. SearXNG is excluded until you
+configure an instance URL, so a fresh install never attempts a localhost
+service that isn't running — `ketch search -b searxng` still uses the
+localhost default if that is what you want.
+
+**Setting a key still matters.** It promotes that provider to the front of the
+chain and lifts the keyless rate limits, and you do not need to set `backend`
+as well:
+
+```sh
+ketch config set brave_api_key <key>   # auto now prefers Brave
+```
+
+**Reporting.** The `backend:` field of the output names the provider that
+actually served, never `auto`. Providers that failed on the way are warned
+about on stderr (`warn: parallel: rate limited`), so a successful search stays
+clean on stdout. Over MCP the same information is the `backend` and `errors`
+fields of the tool result.
+
+**Bounds.** Each attempt gets 10 seconds and the whole chain 30 seconds. If
+every provider fails, the error names each one and ketch exits `4` (upstream).
+
+**Health.** `ketch doctor` shows an `auto` row summarising the chain. It is
+healthy when *any* member answers — a chain with five rate-limited providers
+and one working one is doing its job, not broken.
+
+`auto` cannot be used inside `--multi` or `--random`: those already select
+backends, and nesting a chain in them would hide which provider answered.
+
+## Brave
 
 Brave Search offers a free API tier — no scraping, proper JSON API, reliable.
 

@@ -2,6 +2,9 @@ package mcp
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -115,5 +118,61 @@ func TestCleanMultiNames(t *testing.T) {
 	got := cleanMultiNames([]string{" brave ", "ddg", "brave", "", "exa"})
 	if strings.Join(got, ",") != "brave,ddg,exa" {
 		t.Errorf("cleanMultiNames = %v, want [brave ddg exa]", got)
+	}
+}
+
+// An agent that only sees "auto" cannot tell a healthy install from one
+// limping on its last fallback, so the tool result names the provider that
+// actually served and reports the ones it fell through.
+func TestRunSearchAutoReportsServingBackend(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"results":[{"title":"Served","url":"https://example.com/served","content":"body"}]}`)
+	}))
+	defer server.Close()
+
+	// A configured instance is promoted to the front of the chain, so this
+	// resolves without reaching any hosted provider.
+	cfg := config.Defaults()
+	cfg.SetProvider("searxng_url", server.URL)
+	s := &Server{cfg: &cfg}
+
+	out, err := s.runSearch(context.Background(), SearchInput{Query: "q", Limit: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Backend != "searxng" {
+		t.Fatalf("Backend = %q, want the serving provider, not %q", out.Backend, cfg.Backend)
+	}
+	if len(out.Results) != 1 || out.Results[0].URL != "https://example.com/served" {
+		t.Fatalf("Results = %+v", out.Results)
+	}
+	// Nothing failed ahead of it, so the additive errors map stays absent.
+	if len(out.Errors) != 0 {
+		t.Fatalf("Errors = %v, want none", out.Errors)
+	}
+}
+
+// An explicitly named provider is not a chain, so its output shape is
+// unchanged: no backend field, no errors map.
+func TestRunSearchExplicitBackendOmitsChainMetadata(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"results":[{"title":"Served","url":"https://example.com/served"}]}`)
+	}))
+	defer server.Close()
+
+	cfg := config.Defaults()
+	s := &Server{cfg: &cfg}
+
+	out, err := s.runSearch(context.Background(), SearchInput{Query: "q", Limit: 1, Backend: "searxng", SearxngURL: server.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Backend != "" || len(out.Errors) != 0 {
+		t.Fatalf("Backend=%q Errors=%v, want both empty for a single provider", out.Backend, out.Errors)
+	}
+	if len(out.Results) != 1 {
+		t.Fatalf("Results = %+v", out.Results)
 	}
 }

@@ -7,12 +7,18 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/1broseidon/ketch/health"
 	"github.com/1broseidon/ketch/httpx"
 	config "github.com/1broseidon/ketch/internal/configbase"
 )
+
+// DefaultSearxngURL is the instance URL assumed when an operator has not set
+// searxng_url. It is a local-instance convenience, not a reachable service, so
+// the auto chain treats it as "not configured".
+const DefaultSearxngURL = "http://localhost:8081"
 
 // SearXNG searches a SearXNG instance via its JSON API.
 type SearXNG struct {
@@ -109,11 +115,20 @@ func ProbeSearxng(ctx context.Context, client *http.Client, baseURL string) (hea
 func searxngProvider() Provider {
 	return Provider{
 		MinProbeTimeout: 10 * time.Second,
-		Settings:        []config.Setting{{Key: "searxng_url", ValidationOrder: 1, Default: "http://localhost:8081", FileOrder: 1, DiscoveryOrder: 2, EnvOrder: 1, Always: true}},
+		Settings:        []config.Setting{{Key: "searxng_url", ValidationOrder: 1, Default: DefaultSearxngURL, FileOrder: 1, DiscoveryOrder: 2, EnvOrder: 1, Always: true}},
 		ID:              "searxng",
+		AutoRank:        10,
 		Name:            "SearXNG",
 		Usable:          func(*config.Config) bool { return true },
-		New:             func(c *config.Config) (Searcher, error) { return NewSearXNG(c.String("searxng_url")), nil },
+		// `-b searxng` still works against the built-in localhost default, but
+		// the auto chain must not attempt an instance nobody configured: on a
+		// fresh install that is a guaranteed failure and a warning line on
+		// every search. An operator opts in by pointing searxng_url somewhere.
+		AutoEligible: func(c *config.Config) bool {
+			url := strings.TrimSpace(c.String("searxng_url"))
+			return url != "" && url != DefaultSearxngURL
+		},
+		New: func(c *config.Config) (Searcher, error) { return NewSearXNG(c.String("searxng_url")), nil },
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
 			return ProbeSearxng(ctx, client, c.String("searxng_url"))
 		},

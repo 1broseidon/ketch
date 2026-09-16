@@ -351,6 +351,7 @@ func youcomProvider() Provider {
 	keys := config.KeyPool("youcom_api_key", "youcom_api_keys", 15, 16, 9, 15)
 	return Provider{
 		Settings: []config.Setting{keys},
+		AutoRank: 100,
 		ID:       "youcom",
 		Name:     "You.com",
 		Usable:   func(*config.Config) bool { return true },

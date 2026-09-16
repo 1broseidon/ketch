@@ -187,6 +187,7 @@ func serplyProvider() Provider {
 		// unreachable.
 		MinProbeTimeout: 10 * time.Second,
 		Settings:        []config.Setting{keys},
+		AutoRank:        60,
 		ID:              "serply",
 		Setup:           "serply: API key not set (get a free key at https://serply.io then: ketch config set serply_api_key <key>)",
 		Name:            "Serply",

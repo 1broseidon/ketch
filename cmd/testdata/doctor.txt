@@ -1,10 +1,11 @@
 ---
-checks: 4
-ok: 1
+checks: 5
+ok: 2
 skipped: 1
-problems: 2 (2 blocking)
+problems: 2 (1 blocking)
 ---
-search   brave (default)        no_key              0ms  missing fixture key
+search   auto (default)         ok                  0ms  parallel serving, 5 of 6 providers healthy
+search   brave                  no_key              0ms  missing fixture key
 code     grepapp (default)      ok                 12ms
 docs     context7 (default)     misconfigured       3ms  fixture rejected
 browser  none                   skipped             0ms  not configured

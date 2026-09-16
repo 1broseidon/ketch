@@ -74,14 +74,18 @@ func TestRegistryDoctorTextGolden(t *testing.T) {
 	old := cfg
 	cfg = config.Defaults()
 	t.Cleanup(func() { cfg = old })
+	// A fresh install: the auto chain is the default and is serving, so an
+	// unkeyed Brave is informational rather than blocking. Docs still needs a
+	// key, which is the one remaining zero-config gap.
 	checks := []doctor.Check{
-		{Surface: "search", Backend: "brave", Status: doctor.StatusNoKey, Detail: "missing fixture key", LatencyMS: 0, Required: true},
+		{Surface: "search", Backend: "auto", Status: doctor.StatusOK, Detail: "parallel serving, 5 of 6 providers healthy", LatencyMS: 0, Required: true},
+		{Surface: "search", Backend: "brave", Status: doctor.StatusNoKey, Detail: "missing fixture key", LatencyMS: 0, Required: false},
 		{Surface: "code", Backend: "grepapp", Status: doctor.StatusOK, LatencyMS: 12, Required: true},
 		{Surface: "docs", Backend: "context7", Status: doctor.StatusMisconfigured, Detail: "fixture rejected", LatencyMS: 3, Required: true},
 		{Surface: "browser", Backend: "none", Status: doctor.StatusSkipped, Detail: "not configured", LatencyMS: 0},
 	}
 	assertCompatibilityGolden(t, "doctor.txt", []byte(captureStdout(t, func() { printDoctorReport(checks) })))
-	if blockingCount(checks) != 2 {
+	if blockingCount(checks) != 1 {
 		t.Fatal("doctor exit gating changed")
 	}
 }

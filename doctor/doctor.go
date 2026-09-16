@@ -6,7 +6,9 @@ package doctor
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -105,7 +107,51 @@ func Run(ctx context.Context, cfg *config.Config, timeout time.Duration) []Check
 		}()
 	}
 	wg.Wait()
-	return checks
+	return withAutoChainCheck(cfg, checks)
+}
+
+// withAutoChainCheck prepends the "auto" summary when it is the configured
+// backend. The chain's health is derived from the provider checks that already
+// ran rather than probed again: re-probing every member would double doctor's
+// request count against the same rate-limited keyless endpoints it is trying
+// to report on.
+func withAutoChainCheck(cfg *config.Config, checks []Check) []Check {
+	if cfg.Backend != search.AutoBackend {
+		return checks
+	}
+
+	chain := search.AutoChainNames(cfg)
+	status, detail := summarizeAutoChain(chain, checks)
+	auto := Check{Surface: "search", Backend: search.AutoBackend, Status: status, Detail: detail, Required: true}
+	return append([]Check{auto}, checks...)
+}
+
+// summarizeAutoChain reports the chain healthy when any member is: a fallback
+// chain does its job as long as one provider answers, so a rate-limited
+// provider ahead of a working one is not an installation problem.
+func summarizeAutoChain(chain []string, checks []Check) (Status, string) {
+	if len(chain) == 0 {
+		return StatusMisconfigured, "no usable providers in the fallback chain"
+	}
+
+	byBackend := make(map[string]Check, len(checks))
+	for _, c := range checks {
+		if c.Surface == "search" {
+			byBackend[c.Backend] = c
+		}
+	}
+
+	var healthy []string
+	for _, name := range chain {
+		if byBackend[name].Status == StatusOK {
+			healthy = append(healthy, name)
+		}
+	}
+	if len(healthy) == 0 {
+		return StatusUnreachable, fmt.Sprintf("no provider in the chain answered (%s)", strings.Join(chain, " → "))
+	}
+	return StatusOK, fmt.Sprintf("%s serving, %d of %d providers healthy (%s)",
+		healthy[0], len(healthy), len(chain), strings.Join(chain, " → "))
 }
 
 // buildSpecs assembles the check list for cfg. A check is required (gates the

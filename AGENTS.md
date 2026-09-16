@@ -22,7 +22,7 @@ cmd/
   mcp.go                     MCP command: `mcp serve` runs the MCP server over stdio
   proc_unix.go               Unix process management (detach, signals)
   proc_windows.go            Windows process management stub
-search/                      Searcher interface + Brave/DDG/SearXNG/EXA/Firecrawl/Keenable/Tavily/Parallel/SerpBase/Degoog/Serply/Youcom backends; NewFromConfig resolves the ordered provider registry for cmd/ and mcp/. multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), canonical.go the URL dedup keys
+search/                      Searcher interface + Brave/DDG/SearXNG/EXA/Firecrawl/Keenable/Tavily/Parallel/SerpBase/Degoog/Serply/Youcom backends; NewFromConfig resolves the ordered provider registry for cmd/ and mcp/. auto.go is the default `auto` backend (keyless fallback chain, AutoRank-ordered), multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), random.go shuffled fallback, canonical.go the URL dedup keys
 code/                        code.Searcher interface + GrepApp/Sourcegraph/GitHub backends; NewFromConfig resolves the ordered provider registry
 docs/                        docs.Searcher interface + Context7 backend (FTS5 local is an unimplemented stub); NewFromConfig resolves the ordered provider registry
 mcp/                         MCP server (search/code/docs/scrape/crawl tools; the mcp_tools config key is an allowlist over the published set) over the go-sdk mcp package; Server struct holds the shared scraper + cache, tools call the same NewFromConfig constructors as the CLI
@@ -47,6 +47,7 @@ Reusable packages live at the module root so external programs can `import "gith
 - **Interface-driven backends**: `Searcher` for search engines, `Store` for cache backends, `BrowserConn` for browser rendering.
 - **Concurrent by default**: multiple URLs scraped in parallel via goroutines.
 - **Operator configures, agent consumes**: config sets defaults (backend, browser, cache TTL) so agents don't need to know infrastructure.
+- **Works before it is configured**: `ketch search` answers on a fresh install. The default `auto` backend is a fallback chain over the keyless providers, and configuring a key or an instance promotes that provider rather than requiring `backend` to be set too. Configuration raises limits and picks favourites; it is never the price of a first result.
 - **Three search surfaces**: `ketch search` finds web pages, `ketch code` greps real OSS code, `ketch docs` fetches library documentation. Each has its own backend interface and Result type — they never share backends.
 - **Smart input detection on scrape**: single URL, multiple positional args, JSON array string, file path, or stdin pipe all work — ketch routes automatically. No --batch flag needed.
 - **Context-aware interfaces**: all three Searcher interfaces (`search`, `code`, `docs`) take `context.Context` as first param for cancellation and timeout propagation.
@@ -76,8 +77,9 @@ The reasoning behind each principle — and what ketch deliberately does *not* d
 ## CLI Usage
 
 ```
-ketch search "query"                        # search, return results
+ketch search "query"                        # search, return results (auto backend, no key needed)
 ketch search "query" --scrape               # search + fetch full content
+ketch search "query" -b auto                # keyless fallback chain (the default)
 ketch search "query" -b searxng             # use SearXNG backend
 ketch search "query" -b exa                 # use Exa hosted MCP backend
 ketch search "query" -b firecrawl           # use Firecrawl v2 search API (keyless by default)
@@ -119,7 +121,7 @@ ketch mcp serve                             # run as an MCP server over stdio (s
 | Flag | Scope | Default | Description |
 |------|-------|---------|-------------|
 | --json | global | false | JSON output |
-| --backend, -b | search | brave | Search backend (brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase/degoog/serply/youcom) |
+| --backend, -b | search | auto | Search backend (auto/brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase/degoog/serply/youcom); `auto` is a fallback chain, not a provider |
 | --multi | search | — | Federated search: comma list or bare/`=all` for every usable backend; RRF-fused, dedup'd, mutually exclusive with --backend (use the `=` form for a list) |
 | --limit, -l | search | 5 | Max results |
 | --scrape | search | false | Fetch full content |
@@ -161,11 +163,18 @@ Place the implementation, descriptor, and health probe in one Go file under
 `search/`, `code/`, or `docs/`, with tests alongside it. Append its descriptor
 call to the package's ordered
 `providers` slice in `registry.go`; register explicitly, without `init()`.
-Config discovery, CLI/MCP descriptions, doctor, and search multi/random
+Config discovery, CLI/MCP descriptions, doctor, and search auto/multi/random
 eligibility follow the descriptor. Keep provider-specific branches and config
 fields out of shared consumers.
 
 - Define `ID`, `Name`, `Settings`, `Usable`, `New`, and `Probe`.
+- Search providers set `AutoRank` to join the default `auto` chain: zero keeps
+  the provider out, and lower non-zero ranks are tried first. Rank is only the
+  tiebreak — a provider with configured credentials is promoted ahead of the
+  rest. Rank a keyless provider by how well it serves an unconfigured install;
+  leave a provider out if it cannot answer without setup. Use `AutoEligible`
+  only when `Usable` is deliberately laxer than chain membership should be
+  (SearXNG's localhost default is the one case).
 - `Usable` checks configuration without network I/O. `Build` checks it before
   calling `New`.
 - `New` only constructs a client and must accept empty credentials. `Probe`

@@ -86,7 +86,7 @@ ketch config set github_token ghp_...
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `backend` | `brave` | Default search backend: `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase`, `degoog`, `serply`, `youcom` |
+| `backend` | `auto` | Default search backend: `auto` (keyless fallback chain), `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase`, `degoog`, `serply`, `youcom` |
 | `brave_api_key` | — | Brave Search API key ([get one free](https://brave.com/search/api/)) |
 | `brave_api_keys` | — | Additional Brave keys (JSON array) — see [multiple keys](#multiple-api-keys-per-provider) |
 | `exa_api_key` | — | Optional Exa API key for authenticated hosted MCP usage |

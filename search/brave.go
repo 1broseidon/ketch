@@ -158,6 +158,7 @@ func ProbeBrave(ctx context.Context, client *http.Client, endpoint, apiKey strin
 func braveProvider() Provider {
 	return Provider{
 		Settings: []config.Setting{config.KeyPool("brave_api_key", "brave_api_keys", 2, 3, 2, 2)},
+		AutoRank: 30,
 		ID:       "brave",
 		Setup:    "brave: API key not set (get one free at https://brave.com/search/api/ then: ketch config set brave_api_key <key>)",
 		Name:     "Brave",

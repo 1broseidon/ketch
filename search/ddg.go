@@ -123,6 +123,7 @@ func ProbeDDG(ctx context.Context, client *http.Client, endpoint string) (health
 func ddgProvider() Provider {
 	return Provider{
 		Settings: []config.Setting{},
+		AutoRank: 120,
 		ID:       "ddg",
 		Name:     "DuckDuckGo",
 		Usable:   func(*config.Config) bool { return true },

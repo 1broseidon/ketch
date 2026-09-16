@@ -72,29 +72,68 @@ func (e *EXA) Search(ctx context.Context, query string, limit int) ([]Result, er
 		return nil, err
 	}
 
-	var parsed struct {
-		Result struct {
-			Content []struct {
-				Type string `json:"type"`
-				Text string `json:"text"`
-			} `json:"content"`
-		} `json:"result"`
-	}
-	if err := json.Unmarshal([]byte(payload), &parsed); err != nil {
+	// Step 4 : Populate response and return
+	return decodeEXAResults(payload, limit)
+}
+
+// exaRPCResponse mirrors the parallel/youcom decoders: an MCP server reports
+// failures either as a JSON-RPC error object or as a tool-level isError with
+// the message in the content block, both under HTTP 200.
+type exaRPCResponse struct {
+	Result struct {
+		Content []struct {
+			Type string `json:"type"`
+			Text string `json:"text"`
+		} `json:"content"`
+		IsError bool `json:"isError"`
+	} `json:"result"`
+	Error *struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	} `json:"error"`
+}
+
+// decodeEXAResults turns an MCP payload into results, failing loud on either
+// error shape. Reporting an upstream failure as an empty success would make it
+// indistinguishable from a query that genuinely matched nothing, which in turn
+// would stop the auto chain from falling through to the next provider.
+func decodeEXAResults(payload string, limit int) ([]Result, error) {
+	var rpc exaRPCResponse
+	if err := json.Unmarshal([]byte(payload), &rpc); err != nil {
 		return nil, fmt.Errorf("failed to decode exa response: %w", err)
 	}
+	if rpc.Error != nil {
+		return nil, fmt.Errorf("exa JSON-RPC error %d: %s", rpc.Error.Code, rpc.Error.Message)
+	}
+	if rpc.Result.IsError {
+		if detail := exaErrorDetail(rpc.Result.Content); detail != "" {
+			return nil, fmt.Errorf("exa search tool returned an error: %s", detail)
+		}
+		return nil, errors.New("exa search tool returned an error")
+	}
 
-	// Step 4 : Populate response and return
 	results := make([]Result, 0, limit)
-	for _, content := range parsed.Result.Content {
+	for _, content := range rpc.Result.Content {
 		if content.Type != "text" || len(results) >= limit {
 			continue
 		}
 		remaining := limit - len(results)
 		results = append(results, parseContent(content.Text, remaining)...)
 	}
-
 	return results, nil
+}
+
+// exaErrorDetail returns the first non-empty text block of a tool error.
+func exaErrorDetail(content []struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}) string {
+	for _, c := range content {
+		if text := strings.TrimSpace(c.Text); text != "" {
+			return text
+		}
+	}
+	return ""
 }
 
 func (e *EXA) response(ctx context.Context, body []byte) (*http.Response, error) {
@@ -292,6 +331,7 @@ func exaProbeErrDetail(err error) string {
 func exaProvider() Provider {
 	return Provider{
 		Settings: []config.Setting{config.KeyPool("exa_api_key", "exa_api_keys", 4, 5, 3, 4)},
+		AutoRank: 80,
 		ID:       "exa",
 		Name:     "Exa",
 		Usable:   func(*config.Config) bool { return true },

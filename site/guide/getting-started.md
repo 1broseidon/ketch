@@ -18,16 +18,19 @@ Or grab a binary from the [releases page](https://github.com/1broseidon/ketch/re
 
 ## Search
 
+No API key needed — the default `auto` backend falls back through the keyless
+providers until one answers.
+
 ```sh
 ketch search "golang error handling"
 ```
 
-Output:
+Output (`backend:` names the provider that actually served):
 
 ```yaml
 ---
 query: golang error handling
-backend: brave
+backend: parallel
 result_count: 5
 ---
 Error handling and Go - The Go Programming Language
