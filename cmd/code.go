@@ -66,7 +66,7 @@ func runCode(cmd *cobra.Command, args []string) error {
 	if minimal {
 		for _, r := range results {
 			snippet := firstLine(r.Snippet)
-			fmt.Printf("%s\t%s\t%s\n", r.URL, r.Repo, snippet)
+			fmt.Printf("%s\t%s\t%s\n", r.URL, r.Repo, minimalField(snippet))
 		}
 		return nil
 	}
