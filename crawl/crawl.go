@@ -432,6 +432,14 @@ type urlLoc struct {
 	Loc string `xml:"loc"`
 }
 
+// FetchSitemap fetches a sitemap URL and returns every page URL it lists,
+// following sitemap index files into their child sitemaps. It is exported so
+// the docs ingest pipeline can plan a fetch (count and filter URLs) before
+// committing to a crawl.
+func FetchSitemap(ctx context.Context, scraper *scrape.Scraper, sitemapURL string) ([]string, error) {
+	return fetchSitemap(ctx, scraper, sitemapURL)
+}
+
 // fetchSitemap fetches a sitemap URL and returns all page URLs.
 // Supports both sitemap index files and regular sitemaps.
 func fetchSitemap(ctx context.Context, scraper *scrape.Scraper, sitemapURL string) ([]string, error) {
