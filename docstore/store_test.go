@@ -101,6 +101,35 @@ func TestReplaceIsIdempotentAndKeepsAddedAt(t *testing.T) {
 	}
 }
 
+// A sidebar that readability left on every page must not become a hit on
+// every page; text unique to a page is untouched, and a repeat on fewer
+// than BoilerplatePages pages is kept (two pages legitimately sharing a
+// warning block is not furniture).
+func TestReplaceDropsBoilerplateSections(t *testing.T) {
+	s := openTestStore(t)
+	nav := "## Navigation\n\n- [Colors](/colors)\n- [Flex](/flex)\n- [Grid](/grid)\n"
+	twice := "## Note\n\nShared warning text.\n"
+	pages := []Page{
+		{URL: "https://x.test/a", Title: "A", Markdown: "# A\n\nalpha body\n\n" + nav + twice},
+		{URL: "https://x.test/b", Title: "B", Markdown: "# B\n\nbeta body\n\n" + nav + twice},
+		{URL: "https://x.test/c", Title: "C", Markdown: "# C\n\ngamma body\n\n" + nav},
+	}
+	lib, err := s.Replace(Library{Name: "lib", Seed: "https://x.test", Source: SourceCrawl}, pages)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// 3 bodies + 2 shared notes; the 3 nav sections are gone.
+	if lib.Sections != 5 {
+		t.Fatalf("sections = %d, want 5", lib.Sections)
+	}
+	if hits, _ := s.Search(context.Background(), Query{Text: "colors flex grid"}); len(hits) != 0 {
+		t.Errorf("boilerplate nav still indexed: %+v", hits)
+	}
+	if hits, _ := s.Search(context.Background(), Query{Text: "shared warning"}); len(hits) != 2 {
+		t.Errorf("two-page repeat should be kept: %+v", hits)
+	}
+}
+
 func TestReplaceEmptyIsError(t *testing.T) {
 	s := openTestStore(t)
 	_, err := s.Replace(Library{Name: "lib", Seed: "https://x.test", Source: SourceCrawl}, []Page{{URL: "u", Markdown: "\n"}})

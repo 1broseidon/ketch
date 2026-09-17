@@ -40,6 +40,7 @@ var (
 	atxHeading  = regexp.MustCompile(`^(#{1,6})[ \t]+(.*?)[ \t]*#*[ \t]*$`)
 	mdLink      = regexp.MustCompile(`\[([^\]]*)\]\([^)]*\)`)
 	mdImage     = regexp.MustCompile(`!\[([^\]]*)\]\([^)]*\)`)
+	htmlTag     = regexp.MustCompile(`<[^>]*>`)
 	slugStrip   = regexp.MustCompile(`[^\p{L}\p{N}\s_-]`)
 	slugSpaces  = regexp.MustCompile(`\s+`)
 	slugHyphens = regexp.MustCompile(`-{2,}`)
@@ -161,13 +162,15 @@ func fenceToken(trimmed string) (string, bool) {
 	return "", false
 }
 
-// cleanInline strips inline markdown from a heading: images and links keep
-// their text, emphasis markers and backticks are removed.
+// cleanInline strips inline markup from a heading: images and links keep
+// their text; emphasis markers, backticks, and inline HTML tags (MDX badges
+// and the like) are removed.
 func cleanInline(s string) string {
 	s = mdImage.ReplaceAllString(s, "$1")
 	s = mdLink.ReplaceAllString(s, "$1")
+	s = htmlTag.ReplaceAllString(s, "")
 	s = strings.NewReplacer("`", "", "**", "", "__", "", "*", "", "~~", "").Replace(s)
-	return strings.TrimSpace(s)
+	return strings.Join(strings.Fields(s), " ")
 }
 
 // Slug converts heading text to a GitHub-style anchor: lower-case, letters,

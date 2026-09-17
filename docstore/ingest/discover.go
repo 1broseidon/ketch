@@ -3,6 +3,7 @@ package ingest
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/1broseidon/ketch/docstore"
 	"net/url"
@@ -97,10 +98,14 @@ func Discover(ctx context.Context, s *scrape.Scraper, seed string, opts Discover
 	return plan, nil
 }
 
+// ErrBadSeed reports a seed that is not an absolute http(s) URL: a caller
+// input problem, distinct from fetch failures.
+var ErrBadSeed = errors.New("seed must be an absolute http(s) URL")
+
 func parseSeed(seed string) (*url.URL, error) {
 	u, err := url.Parse(strings.TrimSpace(seed))
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-		return nil, fmt.Errorf("seed must be an absolute http(s) URL, got %q", seed)
+		return nil, fmt.Errorf("%w, got %q", ErrBadSeed, seed)
 	}
 	u.Fragment = ""
 	return u, nil

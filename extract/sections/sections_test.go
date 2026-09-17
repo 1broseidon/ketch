@@ -127,6 +127,13 @@ func TestSectionsCleanInlineHeading(t *testing.T) {
 	}
 }
 
+func TestSectionsStripInlineHTMLFromHeading(t *testing.T) {
+	got := Split("", `### <Badge type="info" text="optional" /> origin: string | string[]`+"\n\nbody", 0)
+	if len(got) != 1 || got[0].Heading != "origin: string | string[]" || got[0].Anchor != "origin-string-string" {
+		t.Fatalf("sections = %+v", got)
+	}
+}
+
 func TestSectionsClosingHashesAndTrailingSpace(t *testing.T) {
 	got := Split("", "## Title ##   \n\nbody", 0)
 	if len(got) != 1 || got[0].Heading != "Title" {

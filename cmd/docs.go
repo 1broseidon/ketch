@@ -14,9 +14,18 @@ import (
 var docsCmd = &cobra.Command{
 	Use:   "docs <query>",
 	Short: "Search library documentation",
-	Long:  `Search library documentation using ` + strings.Join(docs.ProviderNames(), ", ") + ` (default: the configured backend). Supports direct library ID lookup and library name resolution. A local FTS5 backend is planned but not yet implemented.`,
-	Args:  exitArgs(cobra.MinimumNArgs(1)),
-	RunE:  runDocs,
+	Long: `Search library documentation using ` + strings.Join(docs.ProviderNames(), ", ") + ` (default: the configured backend). Supports direct library ID lookup and library name resolution.
+
+The local backend (-b local) searches documentation libraries pulled onto this machine
+with ` + "`ketch docs add <name> <url>`" + ` — offline, no API key, ranked full-text search over
+heading-delimited sections. Inside a project with .ketch/docs.json, searches default to
+the project's attached libraries; --library <name> narrows to one. See ` + "`ketch docs add --help`" + `.`,
+	Example: `  ketch docs "container queries" -b local --library tailwind
+  ketch docs --resolve tail -b local
+  ketch docs add tailwind https://tailwindcss.com/docs --dry-run
+  ketch docs list`,
+	Args: exitArgs(cobra.MinimumNArgs(1)),
+	RunE: runDocs,
 }
 
 func init() {

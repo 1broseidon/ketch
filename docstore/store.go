@@ -236,23 +236,45 @@ func (s *Store) Remove(name string) error {
 	return tx.Commit()
 }
 
+// BoilerplatePages is the number of distinct pages an identical section body
+// must recur on before it is treated as site furniture (a sidebar, a footer,
+// a "was this page helpful?" block that readability left in) and dropped
+// from the index. Section text unique to a page is never touched.
+const BoilerplatePages = 3
+
 // Replace atomically replaces a library's pages and index with the given
-// pages, chunking each with sections.Split. Pages that yield no sections
-// are still stored (their markdown is kept) but contribute nothing to the
-// index. It returns the stored library with counts filled in. A page set
-// that yields zero sections overall is ErrEmpty and leaves the store
-// unchanged.
+// pages, chunking each with sections.Split and dropping boilerplate sections
+// that recur verbatim across BoilerplatePages or more pages. Pages that
+// yield no sections are still stored (their markdown is kept) but contribute
+// nothing to the index. It returns the stored library with counts filled in.
+// A page set that yields zero sections overall is ErrEmpty and leaves the
+// store unchanged.
 func (s *Store) Replace(lib Library, pages []Page) (*Library, error) {
 	type chunk struct {
 		page Page
 		secs []sections.Section
 	}
 	var chunks []chunk
-	total := 0
 	for _, p := range pages {
-		secs := sections.Split(p.Title, p.Markdown, SectionMaxChars)
-		total += len(secs)
-		chunks = append(chunks, chunk{page: p, secs: secs})
+		chunks = append(chunks, chunk{page: p, secs: sections.Split(p.Title, p.Markdown, SectionMaxChars)})
+	}
+	boiler := boilerplate(func(yield func(string, string)) {
+		for _, c := range chunks {
+			for _, sec := range c.secs {
+				yield(c.page.URL, sec.Body)
+			}
+		}
+	})
+	total := 0
+	for i := range chunks {
+		kept := chunks[i].secs[:0]
+		for _, sec := range chunks[i].secs {
+			if !boiler[sec.Body] {
+				kept = append(kept, sec)
+			}
+		}
+		chunks[i].secs = kept
+		total += len(kept)
 	}
 	if total == 0 {
 		return nil, ErrEmpty
@@ -312,6 +334,27 @@ func (s *Store) Replace(lib Library, pages []Page) (*Library, error) {
 		return nil, err
 	}
 	return &lib, nil
+}
+
+// boilerplate returns the section bodies that appear on BoilerplatePages or
+// more distinct pages. each yields every (page URL, body) pair.
+func boilerplate(each func(yield func(url, body string))) map[string]bool {
+	pagesByBody := map[string]map[string]bool{}
+	each(func(url, body string) {
+		set := pagesByBody[body]
+		if set == nil {
+			set = map[string]bool{}
+			pagesByBody[body] = set
+		}
+		set[url] = true
+	})
+	out := map[string]bool{}
+	for body, set := range pagesByBody {
+		if len(set) >= BoilerplatePages {
+			out[body] = true
+		}
+	}
+	return out
 }
 
 // Search runs an FTS5 query over sections, ranked by bm25 with heading and
