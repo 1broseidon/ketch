@@ -55,9 +55,11 @@
     "github"
   ],
   "available_doc_backends": [
-    "context7"
+    "context7",
+    "local"
   ],
   "degoog_url": "",
   "serply_api_key_set": false,
-  "serply_api_keys_count": 0
+  "serply_api_keys_count": 0,
+  "docs_dir": ""
 }

@@ -32,7 +32,7 @@ func TestRegistryDiscoversOptionalLibraryInterface(t *testing.T) {
 	if !slices.Equal(LibraryBackends(), append(before, "libraryfixture")) {
 		t.Fatalf("library capability discovery = %v", LibraryBackends())
 	}
-	if ResolveBackend("libraryfixture") != "libraryfixture" || ResolveBackend("local") != "context7" {
+	if ResolveBackend("libraryfixture") != "libraryfixture" || ResolveBackend("local") != "local" || ResolveBackend("nolibs") != "context7" {
 		t.Fatal("library selection or legacy resolve fallback changed")
 	}
 	client, err := NewFromConfig(&config.Config{}, "libraryfixture")
@@ -45,13 +45,24 @@ func TestRegistryDiscoversOptionalLibraryInterface(t *testing.T) {
 }
 
 func TestRegistryKeepsUnknownAndUnavailableDistinct(t *testing.T) {
+	var cfg config.Config
+	cfg.SetProvider("docs_dir", t.TempDir()) // no store yet: local is unavailable
 	for _, backend := range []string{"local", "context7", "unknown"} {
-		_, err := NewFromConfig(&config.Config{}, backend)
+		_, err := NewFromConfig(&cfg, backend)
 		if err == nil || errors.Is(err, ErrUnknownBackend) != (backend == "unknown") {
 			t.Fatalf("%s error taxonomy = %v", backend, err)
 		}
-		if backend == "local" && !strings.Contains(err.Error(), "not yet implemented") {
-			t.Fatalf("local rejection changed: %v", err)
+		if backend == "local" && !strings.Contains(err.Error(), "ketch docs add") {
+			t.Fatalf("local rejection should point at docs add: %v", err)
 		}
+	}
+}
+
+func TestLocalIsAdvertisedAndLibraryCapable(t *testing.T) {
+	if !slices.Contains(AvailableBackends(), "local") || !slices.Contains(LibraryBackends(), "local") {
+		t.Fatalf("available=%v library=%v", AvailableBackends(), LibraryBackends())
+	}
+	if !slices.Contains(ProviderNames(), "Local") {
+		t.Fatalf("names = %v", ProviderNames())
 	}
 }

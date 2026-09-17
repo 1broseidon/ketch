@@ -1,4 +1,7 @@
-package extract
+// Package sections splits markdown into heading-delimited sections. It is a
+// leaf package (no ketch imports) so the docs registry, which sits below
+// config in the import graph, can use it.
+package sections
 
 import (
 	"regexp"
@@ -42,7 +45,7 @@ var (
 	slugHyphens = regexp.MustCompile(`-{2,}`)
 )
 
-// Sections splits markdown at ATX headings (# through ######), tracking the
+// Split splits markdown at ATX headings (# through ######), tracking the
 // heading hierarchy so each section carries a breadcrumb from the page title
 // down. Fenced code blocks are never split and a "#" inside a fence is not a
 // heading. Text before the first heading becomes a level-0 preamble section
@@ -52,7 +55,7 @@ var (
 //
 // The function is deterministic: the same input always yields the same
 // sections in the same order.
-func Sections(title, markdown string, maxChars int) []Section {
+func Split(title, markdown string, maxChars int) []Section {
 	title = strings.TrimSpace(title)
 	lines := strings.Split(strings.ReplaceAll(markdown, "\r\n", "\n"), "\n")
 

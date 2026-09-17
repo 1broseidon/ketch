@@ -1,9 +1,10 @@
-package docstore
+package ingest
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/1broseidon/ketch/docstore"
 	"net/url"
 	"path"
 	"sort"
@@ -18,7 +19,7 @@ import (
 
 // Ingest defaults. MaxPages is the guard rail that keeps an agent-initiated
 // add from turning into a site-scale crawl; Depth only applies to
-// SourceCrawl, where list sources already know their page set.
+// docstore.SourceCrawl, where list sources already know their page set.
 const (
 	DefaultMaxPages    = 500
 	DefaultDepth       = 5
@@ -56,24 +57,24 @@ type PageError struct {
 // Summary reports what an add did, in the shape an agent needs to decide
 // whether the corpus is complete enough or should be re-run wider.
 type Summary struct {
-	Library  *Library      `json:"library,omitempty"`
-	Plan     Plan          `json:"plan"`
-	Fetched  int           `json:"fetched"`
-	Skipped  int           `json:"skipped"` // fetched but empty after extraction
-	Failed   int           `json:"failed"`
-	Errors   []PageError   `json:"errors,omitempty"`
-	Stopped  string        `json:"stopped,omitempty"`
-	DryRun   bool          `json:"dry_run,omitempty"`
-	Duration time.Duration `json:"-"`
+	Library  *docstore.Library `json:"library,omitempty"`
+	Plan     Plan              `json:"plan"`
+	Fetched  int               `json:"fetched"`
+	Skipped  int               `json:"skipped"` // fetched but empty after extraction
+	Failed   int               `json:"failed"`
+	Errors   []PageError       `json:"errors,omitempty"`
+	Stopped  string            `json:"stopped,omitempty"`
+	DryRun   bool              `json:"dry_run,omitempty"`
+	Duration time.Duration     `json:"-"`
 }
 
 // Add discovers, fetches, chunks, and indexes a library, replacing any
 // existing library of the same name. It returns the summary even on partial
 // success; a nil error means the library was written (or, for a dry run,
-// planned). Errors wrapping ErrEmpty mean nothing indexable was fetched.
-func Add(ctx context.Context, store *Store, s *scrape.Scraper, pc *cache.Cache, opts AddOptions) (*Summary, error) {
+// planned). Errors wrapping docstore.ErrEmpty mean nothing indexable was fetched.
+func Add(ctx context.Context, store *docstore.Store, s *scrape.Scraper, pc *cache.Cache, opts AddOptions) (*Summary, error) {
 	start := time.Now()
-	if err := ValidateName(opts.Name); err != nil {
+	if err := docstore.ValidateName(opts.Name); err != nil {
 		return nil, err
 	}
 	if opts.MaxPages <= 0 {
@@ -99,17 +100,17 @@ func Add(ctx context.Context, store *Store, s *scrape.Scraper, pc *cache.Cache, 
 		return sum, nil
 	}
 
-	var pages []Page
+	var pages []docstore.Page
 	switch plan.Source {
-	case SourceLLMSFull:
+	case docstore.SourceLLMSFull:
 		pages, err = fetchLLMSFull(ctx, s, plan.SourceURL)
 		if err != nil {
 			sum.Failed++
 			sum.Errors = append(sum.Errors, PageError{URL: plan.SourceURL, Error: err.Error()})
 		}
-	case SourceLLMS, SourceSitemap:
+	case docstore.SourceLLMS, docstore.SourceSitemap:
 		pages = fetchList(ctx, s, pc, plan.URLs, opts, sum)
-	case SourceCrawl:
+	case docstore.SourceCrawl:
 		pages = fetchCrawl(ctx, s, pc, plan, opts, sum)
 	default:
 		return nil, fmt.Errorf("unknown source %q", plan.Source)
@@ -118,14 +119,14 @@ func Add(ctx context.Context, store *Store, s *scrape.Scraper, pc *cache.Cache, 
 		return sum, ctx.Err()
 	}
 
-	lib, err := store.Replace(Library{
+	lib, err := store.Replace(docstore.Library{
 		Name: opts.Name, Version: opts.Version, Seed: plan.Seed,
 		Source: plan.Source, SourceURL: plan.SourceURL, Prefix: plan.Prefix, MaxPages: opts.MaxPages,
 	}, pages)
 	sum.Duration = time.Since(start)
 	if err != nil {
-		if errors.Is(err, ErrEmpty) {
-			return sum, fmt.Errorf("%w from %s (%s): %d fetched, %d empty, %d failed", ErrEmpty, plan.SourceURL, plan.Source, sum.Fetched, sum.Skipped, sum.Failed)
+		if errors.Is(err, docstore.ErrEmpty) {
+			return sum, fmt.Errorf("%w from %s (%s): %d fetched, %d empty, %d failed", docstore.ErrEmpty, plan.SourceURL, plan.Source, sum.Fetched, sum.Skipped, sum.Failed)
 		}
 		return sum, err
 	}
@@ -133,25 +134,25 @@ func Add(ctx context.Context, store *Store, s *scrape.Scraper, pc *cache.Cache, 
 	return sum, nil
 }
 
-func fetchLLMSFull(ctx context.Context, s *scrape.Scraper, raw string) ([]Page, error) {
+func fetchLLMSFull(ctx context.Context, s *scrape.Scraper, raw string) ([]docstore.Page, error) {
 	content, err := s.FetchContent(ctx, raw)
 	if err != nil {
 		return nil, err
 	}
 	body := string(content.Body)
-	return []Page{{URL: raw, Title: markdownTitle(body, raw), Markdown: body, ContentHash: scrape.ContentHash(body)}}, nil
+	return []docstore.Page{{URL: raw, Title: markdownTitle(body, raw), Markdown: body, ContentHash: scrape.ContentHash(body)}}, nil
 }
 
 // fetchList scrapes a known URL list with a bounded worker pool, honouring
 // MaxPages. Results are returned in URL order so the store is deterministic
 // regardless of which worker finished first.
-func fetchList(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, urls []string, opts AddOptions, sum *Summary) []Page {
+func fetchList(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, urls []string, opts AddOptions, sum *Summary) []docstore.Page {
 	if len(urls) > opts.MaxPages {
 		urls = urls[:opts.MaxPages]
 	}
 	var (
 		mu    sync.Mutex
-		pages []Page
+		pages []docstore.Page
 		wg    sync.WaitGroup
 		sem   = make(chan struct{}, opts.Concurrency)
 	)
@@ -191,7 +192,7 @@ func fetchList(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, urls []s
 // fetchOne fetches a single page. Markdown and plain-text URLs (the .md
 // twins that llms.txt indexes point at) are taken verbatim; everything else
 // goes through the cache-aware, JS-shell-aware scrape pipeline.
-func fetchOne(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, raw string) (*Page, error) {
+func fetchOne(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, raw string) (*docstore.Page, error) {
 	if isTextURL(raw) {
 		content, err := s.FetchContent(ctx, raw)
 		if err != nil {
@@ -201,12 +202,12 @@ func fetchOne(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, raw strin
 			return scrapePage(ctx, s, pc, raw)
 		}
 		body := string(content.Body)
-		return &Page{URL: raw, Title: markdownTitle(body, raw), Markdown: body, ContentHash: scrape.ContentHash(body)}, nil
+		return &docstore.Page{URL: raw, Title: markdownTitle(body, raw), Markdown: body, ContentHash: scrape.ContentHash(body)}, nil
 	}
 	return scrapePage(ctx, s, pc, raw)
 }
 
-func scrapePage(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, raw string) (*Page, error) {
+func scrapePage(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, raw string) (*docstore.Page, error) {
 	var pageCache scrape.PageCache
 	if pc != nil {
 		pageCache = pc
@@ -218,24 +219,24 @@ func scrapePage(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, raw str
 	return fromScrape(p), nil
 }
 
-func fromScrape(p *scrape.Page) *Page {
+func fromScrape(p *scrape.Page) *docstore.Page {
 	title := p.Title
 	if strings.TrimSpace(title) == "" {
 		title = markdownTitle(p.Markdown, p.URL)
 	}
-	return &Page{URL: p.URL, Title: title, Markdown: p.Markdown, ETag: p.ETag, LastModified: p.LastModified, ContentHash: p.ContentHash}
+	return &docstore.Page{URL: p.URL, Title: title, Markdown: p.Markdown, ETag: p.ETag, LastModified: p.LastModified, ContentHash: p.ContentHash}
 }
 
 // fetchCrawl runs a same-host BFS from the seed, scoped to the plan prefix,
 // and stops once MaxPages pages have been collected.
-func fetchCrawl(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, plan *Plan, opts AddOptions, sum *Summary) []Page {
+func fetchCrawl(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, plan *Plan, opts AddOptions, sum *Summary) []docstore.Page {
 	crawlCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	host := hostOf(plan.Seed)
 
 	var (
 		mu     sync.Mutex
-		pages  []Page
+		pages  []docstore.Page
 		capped bool
 	)
 	collect := func(r crawl.Result) {

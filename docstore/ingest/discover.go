@@ -1,9 +1,10 @@
-package docstore
+package ingest
 
 import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/1broseidon/ketch/docstore"
 	"net/url"
 	"path"
 	"regexp"
@@ -15,34 +16,19 @@ import (
 	"github.com/1broseidon/ketch/scrape"
 )
 
-// Source names how a library's pages were (or will be) obtained.
-type Source string
-
-const (
-	// SourceLLMSFull is a single llms-full.txt document holding the whole
-	// site's docs as markdown: one fetch, no crawl.
-	SourceLLMSFull Source = "llms-full"
-	// SourceLLMS is an llms.txt index whose links are fetched as pages.
-	SourceLLMS Source = "llms"
-	// SourceSitemap is a sitemap (or sitemap index) whose URLs are fetched.
-	SourceSitemap Source = "sitemap"
-	// SourceCrawl is a same-host BFS crawl from the seed, scoped to Prefix.
-	SourceCrawl Source = "crawl"
-)
-
 // probeTimeout bounds each discovery probe (llms.txt, robots.txt, sitemap).
 const probeTimeout = 10 * time.Second
 
 // Plan is what Discover decided to fetch. URLs is the filtered candidate list
-// for list-backed sources (empty for SourceCrawl, whose page set is only
+// for list-backed sources (empty for docstore.SourceCrawl, whose page set is only
 // known after crawling). Candidates counts URLs before the prefix filter.
 type Plan struct {
-	Seed       string   `json:"seed"`
-	Source     Source   `json:"source"`
-	SourceURL  string   `json:"source_url"`
-	Prefix     string   `json:"prefix,omitempty"`
-	Candidates int      `json:"candidates"`
-	URLs       []string `json:"-"`
+	Seed       string          `json:"seed"`
+	Source     docstore.Source `json:"source"`
+	SourceURL  string          `json:"source_url"`
+	Prefix     string          `json:"prefix,omitempty"`
+	Candidates int             `json:"candidates"`
+	URLs       []string        `json:"-"`
 }
 
 // DiscoverOptions steer Discover. Prefix overrides the path prefix derived
@@ -81,7 +67,7 @@ func Discover(ctx context.Context, s *scrape.Scraper, seed string, opts Discover
 
 	switch {
 	case base == "llms-full.txt":
-		plan.Source, plan.SourceURL, plan.URLs, plan.Candidates = SourceLLMSFull, u.String(), []string{u.String()}, 1
+		plan.Source, plan.SourceURL, plan.URLs, plan.Candidates = docstore.SourceLLMSFull, u.String(), []string{u.String()}, 1
 		return plan, nil
 	case base == "llms.txt":
 		return discoverLLMSList(ctx, s, plan, u.String(), u.Hostname())
@@ -90,7 +76,7 @@ func Discover(ctx context.Context, s *scrape.Scraper, seed string, opts Discover
 	}
 
 	if body, ok := probeText(ctx, s, origin+"/llms-full.txt"); ok && looksLikeMarkdown(body) {
-		plan.Source, plan.SourceURL, plan.URLs, plan.Candidates = SourceLLMSFull, origin+"/llms-full.txt", []string{origin + "/llms-full.txt"}, 1
+		plan.Source, plan.SourceURL, plan.URLs, plan.Candidates = docstore.SourceLLMSFull, origin+"/llms-full.txt", []string{origin + "/llms-full.txt"}, 1
 		return plan, nil
 	}
 	if body, ok := probeText(ctx, s, origin+"/llms.txt"); ok {
@@ -107,7 +93,7 @@ func Discover(ctx context.Context, s *scrape.Scraper, seed string, opts Discover
 		return p, nil
 	}
 
-	plan.Source, plan.SourceURL = SourceCrawl, u.String()
+	plan.Source, plan.SourceURL = docstore.SourceCrawl, u.String()
 	return plan, nil
 }
 
@@ -196,7 +182,7 @@ func planLLMSList(plan *Plan, llmsURL, body, host string) (*Plan, error) {
 		links = append(links, m[1])
 	}
 	p := *plan
-	p.Source, p.SourceURL, p.Candidates = SourceLLMS, llmsURL, len(links)
+	p.Source, p.SourceURL, p.Candidates = docstore.SourceLLMS, llmsURL, len(links)
 	p.URLs = filterScope(links, host, p.Prefix)
 	if len(p.URLs) == 0 && p.Prefix != "" {
 		p.URLs = filterScope(links, host, "")
@@ -209,7 +195,7 @@ func planLLMSList(plan *Plan, llmsURL, body, host string) (*Plan, error) {
 
 func discoverSitemaps(ctx context.Context, s *scrape.Scraper, plan *Plan, sitemaps []string, host string, explicit bool) (*Plan, error) {
 	p := *plan
-	p.Source = SourceSitemap
+	p.Source = docstore.SourceSitemap
 	var all []string
 	var used []string
 	for _, sm := range sitemaps {

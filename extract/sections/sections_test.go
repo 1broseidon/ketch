@@ -1,4 +1,4 @@
-package extract
+package sections
 
 import (
 	"reflect"
@@ -30,7 +30,7 @@ Set the width.
 `
 
 func TestSectionsNestingAndBreadcrumbs(t *testing.T) {
-	got := Sections("Glamour", nestedDoc, 0)
+	got := Split("Glamour", nestedDoc, 0)
 
 	want := []struct {
 		level  int
@@ -62,8 +62,8 @@ func TestSectionsNestingAndBreadcrumbs(t *testing.T) {
 // "## Usage" holds no text of its own and must not become a section, but it
 // still appears in its children's breadcrumbs. "## FAQ" is heading-only at
 // the very end and is dropped.
-func TestSectionsDropHeadingOnlySections(t *testing.T) {
-	for _, s := range Sections("Glamour", nestedDoc, 0) {
+func TestSectionsDropHeadingOnlySplit(t *testing.T) {
+	for _, s := range Split("Glamour", nestedDoc, 0) {
 		if s.Heading == "Usage" || s.Heading == "FAQ" {
 			t.Errorf("heading-only section %q should have been dropped", s.Heading)
 		}
@@ -71,7 +71,7 @@ func TestSectionsDropHeadingOnlySections(t *testing.T) {
 }
 
 func TestSectionsTitleNotDuplicatedWhenH1Matches(t *testing.T) {
-	got := Sections("Glamour", "# glamour\n\nbody\n\n## Sub\n\nmore", 0)
+	got := Split("Glamour", "# glamour\n\nbody\n\n## Sub\n\nmore", 0)
 	if len(got) != 2 {
 		t.Fatalf("got %d sections", len(got))
 	}
@@ -81,31 +81,31 @@ func TestSectionsTitleNotDuplicatedWhenH1Matches(t *testing.T) {
 }
 
 func TestSectionsTitlePrefixedWhenH1Differs(t *testing.T) {
-	got := Sections("Tailwind CSS", "# Container queries\n\nbody", 0)
+	got := Split("Tailwind CSS", "# Container queries\n\nbody", 0)
 	if len(got) != 1 || !reflect.DeepEqual(got[0].Breadcrumb, []string{"Tailwind CSS", "Container queries"}) {
 		t.Fatalf("sections = %+v", got)
 	}
 }
 
 func TestSectionsPreambleOnly(t *testing.T) {
-	got := Sections("Notes", "just text\n\nno headings", 0)
+	got := Split("Notes", "just text\n\nno headings", 0)
 	if len(got) != 1 || got[0].Level != 0 || got[0].Heading != "Notes" || got[0].Anchor != "" {
 		t.Fatalf("sections = %+v", got)
 	}
 }
 
 func TestSectionsEmptyInput(t *testing.T) {
-	if got := Sections("T", "", 0); got != nil {
+	if got := Split("T", "", 0); got != nil {
 		t.Fatalf("want nil, got %+v", got)
 	}
-	if got := Sections("T", "# Only\n\n## Headings\n", 0); got != nil {
+	if got := Split("T", "# Only\n\n## Headings\n", 0); got != nil {
 		t.Fatalf("want nil for heading-only docs, got %+v", got)
 	}
 }
 
 func TestSectionsHeadingsInsideFencesAreNotHeadings(t *testing.T) {
 	doc := "# Real\n\n~~~\n# fake\n~~~\n\nafter\n\n```go\n// # also fake\n```\n"
-	got := Sections("", doc, 0)
+	got := Split("", doc, 0)
 	if len(got) != 1 || got[0].Heading != "Real" {
 		t.Fatalf("sections = %+v", got)
 	}
@@ -115,7 +115,7 @@ func TestSectionsHeadingsInsideFencesAreNotHeadings(t *testing.T) {
 }
 
 func TestSectionsCleanInlineHeading(t *testing.T) {
-	got := Sections("", "# The `Config` [type](https://x) **matters**\n\nbody", 0)
+	got := Split("", "# The `Config` [type](https://x) **matters**\n\nbody", 0)
 	if len(got) != 1 {
 		t.Fatalf("sections = %+v", got)
 	}
@@ -128,7 +128,7 @@ func TestSectionsCleanInlineHeading(t *testing.T) {
 }
 
 func TestSectionsClosingHashesAndTrailingSpace(t *testing.T) {
-	got := Sections("", "## Title ##   \n\nbody", 0)
+	got := Split("", "## Title ##   \n\nbody", 0)
 	if len(got) != 1 || got[0].Heading != "Title" {
 		t.Fatalf("sections = %+v", got)
 	}
@@ -137,7 +137,7 @@ func TestSectionsClosingHashesAndTrailingSpace(t *testing.T) {
 func TestSectionsSplitLongBodyAtParagraphs(t *testing.T) {
 	para := strings.Repeat("word ", 20) // 100 chars
 	doc := "# H\n\n" + para + "\n\n" + para + "\n\n" + para + "\n"
-	got := Sections("", doc, 150)
+	got := Split("", doc, 150)
 	if len(got) != 3 {
 		t.Fatalf("got %d parts, want 3: %+v", len(got), got)
 	}
@@ -157,7 +157,7 @@ func TestSectionsSplitLongBodyAtParagraphs(t *testing.T) {
 func TestSectionsSplitKeepsFencesTogether(t *testing.T) {
 	fence := "```\nline one\n\nline two\n```"
 	doc := "# H\n\nshort\n\n" + fence + "\n\nshort again\n"
-	got := Sections("", doc, 40)
+	got := Split("", doc, 40)
 	joined := ""
 	for _, s := range got {
 		joined += s.Body + "\n"
@@ -169,7 +169,7 @@ func TestSectionsSplitKeepsFencesTogether(t *testing.T) {
 
 func TestSectionsHardSplitOversizedBlock(t *testing.T) {
 	block := strings.Repeat("a line of code\n", 20)
-	got := Sections("", "# H\n\n"+block, 60)
+	got := Split("", "# H\n\n"+block, 60)
 	if len(got) < 4 {
 		t.Fatalf("expected several parts, got %d", len(got))
 	}
@@ -181,8 +181,8 @@ func TestSectionsHardSplitOversizedBlock(t *testing.T) {
 }
 
 func TestSectionsDeterministic(t *testing.T) {
-	a := Sections("Glamour", nestedDoc, 80)
-	b := Sections("Glamour", nestedDoc, 80)
+	a := Split("Glamour", nestedDoc, 80)
+	b := Split("Glamour", nestedDoc, 80)
 	if !reflect.DeepEqual(a, b) {
 		t.Fatal("Sections is not deterministic")
 	}
@@ -209,7 +209,7 @@ func TestSlug(t *testing.T) {
 }
 
 func TestSectionsCRLF(t *testing.T) {
-	got := Sections("", "# A\r\n\r\nbody\r\n\r\n## B\r\n\r\nmore\r\n", 0)
+	got := Split("", "# A\r\n\r\nbody\r\n\r\n## B\r\n\r\nmore\r\n", 0)
 	if len(got) != 2 || got[1].Body != "more" {
 		t.Fatalf("sections = %+v", got)
 	}

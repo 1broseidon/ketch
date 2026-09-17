@@ -101,5 +101,12 @@
     "status": "no_key",
     "detail": "API key not set (get one then: ketch config set context7_api_key \u003ckey\u003e)",
     "latency_ms": 0
+  },
+  {
+    "surface": "docs",
+    "backend": "local",
+    "status": "skipped",
+    "detail": "no libraries yet (ketch docs add \u003cname\u003e \u003curl\u003e)",
+    "latency_ms": 0
   }
 ]

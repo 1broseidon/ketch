@@ -94,7 +94,8 @@ by name, bounded by page count, and fully rebuildable from a manifest.
 ## Consequences
 
 - `docs/local.go` implements `docs.Searcher` and `docs.LibraryResolver` over
-  the new `docstore` package. `Source` is `"local"`, `Version` is populated
+  the new `docstore` package; bare searches are scoped to the project that
+  encloses the working directory. `Source` is `"local"`, `Version` is populated
   for the first time, and `--resolve <name>` lists matching local libraries —
   offline, and immune to the resolve-path throttling that sank the withdrawn
   0.16.0 Read the Docs backend.
@@ -113,6 +114,8 @@ by name, bounded by page count, and fully rebuildable from a manifest.
   `stopped: "max_pages"`) so the agent knows exactly what it got.
 - Anchors on result URLs are GitHub-style heading slugs. They match most
   static-site generators and are documented as best-effort.
-- `extract` gains a pure `Sections` function. It is reusable by any future
-  surface that wants heading-delimited chunks and is tested independently of
-  the store.
+- The chunker lives in the leaf package `extract/sections` (`sections.Split`)
+  and the store in the leaf package `docstore`; the fetch side that needs the
+  scraper and crawler is `docstore/ingest`. The split is forced by the import
+  graph — `config` imports `docs`, so anything `docs` depends on must sit
+  below `config` — and it keeps the store independently testable.

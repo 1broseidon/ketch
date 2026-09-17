@@ -25,6 +25,9 @@ func TestRegistryDoctorCompatibilityGolden(t *testing.T) {
 	}
 	t.Setenv("PATH", t.TempDir())
 	cfg := config.Defaults()
+	// The local docs probe reads the store on disk; point it at an empty
+	// directory so the golden is the same on a machine that has added docs.
+	cfg.SetProvider("docs_dir", t.TempDir())
 	client := &http.Client{Transport: goldenTransport{}}
 	var checks []Check
 	for _, s := range buildSpecs(&cfg, client) {

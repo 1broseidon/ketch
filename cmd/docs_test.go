@@ -34,21 +34,28 @@ func asExitError(t *testing.T, err error) *ExitError {
 	return exitErr
 }
 
-// The unimplemented local docs backend must fail with a nonzero exit
-// (precondition, 5) — never print an error and exit 0.
-func TestDocsLocalBackendExitsPrecondition(t *testing.T) {
+// The local docs backend with no libraries added yet must fail with a
+// nonzero exit (precondition, 5) that points at `docs add` — never print an
+// error and exit 0.
+func TestDocsLocalBackendWithoutStoreExitsPrecondition(t *testing.T) {
 	setDocsBackend(t, "local")
+	setDocsDir(t, t.TempDir())
 
 	exitErr := asExitError(t, runDocs(docsCmd, []string{"test"}))
 	if exitErr.Code != ExitPrecondition {
 		t.Errorf("exit code = %d, want %d (precondition)", exitErr.Code, ExitPrecondition)
 	}
-	if exitErr.Code == 0 {
-		t.Error("exit code must be nonzero")
+	if !strings.Contains(exitErr.Error(), "ketch docs add") {
+		t.Errorf("error should point at docs add, got: %v", exitErr)
 	}
-	if !strings.Contains(exitErr.Error(), "not yet implemented") {
-		t.Errorf("error should say the backend is not implemented, got: %v", exitErr)
-	}
+}
+
+// setDocsDir isolates the local docs store for one test.
+func setDocsDir(t *testing.T, dir string) {
+	t.Helper()
+	prev := cfg
+	cfg.SetProvider("docs_dir", dir)
+	t.Cleanup(func() { cfg = prev })
 }
 
 // An unknown docs backend is a validation failure (exit 2) and the error must
@@ -60,7 +67,7 @@ func TestDocsUnknownBackendExitsValidationWithOptions(t *testing.T) {
 	if exitErr.Code != ExitValidation {
 		t.Errorf("exit code = %d, want %d (validation)", exitErr.Code, ExitValidation)
 	}
-	if !strings.Contains(exitErr.Error(), "(available: context7)") {
+	if !strings.Contains(exitErr.Error(), "(available: context7, local)") {
 		t.Errorf("error should list the available backends, got: %v", exitErr)
 	}
 }

@@ -1,8 +1,9 @@
-package docstore
+package ingest
 
 import (
 	"context"
 	"fmt"
+	"github.com/1broseidon/ketch/docstore"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -66,7 +67,7 @@ func TestDiscoverPrefersLLMSFull(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if plan.Source != SourceLLMSFull || plan.SourceURL != s.url("/llms-full.txt") || plan.Prefix != "/docs" {
+	if plan.Source != docstore.SourceLLMSFull || plan.SourceURL != s.url("/llms-full.txt") || plan.Prefix != "/docs" {
 		t.Fatalf("plan = %+v", plan)
 	}
 }
@@ -81,7 +82,7 @@ func TestDiscoverRejectsStubLLMSFull(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if plan.Source != SourceSitemap || len(plan.URLs) != 2 || plan.Candidates != 3 {
+	if plan.Source != docstore.SourceSitemap || len(plan.URLs) != 2 || plan.Candidates != 3 {
 		t.Fatalf("plan = %+v", plan)
 	}
 }
@@ -93,7 +94,7 @@ func TestDiscoverLLMSLinkList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if plan.Source != SourceLLMS || plan.Candidates != 4 || len(plan.URLs) != 2 {
+	if plan.Source != docstore.SourceLLMS || plan.Candidates != 4 || len(plan.URLs) != 2 {
 		t.Fatalf("plan = %+v urls=%v", plan, plan.URLs)
 	}
 	for _, u := range plan.URLs {
@@ -112,7 +113,7 @@ func TestDiscoverLLMSListFallsBackToHostWhenPrefixExcludesAll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if plan.Source != SourceLLMS || len(plan.URLs) != 2 {
+	if plan.Source != docstore.SourceLLMS || len(plan.URLs) != 2 {
 		t.Fatalf("plan = %+v", plan)
 	}
 }
@@ -125,7 +126,7 @@ func TestDiscoverRobotsSitemap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if plan.Source != SourceSitemap || plan.SourceURL != s.url("/sitemaps/pages.xml") || len(plan.URLs) != 2 {
+	if plan.Source != docstore.SourceSitemap || plan.SourceURL != s.url("/sitemaps/pages.xml") || len(plan.URLs) != 2 {
 		t.Fatalf("plan = %+v urls=%v", plan, plan.URLs)
 	}
 }
@@ -139,7 +140,7 @@ func TestDiscoverSitemapIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if plan.Source != SourceSitemap || len(plan.URLs) != 2 || plan.Candidates != 3 {
+	if plan.Source != docstore.SourceSitemap || len(plan.URLs) != 2 || plan.Candidates != 3 {
 		t.Fatalf("plan = %+v urls=%v", plan, plan.URLs)
 	}
 }
@@ -154,7 +155,7 @@ func TestDiscoverFallsThroughToCrawl(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if plan.Source != SourceCrawl || plan.SourceURL != s.url("/docs") || plan.Prefix != "/docs" || plan.URLs != nil {
+	if plan.Source != docstore.SourceCrawl || plan.SourceURL != s.url("/docs") || plan.Prefix != "/docs" || plan.URLs != nil {
 		t.Fatalf("plan = %+v", plan)
 	}
 }
@@ -165,7 +166,7 @@ func TestDiscoverNothingFoundIsCrawl(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if plan.Source != SourceCrawl || plan.Prefix != "" {
+	if plan.Source != docstore.SourceCrawl || plan.Prefix != "" {
 		t.Fatalf("plan = %+v", plan)
 	}
 }
@@ -178,20 +179,20 @@ func TestDiscoverExplicitSeeds(t *testing.T) {
 		xml("/weird", sitemapXML("/x/a"))
 
 	plan, err := Discover(context.Background(), testScraper(), s.url("/x/llms-full.txt"), DiscoverOptions{})
-	if err != nil || plan.Source != SourceLLMSFull || plan.Prefix != "/x" {
+	if err != nil || plan.Source != docstore.SourceLLMSFull || plan.Prefix != "/x" {
 		t.Fatalf("llms-full seed: %+v %v", plan, err)
 	}
 	plan, err = Discover(context.Background(), testScraper(), s.url("/x/llms.txt"), DiscoverOptions{})
-	if err != nil || plan.Source != SourceLLMS || len(plan.URLs) != 1 {
+	if err != nil || plan.Source != docstore.SourceLLMS || len(plan.URLs) != 1 {
 		t.Fatalf("llms seed: %+v %v", plan, err)
 	}
 	plan, err = Discover(context.Background(), testScraper(), s.url("/x/map.xml"), DiscoverOptions{})
-	if err != nil || plan.Source != SourceSitemap || len(plan.URLs) != 1 || plan.Candidates != 2 {
+	if err != nil || plan.Source != docstore.SourceSitemap || len(plan.URLs) != 1 || plan.Candidates != 2 {
 		t.Fatalf(".xml seed: %+v %v", plan, err)
 	}
 	// ForceSitemap on a URL that doesn't look like one, with the whole host.
 	plan, err = Discover(context.Background(), testScraper(), s.url("/weird"), DiscoverOptions{ForceSitemap: true, Prefix: "/"})
-	if err != nil || plan.Source != SourceSitemap || len(plan.URLs) != 1 || plan.Prefix != "" {
+	if err != nil || plan.Source != docstore.SourceSitemap || len(plan.URLs) != 1 || plan.Prefix != "" {
 		t.Fatalf("forced sitemap seed: %+v %v", plan, err)
 	}
 	// An explicit sitemap whose URLs are all out of scope is an error, not a

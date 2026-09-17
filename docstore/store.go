@@ -12,12 +12,12 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/1broseidon/ketch/extract"
+	"github.com/1broseidon/ketch/extract/sections"
 	_ "modernc.org/sqlite" // pure-Go SQLite with FTS5; keeps CGO_ENABLED=0
 )
 
 // SectionMaxChars caps one indexed section. Longer sections are split at
-// paragraph boundaries by extract.Sections so a single hit stays readable
+// paragraph boundaries by sections.Split so a single hit stays readable
 // and a page with one giant section still yields ranked pieces.
 const SectionMaxChars = 4000
 
@@ -237,7 +237,7 @@ func (s *Store) Remove(name string) error {
 }
 
 // Replace atomically replaces a library's pages and index with the given
-// pages, chunking each with extract.Sections. Pages that yield no sections
+// pages, chunking each with sections.Split. Pages that yield no sections
 // are still stored (their markdown is kept) but contribute nothing to the
 // index. It returns the stored library with counts filled in. A page set
 // that yields zero sections overall is ErrEmpty and leaves the store
@@ -245,12 +245,12 @@ func (s *Store) Remove(name string) error {
 func (s *Store) Replace(lib Library, pages []Page) (*Library, error) {
 	type chunk struct {
 		page Page
-		secs []extract.Section
+		secs []sections.Section
 	}
 	var chunks []chunk
 	total := 0
 	for _, p := range pages {
-		secs := extract.Sections(p.Title, p.Markdown, SectionMaxChars)
+		secs := sections.Split(p.Title, p.Markdown, SectionMaxChars)
 		total += len(secs)
 		chunks = append(chunks, chunk{page: p, secs: secs})
 	}
@@ -415,3 +415,20 @@ func ftsMatch(terms []string, op string) string {
 	}
 	return strings.Join(quoted, " "+op+" ")
 }
+
+// Source names how a library's pages were obtained. It is recorded on the
+// Library so `docs list` and a project manifest can say where content came
+// from; the ingest package decides which applies.
+type Source string
+
+const (
+	// SourceLLMSFull is a single llms-full.txt document holding the whole
+	// site's docs as markdown: one fetch, no crawl.
+	SourceLLMSFull Source = "llms-full"
+	// SourceLLMS is an llms.txt index whose links are fetched as pages.
+	SourceLLMS Source = "llms"
+	// SourceSitemap is a sitemap (or sitemap index) whose URLs are fetched.
+	SourceSitemap Source = "sitemap"
+	// SourceCrawl is a same-host BFS crawl from the seed, scoped to a prefix.
+	SourceCrawl Source = "crawl"
+)

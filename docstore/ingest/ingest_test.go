@@ -1,12 +1,23 @@
-package docstore
+package ingest
 
 import (
 	"context"
 	"errors"
+	"github.com/1broseidon/ketch/docstore"
 	"strings"
 	"sync"
 	"testing"
 )
+
+func openTestStore(t *testing.T) *docstore.Store {
+	t.Helper()
+	s, err := docstore.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { s.Close() })
+	return s
+}
 
 func TestAddFromSitemap(t *testing.T) {
 	s := newSite(t).
@@ -24,7 +35,7 @@ func TestAddFromSitemap(t *testing.T) {
 	if err != nil {
 		t.Fatalf("add: %v (summary %+v)", err, sum)
 	}
-	if sum.Plan.Source != SourceSitemap || sum.Fetched != 2 || sum.Failed != 1 || sum.Stopped != "" {
+	if sum.Plan.Source != docstore.SourceSitemap || sum.Fetched != 2 || sum.Failed != 1 || sum.Stopped != "" {
 		t.Fatalf("summary = %+v errors=%v", sum, sum.Errors)
 	}
 	if len(seen) != 3 {
@@ -33,7 +44,7 @@ func TestAddFromSitemap(t *testing.T) {
 	if sum.Library == nil || sum.Library.Pages != 2 || sum.Library.Version != "4" || sum.Library.Prefix != "/docs" {
 		t.Fatalf("library = %+v", sum.Library)
 	}
-	hits, err := store.Search(context.Background(), Query{Text: "customizing palette"})
+	hits, err := store.Search(context.Background(), docstore.Query{Text: "customizing palette"})
 	if err != nil || len(hits) == 0 {
 		t.Fatalf("search = %v %v", hits, err)
 	}
@@ -79,10 +90,10 @@ func TestAddFromLLMSFull(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if sum.Plan.Source != SourceLLMSFull || sum.Fetched != 0 || sum.Library.Pages != 1 || sum.Library.Sections < 3 {
+	if sum.Plan.Source != docstore.SourceLLMSFull || sum.Fetched != 0 || sum.Library.Pages != 1 || sum.Library.Sections < 3 {
 		t.Fatalf("summary = %+v lib=%+v", sum, sum.Library)
 	}
-	hits, _ := store.Search(context.Background(), Query{Text: "installation"})
+	hits, _ := store.Search(context.Background(), docstore.Query{Text: "installation"})
 	if len(hits) == 0 || hits[0].URL != s.url("/llms-full.txt")+"#installation" || hits[0].PageTitle != "Glamour" {
 		t.Fatalf("hits = %+v", hits)
 	}
@@ -98,14 +109,14 @@ func TestAddFromLLMSListTakesMarkdownVerbatim(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if sum.Plan.Source != SourceLLMS || sum.Fetched != 2 {
+	if sum.Plan.Source != docstore.SourceLLMS || sum.Fetched != 2 {
 		t.Fatalf("summary = %+v", sum)
 	}
-	hits, _ := store.Search(context.Background(), Query{Text: "alpha"})
+	hits, _ := store.Search(context.Background(), docstore.Query{Text: "alpha"})
 	if len(hits) == 0 || hits[0].PageTitle != "Alpha page" || !strings.Contains(hits[0].Body, "**alpha**") {
 		t.Fatalf("markdown was not kept verbatim: %+v", hits)
 	}
-	hits, _ = store.Search(context.Background(), Query{Text: "beta"})
+	hits, _ = store.Search(context.Background(), docstore.Query{Text: "beta"})
 	if len(hits) == 0 || hits[0].PageTitle != "b" {
 		t.Fatalf("headingless page title should fall back to the path: %+v", hits)
 	}
@@ -123,11 +134,11 @@ func TestAddFromCrawlScopedToPrefix(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if sum.Plan.Source != SourceCrawl || sum.Fetched != 3 || sum.Stopped != "" {
+	if sum.Plan.Source != docstore.SourceCrawl || sum.Fetched != 3 || sum.Stopped != "" {
 		t.Fatalf("summary = %+v errors=%v", sum, sum.Errors)
 	}
 	for _, q := range []string{"never", "substring"} {
-		if hits, _ := store.Search(context.Background(), Query{Text: q}); len(hits) != 0 {
+		if hits, _ := store.Search(context.Background(), docstore.Query{Text: q}); len(hits) != 0 {
 			t.Errorf("out-of-scope page indexed for %q: %+v", q, hits)
 		}
 	}
@@ -156,8 +167,8 @@ func TestAddNothingIndexableIsErrEmpty(t *testing.T) {
 	s := newSite(t).xml("/sitemap.xml", sitemapXML("/d/a", "/d/b"))
 	store := openTestStore(t)
 	sum, err := Add(context.Background(), store, testScraper(), nil, AddOptions{Name: "x", Seed: s.url("/d")})
-	if !errors.Is(err, ErrEmpty) {
-		t.Fatalf("err = %v, want ErrEmpty", err)
+	if !errors.Is(err, docstore.ErrEmpty) {
+		t.Fatalf("err = %v, want docstore.ErrEmpty", err)
 	}
 	if sum == nil || sum.Failed != 2 {
 		t.Fatalf("summary = %+v", sum)
