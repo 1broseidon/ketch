@@ -279,7 +279,31 @@ Curated, version-aware documentation snippets.
 
 ### Local
 
-A planned FTS5 SQLite backend for offline/private docs. Not yet implemented.
+Offline, keyless search over documentation libraries pulled onto this machine
+with [`ketch docs add`](/reference/commands#ketch-docs-add). Each library is
+a documentation site — discovered from `llms-full.txt`, `llms.txt`, a
+sitemap, or a bounded same-host crawl — chunked at its headings and indexed in
+SQLite FTS5 (pure Go via `modernc.org/sqlite`, ranked by BM25 with heading
+and breadcrumb text weighted above body text). Ranking is lexical only; there
+are no embeddings and nothing leaves the machine at query time.
+
+**Setup:** None. The backend becomes usable once one library exists;
+selecting it before that is a precondition error (exit 5) that names the
+`docs add` command. To make it the default, `ketch config set docs_backend
+local`.
+
+**Scope:** inside a project (a directory tree containing `.ketch/docs.json`),
+a bare search covers only the libraries attached to that project;
+`--library <name>` narrows to one; outside a project every stored library is
+searched. `--resolve <text>` lists stored libraries whose name contains the
+text.
+
+**Storage:** `$XDG_DATA_HOME/ketch/docs` (`~/.local/share/ketch/docs`) on
+Linux, `~/Library/Application Support/ketch/docs` on macOS,
+`%LocalAppData%\ketch\docs` on Windows; override with
+`ketch config set docs_dir <path>`. The store is a build artifact: `.ketch/docs.json`
+records what was added and `ketch docs sync` recreates it. Design record:
+[ADR-0004](https://github.com/1broseidon/ketch/blob/main/design/adr/0004-local-docs-corpus.md).
 
 ## Proposing a provider
 

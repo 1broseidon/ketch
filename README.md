@@ -114,6 +114,27 @@ curl -L https://chain.sh/ketch | ketch extract
 cat page.html | ketch extract --select article --max-chars 4000
 ```
 
+### Local docs libraries
+
+Pull a documentation site onto your machine once, then search it offline with
+no API key. ketch finds the cheapest source itself — `llms-full.txt`,
+`llms.txt`, a sitemap, or a bounded same-host crawl — chunks every page at its
+headings, and indexes the sections in SQLite FTS5 (pure Go, ranked by BM25):
+
+```sh
+ketch docs add tailwind https://tailwindcss.com/docs --dry-run   # what would be pulled, and from where
+ketch docs add tailwind https://tailwindcss.com/docs --version 4
+ketch docs "container queries" -b local --library tailwind
+ketch docs list
+```
+
+This is built for agents to drive: an agent searches for the docs a project
+needs, runs `docs add` with the URLs it found, and every later `ketch docs -b
+local` in that project answers from disk. Run `docs add` inside a project and
+it records the library in `.ketch/docs.json`, so searches there default to the
+project's libraries; the pages and index live per-user in
+`$XDG_DATA_HOME/ketch/docs` and can be rebuilt any time with `ketch docs sync`.
+
 ### PDF extraction
 
 `ketch scrape` detects PDFs from the response MIME type or `%PDF-` signature and extracts their text with a built-in pure-Go parser:
@@ -137,7 +158,7 @@ When configured, the external converter is authoritative: failures are returned 
 |---|---|
 | `search` | Web search — Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, Keenable, Tavily, Parallel, SerpBase, Serply, or You.com |
 | `code` | Grep real OSS source — Grep (default), Sourcegraph, or GitHub Code Search |
-| `docs` | Library/framework docs — Context7 (curated, version-aware snippets) |
+| `docs` | Library/framework docs — Context7 (curated, version-aware snippets) or local libraries built with `docs add` (offline SQLite FTS5; `list`, `remove`, `sync`) |
 | `scrape` | Fetch HTML or PDF URL(s) and extract clean markdown; concurrent batch, JSON array, file, or stdin input |
 | `extract` | Convert piped HTML to clean markdown (`curl ... \| ketch extract`) — no fetch, no cache, no browser |
 | `crawl` | BFS or sitemap crawl with optional background execution and status tracking |
@@ -156,7 +177,7 @@ Every command supports `-h/--help` for its full flag list; `--json` is the only 
 |---|---|---|---|
 | `search` | `auto` | `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `parallel`, `serpbase`, `degoog`, `serply`, `youcom` | Nothing — `auto` falls back through the keyless providers (`parallel` → `exa` → `keenable` → `youcom` → `firecrawl` → `ddg`) and needs no key. Brave, Tavily, SerpBase, and Serply need a free key (`ketch config set brave_api_key <key>` / `tavily_api_key` / `serpbase_api_key` / `serply_api_key`) and `auto` prefers them once set; `firecrawl_api_key`, `exa_api_key`, `keenable_api_key`, and `youcom_api_key` are optional and lift the hosted caps. `degoog` needs a self-hosted instance (`ketch config set degoog_url <url>`), `searxng` an instance URL (`ketch config set searxng_url <url>`); both are preferred over hosted APIs once configured |
 | `code` | `grepapp` | `sourcegraph`, `github` | Grep and Sourcegraph need nothing; GitHub uses `gh auth login`, `$GITHUB_TOKEN`, or `ketch config set github_token <tok>` |
-| `docs` | `context7` | `local` (planned, not yet implemented) | Free key: `ketch config set context7_api_key <key>` |
+| `docs` | `context7` | `local` | Context7: free key, `ketch config set context7_api_key <key>`. Local: no key — `ketch docs add <name> <url>` builds a library, then `-b local` (or `ketch config set docs_backend local`) searches it offline |
 
 ## Why it works well for agents
 

@@ -31,7 +31,7 @@ Use only these terms in ketch output.
 | --- | --- |
 | **surface** | One of the five research operations: `search`, `code`, `docs`, `scrape`, `crawl` |
 | **transport** | How a surface is called: the CLI binary (default) or the optional MCP tools |
-| **backend** | The provider behind a surface: auto (default; a fallback chain, not a provider)/brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase/degoog/serply/youcom (search), grepapp/sourcegraph/github (code), context7 (docs) |
+| **backend** | The provider behind a surface: auto (default; a fallback chain, not a provider)/brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase/degoog/serply/youcom (search), grepapp/sourcegraph/github (code), context7/local (docs) |
 | **operator action** | A system-managing or diagnostic command — `config set`, `cache`, `browser install`, background crawls, `doctor` — CLI-only by design |
 | **error prefix** | The stable class on every ketch error: CLI exit codes 2–6, mirrored as the bracketed prefix opening every MCP tool error — `[validation]`, `[not_found]`, `[upstream]`, `[precondition]`, `[cancelled]` |
 | **fan-out** | How many queries are searched and URLs scraped under one plan |
@@ -92,6 +92,7 @@ First match wins:
 | Current web pages, opinions, news, comparisons | `search` | `docs` — that is curated library docs only |
 | How real projects call an API | `code` | `search` — blogs talk *about* code; `code` greps public OSS repos via grep.app |
 | A library's own documentation, version-aware | `docs` | `scrape` of the docs site — `docs` is already extracted and token-budgeted |
+| The same library's docs, repeatedly, across a project | `docs add` once, then `docs -b local` | re-scraping or re-crawling the site per question — pull it once (CLI-only; `--dry-run` first) and every later lookup is offline |
 | The content of a URL you already hold | `scrape` | `search` — never re-find a known URL |
 | Many pages from one site | `crawl` | looped `scrape` — crawl dedupes, bounds, and streams |
 
@@ -118,7 +119,7 @@ In reverse: `search` finds URLs; `scrape` reads them; `crawl` reads a site; `cod
 | 5 | `[precondition]` | Operator config missing | Stop researching; enter `ketch setup` |
 | 6 | `[cancelled]` | Cancelled or timed out | Rerun with smaller scope |
 
-Situations → class: unknown backend, `regexp` on github → `[validation]`. Selector matched nothing → `[not_found]`. ddg rate limit (it rate-limits readily under fan-out), DNS failure, grepapp's intermittent 504 → `[upstream]`, rotate or retry once. Missing API key, docs backend `local` (planned, unimplemented), `force_browser` with no browser configured → `[precondition]`. One asymmetry: a CLI `crawl` interrupted by SIGINT exits **0** with partial results, by design.
+Situations → class: unknown backend, `regexp` on github → `[validation]`. Selector matched nothing → `[not_found]`. ddg rate limit (it rate-limits readily under fan-out), DNS failure, grepapp's intermittent 504 → `[upstream]`, rotate or retry once. Missing API key, docs backend `local` before any `ketch docs add`, `force_browser` with no browser configured → `[precondition]`. One asymmetry: a CLI `crawl` interrupted by SIGINT exits **0** with partial results, by design.
 
 ## Gotchas
 

@@ -15,6 +15,7 @@ cmd/
   crawl_bg.go                Background crawl: status, stop subcommands, worker mode
   code.go                    Code search command: query → snippet results, --lang qualifier
   docs.go                    Docs search command: query → docs/snippet results, --library, --resolve
+  docs_local.go              Local docs subcommands: add (ingest a site), list, remove, sync (rebuild from .ketch/docs.json)
   config.go                  Config command: discovery, init, set, path
   cache.go                   Cache command: stats, clear
   browser.go                 Browser command: install, status
@@ -24,11 +25,12 @@ cmd/
   proc_windows.go            Windows process management stub
 search/                      Searcher interface + Brave/DDG/SearXNG/EXA/Firecrawl/Keenable/Tavily/Parallel/SerpBase/Degoog/Serply/Youcom backends; NewFromConfig resolves the ordered provider registry for cmd/ and mcp/. auto.go is the default `auto` backend (keyless fallback chain, AutoRank-ordered), multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), random.go shuffled fallback, canonical.go the URL dedup keys
 code/                        code.Searcher interface + GrepApp/Sourcegraph/GitHub backends; NewFromConfig resolves the ordered provider registry
-docs/                        docs.Searcher interface + Context7 backend (FTS5 local is an unimplemented stub); NewFromConfig resolves the ordered provider registry
+docs/                        docs.Searcher interface + Context7 and Local backends; NewFromConfig resolves the ordered provider registry. local.go searches docstore libraries (project-scoped via .ketch/docs.json)
+docstore/                    Local docs corpus (ADR-0004): SQLite FTS5 store over heading-delimited sections (modernc.org/sqlite, pure Go), per-user data dir, project manifest (.ketch/docs.json). ingest/ discovers a site's cheapest source (llms-full.txt → llms.txt → sitemap → bounded crawl) and pulls it through scrape + cache
 mcp/                         MCP server (search/code/docs/scrape/crawl tools; the mcp_tools config key is an allowlist over the published set) over the go-sdk mcp package; Server struct holds the shared scraper + cache, tools call the same NewFromConfig constructors as the CLI
 scrape/                      HTTP fetch + Page type, JS detection fallback, Rod browser; pipeline.go has the cache-aware scrape pipeline (CachedScrape*, ScrapeSelector, FetchLLMSTxt) shared by cmd/ and mcp/
-extract/                     readability + html-to-markdown pipeline, JS shell detection (Detector: built-in + config spa_markers, modern hydration/streaming frameworks)
-crawl/                       BFS crawler, work queue + worker pool, background status
+extract/                     readability + html-to-markdown pipeline, JS shell detection (Detector: built-in + config spa_markers, modern hydration/streaming frameworks); sections/ is the leaf markdown chunker (heading-delimited, breadcrumbs, anchors) used by docstore
+crawl/                       BFS crawler, work queue + worker pool, background status; also used as a library by docstore/ingest
 cookies/                     Netscape cookies.txt jar loader + RFC 6265 domain/path matching (Jar.For); nil-safe, values never logged
 config/                      JSON config loading/saving (~/.config/ketch/)
 doctor/                      Health checks: concurrent read-only probes per backend + browser + cache, status classification (ok/no_key/unreachable/misconfigured/skipped)
@@ -49,6 +51,7 @@ Reusable packages live at the module root so external programs can `import "gith
 - **Operator configures, agent consumes**: config sets defaults (backend, browser, cache TTL) so agents don't need to know infrastructure.
 - **Works before it is configured**: `ketch search` answers on a fresh install. The default `auto` backend is a fallback chain over the keyless providers, and configuring a key or an instance promotes that provider rather than requiring `backend` to be set too. Configuration raises limits and picks favourites; it is never the price of a first result.
 - **Three search surfaces**: `ketch search` finds web pages, `ketch code` greps real OSS code, `ketch docs` fetches library documentation. Each has its own backend interface and Result type — they never share backends.
+- **Explicit, rebuildable local state only**: the one durable corpus ketch keeps is the local docs store, and only because an agent asked for it by name (`ketch docs add`). Nothing is indexed passively, `.ketch/docs.json` is the lockfile that recreates it (`ketch docs sync`), and ranking stays lexical (BM25) — no embeddings. See ADR-0004.
 - **Smart input detection on scrape**: single URL, multiple positional args, JSON array string, file path, or stdin pipe all work — ketch routes automatically. No --batch flag needed.
 - **Context-aware interfaces**: all three Searcher interfaces (`search`, `code`, `docs`) take `context.Context` as first param for cancellation and timeout propagation.
 
@@ -110,6 +113,12 @@ ketch code "query" --lang go               # with language filter
 ketch docs "query"                          # docs search (context7)
 ketch docs "query" --library /org/repo     # skip resolve, fetch directly
 ketch docs --resolve "library name"        # resolve library name → Context7 IDs
+ketch docs add tailwind https://tailwindcss.com/docs        # pull a docs site into a local library (llms.txt/sitemap/crawl auto-discovered)
+ketch docs add tailwind <url> --dry-run     # show the discovered source and page count without writing
+ketch docs "query" -b local --library tailwind  # offline FTS5 search over one local library
+ketch docs list                             # local libraries (project-attached ones marked)
+ketch docs remove tailwind                  # delete a local library
+ketch docs sync                             # rebuild every library .ketch/docs.json declares
 ketch config                                # show effective config + backends (incl. *_key_set presence booleans)
 ketch cache                                 # show cache stats
 ketch doctor                                # live health check of every backend + browser + cache (exit 5 if a configured surface is broken)
@@ -135,11 +144,21 @@ ketch mcp serve                             # run as an MCP server over stdio (s
 | --allow | crawl | — | Path substring filters |
 | --deny | crawl | — | Regex deny patterns |
 | --backend, -b | code | grepapp | Code backend (grepapp/sourcegraph/github) |
-| --backend, -b | docs | context7 | Docs backend (context7; local is planned, not implemented) |
+| --backend, -b | docs | context7 | Docs backend (context7/local) |
 | --lang | code | — | Language qualifier (appended to query) |
-| --library | docs | — | Context7 library ID, skips resolve |
-| --tokens | docs | 4000 | Context7 token budget |
-| --resolve | docs | false | Resolve library name instead of searching |
+| --library | docs | — | Context7 library ID or local library name, skips resolve |
+| --tokens | docs | 4000 | Token budget for --library output (local: ~4 chars/token over snippets) |
+| --resolve | docs | false | Resolve library name instead of searching (local: substring match over stored names) |
+| --version | docs add | — | Version label stored with the library (informational) |
+| --prefix | docs add | URL path | Path prefix pages must be under; `/` for the whole host |
+| --sitemap | docs add | false | Treat `<url>` as a sitemap regardless of its name |
+| --max-pages | docs add | 500 | Stop after this many pages |
+| --depth | docs add | 5 | Max BFS depth when the source is a crawl |
+| --concurrency | docs add | 8 | Max concurrent fetches |
+| --dry-run | docs add | false | Discover the source and report the plan without fetching or writing |
+| --global | docs add | false | Do not attach the library to the enclosing project's `.ketch/docs.json` |
+| --no-cache | docs add, docs sync | false | Bypass the page cache |
+| --force | docs sync | false | Re-add libraries that are already stored |
 | --max-chars N | scrape, search --scrape | 0 (off) | Truncate markdown output to N chars, appends `[truncated]` |
 | --trim | scrape, search --scrape | false | Strip markdown formatting syntax, keep content text only |
 | --minimal | search, code, docs | false | One result per line, tab-separated, no frontmatter (a 4th backends column is appended under `search --multi`, plain search only) |

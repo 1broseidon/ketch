@@ -126,11 +126,11 @@ ketch docs <query> [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--backend, -b` | `context7` | Docs backend: `context7`, `local` (not yet implemented) |
+| `--backend, -b` | `context7` | Docs backend: `context7`, `local` |
 | `--limit, -l` | `5` | Max number of results. With `--library`, applied only when passed explicitly |
-| `--library` | — | Context7 library ID (skip resolve step) |
-| `--resolve` | `false` | Resolve library name instead of searching |
-| `--tokens` | `4000` | Context7 token budget (the only bound on `--library` output unless `--limit` is given) |
+| `--library` | — | Library ID (skip resolve step): a Context7 ID such as `/org/repo`, or a local library name |
+| `--resolve` | `false` | Resolve library name instead of searching. With `-b local`, lists stored libraries whose name contains the query |
+| `--tokens` | `4000` | Token budget (the only bound on `--library` output unless `--limit` is given). Local treats it as ~4 characters per token over the returned snippets |
 | `--minimal` | `false` | One result per line, tab-separated |
 
 **Examples:**
@@ -139,7 +139,114 @@ ketch docs <query> [flags]
 ketch docs "how to render with word wrap" --library /charmbracelet/glamour
 ketch docs "middleware authentication"
 ketch docs --resolve "glamour"
+ketch docs "container queries" -b local --library tailwind
 ```
+
+With `-b local`, a bare query run inside a project (a directory tree with
+`.ketch/docs.json`) searches only that project's attached libraries; outside a
+project it searches every stored library. Results carry `source: local`, the
+library `version` if one was recorded, and a URL with a heading anchor.
+
+### ketch docs add
+
+Pull a documentation site into a local library for offline search.
+
+```sh
+ketch docs add <name> <url> [flags]
+```
+
+`<name>` is a short lower-case slug (`tailwind`, `hono`, `go1.25`). `<url>` may
+be the docs landing page, a sitemap, or an `llms.txt` / `llms-full.txt`. ketch
+picks the cheapest reliable source itself, in this order:
+
+1. `llms-full.txt` at the site root (one fetch, no crawl);
+2. `llms.txt` at the site root, treated as a list of page links;
+3. sitemaps named in `robots.txt`, then `/sitemap.xml`;
+4. a same-host BFS crawl from `<url>`.
+
+List sources and crawls are scoped to `<url>`'s path prefix (`/docs` for
+`https://example.com/docs`), so `https://tailwindcss.com/docs` never pulls the
+blog. Re-adding a name replaces the library.
+
+Inside a project (a directory tree holding `.ketch/docs.json`, or the nearest
+enclosing git repository), the library is also attached to that project's
+manifest, so bare `ketch docs -b local` queries default to it and
+`ketch docs sync` can rebuild it on another machine.
+
+**Flags:**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--version` | — | Version label stored with the library (informational; shown in results) |
+| `--prefix` | `<url>` path | Path prefix pages must be under; `/` for the whole host |
+| `--sitemap` | `false` | Treat `<url>` as a sitemap even if it is not named like one |
+| `--max-pages` | `500` | Stop after this many pages (`stopped: max_pages` in the summary) |
+| `--depth` | `5` | Max BFS depth when the source is a crawl |
+| `--concurrency` | `8` | Max concurrent fetches |
+| `--dry-run` | `false` | Discover the source and print the plan and page counts; fetch and write nothing |
+| `--global` | `false` | Store the library without attaching it to the enclosing project |
+| `--no-cache` | `false` | Bypass the page cache |
+| `--verbose` | `false` | Print each fetched URL to stderr (failures are always printed) |
+| `--cookie-file` | config `cookie_file` or off | Netscape `cookies.txt` jar for the fetches |
+| `--user-agent` | config `user_agent` | User-Agent override for the fetches |
+
+**Examples:**
+
+```sh
+ketch docs add tailwind https://tailwindcss.com/docs --dry-run   # see the plan first
+ketch docs add tailwind https://tailwindcss.com/docs --version 4
+ketch docs add hono https://hono.dev/llms-full.txt
+ketch docs add vitepress https://vitepress.dev/sitemap.xml --prefix /guide
+ketch docs "container queries" -b local --library tailwind
+```
+
+The summary reports `source`, `prefix`, `pages`, `sections`, per-URL failures,
+`stopped: max_pages` when the cap cut the fetch short, and `unrendered: N`
+when pages looked JS-rendered but no browser is configured — their content is
+whatever the server-side HTML carried, so configure a browser (`ketch browser
+install`) and re-add to fill it in. Exit codes: `2` bad name or URL, `3`
+nothing indexable was fetched, `4` the site or network failed.
+
+### ketch docs list
+
+```sh
+ketch docs list
+```
+
+Lists every stored library (name, version, pages, sections, source, updated)
+and marks the ones attached to the current project. Libraries the project
+manifest declares but the store lacks are called out with a `ketch docs sync`
+hint.
+
+### ketch docs remove
+
+```sh
+ketch docs remove <name>
+```
+
+Deletes the library from the local store and detaches it from the current
+project's manifest if it is listed there. Exit `3` when it is neither stored nor
+attached.
+
+### ketch docs sync
+
+```sh
+ketch docs sync [--force]
+```
+
+Reads the enclosing project's `.ketch/docs.json` and adds every library that is
+not yet stored, using the options recorded when it was attached. `--force`
+re-adds them all. Exit `5` when there is no manifest.
+
+### Where local docs live
+
+Libraries are stored in a single SQLite file under the docs directory:
+`$XDG_DATA_HOME/ketch/docs` (default `~/.local/share/ketch/docs`) on Linux,
+`~/Library/Application Support/ketch/docs` on macOS, `%LOCALAPPDATA%\ketch\docs`
+on Windows. Override with `ketch config set docs_dir <path>` or
+`KETCH_DOCS_DIR`. The project manifest is a small JSON file
+(`.ketch/docs.json`) that records only how each library was added — commit it
+and teammates can `ketch docs sync`.
 
 ## ketch scrape
 

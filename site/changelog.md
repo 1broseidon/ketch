@@ -4,6 +4,9 @@ This page mirrors the canonical [`CHANGELOG.md`](https://github.com/1broseidon/k
 
 ## Unreleased
 
+**Added**
+- Local docs backend (`ketch docs -b local`), replacing the unimplemented FTS5 stub. `ketch docs add <name> <url>` pulls a documentation site onto the machine — discovering `llms-full.txt`, `llms.txt`, a sitemap, or falling back to a bounded same-host crawl, all through the same scrape pipeline and page cache as `ketch scrape` — splits each page at its headings, drops sections that recur verbatim across pages as boilerplate, and indexes the rest in SQLite FTS5 (pure Go, no CGO). `ketch docs -b local "query"` then answers offline with no API key, BM25-ranked with headings weighted above body text; results carry `source: local`, a version label, and a URL with the heading anchor. `--dry-run` shows the plan first; `--prefix`, `--max-pages`, `--depth`, `--concurrency`, `--sitemap`, and `--version` tune the pull. Inside a project, `add` records the library in `.ketch/docs.json` so bare searches default to the project's libraries and `ketch docs sync` rebuilds them elsewhere (`--global` opts out); `ketch docs list` and `ketch docs remove` manage the store, which lives in the platform data dir (`docs_dir` overrides). Selecting `local` before any library exists is a precondition error naming the `add` command. See [ADR-0004](https://github.com/1broseidon/ketch/blob/main/design/adr/0004-local-docs-corpus.md).
+
 ## v0.17.0 — 2026-09-16
 
 **Added**

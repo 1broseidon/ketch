@@ -133,7 +133,8 @@ and `ketch doctor` probes the effective pool.
 | `code_backend` | `grepapp` | Default `ketch code` backend: `grepapp`, `sourcegraph`, `github` |
 | `docs_backend` | `context7` | Default `ketch docs` backend: `context7`, `local` |
 | `sourcegraph_url` | `https://sourcegraph.com` | Sourcegraph instance URL (for self-hosted) |
-| `context7_api_key` | — | Context7 API key (required for `ketch docs`) |
+| `context7_api_key` | — | Context7 API key (required for `ketch docs -b context7`) |
+| `docs_dir` | platform data dir | Where local docs libraries live (`~/.local/share/ketch/docs` on Linux); built with `ketch docs add`, searched with `ketch docs -b local` |
 | `github_token` | — | GitHub token for `ketch code -b github` (or use `$GITHUB_TOKEN` / `gh auth`) |
 
 ### Scraping & Cache

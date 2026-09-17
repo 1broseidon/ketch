@@ -43,11 +43,16 @@ The two transports expose the same options under different spellings. Both direc
 
 ## docs
 
-- Backend: `context7` — curated, version-aware snippets; free key via `ketch config set context7_api_key <key>`. A `local` backend is planned but unimplemented; selecting it is `[precondition]` / exit 5.
+- Backends: `context7` (default) — curated, version-aware snippets; free key via `ketch config set context7_api_key <key>`. `local` — libraries you pulled onto this machine with `ketch docs add`; offline, keyless, BM25-ranked full-text search over heading-delimited sections. Selecting `local` before any library exists is `[precondition]` / exit 5 with the `docs add` hint.
 - Two-step usage: `resolve` → vet → `library`.
   - Resolve row shape: `/org/repo  Name  (snippets: N, trust: X)`.
   - **Resolve never returns empty.** A garbage query returns confident fuzzy matches, some with trust 8–10. Trust scores the source, not the match — vet that the *name* is the library you meant before fetching by ID.
 - `tokens` (default 4000) is the docs token budget; the default returns ~3.3 KB.
+- **Building a local library (CLI-only, agent-driven):** `ketch search` for the docs site → `ketch docs add <name> <url> --dry-run` to see the discovered source (`llms-full.txt` → `llms.txt` → sitemap → same-host crawl) and page count → drop `--dry-run` to pull. `<name>` is a lower-case slug; `<url>` may be a landing page, sitemap, or `llms.txt`. Pages are scoped to the URL's path prefix by default (`--prefix /` for the whole host); `--max-pages` (500) bounds the pull. Re-adding a name replaces it.
+  - Inside a project (a `.ketch/docs.json` or git tree) the library is attached: bare `-b local` searches default to the project's libraries and `ketch docs sync` rebuilds them on another machine. `--global` skips the attachment.
+  - Local `--library <name>` is the library name, not a Context7 ID. `--resolve` lists stored libraries whose name contains the query (row: `name  name  (snippets: <sections>, trust: 0.0)` — trust is a Context7 concept and is always 0 here; `--json` adds the description `seed (source, N pages)` and the version). Unknown name → `[not_found]` / exit 3.
+  - Results carry `source: local`, the `version` label if one was given, and a URL with a heading anchor. `ketch docs list` shows every library with page/section counts; `ketch docs remove <name>` deletes one.
+  - Exit codes from `docs add`: bad name/URL `2`; nothing indexable (site fetched but produced no sections) `3`; fetch/discovery failure `4`.
 
 ## scrape
 

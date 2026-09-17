@@ -31,14 +31,18 @@ against which a proposal is measured:
 The ordering reflects what unblocks what, not priority. Earlier items tend to
 enable later ones.
 
-### 1. Local, offline docs backend (`ketch docs -b local`)
+### 1. Local, offline docs backend (`ketch docs -b local`) — landed, growing
 
-The `docs` surface currently proxies a hosted provider; a local backend is
-already stubbed in the code. A pure-Go, offline-capable docs index — indexing a
-library once, then querying it with no network and no API key — would make
-`ketch docs` deliver on ketch's core promise (fast, stateless, single-binary)
-for docs the way it already does for scrape. This is the most concrete near-term
-direction because the seam already exists behind the `docs.Searcher` interface.
+The first cut shipped: `ketch docs add <name> <url>` pulls a documentation
+site into a per-user SQLite FTS5 library (see
+[ADR-0004](adr/0004-local-docs-corpus.md)), `ketch docs -b local` searches it
+offline with no API key, and `.ketch/docs.json` scopes a project to the
+libraries it uses. What remains is depth rather than plumbing: fresher
+`sync` (conditional requests, changed-page detection instead of a full
+re-pull), a per-library `llms.txt`-style export agents can read whole, tuning
+the BM25 column weights and section size on more real-world sites, and an
+MCP surface for `docs add` so an agent talking MCP can build a library the
+way a CLI agent can (the MCP `docs` tool already searches local libraries).
 
 *Enables:* everything that benefits from durable, queryable local content.
 
