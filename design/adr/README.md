@@ -17,6 +17,7 @@ see [`../DESIGN.md`](../DESIGN.md).
 | [0001](./0001-env-var-config.md) | Environment-variable configuration overlay | Accepted |
 | [0002](./0002-error-code-taxonomy.md) | Stable exit-code / error-prefix taxonomy | Accepted |
 | [0003](./0003-fast-path-first-scrape.md) | Fast-path-first scraping (HTTP before browser) | Accepted |
+| [0004](./0004-local-docs-corpus.md) | Local docs corpus (agent-managed, SQLite FTS5, crawl as a library) | Accepted |
 
 ## Writing a new ADR
 

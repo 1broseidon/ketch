@@ -227,10 +227,15 @@ requires.
 
 ### Ketch does not manage state you didn't ask it to
 
-The only persistent state ketch keeps is a deterministic on-disk page cache and
-crawl status files. It does not maintain a search index of your history, a
-profile, telemetry, or any cross-invocation memory. A given input produces a
-given output; the cache only makes that faster, never different in kind.
+The only persistent state ketch keeps is a deterministic on-disk page cache,
+crawl status files, and local docs libraries an agent or operator created by
+name with `ketch docs add`. It does not accumulate a search index of your
+history, a profile, telemetry, or any *implicit* cross-invocation memory. A
+local docs library is explicit, bounded by a page cap, listed and removable,
+and rebuildable from a project's `.ketch/docs.json` manifest
+([ADR-0004](./adr/0004-local-docs-corpus.md)). A given input produces a given
+output; the cache only makes that faster, never different in kind, and
+searching a local library never changes it.
 
 ### Ketch is not a general-purpose browser-automation framework
 
@@ -255,7 +260,10 @@ responsibility, and the tool is built to make honest requests, not evasive ones.
 readable slice of a site. It is not a distributed web-scale crawler, not an
 archival pipeline, and not a store you query later. The MCP `crawl` tool is
 capped hard (page count and wall-clock) precisely to keep it a *research*
-primitive rather than an ingestion engine.
+primitive rather than an ingestion engine. The crawler *library* does serve
+one bounded ingestion path — `ketch docs add` reuses it to pull a documentation
+site into a local library — but that persistence lives behind `docs`, never
+behind `crawl` ([ADR-0004](./adr/0004-local-docs-corpus.md)).
 
 ### Ketch does not embed an LLM or make ranking "smart"
 
