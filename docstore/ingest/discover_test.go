@@ -44,6 +44,13 @@ func (s *site) html(p, title, body string) *site {
 	s.routes[p] = [2]string{"text/html; charset=utf-8", fmt.Sprintf(`<!doctype html><html><head><title>%s</title></head><body><main><h1>%s</h1>%s</main></body></html>`, title, title, body)}
 	return s
 }
+
+// page serves a complete HTML document verbatim, for shapes html() cannot
+// express (a mount point outside <main>, say).
+func (s *site) page(p, doc string) *site {
+	s.routes[p] = [2]string{"text/html; charset=utf-8", doc}
+	return s
+}
 func (s *site) url(p string) string { return s.srv.URL + p }
 
 func sitemapXML(paths ...string) string {

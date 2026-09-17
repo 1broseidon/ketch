@@ -163,6 +163,45 @@ func TestAddCrawlStopsAtMaxPages(t *testing.T) {
 	}
 }
 
+// A JS-shell page that still ships server-side text (the Tailwind docs
+// shape) is indexed from what the HTML carried, and the summary counts it so
+// an agent knows the corpus may be partial without a browser.
+func TestAddCountsUnrenderedShells(t *testing.T) {
+	// App Router shell: a little server-side chrome in <main>, an empty mount
+	// point beside it, and an RSC payload dwarfing the visible text.
+	shell := `<!doctype html><html><head><title>A</title></head><body>` +
+		`<nav><ul><li>Docs</li></ul></nav><main><p>alpha server-rendered summary text</p></main><div id="__next"></div><script>` +
+		strings.Repeat(`self.__next_f.push([1,"a:[\"$\",\"tr\",null,{\"children\":\"row streamed via rsc\"}]"]);`, 120) +
+		`</script></body></html>`
+	s := newSite(t).
+		xml("/sitemap.xml", sitemapXML("/d/a", "/d/b")).
+		page("/d/a", shell).
+		html("/d/b", "B", "<p>beta is a plain page with enough words to be indexed as content</p>")
+	store := openTestStore(t)
+	sum, err := Add(context.Background(), store, testScraper(), nil, AddOptions{Name: "x", Seed: s.url("/d")})
+	if err != nil {
+		t.Fatalf("add: %v (summary %+v)", err, sum)
+	}
+	if sum.Fetched != 2 || sum.Unrendered != 1 {
+		t.Fatalf("summary = %+v", sum)
+	}
+	if hits, _ := store.Search(context.Background(), docstore.Query{Text: "alpha"}); len(hits) == 0 {
+		t.Fatal("shell page's server-side text was not indexed")
+	}
+
+	// The crawl path reports the same count through crawl.Result.FetchSource.
+	c := newSite(t).
+		html("/c", "C", `<p>root</p><a href="/c/shell">s</a>`).
+		page("/c/shell", shell)
+	sum, err = Add(context.Background(), openTestStore(t), testScraper(), nil, AddOptions{Name: "y", Seed: c.url("/c")})
+	if err != nil {
+		t.Fatalf("crawl add: %v (summary %+v)", err, sum)
+	}
+	if sum.Plan.Source != docstore.SourceCrawl || sum.Fetched != 2 || sum.Unrendered != 1 {
+		t.Fatalf("crawl summary = %+v", sum)
+	}
+}
+
 func TestAddNothingIndexableIsErrEmpty(t *testing.T) {
 	s := newSite(t).xml("/sitemap.xml", sitemapXML("/d/a", "/d/b"))
 	store := openTestStore(t)

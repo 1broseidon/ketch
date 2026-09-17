@@ -270,6 +270,9 @@ func printDocsAdd(out *docsAddOutput) {
 	if out.Skipped > 0 || out.Failed > 0 {
 		fmt.Printf("skipped: %d empty, %d failed\n", out.Skipped, out.Failed)
 	}
+	if out.Unrendered > 0 {
+		fmt.Printf("unrendered: %d pages looked JS-rendered and no browser is configured; content may be partial (ketch browser install, then re-add)\n", out.Unrendered)
+	}
 	if out.Stopped != "" {
 		fmt.Printf("stopped: %s\n", out.Stopped)
 	}

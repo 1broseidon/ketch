@@ -28,8 +28,12 @@ type Result struct {
 	Depth  int          `json:"depth"`
 	Status string       `json:"status"` // "new", "changed", "unchanged"
 	Source string       `json:"source"` // "seed", "link", "sitemap"
-	Error  string       `json:"error,omitempty"`
-	URL    string       `json:"url"`
+	// FetchSource is how Page was obtained: scrape.SourceHTTP,
+	// scrape.SourceHTTPShell (a JS shell no browser could render), or
+	// scrape.SourceBrowser. Empty on errors.
+	FetchSource string `json:"fetch_source,omitempty"`
+	Error       string `json:"error,omitempty"`
+	URL         string `json:"url"`
 }
 
 type queueItem struct {
@@ -200,11 +204,12 @@ func (c *crawler) processItem(item queueItem) {
 	// Use --no-cache to force re-fetch for change detection.
 	if cached != nil && !scrape.CacheStaleForBrowser(cachedSource, c.scraper.HasBrowser()) {
 		c.fn(Result{
-			Page:   cached,
-			Depth:  item.depth,
-			Status: "unchanged",
-			Source: item.source,
-			URL:    item.url,
+			Page:        cached,
+			Depth:       item.depth,
+			Status:      "unchanged",
+			Source:      item.source,
+			FetchSource: cachedSource,
+			URL:         item.url,
 		})
 		return
 	}
@@ -251,11 +256,12 @@ func (c *crawler) processItem(item queueItem) {
 
 	c.pc.Put(cacheKey, page, fetchSource)
 	c.fn(Result{
-		Page:   page,
-		Depth:  item.depth,
-		Status: "new",
-		Source: item.source,
-		URL:    item.url,
+		Page:        page,
+		Depth:       item.depth,
+		Status:      "new",
+		Source:      item.source,
+		FetchSource: fetchSource,
+		URL:         item.url,
 	})
 
 	if item.depth < c.opts.Depth && contentIsHTML && rawHTML != "" {

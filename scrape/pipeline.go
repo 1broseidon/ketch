@@ -103,22 +103,31 @@ func warnLooseCookiePerms(path string) {
 // The cache is keyed by the rewritten URL so original and rewritten URLs
 // share one cache entry.
 func (s *Scraper) CachedScrape(ctx context.Context, pc PageCache, url string) (*Page, error) {
+	page, _, err := s.CachedScrapeSource(ctx, pc, url)
+	return page, err
+}
+
+// CachedScrapeSource is CachedScrape that also reports the fetch source of
+// the returned page (SourceHTTP, SourceHTTPShell, or SourceBrowser), whether
+// it came from the cache or a fresh fetch. Callers that aggregate many pages
+// use it to tell how many were JS shells left unrendered.
+func (s *Scraper) CachedScrapeSource(ctx context.Context, pc PageCache, url string) (*Page, string, error) {
 	key := s.CacheKey(s.Rewrite(url))
 	if pc != nil {
 		if page, source := pc.Get(key); page != nil && !CacheStaleForBrowser(source, s.HasBrowser()) {
-			return page, nil
+			return page, source, nil
 		}
 	}
 
 	page, source, err := s.Scrape(ctx, url)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	if pc != nil {
 		pc.Put(key, page, source)
 	}
-	return page, nil
+	return page, source, nil
 }
 
 // CachedScrapeRaw is the raw-HTML path. It routes through ScrapeConditional so

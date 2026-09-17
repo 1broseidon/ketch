@@ -57,15 +57,20 @@ type PageError struct {
 // Summary reports what an add did, in the shape an agent needs to decide
 // whether the corpus is complete enough or should be re-run wider.
 type Summary struct {
-	Library  *docstore.Library `json:"library,omitempty"`
-	Plan     Plan              `json:"plan"`
-	Fetched  int               `json:"fetched"`
-	Skipped  int               `json:"skipped"` // fetched but empty after extraction
-	Failed   int               `json:"failed"`
-	Errors   []PageError       `json:"errors,omitempty"`
-	Stopped  string            `json:"stopped,omitempty"`
-	DryRun   bool              `json:"dry_run,omitempty"`
-	Duration time.Duration     `json:"-"`
+	Library *docstore.Library `json:"library,omitempty"`
+	Plan    Plan              `json:"plan"`
+	Fetched int               `json:"fetched"`
+	Skipped int               `json:"skipped"` // fetched but empty after extraction
+	Failed  int               `json:"failed"`
+	// Unrendered counts fetched pages that looked like a JS shell but could
+	// not be rendered because no browser is configured. Their extracted
+	// content is whatever the server-side HTML carried, which may be partial;
+	// configuring a browser and re-adding fills it in.
+	Unrendered int           `json:"unrendered,omitempty"`
+	Errors     []PageError   `json:"errors,omitempty"`
+	Stopped    string        `json:"stopped,omitempty"`
+	DryRun     bool          `json:"dry_run,omitempty"`
+	Duration   time.Duration `json:"-"`
 }
 
 // Add discovers, fetches, chunks, and indexes a library, replacing any
@@ -165,7 +170,7 @@ func fetchList(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, urls []s
 		go func(raw string) {
 			defer wg.Done()
 			defer func() { <-sem }()
-			page, err := fetchOne(ctx, s, pc, raw)
+			page, shell, err := fetchOne(ctx, s, pc, raw)
 			if opts.Progress != nil {
 				opts.Progress(raw, err)
 			}
@@ -179,6 +184,9 @@ func fetchList(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, urls []s
 				sum.Skipped++
 			default:
 				sum.Fetched++
+				if shell {
+					sum.Unrendered++
+				}
 				pages = append(pages, *page)
 			}
 		}(raw)
@@ -191,32 +199,33 @@ func fetchList(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, urls []s
 
 // fetchOne fetches a single page. Markdown and plain-text URLs (the .md
 // twins that llms.txt indexes point at) are taken verbatim; everything else
-// goes through the cache-aware, JS-shell-aware scrape pipeline.
-func fetchOne(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, raw string) (*docstore.Page, error) {
+// goes through the cache-aware, JS-shell-aware scrape pipeline. shell
+// reports a JS shell that could not be rendered (see Summary.Unrendered).
+func fetchOne(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, raw string) (page *docstore.Page, shell bool, err error) {
 	if isTextURL(raw) {
 		content, err := s.FetchContent(ctx, raw)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		if strings.Contains(strings.ToLower(content.ContentType), "html") {
 			return scrapePage(ctx, s, pc, raw)
 		}
 		body := string(content.Body)
-		return &docstore.Page{URL: raw, Title: markdownTitle(body, raw), Markdown: body, ContentHash: scrape.ContentHash(body)}, nil
+		return &docstore.Page{URL: raw, Title: markdownTitle(body, raw), Markdown: body, ContentHash: scrape.ContentHash(body)}, false, nil
 	}
 	return scrapePage(ctx, s, pc, raw)
 }
 
-func scrapePage(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, raw string) (*docstore.Page, error) {
+func scrapePage(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, raw string) (*docstore.Page, bool, error) {
 	var pageCache scrape.PageCache
 	if pc != nil {
 		pageCache = pc
 	}
-	p, err := s.ScrapeMarkdown(ctx, pageCache, raw, false)
+	p, source, err := s.CachedScrapeSource(ctx, pageCache, raw)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return fromScrape(p), nil
+	return fromScrape(p), source == scrape.SourceHTTPShell, nil
 }
 
 func fromScrape(p *scrape.Page) *docstore.Page {
@@ -265,6 +274,9 @@ func fetchCrawl(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, plan *P
 			return
 		}
 		sum.Fetched++
+		if r.FetchSource == scrape.SourceHTTPShell {
+			sum.Unrendered++
+		}
 		pages = append(pages, *fromScrape(r.Page))
 		if len(pages) >= opts.MaxPages {
 			capped = true
