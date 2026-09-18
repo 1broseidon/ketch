@@ -92,6 +92,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		pc := newPageCache(false)
 		tag, _ := cmd.Flags().GetString("tag")
 		tw := newTagWriter(tag, pc)
+		defer tw.Close()
 		return searchScrape(cmd.Context(), results, scraper, pc, tw, asJSON, trim, maxChars, minimal)
 	}
 
@@ -283,6 +284,7 @@ func runMultiSearch(cmd *cobra.Command, query string, limit int, doScrape, asJSO
 		pc := newPageCache(false)
 		tag, _ := cmd.Flags().GetString("tag")
 		tw := newTagWriter(tag, pc)
+		defer tw.Close()
 		return searchScrape(cmd.Context(), results, scraper, pc, tw, asJSON, trim, maxChars, minimal)
 	}
 
@@ -332,6 +334,7 @@ func runRandomSearch(cmd *cobra.Command, query string, limit int, doScrape, asJS
 		pc := newPageCache(false)
 		tag, _ := cmd.Flags().GetString("tag")
 		tw := newTagWriter(tag, pc)
+		defer tw.Close()
 		return searchScrape(cmd.Context(), results, scraper, pc, tw, asJSON, trim, maxChars, minimal)
 	}
 	if asJSON {

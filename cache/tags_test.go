@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -121,16 +120,68 @@ func TestTagIndexSurvivesTTLExpiry(t *testing.T) {
 	}
 }
 
-func TestTagCachedRequiresAFetchedPage(t *testing.T) {
+// Naming a URL is a deliberate act, so it is indexed whether or not a body
+// happens to be cached — organising URLs must not depend on when they were
+// last fetched.
+func TestTagURLWithoutACachedBody(t *testing.T) {
 	t.Parallel()
 	c := newTestCache(t, time.Hour)
-	err := c.TagCached("guacamole", "https://example.com/never", "https://example.com/never")
-	if !errors.Is(err, ErrNotCached) {
-		t.Fatalf("TagCached on an unfetched URL = %v, want ErrNotCached", err)
+	url := "https://example.com/never-fetched"
+
+	cached, err := c.TagURL("guacamole", url, url)
+	if err != nil {
+		t.Fatalf("TagURL: %v", err)
 	}
+	if cached {
+		t.Error("TagURL reported a cached body for a page never fetched")
+	}
+
 	pages, _ := c.Tagged("guacamole")
-	if len(pages) != 0 {
-		t.Errorf("nothing should have been indexed, got %d entries", len(pages))
+	if len(pages) != 1 {
+		t.Fatalf("%d entries, want the URL to be indexed anyway", len(pages))
+	}
+	if pages[0].URL != url {
+		t.Errorf("URL = %q, want %q", pages[0].URL, url)
+	}
+	if pages[0].Cached {
+		t.Error("entry should list as uncached")
+	}
+	if pages[0].Title != "" || pages[0].Description != "" {
+		t.Errorf("entry should have no metadata yet, got %+v", pages[0])
+	}
+}
+
+// ...and it becomes a proper index entry the first time the page is seen,
+// without anyone re-tagging it.
+func TestTagURLBackfillsMetadataOnceFetched(t *testing.T) {
+	t.Parallel()
+	c := newTestCache(t, time.Hour)
+	url := "https://example.com/ldap"
+	if _, err := c.TagURL("guacamole", url, url); err != nil {
+		t.Fatalf("TagURL: %v", err)
+	}
+
+	// The page arrives later, by any route — a plain scrape, no --tag.
+	c.Put(url, page(url, "LDAP auth", "Guacamole authenticates against an LDAP directory for single sign-on."), scrape.SourceHTTP)
+
+	pages, _ := c.Tagged("guacamole")
+	if len(pages) != 1 {
+		t.Fatalf("%d entries, want 1", len(pages))
+	}
+	if pages[0].Title != "LDAP auth" || pages[0].Description == "" {
+		t.Errorf("metadata not backfilled: %+v", pages[0])
+	}
+	if !pages[0].Cached {
+		t.Error("entry should now list as cached")
+	}
+
+	// Backfill is persisted, so it survives the body expiring again.
+	if err := c.Clear(); err != nil {
+		t.Fatalf("Clear: %v", err)
+	}
+	pages, _ = c.Tagged("guacamole")
+	if len(pages) != 1 || pages[0].Title != "LDAP auth" {
+		t.Errorf("backfilled metadata was not persisted: %+v", pages)
 	}
 }
 

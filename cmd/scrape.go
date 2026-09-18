@@ -83,6 +83,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 
 	pc := newPageCache(noCache)
 	tw := newTagWriter(tag, pc)
+	defer tw.Close()
 	defer pc.Close()
 
 	ctx := cmd.Context()

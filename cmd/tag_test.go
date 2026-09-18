@@ -37,9 +37,8 @@ func TestValidateTagFlag(t *testing.T) {
 			args: []string{"--tag", "proj/auth.v2"},
 		},
 		{
-			name: "tag and no-cache conflict", withNoCache: true,
-			args:     []string{"--tag", "guacamole", "--no-cache"},
-			wantCode: ExitValidation, wantMsg: "mutually exclusive",
+			name: "tag with no-cache is allowed", withNoCache: true,
+			args: []string{"--tag", "guacamole", "--no-cache"},
 		},
 		{
 			name: "control characters rejected", withNoCache: true,
@@ -87,10 +86,7 @@ func TestTagWriterNilIsANoOp(t *testing.T) {
 	if tw := newTagWriter("", nil); tw != nil {
 		t.Errorf("newTagWriter with no tag = %v, want nil", tw)
 	}
-	// A cache that could not be opened yields no writer rather than a panic.
-	if tw := newTagWriter("guacamole", nil); tw != nil {
-		t.Errorf("newTagWriter with no cache = %v, want nil", tw)
-	}
 	var nilWriter *tagWriter
 	nilWriter.record(nil, "https://example.com", nil) // must not panic
+	nilWriter.Close()                                 // must not panic
 }

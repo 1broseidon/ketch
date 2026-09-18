@@ -37,8 +37,8 @@ A tag is a label attached to cache entries. It is applied two ways:
 
 - `--tag <name>` on `search`, `scrape` and `crawl` tags pages as they are
   fetched.
-- `ketch tag add <name> <url>...` tags pages already in the cache, with no
-  network access at all.
+- `ketch tag add <name> <url>...` tags URLs directly, with no network access
+  at all.
 
 `ketch tag show <name>` answers the question the agent actually asks — *what do
 I have under this tag that I can go back to?* — by emitting an llms.txt-shaped
@@ -58,9 +58,18 @@ by whether a URL followed.
 
 Specifics that follow from the decision:
 
-- **Only fetched pages are tagged.** A bare `search --tag` records nothing: its
-  results were never retrieved, and a map of pages nobody read is a map of
-  guesses. `search --scrape --tag` records what it actually fetched.
+- **Implicit tagging records only what was fetched.** A bare `search --tag`
+  records nothing: its results were never retrieved, and a map of pages nobody
+  read is a map of guesses. `search --scrape --tag` records what it actually
+  fetched.
+- **Explicit tagging records whatever URL you name.** `tag add` does not
+  require a cached body *(revised 2026-09-18 — it did at first, a rule carried
+  over from the cache-scoped design)*. Naming a URL is a deliberate act, and
+  the index is a record of what matters to a piece of work rather than a view
+  over the cache; refusing a URL because its body happens to be absent would
+  make organising URLs depend on when they were last fetched. Such an entry
+  lists as uncached with no title or description, and both fill in the first
+  time the page is seen — by any route, with no re-tagging.
 - **A page may carry several tags.** Tags are a list, and the same URL under two
   tags remains one cached page.
 - **Tags never own the page body.** They are stored in their own bbolt bucket

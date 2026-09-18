@@ -29,9 +29,12 @@ import (
 // need a capability the interface does not describe; BBoltStore has it.
 var ErrTagsUnsupported = errors.New("the configured cache backend does not support tags")
 
-// ErrNotCached reports that a page was never fetched, so there is nothing to
-// tag. Only fetched pages are tagged — a map of pages nobody read is a map of
-// guesses.
+// ErrNotCached is no longer returned: a URL can be tagged whether or not its
+// body is cached. Kept so callers compiled against the old behaviour still
+// build; it will be removed in a later release.
+//
+// Deprecated: tagging an uncached URL succeeds and yields an entry with no
+// title or description until the page is fetched.
 var ErrNotCached = errors.New("page is not in the cache")
 
 // descriptionMax bounds a derived description. Long enough to tell two pages
@@ -104,10 +107,6 @@ func (c *Cache) tags() (tagStore, error) {
 // cache key the page was stored under (scrape.Scraper.CacheKey of the
 // rewritten URL); url is the URL to show and re-fetch.
 func (c *Cache) TagPage(tag, key, url string, page *scrape.Page) error {
-	ts, err := c.tags()
-	if err != nil {
-		return err
-	}
 	entry := TagEntry{
 		URL:         url,
 		Key:         key,
@@ -115,22 +114,38 @@ func (c *Cache) TagPage(tag, key, url string, page *scrape.Page) error {
 		Description: Describe(page.Markdown),
 		TaggedAt:    time.Now().Unix(),
 	}
+	return c.tagEntry(tag, entry)
+}
+
+// tagEntry writes one index entry, replacing whatever was there for that page.
+func (c *Cache) tagEntry(tag string, entry TagEntry) error {
+	ts, err := c.tags()
+	if err != nil {
+		return err
+	}
 	data, err := json.Marshal(entry)
 	if err != nil {
 		return err
 	}
-	return ts.PutTagEntry(tag, cacheKey(key), data)
+	return ts.PutTagEntry(tag, cacheKey(entry.Key), data)
 }
 
-// TagCached records a page that is already in the cache, without any network
-// access. Returns ErrNotCached when the page was never fetched or its body
-// has expired — there is no title or description to index without it.
-func (c *Cache) TagCached(tag, key, url string) error {
+// TagURL records a URL under a tag without any network access, using the
+// cached page for title and description when there is one. It reports whether
+// a body was available.
+//
+// A URL with no cached body is still indexed. The index is a durable record of
+// what matters to a piece of work, not a view over the cache: naming a URL is
+// a deliberate act, and refusing it because the body happens to be absent
+// would make organising URLs depend on when they were last fetched. Such an
+// entry lists as uncached and fills in its title and description the first
+// time the page is seen — see Tagged.
+func (c *Cache) TagURL(tag, key, url string) (cached bool, err error) {
 	page, _ := c.Get(key)
 	if page == nil {
-		return ErrNotCached
+		return false, c.tagEntry(tag, TagEntry{URL: url, Key: key, TaggedAt: time.Now().Unix()})
 	}
-	return c.TagPage(tag, key, url, page)
+	return true, c.TagPage(tag, key, url, page)
 }
 
 // Tagged returns everything under a tag, newest first, each marked with
@@ -154,6 +169,17 @@ func (c *Cache) Tagged(tag string) ([]TaggedPage, error) {
 			continue
 		}
 		page, _ := c.Get(e.Key)
+		// An entry tagged before its page was ever fetched has no title or
+		// description. Fill them in the first time the body is available, so
+		// a URL tagged for organisation becomes a proper index entry without
+		// anyone re-tagging it.
+		if page != nil && e.Title == "" && e.Description == "" {
+			e.Title = strings.TrimSpace(page.Title)
+			e.Description = Describe(page.Markdown)
+			if e.Title != "" || e.Description != "" {
+				_ = c.tagEntry(tag, e)
+			}
+		}
 		pages = append(pages, TaggedPage{
 			URL:         e.URL,
 			Title:       e.Title,

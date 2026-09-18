@@ -70,6 +70,7 @@ func runCrawl(cmd *cobra.Command, args []string) error {
 
 	tag, _ := cmd.Flags().GetString("tag")
 	tw := newTagWriter(tag, pc)
+	defer tw.Close()
 
 	scraper, err := newScraper(cmd)
 	if err != nil {

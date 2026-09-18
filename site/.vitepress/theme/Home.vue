@@ -326,7 +326,7 @@ harness/harness  registry/app/remote/clients/registry/client.go  <span class="di
                     <tr><td class="cmd">--force-browser</td><td>Always render via the browser, skipping auto-detection</td></tr>
                     <tr><td class="cmd">--concurrency</td><td>Max concurrent requests, default 5</td></tr>
                     <tr><td class="cmd">--no-cache</td><td>Bypass the page cache</td></tr>
-                    <tr><td class="cmd">--tag <span class="dim">&lt;name&gt;</span></td><td>Record each fetched page under this tag (not with <code class="inline">--no-cache</code>)</td></tr>
+                    <tr><td class="cmd">--tag <span class="dim">&lt;name&gt;</span></td><td>Record each fetched page under this tag</td></tr>
                     <tr><td class="cmd">--cookie-file</td><td>Netscape <code class="inline">cookies.txt</code> jar</td></tr>
                     <tr><td class="cmd">--user-agent</td><td>User-Agent override; empty restores the default</td></tr>
                   </tbody>
@@ -371,7 +371,7 @@ harness/harness  registry/app/remote/clients/registry/client.go  <span class="di
                     <tr><td class="cmd">--background</td><td>Detach and return a crawl id</td></tr>
                     <tr><td class="cmd">--allow</td><td>Path substring filters</td></tr>
                     <tr><td class="cmd">--deny</td><td>Regex deny patterns</td></tr>
-                    <tr><td class="cmd">--tag <span class="dim">&lt;name&gt;</span></td><td>Record each fetched page under this tag (not with <code class="inline">--no-cache</code>)</td></tr>
+                    <tr><td class="cmd">--tag <span class="dim">&lt;name&gt;</span></td><td>Record each fetched page under this tag</td></tr>
                     <tr><td class="cmd">--cookie-file</td><td>Netscape <code class="inline">cookies.txt</code> jar</td></tr>
                     <tr><td class="cmd">--user-agent</td><td>User-Agent override</td></tr>
                   </tbody>
@@ -415,12 +415,13 @@ harness/harness  registry/app/remote/clients/registry/client.go  <span class="di
             <div class="disc-body">
               <pre><code><span class="p">$ </span>ketch scrape https://guacamole.apache.org/doc/gug/ldap-auth.html --tag guacamole
 <span class="p">$ </span>ketch search "guacamole ldap" --scrape --tag guacamole
-<span class="p">$ </span>ketch tag add guacamole https://example.com/already-cached   <span class="dim"># no network</span>
+<span class="p">$ </span>ketch tag add guacamole https://example.com/read-this-later  <span class="dim"># no network</span>
 <span class="p">$ </span>ketch tag show guacamole
 <span class="p">$ </span>ketch tag list
 <span class="p">$ </span>ketch tag remove guacamole <span class="dim"># or: … guacamole &lt;url&gt;… for single pages</span></code></pre>
               <p><code class="inline">tag show</code> renders an llms.txt-shaped index — titles, URLs, one-line descriptions — so an agent mid-task picks the page it needs instead of searching the web again. A page can carry several tags and is still cached once.</p>
-              <p class="note"><strong>The index outlives the pages it points at.</strong> A body is tens of kilobytes and goes stale, so it expires under <code class="inline">cache_ttl</code>; an entry is a couple hundred bytes, and a URL does not rot the way a body does. A page whose body has expired is listed as <code class="inline">(not cached)</code> rather than dropped, and re-fetching restores it without re-tagging. There is no <code class="inline">sync</code>: a tag owns a URL and a title, never a copy of the content. Equally, nothing expires the index, so <code class="inline">tag remove</code> is how a tag ends. <code class="inline">--tag</code> is refused together with <code class="inline">--no-cache</code>.</p>
+              <p class="note"><strong>The index outlives the pages it points at.</strong> A body is tens of kilobytes and goes stale, so it expires under <code class="inline">cache_ttl</code>; an entry is a couple hundred bytes, and a URL does not rot the way a body does. A page whose body has expired is listed as <code class="inline">(not cached)</code> rather than dropped, and re-fetching restores it without re-tagging. There is no <code class="inline">sync</code>: a tag owns a URL and a title, never a copy of the content. Equally, nothing expires the index, so <code class="inline">tag remove</code> is how a tag ends.</p>
+              <p class="note"><code class="inline">tag add</code> takes any URL, cached or not — organising URLs should not depend on when they were last fetched. An un-fetched URL lists with no title or description until the page is seen by any route; both then fill in on their own.</p>
             </div>
           </details>
 

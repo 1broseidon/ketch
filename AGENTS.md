@@ -114,7 +114,7 @@ ketch docs "query" --library /org/repo     # skip resolve, fetch directly
 ketch docs --resolve "library name"        # resolve library name → Context7 IDs
 ketch config                                # show effective config + backends (incl. *_key_set presence booleans)
 ketch scrape <url> --tag docs               # fetch and record the page under a tag
-ketch tag add docs <url>...                 # tag pages already in the cache (no network)
+ketch tag add docs <url>...                 # tag URLs directly, cached or not (no network)
 ketch tag show docs                         # llms.txt-shaped index of what is under a tag
 ketch tag list                              # every tag, with entry counts
 ketch tag remove docs [url...]              # drop a tag, or just those pages from it
@@ -158,7 +158,7 @@ ketch mcp serve                             # run as an MCP server over stdio (s
 | --no-llms-txt | scrape | false | Disable automatic /llms.txt detection for bare domains |
 | --concurrency | scrape | 5 | Max concurrent requests for multi-URL scraping |
 | --force-browser | scrape | false | Always render via the configured browser, skipping JS-shell auto-detection (composes with --raw/--select; errors without a browser) |
-| --tag <name> | scrape, search --scrape, crawl | — | Record each fetched page under this tag; mutually exclusive with --no-cache, since a body that is never stored would index an entry that is cold from birth |
+| --tag <name> | scrape, search --scrape, crawl | — | Record each fetched page under this tag. Composes with --no-cache: the entry keeps the title and description from the fetch and simply lists as uncached |
 | --minimal | tag show | false | One page per line, tab-separated (url/title/description) |
 | --cookie-file <path> | scrape, search --scrape, crawl | config `cookie_file` or off | Netscape cookies.txt jar; flag overrides config and an explicit empty value disables cookies |
 | --user-agent <ua> | scrape, search --scrape, crawl | config `user_agent` or built-in default | User-Agent override applied to HTTP and browser fetches; flag overrides config and an explicit empty value restores each fetch path's default. A configured UA is folded into the page-cache key, so pages cached under one UA are not reused under another |

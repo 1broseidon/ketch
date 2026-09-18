@@ -6,7 +6,7 @@ This page mirrors the canonical [`CHANGELOG.md`](https://github.com/1broseidon/k
 
 **Added**
 - Tags: a durable index over the pages ketch already cached. Record pages as you fetch them (`--tag <name>` on `scrape`, `search --scrape`, `crawl`) or afterwards (`ketch tag add <name> <url>...`, no network), then ask what you have: `ketch tag show <name>` renders an llms.txt-shaped index of titles, URLs and descriptions, `ketch tag list` shows every tag, `ketch tag remove <name> [url...]` drops a tag or single pages. A page can carry several tags and is still cached once.
-- The index outlives the page bodies. `cache_ttl` defaults to 72h, so a tag scoped to the bodies would be empty by the Tuesday after a Friday of research — instead, an expired page is listed as "not cached" and a re-fetch restores it without re-tagging. `ketch cache clear` now reclaims the disk and keeps the map. Nothing expires the index, so `tag remove` is how a tag ends; `--tag` and `--no-cache` are mutually exclusive.
+- The index outlives the page bodies. `cache_ttl` defaults to 72h, so a tag scoped to the bodies would be empty by the Tuesday after a Friday of research — instead, an expired page is listed as "not cached" and a re-fetch restores it without re-tagging. `ketch cache clear` now reclaims the disk and keeps the map. Nothing expires the index, so `tag remove` is how a tag ends. `tag add` takes any URL, cached or not — an un-fetched one is indexed with no title or description, and both fill in the first time the page is seen. A bare `search --tag` still records nothing, since those results were never retrieved.
 - `tag` also ships as a sixth MCP tool (`operation`: add/show/list/remove), and `search`, `scrape` and `crawl` gain a `tag` option.
 
 ## v0.17.1 — 2026-09-18

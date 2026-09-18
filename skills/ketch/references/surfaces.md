@@ -20,7 +20,7 @@ The two transports expose the same options under different spellings. Both direc
 | `--force-browser` | `force_browser` | scrape |
 | `--max-chars` | `max_chars` | scrape / search-with-scrape; crawl has it on MCP only |
 | `--no-cache` | `no_cache` | scrape, crawl |
-| `--tag <name>` | `tag` | scrape, search-with-scrape, crawl; refused together with `--no-cache` |
+| `--tag <name>` | `tag` | scrape, search-with-scrape, crawl; composes with `--no-cache` (entry lists as uncached) |
 | `ketch tag add/show/list/remove` | `tag` tool, `operation` enum | the CLI uses verbs, MCP takes `operation: add\|show\|list\|remove` |
 | `--concurrency` (scrape, default 5) | `concurrency` (capped at 16) | crawl's `--concurrency` (default 8) is CLI-only |
 | — | `max_pages` | crawl, MCP only: default 30, cap 100; CLI crawl bounds with `--depth`/`--allow`/`--deny` |
@@ -79,7 +79,7 @@ there?". No network on any operation.
 | Operation | CLI | MCP |
 | --- | --- | --- |
 | Tag as you fetch | `--tag <name>` on `scrape` / `search --scrape` / `crawl` | `tag` option on those tools |
-| Tag already-cached pages | `ketch tag add <name> <url>...` | `operation: add`, `urls` |
+| Tag URLs directly (cached or not) | `ketch tag add <name> <url>...` | `operation: add`, `urls` |
 | Read the index | `ketch tag show <name>` (`--minimal` for tab-separated) | `operation: show` |
 | List tags | `ketch tag list` | `operation: list` |
 | Drop a tag, or pages from it | `ketch tag remove <name> [url...]` | `operation: remove`, optional `urls` |
@@ -93,9 +93,15 @@ that the page is gone — `scrape` the URL to restore it. `ketch cache clear`
 drops bodies and keeps the index. Nothing expires the index, so `remove` is the
 only way a tag ends.
 
-Errors: `add` on a URL that was never fetched is `[not_found]` / exit 3 — only
-fetched pages can be tagged, because there is no title or description to index
-without the page. `remove` that matches nothing is also `[not_found]`.
+`add` accepts a URL whose page was never fetched: it is indexed with no title
+or description, listed as uncached, and both fill in the first time the page is
+seen by any route. The returned `not_cached` array names those — scrape them if
+you want the index to describe them now.
+
+A bare `search --tag` still records nothing: those results were never
+retrieved. Use `search --scrape --tag`.
+
+Errors: `remove` that matches nothing is `[not_found]` / exit 3.
 
 ---
 

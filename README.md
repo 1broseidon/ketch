@@ -153,7 +153,7 @@ fetch, then ask later what you have:
 ```sh
 ketch search "guacamole ldap authentication" --scrape --tag guacamole
 ketch scrape https://guacamole.apache.org/doc/gug/ldap-auth.html --tag guacamole
-ketch tag add guacamole https://example.com/already-cached   # no network
+ketch tag add guacamole https://example.com/read-this-later  # no network
 
 ketch tag show guacamole
 ```
@@ -168,6 +168,11 @@ index entry is a couple hundred bytes and a URL does not rot the way a body
 does — so entries keep their own metadata, a page whose body has expired is
 listed as `(not cached)` rather than dropped, and re-fetching it restores it
 without re-tagging. `ketch cache clear` reclaims the disk and keeps the map.
+
+`tag add` takes any URL, cached or not — naming a URL is a deliberate act, and
+organising URLs should not depend on when they were last fetched. An
+un-fetched URL lists with no title or description until the page is seen, by
+any route; both then fill in on their own.
 
 There is no `sync` and no staleness to reason about: a tag owns a URL and a
 title, never a copy of the content. Equally, nothing expires the index, so

@@ -2,7 +2,6 @@ package mcp
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"unicode"
 
@@ -22,7 +21,7 @@ import (
 type TagInput struct {
 	Operation string   `json:"operation" jsonschema:"one of: add, show, list, remove"`
 	Tag       string   `json:"tag,omitempty" jsonschema:"the tag to act on; required for every operation except list"`
-	URLs      []string `json:"urls,omitempty" jsonschema:"for add, the already-fetched URLs to tag; for remove, the URLs to drop (omit to drop the whole tag)"`
+	URLs      []string `json:"urls,omitempty" jsonschema:"for add, the URLs to tag (a URL with no cached page is still indexed; its title and description fill in once fetched); for remove, the URLs to drop (omit to drop the whole tag)"`
 }
 
 // TagOutput is the output schema for the "tag" tool. Fields are populated per
@@ -43,7 +42,7 @@ func (s *Server) registerTagTool() {
 		Name: "tag",
 		Description: "Label pages already fetched into the local cache, then ask what is under a label. " +
 			"Use it to keep a working set for a project: tag the docs and write-ups that proved useful (or pass tag to search/scrape/crawl as you fetch), then later call operation=show to get an index of titles, URLs and descriptions instead of searching the web again. " +
-			"Operations: add (tag already-fetched URLs), show (list one tag's pages), list (all tags), remove (drop a tag, or the given URLs from it). " +
+			"Operations: add (tag URLs, cached or not), show (list one tag's pages), list (all tags), remove (drop a tag, or the given URLs from it). " +
 			"Makes no network requests. The index is durable and outlives the cached page bodies: entries whose body has expired come back with cached=false and must be re-fetched with scrape, which restores them." +
 			errTaxonomy,
 		Annotations: localMutating(),
@@ -83,17 +82,16 @@ func (s *Server) tagAdd(in TagInput) (*mcpsdk.CallToolResult, TagOutput, error) 
 	out := TagOutput{Tag: in.Tag, Tagged: []string{}, NotCached: []string{}}
 	for _, url := range in.URLs {
 		key := s.scraper.CacheKey(s.scraper.Rewrite(url))
-		switch err := s.cache.TagCached(in.Tag, key, url); {
-		case err == nil:
-			out.Tagged = append(out.Tagged, url)
-		case errors.Is(err, cache.ErrNotCached):
-			out.NotCached = append(out.NotCached, url)
-		default:
+		cached, err := s.cache.TagURL(in.Tag, key, url)
+		if err != nil {
 			return nil, TagOutput{}, errf(kindPrecondition, "%v", err)
 		}
-	}
-	if len(out.Tagged) == 0 {
-		return nil, TagOutput{}, errf(kindNotFound, "none of those URLs are in the cache; scrape them first, or pass tag to the fetching tool")
+		out.Tagged = append(out.Tagged, url)
+		// Indexed, but with no title or description until the page is
+		// fetched; the caller may want to scrape these.
+		if !cached {
+			out.NotCached = append(out.NotCached, url)
+		}
 	}
 	return nil, out, nil
 }

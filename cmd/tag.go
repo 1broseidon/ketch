@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -125,37 +124,35 @@ func runTagAdd(cmd *cobra.Command, args []string) error {
 	defer c.Close()
 	defer scraper.Close()
 
-	var tagged, missing []string
+	var tagged, uncached []string
 	for _, url := range args[1:] {
 		key := scraper.CacheKey(scraper.Rewrite(url))
-		switch err := c.TagCached(name, key, url); {
-		case err == nil:
-			tagged = append(tagged, url)
-		case errors.Is(err, cache.ErrNotCached):
-			missing = append(missing, url)
-		default:
+		cached, err := c.TagURL(name, key, url)
+		if err != nil {
 			return err
+		}
+		tagged = append(tagged, url)
+		if !cached {
+			uncached = append(uncached, url)
 		}
 	}
 
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(struct {
-			Tag      string   `json:"tag"`
-			Tagged   []string `json:"tagged"`
-			NotCache []string `json:"not_cached"`
-		}{name, orEmpty(tagged), orEmpty(missing)})
+			Tag       string   `json:"tag"`
+			Tagged    []string `json:"tagged"`
+			NotCached []string `json:"not_cached"`
+		}{name, orEmpty(tagged), orEmpty(uncached)})
 	}
 
 	for _, url := range tagged {
 		fmt.Fprintf(os.Stderr, "tagged %s\n", url)
 	}
-	if len(missing) > 0 {
-		for _, url := range missing {
-			fmt.Fprintf(os.Stderr, "not in cache, skipped: %s\n", url)
-		}
-		if len(tagged) == 0 {
-			return exitErrf(ExitNotFound, "no pages tagged: fetch them first, or use --tag when you do")
-		}
+	// An uncached URL is indexed with no title or description; both fill in
+	// the first time the page is fetched. Say so rather than look silent.
+	if len(uncached) > 0 {
+		fmt.Fprintf(os.Stderr, "%d of those %s not cached yet; title and description fill in once fetched\n",
+			len(uncached), plural(len(uncached), "is", "are"))
 	}
 	return nil
 }
@@ -330,21 +327,39 @@ func orEmptyTags(s []cache.TagSummary) []cache.TagSummary {
 // tagWriter records fetched pages under a tag as a fetch command runs.
 // A nil *tagWriter is a no-op, so call sites need no branching.
 type tagWriter struct {
-	tag string
-	c   *cache.Cache
+	tag   string
+	c     *cache.Cache
+	owned bool // opened here, so closed here
 }
 
-// newTagWriter prepares --tag for a fetching command, reusing that command's
-// page cache handle — bbolt takes an exclusive lock, so a second handle on
-// the same file would block rather than work. A nil cache yields a nil
-// writer: --tag is mutually exclusive with --no-cache (an entry tagged while
-// the body is discarded would be born permanently cold), and a cache that
-// could not be opened at all already degrades the fetch to uncached.
+// newTagWriter prepares --tag for a fetching command. It reuses the command's
+// page cache handle when there is one — bbolt takes an exclusive lock, so a
+// second handle on the same file would block rather than work. Under
+// --no-cache no handle exists to reuse, so it opens its own: --no-cache says
+// not to keep page bodies, which is a separate question from keeping a record
+// of what was fetched. Such an entry simply lists as uncached.
 func newTagWriter(tag string, pc *cache.Cache) *tagWriter {
-	if tag == "" || pc == nil {
+	if tag == "" {
 		return nil
 	}
-	return &tagWriter{tag: tag, c: pc}
+	if pc != nil {
+		return &tagWriter{tag: tag, c: pc}
+	}
+	c := cache.NewFromConfig(&cfg)
+	if c == nil {
+		fmt.Fprintln(os.Stderr, "warn: --tag could not open the cache; nothing was tagged")
+		return nil
+	}
+	return &tagWriter{tag: tag, c: c, owned: true}
+}
+
+// Close releases a handle this writer opened. Nil-safe, and a no-op when the
+// handle belongs to the command's page cache.
+func (t *tagWriter) Close() {
+	if t == nil || !t.owned {
+		return
+	}
+	t.c.Close()
 }
 
 // validateTagFlag is the PreRunE for every command carrying --tag. A bad tag
@@ -354,12 +369,6 @@ func validateTagFlag(cmd *cobra.Command, _ []string) error {
 	tag, _ := cmd.Flags().GetString("tag")
 	if tag == "" {
 		return nil
-	}
-	// Tagging a page whose body is deliberately not stored would index an
-	// entry that is cold from birth. GetBool is safe on a command without the
-	// flag (search has none): it reports false.
-	if noCache, _ := cmd.Flags().GetBool("no-cache"); noCache {
-		return exitErrf(ExitValidation, "--tag and --no-cache are mutually exclusive")
 	}
 	return validateTagName(tag)
 }
