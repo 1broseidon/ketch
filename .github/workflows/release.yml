@@ -80,12 +80,48 @@ jobs:
       # Platform packages first: the root pins them as optionalDependencies.
       # Provenance is generated automatically under trusted publishing, so
       # --provenance is deliberately absent.
-      - name: Publish
+      - name: Publish platform packages
         run: |
           set -eu
           for dir in npm/platforms/*/; do
             echo "==> $dir"
             npm publish "$dir" --access public
           done
+
+      # Publishing in order is not enough. Every package is cached at the
+      # registry CDN under its own ~5 minute TTL, so they become publicly
+      # readable at independent times regardless of publish order. Publishing
+      # the root while a binary is still invisible is silently destructive: npm
+      # treats the unresolvable optionalDependency as absent rather than
+      # failing, installs a ketch-cli with no binary, and npx then caches that
+      # broken tree indefinitely. v0.17.1 left a ~150s window of exactly this.
+      #
+      # Poll the same unauthenticated URL a user's npm hits — no cache-busting
+      # query, or we would be checking an origin the installer never sees.
+      - name: Wait for the platform packages to be publicly readable
+        run: |
+          set -eu
+          version="$(node -p "require('./npm/package.json').version")"
+          export version
+          echo "waiting for @ketch-cli/*@$version"
+          for target in darwin-arm64 darwin-x64 linux-arm64 linux-x64 win32-arm64 win32-x64; do
+            for attempt in $(seq 1 60); do
+              if curl -fsS "https://registry.npmjs.org/@ketch-cli%2F$target" -o /tmp/doc.json 2>/dev/null \
+                 && node -e 'const d=require("/tmp/doc.json");process.exit(d.versions&&d.versions[process.env.version]?0:1)'; then
+                echo "  $target ok (after $(( (attempt - 1) * 10 ))s)"
+                break
+              fi
+              if [ "$attempt" -eq 60 ]; then
+                echo "::error::@ketch-cli/$target@$version was not publicly readable after 10m"
+                exit 1
+              fi
+              sleep 10
+            done
+          done
+
+      # Only now can the root safely pin them.
+      - name: Publish root package
+        run: |
+          set -eu
           echo "==> npm/ (root)"
           npm publish npm/ --access public

@@ -32,7 +32,7 @@ curl -fsSL https://ketch.run/install | sh
 # Homebrew
 brew install ketch
 
-# npm — the binary, wrapped; `npx -y ketch-cli` also works without installing
+# npm
 npm install -g ketch-cli
 
 # go install

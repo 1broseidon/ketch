@@ -4,8 +4,7 @@ Fast, stateless CLI for web search, OSS code search, library docs, scraping, and
 crawling — with an MCP server for agents.
 
 This is the npm distribution of [ketch](https://github.com/1broseidon/ketch).
-The `ketch` name on npm was already taken, so the package is `ketch-cli`; the
-installed binary is still `ketch`.
+The package is `ketch-cli`; the command it installs is `ketch`.
 
 Full documentation: **[ketch.run](https://ketch.run)**
 
