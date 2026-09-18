@@ -50,3 +50,51 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  npm:
+    needs: [ref, release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm provenance
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.ref.outputs.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Check for a publish token
+        id: gate
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "NPM_TOKEN is not set — skipping the npm publish." >&2
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Downloads the release archives, verifies them against checksums.txt,
+      # and writes npm/platforms/* plus the stamped root package.
+      - name: Build packages
+        if: steps.gate.outputs.publish == 'true'
+        run: node npm/build.mjs "${{ needs.ref.outputs.ref }}"
+
+      # Platform packages first: the root pins them as optionalDependencies.
+      - name: Publish
+        if: steps.gate.outputs.publish == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -eu
+          for dir in npm/platforms/*/; do
+            echo "==> $dir"
+            npm publish "$dir" --access public --provenance
+          done
+          echo "==> npm/ (root)"
+          npm publish npm/ --access public --provenance

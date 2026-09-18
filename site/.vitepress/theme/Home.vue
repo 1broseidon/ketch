@@ -101,6 +101,9 @@ ketch crawl   <span class="dim">&lt;url&gt;</span>     <span class="dim"># BFS o
 <span class="dim"># Homebrew</span>
 <span class="p">$ </span>brew install ketch
 
+<span class="dim"># npm — or skip the install with: npx -y ketch-cli &lt;command&gt;</span>
+<span class="p">$ </span>npm install -g ketch-cli
+
 <span class="dim"># Go</span>
 <span class="p">$ </span>go install github.com/1broseidon/ketch@latest</code></pre>
         <p>The install script:</p>
@@ -673,7 +676,11 @@ Bound every scrape with --max-chars and --trim. Cite every claim.</code></pre>
 
         <h3>MCP server</h3>
         <p class="tight">For agents that speak MCP rather than shelling out, the same five surfaces run as tools over stdio, on the same config and backends as the CLI.</p>
-        <pre><code><span class="p">$ </span>claude mcp add ketch -- ketch mcp serve</code></pre>
+        <pre><code><span class="p">$ </span>claude mcp add ketch -- ketch mcp serve
+
+<span class="dim"># or with no install step at all</span>
+<span class="p">$ </span>claude mcp add ketch -- npx -y ketch-cli mcp serve</code></pre>
+        <p class="note">The npm package carries the binary in a per-platform dependency, so <code class="inline">npx</code> runs it without a postinstall download. That keeps the server's cold start quick when a client relaunches it.</p>
         <div class="callout">
           <p><strong>Network posture matters.</strong> The server performs no URL filtering — it fetches whatever URL the client gives it, including private or internal addresses reachable from wherever it runs. Give it the network posture you'd give the agent itself.</p>
         </div>

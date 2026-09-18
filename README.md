@@ -32,6 +32,9 @@ curl -fsSL https://ketch.run/install | sh
 # Homebrew
 brew install ketch
 
+# npm — the binary, wrapped; `npx -y ketch-cli` also works without installing
+npm install -g ketch-cli
+
 # go install
 go install github.com/1broseidon/ketch@latest
 
@@ -255,7 +258,14 @@ For agents that speak MCP instead of shelling out, `ketch mcp serve` runs the sa
 
 ```sh
 claude mcp add ketch -- ketch mcp serve
+
+# or, with no install step at all:
+claude mcp add ketch -- npx -y ketch-cli mcp serve
 ```
+
+The npm package carries the binary in a per-platform dependency, so `npx` runs
+it without a postinstall download — which keeps the server's cold start quick
+when a client relaunches it.
 
 Tool errors carry the exit-code taxonomy as stable message prefixes: `[validation]`, `[not_found]`, `[upstream]`, `[precondition]`, `[cancelled]`.
 
