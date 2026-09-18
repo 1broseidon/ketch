@@ -34,6 +34,63 @@ archives:
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}
 
+# Publishes a winget manifest by opening a PR against microsoft/winget-pkgs.
+# GoReleaser commits to a branch on our own fork, then opens a cross-repo PR
+# from it. The Windows archives are zip, which winget consumes as a portable
+# installer nested in the archive — no MSI and no code signing needed.
+#
+# Requires a WINGET_TOKEN secret: the default GITHUB_TOKEN is scoped to this
+# repository and can neither push to the fork nor open a PR on microsoft's.
+winget:
+  - name: ketch
+    publisher: 1broseidon
+    package_identifier: 1broseidon.ketch
+    ids:
+      - ketch
+    homepage: https://ketch.run
+    license: MIT
+    license_url: https://github.com/1broseidon/ketch/blob/main/LICENSE
+    copyright: Copyright (c) 2026 George Dikeakos
+    author: George Dikeakos
+    publisher_url: https://github.com/1broseidon
+    publisher_support_url: https://github.com/1broseidon/ketch/issues
+    short_description: Fast, stateless CLI for web search, code search, docs, scraping, and crawling.
+    description: |-
+      ketch is a fast, stateless command-line tool for agentic web research.
+      It searches the web, greps real open-source code, fetches library
+      documentation, scrapes pages to markdown, and crawls sites — and it
+      answers on a fresh install, with no API key required.
+
+      It also runs as an MCP server over stdio, exposing the same search,
+      code, docs, scrape, and crawl surfaces to agents that a person gets
+      from the CLI.
+    release_notes_url: https://github.com/1broseidon/ketch/releases/tag/{{ .Tag }}
+    tags:
+      - cli
+      - search
+      - web-search
+      - code-search
+      - scraper
+      - crawler
+      - markdown
+      - mcp
+      - ai
+      - agent
+    # Leave prereleases out of winget entirely.
+    skip_upload: auto
+    repository:
+      owner: 1broseidon
+      name: winget-pkgs
+      branch: ketch-{{ .Version }}
+      token: "{{ .Env.WINGET_TOKEN }}"
+      pull_request:
+        enabled: true
+        draft: false
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
+
 checksum:
   name_template: checksums.txt
 

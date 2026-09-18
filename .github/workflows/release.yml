@@ -50,6 +50,9 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Pushes the winget manifest branch to our winget-pkgs fork and opens
+          # the PR on microsoft/winget-pkgs; GITHUB_TOKEN cannot reach either.
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
 
   npm:
     needs: [ref, release]
