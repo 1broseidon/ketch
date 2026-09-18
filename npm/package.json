@@ -36,11 +36,11 @@
     "node": ">=16"
   },
   "optionalDependencies": {
-    "ketch-cli-darwin-arm64": "0.0.0",
-    "ketch-cli-darwin-x64": "0.0.0",
-    "ketch-cli-linux-arm64": "0.0.0",
-    "ketch-cli-linux-x64": "0.0.0",
-    "ketch-cli-win32-arm64": "0.0.0",
-    "ketch-cli-win32-x64": "0.0.0"
+    "@ketch-cli/darwin-arm64": "0.0.0",
+    "@ketch-cli/darwin-x64": "0.0.0",
+    "@ketch-cli/linux-arm64": "0.0.0",
+    "@ketch-cli/linux-x64": "0.0.0",
+    "@ketch-cli/win32-arm64": "0.0.0",
+    "@ketch-cli/win32-x64": "0.0.0"
   }
 }

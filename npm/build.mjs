@@ -105,7 +105,7 @@ for (const [target, { os, arch, ext }] of Object.entries(TARGETS)) {
     path.join(pkgDir, 'package.json'),
     JSON.stringify(
       {
-        name: `ketch-cli-${target}`,
+        name: `@ketch-cli/${target}`,
         version,
         description: `The ${target} binary for ketch-cli.`,
         homepage: 'https://ketch.run',
@@ -126,7 +126,7 @@ for (const [target, { os, arch, ext }] of Object.entries(TARGETS)) {
   // registry, and a bare package.json plus one binary reads as spam to npm.
   writeFileSync(
     path.join(pkgDir, 'README.md'),
-    `# ketch-cli-${target}
+    `# @ketch-cli/${target}
 
 The ${nodeOs}/${nodeCpu} binary for [**ketch**](https://ketch.run) — a fast,
 stateless CLI for web search, OSS code search, library docs, scraping, and
@@ -164,7 +164,7 @@ const rootPkgPath = path.join(ROOT, 'package.json')
 const rootPkg = JSON.parse(readFileSync(rootPkgPath, 'utf8'))
 rootPkg.version = version
 for (const target of Object.keys(TARGETS)) {
-  rootPkg.optionalDependencies[`ketch-cli-${target}`] = version
+  rootPkg.optionalDependencies[`@ketch-cli/${target}`] = version
 }
 writeFileSync(rootPkgPath, JSON.stringify(rootPkg, null, 2) + '\n')
 

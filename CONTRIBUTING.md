@@ -53,8 +53,19 @@ backend issues, include `ketch doctor` output.
 
 ketch ships to npm as `ketch-cli` — the bare `ketch` name belongs to an
 unrelated package. The binary is delivered through six per-platform packages
-declared as `optionalDependencies`, so npm installs only the one that matches
-and nothing is downloaded during install.
+under the `@ketch-cli` scope, declared as `optionalDependencies`, so npm
+installs only the one that matches and nothing is downloaded during install:
+
+| Package | For |
+|---|---|
+| `ketch-cli` | The one users install; carries the launcher and the bin names |
+| `@ketch-cli/darwin-arm64` · `@ketch-cli/darwin-x64` | macOS |
+| `@ketch-cli/linux-arm64` · `@ketch-cli/linux-x64` | Linux |
+| `@ketch-cli/win32-arm64` · `@ketch-cli/win32-x64` | Windows |
+
+Only the root is unscoped, because it is the name people type. The binaries
+are scoped so six machine-specific packages don't sit at the registry root —
+the same split esbuild uses.
 
 Releases publish through **npm trusted publishing**: the `npm` job in
 `.github/workflows/release.yml` mints a GitHub OIDC token and exchanges it for
@@ -70,6 +81,8 @@ node npm/build.mjs v0.17.0     # verifies every archive against checksums.txt
 for d in npm/platforms/*/; do npm publish "$d" --access public; done
 npm publish npm/ --access public
 ```
+
+`--access public` matters: scoped packages publish as restricted by default.
 
 Then, once for each of the seven packages, on npmjs.com → Packages →
 `<package>` → Settings → Trusted publishing:
