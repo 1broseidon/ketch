@@ -48,3 +48,43 @@ Use the Go version specified in [go.mod](go.mod), keep the build compatible with
 
 Include the command, expected and actual behavior, and `ketch version`. For
 backend issues, include `ketch doctor` output.
+
+## Publishing to npm (maintainers)
+
+ketch ships to npm as `ketch-cli` — the bare `ketch` name belongs to an
+unrelated package. The binary is delivered through six per-platform packages
+declared as `optionalDependencies`, so npm installs only the one that matches
+and nothing is downloaded during install.
+
+Releases publish through **npm trusted publishing**: the `npm` job in
+`.github/workflows/release.yml` mints a GitHub OIDC token and exchanges it for
+a short-lived credential. There is no `NPM_TOKEN` secret, and provenance
+attestations are generated automatically.
+
+Trusted publishing is configured per package and a package must exist before it
+can be configured, so the seven packages need one manual bootstrap publish:
+
+```sh
+npm login                      # browser flow; no token stored anywhere
+node npm/build.mjs v0.17.0     # verifies every archive against checksums.txt
+for d in npm/platforms/*/; do npm publish "$d" --access public; done
+npm publish npm/ --access public
+```
+
+Then, once for each of the seven packages, on npmjs.com → Packages →
+`<package>` → Settings → Trusted publishing:
+
+| Field | Value |
+|---|---|
+| Publisher | GitHub Actions |
+| Organization or user | `1broseidon` |
+| Repository | `ketch` |
+| Workflow filename | `release.yml` |
+
+Afterwards, set Settings → Publishing access to **"Require two-factor
+authentication and disallow tokens"** on each package. Trusted publishing keeps
+working — that setting only closes the long-lived-token path — and `npm logout`
+locally once the bootstrap is done.
+
+From then on, tagging a release publishes all seven packages with no secret in
+the repository.
