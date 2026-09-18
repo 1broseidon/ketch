@@ -33,6 +33,11 @@ jobs:
 
       - name: Install and build
         run: cd site && npm ci && npm run build
+        env:
+          # The version comes from git tags (fetch-depth: 0 above), but the
+          # star count is an API call — authenticate it so a shared runner
+          # can't exhaust the anonymous 60/hr limit and render a blank count.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: peaceiris/actions-gh-pages@v4
         with:

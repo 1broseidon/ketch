@@ -1,9 +1,32 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useData } from 'vitepress'
 
 const { theme } = useData()
-const version = computed(() => theme.value.version || 'v0.17.0')
+const repo = computed(() => theme.value.repo || '1broseidon/ketch')
+// No hardcoded fallback: a stale version printed with confidence is worse
+// than none, so the chip is hidden when the build could not resolve one.
+const version = computed(() => theme.value.version || '')
+
+const stars = ref(theme.value.stars ?? null)
+const starLabel = computed(() =>
+  stars.value === null
+    ? ''
+    : stars.value >= 1000
+      ? (stars.value / 1000).toFixed(stars.value >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k'
+      : String(stars.value)
+)
+
+onMounted(() => {
+  // Refresh the build-time count so a long gap between deploys doesn't
+  // undersell the project. Failure is silent — the build-time value stands.
+  fetch(`https://api.github.com/repos/${repo.value}`)
+    .then((r) => (r.ok ? r.json() : null))
+    .then((d) => {
+      if (d && typeof d.stargazers_count === 'number') stars.value = d.stargazers_count
+    })
+    .catch(() => {})
+})
 
 onMounted(() => {
   document.querySelectorAll('[data-copy]').forEach((btn) => {
@@ -34,10 +57,19 @@ onMounted(() => {
 
   <header class="masthead">
     <span class="mark">ketch</span>
-    <span class="ver">{{ version }}</span>
+    <span v-if="version" class="ver">{{ version }}</span>
     <nav>
       <a href="#install">install</a>
-      <a href="https://github.com/1broseidon/ketch">source</a>
+      <a
+        class="gh"
+        :href="`https://github.com/${repo}`"
+        :aria-label="starLabel ? `GitHub repository, ${stars} stars` : 'GitHub repository'"
+      >
+        <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" focusable="false">
+          <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        <span v-if="starLabel" class="stars">{{ starLabel }}</span>
+      </a>
     </nav>
   </header>
 
@@ -114,7 +146,7 @@ ketch crawl   <span class="dim">&lt;url&gt;</span>     <span class="dim"># BFS o
           <li>Requires no sudo</li>
           <li>Never half-overwrites a running binary</li>
         </ul>
-        <p class="note">To avoid piping a URL into a shell, read <a href="https://github.com/1broseidon/ketch/blob/main/install.sh">install.sh</a> or download a prebuilt binary from the <a href="https://github.com/1broseidon/ketch/releases">releases page</a>. Pin a version or redirect the target with <code class="inline">sh -s -- --version v0.17.0 --bin-dir ~/bin</code>.</p>
+        <p class="note">To avoid piping a URL into a shell, read <a href="https://github.com/1broseidon/ketch/blob/main/install.sh">install.sh</a> or download a prebuilt binary from the <a href="https://github.com/1broseidon/ketch/releases">releases page</a>. Pin a version or redirect the target with <code class="inline">sh -s -- --version {{ version || 'v0.17.1' }} --bin-dir ~/bin</code>.</p>
       </section>
 
       <section id="quickstart">
@@ -695,7 +727,7 @@ Bound every scrape with --max-chars and --trim. Cite every claim.</code></pre>
         <span>MIT</span>
         <a href="https://github.com/1broseidon/ketch">github.com/1broseidon/ketch</a>
         <a href="https://github.com/1broseidon/ketch/blob/main/CONTRIBUTING.md">contributing</a>
-        <span class="spacer">{{ version }}</span>
+        <span v-if="version" class="spacer">{{ version }}</span>
       </footer>
 
     </main>

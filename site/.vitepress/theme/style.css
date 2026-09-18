@@ -130,6 +130,18 @@
   .masthead nav a { color: var(--muted); text-decoration: none; }
   .masthead nav a:hover { color: var(--accent); }
 
+  /* GitHub mark + star count. align-items:center overrides the masthead's
+     baseline alignment, which would otherwise sit the glyph on the text
+     baseline and push it visually low against the adjacent link. */
+  .masthead nav a.gh {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .masthead nav a.gh svg { display: block; flex: none; }
+  .masthead nav a.gh .stars { line-height: 1; }
+
   /* ---------- rail ---------- */
 
   .rail {
