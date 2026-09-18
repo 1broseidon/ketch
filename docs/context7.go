@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -65,6 +66,14 @@ type context7InfoSnippet struct {
 	PageID     string `json:"pageId"`
 	Breadcrumb string `json:"breadcrumb"`
 	Content    string `json:"content"`
+}
+
+// context7ErrorResponse is the body Context7 sends alongside some 4xx
+// responses. A 404 with error "no_relevant_snippets" means the library
+// exists but nothing matched the query — a normal empty result, not a
+// missing library.
+type context7ErrorResponse struct {
+	Error string `json:"error"`
 }
 
 // Search resolves a library from the query and fetches documentation,
@@ -148,9 +157,19 @@ func (c *Context7) GetDocs(ctx context.Context, libraryID, query string, tokens 
 		return nil, fmt.Errorf("context7: invalid API key (set via: ketch config set context7_api_key <key>)")
 	}
 	if resp.StatusCode == http.StatusNotFound {
-		// A 404 here means the library ID does not exist — permanently absent,
-		// not a transient upstream failure. Wrap the sentinel so both surfaces
-		// map it to not-found instead of retryable-upstream.
+		body, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return nil, fmt.Errorf("failed to read context7 docs response: %w", readErr)
+		}
+		var errBody context7ErrorResponse
+		if json.Unmarshal(body, &errBody) == nil && errBody.Error == "no_relevant_snippets" {
+			// The library exists but nothing matched this query — an empty
+			// result, not a missing library.
+			return nil, nil
+		}
+		// Any other 404 means the library ID does not exist — permanently
+		// absent, not a transient upstream failure. Wrap the sentinel so both
+		// surfaces map it to not-found instead of retryable-upstream.
 		return nil, fmt.Errorf("context7: library %q %w (resolve the exact ID with: ketch docs --resolve <name>)", libraryID, ErrNotFound)
 	}
 	if resp.StatusCode != http.StatusOK {
