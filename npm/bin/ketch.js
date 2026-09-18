@@ -40,8 +40,22 @@ try {
   binary = path.join(path.dirname(require.resolve(`${pkg}/package.json`)), 'bin', exe)
 } catch {
   console.error(`ketch: the ${pkg} package is not installed.`)
-  console.error('Optional dependencies were probably skipped during install.')
-  console.error('Reinstall with: npm install ketch-cli --include=optional')
+  console.error('Optional dependencies were skipped when ketch-cli was installed —')
+  console.error('usually because the registry was briefly unreachable.')
+  console.error('')
+
+  // npx installs into its own cache tree and reuses it indefinitely, so
+  // `--include=optional` on a project install would not touch it. Point each
+  // caller at the thing that actually holds the bad tree.
+  const root = path.resolve(__dirname, '..', '..', '..')
+  if (root.split(path.sep).includes('_npx')) {
+    console.error('You are running through npx, which caches this install and')
+    console.error('reuses it even with -y. Delete the cached tree and re-run:')
+    console.error('')
+    console.error(process.platform === 'win32' ? `  rmdir /s /q "${root}"` : `  rm -rf "${root}"`)
+  } else {
+    console.error('Reinstall with: npm install ketch-cli --include=optional')
+  }
   process.exit(1)
 }
 
