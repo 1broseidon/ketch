@@ -28,3 +28,7 @@ Thumbs.db
 .familiar/
 artifacts/
 specs/
+
+# Generated during the docs build from install.sh
+site/public/install
+site/public/install.sh

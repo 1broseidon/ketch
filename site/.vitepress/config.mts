@@ -17,7 +17,7 @@ export default (async () => {
   return {
     title: 'ketch',
     description: 'Fast web search and scrape for agents',
-    base: '/ketch/',
+    base: '/',
     appearance: false,
     cleanUrls: true,
     head: [

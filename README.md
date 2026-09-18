@@ -26,6 +26,9 @@ An operator configures the backend once (`ketch config set backend searxng`); ev
 ## Install
 
 ```sh
+# macOS / Linux, any of x86_64 or arm64
+curl -fsSL https://ketch.run/install | sh
+
 # Homebrew
 brew install ketch
 
@@ -35,6 +38,13 @@ go install github.com/1broseidon/ketch@latest
 # Or download a prebuilt binary (linux/darwin/windows, amd64/arm64)
 # from https://github.com/1broseidon/ketch/releases
 ```
+
+The install script picks the right build for your OS and architecture, verifies it
+against the release's `checksums.txt`, and drops the binary in `/usr/local/bin` when
+that's writable, otherwise `~/.local/bin`. Read it first if you'd rather not pipe to a
+shell: [`install.sh`](https://github.com/1broseidon/ketch/blob/main/install.sh). Pin a
+version or change the target directory with
+`sh -s -- --version v0.17.0 --bin-dir ~/bin`.
 
 ## Quickstart
 
@@ -148,7 +158,7 @@ When configured, the external converter is authoritative: failures are returned 
 | `mcp` | Run ketch as an MCP server over stdio (`mcp serve`) — the five research surfaces as tools |
 | `version` | Print version, commit, build date |
 
-Every command supports `-h/--help` for its full flag list; `--json` is the only flag global to every command. Full flag reference lives at [1broseidon.github.io/ketch](https://1broseidon.github.io/ketch/).
+Every command supports `-h/--help` for its full flag list; `--json` is the only flag global to every command. Full flag reference lives at [ketch.run](https://ketch.run/).
 
 ### Backends
 
@@ -199,7 +209,7 @@ Precedence is **CLI flag > `KETCH_*` env > config file > built-in default**. Not
 - Invalid env values (e.g. `KETCH_LIMIT=abc`) fail loudly on commands that use config, naming the offending variable; `ketch version` and `ketch config set/path` still work.
 - Secret `KETCH_*` vars are stripped from the environment of spawned subprocesses (headless browser, external PDF converter).
 
-Other configurable keys include per-backend API keys (`brave_api_key`, `brave_api_keys` for multi-key rotation, `exa_api_key`, `firecrawl_api_key`, `keenable_api_key`, `tavily_api_key`, `serpbase_api_key`, `serply_api_key`, `youcom_api_key`, `context7_api_key`, `github_token`), `firecrawl_url` / `sourcegraph_url` / `degoog_url` (self-hosted overrides), `cache_ttl`, `url_rewrites` (regex rewrite rules applied before fetch), `spa_markers` (extra JS-shell detection tokens), `cookie_file` (see below), and the optional external PDF converter command/timeout. Multiple keys per provider are picked randomly per request to spread rate limits. See the [config reference](https://1broseidon.github.io/ketch/) for the full list.
+Other configurable keys include per-backend API keys (`brave_api_key`, `brave_api_keys` for multi-key rotation, `exa_api_key`, `firecrawl_api_key`, `keenable_api_key`, `tavily_api_key`, `serpbase_api_key`, `serply_api_key`, `youcom_api_key`, `context7_api_key`, `github_token`), `firecrawl_url` / `sourcegraph_url` / `degoog_url` (self-hosted overrides), `cache_ttl`, `url_rewrites` (regex rewrite rules applied before fetch), `spa_markers` (extra JS-shell detection tokens), `cookie_file` (see below), and the optional external PDF converter command/timeout. Multiple keys per provider are picked randomly per request to spread rate limits. See the [config reference](https://ketch.run/) for the full list.
 
 ### Cookies (BYO cookies.txt)
 

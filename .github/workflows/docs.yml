@@ -3,7 +3,7 @@ name: Deploy Docs
 on:
   push:
     branches: [main]
-    paths: ['site/**']
+    paths: ['site/**', 'install.sh']
   release:
     types: [published]
   workflow_dispatch:
@@ -25,8 +25,11 @@ jobs:
           cache: npm
           cache-dependency-path: site/package-lock.json
 
-      - name: Sync changelog
-        run: cp site/changelog.md site/changelog.md || true
+      - name: Stage install script
+        run: |
+          mkdir -p site/public
+          cp install.sh site/public/install
+          cp install.sh site/public/install.sh
 
       - name: Install and build
         run: cd site && npm ci && npm run build
@@ -35,3 +38,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: site/.vitepress/dist
+          cname: ketch.run
