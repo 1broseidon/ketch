@@ -110,14 +110,50 @@ for (const [target, { os, arch, ext }] of Object.entries(TARGETS)) {
         description: `The ${target} binary for ketch-cli.`,
         homepage: 'https://ketch.run',
         repository: { type: 'git', url: `git+https://github.com/${REPO}.git` },
+        bugs: { url: `https://github.com/${REPO}/issues` },
         license: 'MIT',
+        author: '1broseidon',
         os: [nodeOs],
         cpu: [nodeCpu],
-        files: ['bin/'],
+        files: ['bin/', 'README.md'],
       },
       null,
       2
     ) + '\n'
+  )
+
+  // A real README on every package: it is what a human lands on from the
+  // registry, and a bare package.json plus one binary reads as spam to npm.
+  writeFileSync(
+    path.join(pkgDir, 'README.md'),
+    `# ketch-cli-${target}
+
+The ${nodeOs}/${nodeCpu} binary for [**ketch**](https://ketch.run) — a fast,
+stateless CLI for web search, OSS code search, library docs, scraping, and
+crawling, with an MCP server for agents.
+
+This package is not meant to be installed directly. It is one of the
+platform-specific binaries that [\`ketch-cli\`](https://www.npmjs.com/package/ketch-cli)
+declares as optional dependencies; npm installs only the one matching your
+machine, so nothing is downloaded by a postinstall script.
+
+Install the real package instead:
+
+\`\`\`sh
+npm install -g ketch-cli
+\`\`\`
+
+Or run it without installing:
+
+\`\`\`sh
+npx -y ketch-cli search "your query"
+npx -y ketch-cli mcp serve
+\`\`\`
+
+Documentation: [ketch.run](https://ketch.run) ·
+Source: [github.com/${REPO}](https://github.com/${REPO}) ·
+License: MIT
+`
   )
 
   console.log(`  ${target.padEnd(14)} ${asset}  ${(buf.length / 1048576).toFixed(1)} MiB  verified`)
