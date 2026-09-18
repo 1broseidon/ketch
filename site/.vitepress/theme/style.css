@@ -103,7 +103,9 @@
     align-items: start;
   }
 
-  .col { max-width: 44rem; min-width: 0; }
+  /* width:100% keeps the grid item inside its track — without it the item is
+     sized by the min-content width of the <pre> blocks and overflows on phones. */
+  .col { width: 100%; max-width: 44rem; min-width: 0; }
 
   a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
   a:hover { text-decoration-thickness: 2px; }
