@@ -37,15 +37,24 @@ A tag is a label attached to cache entries. It is applied two ways:
 
 - `--tag <name>` on `search`, `scrape` and `crawl` tags pages as they are
   fetched.
-- `ketch tag <name> <url>...` tags pages already in the cache, with no network
-  access at all.
+- `ketch tag add <name> <url>...` tags pages already in the cache, with no
+  network access at all.
 
-Reading a tag answers the question the agent actually asks — *what do I have
-under this tag that I can go back to?* — by emitting an llms.txt-shaped index of
-titles, URLs and descriptions. The agent reads the index cheaply, then fetches
-the one page it wants — returning without a network round trip when the page is
-still cached, and re-fetching it when it is not. This mirrors `FetchLLMSTxt`, which already consumes exactly this
-shape from upstream sites; ketch now emits it for a corpus of the agent's own.
+`ketch tag show <name>` answers the question the agent actually asks — *what do
+I have under this tag that I can go back to?* — by emitting an llms.txt-shaped
+index of titles, URLs and descriptions. The agent reads the index cheaply, then
+fetches the one page it wants — returning without a network round trip when the
+page is still cached, and re-fetching it when it is not. This mirrors
+`FetchLLMSTxt`, which already consumes exactly this shape from upstream sites;
+ketch now emits it for a corpus of the agent's own.
+
+Every operation is a verb under `tag` — `add`, `show`, `list`, `remove` — rather
+than a bare `tag <name>` whose meaning shifts with its arity. That follows the
+grammar the CLI already uses for a command with stored state to operate on
+(`crawl status`, `crawl stop`; likewise `cache clear`, `browser install`), and
+it keeps every name available as a tag: a bare positional form would have had to
+reserve `list` and `remove`, and would have made reading and writing differ only
+by whether a URL followed.
 
 Specifics that follow from the decision:
 
@@ -95,8 +104,9 @@ The costs are real and accepted:
   not ranked full-text results. Pages are found by title and URL. If ranked
   search over page bodies is ever wanted, it needs an index, and that is a
   separate decision — not something this design grows into by accident.
-- **Nothing expires the index, so deletion must be explicit.** `ketch tag rm
-  <name>` and `ketch untag <name> <url>...` are the price of durability: no TTL
+- **Nothing expires the index, so deletion must be explicit.** `ketch tag remove
+  <name>` drops a whole tag and `ketch tag remove <name> <url>...` drops single
+  entries; they are the price of durability, because no TTL
   is going to tidy up after a tag that has outlived its project. This is a
   deliberate trade — an entry is roughly 200 bytes against a page body's tens of
   kilobytes, so a thousand tagged pages is a rounding error on disk, and the
