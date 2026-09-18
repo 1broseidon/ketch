@@ -23,36 +23,15 @@ export default (async () => {
     head: [
       ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
       ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
-      ['link', { href: 'https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;700&family=JetBrains+Mono:wght@400;500&display=swap', rel: 'stylesheet' }],
+      ['link', { href: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;1,400&display=swap', rel: 'stylesheet' }],
     ],
     themeConfig: {
       version,
       nav: [
-        { text: 'Guide', link: '/guide/getting-started' },
-        { text: 'Reference', link: '/reference/commands' },
+        { text: 'Manual', link: '/' },
         { text: 'Changelog', link: '/changelog' },
       ],
-      sidebar: [
-        {
-          text: 'Guide',
-          items: [
-            { text: 'Getting Started', link: '/guide/getting-started' },
-            { text: 'Configuration', link: '/guide/configuration' },
-            { text: 'Agent Integration', link: '/guide/agent-integration' },
-          ],
-        },
-        {
-          text: 'Reference',
-          items: [
-            { text: 'Commands', link: '/reference/commands' },
-            { text: 'Backends', link: '/reference/backends' },
-          ],
-        },
-        {
-          text: 'Changelog',
-          link: '/changelog',
-        },
-      ],
+      sidebar: false,
       socialLinks: [
         { icon: 'github', link: 'https://github.com/1broseidon/ketch' },
       ],

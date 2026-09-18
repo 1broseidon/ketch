@@ -108,7 +108,7 @@ deduplicating by URL and tagging each result with the engines that returned it.
 ideal when you want one provider's results without wasting rate limits on all
 of them. Both support bare (all usable backends) or `=brave,exa` explicit lists, and both
 are mutually exclusive with `--backend` and each other.
-See [`site/reference/commands.md`](./site/reference/commands.md).
+See the [command reference](https://ketch.run/#commands).
 
 Every command takes `--json` for structured output:
 

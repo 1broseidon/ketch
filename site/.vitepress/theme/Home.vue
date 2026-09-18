@@ -1,448 +1,716 @@
 <script setup>
-import { useData, withBase } from 'vitepress'
-const { theme } = useData()
+import { computed, onMounted } from 'vue'
+import { useData } from 'vitepress'
 
-const features = [
-  {
-    title: 'Search + Scrape',
-    description: 'Web search across six backends. Scrape any URL to clean markdown. Combine both in one call with --scrape, or federate backends with --multi.',
-  },
-  {
-    title: 'Agent-Native Output',
-    description: 'YAML frontmatter + markdown body — the same format as cymbal. Agents scan metadata first, read content when needed. --json available as escape hatch.',
-  },
-  {
-    title: 'Operator Configures, Agent Consumes',
-    description: 'Set your backend and API keys once in ~/.config/ketch/config.json. Agents call ketch search without knowing the infrastructure.',
-  },
-  {
-    title: 'Page Cache',
-    description: 'Scraped pages cached locally with TTL-based expiry. Re-fetching the same URL serves from cache until the TTL lapses. Cache follows platform conventions.',
-  },
-  {
-    title: 'Zero Dependencies',
-    description: 'Single Go binary, CGO_ENABLED=0, cross-compiles everywhere. No daemon, no database, no runtime dependencies. Install and run.',
-  },
-  {
-    title: 'Multiple Backends',
-    description: 'Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, or Keenable for web search; Grep, Sourcegraph, or GitHub for code; Context7 for docs. Switch backends with one config change.',
-  },
-]
+const { theme } = useData()
+const version = computed(() => theme.value.version || 'v0.17.0')
+
+onMounted(() => {
+  document.querySelectorAll('[data-copy]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const src = document.getElementById('src-' + btn.getAttribute('data-copy'))
+      if (!src) return
+      const text = src.innerText.replace(/^\$ /gm, '')
+      const done = () => {
+        btn.textContent = 'Copied'
+        btn.setAttribute('data-copied', '1')
+        setTimeout(() => {
+          btn.textContent = 'Copy'
+          btn.removeAttribute('data-copied')
+        }, 1600)
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, done)
+      } else {
+        done()
+      }
+    })
+  })
+})
 </script>
 
 <template>
-  <div class="home">
-    <!-- Nav -->
-    <nav class="home-nav">
-      <div class="nav-left">
-        <a href="https://chain.sh" class="nav-back">CHAIN.SH</a>
-        <span class="nav-sep">/</span>
-        <span class="nav-title">KETCH</span>
-      </div>
-      <a href="https://github.com/1broseidon/ketch" target="_blank" rel="noopener" class="nav-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
-        </svg>
-      </a>
+<div class="wrap">
+
+  <header class="masthead">
+    <span class="mark">ketch</span>
+    <span class="ver">{{ version }}</span>
+    <nav>
+      <a href="#install">install</a>
+      <a href="https://github.com/1broseidon/ketch">source</a>
     </nav>
+  </header>
 
-    <!-- Hero -->
-    <main class="hero fade-up" style="animation-delay: 100ms">
-      <h1 class="headline">KETCH</h1>
-      <div class="tagline-row">
-        <div class="accent-line"></div>
-        <p class="tagline">Web search and scrape for agents</p>
-        <span v-if="theme.version" class="version-tag">{{ theme.version }}</span>
-      </div>
-      <p class="subtitle">Fast, stateless CLI for web search, OSS code search, library docs, and page scraping. Search the web, fetch pages, extract clean markdown — all from one binary. Designed to be called by AI agents or directly from your terminal.</p>
+  <div class="layout">
 
-      <!-- Install -->
-      <div class="install-block">
-        <span class="install-dollar">$</span>
-        <code>brew install ketch</code>
+    <main class="col">
+
+      <div class="hero">
+        <h1>ketch</h1>
+        <div class="rule"></div>
+        <p class="lede">A stateless command-line tool for web search, OSS code search, library docs, and scraping — one binary, no daemon, nothing to keep running.</p>
+        <p class="sub">For people, it replaces <code class="inline">curl | pandoc</code> or a browser tab. For agents, it gives predictable output, <code class="inline">--json</code> everywhere, and documented exit codes to branch on.</p>
+
+        <div class="copyblock">
+          <div class="cb-head">
+            <span>Install</span>
+            <button type="button" data-copy="install" aria-label="Copy install command">Copy</button>
+          </div>
+          <pre><code id="src-install"><span class="p">$ </span>curl -fsSL https://ketch.run/install | sh</code></pre>
+        </div>
+
+        <div class="copyblock">
+          <div class="cb-head">
+            <span>Or hand it to your agent</span>
+            <button type="button" data-copy="agent" aria-label="Copy agent setup prompt">Copy</button>
+          </div>
+          <pre><code id="src-agent">Install ketch and configure it for me.
+1. Run: curl -fsSL https://ketch.run/install | sh
+2. Run `ketch doctor` and show me what is healthy vs missing.
+3. Run `ketch config` to show the active backends.
+4. Ask me which providers I want keys for, then set each one
+   with `ketch config set &lt;provider&gt;_api_key &lt;key&gt;`.
+5. Re-run `ketch doctor` to confirm everything resolves.
+Do not change any setting that is already configured and working.</code></pre>
+        </div>
+        <p class="note" style="margin-top:0.75rem"><code class="inline">doctor</code> and <code class="inline">config</code> let an agent discover state without probing your environment.</p>
       </div>
 
-      <!-- Actions -->
-      <div class="actions">
-        <a :href="withBase('/guide/getting-started')" class="action-primary">Get Started</a>
-        <a href="https://github.com/1broseidon/ketch" target="_blank" rel="noopener" class="action-secondary">View Source</a>
-      </div>
+      <section id="what">
+        <p class="eyebrow">What it is</p>
+        <h2>Overview</h2>
+        <p>Most research tooling for agents means wiring up several provider SDKs, each with its own auth and response shape. ketch collapses that into one binary with three research surfaces and two fetch surfaces.</p>
+        <pre><code>ketch search  <span class="dim">"query"</span>   <span class="dim"># web pages</span>
+ketch code    <span class="dim">"query"</span>   <span class="dim"># real OSS source</span>
+ketch docs    <span class="dim">"query"</span>   <span class="dim"># library documentation</span>
+ketch scrape  <span class="dim">&lt;url&gt;</span>     <span class="dim"># HTML or PDF → markdown</span>
+ketch crawl   <span class="dim">&lt;url&gt;</span>     <span class="dim"># BFS or sitemap walk</span></code></pre>
+        <p>Output is YAML frontmatter followed by content, so it stays readable in a terminal and parseable by a program. Add <code class="inline">--json</code> to any command for a structured object instead.</p>
+        <p>An operator configures the backend once — <code class="inline">ketch config set backend searxng</code> — and every later <code class="inline">ketch search</code> call runs without knowing which provider serves it.</p>
+        <div class="callout">
+          <p><strong>It works before it is configured.</strong> The default <code class="inline">auto</code> backend is a fallback chain over the keyless providers, so <code class="inline">ketch search</code> answers on a fresh install. Configuration raises limits and picks favourites; it is never the price of a first result.</p>
+        </div>
+      </section>
+
+      <section id="install">
+        <p class="eyebrow">Install</p>
+        <h2>Installation methods</h2>
+        <pre><code><span class="dim"># macOS / Linux, x86_64 or arm64</span>
+<span class="p">$ </span>curl -fsSL https://ketch.run/install | sh
+
+<span class="dim"># Homebrew</span>
+<span class="p">$ </span>brew install ketch
+
+<span class="dim"># Go</span>
+<span class="p">$ </span>go install github.com/1broseidon/ketch@latest</code></pre>
+        <p>The install script:</p>
+        <ul class="plain">
+          <li>Picks the build for your OS and architecture</li>
+          <li>Verifies it against the release's <code class="inline">checksums.txt</code></li>
+          <li>Installs to <code class="inline">/usr/local/bin</code> if writable, otherwise <code class="inline">~/.local/bin</code></li>
+          <li>Requires no sudo</li>
+          <li>Never half-overwrites a running binary</li>
+        </ul>
+        <p class="note">To avoid piping a URL into a shell, read <a href="https://github.com/1broseidon/ketch/blob/main/install.sh">install.sh</a> or download a prebuilt binary from the <a href="https://github.com/1broseidon/ketch/releases">releases page</a>. Pin a version or redirect the target with <code class="inline">sh -s -- --version v0.17.0 --bin-dir ~/bin</code>.</p>
+      </section>
+
+      <section id="quickstart">
+        <p class="eyebrow">Quickstart</p>
+        <h2>First commands</h2>
+        <p class="tight">No API key needed. <code class="inline">auto</code> falls through the keyless providers until one answers, and reports which one served.</p>
+        <pre><code><span class="p">$ </span>ketch search <span class="dim">"golang error handling"</span>
+<span class="dim">---</span>
+<span class="key">query:</span> golang error handling
+<span class="key">backend:</span> parallel
+<span class="key">result_count:</span> 5
+<span class="dim">---</span>
+Error handling and Go - The Go Programming Language
+  <span class="dim">https://go.dev/blog/error-handling-and-go</span>
+  The language's design and conventions encourage you to explicitly check...
+
+Best Practices for Error Handling in Go
+  <span class="dim">https://www.jetbrains.com/guide/go/tutorials/handle_errors_in_go/</span>
+  How can a reader see that any of these functions might observe an error?</code></pre>
+        <pre><code><span class="p">$ </span>ketch scrape https://go.dev/blog/error-handling-and-go
+<span class="dim">---</span>
+<span class="key">url:</span> https://go.dev/blog/error-handling-and-go
+<span class="key">title:</span> Error handling and Go
+<span class="key">words:</span> 1693
+<span class="dim">---</span>
+## Introduction
+
+If you have written any Go code you have probably encountered the built-in
+`error` type...</code></pre>
+        <p class="note">Accepted input: one URL, several URLs, a JSON array, a file of URLs, or stdin. ketch detects the shape, so there's no batch flag. PDFs are detected by MIME type or signature and parsed to text. JS-shell pages are re-fetched through headless Chrome automatically, with the same output either way.</p>
+      </section>
+
+      <section id="surfaces">
+        <p class="eyebrow">Choosing a surface</p>
+        <h2>When to use each command</h2>
+        <p>First match wins. The Not column names the most common mistake for each row.</p>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr><th>The question needs</th><th>Use</th><th>Not</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Current pages, opinions, news, comparisons</td>
+                <td class="cmd">search</td>
+                <td class="no"><code class="inline">docs</code> — that's curated library docs only</td>
+              </tr>
+              <tr>
+                <td>How real projects call an API</td>
+                <td class="cmd">code</td>
+                <td class="no"><code class="inline">search</code> — blogs talk <em>about</em> code; <code class="inline">code</code> greps the source</td>
+              </tr>
+              <tr>
+                <td>A library's own documentation, version-aware</td>
+                <td class="cmd">docs</td>
+                <td class="no"><code class="inline">scrape</code> of the docs site — <code class="inline">docs</code> is already extracted and budgeted</td>
+              </tr>
+              <tr>
+                <td>The content of a URL you already hold</td>
+                <td class="cmd">scrape</td>
+                <td class="no"><code class="inline">search</code> — never re-find a known URL</td>
+              </tr>
+              <tr>
+                <td>Many pages from one site</td>
+                <td class="cmd">crawl</td>
+                <td class="no">looped <code class="inline">scrape</code> — crawl dedupes, bounds, and streams</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">In reverse: <code class="inline">search</code> finds URLs, <code class="inline">scrape</code> reads them, <code class="inline">crawl</code> reads a site, <code class="inline">code</code> reads public source, <code class="inline">docs</code> reads library docs. <code class="inline">search --scrape</code> fuses the two when you already want full content from every hit. Budget it like a scrape.</p>
+      </section>
+
+      <section id="commands">
+        <p class="eyebrow">Commands</p>
+        <h2>Command reference</h2>
+        <p>Twelve commands. <code class="inline">--json</code> is the only flag global to all of them; everything else is per-command. Expand a row for its full flag list.</p>
+        <div class="discs">
+
+          <details>
+            <summary>search <span class="sm">Web search across twelve providers</span></summary>
+            <div class="disc-body">
+              <pre><code><span class="p">$ </span>ketch search <span class="dim">"query"</span> --limit 10
+<span class="p">$ </span>ketch search <span class="dim">"query"</span> --scrape          <span class="dim"># fetch full content per result</span>
+<span class="p">$ </span>ketch search <span class="dim">"query"</span> -b brave
+<span class="p">$ </span>ketch search <span class="dim">"query"</span> --multi           <span class="dim"># federate, rank-fuse</span>
+<span class="p">$ </span>ketch search <span class="dim">"query"</span> --multi=brave,exa <span class="dim"># a specific set</span></code></pre>
+              <div class="scroll">
+                <table>
+                  <tbody>
+                    <tr><td class="cmd">--backend, -b</td><td>Provider, default <code class="inline">auto</code></td></tr>
+                    <tr><td class="cmd">--limit, -l</td><td>Max results, default 5</td></tr>
+                    <tr><td class="cmd">--scrape</td><td>Fetch full content for every result</td></tr>
+                    <tr><td class="cmd">--multi</td><td>Federate across backends, RRF-fused; mutually exclusive with <code class="inline">-b</code></td></tr>
+                    <tr><td class="cmd">--random</td><td>Shuffle backends, try one, fall back to the rest</td></tr>
+                    <tr><td class="cmd">--searxng-url</td><td>SearXNG instance, default <code class="inline">http://localhost:8081</code></td></tr>
+                    <tr><td class="cmd">--minimal</td><td>One result per line, tab-separated, no frontmatter</td></tr>
+                    <tr><td class="cmd">--max-chars</td><td>Truncate scraped markdown (with <code class="inline">--scrape</code>)</td></tr>
+                    <tr><td class="cmd">--trim</td><td>Strip markdown syntax, keep content text</td></tr>
+                    <tr><td class="cmd">--cookie-file</td><td>Cookie jar for <code class="inline">--scrape</code> fetches</td></tr>
+                    <tr><td class="cmd">--user-agent</td><td>User-Agent override for <code class="inline">--scrape</code> fetches</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="note"><code class="inline">--multi</code> fuses rankings with Reciprocal Rank Fusion — a page several engines rank highly floats to the top — deduplicating by URL and tagging each result with the engines that returned it.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>code <span class="sm">Grep real source in public repos</span></summary>
+            <div class="disc-body">
+              <pre><code><span class="p">$ </span>ketch code <span class="dim">"http.NewRequestWithContext"</span> --lang go --limit 2
+<span class="dim">---</span>
+<span class="key">query:</span> http.NewRequestWithContext
+<span class="key">lang:</span> go
+<span class="key">backend:</span> grepapp
+<span class="key">result_count:</span> 2
+<span class="dim">---</span>
+harness/harness  registry/app/remote/clients/registry/client.go  <span class="dim">(line 207)</span>
+  req, err := http.NewRequestWithContext(ctx, http.MethodGet, buildPingURL(c.url), nil)
+  <span class="dim">https://github.com/harness/harness/blob/main/...</span></code></pre>
+              <div class="scroll">
+                <table>
+                  <tbody>
+                    <tr><td class="cmd">--backend, -b</td><td><code class="inline">grepapp</code> (default), <code class="inline">sourcegraph</code>, <code class="inline">github</code></td></tr>
+                    <tr><td class="cmd">--lang</td><td>Language qualifier, appended to the query</td></tr>
+                    <tr><td class="cmd">--limit, -l</td><td>Max results</td></tr>
+                    <tr><td class="cmd">--minimal</td><td>One result per line</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="note">Regex support is per-backend: grepapp and sourcegraph accept it, github rejects it with a pointer to the other two.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>docs <span class="sm">Curated, version-aware library documentation</span></summary>
+            <div class="disc-body">
+              <pre><code><span class="p">$ </span>ketch docs <span class="dim">"routing"</span> --library /vercel/next.js
+<span class="p">$ </span>ketch docs --resolve <span class="dim">"next.js"</span>     <span class="dim"># name → Context7 IDs</span></code></pre>
+              <div class="scroll">
+                <table>
+                  <tbody>
+                    <tr><td class="cmd">--backend, -b</td><td><code class="inline">context7</code> (default)</td></tr>
+                    <tr><td class="cmd">--library</td><td>Context7 library ID; skips the resolve step</td></tr>
+                    <tr><td class="cmd">--tokens</td><td>Token budget, default 4000</td></tr>
+                    <tr><td class="cmd">--resolve</td><td>Resolve a library name instead of searching</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="note"><code class="inline">docs</code> is a two-step: resolve the name, <em>vet the matches</em>, then fetch by ID. Resolve never returns empty. A bad name still returns confident fuzzy matches, so check the name, not just the trust score.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>scrape <span class="sm">URL(s) → clean markdown</span></summary>
+            <div class="disc-body">
+              <pre><code><span class="p">$ </span>ketch scrape <span class="dim">&lt;url&gt;</span>
+<span class="p">$ </span>ketch scrape <span class="dim">&lt;url1&gt; &lt;url2&gt; &lt;url3&gt;</span>      <span class="dim"># concurrent batch</span>
+<span class="p">$ </span>ketch scrape urls.txt                 <span class="dim"># one URL per line</span>
+<span class="p">$ </span>ketch scrape <span class="dim">'["url1","url2"]'</span>        <span class="dim"># JSON array</span>
+<span class="p">$ </span>echo <span class="dim">"url1\nurl2"</span> | ketch scrape      <span class="dim"># stdin</span></code></pre>
+              <div class="scroll">
+                <table>
+                  <tbody>
+                    <tr><td class="cmd">--raw</td><td>Raw HTML instead of markdown</td></tr>
+                    <tr><td class="cmd">--select &lt;css&gt;</td><td>Extract only matching elements, skipping readability</td></tr>
+                    <tr><td class="cmd">--max-chars</td><td>Truncate output, appending <code class="inline">[truncated]</code></td></tr>
+                    <tr><td class="cmd">--trim</td><td>Strip markdown formatting, keep content text</td></tr>
+                    <tr><td class="cmd">--no-llms-txt</td><td>Disable <code class="inline">/llms.txt</code> detection for bare domains</td></tr>
+                    <tr><td class="cmd">--force-browser</td><td>Always render via the browser, skipping auto-detection</td></tr>
+                    <tr><td class="cmd">--concurrency</td><td>Max concurrent requests, default 5</td></tr>
+                    <tr><td class="cmd">--no-cache</td><td>Bypass the page cache</td></tr>
+                    <tr><td class="cmd">--cookie-file</td><td>Netscape <code class="inline">cookies.txt</code> jar</td></tr>
+                    <tr><td class="cmd">--user-agent</td><td>User-Agent override; empty restores the default</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+
+          <details>
+            <summary>extract <span class="sm">Piped HTML → markdown, no fetch</span></summary>
+            <div class="disc-body">
+              <pre><code><span class="p">$ </span>curl -L https://example.com | ketch extract
+<span class="p">$ </span>cat page.html | ketch extract --select article --max-chars 4000</code></pre>
+              <div class="scroll">
+                <table>
+                  <tbody>
+                    <tr><td class="cmd">--url</td><td>Source URL for metadata and relative-link resolution</td></tr>
+                    <tr><td class="cmd">--select &lt;css&gt;</td><td>CSS selector to extract</td></tr>
+                    <tr><td class="cmd">--trim</td><td>Strip markdown formatting</td></tr>
+                    <tr><td class="cmd">--max-chars</td><td>Truncate output</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="note">No fetch, no cache, no browser — just the readability and markdown pipeline. Useful when you already have the bytes.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>crawl <span class="sm">BFS or sitemap walk, foreground or detached</span></summary>
+            <div class="disc-body">
+              <pre><code><span class="p">$ </span>ketch crawl https://docs.example.com --depth 2
+<span class="p">$ </span>ketch crawl https://docs.example.com --sitemap
+<span class="p">$ </span>ketch crawl https://docs.example.com --background
+<span class="p">$ </span>ketch crawl status <span class="dim">[id]</span>
+<span class="p">$ </span>ketch crawl stop <span class="dim">&lt;id&gt;</span></code></pre>
+              <div class="scroll">
+                <table>
+                  <tbody>
+                    <tr><td class="cmd">--depth</td><td>Max BFS depth, default 3</td></tr>
+                    <tr><td class="cmd">--concurrency</td><td>Worker pool size, default 8</td></tr>
+                    <tr><td class="cmd">--sitemap</td><td>Treat the seed URL as a sitemap</td></tr>
+                    <tr><td class="cmd">--background</td><td>Detach and return a crawl id</td></tr>
+                    <tr><td class="cmd">--allow</td><td>Path substring filters</td></tr>
+                    <tr><td class="cmd">--deny</td><td>Regex deny patterns</td></tr>
+                    <tr><td class="cmd">--cookie-file</td><td>Netscape <code class="inline">cookies.txt</code> jar</td></tr>
+                    <tr><td class="cmd">--user-agent</td><td>User-Agent override</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="note">A foreground crawl interrupted by SIGINT exits <strong>0</strong> with partial results, by design.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>browser <span class="sm">Headless Chrome for JS-shell pages</span></summary>
+            <div class="disc-body">
+              <pre><code><span class="p">$ </span>ketch browser status
+<span class="p">$ </span>ketch browser install    <span class="dim"># download Chromium to ketch's cache dir</span></code></pre>
+              <p class="note">Scraping is fast path first: plain HTTP by default, with the browser used only when a JS shell is detected. <code class="inline">--force-browser</code> overrides the detection.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>config <span class="sm">Show, init, set, path</span></summary>
+            <div class="disc-body">
+              <pre><code><span class="p">$ </span>ketch config                  <span class="dim"># effective config + active backends, as JSON</span>
+<span class="p">$ </span>ketch config init
+<span class="p">$ </span>ketch config set backend searxng
+<span class="p">$ </span>ketch config path</code></pre>
+              <p class="note">Plain <code class="inline">ketch config</code> is the discovery call: one invocation returns everything an agent needs to know about what's active, including <code class="inline">*_key_set</code> presence booleans that never reveal the key itself.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>cache <span class="sm">Page-cache stats, or clear it</span></summary>
+            <div class="disc-body">
+              <pre><code><span class="p">$ </span>ketch cache
+<span class="p">$ </span>ketch cache clear</code></pre>
+              <p class="note">bbolt-backed, 72-hour default TTL. Repeat scrapes and crawls read from cache, with no refetch.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>doctor <span class="sm">Live health check of every surface</span></summary>
+            <div class="disc-body">
+              <pre><code><span class="p">$ </span>ketch doctor</code></pre>
+              <p class="note">Concurrent read-only probes against every backend, plus the browser and cache. Each comes back <code class="inline">ok</code>, <code class="inline">no_key</code>, <code class="inline">unreachable</code>, <code class="inline">misconfigured</code>, or <code class="inline">skipped</code>. Exits <strong>0</strong> when healthy and <strong>5</strong> when a configured surface is broken — so it works in CI.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>mcp <span class="sm">Run as an MCP server over stdio</span></summary>
+            <div class="disc-body">
+              <pre><code><span class="p">$ </span>ketch mcp serve</code></pre>
+              <p class="note">The five surfaces as MCP tools, on the same config and backends as the CLI. <code class="inline">config</code>, <code class="inline">cache</code>, and <code class="inline">doctor</code> are deliberately <em>not</em> tools — they're operator actions, not research surfaces.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>version <span class="sm">Version, commit, build date</span></summary>
+            <div class="disc-body">
+              <pre><code><span class="p">$ </span>ketch version
+ketch v0.17.0
+  <span class="key">commit:</span> 8f41359
+  <span class="key">built:</span>  2026-09-16T22:51:07Z
+  <span class="key">go:</span>     go1.25.7 linux/amd64</code></pre>
+            </div>
+          </details>
+
+        </div>
+      </section>
+
+      <section id="workflows">
+        <p class="eyebrow">Workflows</p>
+        <h2>Common workflows</h2>
+
+        <h3>Bounded research query</h3>
+        <p class="tight">Search, then fetch full content for every hit — bounded, because an unguarded page can cost ~25k tokens.</p>
+        <pre><code><span class="p">$ </span>ketch search <span class="dim">"raft consensus implementation tradeoffs"</span> \
+    --scrape --limit 5 --max-chars 6000 --trim</code></pre>
+
+        <h3>Crawl a docs site into the cache</h3>
+        <p class="tight">Crawl once in the background; every page lands in the cache, so later scrapes are local reads.</p>
+        <pre><code><span class="p">$ </span>ketch crawl https://docs.example.com --background
+<span class="dim">→ crawl_id: c_a1b2c3d4</span>
+
+<span class="p">$ </span>ketch crawl status c_a1b2c3d4
+<span class="dim">→ {"status": "running", "pages": 847, ...}</span>
+
+<span class="dim"># once complete, individual pages come from cache — no refetch</span>
+<span class="p">$ </span>ketch scrape https://docs.example.com/guide/auth</code></pre>
+
+        <h3>Federated search across providers</h3>
+        <p class="tight">Rank fusion surfaces what several engines agree on, and tags each result with who returned it.</p>
+        <pre><code><span class="p">$ </span>ketch search <span class="dim">"postgres connection pooling pgbouncer vs pgcat"</span> --multi</code></pre>
+
+        <h3>Convert existing HTML</h3>
+        <pre><code><span class="p">$ </span>curl -L https://example.com/post | ketch extract --trim --max-chars 4000</code></pre>
+
+        <h3>Pages behind a session or consent wall</h3>
+        <p class="tight">Export a Netscape <code class="inline">cookies.txt</code> from your browser, then attach it to any fetch.</p>
+        <pre><code><span class="p">$ </span>ketch scrape <span class="dim">&lt;url&gt;</span> --cookie-file ~/cookies.txt
+<span class="p">$ </span>ketch config set cookie_file ~/cookies.txt   <span class="dim"># persist as a default</span>
+<span class="p">$ </span>ketch scrape <span class="dim">&lt;url&gt;</span> --cookie-file <span class="dim">""</span>          <span class="dim"># disable for one run</span></code></pre>
+        <p class="note">Only cookies whose domain, path, and secure scope match are sent, re-evaluated on every redirect. Values are never printed — not in output, JSON, errors, or doctor. Respecting a site's terms and using only your own session cookies is the operator's responsibility.</p>
+
+        <h3>Exit-code branching in scripts</h3>
+        <pre><code><span class="p">$ </span>ketch search <span class="dim">"$q"</span> --json &gt; out.json
+<span class="p">$ </span><span class="key">case</span> $? <span class="key">in</span>
+    0) jq -r <span class="dim">'.results[].url'</span> out.json ;;
+    4) echo <span class="dim">"upstream down, retry later"</span> ;;
+    5) echo <span class="dim">"needs configuration — run ketch doctor"</span>; exit 1 ;;
+  <span class="key">esac</span></code></pre>
+      </section>
+
+      <section id="playbook">
+        <p class="eyebrow">Research playbook</p>
+        <h2>Usage guidelines</h2>
+        <p>These are the disciplines the bundled skill enforces, for agents and terminal users alike.</p>
+
+        <ul class="plain">
+          <li><strong>Bound every fetch.</strong> <code class="inline">--max-chars 4000–8000</code> plus <code class="inline">--trim</code> on any page you haven't seen. Skipping the cap should come with a reason.</li>
+          <li><strong>Cite every claim.</strong> A synthesis without source URLs isn't a deliverable.</li>
+          <li><strong>Treat exit codes as control flow.</strong> Classify before reacting; never retry a <code class="inline">2</code> or <code class="inline">3</code> unchanged.</li>
+          <li><strong>Propose, then mutate.</strong> <code class="inline">config set</code>, <code class="inline">browser install</code>, and installs are operator actions — confirm the exact command first, and never touch a value that's already working.</li>
+        </ul>
+
+        <h3>Token budgets</h3>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr><th>Call</th><th>Bound with</th><th>Measured cost</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="cmd">search, limit 5</td><td><code class="inline">--limit</code></td><td class="num">~1.4 KB</td></tr>
+              <tr><td class="cmd">code, limit 3</td><td><code class="inline">--limit</code></td><td class="num">~0.7 KB</td></tr>
+              <tr><td class="cmd">docs, default</td><td><code class="inline">--tokens</code> (4000)</td><td class="num">~3.3 KB</td></tr>
+              <tr><td class="cmd">scrape, unknown page</td><td><code class="inline">--max-chars</code> + <code class="inline">--trim</code></td><td class="num s-crit"><span class="status">~100 KB unguarded</span></td></tr>
+              <tr><td class="cmd">any list</td><td><code class="inline">--minimal</code></td><td class="num">roughly halves it</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Worked session</h3>
+        <p class="tight">Two queries, three scrapes, one corroboration — including a rate limit and a source that never came back.</p>
+        <pre><code><span class="p">$ </span>ketch search <span class="dim">"Go iter.Seq real-world gotchas"</span> --limit 5
+<span class="wn">→ exit 4: [upstream] ddg rate limited</span>
+  <span class="dim"># an explicit backend failed — rotate, don't retry unchanged</span>
+
+<span class="p">$ </span>ketch search <span class="dim">"Go iter.Seq real-world gotchas"</span> -b brave --limit 5
+<span class="dim">→ 5 results, 4 unique hosts → picked 3 primary sources</span>
+
+<span class="p">$ </span>ketch scrape <span class="dim">&lt;u1&gt; &lt;u2&gt; &lt;u3&gt;</span> --max-chars 6000 --trim
+<span class="dim">→ u1, u2 ok; </span><span class="wn">u3 failed (503)</span><span class="dim"> — named in the synthesis, not dropped silently</span>
+
+<span class="p">$ </span>ketch code <span class="dim">"iter.Seq"</span> --lang go --limit 3
+<span class="dim">→ 3 repos with file and line URLs, to corroborate real usage</span></code></pre>
+        <p class="note">Five claims, each cited to its URL. The unretrieved source is listed as unretrieved. Where two sources conflict, the conflict is stated and attributed rather than averaged away.</p>
+
+        <h3>Common mistakes</h3>
+        <div class="pair">
+          <div class="row"><span class="tag bad">Bad</span><p class="txt"><code class="inline">ketch scrape https://docs.example.com</code> — no bound. You get llms.txt or ~25k tokens, whichever is worse.</p></div>
+          <div class="row"><span class="tag good">Good</span><p class="txt"><code class="inline">ketch scrape https://docs.example.com/quickstart --max-chars 6000 --trim</code> — plus <code class="inline">--no-llms-txt</code> when you want the page itself.</p></div>
+        </div>
+        <div class="pair">
+          <div class="row"><span class="tag bad">Bad</span><p class="txt"><code class="inline">[upstream]</code> from ddg, so retry the identical call three times.</p></div>
+          <div class="row"><span class="tag good">Good</span><p class="txt">Rotate to another provider from <code class="inline">available_backends</code>, retry once, and note the swap. When <code class="inline">auto</code> itself fails it has already tried every usable provider — retry once, then report the outage.</p></div>
+        </div>
+        <div class="pair">
+          <div class="row"><span class="tag bad">Bad</span><p class="txt">Fetch docs from resolve's first match because its trust score is high, even though the name isn't the library you asked about.</p></div>
+          <div class="row"><span class="tag good">Good</span><p class="txt">Vet name, snippet count, and trust together. If no match names the intended library, say so instead of fetching junk docs.</p></div>
+        </div>
+      </section>
+
+      <section id="backends">
+        <p class="eyebrow">Backends</p>
+        <h2>Backends by surface</h2>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr><th>Surface</th><th>Default</th><th>Also available</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="cmd">search</td><td class="cmd">auto</td><td>brave, ddg, searxng, exa, firecrawl, keenable, tavily, parallel, serpbase, degoog, serply, youcom</td></tr>
+              <tr><td class="cmd">code</td><td class="cmd">grepapp</td><td>sourcegraph, github</td></tr>
+              <tr><td class="cmd">docs</td><td class="cmd">context7</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout">
+          <p><strong><code class="inline">auto</code> is a chain, not a provider.</strong> It falls through <code class="inline">parallel → exa → keenable → youcom → firecrawl → ddg</code>, none of which need a key, and reports which one served.</p>
+          <p>Set a key and <code class="inline">auto</code> promotes that provider ahead of the chain — you don't also have to set <code class="inline">backend</code>. Self-hosted SearXNG and Degoog instances are preferred over hosted APIs once configured.</p>
+        </div>
+        <div class="discs">
+          <details>
+            <summary>Keyless <span class="sm">Nothing to configure</span></summary>
+            <div class="disc-body">
+              <p class="note"><code class="inline">parallel</code>, <code class="inline">exa</code>, <code class="inline">keenable</code>, <code class="inline">youcom</code>, <code class="inline">firecrawl</code>, and <code class="inline">ddg</code> answer with no setup. Keys for exa, keenable, youcom, and firecrawl are optional and lift the hosted caps. ddg rate-limits readily under fan-out.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Keyed <span class="sm">Free key, then promoted by auto</span></summary>
+            <div class="disc-body">
+              <pre><code><span class="p">$ </span>ketch config set brave_api_key <span class="dim">&lt;key&gt;</span>
+<span class="p">$ </span>ketch config set tavily_api_key <span class="dim">&lt;key&gt;</span>
+<span class="p">$ </span>ketch config set serpbase_api_key <span class="dim">&lt;key&gt;</span>
+<span class="p">$ </span>ketch config set serply_api_key <span class="dim">&lt;key&gt;</span></code></pre>
+              <p class="note">Providers accept multiple keys for rotation — <code class="inline">brave_api_keys</code> takes a list, and one is picked at random per request to spread rate limits.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Self-hosted <span class="sm">Your own instance, preferred once set</span></summary>
+            <div class="disc-body">
+              <pre><code><span class="p">$ </span>ketch config set searxng_url http://my-searxng:8080
+<span class="p">$ </span>ketch config set degoog_url http://my-degoog:8090</code></pre>
+            </div>
+          </details>
+          <details>
+            <summary>Code and docs <span class="sm">grepapp, sourcegraph, github, context7</span></summary>
+            <div class="disc-body">
+              <p class="note">Grep and Sourcegraph need nothing. GitHub uses <code class="inline">gh auth login</code>, <code class="inline">$GITHUB_TOKEN</code>, or <code class="inline">ketch config set github_token &lt;tok&gt;</code>. Context7 takes a free key via <code class="inline">ketch config set context7_api_key &lt;key&gt;</code>.</p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section id="config">
+        <p class="eyebrow">Configuration</p>
+        <h2>Config file and environment variables</h2>
+        <p>Defaults live in <code class="inline">~/.config/ketch/config.json</code>.</p>
+        <pre><code><span class="p">$ </span>ketch config init                    <span class="dim"># write a default config file</span>
+<span class="p">$ </span>ketch config set backend searxng
+<span class="p">$ </span>ketch config set browser chrome      <span class="dim"># JS-rendered page fallback</span>
+<span class="p">$ </span>ketch config                         <span class="dim"># effective config + active backends</span></code></pre>
+        <p>Every scalar key can also come from the environment as <code class="inline">KETCH_</code> plus the upper-snake key name — useful in containers and CI where writing a file is awkward.</p>
+        <pre><code><span class="p">$ </span>KETCH_BRAVE_API_KEY=<span class="dim">&lt;key&gt;</span> ketch search <span class="dim">"query"</span>
+<span class="p">$ </span>KETCH_BACKEND=ddg KETCH_LIMIT=10 ketch search <span class="dim">"query"</span>
+<span class="p">$ </span>KETCH_CONFIG=/etc/ketch/config.json ketch config</code></pre>
+        <div class="callout">
+          <p><strong>Precedence:</strong> CLI flag → <code class="inline">KETCH_*</code> env → config file → built-in default.</p>
+        </div>
+        <div class="discs">
+          <details>
+            <summary>Environment details <span class="sm">Lists, tokens, and what's file-only</span></summary>
+            <div class="disc-body">
+              <ul class="plain">
+                <li>Per-provider key vars accept a comma-separated list and replace the provider's whole key pool — there are no plural <code class="inline">*_API_KEYS</code> vars.</li>
+                <li><code class="inline">KETCH_GITHUB_TOKEN</code> beats the config file, which beats an ambient <code class="inline">$GITHUB_TOKEN</code>.</li>
+                <li><code class="inline">url_rewrites</code> and <code class="inline">spa_markers</code> are file-only — their JSON and regex values don't survive env quoting.</li>
+                <li><code class="inline">ketch config</code> reports an <code class="inline">env_overrides</code> section, so you can always see which values came from the environment.</li>
+                <li>Invalid values fail loudly, naming the offending variable. Secret <code class="inline">KETCH_*</code> vars are stripped from spawned subprocesses.</li>
+              </ul>
+            </div>
+          </details>
+          <details>
+            <summary>Page cache <span class="sm">bbolt, 72h TTL, single-process</span></summary>
+            <div class="disc-body">
+              <pre><code><span class="p">$ </span>ketch cache          <span class="dim"># stats</span>
+<span class="p">$ </span>ketch cache clear
+<span class="p">$ </span>ketch scrape <span class="dim">&lt;url&gt;</span> --no-cache</code></pre>
+              <p class="note">The cache is single-process. A long-running MCP server holds the lock, so concurrent CLI scrapes silently run cache-disabled — <code class="inline">ketch doctor</code> reports the cache as locked by another process.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Browser rendering <span class="sm">Fast path first, Chrome on detection</span></summary>
+            <div class="disc-body">
+              <pre><code><span class="p">$ </span>ketch config set browser chrome       <span class="dim"># from PATH</span>
+<span class="p">$ </span>ketch config set browser /usr/bin/google-chrome-stable
+<span class="p">$ </span>ketch browser install                 <span class="dim"># download Chromium</span>
+<span class="p">$ </span>ketch browser status</code></pre>
+            </div>
+          </details>
+          <details>
+            <summary>Other keys <span class="sm">Rewrites, SPA markers, user agent, PDF converter</span></summary>
+            <div class="disc-body">
+              <ul class="plain">
+                <li><code class="inline">url_rewrites</code> — regex rewrites applied before fetch</li>
+                <li><code class="inline">spa_markers</code> — extra tokens for JS-shell detection</li>
+                <li><code class="inline">cache_ttl</code> — cache lifetime</li>
+                <li><code class="inline">user_agent</code> — User-Agent override for HTTP and browser fetches</li>
+                <li><code class="inline">external_pdf_to_md_converter_command</code> — external PDF-to-Markdown converter; must contain exactly one <code class="inline">{input}</code> placeholder. Once set it is authoritative, with no silent fallback</li>
+              </ul>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section id="exit">
+        <p class="eyebrow">Exit status</p>
+        <h2>Exit code reference</h2>
+        <p>Every failure mode has a number, so a script or an agent can branch on the outcome instead of pattern-matching an error string.</p>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr><th>Code</th><th>Meaning</th><th>What to do</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="num s-ok"><span class="status">0</span></td><td>Success</td><td>Read the result</td></tr>
+              <tr><td class="num s-warn"><span class="status">2</span></td><td>Bad input</td><td>Fix the call — retrying unchanged can never succeed</td></tr>
+              <tr><td class="num s-warn"><span class="status">3</span></td><td>Nothing matched</td><td>Change the query or selector; not an outage</td></tr>
+              <tr><td class="num s-crit"><span class="status">4</span></td><td>Upstream or network failure</td><td>Rotate to another provider, or retry once</td></tr>
+              <tr><td class="num s-crit"><span class="status">5</span></td><td>Missing precondition</td><td>Stop and configure — run <code class="inline">ketch doctor</code></td></tr>
+              <tr><td class="num s-warn"><span class="status">6</span></td><td>Cancelled or timed out</td><td>Rerun with a smaller scope</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">The MCP server carries the same taxonomy, as stable message prefixes: <code class="inline">[validation]</code>, <code class="inline">[not_found]</code>, <code class="inline">[upstream]</code>, <code class="inline">[precondition]</code>, <code class="inline">[cancelled]</code>. One asymmetry: a CLI crawl interrupted by SIGINT exits <strong>0</strong> with partial results, by design.</p>
+      </section>
+
+      <section id="gotchas">
+        <p class="eyebrow">Pitfalls</p>
+        <h2>Known pitfalls</h2>
+        <ul class="plain">
+          <li>Scraping a <strong>bare domain</strong> auto-probes <code class="inline">/llms.txt</code> and may return that instead of the homepage. The <code class="inline">title</code> field reveals the swap; <code class="inline">--no-llms-txt</code> opts out.</li>
+          <li><strong>Batch scrape reports per-URL failures inside a successful call.</strong> The command exits 0 with per-result errors set — check every entry, don't just check the exit code.</li>
+          <li><strong><code class="inline">docs</code> resolve never returns empty.</strong> Garbage in gets confident fuzzy matches out, so vet the name rather than trusting the score.</li>
+          <li><strong>Regex is per-backend.</strong> grepapp and sourcegraph accept it; github rejects it with a pointer to the other two.</li>
+          <li><strong>Background crawls are CLI-only.</strong> The MCP <code class="inline">crawl</code> tool is synchronous and capped at 30 pages by default, 100 hard, three minutes wall clock.</li>
+          <li><strong>The page cache is single-process.</strong> Running the MCP server long-term degrades concurrent CLI scrapes to uncached.</li>
+        </ul>
+      </section>
+
+      <section id="agents">
+        <p class="eyebrow">Agents</p>
+        <h2>Using ketch with agents</h2>
+        <p>Instead of teaching an agent a search API, a code API, and a docs API — each with its own auth and response shape — give it one binary and five surfaces.</p>
+
+        <div class="copyblock">
+          <div class="cb-head">
+            <span>System prompt snippet</span>
+            <button type="button" data-copy="prompt" aria-label="Copy system prompt snippet">Copy</button>
+          </div>
+          <pre><code id="src-prompt">Use `ketch` for external research — web pages, OSS code, library docs.
+- `ketch search "query"` / `--scrape` for results with full content
+- `ketch scrape &lt;url&gt; [url...]` for clean markdown from one or more URLs
+- `ketch extract` for already-fetched HTML piped in
+- `ketch code "query" --lang go` for real OSS code with line context
+- `ketch docs "query" --library /org/repo` for version-aware docs
+All commands support `--json`. `ketch config` reports active backends.
+Bound every scrape with --max-chars and --trim. Cite every claim.</code></pre>
+        </div>
+
+        <h3>Bundled skill</h3>
+        <p class="tight">The repo ships a fuller playbook as a skill, covering surface routing, token budgets, error-code control flow, a deep-research recipe, and guided backend setup. Any agent that loads <code class="inline">SKILL.md</code>-style files can use it.</p>
+        <p class="note">Read it at <a href="https://github.com/1broseidon/ketch/tree/main/skills/ketch">skills/ketch/</a>. Most of this page's playbook and gotchas sections come from it.</p>
+
+        <h3>MCP server</h3>
+        <p class="tight">For agents that speak MCP rather than shelling out, the same five surfaces run as tools over stdio, on the same config and backends as the CLI.</p>
+        <pre><code><span class="p">$ </span>claude mcp add ketch -- ketch mcp serve</code></pre>
+        <div class="callout">
+          <p><strong>Network posture matters.</strong> The server performs no URL filtering — it fetches whatever URL the client gives it, including private or internal addresses reachable from wherever it runs. Give it the network posture you'd give the agent itself.</p>
+        </div>
+
+        <h3>Claude Code plugin</h3>
+        <p class="tight">ketch only needs the CLI on PATH. The repo also works as a plugin marketplace that installs the MCP server and skill together.</p>
+        <pre><code><span class="p">$ </span>claude plugin marketplace add 1broseidon/ketch
+<span class="p">$ </span>claude plugin install ketch@ketch</code></pre>
+      </section>
+
+      <footer>
+        <span>MIT</span>
+        <a href="https://github.com/1broseidon/ketch">github.com/1broseidon/ketch</a>
+        <a href="https://github.com/1broseidon/ketch/blob/main/CONTRIBUTING.md">contributing</a>
+        <span class="spacer">{{ version }}</span>
+      </footer>
+
     </main>
 
-    <!-- Features -->
-    <section class="features fade-up" style="animation-delay: 200ms">
-      <div class="section-header">
-        <h2 class="section-title">Features</h2>
-        <div class="section-divider"></div>
-        <span class="section-count">{{ String(features.length).padStart(2, '0') }} Modules</span>
-      </div>
-      <div class="feature-grid">
-        <div v-for="(feature, i) in features" :key="feature.title" class="feature-card">
-          <span class="feature-index">{{ String(i + 1).padStart(3, '0') }}</span>
-          <h3 class="feature-title">{{ feature.title }}</h3>
-          <p class="feature-desc">{{ feature.description }}</p>
-        </div>
-      </div>
-    </section>
+    <aside class="rail">
+      <div class="rail-label">Contents</div>
+      <ol>
+        <li><a href="#what">What it is</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a href="#quickstart">Quickstart</a></li>
+        <li><a href="#surfaces">Choosing a surface</a></li>
+        <li><a href="#commands">Commands</a></li>
+        <li><a href="#workflows">Workflows</a></li>
+        <li><a href="#playbook">Research playbook</a></li>
+        <li><a href="#backends">Backends</a></li>
+        <li><a href="#config">Configuration</a></li>
+        <li><a href="#exit">Exit status</a></li>
+        <li><a href="#gotchas">Pitfalls</a></li>
+        <li><a href="#agents">Agents</a></li>
+      </ol>
+    </aside>
 
-    <!-- Quick Start -->
-    <section class="quickstart fade-up" style="animation-delay: 300ms">
-      <div class="section-header">
-        <h2 class="section-title">Quick Start</h2>
-        <div class="section-divider"></div>
-      </div>
-      <div class="code-block">
-        <pre><code><span class="code-comment"># Search the web</span>
-ketch search "golang error handling"
-
-<span class="code-comment"># Search and fetch full content from each result</span>
-ketch search "golang error handling" --scrape
-
-<span class="code-comment"># Scrape a URL to clean markdown</span>
-ketch scrape https://go.dev/doc/effective_go
-
-<span class="code-comment"># Batch scrape (concurrent)</span>
-ketch scrape https://example.com https://go.dev</code></pre>
-      </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="home-footer fade-up" style="animation-delay: 400ms">
-      <div class="footer-line">
-        <span>&copy; {{ new Date().getFullYear() }} CHAIN.SH / KETCH</span>
-        <a href="https://chain.sh" class="footer-back">&larr; CHAIN.SH</a>
-      </div>
-    </footer>
   </div>
+</div>
 </template>
-
-<style scoped>
-.home {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-@media (min-width: 768px) {
-  .home { padding: 2rem 3rem; }
-}
-
-/* Nav */
-.home-nav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.5rem 2rem;
-  background: rgba(13, 17, 23, 0.8);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--vp-c-divider);
-}
-
-@media (min-width: 768px) {
-  .home-nav { padding: 1.5rem 3rem; }
-}
-
-.nav-left {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-}
-
-.nav-back {
-  color: var(--vp-c-text-3);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.nav-back:hover { color: var(--vp-c-text-1); }
-
-.nav-sep { color: var(--vp-c-text-3); }
-
-.nav-title { color: var(--vp-c-text-1); }
-
-.nav-icon {
-  color: var(--vp-c-text-3);
-  transition: color 0.2s;
-}
-
-.nav-icon:hover { color: var(--vp-c-text-1); }
-
-/* Hero */
-.hero {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  margin-top: 8rem;
-  margin-bottom: 5rem;
-}
-
-.headline {
-  font-size: clamp(4rem, 18vw, 12rem);
-  line-height: 0.9;
-  font-weight: 700;
-  color: var(--vp-c-text-1);
-  text-transform: uppercase;
-  position: relative;
-  display: inline-block;
-}
-
-.headline::after {
-  content: 'KETCH';
-  position: absolute;
-  left: 4px;
-  top: 4px;
-  z-index: -1;
-  -webkit-text-stroke: 1px var(--vp-c-divider);
-  color: transparent;
-}
-
-.tagline-row {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  margin-top: 2rem;
-}
-
-.accent-line {
-  height: 1px;
-  width: 6rem;
-  background: var(--vp-c-brand-1);
-}
-
-.tagline {
-  text-transform: uppercase;
-  letter-spacing: 0.3em;
-  color: var(--vp-c-text-3);
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.version-tag {
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.6875rem;
-  color: var(--vp-c-text-3);
-  letter-spacing: 0.05em;
-  margin-left: auto;
-}
-
-.subtitle {
-  color: var(--vp-c-text-3);
-  font-size: 0.8125rem;
-  line-height: 1.7;
-  margin-top: 1.5rem;
-  max-width: 36rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.install-block {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 2rem;
-  padding: 0.75rem 1.25rem;
-  border: 1px solid var(--vp-c-divider);
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.8125rem;
-}
-
-.install-dollar {
-  color: var(--vp-c-text-3);
-  user-select: none;
-}
-
-.install-block code {
-  color: var(--vp-c-text-1);
-}
-
-.actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.action-primary,
-.action-secondary {
-  padding: 0.75rem 1.5rem;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  text-decoration: none;
-  transition: all 0.2s;
-}
-
-.action-primary {
-  background: var(--vp-c-divider);
-  border: 1px solid #30363d;
-  color: var(--vp-c-text-1);
-}
-
-.action-primary:hover {
-  background: #30363d;
-  border-color: var(--vp-c-brand-1);
-}
-
-.action-secondary {
-  border: 1px solid var(--vp-c-divider);
-  color: var(--vp-c-text-2);
-  background: transparent;
-}
-
-.action-secondary:hover {
-  border-color: #30363d;
-  color: var(--vp-c-text-1);
-}
-
-/* Section header */
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 3rem;
-}
-
-.section-title {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.4em;
-  color: var(--vp-c-brand-1);
-  flex-shrink: 0;
-}
-
-.section-divider {
-  height: 1px;
-  flex-grow: 1;
-  margin: 0 2rem;
-  background: var(--vp-c-divider);
-}
-
-.section-count {
-  font-size: 0.6875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--vp-c-text-3);
-  flex-shrink: 0;
-}
-
-/* Feature cards */
-.feature-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-}
-
-@media (min-width: 768px) {
-  .feature-grid { grid-template-columns: 1fr 1fr; }
-}
-
-.feature-card {
-  border: 1px solid var(--vp-c-divider);
-  padding: 1.5rem;
-  transition: background 0.2s;
-}
-
-.feature-card:hover {
-  background: rgba(139, 148, 158, 0.03);
-}
-
-.feature-index {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  color: var(--vp-c-brand-1);
-  display: block;
-  margin-bottom: 1rem;
-}
-
-.feature-title {
-  font-size: 1rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--vp-c-text-1);
-  margin-bottom: 0.5rem;
-}
-
-.feature-desc {
-  font-size: 0.6875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  line-height: 1.7;
-  color: var(--vp-c-text-3);
-}
-
-/* Features section */
-.features {
-  margin-bottom: 4rem;
-}
-
-/* Quick Start */
-.quickstart {
-  margin-bottom: 4rem;
-}
-
-.code-block {
-  border: 1px solid var(--vp-c-divider);
-  background: var(--vp-c-bg-alt);
-  padding: 1.5rem;
-  overflow-x: auto;
-}
-
-.code-block pre {
-  margin: 0;
-}
-
-.code-block code {
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.8125rem;
-  line-height: 1.8;
-  color: var(--vp-c-text-1);
-}
-
-.code-comment {
-  color: var(--vp-c-text-3);
-}
-
-/* Footer */
-.home-footer {
-  margin-top: auto;
-}
-
-.footer-line {
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--vp-c-divider);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.6875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: var(--vp-c-text-3);
-}
-
-.footer-back {
-  color: var(--vp-c-text-3);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.footer-back:hover {
-  color: var(--vp-c-text-1);
-}
-</style>
