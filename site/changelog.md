@@ -4,6 +4,19 @@ This page mirrors the canonical [`CHANGELOG.md`](https://github.com/1broseidon/k
 
 ## Unreleased
 
+## v0.17.1 — 2026-09-18
+
+**Added**
+- Install via npm: `npm install -g ketch-cli`, or `npx -y ketch-cli ...` to run without installing. That also makes the MCP server available with no install step — `claude mcp add ketch -- npx -y ketch-cli mcp serve`. The binary ships in six per-platform packages under the `@ketch-cli` scope as `optionalDependencies`, so npm fetches only the one for your machine and nothing executes at install time.
+- Install script: `curl -fsSL https://ketch.run/install | sh`. Detects OS/arch, resolves the latest tag via the `/releases/latest` redirect (no API rate limit), verifies against the release `checksums.txt`, and installs to `/usr/local/bin` or `~/.local/bin` without sudo.
+
+**Fixed**
+- `ketch docs` no longer reports "library not found" when a query simply has no matches. Context7 returns 404 both for a missing library and for a library with no matching snippets; the body is now inspected, so `no_relevant_snippets` yields an empty result and other 404s still mean not-found.
+- A failed read of a Context7 404 body propagates instead of being masked as not-found, restoring the cancelled-request mapping to exit code 6 and MCP's `[cancelled]` prefix.
+
+**Changed**
+- Documentation moved to [ketch.run](https://ketch.run) and is now a single-page manual instead of five pages. The changelog stays separate.
+
 ## v0.17.0 — 2026-09-16
 
 **Added**

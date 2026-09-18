@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.1] - 2026-09-18
+
+### Added
+- **Install via npm.** ketch is published to npm as [`ketch-cli`](https://www.npmjs.com/package/ketch-cli) (the bare `ketch` name belongs to an unrelated package). `npm install -g ketch-cli` installs the binary, and `npx -y ketch-cli ...` runs it without installing — which makes the MCP server reachable with no install step at all: `claude mcp add ketch -- npx -y ketch-cli mcp serve`. The binary ships in six per-platform packages under the `@ketch-cli` scope declared as `optionalDependencies`, so npm downloads exactly the one matching your machine and nothing runs at install time. No postinstall script, no download-on-install.
+- **Install script.** `curl -fsSL https://ketch.run/install | sh` detects OS and architecture, resolves the latest tag through the `/releases/latest` redirect rather than the API (so there is no unauthenticated rate limit), verifies the tarball against the release `checksums.txt`, and installs without sudo — `/usr/local/bin` when writable, otherwise `~/.local/bin`. It installs via rename, so a running `ketch` is never half-overwritten.
+
+### Fixed
+- **`ketch docs` no longer reports a missing library when a query simply has no matches.** Context7's `/api/v2/context` endpoint answers HTTP 404 both when a library ID does not exist and when the library exists but nothing matched the query (body `{"error":"no_relevant_snippets"}`). Every 404 mapped to `ErrNotFound`, so an ordinary empty result surfaced as "library not found" even when called with an exact resolved ID. The 404 body is now inspected first: `no_relevant_snippets` returns an empty result set, and any other 404 still maps to `ErrNotFound` (#66, #67).
+- **A failed read of a Context7 404 body propagates instead of being masked.** The `io.ReadAll` error was discarded and fell through to `ErrNotFound`, misclassifying a transient transport failure or a cancelled request as "library does not exist" — which broke the `errors.Is(context.Canceled)` mapping to exit code 6 and MCP's `[cancelled]` prefix.
+
+### Changed
+- **Documentation moved to [ketch.run](https://ketch.run)** and was consolidated from five pages into a single-page manual. The old `1broseidon.github.io/ketch` location is superseded; the changelog remains a separate page.
+
 ## [0.17.0] - 2026-09-16
 
 ### Added
