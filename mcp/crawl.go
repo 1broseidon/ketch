@@ -39,6 +39,7 @@ type CrawlInput struct {
 	Deny     []string `json:"deny,omitempty" jsonschema:"regex patterns; matching URLs are skipped"`
 	MaxChars int      `json:"max_chars,omitempty" jsonschema:"truncate each page's markdown to N characters (0 = disabled)"`
 	NoCache  bool     `json:"no_cache,omitempty" jsonschema:"bypass the page cache"`
+	Tag      string   `json:"tag,omitempty" jsonschema:"record each crawled page under this tag, retrievable later with the tag tool"`
 }
 
 // CrawlPage is one crawled page in the "crawl" tool output.
@@ -93,7 +94,7 @@ func (s *Server) registerCrawlTool() {
 		crawlCtx, cancel := context.WithTimeout(ctx, crawlTimeout)
 		defer cancel()
 
-		col := &crawlCollector{maxPages: maxPages, maxChars: in.MaxChars, cancel: cancel, ctx: crawlCtx}
+		col := &crawlCollector{maxPages: maxPages, maxChars: in.MaxChars, cancel: cancel, ctx: crawlCtx, srv: s, tag: in.Tag}
 		opts := crawl.Options{
 			Depth:       depth,
 			Concurrency: crawlConcurrency,
@@ -124,6 +125,11 @@ type crawlCollector struct {
 	pages    []CrawlPage
 	errs     []CrawlError
 	capped   bool
+
+	// srv and tag are set when the call asked for tagging; the collector is
+	// where a crawled page is seen whole, before truncation.
+	srv *Server
+	tag string
 }
 
 func (c *crawlCollector) collect(r crawl.Result) {
@@ -139,6 +145,7 @@ func (c *crawlCollector) collect(r crawl.Result) {
 	if r.Page == nil {
 		return
 	}
+	c.srv.recordTag(c.tag, r.URL, r.Page)
 	c.pages = append(c.pages, CrawlPage{
 		URL:      r.Page.URL,
 		Title:    r.Page.Title,

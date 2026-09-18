@@ -20,6 +20,8 @@ The two transports expose the same options under different spellings. Both direc
 | `--force-browser` | `force_browser` | scrape |
 | `--max-chars` | `max_chars` | scrape / search-with-scrape; crawl has it on MCP only |
 | `--no-cache` | `no_cache` | scrape, crawl |
+| `--tag <name>` | `tag` | scrape, search-with-scrape, crawl; refused together with `--no-cache` |
+| `ketch tag add/show/list/remove` | `tag` tool, `operation` enum | the CLI uses verbs, MCP takes `operation: add\|show\|list\|remove` |
 | `--concurrency` (scrape, default 5) | `concurrency` (capped at 16) | crawl's `--concurrency` (default 8) is CLI-only |
 | — | `max_pages` | crawl, MCP only: default 30, cap 100; CLI crawl bounds with `--depth`/`--allow`/`--deny` |
 | `--minimal`, `--json`, `--background` | — | CLI-only; MCP output is already structured |
@@ -66,6 +68,34 @@ The two transports expose the same options under different spellings. Both direc
 - **CLI:** `--depth` (default 3), `--allow` path substrings, `--deny` regexes, `--concurrency` (default 8). No page-cap flag — bound with depth and filters.
 - **Background mode is CLI-only:** `ketch crawl <url> --background` returns a crawl ID; `ketch crawl status [id]` and `ketch crawl stop <id>` manage it.
 - A CLI crawl interrupted by SIGINT exits **0** with the partial results already streamed — by design, not an error.
+
+---
+
+## tag
+
+Not a research surface: it answers "what did I already find?", not "what is out
+there?". No network on any operation.
+
+| Operation | CLI | MCP |
+| --- | --- | --- |
+| Tag as you fetch | `--tag <name>` on `scrape` / `search --scrape` / `crawl` | `tag` option on those tools |
+| Tag already-cached pages | `ketch tag add <name> <url>...` | `operation: add`, `urls` |
+| Read the index | `ketch tag show <name>` (`--minimal` for tab-separated) | `operation: show` |
+| List tags | `ketch tag list` | `operation: list` |
+| Drop a tag, or pages from it | `ketch tag remove <name> [url...]` | `operation: remove`, optional `urls` |
+
+`show` returns titles, URLs, one-line descriptions and a `cached` flag per page,
+newest first. A page can carry several tags and is stored once.
+
+**The index outlives the cached bodies.** `cache_ttl` defaults to 72h; index
+entries have no TTL. An entry with `cached: false` means the body expired, not
+that the page is gone — `scrape` the URL to restore it. `ketch cache clear`
+drops bodies and keeps the index. Nothing expires the index, so `remove` is the
+only way a tag ends.
+
+Errors: `add` on a URL that was never fetched is `[not_found]` / exit 3 — only
+fetched pages can be tagged, because there is no title or description to index
+without the page. `remove` that matches nothing is also `[not_found]`.
 
 ---
 

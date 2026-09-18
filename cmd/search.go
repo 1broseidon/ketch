@@ -44,6 +44,8 @@ func init() {
 	searchCmd.Flags().String("random", "",
 		"random provider with fallback: comma-separated list, or bare/=all for every usable backend (use the = form, e.g. --random=brave,exa)")
 	searchCmd.Flags().Lookup("random").NoOptDefVal = "all"
+	searchCmd.Flags().String("tag", "", "with --scrape, record each fetched page under this tag (see `ketch tag`)")
+	searchCmd.PreRunE = validateTagFlag
 	searchCmd.Flags().String("cookie-file", "", "Netscape cookies.txt jar for --scrape fetches; matching cookies are sent with each fetch (overrides config cookie_file)")
 	searchCmd.Flags().String("user-agent", "", "User-Agent override for --scrape fetches (overrides config user_agent; applies to HTTP and browser fetches; empty restores each fetch path's default)")
 }
@@ -88,7 +90,9 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		}
 		defer scraper.Close()
 		pc := newPageCache(false)
-		return searchScrape(cmd.Context(), results, scraper, pc, asJSON, trim, maxChars, minimal)
+		tag, _ := cmd.Flags().GetString("tag")
+		tw := newTagWriter(tag, pc)
+		return searchScrape(cmd.Context(), results, scraper, pc, tw, asJSON, trim, maxChars, minimal)
 	}
 
 	if asJSON {
@@ -117,7 +121,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func searchScrape(ctx context.Context, results []search.Result, scraper *scrape.Scraper, pc *cache.Cache, asJSON bool, trim bool, maxChars int, minimal bool) error {
+func searchScrape(ctx context.Context, results []search.Result, scraper *scrape.Scraper, pc *cache.Cache, tw *tagWriter, asJSON bool, trim bool, maxChars int, minimal bool) error {
 	if asJSON {
 		for i, r := range results {
 			page, err := scraper.CachedScrape(ctx, pc, r.URL)
@@ -125,6 +129,7 @@ func searchScrape(ctx context.Context, results []search.Result, scraper *scrape.
 				fmt.Fprintf(os.Stderr, "warn: failed to scrape %s: %v\n", r.URL, err)
 				continue
 			}
+			tw.record(scraper, r.URL, page)
 			if page.FetchedURL != "" {
 				results[i].FetchedURL = page.FetchedURL
 			}
@@ -140,6 +145,7 @@ func searchScrape(ctx context.Context, results []search.Result, scraper *scrape.
 				fmt.Fprintf(os.Stderr, "warn: failed to scrape %s: %v\n", r.URL, err)
 				continue
 			}
+			tw.record(scraper, r.URL, page)
 			content := extract.PostProcess(page.Markdown, trim, maxChars)
 			snippet := firstLine(content)
 			fmt.Printf("%s\t%s\t%s\n", r.URL, minimalField(page.Title), minimalField(snippet))
@@ -153,6 +159,7 @@ func searchScrape(ctx context.Context, results []search.Result, scraper *scrape.
 			fmt.Fprintf(os.Stderr, "warn: failed to scrape %s: %v\n", r.URL, err)
 			continue
 		}
+		tw.record(scraper, r.URL, page)
 		if page.FetchedURL != "" {
 			results[i].FetchedURL = page.FetchedURL
 		}
@@ -274,7 +281,9 @@ func runMultiSearch(cmd *cobra.Command, query string, limit int, doScrape, asJSO
 		}
 		defer scraper.Close()
 		pc := newPageCache(false)
-		return searchScrape(cmd.Context(), results, scraper, pc, asJSON, trim, maxChars, minimal)
+		tag, _ := cmd.Flags().GetString("tag")
+		tw := newTagWriter(tag, pc)
+		return searchScrape(cmd.Context(), results, scraper, pc, tw, asJSON, trim, maxChars, minimal)
 	}
 
 	if asJSON {
@@ -321,7 +330,9 @@ func runRandomSearch(cmd *cobra.Command, query string, limit int, doScrape, asJS
 		}
 		defer scraper.Close()
 		pc := newPageCache(false)
-		return searchScrape(cmd.Context(), results, scraper, pc, asJSON, trim, maxChars, minimal)
+		tag, _ := cmd.Flags().GetString("tag")
+		tw := newTagWriter(tag, pc)
+		return searchScrape(cmd.Context(), results, scraper, pc, tw, asJSON, trim, maxChars, minimal)
 	}
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(results)

@@ -144,6 +144,35 @@ ketch config set external_pdf_to_md_converter_timeout_sec 300
 
 When configured, the external converter is authoritative: failures are returned rather than silently falling back to the built-in parser. PDF binary output is never emitted: `--raw` and `--select` reject PDFs as validation errors. With `--force-browser`, PDF markdown still uses text extraction and never opens Chromium's PDF viewer.
 
+### Tags — a working set that survives the cache
+
+Mid-task, an agent keeps needing the same handful of pages: the vendor's docs,
+two how-tos, the issue thread explaining an undocumented flag. Tag them as you
+fetch, then ask later what you have:
+
+```sh
+ketch search "guacamole ldap authentication" --scrape --tag guacamole
+ketch scrape https://guacamole.apache.org/doc/gug/ldap-auth.html --tag guacamole
+ketch tag add guacamole https://example.com/already-cached   # no network
+
+ketch tag show guacamole
+```
+
+`tag show` renders an llms.txt-shaped index — titles, URLs, one-line
+descriptions — so the agent picks the page it wants instead of searching the
+web again. A page can carry several tags and is still cached once.
+
+**The index outlives the pages it points at.** A page body is tens of kilobytes
+and genuinely goes stale, so it expires under `cache_ttl` (72h by default). An
+index entry is a couple hundred bytes and a URL does not rot the way a body
+does — so entries keep their own metadata, a page whose body has expired is
+listed as `(not cached)` rather than dropped, and re-fetching it restores it
+without re-tagging. `ketch cache clear` reclaims the disk and keeps the map.
+
+There is no `sync` and no staleness to reason about: a tag owns a URL and a
+title, never a copy of the content. Equally, nothing expires the index, so
+`ketch tag remove` is how a tag ends.
+
 ## Commands
 
 | Command | What it does |
@@ -157,8 +186,9 @@ When configured, the external converter is authoritative: failures are returned 
 | `browser` | Manage headless Chrome for JS-rendered pages (`install`, `status`) |
 | `config` | Show effective config as JSON, or `init` / `set` / `path` |
 | `cache` | Show page-cache stats, or `clear` |
+| `tag` | Label cached pages and ask what you already have (`add`, `show`, `list`, `remove`) |
 | `doctor` | Live health check of every backend, the browser, and the cache — exit `0` healthy, `5` when a configured surface is broken |
-| `mcp` | Run ketch as an MCP server over stdio (`mcp serve`) — the five research surfaces as tools |
+| `mcp` | Run ketch as an MCP server over stdio (`mcp serve`) — the research surfaces plus `tag`, as tools |
 | `version` | Print version, commit, build date |
 
 Every command supports `-h/--help` for its full flag list; `--json` is the only flag global to every command. Full flag reference lives at [ketch.run](https://ketch.run/).
@@ -254,7 +284,7 @@ For a fuller agent playbook — surface routing, token budgets, error-code contr
 
 ### MCP server
 
-For agents that speak MCP instead of shelling out, `ketch mcp serve` runs the same five surfaces — `search`, `code`, `docs`, `scrape`, `crawl` — as MCP tools over stdio, using the same config and backends as the CLI. To register it with Claude Code:
+For agents that speak MCP instead of shelling out, `ketch mcp serve` runs the same surfaces — `search`, `code`, `docs`, `scrape`, `crawl`, plus `tag` — as MCP tools over stdio, using the same config and backends as the CLI. To register it with Claude Code:
 
 ```sh
 claude mcp add ketch -- ketch mcp serve

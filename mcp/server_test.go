@@ -159,16 +159,18 @@ func TestNewServerPrunesTools(t *testing.T) {
 			t.Errorf("instructions mention pruned tool text %q:\n%s", absent, instructions)
 		}
 	}
-	// Every tool published (the default) keeps the server whole.
+	// Every tool published (the default) keeps the server whole. Asserted
+	// against the registry rather than a literal so adding a tool does not
+	// silently need this number edited.
 	namesAll, _ := newPublishedTools(t, nil)
-	if len(namesAll) != 5 {
-		t.Errorf("published tools with no allowlist = [%s], want all five", strings.Join(namesAll, ","))
+	if len(namesAll) != len(config.MCPToolNames()) {
+		t.Errorf("published tools with no allowlist = [%s], want all %d", strings.Join(namesAll, ","), len(config.MCPToolNames()))
 	}
 	set := map[string]bool{}
 	for _, n := range namesAll {
 		set[n] = true
 	}
-	for _, want := range []string{"search", "code", "docs", "scrape", "crawl"} {
+	for _, want := range config.MCPToolNames() {
 		if !set[want] {
 			t.Errorf("unconfigured server missing tool %q", want)
 		}

@@ -118,6 +118,9 @@ func runCrawlWorker(cmd *cobra.Command, args []string, crawlID string) error {
 	pc := newCrawlCache(noCache)
 	defer pc.Close()
 
+	tag, _ := cmd.Flags().GetString("tag")
+	tw := newTagWriter(tag, pc)
+
 	scraper, err := newScraper(cmd)
 	if err != nil {
 		status.Status = "failed"
@@ -150,6 +153,9 @@ func runCrawlWorker(cmd *cobra.Command, args []string, crawlID string) error {
 			case "unchanged":
 				status.Unchanged++
 			}
+		}
+		if r.Error == "" && r.Page != nil {
+			tw.record(scraper, r.URL, r.Page)
 		}
 		// Update status file every 10 pages
 		if status.Pages%10 == 0 {

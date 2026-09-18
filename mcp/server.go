@@ -17,6 +17,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/1broseidon/ketch/cache"
@@ -40,6 +41,7 @@ var toolProse = map[string]toolMeta{
 	"docs":   {"curated library/API documentation via " + strings.Join(docs.ProviderNames(), ", "), "docs for library references"},
 	"scrape": {"fetch URLs as clean markdown", "scrape when you already have the URL"},
 	"crawl":  {"bounded same-host multi-page crawl", "crawl only when one page is not enough"},
+	"tag":    {"label fetched pages and ask what you already have locally", "tag to keep and revisit a working set instead of re-searching"},
 }
 
 // buildServerInstructions returns the initialize-result instructions for the
@@ -106,7 +108,13 @@ func writeClauses(b *strings.Builder, names []string, clause func(string) string
 // countWord and plural shape the first line's prose: "five research tools",
 // but "one research tool".
 func countWord(n int) string {
-	return []string{"zero", "one", "two", "three", "four", "five"}[n]
+	words := []string{"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"}
+	if n < 0 || n >= len(words) {
+		// Past the table, a numeral reads fine and beats panicking the
+		// server because someone published an eleventh tool.
+		return strconv.Itoa(n)
+	}
+	return words[n]
 }
 
 func plural(n int, one, many string) string {
@@ -188,6 +196,8 @@ func (s *Server) registerTools() {
 			s.registerScrapeTool()
 		case "crawl":
 			s.registerCrawlTool()
+		case "tag":
+			s.registerTagTool()
 		}
 	}
 }
@@ -215,8 +225,19 @@ func (s *Server) pageCache(noCache bool) *cache.Cache {
 	return s.cache
 }
 
+// localMutating marks a tool that changes local state and never touches the
+// network. tag is the one such tool: it writes and deletes index entries over
+// pages the cache already holds, so it is neither read-only nor open-world.
+func localMutating() *mcpsdk.ToolAnnotations {
+	openWorld := false
+	return &mcpsdk.ToolAnnotations{
+		ReadOnlyHint:  false,
+		OpenWorldHint: &openWorld,
+	}
+}
+
 // readOnlyOpenWorld marks a tool as a non-mutating fetcher that talks to the
-// open web. All ketch tools are read-only network fetchers.
+// open web. Every ketch tool but tag is a read-only network fetcher.
 func readOnlyOpenWorld() *mcpsdk.ToolAnnotations {
 	openWorld := true
 	return &mcpsdk.ToolAnnotations{

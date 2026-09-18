@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Tags: a durable index over the pages the cache already holds.** `ketch tag` answers the question an agent actually asks mid-task — *what do I have under this tag that I can go back to?* — without re-searching the web. Pages are recorded as they are fetched (`--tag <name>` on `scrape`, `search --scrape` and `crawl`) or afterwards from the cache (`ketch tag add <name> <url>...`, no network). `ketch tag show <name>` renders an llms.txt-shaped index of titles, URLs and descriptions; `ketch tag list` shows every tag; `ketch tag remove <name> [url...]` drops a tag or single pages from it. A page can carry several tags and is still stored once.
+
+  **The index outlives the page bodies it points at.** A body is tens of kilobytes and genuinely goes stale, so it expires under `cache_ttl` (72h by default); an index entry is a couple hundred bytes of URL, title and description, and a URL does not rot the way a body does. Tying the two together would empty a tag by the Tuesday after a Friday of research — exactly when the work resumes. So an entry keeps its own metadata, a page whose body has expired is listed as "not cached" rather than dropped, and re-fetching it restores it without re-tagging. `ketch cache clear` now has a useful meaning: it reclaims the disk and keeps the map. There is no `sync` and no staleness to reason about — a tag owns a URL and a title, not a copy of the content. See [ADR-0004](design/adr/0004-tagged-cache-corpus.md).
+
+  Nothing expires the index, so deletion is explicit — that is what `tag remove` is for. `--tag` is rejected together with `--no-cache`: tagging a page whose body is deliberately not stored would index an entry that is cold from birth.
+
+- **`tag` is published as a sixth MCP tool**, the first addition to the tool set and the first agent-facing command added to it. Unlike `config`/`cache`/`doctor` (operator actions, deliberately CLI-only), the agent is both writer and reader here. It takes an `operation` enum (`add`/`show`/`list`/`remove`), and `search`, `scrape` and `crawl` gain a `tag` option. It is also the one tool that is neither read-only nor open-world — it mutates the local index and makes no network request — and declares `readOnlyHint: false`, `openWorldHint: false` accordingly. `mcp_tools` accepts `tag` in the allowlist.
+
 ## [0.17.1] - 2026-09-18
 
 ### Added

@@ -518,8 +518,10 @@ func TestApplyConfigSetMCPToolsInvalid(t *testing.T) {
 
 func TestEffectiveMCPTools(t *testing.T) {
 	c := config.Defaults()
-	if got := effectiveMCPTools(c); strings.Join(got, ",") != "search,code,docs,scrape,crawl" {
-		t.Errorf("unset: effective = %v, want all five", got)
+	// Compared against the registry, not a literal, so publishing a tool does
+	// not require editing this expectation.
+	if got := effectiveMCPTools(c); strings.Join(got, ",") != strings.Join(config.MCPToolNames(), ",") {
+		t.Errorf("unset: effective = %v, want every published tool", got)
 	}
 	c.MCPTools = []string{"search"}
 	if got := effectiveMCPTools(c); strings.Join(got, ",") != "search" {

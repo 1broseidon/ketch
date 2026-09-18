@@ -23,6 +23,7 @@ type SearchInput struct {
 	Scrape     bool     `json:"scrape,omitempty" jsonschema:"also fetch each result URL and fill its content field with extracted markdown"`
 	Trim       bool     `json:"trim,omitempty" jsonschema:"strip markdown formatting from scraped content, keep text only (with scrape)"`
 	MaxChars   int      `json:"max_chars,omitempty" jsonschema:"truncate each result's scraped content to N characters (with scrape; 0 = disabled)"`
+	Tag        string   `json:"tag,omitempty" jsonschema:"with scrape, record each fetched page under this tag, retrievable later with the tag tool"`
 }
 
 // SearchOutput is the output schema for the "search" tool. Results carries
@@ -106,7 +107,7 @@ func (s *Server) runSearch(ctx context.Context, in SearchInput) (SearchOutput, e
 	}
 
 	if in.Scrape {
-		s.scrapeSearchResults(ctx, results, in.Trim, in.MaxChars)
+		s.scrapeSearchResults(ctx, results, in.Trim, in.MaxChars, in.Tag)
 	}
 	out.Results = results
 	return out, nil
@@ -143,7 +144,7 @@ func (s *Server) runMultiSearch(ctx context.Context, in SearchInput, limit int) 
 		return SearchOutput{}, upstreamErrf(err, "search failed")
 	}
 	if in.Scrape {
-		s.scrapeSearchResults(ctx, results, in.Trim, in.MaxChars)
+		s.scrapeSearchResults(ctx, results, in.Trim, in.MaxChars, in.Tag)
 	}
 
 	out := SearchOutput{Results: results}
@@ -185,7 +186,7 @@ func (s *Server) runRandomSearch(ctx context.Context, in SearchInput, limit int)
 		return SearchOutput{}, upstreamErrf(err, "search failed")
 	}
 	if in.Scrape {
-		s.scrapeSearchResults(ctx, results, in.Trim, in.MaxChars)
+		s.scrapeSearchResults(ctx, results, in.Trim, in.MaxChars, in.Tag)
 	}
 
 	out := SearchOutput{Results: results, Backend: selected}
@@ -217,13 +218,14 @@ func cleanMultiNames(names []string) []string {
 // scrapeSearchResults fills each result's Content with extracted markdown,
 // like `ketch search --scrape`. Individual fetch failures leave that
 // result's content empty rather than failing the whole call.
-func (s *Server) scrapeSearchResults(ctx context.Context, results []search.Result, trim bool, maxChars int) {
+func (s *Server) scrapeSearchResults(ctx context.Context, results []search.Result, trim bool, maxChars int, tag string) {
 	pc := s.pageCache(false)
 	for i, r := range results {
 		page, err := s.scraper.CachedScrape(ctx, pc, r.URL)
 		if err != nil {
 			continue
 		}
+		s.recordTag(tag, r.URL, page)
 		if page.FetchedURL != "" {
 			results[i].FetchedURL = page.FetchedURL
 		}

@@ -15,11 +15,13 @@ The CLI is ketch's identity: call → result → exit, `--json` on every call, e
 Decide once per session, before the first call:
 
 1. `which ketch` succeeds → the CLI is your transport: `--json` on every call, exit codes as control flow.
-2. Also check for ketch's five MCP tools in your tool list — `search`, `code`, `docs`, `scrape`, `crawl` from a server named `ketch` (in Claude Code: `mcp__ketch__search`, …). Present → the operator wired them up on purpose, and using them for research calls is correct and good: structured output, per-URL errors, no shell round-trip. Do not shell out around tools the operator set up.
+2. Also check for ketch's MCP tools in your tool list — `search`, `code`, `docs`, `scrape`, `crawl` and `tag` from a server named `ketch` (in Claude Code: `mcp__ketch__search`, …). Present → the operator wired them up on purpose, and using them for research calls is correct and good: structured output, per-URL errors, no shell round-trip. Do not shell out around tools the operator set up.
 3. Both live → either transport serves research calls, but know the tradeoff: a running MCP server holds the single-process page-cache lock, so concurrent CLI scrapes silently run cache-disabled.
 4. Neither CLI nor MCP tools → ketch is not installed. Offer `brew install ketch` or `go install github.com/1broseidon/ketch@latest` — an operator action: propose, wait for confirmation.
 
 The rule: **use the transport the operator gave you** — when both are live, either is fine for research calls, and operator actions are always CLI.
+
+`tag` is the one exception to the operator-action rule below: it changes local state but the agent is both writer and reader, so it is published over MCP as well as the CLI.
 
 Config discovery is CLI regardless of transport: `ketch config` prints effective settings and available backends as JSON; there is no config tool over MCP. Operator actions — `config set`, `cache`, `browser install`, `crawl --background`/`status`/`stop`, `doctor` — are deliberately not in MCP. They are always CLI.
 
@@ -30,6 +32,7 @@ Use only these terms in ketch output.
 | Term | Meaning |
 | --- | --- |
 | **surface** | One of the five research operations: `search`, `code`, `docs`, `scrape`, `crawl` |
+| **tag** | A label over pages already fetched into the cache. Not a research surface — it answers "what did I already find?", not "what is out there?" |
 | **transport** | How a surface is called: the CLI binary (default) or the optional MCP tools |
 | **backend** | The provider behind a surface: auto (default; a fallback chain, not a provider)/brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase/degoog/serply/youcom (search), grepapp/sourcegraph/github (code), context7 (docs) |
 | **operator action** | A system-managing or diagnostic command — `config set`, `cache`, `browser install`, background crawls, `doctor` — CLI-only by design |
@@ -94,8 +97,24 @@ First match wins:
 | A library's own documentation, version-aware | `docs` | `scrape` of the docs site — `docs` is already extracted and token-budgeted |
 | The content of a URL you already hold | `scrape` | `search` — never re-find a known URL |
 | Many pages from one site | `crawl` | looped `scrape` — crawl dedupes, bounds, and streams |
+| Pages you already fetched earlier in this project | `tag` (`operation: show`) | `search` again — you already paid for these once |
 
 In reverse: `search` finds URLs; `scrape` reads them; `crawl` reads a site; `code` reads public source; `docs` reads library docs. `search` with `scrape: true` fuses the first two when you will want full content from every hit — budget it like a scrape.
+
+### Keeping a working set with `tag`
+
+On work that spans more than one session or more than a handful of pages, pass
+`--tag <name>` (CLI) or `tag` (MCP) on the fetches you will want again, naming
+the project or topic. Later, `tag show` returns an llms.txt-shaped index —
+titles, URLs, descriptions — for a few hundred tokens, and you re-read one page
+instead of re-running the search that found it. Tag the sources you actually
+cited, not every hit.
+
+The index is durable and outlives the cached page bodies, so it still answers
+days later. An entry whose body has expired comes back with `cached: false` —
+that is not an error and not a dead link; `scrape` the URL and it is restored.
+Read the index first, then fetch only the page you need: assembling the whole
+tag defeats the point.
 
 ## Token budgets
 

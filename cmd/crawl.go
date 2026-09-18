@@ -32,6 +32,8 @@ func init() {
 	crawlCmd.Flags().Bool("sitemap", false, "treat seed URL as sitemap")
 	crawlCmd.Flags().Bool("no-cache", false, "bypass the page cache")
 	crawlCmd.Flags().Bool("background", false, "run crawl in background, return immediately with crawl ID")
+	crawlCmd.Flags().String("tag", "", "record each crawled page under this tag (see `ketch tag`)")
+	crawlCmd.PreRunE = validateTagFlag
 	crawlCmd.Flags().String("cookie-file", "", "Netscape cookies.txt jar; matching cookies are sent with each fetch (overrides config cookie_file)")
 	crawlCmd.Flags().String("user-agent", "", "User-Agent override (overrides config user_agent; applies to HTTP and browser fetches; empty restores each fetch path's default)")
 }
@@ -65,6 +67,9 @@ func runCrawl(cmd *cobra.Command, args []string) error {
 
 	pc := newCrawlCache(noCache)
 	defer pc.Close()
+
+	tag, _ := cmd.Flags().GetString("tag")
+	tw := newTagWriter(tag, pc)
 
 	scraper, err := newScraper(cmd)
 	if err != nil {
@@ -113,6 +118,7 @@ func runCrawl(cmd *cobra.Command, args []string) error {
 		if r.Page == nil {
 			return
 		}
+		tw.record(scraper, r.URL, r.Page)
 
 		if asJSON {
 			printCrawlJSON(r)

@@ -30,6 +30,7 @@ type ScrapeInput struct {
 	ForceBrowser bool     `json:"force_browser,omitempty" jsonschema:"always render via the configured headless browser, skipping JS-shell auto-detection (requires a configured browser)"`
 	NoLLMSTxt    bool     `json:"no_llms_txt,omitempty" jsonschema:"disable automatic /llms.txt detection for bare domain URLs"`
 	Concurrency  int      `json:"concurrency,omitempty" jsonschema:"max concurrent fetches for multi-URL scrapes (default 5, capped at 16)"`
+	Tag          string   `json:"tag,omitempty" jsonschema:"record each fetched page under this tag, retrievable later with the tag tool"`
 }
 
 // ScrapeResult is one scraped page. It embeds scrape.Page — the same object
@@ -98,6 +99,7 @@ func (s *Server) scrapeOne(ctx context.Context, rawURL string, in ScrapeInput) (
 		if err != nil {
 			return ScrapeResult{}, classifySelectorErr(err)
 		}
+		s.recordTag(in.Tag, rawURL, page)
 		page.Markdown = extract.PostProcess(page.Markdown, in.Trim, in.MaxChars)
 		return ScrapeResult{Page: *page}, nil
 	}
@@ -112,6 +114,7 @@ func (s *Server) scrapeOne(ctx context.Context, rawURL string, in ScrapeInput) (
 			}
 			return ScrapeResult{}, classifyScrapeFailure(err)
 		}
+		s.recordTag(in.Tag, rawURL, page)
 		return ScrapeResult{Page: *page, Source: source, RawHTML: extract.Truncate(rawHTML, in.MaxChars)}, nil
 	}
 
@@ -119,7 +122,9 @@ func (s *Server) scrapeOne(ctx context.Context, rawURL string, in ScrapeInput) (
 	// the caller explicitly wants the rendered page, not an /llms.txt shortcut.
 	if !in.NoLLMSTxt && !in.ForceBrowser {
 		if content, ok := s.scraper.FetchLLMSTxt(ctx, rawURL); ok {
-			page := scrape.Page{URL: rawURL, Title: "llms.txt", Markdown: extract.PostProcess(content, in.Trim, in.MaxChars)}
+			page := scrape.Page{URL: rawURL, Title: "llms.txt", Markdown: content}
+			s.recordTag(in.Tag, rawURL, &page)
+			page.Markdown = extract.PostProcess(page.Markdown, in.Trim, in.MaxChars)
 			return ScrapeResult{Page: page}, nil
 		}
 	}
@@ -128,6 +133,7 @@ func (s *Server) scrapeOne(ctx context.Context, rawURL string, in ScrapeInput) (
 	if err != nil {
 		return ScrapeResult{}, classifyScrapeFailure(err)
 	}
+	s.recordTag(in.Tag, rawURL, page)
 	page.Markdown = extract.PostProcess(page.Markdown, in.Trim, in.MaxChars)
 	return ScrapeResult{Page: *page}, nil
 }
