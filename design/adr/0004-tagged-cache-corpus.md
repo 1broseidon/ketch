@@ -43,8 +43,8 @@ A tag is a label attached to cache entries. It is applied two ways:
 Reading a tag answers the question the agent actually asks — *what do I have
 under this tag that I can go back to?* — by emitting an llms.txt-shaped index of
 titles, URLs and descriptions. The agent reads the index cheaply, then fetches
-the one page it wants, which is already local and returns without a network
-round trip. This mirrors `FetchLLMSTxt`, which already consumes exactly this
+the one page it wants — returning without a network round trip when the page is
+still cached, and re-fetching it when it is not. This mirrors `FetchLLMSTxt`, which already consumes exactly this
 shape from upstream sites; ketch now emits it for a corpus of the agent's own.
 
 Specifics that follow from the decision:
@@ -54,19 +54,31 @@ Specifics that follow from the decision:
   guesses. `search --scrape --tag` records what it actually fetched.
 - **A page may carry several tags.** Tags are a list, and the same URL under two
   tags remains one cached page.
-- **Tags never own the data.** They are stored in their own bbolt bucket as
-  references into the existing `pages` keyspace. The `cache.Store` interface is
+- **Tags never own the page body.** They are stored in their own bbolt bucket
+  alongside the existing `pages` keyspace. The `cache.Store` interface is
   unchanged.
-- **Tags are a view, not a store.** Reading a tag prunes references whose pages
-  have expired and refreshes the ones that remain.
+- **The index is durable; the body is not.** A tag entry carries its own URL,
+  title, description and the time it was tagged, so it survives the expiry of
+  the page it describes. Reading a tag is a purely local render that never
+  touches the network and never returns less than it was given.
+- **An expired page is a cold entry, not a missing one.** The index marks which
+  entries are still cached, so the agent knows which cost a round trip. Fetching
+  a cold entry is an ordinary fetch that re-warms the cache.
 
 ## Consequences
 
-The lifecycle disappears. Because a tag references the cache rather than
-duplicating it, an expired page cannot rot a tag into a lie — the tag simply
-gets smaller. A project in active use keeps its pages warm by being read; an
-abandoned one empties out on its own. There is no `sync`, no `prune`, and no
-staleness to reason about.
+The *sync* lifecycle disappears, which was the weight in the corpus prototype.
+Sync existed because the corpus owned a copy of the content and content drifts
+from upstream. A tag entry owns a URL and a title: the URL does not drift, and
+the body still arrives through the normal cache path under the normal TTL. There
+is nothing to reconcile, so there is no `sync` and no staleness to reason about.
+
+What a tag retains is its history. `cache_ttl` defaults to 72h, so a tag scoped
+to the page bodies would be empty by the Tuesday after a Friday of research —
+which is precisely when the work resumes and the agent asks what it already
+found. Because the index outlives the bodies it points at, tagging accrues a
+durable record of what proved useful on a project, and `cache clear` gains a
+sensible meaning: it reclaims the disk and keeps the map.
 
 Nothing new is persisted and no dependency is added. The feature is tags plus a
 renderer over storage that already exists, which is a fraction of the corpus
@@ -83,10 +95,16 @@ The costs are real and accepted:
   not ranked full-text results. Pages are found by title and URL. If ranked
   search over page bodies is ever wanted, it needs an index, and that is a
   separate decision — not something this design grows into by accident.
-- **Tag reads are bounded by the cache TTL.** A tag is only as durable as
-  `cache_ttl`. Refresh-on-read makes active use self-sustaining, but a tag left
-  alone longer than the TTL will be empty when revisited. This is intended:
-  ephemerality is the property that removes the lifecycle.
+- **Nothing expires the index, so deletion must be explicit.** `ketch tag rm
+  <name>` and `ketch untag <name> <url>...` are the price of durability: no TTL
+  is going to tidy up after a tag that has outlived its project. This is a
+  deliberate trade — an entry is roughly 200 bytes against a page body's tens of
+  kilobytes, so a thousand tagged pages is a rounding error on disk, and the
+  alternative is a feature that silently forgets the thing it exists to
+  remember.
+- **A tagged URL can go away upstream.** The index records where a page was, not
+  a promise that it still resolves; a dead link surfaces as a failed fetch, at
+  the same moment and in the same way a bookmark's would.
 - **`tag` is the first agent-facing command added to MCP.** Unlike `config`,
   `cache` and `doctor` — operator actions, deliberately CLI-only — the agent is
   both the writer and the reader here, so `tag` is published as an MCP tool and
