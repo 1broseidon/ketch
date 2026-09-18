@@ -158,13 +158,14 @@ func (c *Context7) GetDocs(ctx context.Context, libraryID, query string, tokens 
 	}
 	if resp.StatusCode == http.StatusNotFound {
 		body, readErr := io.ReadAll(resp.Body)
-		if readErr == nil {
-			var errBody context7ErrorResponse
-			if json.Unmarshal(body, &errBody) == nil && errBody.Error == "no_relevant_snippets" {
-				// The library exists but nothing matched this query — an empty
-				// result, not a missing library.
-				return nil, nil
-			}
+		if readErr != nil {
+			return nil, fmt.Errorf("failed to read context7 docs response: %w", readErr)
+		}
+		var errBody context7ErrorResponse
+		if json.Unmarshal(body, &errBody) == nil && errBody.Error == "no_relevant_snippets" {
+			// The library exists but nothing matched this query — an empty
+			// result, not a missing library.
+			return nil, nil
 		}
 		// Any other 404 means the library ID does not exist — permanently
 		// absent, not a transient upstream failure. Wrap the sentinel so both
