@@ -152,6 +152,7 @@ ketch mcp serve                             # run as an MCP server over stdio (s
 | --concurrency | scrape | 5 | Max concurrent requests for multi-URL scraping |
 | --force-browser | scrape | false | Always render via the configured browser, skipping JS-shell auto-detection (composes with --raw/--select; errors without a browser) |
 | --cookie-file <path> | scrape, search --scrape, crawl | config `cookie_file` or off | Netscape cookies.txt jar; flag overrides config and an explicit empty value disables cookies |
+| --user-agent <ua> | scrape, search --scrape, crawl | config `user_agent` or built-in default | User-Agent override applied to HTTP and browser fetches; flag overrides config and an explicit empty value restores each fetch path's default. A configured UA is folded into the page-cache key, so pages cached under one UA are not reused under another |
 
 
 ## Adding a provider
