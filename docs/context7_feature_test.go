@@ -95,6 +95,26 @@ func TestFeatureGetDocs404IsErrNotFound(t *testing.T) {
 	}
 }
 
+func TestFeatureGetDocsNoRelevantSnippetsReturnsEmptyResult(t *testing.T) {
+	t.Parallel()
+	c := newTestContext7(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]any{ //nolint:errcheck
+			"error":   "no_relevant_snippets",
+			"message": `No documentation in "/wahern/timeout" matched this query.`,
+		})
+	})
+
+	results, err := c.GetDocs(context.Background(), "/wahern/timeout", "query with no matches", 4000)
+	if err != nil {
+		t.Fatalf("no_relevant_snippets must be an empty result, not an error, got: %v", err)
+	}
+	if len(results) != 0 {
+		t.Fatalf("got %d results, want 0", len(results))
+	}
+}
+
 // A bare query honours the result limit; it used to return every snippet
 // in the token budget regardless of --limit.
 func TestFeatureSearchRespectsLimit(t *testing.T) {
