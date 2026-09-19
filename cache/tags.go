@@ -253,6 +253,31 @@ func (c *Cache) RemoveTagged(tag string, keys []string) (removed int, missing in
 	return removed, missing, nil
 }
 
+// TagResult records something a surface returned that never went through the
+// page cache — a code hit, a docs chunk, or a search result nobody scraped.
+// The caller supplies title and description because there is no page to derive
+// them from; the snippet a code or docs result already carries is exactly that
+// metadata.
+//
+// The entry lists as uncached until the URL is actually fetched, which is
+// honest rather than a defect: the index records where something is and what
+// it was, and a scrape of that URL fills the body in.
+func (c *Cache) TagResult(tag, key, url, title, description string) error {
+	return c.tagEntry(tag, TagEntry{
+		URL:         url,
+		Key:         key,
+		Title:       oneLine(title, descriptionMax),
+		Description: oneLine(description, descriptionMax),
+		TaggedAt:    time.Now().Unix(),
+	})
+}
+
+// oneLine collapses arbitrary text — prose, or the indented lines of a code
+// snippet — into a single bounded line fit for an index.
+func oneLine(s string, max int) string {
+	return truncate(strings.Join(strings.Fields(s), " "), max)
+}
+
 // Describe derives a one-line description from page markdown: the first real
 // paragraph, with markdown syntax removed and headings skipped. Computed once
 // at tag time and stored, because the body it came from will expire while the

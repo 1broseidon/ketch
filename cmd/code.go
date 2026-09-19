@@ -26,6 +26,8 @@ func init() {
 	codeCmd.Flags().String("lang", "", "language filter (appended to query)")
 	codeCmd.Flags().Bool("regex", false, "interpret query as a regular expression ("+strings.Join(code.RegexpBackends(), ", ")+")")
 	codeCmd.Flags().IntP("limit", "l", cfg.Limit, "max number of results")
+	codeCmd.Flags().String("tag", "", "record each result under this tag (see `ketch tag`)")
+	codeCmd.PreRunE = validateTagFlag
 	codeCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/repo/snippet)")
 }
 
@@ -58,6 +60,8 @@ func runCode(cmd *cobra.Command, args []string) error {
 		}
 		return exitErrf(ExitUpstream, "code search failed: %w", err)
 	}
+
+	tagResults(cmd, codeTaggable(results))
 
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(results)
@@ -105,4 +109,21 @@ func newCodeSearcher(backend string) (code.Searcher, error) {
 		return nil, backendErr(err, code.ErrUnknownBackend)
 	}
 	return s, nil
+}
+
+// codeTaggable maps code hits onto index entries: the location is the title,
+// the matching snippet the description.
+func codeTaggable(results []code.Result) []taggableResult {
+	out := make([]taggableResult, 0, len(results))
+	for _, r := range results {
+		title := r.Repo
+		if r.Path != "" {
+			title += " " + r.Path
+		}
+		if r.Line > 0 {
+			title += fmt.Sprintf(":%d", r.Line)
+		}
+		out = append(out, taggableResult{URL: r.URL, Title: title, Description: r.Snippet})
+	}
+	return out
 }

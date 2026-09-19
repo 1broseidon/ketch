@@ -215,7 +215,7 @@ If you have written any Go code you have probably encountered the built-in
                 <td class="no">looped <code class="inline">scrape</code> — crawl dedupes, bounds, and streams</td>
               </tr>
               <tr>
-                <td>Pages you already found earlier in this project</td>
+                <td>Anything you already found earlier in this project</td>
                 <td class="cmd">tag</td>
                 <td class="no"><code class="inline">search</code> again — you already paid for these once</td>
               </tr>
@@ -413,13 +413,15 @@ harness/harness  registry/app/remote/clients/registry/client.go  <span class="di
           <details>
             <summary>tag <span class="sm">Label cached pages and ask what you already have</span></summary>
             <div class="disc-body">
-              <pre><code><span class="p">$ </span>ketch scrape https://guacamole.apache.org/doc/gug/ldap-auth.html --tag guacamole
-<span class="p">$ </span>ketch search "guacamole ldap" --scrape --tag guacamole
-<span class="p">$ </span>ketch tag add guacamole https://example.com/read-this-later  <span class="dim"># no network</span>
-<span class="p">$ </span>ketch tag show guacamole
+              <pre><code><span class="p">$ </span>ketch search "guacamole ldap" --scrape --tag remote-access
+<span class="p">$ </span>ketch code "guacamole ldap" --tag remote-access
+<span class="p">$ </span>ketch docs "apache guacamole" --tag remote-access
+<span class="p">$ </span>ketch tag add remote-access https://example.com/read-this-later  <span class="dim"># no network</span>
+<span class="p">$ </span>ketch tag show remote-access
 <span class="p">$ </span>ketch tag list
-<span class="p">$ </span>ketch tag remove guacamole <span class="dim"># or: … guacamole &lt;url&gt;… for single pages</span></code></pre>
-              <p><code class="inline">tag show</code> renders an llms.txt-shaped index — titles, URLs, one-line descriptions — so an agent mid-task picks the page it needs instead of searching the web again. A page can carry several tags and is still cached once.</p>
+<span class="p">$ </span>ketch tag remove remote-access <span class="dim"># or: … &lt;url&gt;… for single pages</span></code></pre>
+              <p><code class="inline">--tag</code> works on every surface, and one tag holds them all — the vendor's documentation, the code that calls it, and the write-up that explained the undocumented flag, in one list. Each entry records what that surface produced: the full extraction for a fetched page, the matching snippet for a <code class="inline">code</code> or <code class="inline">docs</code> hit, the engine's title and description for an unscraped search result.</p>
+              <p><code class="inline">tag show</code> renders an llms.txt-shaped index — titles, URLs, one-line descriptions — so an agent mid-task picks what it needs instead of searching the web again. A page can carry several tags and is still cached once.</p>
               <p class="note"><strong>The index outlives the pages it points at.</strong> A body is tens of kilobytes and goes stale, so it expires under <code class="inline">cache_ttl</code>; an entry is a couple hundred bytes, and a URL does not rot the way a body does. A page whose body has expired is listed as <code class="inline">(not cached)</code> rather than dropped, and re-fetching restores it without re-tagging. There is no <code class="inline">sync</code>: a tag owns a URL and a title, never a copy of the content. Equally, nothing expires the index, so <code class="inline">tag remove</code> is how a tag ends.</p>
               <p class="note"><code class="inline">tag add</code> takes any URL, cached or not — organising URLs should not depend on when they were last fetched. An un-fetched URL lists with no title or description until the page is seen by any route; both then fill in on their own.</p>
             </div>

@@ -373,6 +373,15 @@ func validateTagFlag(cmd *cobra.Command, _ []string) error {
 	return validateTagName(tag)
 }
 
+// recordResult indexes something a non-page surface returned: a code hit, a
+// docs chunk, or an unscraped search result. Same silence policy as record.
+func (t *tagWriter) recordResult(s *scrape.Scraper, url, title, description string) {
+	if t == nil || url == "" {
+		return
+	}
+	_ = t.c.TagResult(t.tag, s.CacheKey(s.Rewrite(url)), url, title, description)
+}
+
 // record indexes one fetched page. Failures are deliberately silent: tagging
 // is a side effect of a fetch the caller asked for, and losing an index entry
 // must not fail the scrape that produced it.
@@ -381,4 +390,42 @@ func (t *tagWriter) record(s *scrape.Scraper, rawURL string, page *scrape.Page) 
 		return
 	}
 	_ = t.c.TagPage(t.tag, s.CacheKey(s.Rewrite(rawURL)), rawURL, page)
+}
+
+// taggableResult is the minimum an index entry needs from a surface that
+// returns results rather than fetched pages.
+type taggableResult struct{ URL, Title, Description string }
+
+// tagResults files a surface's results under --tag when one was asked for.
+//
+// code and docs results are not unread links: each carries the matching
+// snippet or documentation chunk, which is the content the agent came for and
+// exactly the metadata an index entry needs. Bare search results carry the
+// engine's own title and description. None of them went through the page
+// cache, so each entry lists as uncached until its URL is scraped.
+//
+// It opens and closes its own handles because these commands hold no page
+// cache to reuse, and opens nothing at all when --tag is absent.
+func tagResults(cmd *cobra.Command, results []taggableResult) {
+	tag, _ := cmd.Flags().GetString("tag")
+	if tag == "" || len(results) == 0 {
+		return
+	}
+	c := cache.NewFromConfig(&cfg)
+	if c == nil {
+		fmt.Fprintln(os.Stderr, "warn: --tag could not open the cache; nothing was tagged")
+		return
+	}
+	defer c.Close()
+	scraper, err := newScraper(cmd)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warn: --tag could not resolve cache keys: %v\n", err)
+		return
+	}
+	defer scraper.Close()
+
+	tw := &tagWriter{tag: tag, c: c}
+	for _, r := range results {
+		tw.recordResult(scraper, r.URL, r.Title, r.Description)
+	}
 }

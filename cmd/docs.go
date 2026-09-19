@@ -26,6 +26,8 @@ func init() {
 	docsCmd.Flags().Int("tokens", 4000, strings.Join(docs.LibraryProviderNames(), ", ")+" token budget")
 	docsCmd.Flags().IntP("limit", "l", cfg.Limit, "max number of results")
 	docsCmd.Flags().Bool("resolve", false, "resolve library name instead of searching")
+	docsCmd.Flags().String("tag", "", "record each result under this tag (see `ketch tag`)")
+	docsCmd.PreRunE = validateTagFlag
 	docsCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/library/snippet)")
 }
 
@@ -63,6 +65,8 @@ func runDocs(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return upstreamErr(err, "docs search failed")
 	}
+
+	tagResults(cmd, docsTaggable(results))
 
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(results)
@@ -163,4 +167,18 @@ func newDocSearcher(backend string) (docs.Searcher, error) {
 		return nil, backendErr(err, docs.ErrUnknownBackend)
 	}
 	return s, nil
+}
+
+// docsTaggable maps docs hits onto index entries: library and heading make the
+// title, the documentation chunk the description.
+func docsTaggable(results []docs.Result) []taggableResult {
+	out := make([]taggableResult, 0, len(results))
+	for _, r := range results {
+		title := r.Title
+		if r.Library != "" {
+			title = r.Library + " " + title
+		}
+		out = append(out, taggableResult{URL: r.URL, Title: title, Description: r.Snippet})
+	}
+	return out
 }

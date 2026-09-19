@@ -65,7 +65,7 @@ The reasoning behind each principle — and what ketch deliberately does *not* d
 - **Bounded crawl**: the `crawl` tool is synchronous and capped (`max_pages` default 30, hard cap 100, 3-minute wall clock); partial results return with `stopped: "max_pages" | "timeout"`. Detached background crawls (`ketch crawl --background`, status/stop) remain CLI-only.
 - **CLI-only operator commands**: `config`, `cache`, and `doctor` are deliberately not MCP tools. They are operator actions (change credentials, clear state, diagnose the installation), not research surfaces — an agent that needs to know whether a backend is ready reads `ketch config`'s `*_set` booleans or the operator runs `ketch doctor`. Don't add them to the server.
 - **Annotations**: the five fetching tools are read-only network fetchers and declare `readOnlyHint: true` and `openWorldHint: true`. `tag` is the exception in both directions — it mutates the local index and never touches the network — so it declares `readOnlyHint: false` and `openWorldHint: false`.
-- **Tagging**: `tag` is the first agent-facing command added to MCP, and the first change to the published tool set. Unlike `config`/`cache`/`doctor` (operator actions, deliberately CLI-only), the agent is both writer and reader, so it ships as a tool with an `operation` enum (add/show/list/remove) plus a `tag` option on `search`, `scrape` and `crawl`. The index is durable: entries whose page body has expired come back with `cached: false` rather than disappearing, and a re-fetch restores them. See [ADR-0004](design/adr/0004-tagged-cache-corpus.md).
+- **Tagging**: `tag` is the first agent-facing command added to MCP, and the first change to the published tool set. Unlike `config`/`cache`/`doctor` (operator actions, deliberately CLI-only), the agent is both writer and reader, so it ships as a tool with an `operation` enum (add/show/list/remove) plus a `tag` option on all five research tools. The index is durable: entries whose page body has expired come back with `cached: false` rather than disappearing, and a re-fetch restores them. See [ADR-0004](design/adr/0004-tagged-cache-corpus.md).
 - **Security note**: the server performs no URL filtering — `scrape` and `crawl` fetch whatever URL the client supplies, including private or internal addresses reachable from wherever the server runs (their descriptions say so). Run it with the network posture you'd give the agent itself; don't point an untrusted agent at a server inside a sensitive network.
 - **Smoke test**: `go test -tags mcpsmoke ./mcp/... -v` exercises the real binary over stdio (live network; not part of `go test ./...`).
 
@@ -113,6 +113,7 @@ ketch docs "query"                          # docs search (context7)
 ketch docs "query" --library /org/repo     # skip resolve, fetch directly
 ketch docs --resolve "library name"        # resolve library name → Context7 IDs
 ketch config                                # show effective config + backends (incl. *_key_set presence booleans)
+ketch code "query" --tag remote-access      # record results under a tag (any surface)
 ketch scrape <url> --tag docs               # fetch and record the page under a tag
 ketch tag add docs <url>...                 # tag URLs directly, cached or not (no network)
 ketch tag show docs                         # llms.txt-shaped index of what is under a tag
@@ -158,7 +159,7 @@ ketch mcp serve                             # run as an MCP server over stdio (s
 | --no-llms-txt | scrape | false | Disable automatic /llms.txt detection for bare domains |
 | --concurrency | scrape | 5 | Max concurrent requests for multi-URL scraping |
 | --force-browser | scrape | false | Always render via the configured browser, skipping JS-shell auto-detection (composes with --raw/--select; errors without a browser) |
-| --tag <name> | scrape, search --scrape, crawl | — | Record each fetched page under this tag. Composes with --no-cache: the entry keeps the title and description from the fetch and simply lists as uncached |
+| --tag <name> | search, code, docs, scrape, crawl | — | Record what the call returned under this tag: the full extraction for a fetched page, the snippet for a code or docs hit, the engine's title and description for an unscraped search result. Composes with --no-cache; entries with no fetched body simply list as uncached |
 | --minimal | tag show | false | One page per line, tab-separated (url/title/description) |
 | --cookie-file <path> | scrape, search --scrape, crawl | config `cookie_file` or off | Netscape cookies.txt jar; flag overrides config and an explicit empty value disables cookies |
 | --user-agent <ua> | scrape, search --scrape, crawl | config `user_agent` or built-in default | User-Agent override applied to HTTP and browser fetches; flag overrides config and an explicit empty value restores each fetch path's default. A configured UA is folded into the page-cache key, so pages cached under one UA are not reused under another |

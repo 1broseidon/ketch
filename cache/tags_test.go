@@ -373,3 +373,83 @@ func TestDescribeTruncatesOnAWordBoundary(t *testing.T) {
 		t.Errorf("truncation cut mid-word: %q", got)
 	}
 }
+
+// TestTagResultKeepsTheSnippet covers the surfaces that return snippets
+// rather than fetched pages — code hits, docs chunks, unscraped search
+// results. There is no body to describe, so the snippet the caller already
+// saw *is* the entry's description.
+func TestTagResultKeepsTheSnippet(t *testing.T) {
+	t.Parallel()
+	c := newTestCache(t, time.Hour)
+	const url = "https://github.com/apache/guacamole-client/blob/main/ldap.go"
+	snippet := "func authenticate(ctx context.Context, dn string) error {\n\t\treturn dir.Bind(ctx, dn)\n}"
+	if err := c.TagResult("remote-access", url, url, "guacamole-client ldap.go:42", snippet); err != nil {
+		t.Fatalf("TagResult: %v", err)
+	}
+
+	pages, err := c.Tagged("remote-access")
+	if err != nil {
+		t.Fatalf("Tagged: %v", err)
+	}
+	if len(pages) != 1 {
+		t.Fatalf("got %d entries, want 1", len(pages))
+	}
+	got := pages[0]
+	if got.Cached {
+		t.Error("a snippet result was never fetched, so its entry must report cached=false")
+	}
+	if got.Title != "guacamole-client ldap.go:42" {
+		t.Errorf("title = %q, want the result's location", got.Title)
+	}
+	if strings.ContainsAny(got.Description, "\n\t") {
+		t.Errorf("description = %q, want the snippet collapsed onto one line", got.Description)
+	}
+	if !strings.Contains(got.Description, "func authenticate(ctx context.Context, dn string) error {") {
+		t.Errorf("description = %q, want it to keep the snippet", got.Description)
+	}
+}
+
+// A snippet entry is not a lesser entry: scraping the URL later warms it in
+// place, without losing the description the snippet gave it.
+func TestTagResultWarmsWhenTheURLIsLaterScraped(t *testing.T) {
+	t.Parallel()
+	c := newTestCache(t, time.Hour)
+	const url = "https://example.com/ldap"
+	if err := c.TagResult("remote-access", url, url, "LDAP auth", "a one-line summary from the search engine"); err != nil {
+		t.Fatalf("TagResult: %v", err)
+	}
+	c.Put(url, page(url, "LDAP auth", "Guacamole authenticates against an LDAP directory."), scrape.SourceHTTP)
+
+	pages, err := c.Tagged("remote-access")
+	if err != nil {
+		t.Fatalf("Tagged: %v", err)
+	}
+	if len(pages) != 1 || !pages[0].Cached {
+		t.Fatalf("got %+v, want one entry reporting cached", pages)
+	}
+	if pages[0].Description != "a one-line summary from the search engine" {
+		t.Errorf("description = %q, want the snippet kept", pages[0].Description)
+	}
+}
+
+func TestOneLine(t *testing.T) {
+	t.Parallel()
+	cases := []struct{ name, in, want string }{
+		{"already one line", "plain text", "plain text"},
+		{"indented snippet", "if err != nil {\n\t\treturn err\n}", "if err != nil { return err }"},
+		{"collapses runs of space", "a   b\n\n  c", "a b c"},
+		{"empty", "   \n\t", ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			if got := oneLine(tc.in, descriptionMax); got != tc.want {
+				t.Errorf("oneLine(%q) = %q, want %q", tc.in, got, tc.want)
+			}
+		})
+	}
+	long := strings.Repeat("word ", 200)
+	if got := oneLine(long, descriptionMax); len([]rune(got)) > descriptionMax {
+		t.Errorf("oneLine kept %d runes, want at most %d", len([]rune(got)), descriptionMax)
+	}
+}

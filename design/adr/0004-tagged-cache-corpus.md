@@ -1,4 +1,4 @@
-# ADR 0004: Tags over the page cache instead of a local docs corpus
+# ADR 0004: Tags as an organization layer instead of a local docs corpus
 
 **Status:** Accepted · **Date:** 2026-09-18
 
@@ -30,13 +30,14 @@ is *knowing what you already have*.
 
 ## Decision
 
-Do not build a corpus. Add **tags as metadata over the pages the cache already
-holds.**
+Do not build a corpus. Add **tags as an organization layer over everything
+ketch returns.**
 
-A tag is a label attached to cache entries. It is applied two ways:
+A tag is a label on a URL, plus enough metadata to recognise it again. It is
+applied two ways:
 
-- `--tag <name>` on `search`, `scrape` and `crawl` tags pages as they are
-  fetched.
+- `--tag <name>` on `search`, `code`, `docs`, `scrape` and `crawl` records what
+  that call returned.
 - `ketch tag add <name> <url>...` tags URLs directly, with no network access
   at all.
 
@@ -58,18 +59,24 @@ by whether a URL followed.
 
 Specifics that follow from the decision:
 
-- **Implicit tagging records only what was fetched.** A bare `search --tag`
-  records nothing: its results were never retrieved, and a map of pages nobody
-  read is a map of guesses. `search --scrape --tag` records what it actually
-  fetched.
-- **Explicit tagging records whatever URL you name.** `tag add` does not
-  require a cached body *(revised 2026-09-18 — it did at first, a rule carried
-  over from the cache-scoped design)*. Naming a URL is a deliberate act, and
-  the index is a record of what matters to a piece of work rather than a view
-  over the cache; refusing a URL because its body happens to be absent would
-  make organising URLs depend on when they were last fetched. Such an entry
-  lists as uncached with no title or description, and both fill in the first
-  time the page is seen — by any route, with no re-tagging.
+- **Every surface can tag what it returned.** *(Revised 2026-09-18. The first
+  draft tagged only fetched pages, reasoning that unretrieved results are "a
+  map of guesses". That holds for a bare web-search hit, where the description
+  is engine boilerplate and the page is unseen — but not for `code` and `docs`,
+  whose results carry the matching snippet and the documentation chunk. That
+  content is what the caller came for, and it is exactly what an index entry
+  needs. Restricting tagging to the page cache was the third place the
+  superseded cache-scoped design leaked; it is removed rather than patched
+  again.)* An entry records whatever the surface produced: a full extraction
+  for a fetched page, the snippet for a code or docs hit, the engine's title
+  and description for an unscraped search result.
+- **Tagging does not require a cached body.** `tag add` takes any URL. Naming a
+  URL is a deliberate act, and the index is a record of what matters to a piece
+  of work, not a view over the cache; refusing a URL because its body happens
+  to be absent would make organising URLs depend on when they were last
+  fetched. Entries with no fetched page list as uncached, and a page tagged
+  before it was ever fetched fills in its title and description the first time
+  the page is seen — by any route, with no re-tagging.
 - **A page may carry several tags.** Tags are a list, and the same URL under two
   tags remains one cached page.
 - **Tags never own the page body.** They are stored in their own bbolt bucket
@@ -91,7 +98,9 @@ from upstream. A tag entry owns a URL and a title: the URL does not drift, and
 the body still arrives through the normal cache path under the normal TTL. There
 is nothing to reconcile, so there is no `sync` and no staleness to reason about.
 
-What a tag retains is its history. `cache_ttl` defaults to 72h, so a tag scoped
+What a tag retains is its history, across every surface at once: a project tag
+holds the vendor's documentation, the code that calls it, and the write-up that
+explained the undocumented flag, in one list. `cache_ttl` defaults to 72h, so a tag scoped
 to the page bodies would be empty by the Tuesday after a Friday of research —
 which is precisely when the work resumes and the agent asks what it already
 found. Because the index outlives the bodies it points at, tagging accrues a

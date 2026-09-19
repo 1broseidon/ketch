@@ -17,6 +17,7 @@ type DocsInput struct {
 	Library string `json:"library,omitempty" jsonschema:"library ID to fetch docs from directly, skipping the resolve step; requires a backend with library operations"`
 	Tokens  int    `json:"tokens,omitempty" jsonschema:"library token budget when library is set (default 4000)"`
 	Limit   int    `json:"limit,omitempty" jsonschema:"max number of results (default: the configured limit; with library set, unbounded unless given)"`
+	Tag     string `json:"tag,omitempty" jsonschema:"record each result under this tag, retrievable later with the tag tool"`
 	Resolve bool   `json:"resolve,omitempty" jsonschema:"resolve a library name to library IDs instead of searching docs"`
 }
 
@@ -78,6 +79,7 @@ func (s *Server) registerDocsTool() {
 			return nil, DocsOutput{}, upstreamErrf(err, "docs search failed")
 		}
 
+		s.recordResults(in.Tag, docsTagged(results))
 		return nil, DocsOutput{Results: results}, nil
 	})
 }
@@ -143,4 +145,18 @@ func docsInputSchema() *jsonschema.Schema {
 		"tokens":  libNames + " token budget when library is set (default 4000)",
 		"resolve": "resolve a library name to " + libNames + " library IDs instead of searching docs",
 	})
+}
+
+// docsTagged maps docs hits onto index entries: library and heading make the
+// title, the documentation chunk the description.
+func docsTagged(results []docs.Result) []taggedResult {
+	out := make([]taggedResult, 0, len(results))
+	for _, r := range results {
+		title := r.Title
+		if r.Library != "" {
+			title = r.Library + " " + title
+		}
+		out = append(out, taggedResult{URL: r.URL, Title: title, Description: r.Snippet})
+	}
+	return out
 }

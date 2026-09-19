@@ -151,12 +151,20 @@ two how-tos, the issue thread explaining an undocumented flag. Tag them as you
 fetch, then ask later what you have:
 
 ```sh
-ketch search "guacamole ldap authentication" --scrape --tag guacamole
-ketch scrape https://guacamole.apache.org/doc/gug/ldap-auth.html --tag guacamole
-ketch tag add guacamole https://example.com/read-this-later  # no network
+ketch search "guacamole ldap authentication" --scrape --tag remote-access
+ketch code "guacamole ldap" --tag remote-access
+ketch docs "apache guacamole" --tag remote-access
+ketch tag add remote-access https://example.com/read-this-later  # no network
 
-ketch tag show guacamole
+ketch tag show remote-access
 ```
+
+`--tag` works on every surface, and one tag holds them all — the vendor's
+documentation, the code that calls it, and the write-up that explained the
+undocumented flag, in one list. Each entry records whatever that surface
+produced: the full extraction for a fetched page, the matching snippet for a
+`code` or `docs` hit, the engine's title and description for an unscraped
+search result.
 
 `tag show` renders an llms.txt-shaped index — titles, URLs, one-line
 descriptions — so the agent picks the page it wants instead of searching the

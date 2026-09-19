@@ -23,7 +23,7 @@ type SearchInput struct {
 	Scrape     bool     `json:"scrape,omitempty" jsonschema:"also fetch each result URL and fill its content field with extracted markdown"`
 	Trim       bool     `json:"trim,omitempty" jsonschema:"strip markdown formatting from scraped content, keep text only (with scrape)"`
 	MaxChars   int      `json:"max_chars,omitempty" jsonschema:"truncate each result's scraped content to N characters (with scrape; 0 = disabled)"`
-	Tag        string   `json:"tag,omitempty" jsonschema:"with scrape, record each fetched page under this tag, retrievable later with the tag tool"`
+	Tag        string   `json:"tag,omitempty" jsonschema:"record each result under this tag; with scrape the entry gets the fetched page's title and description"`
 }
 
 // SearchOutput is the output schema for the "search" tool. Results carries
@@ -108,6 +108,8 @@ func (s *Server) runSearch(ctx context.Context, in SearchInput) (SearchOutput, e
 
 	if in.Scrape {
 		s.scrapeSearchResults(ctx, results, in.Trim, in.MaxChars, in.Tag)
+	} else {
+		s.recordResults(in.Tag, searchTagged(results))
 	}
 	out.Results = results
 	return out, nil
@@ -145,6 +147,8 @@ func (s *Server) runMultiSearch(ctx context.Context, in SearchInput, limit int) 
 	}
 	if in.Scrape {
 		s.scrapeSearchResults(ctx, results, in.Trim, in.MaxChars, in.Tag)
+	} else {
+		s.recordResults(in.Tag, searchTagged(results))
 	}
 
 	out := SearchOutput{Results: results}
@@ -187,6 +191,8 @@ func (s *Server) runRandomSearch(ctx context.Context, in SearchInput, limit int)
 	}
 	if in.Scrape {
 		s.scrapeSearchResults(ctx, results, in.Trim, in.MaxChars, in.Tag)
+	} else {
+		s.recordResults(in.Tag, searchTagged(results))
 	}
 
 	out := SearchOutput{Results: results, Backend: selected}
@@ -231,4 +237,15 @@ func (s *Server) scrapeSearchResults(ctx context.Context, results []search.Resul
 		}
 		results[i].Content = extract.PostProcess(page.Markdown, trim, maxChars)
 	}
+}
+
+// searchTagged maps search hits onto index entries. Without scrape the
+// engine's own title and description are all there is; with it,
+// scrapeSearchResults records the fetched pages instead.
+func searchTagged(results []search.Result) []taggedResult {
+	out := make([]taggedResult, 0, len(results))
+	for _, r := range results {
+		out = append(out, taggedResult{URL: r.URL, Title: r.Title, Description: r.Description})
+	}
+	return out
 }

@@ -32,7 +32,7 @@ Use only these terms in ketch output.
 | Term | Meaning |
 | --- | --- |
 | **surface** | One of the five research operations: `search`, `code`, `docs`, `scrape`, `crawl` |
-| **tag** | A label over pages already fetched into the cache. Not a research surface — it answers "what did I already find?", not "what is out there?" |
+| **tag** | A label filed across surfaces: search hits, code hits, docs chunks, scraped pages, crawled pages. Not a research surface — it answers "what did I already find?", not "what is out there?" |
 | **transport** | How a surface is called: the CLI binary (default) or the optional MCP tools |
 | **backend** | The provider behind a surface: auto (default; a fallback chain, not a provider)/brave/ddg/searxng/exa/firecrawl/keenable/tavily/parallel/serpbase/degoog/serply/youcom (search), grepapp/sourcegraph/github (code), context7 (docs) |
 | **operator action** | A system-managing or diagnostic command — `config set`, `cache`, `browser install`, background crawls, `doctor` — CLI-only by design |
@@ -97,24 +97,31 @@ First match wins:
 | A library's own documentation, version-aware | `docs` | `scrape` of the docs site — `docs` is already extracted and token-budgeted |
 | The content of a URL you already hold | `scrape` | `search` — never re-find a known URL |
 | Many pages from one site | `crawl` | looped `scrape` — crawl dedupes, bounds, and streams |
-| Pages you already fetched earlier in this project | `tag` (`operation: show`) | `search` again — you already paid for these once |
+| Anything you already found earlier in this project | `tag` (`operation: show`) | `search` again — you already paid for these once |
 
 In reverse: `search` finds URLs; `scrape` reads them; `crawl` reads a site; `code` reads public source; `docs` reads library docs. `search` with `scrape: true` fuses the first two when you will want full content from every hit — budget it like a scrape.
 
 ### Keeping a working set with `tag`
 
-On work that spans more than one session or more than a handful of pages, pass
-`--tag <name>` (CLI) or `tag` (MCP) on the fetches you will want again, naming
-the project or topic. Later, `tag show` returns an llms.txt-shaped index —
-titles, URLs, descriptions — for a few hundred tokens, and you re-read one page
-instead of re-running the search that found it. Tag the sources you actually
-cited, not every hit.
+On work that spans more than one session or more than a handful of sources,
+pass `--tag <name>` (CLI) or `tag` (MCP) on the calls you will want again,
+naming the project or scope of work — `remote-access`, not `results-3`.
+
+It works on every surface, and one tag holds them all: `search`, `code`,
+`docs`, `scrape`, `crawl`. So a project tag ends up holding the vendor's
+documentation, the code that calls it, and the write-up that explained the
+undocumented flag, in one list. Later, `tag show` returns that as an
+llms.txt-shaped index — titles, URLs, descriptions — for a few hundred tokens,
+and you re-read one source instead of re-running the searches that found them.
+Tag the sources you actually used, not every hit.
 
 The index is durable and outlives the cached page bodies, so it still answers
-days later. An entry whose body has expired comes back with `cached: false` —
-that is not an error and not a dead link; `scrape` the URL and it is restored.
-Read the index first, then fetch only the page you need: assembling the whole
-tag defeats the point.
+days later. `cached: false` means only that the body is not local right now —
+it is not an error and not a dead link. Entries from `code`, `docs` and
+unscraped `search` hits start that way by nature, since those calls return
+snippets rather than fetched pages; `scrape` the URL when you want the whole
+thing. Read the index first, then fetch only what you need: assembling the
+whole tag defeats the point.
 
 ## Token budgets
 

@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/1broseidon/ketch/code"
@@ -16,6 +17,7 @@ type CodeInput struct {
 	Backend string `json:"backend,omitempty" jsonschema:"code search backend (default: the configured backend)"`
 	Lang    string `json:"lang,omitempty" jsonschema:"language filter appended to the query"`
 	Limit   int    `json:"limit,omitempty" jsonschema:"max number of results (default: the configured limit)"`
+	Tag     string `json:"tag,omitempty" jsonschema:"record each result under this tag, retrievable later with the tag tool"`
 	Regexp  bool   `json:"regexp,omitempty" jsonschema:"interpret query as a regular expression when supported by the backend"`
 }
 
@@ -67,6 +69,24 @@ func (s *Server) registerCodeTool() {
 			return nil, CodeOutput{}, upstreamErrf(err, "code search failed")
 		}
 
+		s.recordResults(in.Tag, codeTagged(results))
 		return nil, CodeOutput{Results: results}, nil
 	})
+}
+
+// codeTagged maps code hits onto index entries: the location is the title, the
+// matching snippet the description.
+func codeTagged(results []code.Result) []taggedResult {
+	out := make([]taggedResult, 0, len(results))
+	for _, r := range results {
+		title := r.Repo
+		if r.Path != "" {
+			title += " " + r.Path
+		}
+		if r.Line > 0 {
+			title += fmt.Sprintf(":%d", r.Line)
+		}
+		out = append(out, taggedResult{URL: r.URL, Title: title, Description: r.Snippet})
+	}
+	return out
 }

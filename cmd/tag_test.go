@@ -2,9 +2,13 @@ package cmd
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/1broseidon/ketch/code"
+	"github.com/1broseidon/ketch/docs"
+	"github.com/1broseidon/ketch/search"
 	"github.com/spf13/cobra"
 )
 
@@ -89,4 +93,58 @@ func TestTagWriterNilIsANoOp(t *testing.T) {
 	var nilWriter *tagWriter
 	nilWriter.record(nil, "https://example.com", nil) // must not panic
 	nilWriter.Close()                                 // must not panic
+}
+
+// The taggable mappers are what make a tag readable when the entry will never
+// have a fetched body: the title has to say where the hit was, and the
+// description has to carry the snippet the caller actually saw.
+func TestCodeTaggable(t *testing.T) {
+	t.Parallel()
+	got := codeTaggable([]code.Result{
+		{Repo: "apache/guacamole-client", Path: "src/ldap.java", Line: 42, Snippet: "bind(dn)", URL: "https://example.com/a"},
+		{Repo: "apache/guacamole-server", Snippet: "guac_client_init", URL: "https://example.com/b"},
+	})
+	want := []taggableResult{
+		{URL: "https://example.com/a", Title: "apache/guacamole-client src/ldap.java:42", Description: "bind(dn)"},
+		{URL: "https://example.com/b", Title: "apache/guacamole-server", Description: "guac_client_init"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("codeTaggable() = %+v, want %+v", got, want)
+	}
+}
+
+func TestDocsTaggable(t *testing.T) {
+	t.Parallel()
+	got := docsTaggable([]docs.Result{
+		{Library: "/apache/guacamole", Title: "LDAP authentication", Snippet: "Set ldap-hostname", URL: "https://example.com/ldap"},
+		{Title: "Untitled chunk", Snippet: "body", URL: "https://example.com/x"},
+	})
+	want := []taggableResult{
+		{URL: "https://example.com/ldap", Title: "/apache/guacamole LDAP authentication", Description: "Set ldap-hostname"},
+		{URL: "https://example.com/x", Title: "Untitled chunk", Description: "body"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("docsTaggable() = %+v, want %+v", got, want)
+	}
+}
+
+func TestSearchTaggable(t *testing.T) {
+	t.Parallel()
+	got := searchTaggable([]search.Result{
+		{URL: "https://example.com/a", Title: "Guacamole", Description: "A clientless remote desktop gateway."},
+	})
+	want := []taggableResult{
+		{URL: "https://example.com/a", Title: "Guacamole", Description: "A clientless remote desktop gateway."},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("searchTaggable() = %+v, want %+v", got, want)
+	}
+}
+
+// Without --tag, tagResults must open nothing at all: every surface calls it
+// unconditionally on its result set, so the untagged path has to stay free.
+func TestTagResultsWithoutATagOpensNothing(t *testing.T) {
+	t.Parallel()
+	c := newTagFlagCmd(false)
+	tagResults(c, []taggableResult{{URL: "https://example.com", Title: "t", Description: "d"}})
 }

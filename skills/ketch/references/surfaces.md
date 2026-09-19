@@ -20,7 +20,7 @@ The two transports expose the same options under different spellings. Both direc
 | `--force-browser` | `force_browser` | scrape |
 | `--max-chars` | `max_chars` | scrape / search-with-scrape; crawl has it on MCP only |
 | `--no-cache` | `no_cache` | scrape, crawl |
-| `--tag <name>` | `tag` | scrape, search-with-scrape, crawl; composes with `--no-cache` (entry lists as uncached) |
+| `--tag <name>` | `tag` | every surface: search, code, docs, scrape, crawl; composes with `--no-cache` |
 | `ketch tag add/show/list/remove` | `tag` tool, `operation` enum | the CLI uses verbs, MCP takes `operation: add\|show\|list\|remove` |
 | `--concurrency` (scrape, default 5) | `concurrency` (capped at 16) | crawl's `--concurrency` (default 8) is CLI-only |
 | — | `max_pages` | crawl, MCP only: default 30, cap 100; CLI crawl bounds with `--depth`/`--allow`/`--deny` |
@@ -74,11 +74,16 @@ The two transports expose the same options under different spellings. Both direc
 ## tag
 
 Not a research surface: it answers "what did I already find?", not "what is out
-there?". No network on any operation.
+there?". No network on any `tag` operation.
+
+`--tag` / the `tag` option works on **every** surface, and one tag holds them
+all. Each entry records what that surface produced: the full extraction for a
+fetched page, the matching snippet for a `code` or `docs` hit, the engine's
+title and description for an unscraped `search` hit.
 
 | Operation | CLI | MCP |
 | --- | --- | --- |
-| Tag as you fetch | `--tag <name>` on `scrape` / `search --scrape` / `crawl` | `tag` option on those tools |
+| Tag what a call returned | `--tag <name>` on `search` / `code` / `docs` / `scrape` / `crawl` | `tag` option on those tools |
 | Tag URLs directly (cached or not) | `ketch tag add <name> <url>...` | `operation: add`, `urls` |
 | Read the index | `ketch tag show <name>` (`--minimal` for tab-separated) | `operation: show` |
 | List tags | `ketch tag list` | `operation: list` |
@@ -98,8 +103,10 @@ or description, listed as uncached, and both fill in the first time the page is
 seen by any route. The returned `not_cached` array names those — scrape them if
 you want the index to describe them now.
 
-A bare `search --tag` still records nothing: those results were never
-retrieved. Use `search --scrape --tag`.
+`cached: false` is the normal state for entries from `code`, `docs` and
+unscraped `search`: those surfaces return snippets, not fetched pages. The
+snippet is kept as the entry's description, so the index is still useful
+without a round trip.
 
 Errors: `remove` that matches nothing is `[not_found]` / exit 3.
 

@@ -44,7 +44,8 @@ func init() {
 	searchCmd.Flags().String("random", "",
 		"random provider with fallback: comma-separated list, or bare/=all for every usable backend (use the = form, e.g. --random=brave,exa)")
 	searchCmd.Flags().Lookup("random").NoOptDefVal = "all"
-	searchCmd.Flags().String("tag", "", "with --scrape, record each fetched page under this tag (see `ketch tag`)")
+	searchCmd.Flags().String("tag", "", "record each result under this tag; with --scrape the entry gets the fetched page's title and description (see `ketch tag`)")
+	searchCmd.PreRunE = validateTagFlag
 	searchCmd.PreRunE = validateTagFlag
 	searchCmd.Flags().String("cookie-file", "", "Netscape cookies.txt jar for --scrape fetches; matching cookies are sent with each fetch (overrides config cookie_file)")
 	searchCmd.Flags().String("user-agent", "", "User-Agent override for --scrape fetches (overrides config user_agent; applies to HTTP and browser fetches; empty restores each fetch path's default)")
@@ -95,6 +96,8 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		defer tw.Close()
 		return searchScrape(cmd.Context(), results, scraper, pc, tw, asJSON, trim, maxChars, minimal)
 	}
+
+	tagResults(cmd, searchTaggable(results))
 
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(results)
@@ -288,6 +291,8 @@ func runMultiSearch(cmd *cobra.Command, query string, limit int, doScrape, asJSO
 		return searchScrape(cmd.Context(), results, scraper, pc, tw, asJSON, trim, maxChars, minimal)
 	}
 
+	tagResults(cmd, searchTaggable(results))
+
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(results)
 	}
@@ -337,6 +342,8 @@ func runRandomSearch(cmd *cobra.Command, query string, limit int, doScrape, asJS
 		defer tw.Close()
 		return searchScrape(cmd.Context(), results, scraper, pc, tw, asJSON, trim, maxChars, minimal)
 	}
+
+	tagResults(cmd, searchTaggable(results))
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(results)
 	}
@@ -468,4 +475,15 @@ func printMultiPlain(query string, results []search.Result, berrs []search.Backe
 		}
 		fmt.Println()
 	}
+}
+
+// searchTaggable maps search hits onto index entries. Without --scrape the
+// engine's own title and description are all there is; with it, searchScrape
+// has already recorded the fetched pages and this never runs.
+func searchTaggable(results []search.Result) []taggableResult {
+	out := make([]taggableResult, 0, len(results))
+	for _, r := range results {
+		out = append(out, taggableResult{URL: r.URL, Title: r.Title, Description: r.Description})
+	}
+	return out
 }

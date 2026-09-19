@@ -156,6 +156,25 @@ func validTagName(name string) error {
 	return nil
 }
 
+// recordResults indexes results from a surface that returns snippets rather
+// than fetched pages — code hits and docs chunks carry the content the caller
+// came for, which is exactly what an index entry needs. Entries list as
+// uncached until their URL is scraped.
+func (s *Server) recordResults(tag string, results []taggedResult) {
+	if s == nil || tag == "" || s.cache == nil || validTagName(tag) != nil {
+		return
+	}
+	for _, r := range results {
+		if r.URL == "" {
+			continue
+		}
+		_ = s.cache.TagResult(tag, s.scraper.CacheKey(s.scraper.Rewrite(r.URL)), r.URL, r.Title, r.Description)
+	}
+}
+
+// taggedResult is the minimum an index entry needs from a result-shaped tool.
+type taggedResult struct{ URL, Title, Description string }
+
 // recordTag indexes a page a fetching tool just retrieved, when that call
 // passed a tag. Failures are silent for the same reason as on the CLI:
 // losing an index entry must not fail the fetch that produced it.
