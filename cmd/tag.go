@@ -347,7 +347,7 @@ func newTagWriter(tag string, pc *cache.Cache) *tagWriter {
 	}
 	c := cache.NewFromConfig(&cfg)
 	if c == nil {
-		fmt.Fprintln(os.Stderr, "warn: --tag could not open the cache; nothing was tagged")
+		warnTagCacheLocked(0)
 		return nil
 	}
 	return &tagWriter{tag: tag, c: c, owned: true}
@@ -406,6 +406,28 @@ type taggableResult struct{ URL, Title, Description string }
 //
 // It opens and closes its own handles because these commands hold no page
 // cache to reuse, and opens nothing at all when --tag is absent.
+// warnTagCacheLocked reports a --tag that recorded nothing. The cache is one
+// bbolt file under an exclusive lock, so a long-running ketch process — a
+// background crawl, most often — owns it for its whole run and every other
+// process's tag writes are dropped. Say so, and say what it cost: the command
+// itself still succeeds, and a silent "warn: could not open the cache" leaves
+// the operator to discover the gap later, when the tag is asked what it found.
+func warnTagCacheLocked(lost int) {
+	what := "nothing was recorded"
+	if lost > 0 {
+		what = fmt.Sprintf("%s were not recorded", countResults(lost))
+	}
+	fmt.Fprintf(os.Stderr,
+		"warn: --tag: the cache is locked by another ketch process (a background crawl?); %s\n", what)
+}
+
+func countResults(n int) string {
+	if n == 1 {
+		return "1 result"
+	}
+	return fmt.Sprintf("%d results", n)
+}
+
 func tagResults(cmd *cobra.Command, results []taggableResult) {
 	tag, _ := cmd.Flags().GetString("tag")
 	if tag == "" || len(results) == 0 {
@@ -413,7 +435,7 @@ func tagResults(cmd *cobra.Command, results []taggableResult) {
 	}
 	c := cache.NewFromConfig(&cfg)
 	if c == nil {
-		fmt.Fprintln(os.Stderr, "warn: --tag could not open the cache; nothing was tagged")
+		warnTagCacheLocked(len(results))
 		return
 	}
 	defer c.Close()

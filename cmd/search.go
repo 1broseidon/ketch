@@ -84,6 +84,11 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		backend = served
 	}
 
+	// Tag every hit first, then let the fetch upgrade the ones that succeed:
+	// adding --scrape must never record *less* than the same search without
+	// it, and a result whose page fails to load is still a result.
+	tagResults(cmd, searchTaggable(results))
+
 	if doScrape {
 		scraper, err := newScraper(cmd)
 		if err != nil {
@@ -96,8 +101,6 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		defer tw.Close()
 		return searchScrape(cmd.Context(), results, scraper, pc, tw, asJSON, trim, maxChars, minimal)
 	}
-
-	tagResults(cmd, searchTaggable(results))
 
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(results)
@@ -278,6 +281,11 @@ func runMultiSearch(cmd *cobra.Command, query string, limit int, doScrape, asJSO
 		fmt.Fprintf(os.Stderr, "warn: %s: %v\n", be.Backend, be.Err)
 	}
 
+	// Tag every hit first, then let the fetch upgrade the ones that succeed:
+	// adding --scrape must never record *less* than the same search without
+	// it, and a result whose page fails to load is still a result.
+	tagResults(cmd, searchTaggable(results))
+
 	if doScrape {
 		scraper, err := newScraper(cmd)
 		if err != nil {
@@ -290,8 +298,6 @@ func runMultiSearch(cmd *cobra.Command, query string, limit int, doScrape, asJSO
 		defer tw.Close()
 		return searchScrape(cmd.Context(), results, scraper, pc, tw, asJSON, trim, maxChars, minimal)
 	}
-
-	tagResults(cmd, searchTaggable(results))
 
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(results)
@@ -330,6 +336,11 @@ func runRandomSearch(cmd *cobra.Command, query string, limit int, doScrape, asJS
 		fmt.Fprintf(os.Stderr, "warn: %s: %v\n", failure.Backend, failure.Err)
 	}
 
+	// Tag every hit first, then let the fetch upgrade the ones that succeed:
+	// adding --scrape must never record *less* than the same search without
+	// it, and a result whose page fails to load is still a result.
+	tagResults(cmd, searchTaggable(results))
+
 	if doScrape {
 		scraper, err := newScraper(cmd)
 		if err != nil {
@@ -343,7 +354,6 @@ func runRandomSearch(cmd *cobra.Command, query string, limit int, doScrape, asJS
 		return searchScrape(cmd.Context(), results, scraper, pc, tw, asJSON, trim, maxChars, minimal)
 	}
 
-	tagResults(cmd, searchTaggable(results))
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(results)
 	}

@@ -120,6 +120,8 @@ func runDocsWithLibrary(cmd *cobra.Command, query, library string, tokens, limit
 	}
 	results = docs.Truncate(results, limit)
 
+	tagResults(cmd, docsTaggable(results))
+
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(results)
 	}

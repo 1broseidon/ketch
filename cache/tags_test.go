@@ -453,3 +453,34 @@ func TestOneLine(t *testing.T) {
 		t.Errorf("oneLine kept %d runes, want at most %d", len([]rune(got)), descriptionMax)
 	}
 }
+
+// `search --scrape --tag` records every hit from the result list first, then
+// lets each successful fetch overwrite its entry. The second write has to win:
+// a fetched page's own title and description are better than the engine's.
+func TestTagPageOverwritesASnippetEntry(t *testing.T) {
+	t.Parallel()
+	c := newTestCache(t, time.Hour)
+	const url = "https://example.com/ldap"
+	if err := c.TagResult("remote-access", url, url, "engine title", "engine blurb"); err != nil {
+		t.Fatalf("TagResult: %v", err)
+	}
+	p := page(url, "LDAP authentication", "Guacamole authenticates against an LDAP directory, mapping entries to users without duplicating credentials.")
+	c.Put(url, p, scrape.SourceHTTP)
+	if err := c.TagPage("remote-access", url, url, p); err != nil {
+		t.Fatalf("TagPage: %v", err)
+	}
+
+	pages, err := c.Tagged("remote-access")
+	if err != nil {
+		t.Fatalf("Tagged: %v", err)
+	}
+	if len(pages) != 1 {
+		t.Fatalf("got %d entries, want 1 — the fetch must replace the entry, not add one", len(pages))
+	}
+	if pages[0].Title != "LDAP authentication" {
+		t.Errorf("title = %q, want the fetched page's", pages[0].Title)
+	}
+	if pages[0].Description == "engine blurb" {
+		t.Error("description is still the engine's; the fetched page should have replaced it")
+	}
+}

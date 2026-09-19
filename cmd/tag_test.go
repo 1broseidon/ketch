@@ -148,3 +148,12 @@ func TestTagResultsWithoutATagOpensNothing(t *testing.T) {
 	c := newTagFlagCmd(false)
 	tagResults(c, []taggableResult{{URL: "https://example.com", Title: "t", Description: "d"}})
 }
+
+func TestCountResults(t *testing.T) {
+	t.Parallel()
+	for n, want := range map[int]string{1: "1 result", 2: "2 results", 0: "0 results"} {
+		if got := countResults(n); got != want {
+			t.Errorf("countResults(%d) = %q, want %q", n, got, want)
+		}
+	}
+}
