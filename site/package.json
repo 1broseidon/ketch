@@ -3,10 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node build.mjs",
-    "prebuild": "node scripts/fetch-stars.mjs"
+    "build": "inkcap build",
+    "prebuild": "inkcap stars"
   },
   "devDependencies": {
-    "marked": "^18.0.13"
+    "inkcap": "^0.1.0"
   }
 }
