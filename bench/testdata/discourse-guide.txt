@@ -1,0 +1,624 @@
+Discourse
+                  
+                
+              
+
+                
+
+                
+
+              
+            
+
+            
+
+              
+
+
+ This guide covers the fundamental features and basic usage of Discourse for new users, explaining key terms, how to navigate, participate in conversations, and configure notifications.
+
+
+ Required user level: Any
+
+
+
+
+Welcome! As a new user of Discourse, we hope you will find this site intuitive and clearly structured. Here’s some guidance to help you get started:
+
+
+
+Summary
+
+
+This guide will cover:
+
+
+
+Basic terms used in Discourse
+
+
+Browsing and navigation tips
+
+
+Reading and participating in topics
+
+
+Notifications and how to manage them
+
+
+
+
+
+
+
+Basic Terms Used by Discourse
+
+
+Here are some key terms you should be familiar with while using Discourse:
+
+
+
+
+Topic: A series of messages grouped together in a meaningful conversation with a title, listed in a category, beginning with an Original Post, and including all replies in chronological order. This is similar to what other platforms might call a “thread.”
+
+
+
+Post: An individual message within a topic. Each post can be authored by different users, moved to another topic, or become the start of a new topic.
+
+
+
+Original Post (OP): The first post in any topic. It determines the focus of the topic and is associated with the title and tags.
+
+
+
+Category: The primary way of organizing topics. Each topic resides in one category, which can have its own permissions and notification settings. Categories are similar to forums on other sites.
+
+
+
+Tag: A marker used to describe a topic. Each topic can have multiple tags and users can create new ones.
+
+
+
+User: All site activities, like creating posts and recording actions, are centered around registered users. Discourse sites may be private or public, but registration is required for participation.
+
+
+
+
+
+ For more details, see the Interface Nomenclature Guide.
+
+
+
+
+
+Browsing the Forum
+
+
+
+Topic Lists
+
+
+By default, the Discourse homepage shows all Latest conversations, but you can filter this list in several ways:
+
+
+
+
+
+views1672×264 26.3 KB
+
+
+
+
+
+
+
+By category: Click the ‘all categories’ title to see a list of all categories:
+
+
+
+By tag: Click the ‘all tags’ title to see a list of all tags.
+
+
+
+By activity level: Click ‘Top’ to list topics by activity level for a specific time period.
+
+
+
+By new topics: New topics (created in the last 2 days that you haven’t opened) are marked with a small blue dot:
+
+
+
+
+discourse-topic-new-indicator819×164 3.95 KB
+
+
+
+
+
+
+By unread topics: Topics that you’ve opened and read for at least 5 minutes but have new posts (replies) are marked with a number in a blue circle:
+
+
+
+
+discourse-topic-unread-indicator817×160 4.11 KB
+
+
+
+
+
+
+
+See Who’s Participating
+
+
+On the homepage, you can see avatars of:
+
+
+
+
+
+
+The user who started the topic
+
+
+The most active participants
+
+
+The user who created the most recent post
+
+
+If the original poster is also the most recent poster, the first photo has a blue border or halo:
+
+
+
+
+
+
+
+Indicators at the bottom of the OP show who created the post, the count of replies, and views, and the avatars of the most frequent participants:
+
+
+
+
+
+topic-map706×145 28.5 KB
+
+
+
+
+
+
+Navigation Tools
+
+
+Use the icon buttons at the upper right for the chat, search, or your user menu:
+
+
+
+
+
+
+Reading Topics
+
+
+
+Keep Scrolling
+
+
+Click on a topic title to read replies in chronological order. Use your mouse or the timeline scroll bar on the right to navigate through the conversation. On smaller screens, select the bottom progress bar to expand it.
+
+
+
+Jump Back In
+
+
+Selecting a topic title takes you to your last read post. To enter at the top or bottom, click the reply count or last reply date:
+
+
+
+
+
+
+Topics above the light red line are new or updated since your last visit.
+
+
+Fully read topics have light grey titles:
+
+
+
+
+topic-list-last-visit-date-read898×288 17.6 KB
+
+
+
+
+
+
+
+Related Topics
+
+
+Posts can be moved to more appropriate topics, or two related topics can be merged. A link will appear allowing readers to jump to the new location. Related topics are listed at the end of the OP:
+
+
+
+
+
+
+
+
+related-topics711×194 15.6 KB
+
+
+
+
+
+
+Taking Part in Conversations
+
+
+
+Replying
+
+
+Press any Reply button to open the editor. You can continue reading or navigate to different topics while composing your reply:
+
+
+
+
+
+
+Replies to a specific post are linked to that post:
+
+
+If your reply is next in chronological order, it appears next.
+
+
+If not, your post has a link to the previous post for context, and the original post shows a count of replies.
+
+
+
+
+replies824×277 24.9 KB
+
+
+
+
+
+
+
+
+
+
+Drafts
+
+
+Drafts are automatically saved. If minimized or if you navigate away, the editor can be reopened by returning to the topic or clicking the highlighted bar at the bottom of your browser.
+
+
+
+Quoting
+
+
+To insert a quote, select the text you wish to quote, then press the Quote button that pops up. Repeat for multiple quotes from different posts or users:
+
+
+
+
+
+
+Mentioning
+
+
+Notify someone by mentioning their name. Type @ to select a username:
+
+
+
+
+
+mention-username527×385 53.5 KB
+
+
+
+
+
+
+Emoji
+
+
+To use emojis, press the emoji button in the editor or type : to match by name or traditional smileys. Use the more option for the full list:
+
+
+
+
+
+emoji-completion527×425 18.3 KB
+
+
+
+
+
+
+Oneboxes (Link Previews)
+
+
+To create a summary for a link, paste it on a line by itself. Starting a topic with a link can generate a summary in the title field:
+
+
+
+
+
+
+
+ You can read more about using the onebox feature in this guide.
+
+
+
+
+
+Formatting
+
+
+Discourse uses a rich text editor by default, providing a toolbar with formatting options like bold, italic, lists, headings, and more. You can also switch to Markdown mode in the editor. Formatting is supported via simple HTML, BBCode, or Markdown. For example:
+
+
+This is <b>bold</b>.
+This is [b]bold[/b].
+This is **bold**.
+
+
+
+For more formatting tips, try this 10-minute markdown tutorial.
+
+
+
+Actions and Reactions
+
+
+At the bottom of each post, you will find action buttons:
+
+
+
+
+
+
+
+Like: Show appreciation for the post.
+
+
+
+Link: Copy a permalink to the reply or topic.
+
+
+The “…” button will show more actions, such as Flag, Edit, and Bookmark:
+
+
+
+
+
+
+
+
+Notifications
+
+
+When someone interacts with you directly, a blue number will appear over your profile picture. For personal messages, a green envelope will appear instead. To receive desktop or Android push notifications, allow the site to send you notifications through your browser.
+
+
+
+
+
+
+
+
+
+
+
+notification menu490×507 12.8 KB
+
+
+
+
+
+
+Topic Notifications
+
+
+Change notification level for any topic via the notification control at the bottom of the topic:
+
+
+
+
+
+2022-05-04_topic_notify_bottom628×884 92.4 KB
+
+
+
+
+
+or on the timeline on the right:
+
+
+
+
+
+2022-05-04_topic_notify_tl564×952 89.6 KB
+
+
+
+
+
+
+Category Notifications
+
+
+Set notification levels per category from your user preferences or the category page:
+
+
+
+
+
+2022-05-04_category_notify614×996 132 KB
+
+
+
+
+
+
+Tag Notifications
+
+
+Set notification levels per tag via your user preferences (Under “Tracking”):
+
+
+
+
+
+2022-05-04_tag_notify1072×1326 121 KB
+
+
+
+
+
+If you are on a category or tag on which you have set a notification setting, you can change it by clicking the bell icon next to the New Topic button:
+
+
+
+
+
+change-notification473×395 10.7 KB
+
+
+
+
+
+
+
+
+ Do you want to add this guide on your site?
+
+
+Go to https://meta.discourse.org/raw/96331 and copy/paste the text to a topic on your site. You will then need to download the images of this topic and upload them on your topic. You will also need to adapt the content and screenshots to reflect the specific setup of your forum.
+
+
+Add the table of contents with the DiscoTOC theme component.
+
+
+
+            
+
+
+              
+
+                  
+                  
+                197 Likes
+              
+
+
+                
+
+            
+
+
+          
+
+
+            
+
+              
+                Moin
+                  
+                
+              
+
+
+                
+
+              
+            
+
+            
+
+              
+
+
+
+
+
+ Discourse:
+
+
+
+
+Indicators at the bottom of the OP show who created the post, the count of replies, and views, and the avatars of the most frequent participants:
+
+
+
+
+
+topic-map706×145 28.5 KB
+
+
+
+
+
+
+
+
+The new topic map does no longer highlight the op
+
+
+
+
+
+Screenshot_20250114_094145_Firefox1367×449 115 KB
+
+
+
+
+            
+
+
+              
+
+                  
+                  
+                4 Likes
+              
+
+
+
+            
+
+
+          
+
+
+            
+
+              
+                nathank
+                  
+                (Nathan Kershaw)
+              
+
+
+
+              
+            
+
+            
+
+              
+This could do with an update to incorporate the new rich text editor for things like quotes, etc.
+
+            
+
+
+              
+
+                  
+                  
+                4 Likes

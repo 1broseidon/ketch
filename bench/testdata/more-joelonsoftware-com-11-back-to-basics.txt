@@ -1,0 +1,239 @@
+We spend a lot of time on this site talking about exciting Big Picture Stuff like .NET versus Java, XML strategy, Lock-In, competitive strategy, software design, architecture, and so forth. All this stuff is a layer cake, in a way. At the top layer, you’ve got software strategy. Below that, we think about architectures like .NET, and below that, individual products: software development products like Java or platforms like Windows.
+
+
+Go lower on the cake, please. DLLs? Objects? Functions? No! Lower! At some point you’re thinking about lines of code written in programming languages.
+
+
+Still not low enough. Today I want to think about CPUs. A little bit of silicon moving bytes around. Pretend you are a beginning programmer. Tear away all that knowledge you’ve built up about programming, software, management, and get back to the lowest level Von Neumann fundamental stuff. Wipe J2EE out of your mind for a moment. Think Bytes.
+
+
+Why are we doing this? I think that some of the biggest mistakes people make even at the highest architectural levels come from having a weak or broken understanding of a few simple things at the very lowest levels. You’ve built a marvelous palace but the foundation is a mess. Instead of a nice cement slab, you’ve got rubble down there. So the palace looks nice but occasionally the bathtub slides across the bathroom floor and you have no idea what’s going on.
+
+
+So today, take a deep breath. Walk with me, please, through a little exercise which will be conducted using the C programming language.
+
+
+Remember the way strings work in C: they consist of a bunch of bytes followed by a null character, which has the value 0. This has two obvious implications:
+
+
+
+There is no way to know where the string ends (that is, the string length) without moving through it, looking for the null character at the end.
+
+
+Your string can’t have any zeros in it. So you can’t store an arbitrary binary blob like a JPEG picture in a C string.
+
+
+
+Why do C strings work this way? It’s because the PDP-7 microprocessor, on which UNIX and the C programming language were invented, had an ASCIZ string type. ASCIZ meant “ASCII with a Z (zero) at the end.”
+
+
+Is this the only way to store strings? No, in fact, it’s one of the worst ways to store strings. For non-trivial programs, APIs, operating systems, class libraries, you should avoid ASCIZ strings like the plague. Why?
+
+
+Let’s start by writing a version of the code for strcat, the function which appends one string to another.
+
+
+void strcat( char* dest, char* src )
+{
+    while (*dest) dest++;
+    while (*dest++ = *src++);
+}
+
+
+Study the code a bit and see what we’re doing here. First, we’re walking through the first string looking for its null-terminator. When we find it, we walk through the second string, copying one character at a time onto the first string.
+
+
+This kind of string handling and string concatenation was good enough for Kernighan and Ritchie, but it has its problems. Here’s a problem. Suppose you have a bunch of names that you want to append together in one big string:
+
+
+char bigString[1000];  /* I never know how much to allocate */
+bigString[0] = '\0';
+strcat(bigString,"John, ");
+strcat(bigString,"Paul, ");
+strcat(bigString,"George, ");
+strcat(bigString,"Joel ");
+
+
+This works, right? Yes. And it looks nice and clean.
+
+
+What is its performance characteristic? Is it as fast as it could be? Does it scale well? If we had a million strings to append, would this be a good way to do it?
+
+
+No. This code uses the Shlemiel the painter’s algorithm. Who is Shlemiel? He’s the guy in this joke:
+
+
+
+Shlemiel gets a job as a street painter, painting the dotted lines down the middle of the road. On the first day he takes a can of paint out to the road and finishes 300 yards of the road. “That’s pretty good!” says his boss, “you’re a fast worker!” and pays him a kopeck.
+
+
+The next day Shlemiel only gets 150 yards done. “Well, that’s not nearly as good as yesterday, but you’re still a fast worker. 150 yards is respectable,” and pays him a kopeck.
+
+
+The next day Shlemiel paints 30 yards of the road. “Only 30!” shouts his boss. “That’s unacceptable! On the first day you did ten times that much work! What’s going on?”
+
+
+“I can’t help it,” says Shlemiel. “Every day I get farther and farther away from the paint can!”
+
+
+
+(For extra credit, what are the real numbers?) This lame joke illustrates exactly what’s going on when you use strcat like I just did. Since the first part of strcat has to scan through the destination string every time, looking for that dang null terminator again and again, this function is much slower than it needs to be and doesn’t scale well at all. Lots of code you use every day has this problem. Many file systems are implemented in a way that it’s a bad idea to put too many files in one directory, because performance starts to drop off dramatically when you get thousands of items in one directory. Try opening an overstuffed Windows recycle bin to see this in action — it takes hours to show up, which is clearly not linear in the number of files it contains. There must be a Shlemiel the Painter’s Algorithm in there somewhere. Whenever something seems like it should have linear performance but it seems to have n-squared performance, look for hidden Shlemiels. They are often hidden by your libraries. Looking at a column of strcats or a strcat in a loop doesn’t exactly shout out “n-squared,” but that is what’s happening.
+
+
+How do we fix this? A few smart C programmers implemented their own mystrcat as follows:
+
+
+char* mystrcat( char* dest, char* src )
+{
+    while (*dest) dest++;
+    while (*dest++ = *src++);
+    return --dest;
+}
+
+
+What have we done here? At very little extra cost we’re returning a pointer to the end of the new, longer string. That way the code that calls this function can decide to append further without rescanning the string:
+
+
+char bigString[1000];  /* I never know how much to allocate */
+char *p = bigString;
+bigString[0] = '\0';
+p = mystrcat(p,"John, ");
+p = mystrcat(p,"Paul, ");
+p = mystrcat(p,"George, ");
+p = mystrcat(p,"Joel ");
+
+
+This is, of course, linear in performance, not n-squared, so it doesn’t suffer from degradation when you have a lot of stuff to concatenate.
+
+
+The designers of Pascal were aware of this problem and “fixed” it by storing a byte count in the first byte of the string. These are called Pascal Strings. They can contain zeros and are not null terminated. Because a byte can only store numbers between 0 and 255, Pascal strings are limited to 255 bytes in length, but because they are not null terminated they occupy the same amount of memory as ASCIZ strings. The great thing about Pascal strings is that you never have to have a loop just to figure out the length of your string. Finding the length of a string in Pascal is one assembly instruction instead of a whole loop. It is monumentally faster.
+
+
+The old Macintosh operating system used Pascal strings everywhere. Many C programmers on other platforms used Pascal strings for speed. Excel uses Pascal strings internally which is why strings in many places in Excel are limited to 255 bytes, and it’s also one reason Excel is blazingly fast.
+
+
+For a long time, if you wanted to put a Pascal string literal in your C code, you had to write:
+
+
+char* str = "\006Hello!";
+
+
+Yep, you had to count the bytes by hand, yourself, and hardcode it into the first byte of your string. Lazy programmers would do this, and have slow programs:
+
+
+char* str = "*Hello!";
+str[0] = strlen(str) - 1;
+
+
+Notice in this case you’ve got a string that is null terminated (the compiler did that) as well as a Pascal string. I used to call these fucked strings because it’s easier than calling them null terminated pascal strings but this is a rated-G channel so you will have use the longer name.
+
+
+I elided an important issue earlier. Remember this line of code?
+
+
+char bigString[1000];  /* I never know how much to allocate */
+
+
+Since we’re looking at the bits today I shouldn’t have ignored this. I should have done this correctly: figured out how many bytes I needed and allocated the right amount of memory.
+
+
+Shouldn’t I have?
+
+
+Because otherwise, you see, a clever hacker will read my code and notice that I’m only allocating 1000 bytes and hoping it will be enough, and they’ll find some clever way to trick me into strcatting a 1100 byte string into my 1000 bytes of memory, thus overwriting the stack frame and changing the return address so that when this function returns, it executes some code which the hacker himself wrote. This is what they’re talking about when they say that a particular program has a buffer overflow susceptibility. It was the number one cause of hacks and worms in the olden days before Microsoft Outlook made hacking easy enough for teenagers to do.
+
+
+OK, so all those programmers are just lame-asses. They should have figured out how much memory to allocate.
+
+
+But really, C does not make this easy on you. Let’s go back to my Beatles example:
+
+
+char bigString[1000];  /* I never know how much to allocate */
+char *p = bigString;
+bigString[0] = '\0';
+p = mystrcat(p,"John, ");
+p = mystrcat(p,"Paul, ");
+p = mystrcat(p,"George, ");
+p = mystrcat(p,"Joel ");
+
+
+How much should we allocate? Let’s try doing this The Right Way.
+
+
+char* bigString;
+int i = 0;
+i = strlen("John, ")
++ strlen("Paul, ")
++ strlen("George, ")
++ strlen("Joel ");
+bigString = (char*) malloc (i + 1);
+/* remember space for null terminator! */
+...
+
+
+My eyes glazeth over. You’re probably about ready to change the channel already. I don’t blame you, but bear with me because it gets really interesting.
+
+
+We have to scan through all the strings once just figuring out how big they are, then we scan through them again concatenating. At least if you use Pascal strings the strlen operation is fast. Maybe we can write a version of strcat that reallocates memory for us.
+
+
+That opens another whole can of worms: memory allocators. Do you know how malloc works? The nature of malloc is that it has a long linked list of available blocks of memory called the free chain. When you call malloc, it walks the linked list looking for a block of memory that is big enough for your request. Then it cuts that block into two blocks — one the size you asked for, the other with the extra bytes, and gives you the block you asked for, and puts the leftover block (if any) back into the linked list. When you call free, it adds the block you freed onto the free chain. Eventually, the free chain gets chopped up into little pieces and you ask for a big piece and there are no big pieces available the size you want. So malloc calls a timeout and starts rummaging around the free chain, sorting things out, and merging adjacent small free blocks into larger blocks. This takes 3 1/2 days. The end result of all this mess is that the performance characteristic of malloc is that it’s never very fast (it always walks the free chain), and sometimes, unpredictably, it’s shockingly slow while it cleans up. (This is, incidentally, the same performance characteristic of garbage collected systems, surprise surprise, so all the claims people make about how garbage collection imposes a performance penalty are not entirely true, since typical malloc implementations had the same kind of performance penalty, albeit milder.)
+
+
+Smart programmers minimize the potential distruption of malloc by always allocating blocks of memory that are powers of 2 in size. You know, 4 bytes, 8 bytes, 16 bytes, 18446744073709551616 bytes, etc. For reasons that should be intuitive to anyone who plays with Lego, this minimizes the amount of weird fragmentation that goes on in the free chain. Although it may seem like this wastes space, it is also easy to see how it never wastes more than 50% of the space. So your program uses no more than twice as much memory as it needs to, which is not that big a deal.
+
+
+Suppose you wrote a smart strcat function that reallocates the destination buffer automatically. Should it always reallocate it to the exact size needed? My teacher and mentor Stan Eisenstat suggests that when you call realloc, you should always double the size of memory that was previously allocated. That means that you never have to call realloc more than lg n times, which has decent performance characteristics even for huge strings, and you never waste more than 50% of your memory.
+
+
+Anyway. Life just gets messier and messier down here in byte-land. Aren’t you glad you don’t have to write in C anymore? We have all these great languages like Perl and Java and VB and XSLT that never make you think of anything like this, they just deal with it, somehow. But occasionally, the plumbing infrastructure sticks up in the middle of the living room, and we have to think about whether to use a String class or a StringBuilder class, or some such distinction, because the compiler is still not smart enough to understand everything about what we’re trying to accomplish and is trying to help us not write inadvertent Shlemiel the Painter algorithms.
+
+
+
+
+
+Last week I wrote that you can’t implement the SQL statement SELECT author FROM books fast when your data is stored in XML. Just in case everybody didn’t understand what I was talking about, and now that we’ve been rolling around in the CPU all day, this assertion might make more sense.
+
+
+How does a relational database implement SELECT author FROM books? In a relational database, every row in a table (e.g. the books table) is exactly the same length in bytes, and every fields is always at a fixed offset from the beginning of the row. So, for example, if each record in the books table is 100 bytes long, and the author field is at offset 23, then there are authors stored at byte 23, 123, 223, 323, etc. What is the code to move to the next record in the result of this query? Basically, it’s this:
+
+
+pointer += 100;
+
+
+One CPU instruction. Faaaaaaaaaast.
+
+
+Now lets look at the books table in XML.
+
+
+<?xml blah blah>
+<books>
+<book>
+<title>UI Design for Programmers</title>
+<author>Joel Spolsky</author>
+</book>
+<book>
+<title>The Chop Suey Club</title>
+<author>Bruce Weber</author>
+</book>
+</books>
+
+
+Quick question. What is the code to move to the next record?
+
+
+Uh…
+
+
+At this point a good programmer would say, well, let’s parse the XML into a tree in memory so that we can operate on it reasonably quickly. The amount of work that has to be done here by the CPU to SELECT author FROM books will bore you absolutely to tears. As every compiler writer knows, lexing and parsing are the slowest part of compiling. Suffice it to say that it involves a lot of string stuff, which we discovered is slow, and a lot of memory allocation stuff, which we discovered is slow, as we lex, parse, and build an abstract syntax tree in memory. That assumes that you have enough memory to load the whole thing at once. With relational databases, the performance of moving from record to record is fixed and is, in fact, one CPU instruction. That’s very much by design. And thanks to memory mapped files you only have to load the pages of disk that you are actually going to use. With XML, if you preparse, the performance of moving from record to record is fixed but there’s a huge startup time, and if you don’t preparse, the performance of moving from record to record varies based on the length of the record before it and is still hundreds of CPU instructions long.
+
+
+What this means to me is that you can’t use XML if you need performance and have lots of data. If you have a little bit of data, or if what you’re doing doesn’t have to be fast, XML is a fine format. And if you really want the best of both worlds, you have to come up with a way to store metadata next to your XML, something like Pascal strings’ byte count, which give you hints about where things are in the file so that you don’t have to parse and scan for them. But of course then you can’t use text editors to edit the file because that messes up the metadata, so it’s not really XML anymore.
+
+
+For those three gracious members of my audience who are still with me at this point, I hope you’ve learned something or rethought something. I hope that thinking about boring first-year computer-science stuff like how strcat and malloc actually work has given you new tools to think about the latest, top level, strategic and architectural decisions that you make in dealing with technologies like XML. For homework, think about why Transmeta chips will always feel sluggish. Or why the original HTML spec for TABLES was so badly designed that large tables on web pages can’t be shown quickly to people with modems. Or about why COM is so dang fast but not when you’re crossing process boundaries. Or about why the NT guys put the display driver into kernelspace instead of userspace.
+
+
+These are all things that require you to think about bytes, and they affect the big top-level decisions we make in all kinds of architecture and strategy. This is why my view of teaching is that first year CS students need to start at the basics, using C and building their way up from the CPU. I am actually physically disgusted that so many computer science programs think that Java is a good introductory language, because it’s “easy” and you don’t get confused with all that boring string/malloc stuff but you can learn cool OOP stuff which will make your big programs ever so modular. This is a pedagogical disaster waiting to happen. Generations of graduates are descending on us and creating Shlemiel The Painter algorithms right and left and they don’t even realize it, since they fundamentally have no idea that strings are, at a very deep level, difficult, even if you can’t quite see that in your perl script. If you want to teach somebody something well, you have to start at the very lowest level. It’s like Karate Kid. Wax On, Wax Off. Wax On, Wax Off. Do that for three weeks. Then Knocking The Other Kid’s Head off is easy.

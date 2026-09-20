@@ -1,0 +1,336 @@
+< Tool Guides
+    
+
+
+  
+How to: Use Tor
+
+
+    
+Last Reviewed: January 28, 2025
+
+
+
+
+
+  
+
+
+Computer requirements: An internet connection, a computer running your favorite operating system .
+
+
+Versions used in this guide: Windows 11, macOS 15.2, Ubuntu 20.04.4 LTS; Tor Browser: 14.0.4
+
+
+License: Free Software ; mix of Free Software licenses
+
+
+Level: Beginner-Intermediate
+
+
+Time required: 5 minutes
+
+
+Other reading:
+
+
+
+	
+https://tb-manual.torproject.org/installation/
+
+	
+https://tor.stackexchange.com/
+
+	
+https://www.eff.org/pages/tor-and-https
+
+	
+https://www.youtube.com/@TheTorProject/playlists?view=1&sort=dd&shelf_id=0
+
+
+
+ 
+What is Tor? #
+
+
+
+
+Tor is a volunteer-run service that provides both privacy and anonymity online by masking who you are and where you are connecting from. The service also protects you from the Tor network itself—so you can have good assurance that you’ll remain anonymous to other Tor users.
+
+
+
+For people needing occasional anonymity and privacy when accessing websites, the Tor Browser provides a quick and easy way to use the Tor network.
+
+
+
+The Tor Browser works just like a regular web browser . Web browsers are programs you use to view websites. Examples include Chrome, Firefox, and Safari. Unlike other web browsers, though, the Tor Browser sends your communications through Tor, making it harder for people monitoring you to know exactly what you're doing online, and harder for people monitoring the sites you use to know where you're connecting from.
+
+
+
+Keep in mind that only activities you do inside of Tor Browser itself will be anonymized. Having Tor Browser installed on your computer does not make anonymous things you do on the same computer using other software (such as your regular web browser). But you can also take steps to protect that data  too, if needed.
+
+
+
+Tor is also available on Android and iPhone. Check out our guide for getting started on those platforms.
+
+
+ 
+Some Tips to Keep in Mind When Using Tor #
+
+
+
+
+Tor is a useful tool for privacy and anonymity, but remember that it's generally impossible to achieve perfect anonymity. Knowing the limitations of Tor and following some best practices can help you stay safe online without too many surprises:
+
+
+
+	
+Browsing the web is much slower over Tor, and certain websites may not work at all.
+
+	
+The Tor Browser funnels only the browsing you do in the browser through the Tor network. Other apps or services installed on your device will not be routed through Tor.
+
+	
+If you log into a website using the Tor Browser or fill out forms with personally identifying information, that website will be able to identify you and may know that you're using Tor.
+
+	
+You can use Tor to circumvent censorship in a number of countries, but keep in mind that anyone who can see your network activity can also see that you're using Tor.
+
+	
+Don't install or add any additional browser plugins to the Tor Browser that could de-anonymize you. (Tor is already set up with a set of privacy protecting rules, so you do not need additional ad or tracker blockers.)
+
+	
+Beware of opening documents downloaded with Tor, especially when you have Tor running. Some documents may include internet-connected resources that may be downloaded when you open the document outside of Tor, which could reveal your IP address .
+
+
+
+
+The Tor Project maintains a page with other tips for anonymity that is worth checking periodically for other best practices for using Tor safely.
+
+
+
+The Tor Browser can access both the regular web that you're used to, as well as special ".onion" sites that only live on the Tor network. Unlike traditional websites, which have a public IP address, a .onion address is hidden, unique, and provides end-to-end encryption . You can check a number of EFF sites this way, including Surveillance Self-Defense itself (this link will only work in the Tor Browser).
+
+
+ 
+Getting the Tor Browser #
+
+
+
+
+Open a browser like Firefox or Chrome and go to:
+
+
+
+https://www.torproject.org/download/
+
+
+
+If you are using a search engine to look for the Tor Browser, make sure that the URL is correct.
+
+
+
+Only download Tor from the official website, and if you are prompted to accept alternative HTTPS  (SSL/TLS) security certificates, do not proceed.
+
+
+
+
+
+
+
+Select the "Download" icon for your operating system. Some browsers will ask you to confirm whether you want to download this file; otherwise it should automatically download the application.
+
+
+
+This example shows Tor Browser version 14.0.4, which is the current version at the time of writing this guide. A more recent version of Tor Browser may be available for download by the time you read this, so download and use the current version that Tor Project provides.
+
+
+
+
+
+
+
+Downloading directly from the official Tor website should be safe, but if you are ever unsure, Tor has a guide for verifying the authenticity of your download with a signature.
+
+
+ 
+Installing the Tor Browser #
+
+
+
+
+After the download is complete, go to your "Downloads" folder. You should always make sure you trust the software you want to install and that you got an authentic copy from the official site over a secure connection. Since you know this software is legitimate and the download was from the Tor Project's secure HTTPS site, you can proceed through the installation steps.
+
+
+
+
+
+
+
+Windows install screen (left), Mac install screen (middle), Linux downloads folder (right).
+
+
+ 
+Windows #
+
+
+
+
+	
+Double-click on the file you just downloaded, for us it is “torbrowser-windows-x86_64-portable-14.0.4.exe”. After double-clicking on the Tor Browser installer, a window may open with a warning about the origin of the software. You should always take these warnings seriously and make sure you trust the software you want to install and that you got an authentic copy from the official site over a secure connection. Since you know this software is legitimate and the download was from the Tor Project's secure HTTPS site, click “Run.”
+
+	
+Choose your installer language, and click "OK."
+
+	
+A window will ask where to install the Tor Browser. The default location is your desktop. You can change this to be a different location if you want. When you’re ready to proceed, click “Install.”
+
+	
+The installation process is complete when you see a window that says you have completed the installation process. If you click the "Finish" button, the Tor Browser will start immediately and “Start Tor Browser” shortcuts will be added to the Start Menu and Desktop.
+
+
+
+
+
+
+
+ 
+macOS #
+
+
+
+
+	
+Double-click the file you just downloaded, for us it was "tor-browser-macos-14.0.4.dmg"
+
+	
+macOS will now verify that the application hasn’t been tampered with. You may need to go to System Settings > Security & Privacy to approve the download of a third-party application. Since you know this software is legitimate and the download was from the Tor Project's secure HTTPS site, click “Allow.”
+
+	
+Next a window will open asking you to install Tor Browser by dragging it to your "Applications" folder. Do so, and the Tor Browser is now installed in your "Applications" folder.
+
+
+
+
+
+
+
+ 
+Linux #
+
+
+
+
+	
+Double-click on the file you just downloaded. For us it was, “tor-browser-linux-x86_64-14.0.4.tar.xz”
+
+	
+Click the “Extract” button and choose where you want to extract its contents.
+
+	
+After the extraction is complete, open the “tor-browser” folder. Then right-click the file “start-tor-browser.desktop” and go to “Properties.” Go to the “Permissions” tab and view the “Execute” property. Check the box next to this property. Go back to the file and double-click it. Proceed to run the program if asked what to do.​​
+
+
+
+
+If the file does not run, you may have to take additional steps, refer to Tor’s official installation guide for troubleshooting steps.
+
+
+
+
+
+
+ 
+Using Tor Browser #
+
+
+
+
+The first time Tor Browser starts, you'll get a window that allows you to modify some settings. You might have to come back and change some configuration settings later, but for now, go ahead and connect to the Tor network by clicking the “Connect” button.​​
+
+
+
+
+
+
+
+After connecting, you’ll see a search bar with the option to “Onionize.” Clicking this option will route your search traffic through the .onion version of DuckDuckGo instead of the standard one. It’s more private, but takes longer to load.
+
+
+
+
+
+
+
+At this point, you should be ready to browse the internet. But if Tor is blocked for you, the Connection Assist feature will pop up to help you choose a “bridge” using your location.
+
+
+
+
+
+
+
+Tor’s Connection Assistant should automatically choose a compatible bridge, but if Tor is not working for you or you're in a country where the Tor network is blocked, you can try connecting to a bridge manually.
+
+
+
+	
+Click the three line icon in the top right corner of the browser window, then Settings.
+
+	
+Click Connection.
+
+	
+Scroll down to “Select a built-in-bridge…” and click it.
+
+
+
+
+You’ll see three options:
+
+
+
+	
+
+Obfs4: This cloaks your traffic and gets around some Tor blocking , but it works best if you're in a country where Tor isn't blocked.
+
+	
+
+Snowflake: Snowflake makes your internet activity appear as though you're using the internet for a regular video or voice call.
+
+	
+
+Meek-azure: This makes it look like you are browsing a Microsoft website instead of using Tor. This option is incredibly slow, but if obfs4 and snowflake do not work, give it a shot.
+
+
+
+
+If one of the built-in bridges doesn’t work, you can also try manually entering a bridge address. Head over to Tor’s official Bridges page for more information.
+
+
+
+
+
+
+
+The Tor Browser's default security level will block many known privacy and security issues found in other web browsers. For example, it uses an HTTPS-only mode and NoScript by default. You can also crank up the security further if needed.
+
+
+
+Click the shield icon in the top right corner, then click "Settings," and you're taken to the "Privacy & Security" settings. Changing Tor's "Security Level" to its "Safest" setting disables a variety of website features that can potentially be used against you. This will make you safer from well-funded attackers who can interfere with your internet connection or use new unknown bugs in these features. Unfortunately, the "Safest" setting can make some websites unusable. The default "Standard" setting is fine for everyday privacy protection, but you can set it to "Safest" if you are worried about sophisticated attackers or if you don't mind if some websites do not display correctly. You can get more information about each security level here.
+
+
+
+
+
+
+
+Tor anonymizes your web browsing traffic by sending it through randomly select “nodes” around the world, all of which form together as a circuit. You can always verify this by clicking the “circuit” button in the URL bar next to the lock icon to see the nodes you’re connected to and request new ones. It’s technically possible that Tor exit nodes may be monitored. But that still doesn't reveal your traffic, it’s more of a concern for whoever is running the exit node.
+
+
+
+
+
+
+
+Finally, browsing with Tor is different in some ways from the normal browsing experience. We recommend reading these tips for properly browsing with the Tor Browser and retaining your anonymity.

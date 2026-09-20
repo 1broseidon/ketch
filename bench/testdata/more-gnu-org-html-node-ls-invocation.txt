@@ -1,0 +1,84 @@
+10.1 ls: List directory contents
+
+
+
+
+
+
+The ls program lists information about files (of any type,
+including directories).  Options and file arguments can be intermixed
+arbitrarily, as usual.  Later options override earlier options that
+are incompatible.
+
+
+
+For non-option command-line arguments that are directories, by default
+ls lists the contents of directories, not recursively, and
+omitting files with names beginning with ‘.’.  For other non-option
+arguments, by default ls lists just the file name.  If no
+non-option argument is specified, ls operates on the current
+directory, acting as if it had been invoked with a single argument of ‘.’.
+
+
+
+
+By default, ls lists each directory’s contents alphabetically,
+according to the locale
+settings in effect.3
+If standard output is
+a terminal, the output is in columns (sorted vertically) and control
+characters are output as question marks; otherwise, the output is listed
+one per line and control characters are output as-is.
+
+
+
+Because ls is such a fundamental program, it has accumulated many
+options over the years.  They are described in the subsections below;
+within each section, options are listed alphabetically (ignoring case).
+The division of options into the subsections is not absolute, since some
+options affect more than one aspect of ls’s operation.
+
+
+
+
+Exit status:
+
+
+
+
+
+0 success
+1 minor problems  (e.g., failure to access a file or directory not
+  specified as a command line argument.  This happens when listing a
+  directory in which entries are actively being removed or renamed.)
+2 serious trouble (e.g., memory exhausted, invalid option, failure
+  to access a file or directory specified as a command line argument
+  or a directory loop)
+
+
+
+
+
+Also see Common options.
+
+
+
+
+
+
+Which files are listed
+
+
+What information is listed
+
+
+Sorting the output
+
+
+General output formatting
+
+
+Formatting file timestamps
+
+
+Formatting the file names

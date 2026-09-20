@@ -36,6 +36,7 @@ doctor/                      Health checks: concurrent read-only probes per back
 cache/                       TTL page cache (Store interface, BBoltStore backend); tags.go adds the durable tag index in its own bbolt bucket — entries outlive the page bodies they point at, so `cache clear` reclaims disk and keeps the map
 httpx/                       Shared tuned *http.Transport for all HTTP backends
 updatecheck/                 "new release available" probe + throttled stderr hint
+bench/                       Developer extraction benchmark: pinned 500-page, 70-site corpus, source assertions, CLI latency/stress runs and regression gates; not an installed ketch command
 site/                        VitePress documentation site (deployed to gh-pages)
 ```
 

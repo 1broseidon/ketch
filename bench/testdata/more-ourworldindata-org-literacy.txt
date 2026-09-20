@@ -1,0 +1,536 @@
+Literacy
+
+Being able to read and write opens up the world of education and knowledge.
+When and why did more people become literate? How can progress continue?
+
+By Max Roser and Esteban Ortiz-Ospina
+
+This article was first published in 2013. We made minor changes to the text in March 2024.
+
+
+
+Literacy is a key skill and a key measure of a population’s education. In this topic page, we discuss historical trends, as well as recent developments in literacy.
+
+From a historical perspective, literacy levels for the world population have risen drastically in the last couple of centuries. While only one in ten people in the world could read and write in 1820, today, the share has reversed, with only one in ten remaining illiterate.
+
+Despite large improvements in the expansion of basic education and the continuous reduction of education inequalities, there are substantial challenges ahead. The poorest countries in the world, where basic education is most likely to be a constraint for development, still have very large segments of the population who are illiterate.
+
+See all interactive charts on literacy ↓
+
+Related topics
+
+
+
+
+
+
+Global Education
+
+Education has expanded widely, but large gaps in learning quality still trap many children in poverty and inequality. Explore our writing and data on global education.
+
+
+
+
+Other research and writing on literacy on Our World in Data:
+
+Access to basic education: Almost 60 million children of primary school age are not in school
+
+Education spending
+
+How is literacy measured?
+
+Millions of children learn only very little. How can the world provide a better education to the next generation?
+
+Global literacy today
+
+Of the world population older than 15 years, the majority are literate. This interactive map shows how literacy rates vary around the world.
+
+In many countries, more than 95% have basic literacy skills. Literacy skills of the majority of the population are a modern achievement as we show below.
+
+Globally, however, large inequalities remain, notably between some sub-Saharan Africa and the rest of the world. In some countries in sub-Saharan Africa, fewer than 1-in-3 adults (aged over 15 years) are able to both read and write.
+
+
+
+
+
+
+
+Historical change in literacy
+
+Global literacy has grown substantially in the last two centuries
+
+While the earliest forms of written communication date back to about 3,500-3,000 BCE, for centuries literacy remained a very restricted technology closely associated with the exercise of power. It was only during the Middle Ages that book production started growing, and literacy among the general population slowly started becoming important in the Western World.1
+
+While the ambition of universal literacy in Europe was a fundamental reform born from the Enlightenment, it took centuries for it to happen. It was only in the 19th and 20th centuries that rates of literacy approached universality in early-industrialized countries.
+
+The following visualization presents estimates of world literacy from the early nineteenth century until the current day. As we can see, literacy rates grew constantly but rather slowly until the beginning of the twentieth century. The rate of growth really climbed after the middle of the 20th century, when the expansion of basic education became a global priority. You can read more about the expansion of education systems around the world on our topic page on Financing Education.
+
+
+
+
+
+
+
+When did literacy start increasing in Europe?
+
+The following visualization shows the spread of literacy in Europe since the 15th century, based on estimates from Buringh and Van Zanden (2009).2
+
+As can be seen, the rising levels of education in Europe foreshadowed the emergence of modern societies.
+
+Particularly fast improvements in literacy took place across Northwest Europe in the period 1600-1800. As we discuss below, widespread literacy is considered a legacy of the Age of Enlightenment.
+
+
+
+
+
+
+
+The ambition of universal literacy in Europe was a reform born of the Enlightenment
+
+The next chart shows historical estimates of literacy in England over the last five centuries.
+
+The historical estimates are based on the percentage of men and women who could sign documents, a very basic definition of literacy that is often used in historical research on education.3
+
+The first observations refer to men and women in the diocese of Norwich, which lies to the Northeast of London. Here, the majority of men (61%) were unable to write their names in the late 16th century; for women, it was much lower.
+
+By 1840, two-thirds of men and about half of women were literate in England. The expansion of education led to a reduction in education gender inequality. Towards the end of the 19th century, the share had increased to almost three-quarters for both genders.
+
+As the center of the Industrial Revolution and one of the first countries that established democratic institutions, England was, in important aspects, the center of the development of modernity.
+
+The data shows that improvements in literacy preceded the Industrial Revolution, and in many ways, the rise of living standards became only possible thanks to an increasingly better-educated public. Economic growth is possible when we better understand how to produce the things we need and translate these insights into technological improvements that allow us to produce them more efficiently. Both the development of new technologies (innovation) and their use in production relied on a much better-educated population.
+
+Widespread school education and even basic skills like literacy are very recent achievements that were enabled and, at the same time, required by the progress achieved in recent generations.
+
+
+
+
+
+In the US, the expansion of literacy helped reduce within-country inequalities
+
+The expansion of literacy in early-industrialized countries helped reduce within-country inequalities. In the preceding visualization, we showed that England virtually closed literacy gender gaps by 1900. Here, we provide evidence of literacy gaps across races in the US.
+
+The following visualization shows illiteracy rates by race for the period 1870-1979. As we can see, in order to reach near-universal levels of literacy, the US had to close the race gap. This was eventually achieved around 1980.
+
+
+
+
+Percentage of persons 14 years old and over in the US who were illiterate by race, 1870-1979 – Our World in Data, with data from NCES4
+Literacy and access to education have increased around the world
+
+The next visualization shows, in two panels, a side-by-side comparison of long-term trends in school attendance and literacy.
+
+We can see that in 1870, only one in four people in the world attended school, and this meant that only one in five were able to read. Global inequalities in access to education were very large.
+
+Today, in contrast, the global estimates of literacy and school attendance are above 80%, and the inequality between world regions – while still existing – is much lower.
+
+We can see that two centuries ago, only a small elite of the world population had the ability to read and write – the best estimate is that 12% of the world population was literate. Over the course of the 19th century, global literacy more than doubled. And over the course of the 20th century the world achieved rapid progress in education. More than 4 out of 5 people are now able to read. Younger generations are better educated than ever before.
+
+
+
+
+
+Latin America has made huge improvements in literacy in the last century
+
+As pointed out above, Europe pioneered the expansion of basic education – but global literacy rates only started really climbing in the second half of the 20th century, when the expansion of basic education became a global priority. Here, we present evidence of important recent achievements in Latin America, where literacy has dramatically increased in the past century.
+
+As can be seen, many nations have gained 40-50 percentage points in literacy during this period.
+
+Despite these improvements, however, there is still a wide disparity between nations. Here, you can see that, at the turn of the 21st century, half of the population in poor countries such as Haiti remains illiterate. This motivates the next visualization, where we discuss cross-country heterogeneity in more detail.
+
+
+
+
+
+
+
+Literacy around the world today
+
+Literacy by generation
+
+To assess the extent to which progress can be expected in the years to come, it is convenient to break down literacy estimates by age groups. The following map, using data from UNESCO, shows such estimates for most countries in the world.
+
+As can be seen, in the majority of nations, there is a large difference in literacy rates across generations.
+
+These large differences across generations point to a global trend: the high literacy rate among the youth indicates that as time passes, the literacy rate for the overall population will continue to increase.
+
+
+
+
+World maps of the literacy rate by age group5
+Northern Africa and the Middle East have drastically improved literacy in just one generation
+
+We highlighted above the fact that most low and middle-income countries feature large differences in literacy rates across generations. The visualization shows specifically how remarkably large these differences are in Northern Africa and the Middle East. Using UNESCO data, these maps show that in many countries in these regions, only less than a third of the older generation is literate – while in contrast, more than 90% of the younger generation is literate.
+
+
+
+
+
+The scatter plot emphasizes the point already made. As you can see, younger generations are more likely to be literate than older generations around the world. In some countries, the gaps are dramatic. For example, countries in the bottom right of the chart where the youth literacy rate may be over 90% but the elderly literacy rate is below 40%.
+
+In the chart you can use the slider at the bottom to check how these generational gaps have changed in recent decades. You can see that throughout Africa, the changes have been mainly horizontal (i.e., gaps have been widening as there have been radical recent improvements specifically benefiting the younger population). This is in contrast to richer regions, such as Europe, where the expansion of education started earlier, and as a consequence, changes have been mainly vertical.
+
+
+
+
+
+
+
+Literacy rates by sex
+
+The visualization shows the literacy for rates for young men and women. In countries above the diagonal dashed line, literacy rates are higher for young men than for young women; this is the case for many poorer countries.
+
+This chart shows the literacy rate by sex over time.
+
+This visualization shows the ratio of the literacy rate between young women and men around the world.
+
+
+
+
+
+
+
+Numeracy
+
+Numeracy skills over the long run
+
+Numeracy is the ability to understand and work with numbers. The visualization shows how this ability became more common in populations around the world based on a very basic definition of numeracy, the ability to state one's own age correctly.
+
+
+
+
+
+
+
+
+
+
+Subscribe to our newsletters
+
+
+We send two regular newsletters so you can stay up to date on our work and receive curated highlights from across Our World in Data.
+
+Subscribe
+
+Definitions & Measurement
+
+Measurement today
+
+Common methods and data sources
+
+In the chart, we present a breakdown of UNESCO literacy estimates, showing the main methodologies used and how these have changed over time. (To explore changes across time, use the slider underneath the map.)
+
+The breakdown covers four categories: self-reported literacy declared directly by individuals, self-reported literacy declared by the head of the household, tested literacy from proficiency examinations, and indirect estimation or extrapolation.
+
+In most cases, the categories covering 'self-reports' correspond to estimates of literacy that rely on answers provided to a simple yes/no question asking people if they can read and write.
+
+The category 'indirect estimates ' corresponds mainly to estimates that rely on indirect evidence from educational attainment, usually based on the highest degree of completed education.
+
+In this table, you will find details regarding all literacy definitions and sources, country by country, and how we categorized them for the purpose of this chart.
+
+This chart tells us that:
+
+There is substantial cross-country variation, with recent estimates covering all four measurement methods.
+
+There is variation within countries across time (e.g., Mexico switches between self-reports and extrapolation).
+
+
+
+
+
+
+
+Another way to dissect the same data is to classify literacy estimates according to the type of measurement instrument used to collect the relevant data. In the next chart, we explore this, splitting estimates into three categories: sampling, including data from literacy tests, and household surveys; census data; and other instruments (e.g., administrative data on school enrollment).
+
+Here, we can see that most countries use sampling instruments (coded as 'Survey' on the map), although in the past census data was more common. Literacy surveys have the potential of being more accurate – when the sampling is done correctly – because they allow for more specific and detailed measurement than short and generic questions in population censuses.
+
+
+
+
+
+
+
+Data quality: Challenges and limitations
+
+As mentioned above, recent data on literacy is often based on a single question included in national population censuses, or household surveys presented to respondents above a certain age, where literacy skills are self-reported. The question is often phrased as "Can you read and write?". These self-reports of literacy skills have several limitations:
+
+Simple questions such as "Can you read and write?" frame literacy as a skill you either possess or do not when, in reality, literacy is a multi-dimensional skill that exists on a continuum.
+
+Self-reports are subjective in that the question depends on what each individual understands by "reading" and "writing". The form of a word may be familiar enough for a respondent to recall its sound or meaning without actually ‘reading’ it. Similarly, when writing out one’s name to convey written ability, this can be accomplished by ‘drawing’ a familiar shape rather than writing in an effort to produce a written text with meaning.
+
+In many cases, surveys ask only one individual to report literacy on behalf of the entire household. This indirect reporting potentially introduces further noise, in particular when it comes to estimating literacy among women and children since these groups are less often considered 'heads of household' in the surveys.
+
+Similarly, inferring literacy from data on educational attainment is also problematic since schooling does not produce literacy in the same way everywhere: Proficiency tests show that in many low-income countries, a large fraction of second-grade primary school students cannot read a single word of a short text, and for very few people in these countries going to school for four or five years guarantees basic literacy.
+
+Even at a conceptual level, there is a lack of consensus – national definitions of literacy that are based on educational attainment vary substantially from country to country. For example, in Greece, people are considered literate if they have finished six years of primary education, while in Paraguay, you qualify as literate if you have completed two years of primary school.6
+
+Reconstructing estimates from the past
+
+Trends over time
+
+The correlation between educational attainment and literacy holds across countries and over time. The next chart shows this by plotting changes in literacy rates and average years of schooling.
+
+Each country in this chart is represented by a line, where the beginning and end points correspond to the first and last available observation of these two variables over the period of available data, which varies from country to country. Before 1990, almost all observations correspond to census data.
+
+As we can see by the arrows pointing to the top-right corner, literacy rates tend to be much higher in countries where people tend to have more years of education. As average years of education go up in a country, literacy rates also increase.
+
+
+
+
+
+
+
+Countries with high literacy rates also tend to have higher results in the basic literacy test included in the DHS surveys (this test requires survey respondents to read a sentence shown to them). As we can see in the chart, but these two variables are closely related.
+
+
+
+
+
+
+
+Other historical sources
+
+Other historical sources used to estimate literacy is to calculate the share of people who could sign official documents (e.g., court documents, marriage certificates, etc.).7
+
+As the researcher Jeremiah Dittmar explains, this approach only gives a lower bound of the estimates because the number of people who could read was higher than the number who could write.
+
+Indeed, other methods have been proposed in order to rely on historical estimates of people who could read. For example, researchers Eltjo Buringh and Jan Luiten van Zanden deduce literacy rates from estimated per capita book consumption. 8 As Buringh and Van Zanden show, their estimates based on book consumption are different but still fairly close to alternative estimates based on signed documents.
+
+
+Key charts on literacy
+See all charts on this topic
+
+
+
+Data instruments used to estimate literacy
+
+Literacy levels among young people, adjusted gender parity index
+
+Literacy rate
+
+Literacy rate vs. GDP per capita
+
+Literacy rate vs. average years of schooling
+
+Methodologies used for measuring literacy
+
+
+
+
+
+
+
+
+Chart 1 of 6
+
+
+
+
+
+
+
+Featured data on literacy
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Endnotes
+
+
+An overview of the academic literature on the historical origins and spread of literacy can be found in Easton, P. (2014). Sustaining Literacy in Africa: Developing a Literate Environment. United Nations Educational, Scientific and Cultural Organization. Paris, France.
+
+
+
+Buringh, E., & Van Zanden, J. L. (2009). Charting the “Rise of the West”: Manuscripts and Printed Books in Europe, A long-term perspective from the sixth through eighteenth centuries. The Journal of Economic History, 69(02), 409-445.
+
+
+
+The graph is based on Clark (2008), who, in turn, relies on the sources indicated in the chart. Gregory Clark (2008). A farewell to alms: a brief economic history of the world. Princeton University Press.
+
+
+
+National Center for Education Statistics. From the original source, we have excluded some years to have equal time differences on the x-axis (and interpolated the values for 1950), but the data is shown at the linked source.
+
+
+
+The data is taken from the UNESCO statistics. The data refers to both genders and to the latest available data in the time between 2000 and 2012.
+
+
+
+You will find more details about this in Chapter 6 of the Education for All Global Monitoring Report (2006).
+
+
+
+Since estimates of signed documents tend to rely on small samples (e.g., parish documents from specific towns), researchers often rely on additional assumptions to extrapolate estimates to the national level. For example, Bob Allen provides estimates of the evolution of literacy in Europe between 1500 and 1800 using data on urbanization rates. For more details, see Allen, R. C. (2003). Progress and poverty in early modern Europe. The Economic History Review, 56(3), 403-443.
+
+
+
+They use a demand equation that links book consumption to a number of factors, including literacy and book prices. For more details, see Buringh, E. and Van Zanden, J.L., 2009. Charting the “Rise of the West”: Manuscripts and Printed Books in Europe, a long-term Perspective from the Sixth through Eighteenth Centuries. The Journal of Economic History, 69(2), pp.409-445.
+
+
+
+
+
+
+Cite this work
+
+Our articles and data visualizations rely on work from many different people and organizations. When citing this topic page, please also cite the underlying data sources. This topic page can be cited as:
+
+
+
+Max Roser and Esteban Ortiz-Ospina (2018) - “Literacy” Published online at OurWorldinData.org. Retrieved from: 'https://ourworldindata.org/literacy' [Online Resource]
+
+
+
+BibTeX citation
+
+
+
+@article{owid-literacy,
+    author = {Max Roser and Esteban Ortiz-Ospina},
+    title = {Literacy},
+    journal = {Our World in Data},
+    year = {2018},
+    note = {https://ourworldindata.org/literacy}
+}
+
+
+
+
+
+
+
+Reuse this work freely
+
+All visualizations, data, and articles produced by Our World in Data are completely open access under the Creative Commons BY license. You have the permission to use, distribute, and reproduce these in any medium, provided the source and authors are credited.
+
+The data produced by third parties and made available by Our World in Data is subject to the license terms from the original third-party authors. We will always indicate the original source of the data in our documentation, so you should always check the license of any such third-party data before use and redistribution.
+
+All of our charts can be embedded in any site.

@@ -1,0 +1,118 @@
+{
+  "default": {
+    "command": [
+      "/tmp/ketch-bench500/bench",
+      "run",
+      "-binary",
+      "/tmp/ketch-bench500/ketch-current",
+      "-out",
+      "bench/.runs/default500-corrected"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 148.58594588798587,
+    "max_process_rss_kib": 147292,
+    "sampled_tree_peak_rss_kib": 170396,
+    "sampling_interval_ms": 20,
+    "samples": 6912,
+    "max_observed_processes": 2,
+    "completed_at": "2026-09-19T16:39:46.954003+00:00",
+    "notes": "Linux /proc sampling of harness and descendant processes; task-tree RSS sums count shared pages more than once and can miss between-sample peaks. max_process_rss_kib is OS maximum individual process RSS, not aggregate concurrent memory. Elapsed includes corpus loading/source validation; report wall_seconds also includes on-demand fixture reads but excludes initial validation/build."
+  },
+  "before": {
+    "command": [
+      "/tmp/ketch-bench500/bench",
+      "run",
+      "-binary",
+      "/tmp/ketch-extraction-audit/ketch-before",
+      "-iterations",
+      "1",
+      "-warmup",
+      "0",
+      "-workers",
+      "4",
+      "-out",
+      "bench/.runs/before500-corrected"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 16.861420868022833,
+    "max_process_rss_kib": 146844,
+    "sampled_tree_peak_rss_kib": 318248,
+    "sampling_interval_ms": 20,
+    "samples": 783,
+    "max_observed_processes": 5,
+    "completed_at": "2026-09-19T16:40:08.594389+00:00",
+    "notes": "Linux /proc sampling of harness and descendant processes; task-tree RSS sums count shared pages more than once and can miss between-sample peaks. max_process_rss_kib is OS maximum individual process RSS, not aggregate concurrent memory. Elapsed includes corpus loading/source validation; report wall_seconds also includes on-demand fixture reads but excludes initial validation/build."
+  },
+  "selector": {
+    "command": [
+      "/tmp/ketch-bench500/bench",
+      "run",
+      "-binary",
+      "/tmp/ketch-bench500/ketch-current",
+      "-mode",
+      "selector",
+      "-iterations",
+      "1",
+      "-warmup",
+      "0",
+      "-workers",
+      "4",
+      "-out",
+      "bench/.runs/selector500-corrected"
+    ],
+    "exit_code": 1,
+    "elapsed_seconds": 16.05712605000008,
+    "max_process_rss_kib": 143472,
+    "sampled_tree_peak_rss_kib": 321092,
+    "sampling_interval_ms": 20,
+    "samples": 750,
+    "max_observed_processes": 5,
+    "completed_at": "2026-09-19T16:42:26.754466+00:00",
+    "notes": "Linux /proc sampling of harness and descendant processes; task-tree RSS sums count shared pages more than once and can miss between-sample peaks. max_process_rss_kib is OS maximum individual process RSS, not aggregate concurrent memory. Elapsed includes corpus loading/source validation; report wall_seconds also includes on-demand fixture reads but excludes initial validation/build."
+  },
+  "stress": {
+    "command": [
+      "/tmp/ketch-bench500/bench",
+      "run",
+      "-binary",
+      "/tmp/ketch-bench500/ketch-current",
+      "-iterations",
+      "3",
+      "-warmup",
+      "0",
+      "-workers",
+      "4",
+      "-strict",
+      "-out",
+      "bench/.runs/stress500"
+    ],
+    "exit_code": 1,
+    "elapsed_seconds": 26.111404895986198,
+    "max_process_rss_kib": 143224,
+    "sampled_tree_peak_rss_kib": 328332,
+    "sampling_interval_ms": 20,
+    "samples": 1175,
+    "max_observed_processes": 5,
+    "completed_at": "2026-09-19T16:43:08.783228+00:00",
+    "notes": "Linux /proc sampling of harness and descendant processes; task-tree RSS sums count shared pages more than once and can miss between-sample peaks. max_process_rss_kib is OS maximum individual process RSS, not aggregate concurrent memory. Elapsed includes corpus loading/source validation; report wall_seconds also includes on-demand fixture reads but excludes initial validation/build."
+  },
+  "check": {
+    "command": [
+      "/tmp/ketch-bench500/bench",
+      "check",
+      "-binary",
+      "/tmp/ketch-bench500/ketch-current",
+      "-out",
+      "bench/.runs/check500"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 148.55972460500197,
+    "max_process_rss_kib": 144888,
+    "sampled_tree_peak_rss_kib": 174376,
+    "sampling_interval_ms": 20,
+    "samples": 6915,
+    "max_observed_processes": 2,
+    "completed_at": "2026-09-19T16:45:47.623813+00:00",
+    "notes": "Linux /proc sampling of harness and descendant processes; task-tree RSS sums count shared pages more than once and can miss between-sample peaks. max_process_rss_kib is OS maximum individual process RSS, not aggregate concurrent memory. Elapsed includes corpus loading/source validation; report wall_seconds also includes on-demand fixture reads but excludes initial validation/build."
+  }
+}

@@ -1,0 +1,264 @@
+< Basics
+    
+
+
+  
+Your Security Plan
+
+
+    
+Last Reviewed: October 27, 2023
+
+
+
+
+
+  
+
+
+Trying to protect all your data  from everything all the time is impractical and exhausting. But, have no fear! Security is a process, and through thoughtful planning, you can put together a plan that’s best for you. Security isn’t just about the tools you use or the software you download. It begins with understanding the unique threats you face and how you can counter those threats.
+
+
+
+In computer security, a threat  is a potential event that could undermine your efforts to defend your data. You can counter the threats you face by determining what you need to protect and from whom you need to protect it. This is the process of security planning, often referred to as “threat modeling .”
+
+
+
+This guide will share how to make a security plan for your digital information and how to determine what solutions are best for you.
+
+
+
+What does a security plan look like? Let’s say you want to keep your house and possessions safe. Here are a few questions you might ask, using some keywords like “assets ” and “adversaries” that will come up again later:
+
+
+
+What do I have inside my home that is worth protecting?
+
+
+
+	
+Assets could include: jewelry, electronics, financial documents, passports, or photos
+
+
+
+
+Who do I want to protect it from?
+
+
+
+	
+Adversaries could include: burglars, roommates, or guests
+
+
+
+
+How likely is it that I will need to protect it?
+
+
+
+	
+
+	
+Does my neighborhood have a history of burglaries? How trustworthy are my roommates/guests? What are the capabilities of my adversaries? What are the risks I should consider?
+
+	
+
+
+
+
+How bad are the consequences if I fail?
+
+
+
+	
+
+	
+Do I have anything in my house that I cannot replace? Do I have the time or money to replace these things? Do I have insurance that covers goods stolen from my home? Are there other people in my life whose security will be compromised if these threats occur?
+
+	
+
+
+
+
+How much trouble am I willing to go through to prevent these consequences?
+
+
+
+	
+
+	
+Am I willing to buy a safe for sensitive documents? Can I afford to buy a high-quality lock? Do I have time to open a security box at my local bank and keep my valuables there?
+
+	
+
+
+
+
+Who are my allies?
+
+
+
+	
+
+	
+Are there people I live with that could help protect the things I care about? Are there neighbors who might know more about where we live and the resources we have access to?
+
+	
+
+
+
+
+Once you have asked yourself these questions, you are in a position to assess what measures to take. If your possessions are valuable, but the probability of a break-in is low, then you may not want to invest too much money in a lock. But, if the probability of a break-in is high, you’ll want to get the best lock on the market, and consider adding a security system.
+
+
+
+You may already begin to sense that there is no definitive answer to these questions. Rather, you have to make judgments based on what you value and the likelihood that some threat could come to pass. That is the essence of this exercise; making educated decisions based on measuring severity of impact of threats, likelihood of them occurring, and prioritizing what things you want to protect.
+
+
+ 
+How do I make my own security plan? Where do I start? #
+
+
+
+
+When building a security plan answer these six questions:
+
+
+
+	
+What do I want to protect?
+
+	
+Who do I want to protect it from?
+
+	
+How bad are the consequences if I fail?
+
+	
+How likely is it that I will need to protect it?
+
+	
+How much trouble am I willing to go through to try to prevent potential consequences?
+
+	
+Who are my allies?
+
+
+
+
+Let’s take a closer look at each of these questions.
+
+
+ 
+What do I want to protect? #
+
+
+
+
+An “asset” is something you value and want to protect. In the context of digital security, an asset is usually some kind of information. For example it could be your emails, contact lists, direct messages, location, or other documents. Your devices themselves may also be assets.
+
+
+
+Make a list of your assets: data that you keep, where it’s kept, who has access to it, and what stops others from accessing it.
+
+
+ 
+Who do I want to protect it from? #
+
+
+
+
+To answer this question, it’s important to identify who might want to target you or your information. A person or entity that poses a threat to your assets is an “adversary .” Examples of potential adversaries are your boss, law enforcement, your former partner, your business competition, your government, or a hacker on a public network. It could even include people you would otherwise trust who might accidentally compromise your assets by being careless with their own security plans.
+
+
+
+Make a list of potential or known adversaries, or those who might want to get ahold of your assets. Your list may include individuals, a government agency, or corporations. Depending on who your adversaries are, under some circumstances this list might be something you want to destroy after you’re done security planning.
+
+
+ 
+How bad are the consequences if I fail? #
+
+
+
+
+There are many ways an adversary could gain access to your data. For example, an adversary could get you to click on a malicious link sent to your email address that compromises your computer. Or more simply, it could be someone screenshotting your private DM’s and using that information against you.
+
+
+
+The motives of adversaries differ widely, as do their tactics. Some might be highly technically sophisticated, while others are more like scams made to gain your trust and ultimately betray it.
+
+
+
+Security planning involves understanding how bad the consequences could be if an adversary successfully gains access to one of your assets. To determine this, you should consider the capability  of your adversary. For example, your mobile phone provider has access to all your phone records. Your government might have stronger capabilities.
+
+
+
+Write down what your adversary might want to do with your private data.
+
+
+ 
+How likely is it that I will need to protect it? #
+
+
+
+
+Risk  is the likelihood that a particular threat against a particular asset will actually occur. It goes hand-in-hand with capability. For example, while your mobile phone provider has the capability to access all of your data, the risk of them posting your private data online to harm your reputation is low.
+
+
+
+It is important to distinguish between what might happen and the probability it may happen. For instance, there is a threat that your building might collapse, but the risk of this happening is far greater in San Francisco (where earthquakes are common) than in Stockholm (where they are not).
+
+
+
+Assessing risks is both a personal and a subjective process. Many people find certain threats unacceptable no matter the likelihood they will occur because the mere presence of the threat at any likelihood is not worth the cost. In other cases, people disregard high risks because they don’t view the threat as a problem.
+
+
+
+Write down which threats you are going to take seriously, and which may be too rare or too harmless (or too difficult to combat) to worry about.
+
+
+ 
+How much trouble am I willing to go through to try to prevent potential consequences? #
+
+
+
+
+There is no perfect option for security. Not everyone has the same priorities, concerns, or access to resources. Your risk assessment will allow you to plan the right strategy for you, balancing convenience, cost, and privacy.
+
+
+
+For example, an attorney representing a client in a national security case may be willing to go to greater lengths to protect communications about that case, such as using encrypted email, than a family member who regularly emails funny cat videos.
+
+
+
+Write down what options you have available to you to help mitigate your unique threats. Note if you have any financial constraints, technical constraints, or social constraints.
+
+
+ 
+Who are my allies? #
+
+
+
+
+As we’ve indicated several times throughout this guide—digital privacy and security is a team sport that’s best applied with the help of others. This is not just because there is power in numbers, but because your privacy and security overlap with others in your life. If a threat affects you, it could also affect them, and vice versa.
+
+
+
+Consider who you extend that trust to. For example, consider if someone may be an "insider threat," a person in your trusted network who could betray your security in one way or another. But don’t let the fear of an insider threat discourage you from making connections with others. Rather, use it as a guide to urge you to plan carefully and make sure others in your circles are taking their security seriously as well.
+
+
+
+Open up a dialogue with others who likely share the same concerns you do. Come to some shared agreements about how to care for each other, and what information to trust each other with. 
+
+
+ 
+Security planning as a regular practice #
+
+
+
+
+Keep in mind your security plan can change as your situation changes. Thus, revisiting your security plan frequently is good practice.
+
+
+
+Create your own security plan based on your own unique situation. Then mark your calendar for a date in the future. This will prompt you to review your plan and check back in to determine whether it’s still relevant to your situation.

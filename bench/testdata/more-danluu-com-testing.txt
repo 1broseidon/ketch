@@ -1,0 +1,246 @@
+I've been reading a lot about software testing, lately. Coming from a hardware background (CPUs and hardware accelerators), it's interesting how different software testing is. Bugs in software are much easier to fix, so it makes sense to spend a lot less effort spent on testing. Because less effort is spent on testing, methodologies differ; software testing is biased away from methods with high fixed costs, towards methods with high variable costs. But that doesn't explain all of the differences, or even most of the differences. Most of the differences come from a cultural path dependence, which shows how non-optimally test effort is allocated in both hardware and software.
+  
+I don't really know anything about software testing, but here are some notes from what I've seen at Google, on a few open source projects, and in a handful of papers and demos. Since I'm looking at software, I'm going to avoid talking about how hardware testing isn't optimal, but I find that interesting, too.
+ 
+Manual Test Generation
+ 
+From what I've seen, most test effort on most software projects comes from handwritten tests. On the hardware projects I know of, writing tests by hand consumed somewhere between 1% and 25% of the test effort and was responsible for a much smaller percentage of the actual bugs found. Manual testing is considered ok for sanity checking, and sometimes ok for really dirty corner cases, but it's not scalable and too inefficient to rely on.
+ 
+It's true that there's some software that's difficult to do automated testing on, but the software projects I've worked on have relied pretty much totally on manual testing despite being in areas that are among the easiest to test with automated testing. As far as I can tell, that's not because someone did a calculation of the tradeoffs and decided that manual testing was the way to go, it's because it didn't occur to people that there were alternatives to manual testing.
+ 
+At the hardware company I worked for, we called what programmers call tests, "hand tests" or "hand jobs" because they were written by hand (the latter isn't innuedo, it's becasue we launched tests into "jobs" in our job system). What people in the software world call "fuzzing", "property based testing", "randomized testing", etc., we just called testing because that was the default. How else would you test? Sure, you might have 1% of test writing time go to hand tests (whch would mean some tiny fraction of actual tests were written by hand, surely less than 0.00000001%), but no one would actually spend a signifiant amount of time writing tests by hand, would they?
+ 
+So, what do you do?
+ 
+Random Test Generation
+ 
+The good news is that random testing is easy to implement. You can spend an hour implementing a random test generator and find tens of bugs, or you can spend more time and find thousands of bugs.
+ 
+You can start with something that's almost totally random and generates incredibly dumb tests. As you spend more time on it, you can add constraints and generate smarter random tests that find more complex bugs. Some good examples of this are jsfunfuzz, which started out relatively simple and gained smarts as time went out, and Jepsen, which originally checked some relatively simple constraints and can now check linearizability.
+ 
+While you can generate random tests pretty easily, it still takes some time to write a powerful framework or collection of functions. Luckily, this space is well covered by existing frameworks.
+ 
+[2026 update: I'm writing this long after I originally wrote this post. Since writing this post, I've sat down with a few people and wrote a fuzzer with them. This has worked very well every time I've tried it and people carried this skill away with them and use it all the time after learning how to do it. The trick is, it's extremely easy to do and I wasn't really providing any knowledge at all, other than the fact that it can be done. If you take a piece of software and use any knowledge you have whatsoever to start sending randomized inputs to it, this tends to work pretty well.
+ 
+I'll also add that I'm less positive about frameworks, etc., than I used to be. I've tried a number of them out at this point and, while I see the advantages they have, the value add is much less than I would've expected back when I wrote this post and didn't have almost any software experience. There are a variety of reasons for this that are fairly long and should probably be their own post, but I think the two top ones are that almost every test framework I've tried is very slow compared to what I'd write by hand, so you lose a lot of actual test capability, and the other part is that I haven't found that the frameworks really save time on the most time consuming aspects of testing nor do I find that they're generally better at finding bugs once you account for the execution speed slowdown you get from using the framework.
+ 
+Looking back on this post, I consider it a fairly bad failure in that I have a 100% success rate a converting people to being quite good at testing by sitting down with them for an hour or less and the blog post had an epsilon success rate at doing the same thing. Due to the scale of readership a blog post gets, it surely helped more people learn how to test well than I've personally helped, but given how easy it is for me to do this in person, I definitely failed to convey the key insights in this post.]
+ 
+Random Test Generation, Framework
+ 
+Here's an example of how simple it is to write a JavaScript tests using Scott Feeney's gentest, taken from the gentest readme.
+ 
+You want to test something like
+ 
+function add(x, y) {
+  return x + y;
+}
+
+ 
+To check that addition commutes, so you'd write
+ 
+var t = gentest.types;
+
+forAll([t.int, t.int], 'addition is commutative', function(x, y) {
+  return add(x, y) === add(y, x);
+});
+
+ 
+Instead of checking the values by hand, or writing the code to generate the values, the framework handles that and generates tests for after you when you specify the constraints. QuickCheck-like generative test frameworks tend to be simple enough that they're no harder to learn how to use than any other unit test or mocking framework.
+ 
+You'll sometimes hear objections about how random testing can only find shallow bugs because random tests are too dumb to find really complex bugs. For one thing, that assumes that you don't specify constraints that allow the random generator to generate intricate test cases. But even then, this paper analyzed production failures in distributed systems, looking for "critical" bugs, bugs that either took down the entire cluster or caused data corruption, and found that 58% could be caught with very simple tests. Turns out, generating “shallow” random tests is enough to catch most production bugs. And that's on projects that are unusually serious about testing and static analysis, projects that have much better test coverage than the average project.
+ 
+A specific examples of the effective of naive random testing this is the story John Hughes tells in this talk. It starts out when some people came to him with a problem.
+ 
+ 
+We know there is a lurking bug somewhere in the dets code. We have got 'bad object' and 'premature eof' every other month the last year. We have not been able to track the bug down since the dets files is repaired automatically next time it is opened.
+ 
+ 
+
+ 
+An application that ran on top of Mnesia, a distributed database, was somehow causing errors a layer below the database. There were some guesses as to the cause. Based on when they'd seen the failures, maybe something to do with rehashing something or other in files that are bigger than 1GB? But after more than a month of effort, no one was really sure what was going on.
+ 
+In less than a day, with QuickCheck, they found five bugs. After fixing those bugs, they never saw the problem again. Each of the five bugs was reproducible on a database with one record, with at most five function calls. It is very common for bugs that have complex real-world manifestations to be reproducible with really simple test cases, if you know where to look.
+ 
+In terms of developer time, using some kind of framework that generates random tests is a huge win over manually writing tests in a lot of circumstances, and it's so trivially easy to try out that there's basically no reason not to do it. The ROI of using more advanced techniques may or may not be worth the extra investment to learn how to implement and use them.
+ 
+While dumb random testing works really well in a lot of cases, it has limits. Not all bugs are shallow. I know of a hardware company that's very good at finding deep bugs by having people with years or decades of domain knowledge write custom test generators, which then run on N-thousand machines. That works pretty well, but it requires a lot of test effort, much more than makes sense for almost any software.
+ 
+The other option is to build more smarts into the program doing the test generation. There are a ridiculously large number of papers on how to do that, but very few of those papers have turned into practical, robust, software tools. The sort of simple coverage-based test generation used in AFL doesn't have that many papers on it, but it seems to be effective.
+ 
+Random Test Generation, Coverage Based
+ 
+If you're using an existing framework, coverage-based testing isn't much harder than using any other sort of random testing. In theory, at least. There are often a lot of knobs you can turn to adjust different settings, as well other complexity.
+ 
+If you're writing a framework, there are a lot of decisions. Chief among them are what coverage metric to use and how to use that coverage metric to drive test generation.
+ 
+For the first choice, which coverage metric, there are coverage metrics that are tractable, but too simplistic, like function coverage, or line coverage (a.k.a. basic block coverage). It's easy to track those, but it's also easy to get 100% coverage while missing very serious bugs. And then there are metrics that are great, but intractable, like state coverage or path coverage. Without some kind of magic to collapse equivalent paths or states together, it's impossible to track those for non-trivial programs.
+ 
+For now, let's assume we're not going to use magic, and use some kind of approximation instead. Coming up with good approximations that work in practice often takes a lot of trial and error. Luckily, Michal Zalewski has experimented with a wide variety of different strategies for AFL, a testing tool that instruments code with some coverage metrics that allow the tool to generate smart tests.
+ 
+AFL does the following. Each branch gets something like the following injected, which approximates tracking edges between basic blocks, i.e., which branches are taken and how many times:
+ 
+cur_location = <UNIQUE_COMPILE_TIME_RANDOM_CONSTANT>;
+shared_mem[prev_location ^ cur_location]++;
+prev_location = cur_location >> 1;
+
+ 
+shared_mem happens to be a 64kB array in AFL, but the size is arbitrary.
+ 
+The non-lossy version of this would be to have shared_mem be a map of (prev_location, cur_location) -> int, and increment that. That would track how often each edge (prev_location, cur_location) is taken in the basic block graph.
+ 
+Using a fixed sized array and xor'ing prev_location and cur_location provides lossy compression. To keep from getting too much noise out of trivial changes, for example, running a loop 1200 times vs. 1201 times, AFL only considers a bucket to have changed when it crosses one of the following boundaries: 1, 2, 3, 4, 8, 16, 32, or 128. That's one of the two things that AFL tracks to determine coverage.
+ 
+The other is a global set of all (prev_location, cur_location) tuples, which makes it easy to quickly determine if a tuple/transition is new.
+ 
+Roughly speaking, AFL keeps a queue of “interesting” test cases it's found and generates mutations of things in the queue to test. If something changes the coverage stat, it gets added to the queue. There's also some logic to avoid adding test cases that are too slow, and to remove test cases that are relatively uninteresting.
+ 
+AFL is about 13k lines of code, so there's clearly a lot more to it than that, but, conceptually, it's pretty simple. Zalewksi explains why he's kept AFL so simple here. His comments are short enough that they're worth reading in their entirety if you're at all interested, but I'll excerpt a few bits anyway.
+ 
+ 
+In the past six years or so, I've also seen a fair number of academic papers that dealt with smart fuzzing (focusing chiefly on symbolic execution) and a couple papers that discussed proof-of-concept application of genetic algorithms. I'm unconvinced how practical most of these experiments were … Effortlessly getting comparable results [from AFL] with state-of-the-art symbolic execution in equally complex software still seems fairly unlikely, and hasn't been demonstrated in practice so far.
+ 
+ 
+Test Generation, Other Smarts
+ 
+While Zalewski is right that it's hard to write a robust and generalizable tool that uses more intelligence, it's possible to get a lot of mileage out of domain specific tools. For example, BloomUnit, a test framework for distributed systems, helps you test non-deterministic systems by generating a subset of valid orderings, which uses a SAT solver to avoid generating equivalent re-orderings. The authors don't provide benchmark results the same way Zalewksi does with AFL, but even without benchmarks it's at least plausible that a SAT solver can be productively applied to test case generation. If nothing else, distributed system tests are often slow enough that you can do a lot of work without severely impacting test throughput.
+ 
+Zalewski says “If your instrumentation makes it 10x more likely to find a bug, but runs 100x slower, your users [are] getting a bad deal.“, which is a great point -- gains in test smartness have to be balanced against losses in test throughput, but if you're testing with something like Jepsen, where your program under test actually runs on multiple machines that have to communicate with each other, the test is going to be slow enough that you can spend a lot of computation generating smarter tests before getting a 10x or 100x slowdown.
+ 
+This same effect makes it difficult to port smart hardware test frameworks to software. It's not unusual for a “short” hardware test to take minutes, and for a long test to take hours or days. As a result, spending a massive amount of computation to generate more efficient tests is worth it, but naively porting a smart hardware test framework1 to software is a recipe for overly clever inefficiency.
+ 
+Why Not Coverage-Based Unit Testing?
+ 
+QuickCheck and the tens or hundreds of QuickCheck clones are pretty effective for random unit testing, and AFL is really amazing at coverage-based pseudo-random end-to-end test generation to find crashes and security holes. How come there isn't a tool that does coverage-based unit testing?
+ 
+I often assume that if there isn't an implementation of a straightforward idea, there must be some reason, like maybe it's much harder than it sounds, but Mindy convinced me that there's often no reason something hasn't been done before, so I tried making the simplest possible toy implementation.
+ 
+Before I looked at AFL's internals, I created this really dumb function to test. The function takes an array of arbitrary length as input and is supposed to return a non-zero int.
+ 
+// Checks that a number has its bottom bits set
+func some_filter(x int) bool {
+	for i := 0; i < 16; i = i + 1 {
+		if !(x&1 == 1) {
+			return false
+		}
+		x >>= 1
+	}
+	return true
+}
+
+// Takes an array and returns a non-zero int
+func dut(a []int) int {
+	if len(a) != 4 {
+		return 1
+	}
+
+	if some_filter(a[0]) {
+		if some_filter(a[1]) {
+			if some_filter(a[2]) {
+				if some_filter(a[3]) {
+					return 0 // A bug! We failed to return non-zero!
+				}
+				return 2
+			}
+			return 3
+		}
+		return 4
+	}
+	return 5
+}
+
+ 
+dut stands for device under test, a commonly used term in the hardware world. This code is deliberately contrived to make it easy for a coverage based test generator to make progress. Since the code does little work as possible per branch and per loop iteration, the coverage metric changes every time we do a bit of additional work2. It turns out, that a lot of software acts like this, despite not being deliberately built this way.
+ 
+Random testing is going to have a hard time finding cases where dut incorrectly returns 0. Even if you set the correct array length, a total of 64 bits have to be set to particular values, so there's a 1 in 2^64 chance of any particular random input hitting the failure.
+ 
+But a test generator that uses something like AFL's fuzzing algorithm hits this case almost immediately. Turns out, with reasonable initial inputs, it even finds a failing test case before it really does any coverage-guided test generation because the heuristics AFL uses for generating random tests generate an input that covers this case.
+ 
+That brings up the question of why QuickCheck and most of its clones don't use heuristics to generate random numbers. The QuickCheck paper mentions that it uses random testing because it's nearly as good as partition testing and much easier to implement. That may be true, but it doesn't mean that generating some values using simple heuristics can't generate better results with the same amount of effort. Since Zalewski has already done the work of figuring out, empirically, what heuristics are likely to exercise more code paths, it seems like a waste to ignore that and just generate totally random values.
+ 
+Whether or not it's worth it to use coverage guided generation is a bit iffier; it doesn't prove anything that a toy coverage-based unit testing prototype can find a bug in a contrived function that's amenable to coverage based testing. But that wasn't the point. The point was to see if there was some huge barrier that should prevent people from doing coverage-driven unit testing. As far as I can tell, there isn't.
+ 
+It helps that the implementation of the golang is very well commented and has good facilities for manipulating go code, which makes it really easy to modify its coverage tools to generate whatever coverage metrics you want, but most languages have some kind of coverage tools that can be hacked up to provide the appropriate coverage metrics so it shouldn't be too painful for any mature language. And once you've got the coverage numbers, generating coverage-guided tests isn't much harder than generating random QuickCheck like tests. There are some cases where it's pretty difficult to generate good coverage-guided tests, like when generating functions to test a function that uses higher-order functions, but even in those cases you're no worse off than you would be with a QuickCheck clone3.
+ 
+Test Time
+ 
+It's possible to run software tests much more quickly than hardware tests. One side effect of that is that it's common to see people proclaim that all tests should run in time bound X, and you're doing it wrong if they don't. I've heard various values of X from 100ms to 5 minutes. Regardless of the validity of those kinds of statements, a side effect of that attitude is that people often think that running a test generator for a few hours is A LOT OF TESTING. I overheard one comment about how a particular random test tool had found basically all the bugs it could find because, after a bunch of bug fixes, it had been run for a few hours without finding any additional bugs.
+ 
+And then you have hardware companies, which will dedicate thousands of machines to generating and running tests. That probably doesn't make sense for a software company, but considering the relative cost of a single machine compared to the cost of a developer, it's almost certainly worth dedicating at least one machine to generating and running tests. And for companies with their own machines, or dedicated cloud instances, generating tests on idle machines is pretty much free.
+ 
+Attitude
+ 
+In "Lessons Learned in Software Testing", the authors mention that QA shouldn't be expected to find all bugs and that QA shouldn't have veto power over releases because it's impossible to catch most important bugs, and thinking that QA will do so leads to sloppiness. That's a pretty common attitude on the software teams I've seen. But on hardware teams, it's expected that all “bad” bugs will be caught before the final release and QA will shoot down a release if it's been inadequately tested. Despite that, devs are pretty serious about making things testable by avoiding unnecessary complexity. If a bad bug ever escapes (e.g., the Pentium FDIV bug or the Haswell STM bug), there's a post-mortem to figure out how the test process could have gone so wrong that a significant bug escaped.
+ 
+It's hard to say how much of the difference in bug count between hardware and software is attitude, and how much is due to the difference in the amount of effort expended on testing, but I think attitude is a significant factor, in addition to the difference in resources.
+ 
+It affects everything4, down to what level of tests people write. There's a lot of focus on unit testing in software. In hardware, people use the term unit testing, but it usually refers to what would be called an integration test in software. It's considered too hard to thoroughly test every unit; it's much less total effort to test “units” that lie on clean API boundaries (which can be internal or external), so that's where test effort is concentrated.
+ 
+This also drives test generation. If you accept that bad bugs will occur frequently, manually writing tests is ok. But if your goal is to never release a chip with a bad bug, there's no way to do that when writing tests by hand, so you'll rely on some combination of random testing, manual testing for tricky edge cases, and formal methods. If you then decide that you don't have the resources to avoid bad bugs all the time, and you have to scale things back, you'll be left with the most efficient bug finding methods, which isn't going to leave a lot of room for writing tests by hand.
+ 
+Conclusion
+ 
+A lot of projects could benefit from more automated testing. Basically every language has a QuickCheck-like framework available, but most projects that are amenable to QuickCheck still rely on manual tests. For all but the tiniest companies, dedicating at least one machine for that kind of testing is probably worth it.
+ 
+I think QuickCheck-like frameworks could benefit from using a coverage driven approach. It's certainly easy to implement for functions that take arrays of ints, but that's also pretty much the easiest possible case for something that uses AFL-like test generation (other than, maybe, an array of bytes). It's possible that this is much harder than I think, but if so, I don't see why.
+ 
+My background is primarily in hardware, so I could be totally wrong! If you have a software testing background, I'd be really interested in hearing what you think. Also, I haven't talked about the vast majority of the topics that testing covers. For example, figuring out what should be tested is really important! So is figuring out how where nasty bugs might be hiding, and having a good regression test setup. But those are pretty similar between hardware and software, so there's not much to compare and contrast.
+ 
+Resources
+ 
+Brian Marick on code coverage, and how it can be misused.
+ 
+ 
+If a part of your test suite is weak in a way that coverage can detect, it's likely also weak in a way coverage can't detect.
+ 
+ 
+I'm used to bugs being thought of in the same way -- if a test generator takes a month to catch a bug in an area, there are probably other subtle bugs in the same area, and more work needs to be done on the generator to flush them out.
+ 
+Lessons Learned in Software Testing: A Context-Driven Approach, by Kaner, Bach, & Pettichord. This book is too long to excerpt, but I find it interesting because it reflects a lot of conventional wisdom.
+ 
+AFL whitepaper, AFL historical notes, and AFL code tarball. All of it is really readable. One of the reasons I spent so much time looking at AFL is because of how nicely documented it is. Another reason is, of course, that it's been very effective at finding bugs on a wide variety of projects.
+ 
+Update: Dmitry Vyukov's Go-fuzz, which looks like it was started a month after this post was written, uses the approach from the proof of concept in this post of combining the sort of logic seen in AFL with a QuickCheck-like framework, and has been shown to be quite effective. I believe David R. MacIver is also planning to use this approach in the next version of hypothesis.
+ 
+And here's some testing related stuff of mine: everything is broken, builds are broken, julia is broken, and automated bug finding using analytics.
+ 
+Terminology
+ 
+I use the term random testing a lot, in a way that I'm used to using it among hardware folks. I probably mean something broader than what most software folks mean when they say random testing. For example, here's how sqlite describes their testing. There's one section on fuzz (random) testing, but it's much smaller than the sections on, say, I/O error testing or OOM testing. But as a hardware person, I'd also put I/O error testing or OOM testing under random testing because I'd expect to use randomly generated tests to test those.
+ 
+Acknowledgments
+ 
+ I've gotten great feedback from a lot of software folks! Thanks to Leah Hanson, Mindy Preston, Allison Kaptur, Lindsey Kuper, Jamie Brandon, John Regehr, David Wragg, and Scott Feeney for providing comments/discussion/feedback. 
+ 
+ 
+
+  
+
+This footnote is a total tangent about a particular hardware test framework! You may want to skip this!
+ 
+SixthSense does a really good job of generating smart tests. It takes as input, some unit or collection of units (with assertions), some checks on the outputs, and some constraints on the inputs. If you don't give it any constraints, it assumes that any input is legal.
+ 
+Then it runs for a while. For units without “too much” state, it will either find a bug or tell you that it formally proved that there are no bugs. For units with “too much” state, it's still pretty good at finding bugs, using some combination of random simulation and exhaustive search.
+ 
+
+ 
+It can issue formal proofs for units with way too much state to brute force. How does it reduce the state space and determine what it's covered?
+ 
+I basically don't know. There are at least thirty-seven papers on SixthSense. Apparently, it uses a combination of combinational rewriting, sequential redundancy removal, min-area retiming, sequential rewriting, input reparameterization, localization, target enlargement, state-transition folding, isomoprhic property decomposition, unfolding, semi-formal search, symbolic simulation, SAT solving with BDDs, induction, interpolation, etc..
+ 
+My understanding is that SixthSense has had a multi-person team working on it for over a decade. Considering the amount of effort IBM puts into finding hardware bugs, investing tens or hundreds of person years to create a tool like SixthSense is an obvious win for them, but it's not really clear that it makes sense for any software company to make the same investment.
+ 
+Furthermore, SixthSense is really slow by software test standards. Because of the massive overhead involved in simulating hardware, SixthSense actually runs faster than a lot of simple hardware tests normally would, but running SixthSense on a single unit can easily take longer than it takes to run all of the tests on most software projects.
+ [return]
+ 
+Among other things, it uses nested if statements instead of && because go's coverage tool doesn't create separate coverage points for && and ||. [return]
+ 
+Ok, you're slightly worse off due to the overhead of generating and looking at coverage stats, but that's pretty small for most non-trivial programs. [return]
+ 
+
+This is another long, skippable, footnote. This difference in attitude also changes how people try to write correct software. I've had "testing is hopelessly inadequate….(it) can be used very effectively to show the presence of bugs but never to show their absence." quoted at me tens of times by software folks, along with an argument that we have to reason our way out of having bugs. But the attitude of most hardware folks is that while the back half of that statement is true, testing (and, to some extent, formal verification) is the least bad way to assure yourself that something is probably free of bad bugs.
+ 
+This is even true not just on a macro level, but on a micro level. When I interned at Micron in 2003, I worked on flash memory. I read "the green book", and the handful of papers that were new enough that they weren't in the green book. After all that reading, it was pretty obvious that we (humans) didn't understand all of the mechanisms behind the operation and failure modes of flash memory. There were plausible theories about the details of the exact mechanisms, but proving all of them was still an open problem. Even one single bit of flash memory was beyond human understanding. And yet, we still managed to build reliable flash devices, despite building them out of incompletely understood bits, each of which would eventually fail due to some kind of random (in the quantum sense) mechanism.
+ 
+It's pretty common for engineering to advance faster than human understanding of the underlying physics. When you work with devices that aren't understood and assembly them to create products that are too complex for any human to understand or for any known technique to formally verify, there's no choice but to rely on testing. With software, people often have the impression that it's possible to avoid relying on testing because it's possible to just understand the whole thing.
+ [return]

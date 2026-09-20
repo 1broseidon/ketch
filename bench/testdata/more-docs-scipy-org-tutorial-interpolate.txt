@@ -1,0 +1,698 @@
+Interpolation (scipy.interpolate)
+
+
+There are several general facilities available in SciPy for interpolation and
+smoothing for data in 1, 2, and higher dimensions. The choice of a specific
+interpolation routine depends on the data: whether it is one-dimensional,
+is given on a structured grid, or is unstructured. One other factor is the
+desired smoothness of the interpolator. In short, routines recommended for
+interpolation can be summarized as follows:
+
+
+
+
+
+
+
+
+
+
+kind
+
+
+
+
+routine
+
+
+
+
+continuity
+
+
+
+
+comment
+
+
+
+
+
+
+
+
+
+1D
+
+
+
+
+linear
+
+
+
+
+numpy.interp
+
+
+
+
+piecewise continuous
+
+
+
+
+Alternatively,
+make_interp_spline(..., k=1)
+
+
+
+
+
+
+
+cubic spline
+
+
+
+
+CubicSpline
+
+
+
+
+2nd derivative
+
+
+
+
+
+
+
+
+
+
+monotone cubic spline
+
+
+
+
+PchipInterpolator
+
+
+
+
+1st derivative
+
+
+
+
+non-overshooting
+
+
+
+
+
+
+
+non-cubic spline
+
+
+
+
+make_interp_spline
+
+
+
+
+(k-1)th derivative
+
+
+
+
+k=3 is equivalent to CubicSpline
+
+
+
+
+
+
+
+nearest
+
+
+
+
+interp1d
+
+
+
+
+
+
+
+kind=’nearest’, ‘previous’, ‘next’
+
+
+
+
+
+
+
+N-D curve
+
+
+
+
+nearest, linear, spline
+
+
+
+
+make_interp_spline
+
+
+
+
+(k-1)th derivative
+
+
+
+
+use N-dim y array
+
+
+
+
+
+
+
+N-D regular
+(rectilinear)
+grid
+
+
+
+
+nearest
+
+
+
+
+RegularGridInterpolator
+
+
+
+
+
+
+
+method=’nearest’
+
+
+
+
+
+
+
+linear
+
+
+
+
+method=’linear’
+
+
+
+
+
+
+
+splines
+
+
+
+
+2nd derivatives
+
+
+
+
+method=’cubic’, ‘quintic’
+
+
+
+
+
+
+
+monotone splines
+
+
+
+
+1st derivatives
+
+
+
+
+method=’pchip’
+
+
+
+
+
+
+
+N-D scattered
+
+
+
+
+nearest
+
+
+
+
+NearestNDInterpolator
+
+
+
+
+
+
+
+alias: griddata
+
+
+
+
+
+
+
+linear
+
+
+
+
+LinearNDInterpolator
+
+
+
+
+
+
+
+cubic (2D only)
+
+
+
+
+CloughTocher2DInterpolator
+
+
+
+
+1st derivatives
+
+
+
+
+
+
+
+radial basis function
+
+
+
+
+RBFInterpolator
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Smoothing and approximation of data
+
+
+
+
+
+
+
+1D spline functions
+
+
+
+
+make_smoothing_spline
+
+
+
+
+classic smoothing splines,
+GCV penalty
+
+
+
+
+
+
+
+make_splrep
+
+
+
+
+automated/semi-automated knot
+selection
+
+
+
+
+
+
+
+spine curves in N-D
+
+
+
+
+make_splprep
+
+
+
+
+
+
+
+
+
+
+unconstrained least squares
+spline fit
+
+
+
+
+make_lsq_spline
+
+
+
+
+
+
+
+
+
+
+2D smoothing surfaces
+
+
+
+
+bisplrep
+
+
+
+
+scattered data
+
+
+
+
+
+
+
+
+
+
+RectBivariateSpline
+
+
+
+
+gridded data
+
+
+
+
+
+
+
+Radial basis functions in N-D
+
+
+
+
+RBFInterpolator
+
+
+
+
+
+
+
+
+
+
+
+
+Further details are given in the links below
+
+
+
+
+
+1-D interpolation
+
+Piecewise linear interpolation
+
+
+Cubic splines
+
+
+Monotone interpolants
+
+
+Interpolation with B-splines
+
+Non-cubic splines
+
+
+
+
+
+Batches of y
+
+
+Parametric spline curves
+
+
+Missing data
+
+
+Out-of-bounds behavior
+
+The bc_type parameter
+
+
+The extrapolate constructor argument
+
+
+Overriding extrapolate per call
+
+
+
+
+
+Legacy interface for 1-D interpolation (interp1d)
+
+Recommended replacements for interp1d modes
+
+
+
+
+
+
+
+
+Piecewise polynomials and splines
+
+Manipulating PPoly objects
+
+
+B-splines: knots and coefficients
+
+B-spline basis elements
+
+
+Design matrices in the B-spline basis
+
+
+
+
+
+Bernstein polynomials, BPoly
+
+
+Conversion between bases
+
+
+
+
+
+Smoothing splines
+
+Spline smoothing in 1D
+
+“Classic” smoothing splines and generalized cross-validation (GCV) criterion
+
+
+Smoothing splines with automatic knot selection
+
+
+Smoothing spline curves in \(d>1\)
+
+
+Batching of y arrays
+
+
+Legacy routines for spline smoothing in 1-D
+
+
+
+
+
+2-D smoothing splines
+
+Bivariate spline fitting of scattered data
+
+
+Bivariate spline fitting of data on a grid
+
+
+Bivariate spline fitting of data in spherical coordinates
+
+
+
+
+
+
+
+
+Multivariate data interpolation on a regular grid (RegularGridInterpolator)
+
+Batch dimensions of values
+
+
+Uniformly spaced data
+
+
+
+
+
+Scattered data interpolation (griddata)
+
+
+Using radial basis functions for smoothing/interpolation
+
+1-D Example
+
+
+2-D Example
+
+
+
+
+
+Extrapolation tips and tricks
+
+Replicate numpy.interp left and right fill values
+
+
+CubicSpline extend the boundary conditions
+
+
+Manually implement the asymptotics
+
+The setup
+
+
+Use the known asymptotics
+
+
+
+
+
+Extrapolation in D > 1
+
+
+
+
+
+interp2d transition guide
+
+1. How to transition away from using  interp2d
+
+1.1 interp2d on a regular grid
+
+
+1.2. interp2d with full coordinates of points (scattered interpolation)
+
+
+
+
+
+2. Alternative to interp2d: regular grid
+
+
+3. Scattered 2D linear interpolation: prefer LinearNDInterpolator to SmoothBivariateSpline  or bisplrep
+
+
+
+
+
+Filling an image from a border
+
+Analytic solutions
+
+
+Simple unstructured interpolators
+
+Simplex tolerance
+
+
+
+
+
+Radial basis functions
+
+
+Multi-linear regression
+
+Unconstrained polynomials
+
+
+Restricted polynomials
+
+
+
+
+
+Other packages
+
+
+Closing notes

@@ -1,0 +1,799 @@
+Life Expectancy
+
+
+
+By Saloni Dattani, Lucas Rodés-Guirao, Hannah Ritchie, Esteban Ortiz-Ospina,  and Max Roser
+
+Cite this workReuse this work
+
+
+
+Across the world, people are living longer.
+
+In 1900, the average life expectancy of a newborn was 32 years. By 2021 this had more than doubled to 71 years.
+
+But where, when, how, and why has this dramatic change occurred?
+
+To understand it, we can look at data on life expectancy worldwide.
+
+The large reduction in child mortality has played an important role in increasing life expectancy. But life expectancy has increased at all ages. Infants, children, adults, and the elderly are all less likely to die than in the past, and death is being delayed.
+
+This remarkable shift results from advances in medicine, public health, and living standards. Along with it, many predictions of the ‘limit’ of life expectancy have been broken.
+
+On this page, you will find global data and research on life expectancy and related measures of longevity: the probability of death at a given age, the sex gap in life expectancy, lifespan inequality within countries, and more.
+
+
+
+Related Topics
+
+Population Growth
+
+Age Structure
+
+Child and Infant Mortality
+
+Causes of Death
+
+
+
+
+Key Insights on Life Expectancy
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Life expectancy has increased across the world
+
+
+In 2021, the global average life expectancy was just over 70 years. This is an astonishing fact – because just two hundred years ago, it was less than half.
+
+This was the case for all world regions: in 1800, no region had a life expectancy higher than 40 years.
+
+The average life expectancy has risen steadily and significantly across all regions.1
+
+This extraordinary rise is the result of a wide range of advances in health – in nutrition, clean water, sanitation, neonatal healthcare, antibiotics, vaccines, and other technologies and public health efforts – and improvements in living standards, economic growth, and poverty reduction.
+
+In this article, we cover this in more detail:
+
+
+
+
+
+
+Twice as long – life expectancy around the world
+
+Life expectancy has doubled over the last two centuries around the world. How has this happened?
+
+
+
+
+
+What you should know about this data
+
+Period life expectancy is a metric that summarizes death rates across all age groups in one particular year.
+
+For a given year, it represents the average lifespan for a hypothetical group of people, if they experienced the same age-specific death rates throughout their whole lives as the age-specific death rates seen in that particular year.
+
+This data is compiled from three sources: the United Nations’ World Population Prospects (UN WPP), Zijdeman et al. (2015)2, and Riley (2005)3. For data points before 1950, we use Human Mortality Database data4 combined with Zijdeman (2015). From 1950 onwards, we use UN WPP data. For pre-1950 data on world regions and the world as a whole, we use estimates from Riley (2005).
+
+Riley (2005)3 compiles life expectancy estimates from hundreds of historical sources and calculates the average of estimates that met an acceptable quality threshold, such as having estimates for entire nations or regions. Less historical data is available from the pre-health transition period in countries – this is especially the case for Africa, Asia, Oceania, and the former Soviet Union.
+
+Zijdeman et al. (2015)2 compiles data from various sources: the OECD.Stat database library, the United Nations World Population Prospects Database (UN WPP), the Human Mortality Database (HMD), the Montevideo-Oxford Latin American Economic History Database (MOxLAD), and Gapminder. In some cases, regional databases are used, such as Wrigley et al. (1997)5 for life expectancy in England in the 17th, 18th and early 19th centuries; the ONS for Australia; Kannisto et al. (1999)6 for Finland; and data from the Estonian Interuniversity Population Research Centre for Estonia.
+
+The UN WPP estimates life expectancy in various countries using data on mortality rates. In poorer countries, where death registration data is often lacking, the underlying data often comes from national household surveys, which are then used to estimate mortality rates and life expectancy.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+There are wide differences in life expectancy around the world
+
+
+In 2021, Nigeria's life expectancy was thirty years lower than Japan’s.
+
+This striking fact reflects the wide differences in life expectancy between countries, which you can see on the map.
+
+These wide differences are also reflected within countries. Countries with a lower average life expectancy also tend to have wider variations in lifespans.7
+
+
+What you should know about this data
+
+Period life expectancy is a metric that summarizes death rates across all age groups in one particular year.
+
+For a given year, it represents the average lifespan for a hypothetical group of people, if they experienced the same age-specific death rates throughout their whole lives as the age-specific death rates seen in that particular year.
+
+This data is compiled from two sources: the Human Mortality Database (HMD)4 and the United Nations World Population Prospects Database (UN WPP). For data points before 1950, we use HMD data. From 1950 onwards, we use UN WPP data.
+
+The Human Mortality Database prioritizes uniformity in methods and is limited to specific countries and periods where high-quality mortality data is available nationally.
+
+The UN WPP estimates life expectancy in various countries through various methods, using data on mortality rates. In poorer countries, where death registration data is often lacking, the underlying data often comes from national household surveys, which are then used to estimate mortality rates and life expectancy.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Life expectancy has increased at all ages
+
+
+It’s a common misconception that life expectancy has only increased because of declines in child mortality.
+
+This is part of what happened. Child mortality used to be high and contributed significantly to short lifespans in the past, and it has declined greatly over time.
+
+But, especially in recent decades, child mortality declines have contributed much less to increasing life expectancy8, and large declines in mortality are seen across all age groups.
+
+You can see this in the chart. It shows the total life expectancy for people who have already survived to older ages.
+
+For example, 15-year-olds in 1816 in France had a life expectancy of 58 years. By 2021, the life expectancy of 15-year-olds increased to 83.
+
+These gains are also seen at older ages: someone who was 65 years old in 1816 would have a life expectancy of 76 years. By 2021, their life expectancy would be 86 years.
+
+In this article, we cover this in more detail:
+
+
+
+
+
+
+It’s not just about child mortality; life expectancy increased at all ages
+
+It’s often argued that life expectancy across the world has only increased because child mortality has fallen. But this is untrue. The data shows that life expectancy has increased at all ages.
+
+
+
+
+
+What you should know about this data
+
+Period life expectancy is a metric that summarizes death rates across all age groups in one particular year.
+
+For a given year, it represents the average lifespan for a hypothetical group of people, if they experienced the same age-specific death rates throughout their whole lives as the age-specific death rates seen in that particular year.
+
+This data is compiled from three sources: the United Nations’ World Population Prospects (UN WPP), Zijdeman et al. (2015)2, and Riley (2005)3. For data points before 1950, we use the Human Mortality Database4 data combined with Zijdeman (2015). From 1950 onwards, we use UN WPP data. For pre-1950 data on world regions and the world as a whole, we use estimates from Riley (2005).
+
+Riley (2005)3 compiles life expectancy estimates from hundreds of historical sources. It calculates the average of estimates that met an acceptable quality threshold, such as having estimates for entire nations or regions. Less historical data is available from the pre-health transition period in countries – especially for Africa, Asia, Oceania, and the former Soviet Union.
+
+Zijdeman et al. (2015)2 compiles data from various sources: the OECD.Stat database library, the United Nations World Population Prospects Database (UN WPP), the Human Mortality Database (HMD), the Montevideo-Oxford Latin American Economic History Database (MOxLAD), and Gapminder. In some cases, regional databases are used, such as Wrigley et al. (1997)5 for life expectancy in England in the 17th, 18th and early 19th centuries; the ONS for Australia; Kannisto et al. (1999)6 for Finland; and data from the Estonian Interuniversity Population Research Centre for Estonia.
+
+The UN WPP estimates life expectancy in various countries using data on mortality rates. In poorer countries, where death registration data is often lacking, the underlying data often comes from national household surveys, which are then used to estimate mortality rates and life expectancy.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Women tend to live longer than men, but this gap has changed over time
+
+
+Across the world, women tend to live longer than men.
+
+But the gender gap varies between countries and is not constant over time, as you can see in the chart.
+
+For example, the gap spiked in some countries during the World Wars.
+
+But wars are only one of many reasons for the sex gap in life expectancy, which arises from a range of causes at different ages.9
+
+The gap begins at birth: newborn boys have a higher death rate than newborn girls, as they’re more vulnerable to diseases.10
+
+It continues in youth, when boys have a higher death rate than girls, typically due to violence and accidents. It’s sustained at older ages when men have higher death rates than women from chronic health conditions, which are partly due to higher rates of smoking, alcohol, and drug use.11
+
+The chart shows how the sex gap in life expectancy widened gradually over the twentieth century, largely because of the rise in smoking, especially among men.12 Since then, it has been narrowing again in many but not all countries.13
+
+In this article, we cover this in more detail:
+
+
+
+
+
+
+Why do women live longer than men?
+
+Women tend to live longer than men in all countries — but the sex gap in life expectancy is not a constant.
+
+
+
+
+
+What you should know about this data
+
+Period life expectancy is a metric that summarizes death rates across all age groups in one particular year.
+
+For a given year, it represents the average lifespan for a hypothetical group of people, if they experienced the same age-specific death rates throughout their whole lives as the age-specific death rates seen in that particular year.
+
+This data is compiled from two sources: the Human Mortality Database (HMD)4 and the United Nations World Population Prospects Database (UN WPP). For data points before 1950, we use HMD data. From 1950 onwards, we use UN WPP data.
+
+The Human Mortality Database prioritizes uniformity in methods and is limited to specific countries and periods where high-quality mortality data is available nationally.
+
+The UN WPP estimates life expectancy in various countries through various methods, using data on mortality rates. In poorer countries, where death registration data is often lacking, the underlying data often comes from national household surveys, which are then used to estimate mortality rates and life expectancy.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Life expectancy has surpassed predictions again and again
+
+
+The chart shows which country had the highest recorded female life expectancy in each year. It comes from a study by Jim Oeppen and James W Vaupel.14
+
+The first dot shows Sweden’s life expectancy of 46 in 1840, the highest of any country that year. Over time, the record was pushed higher and higher.
+
+But is there a limit to life expectancy?
+
+In 1928, an American statistician, Louis Dublin, used mortality data to predict the longest possible life expectancy that could be achieved. Life expectancy in the US was 57 years at the time, and his answer for the maximum was 64.8 years.15 Because he lacked data from New Zealand, he was unaware that the limit had already been broken there.
+
+The horizontal lines on the chart show many predictions of the maximum limit of life expectancy. As you can see, the predictions have been broken again and again.
+
+Rather than slowing down, record life expectancy has risen steadily over time, by around one year every four years. By 2021, Hong Kong had the highest life expectancy of 88 years.
+
+The authors, Oeppen and Vaupel, explain that improvements in life expectancy shouldn’t be thought of as the result of one-off breakthroughs but instead “a regular stream of continuing progress”.
+
+In this article, we cover this in more detail:
+
+
+
+
+
+
+The rise of maximum life expectancy
+
+Predictions of a maximum limit of life expectancy have been broken again and again.
+
+
+
+
+
+What you should know about this data
+
+Period life expectancy is a metric that summarizes death rates across all age groups in one particular year.
+
+For a given year, it represents the average lifespan for a hypothetical group of people, if they experienced the same age-specific death rates throughout their whole lives as the age-specific death rates seen in that particular year.
+
+The chart comes from a 2002 study by Jim Oeppen and James W Vaupel.14
+
+Records from recent years have been added to the chart.
+
+An interactive version of this chart can be found online.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Research & Writing
+
+
+
+
+
+October 8, 2018
+
+Twice as long — life expectancy around the world
+
+Life expectancy has doubled over the last two centuries around the world. How has this happened?
+
+Max Roser
+
+
+
+May 1, 2015
+
+Life expectancy increased in all countries of the world
+
+People in all countries are living longer than in the past.
+
+Max Roser
+
+
+
+
+More articles on life expectancy
+
+
+
+
+August 28, 2017
+
+Life expectancy: what does this actually mean?
+
+Esteban Ortiz-Ospina
+
+
+
+March 1, 2020
+
+The rise of maximum life expectancy
+
+Max Roser
+
+
+
+November 27, 2023
+
+Why do women live longer than men?
+
+Saloni Dattani and Lucas Rodés-Guirao
+
+
+
+October 13, 2023
+
+How does the risk of death change as we age — and how has this changed over time?
+
+Saloni Dattani
+
+
+
+November 27, 2023
+
+Period versus cohort measures: what’s the difference?
+
+Saloni Dattani
+
+
+
+September 23, 2020
+
+It’s not just about child mortality; life expectancy increased at all ages
+
+Max Roser
+
+
+
+March 4, 2020
+
+The Spanish flu: the global impact of the largest influenza pandemic in history
+
+Max Roser
+
+
+
+October 29, 2020
+
+Why is life expectancy in the US lower than in other rich countries?
+
+Max Roser
+
+
+
+
+
+Key Charts on Life Expectancy
+See all charts on this topic
+
+
+
+Life expectancyHMD, UN WPP
+
+Life expectancyover the long-run
+
+Life expectancy by sexHMD, UN WPP data
+
+Period versus cohort life expectancy
+
+Probability of dying in infancy, by sex
+
+Probability of dying that year, among females
+
+Probability of dying that year, among males
+
+Remaining life expectancy at different ages
+
+Sex gap in life expectancy
+
+Annual death rate by age group
+
+Annual death rate from all causes
+
+Annual death rates at different ages
+
+Annual death rates in people of different ages, by sex
+
+Country with highest female life expectancy
+
+Death rates from different causesWHO Mortality Database, age-standardized
+
+Deaths by age groupUN
+
+Female life expectancy at birth2024-2100, UN projections
+
+Healthy life expectancy and years lived with disability or disease
+
+How do death rates in each age group contribute to the overall sex gap in life expectancy?
+
+Life expectancy
+
+Life expectancy at birth1950-2100, with UN projections
+
+Life expectancy at birth, projections2024-2100, UN projections
+
+Life expectancy for people of different ages
+
+Life expectancy of women vs. menUN
+
+Life expectancy versus lifespan inequality
+
+Life expectancy vs. GDP per capitaWorld Bank
+
+Life expectancy vs. GDP per capitaMaddison, historical
+
+Lifespan inequality: Gini coefficient by sex
+
+Lifespan inequality: Gini coefficient in women
+
+Male life expectancy at birth
+
+Median age1950-2100, with UN projections
+
+Modal age at death in adults
+
+Number of deaths, by world region
+
+Probability that a man will outlive a woman
+
+Remaining life expectancy at different ages, in females
+
+Remaining life expectancy at different ages, in males
+
+Sex gap in life expectancy at different ages
+
+Sex gap in life expectancy versus child mortality
+
+Sex ratio in life expectancy
+
+Sex ratio in life expectancy at different ages
+
+Share of men and women expected to survive to the age of 65
+
+Survival ages across the population
+
+Crude death rate
+
+
+
+
+
+
+
+
+Chart 1 of 43
+
+
+
+
+
+
+
+Featured Data on Life Expectancy
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Endnotes
+
+
+As you can see, the chart also shows that the rise has not been completely constant. Major events – the World Wars, the 1918 Spanish flu pandemic, the HIV/AIDS epidemic, and the COVID-19 pandemic – have had a major impact on mortality rates and left a visible mark on life expectancy.
+
+
+
+Zijdeman, Richard and Filipa Ribeira da Silva (2015). Life Expectancy at Birth (Total). http://hdl.handle.net/10622/LKYT53 , accessed via the Clio Infra website. Zijdeman, R. L., & de Silva, F. R. (2014). Life expectancy since 1820.
+
+
+
+Riley, J. C. (2005). Estimates of regional and global life expectancy, 1800–2001. Population and Development Review, 31(3), 537–543.
+
+
+
+Barbieri, M., Wilmoth, J. R., Shkolnikov, V. M., Glei, D., Jasilionis, D., Jdanov, D., Boe, C., Riffe, T., Grigoriev, P., & Winant, C. (2015). Data Resource Profile: The Human Mortality Database (HMD). International Journal of Epidemiology, 44(5), 1549–1556. https://doi.org/10.1093/ije/dyv105
+
+
+
+Wrigley E.A. et al. (1997) English population history from family reconstitution 1580-1837, Cambridge University Press, Cambridge.
+
+
+
+Kannisto, V., Nieminen, M. and O. Turpeinen (1999), “Finnish life tables since 1751,” Demographic Research, Vol. 1/1.
+
+
+
+Aburto, J. M., Villavicencio, F., Basellini, U., Kjærgaard, S., & Vaupel, J. W. (2020). Dynamics of life expectancy and life span equality. Proceedings of the National Academy of Sciences, 117(10), 5250–5259. https://doi.org/10.1073/pnas.1915884117
+
+Liou, L., Joe, W., Kumar, A., & Subramanian, S. V. (2020). Inequalities in life expectancy: An analysis of 201 countries, 1950–2015. Social Science & Medicine, 253, 112964. https://doi.org/10.1016/j.socscimed.2020.112964
+
+Permanyer, I., & Scholl, N. (2019). Global trends in lifespan inequality: 1950-2015. PLOS ONE, 14(5), e0215742. https://doi.org/10.1371/journal.pone.0215742
+
+Vaupel, J. W., Zhang, Z., & Van Raalte, A. A. (2011). Life expectancy and disparity: An international comparison of life table data. BMJ Open, 1(1), e000128–e000128. https://doi.org/10.1136/bmjopen-2011-000128
+
+Wilson, C. (2011). Understanding Global Demographic Convergence since 1950. Population and Development Review, 37(2), 375–388. https://doi.org/10.1111/j.1728-4457.2011.00415.x
+
+
+
+Aburto, J. M., Villavicencio, F., Basellini, U., Kjærgaard, S., & Vaupel, J. W. (2020). Dynamics of life expectancy and life span equality. Proceedings of the National Academy of Sciences, 117(10), 5250–5259. https://doi.org/10.1073/pnas.1915884117
+
+
+
+Zarulli, V., Kashnitsky, I., & Vaupel, J. W. (2021). Death rates at specific life stages mold the sex gap in life expectancy. Proceedings of the National Academy of Sciences, 118(20), e2010588118. https://doi.org/10.1073/pnas.2010588118
+
+Vladimir Canudas-Romo, Nandita Saikia, & Nadia Diamond-Smith. (2016). The contribution of age-specific mortality towards male and female life expectancy differentials in India and selected States, 1970-2013. Asia-Pacific Population Journal, 30(2), 1–20. https://doi.org/10.18356/8ec0129d-en
+
+
+
+Drevenstedt, G. L., Crimmins, E. M., Vasunilashorn, S., & Finch, C. E. (2008). The rise and fall of excess male infant mortality. Proceedings of the National Academy of Sciences, 105(13), 5016–5021. https://doi.org/10.1073/pnas.0800221105
+
+
+
+Feraldi, A., & Zarulli, V. (2022). Patterns in age and cause of death contribution to the sex gap in life expectancy: A comparison among ten countries. Genus, 78(1), 23. https://doi.org/10.1186/s41118-022-00171-9
+
+
+
+Janssen, F. (2020). Changing contribution of smoking to the sex differences in life expectancy in Europe, 1950–2014. European Journal of Epidemiology, 35(9), 835–841. https://doi.org/10.1007/s10654-020-00602-x
+
+Luy, M., & Wegner-Siegmundt, C. (2015). The impact of smoking on gender differences in life expectancy: More heterogeneous than often stated. The European Journal of Public Health, 25(4), 706–710. https://doi.org/10.1093/eurpub/cku211
+
+
+
+Glei, D. A., & Horiuchi, S. (2007). The narrowing sex differential in life expectancy in high-income populations: Effects of differences in the age pattern of mortality. Population Studies, 61(2), 141–159. https://doi.org/10.1080/00324720701331433
+
+Bergeron-Boucher, M.-P., Alvarez, J.-A., Kashnitsky, I., & Zarulli, V. (2022). Probability of males to outlive females: An international comparison from 1751 to 2020. BMJ Open, 12(8), e059964. https://doi.org/10.1136/bmjopen-2021-059964
+
+
+
+Oeppen, J., & Vaupel, J. W. (2002). Broken Limits to Life Expectancy. Science, 296(5570), 1029–1031. https://doi.org/10.1126/science.1069675
+
+
+
+Dublin, L., Israel. (1928). Health and Wealth: A Survey of the Economics of World Health. Harper & Brothers.
+
+
+
+
+
+
+Cite this work
+
+Our articles and data visualizations rely on work from many different people and organizations. When citing this topic page, please also cite the underlying data sources. This topic page can be cited as:
+
+
+
+Saloni Dattani, Lucas Rodés-Guirao, Hannah Ritchie, Esteban Ortiz-Ospina, and Max Roser (2023) - “Life Expectancy” Published online at OurWorldinData.org. Retrieved from: 'https://ourworldindata.org/life-expectancy' [Online Resource]
+
+
+
+BibTeX citation
+
+
+
+@article{owid-life-expectancy,
+    author = {Saloni Dattani and Lucas Rodés-Guirao and Hannah Ritchie and Esteban Ortiz-Ospina and Max Roser},
+    title = {Life Expectancy},
+    journal = {Our World in Data},
+    year = {2023},
+    note = {https://ourworldindata.org/life-expectancy}
+}
+
+
+
+
+
+
+
+Reuse this work freely
+
+All visualizations, data, and articles produced by Our World in Data are completely open access under the Creative Commons BY license. You have the permission to use, distribute, and reproduce these in any medium, provided the source and authors are credited.
+
+The data produced by third parties and made available by Our World in Data is subject to the license terms from the original third-party authors. We will always indicate the original source of the data in our documentation, so you should always check the license of any such third-party data before use and redistribution.
+
+All of our charts can be embedded in any site.

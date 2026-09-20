@@ -1,0 +1,760 @@
+{
+  "reviewed_at": "2026-09-19T16:35:03.333243+00:00",
+  "provisional_corpus_sha256": "9a5cd798d5386300a633bfcf7ec40ca414c95e2014a28818cc94c7be78f761a0",
+  "corrected_corpus_sha256": "14c3ccc4f5eb5b6ef0bec2ca0727871d682d5845560ff7bce8bc70f8b719f441",
+  "sequence": "Provisional default/before/selector results were inspected. Eight source annotations contradicted their declared exclusion scope: photo-gallery comments/controls and newsletter copy remained. Correct scopes and affected prose/link candidates were reviewed against original HTML; closing checks now target authored cooking/safety instructions. No extractor code changed, no source page was dropped, and both binaries are rerun on the same corrected corpus. This is post-evaluation oracle repair, not an untouched blind evaluation.",
+  "retained_evidence": [
+    "corpus500-provisional.json",
+    "corpus500-provisional-freeze.json",
+    "default500-provisional.json",
+    "before500-provisional.json",
+    "selector500-provisional.json",
+    "annotation-errata500/*-before.txt"
+  ],
+  "changes": [
+    {
+      "id": "more-allrecipes-com-20144-banana-banana-bread",
+      "changed_fields": [
+        "reference_sha256",
+        "reference_exclude",
+        "checks"
+      ],
+      "reason": "Source-scope correction: exclude photo-gallery reader reviews, app/rating/error widgets; retain authored recipe, editorial quotes, ingredients, method and nutrition",
+      "old_reference_sha256": "ea5e5a74c3f6fb33424d06a0d225939e0a5a278ea3fff5cf394033f82c1b74cb",
+      "new_reference_sha256": "aa6046d037a5343b4428f3c361dc74405c8b187bf0e554ddb74060c7d76b37f4",
+      "old_exclude": "script,style,template,noscript,nav,footer,svg,form,button:not([aria-controls]),[role=navigation],.mntl-recirc-section,.mntl-bio-tooltip,.mntl-ugc-reviews,.mntl-toc__wrapper,.mntl-recipe-review-bar,.mntl-di-bylines,.mntl-share-tools,.mntl-breadcrumbs,.mntl-recipe-review-bar__rating",
+      "new_exclude": "script,style,template,noscript,nav,footer,svg,form,button:not([aria-controls]),[role=navigation],.mntl-recirc-section,.mntl-bio-tooltip,.mntl-ugc-reviews,.mntl-toc__wrapper,.mntl-recipe-review-bar,.mntl-di-bylines,.mntl-share-tools,.mntl-breadcrumbs,.mntl-recipe-review-bar__rating,.photo-dialog,.ugc-review,.mntl-message-banner,.mm-recipes-rate-print,.mm-myrecipes-recipe-detail-promo-banner",
+      "old_checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "critical": true,
+          "text": "This banana bread recipe creates the most delicious, moist loaf with loads of banana flavor."
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "critical": true,
+          "text": "\u201cThis turned out so yummy,\u201d raves Britt Pfaff. \u201cI\u2019m pretty sure this is the recipe I use every year but always forget!"
+        },
+        {
+          "id": "closing",
+          "kind": "text",
+          "critical": true,
+          "text": "(-) Information is not currently available for this nutrient."
+        },
+        {
+          "id": "section-heading",
+          "kind": "heading",
+          "text": "Banana Bread Ingredients"
+        },
+        {
+          "id": "later-heading",
+          "kind": "heading",
+          "text": "Allrecipes Community Tips and Praise"
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.allrecipes.com/allrecipes-test-kitchen-7553892"
+        },
+        {
+          "id": "navigation-noise",
+          "kind": "absent",
+          "text": "People Inc."
+        }
+      ],
+      "new_checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "critical": true,
+          "text": "This banana bread recipe creates the most delicious, moist loaf with loads of banana flavor."
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "critical": true,
+          "text": "\u201cThis turned out so yummy,\u201d raves Britt Pfaff. \u201cI\u2019m pretty sure this is the recipe I use every year but always forget!"
+        },
+        {
+          "id": "closing",
+          "kind": "text",
+          "critical": true,
+          "text": "Bake in the preheated oven until a toothpick inserted into the center comes out clean, about 60 minutes."
+        },
+        {
+          "id": "section-heading",
+          "kind": "heading",
+          "text": "Banana Bread Ingredients"
+        },
+        {
+          "id": "later-heading",
+          "kind": "heading",
+          "text": "Can You Freeze Banana Bread?"
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.allrecipes.com/allrecipes-test-kitchen-7553892"
+        },
+        {
+          "id": "navigation-noise",
+          "kind": "absent",
+          "text": "People Inc."
+        }
+      ]
+    },
+    {
+      "id": "more-allrecipes-com-10549-best-brownies",
+      "changed_fields": [
+        "reference_sha256",
+        "reference_exclude",
+        "checks"
+      ],
+      "reason": "Source-scope correction: exclude photo-gallery reader reviews, app/rating/error widgets; retain authored recipe, editorial quotes, ingredients, method and nutrition",
+      "old_reference_sha256": "2c7e7c98d46240c40c5a4411abffe475b01c2c6cbd322f3808ce220d07b6a85c",
+      "new_reference_sha256": "58ff0ccd7f80e957b42330f2899fa1893bbd59319925beb2f28a5b59f656df86",
+      "old_exclude": "script,style,template,noscript,nav,footer,svg,form,button:not([aria-controls]),[role=navigation],.mntl-recirc-section,.mntl-bio-tooltip,.mntl-ugc-reviews,.mntl-toc__wrapper,.mntl-recipe-review-bar,.mntl-di-bylines,.mntl-share-tools,.mntl-breadcrumbs,.mntl-recipe-review-bar__rating",
+      "new_exclude": "script,style,template,noscript,nav,footer,svg,form,button:not([aria-controls]),[role=navigation],.mntl-recirc-section,.mntl-bio-tooltip,.mntl-ugc-reviews,.mntl-toc__wrapper,.mntl-recipe-review-bar,.mntl-di-bylines,.mntl-share-tools,.mntl-breadcrumbs,.mntl-recipe-review-bar__rating,.photo-dialog,.ugc-review,.mntl-message-banner,.mm-recipes-rate-print,.mm-myrecipes-recipe-detail-promo-banner",
+      "old_checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "critical": true,
+          "text": "This brownie recipe makes rich, fudgy brownies that turn out perfectly every time."
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "critical": true,
+          "text": "Fold in 1/2 cup of chopped walnuts, pecans, or hazelnuts for a nutty variation."
+        },
+        {
+          "id": "closing",
+          "kind": "text",
+          "critical": true,
+          "text": "(-) Information is not currently available for this nutrient."
+        },
+        {
+          "id": "section-heading",
+          "kind": "heading",
+          "text": "Why You\u2019ll Love This Recipe"
+        },
+        {
+          "id": "later-heading",
+          "kind": "heading",
+          "text": "Recipe Tip"
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.allrecipes.com/allrecipes-test-kitchen-7553892"
+        },
+        {
+          "id": "navigation-noise",
+          "kind": "absent",
+          "text": "People Inc."
+        }
+      ],
+      "new_checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "critical": true,
+          "text": "This brownie recipe makes rich, fudgy brownies that turn out perfectly every time."
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "critical": true,
+          "text": "Fold in 1/2 cup of chopped walnuts, pecans, or hazelnuts for a nutty variation."
+        },
+        {
+          "id": "closing",
+          "kind": "text",
+          "critical": true,
+          "text": "Bake in the preheated oven until top is dry and edges have started to pull away from the sides of the pan, about 25 to 30 minutes."
+        },
+        {
+          "id": "section-heading",
+          "kind": "heading",
+          "text": "Why You\u2019ll Love This Recipe"
+        },
+        {
+          "id": "later-heading",
+          "kind": "heading",
+          "text": "Directions"
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.allrecipes.com/allrecipes-test-kitchen-7553892"
+        },
+        {
+          "id": "navigation-noise",
+          "kind": "absent",
+          "text": "People Inc."
+        }
+      ]
+    },
+    {
+      "id": "more-allrecipes-com-10813-best-chocolate-chip-cookies",
+      "changed_fields": [
+        "reference_sha256",
+        "reference_exclude",
+        "checks"
+      ],
+      "reason": "Source-scope correction: exclude photo-gallery reader reviews, app/rating/error widgets; retain authored recipe, editorial quotes, ingredients, method and nutrition",
+      "old_reference_sha256": "64fee8f4ef22a5b3952ab32e3fa6134aecdf4bf02309f1f25602e47e5c5f3990",
+      "new_reference_sha256": "d975b4bbf1726b525f065b43308869e24375d25cfc0c63b7071aa08f267e2f5b",
+      "old_exclude": "script,style,template,noscript,nav,footer,svg,form,button:not([aria-controls]),[role=navigation],.mntl-recirc-section,.mntl-bio-tooltip,.mntl-ugc-reviews,.mntl-toc__wrapper,.mntl-recipe-review-bar,.mntl-di-bylines,.mntl-share-tools,.mntl-breadcrumbs,.mntl-recipe-review-bar__rating",
+      "new_exclude": "script,style,template,noscript,nav,footer,svg,form,button:not([aria-controls]),[role=navigation],.mntl-recirc-section,.mntl-bio-tooltip,.mntl-ugc-reviews,.mntl-toc__wrapper,.mntl-recipe-review-bar,.mntl-di-bylines,.mntl-share-tools,.mntl-breadcrumbs,.mntl-recipe-review-bar__rating,.photo-dialog,.ugc-review,.mntl-message-banner,.mm-recipes-rate-print,.mm-myrecipes-recipe-detail-promo-banner",
+      "old_checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "critical": true,
+          "text": "This chocolate chip cookie recipe makes dozens of delicious cookies with crisp edges and chewy middles loaded with chocolate chips."
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "critical": true,
+          "text": "Gather your ingredients, making sure your butter is softened, and your eggs are room temperature."
+        },
+        {
+          "id": "closing",
+          "kind": "text",
+          "critical": true,
+          "text": "(-) Information is not currently available for this nutrient."
+        },
+        {
+          "id": "section-heading",
+          "kind": "heading",
+          "text": "Chocolate Chip Cookies Ingredients"
+        },
+        {
+          "id": "later-heading",
+          "kind": "heading",
+          "text": "Allrecipes Community Tips and Praise"
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.allrecipes.com/about-allrecipes-test-kitchen-7550983"
+        },
+        {
+          "id": "navigation-noise",
+          "kind": "absent",
+          "text": "People Inc."
+        }
+      ],
+      "new_checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "critical": true,
+          "text": "This chocolate chip cookie recipe makes dozens of delicious cookies with crisp edges and chewy middles loaded with chocolate chips."
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "critical": true,
+          "text": "Gather your ingredients, making sure your butter is softened, and your eggs are room temperature."
+        },
+        {
+          "id": "closing",
+          "kind": "text",
+          "critical": true,
+          "text": "Bake in the preheated oven until edges are lightly browned, about 10 minutes."
+        },
+        {
+          "id": "section-heading",
+          "kind": "heading",
+          "text": "Chocolate Chip Cookies Ingredients"
+        },
+        {
+          "id": "later-heading",
+          "kind": "heading",
+          "text": "Can You Freeze Chocolate Chip Cookies?"
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.allrecipes.com/about-allrecipes-test-kitchen-7550983"
+        },
+        {
+          "id": "navigation-noise",
+          "kind": "absent",
+          "text": "People Inc."
+        }
+      ]
+    },
+    {
+      "id": "more-allrecipes-com-16354-easy-meatloaf",
+      "changed_fields": [
+        "reference_sha256",
+        "reference_exclude",
+        "checks"
+      ],
+      "reason": "Source-scope correction: exclude photo-gallery reader reviews, app/rating/error widgets; retain authored recipe, editorial quotes, ingredients, method and nutrition",
+      "old_reference_sha256": "aab3bef0855cf57006ad138686d96a882ac6e795ce26cba3a23c4d5bc6980287",
+      "new_reference_sha256": "bd5807c883a49a24d8594d7c9ce7bc1e7eb22944fa5517e24fd692cd4a62af27",
+      "old_exclude": "script,style,template,noscript,nav,footer,svg,form,button:not([aria-controls]),[role=navigation],.mntl-recirc-section,.mntl-bio-tooltip,.mntl-ugc-reviews,.mntl-toc__wrapper,.mntl-recipe-review-bar,.mntl-di-bylines,.mntl-share-tools,.mntl-breadcrumbs,.mntl-recipe-review-bar__rating",
+      "new_exclude": "script,style,template,noscript,nav,footer,svg,form,button:not([aria-controls]),[role=navigation],.mntl-recirc-section,.mntl-bio-tooltip,.mntl-ugc-reviews,.mntl-toc__wrapper,.mntl-recipe-review-bar,.mntl-di-bylines,.mntl-share-tools,.mntl-breadcrumbs,.mntl-recipe-review-bar__rating,.photo-dialog,.ugc-review,.mntl-message-banner,.mm-recipes-rate-print,.mm-myrecipes-recipe-detail-promo-banner",
+      "old_checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "critical": true,
+          "text": "This meatloaf recipe doesn't take long to make at all, and it's very good!"
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "critical": true,
+          "text": "Combine ground beef, onion, milk, bread crumbs, and egg in a large bowl, and season with salt and pepper."
+        },
+        {
+          "id": "closing",
+          "kind": "text",
+          "critical": true,
+          "text": "Grant Webster / Food Styling: Lauren McAnelly / Prop Styling: Gabriel Greco"
+        },
+        {
+          "id": "section-heading",
+          "kind": "heading",
+          "text": "Meatloaf Ingredients"
+        },
+        {
+          "id": "later-heading",
+          "kind": "heading",
+          "text": "Ingredients"
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.allrecipes.com/gallery/side-dish-recipes-for-meatloaf/"
+        },
+        {
+          "id": "navigation-noise",
+          "kind": "absent",
+          "text": "People Inc."
+        }
+      ],
+      "new_checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "critical": true,
+          "text": "This meatloaf recipe doesn't take long to make at all, and it's very good!"
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "critical": true,
+          "text": "Combine ground beef, onion, milk, bread crumbs, and egg in a large bowl, and season with salt and pepper."
+        },
+        {
+          "id": "closing",
+          "kind": "text",
+          "critical": true,
+          "text": "An instant-read thermometer inserted into the middle reads at least 160 degrees F (70 degrees C)."
+        },
+        {
+          "id": "section-heading",
+          "kind": "heading",
+          "text": "Meatloaf Ingredients"
+        },
+        {
+          "id": "later-heading",
+          "kind": "heading",
+          "text": "Allrecipes Community Tips and Praise"
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.allrecipes.com/gallery/side-dish-recipes-for-meatloaf/"
+        },
+        {
+          "id": "navigation-noise",
+          "kind": "absent",
+          "text": "People Inc."
+        }
+      ]
+    },
+    {
+      "id": "more-redcross-org-types-of-emergencies-earthquake",
+      "changed_fields": [
+        "reference_sha256",
+        "reference_exclude",
+        "checks"
+      ],
+      "reason": "Source-scope correction: exclude newsletter signup block; retain before/during/after safety instructions and relevant safety-app links",
+      "old_reference_sha256": "15f376ac55d9a4925d1c5c4528fc42e9dab2528749545581e92e67e07ab8ff2d",
+      "new_reference_sha256": "0fe5fcf995418a2cbaed5cf99a602f17c1c0e5330926442d6c2626a5e00daa7c",
+      "old_exclude": "script,style,template,noscript,nav,footer,svg,form,button:not([aria-controls]),[role=navigation],.hero-image-content .bp1-show,.section-control:has(form),.section-control:has(.donate-form)",
+      "new_exclude": "script,style,template,noscript,nav,footer,svg,form,button:not([aria-controls]),[role=navigation],.hero-image-content .bp1-show,.section-control:has(form),.section-control:has(.donate-form),.section-control:has(a[href=\"/subscribe.html\"])",
+      "old_checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "critical": true,
+          "text": "If you are in immediate need of help, please contact your local Red Cross \u00bb or find an open shelter \u00bb"
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "critical": true,
+          "text": "Learn what steps to take to prepare you and your loved ones for disasters."
+        },
+        {
+          "id": "closing",
+          "kind": "text",
+          "critical": true,
+          "text": "Did you find this content useful? Subscribe to our email list and stay informed on disaster alerts, preparedness tips, and ways to get involved."
+        },
+        {
+          "id": "section-heading",
+          "kind": "heading",
+          "text": "Earthquake Safety"
+        },
+        {
+          "id": "later-heading",
+          "kind": "heading",
+          "text": "Get Preparation Tips for the Whole Family"
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.redcross.org/content/dam/redcross/get-help/pdfs/earthquake/Earthquake-Preparedness-Checklist-Hakha-Chin_-_R2.pdf"
+        },
+        {
+          "id": "navigation-noise",
+          "kind": "absent",
+          "text": "Careers"
+        }
+      ],
+      "new_checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "critical": true,
+          "text": "If you are in immediate need of help, please contact your local Red Cross \u00bb or find an open shelter \u00bb"
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "critical": true,
+          "text": "During an earthquake, you should Drop, Cover, and Hold On to protect yourself from falling debris."
+        },
+        {
+          "id": "closing",
+          "kind": "text",
+          "critical": true,
+          "text": "Do not use matches, lighters, appliances, or light switches until you are sure there are no gas leaks."
+        },
+        {
+          "id": "section-heading",
+          "kind": "heading",
+          "text": "Earthquake Safety"
+        },
+        {
+          "id": "later-heading",
+          "kind": "heading",
+          "text": "Get Preparation Tips for the Whole Family"
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.redcross.org/content/dam/redcross/get-help/pdfs/earthquake/Earthquake-Preparedness-Checklist-French_-_R2.pdf"
+        },
+        {
+          "id": "navigation-noise",
+          "kind": "absent",
+          "text": "Careers"
+        }
+      ]
+    },
+    {
+      "id": "more-redcross-org-types-of-emergencies-flood",
+      "changed_fields": [
+        "reference_sha256",
+        "reference_exclude",
+        "checks"
+      ],
+      "reason": "Source-scope correction: exclude newsletter signup block; retain before/during/after safety instructions and relevant safety-app links",
+      "old_reference_sha256": "5bedfe272fd982666ce66fff2033336dd22144e04182971f826fee32fa74cc03",
+      "new_reference_sha256": "c34ae3c7b9c1cda2314b1f64862f2bb2fbaec5ba275e52c86b089c4c3a6d7296",
+      "old_exclude": "script,style,template,noscript,nav,footer,svg,form,button:not([aria-controls]),[role=navigation],.hero-image-content .bp1-show,.section-control:has(form),.section-control:has(.donate-form)",
+      "new_exclude": "script,style,template,noscript,nav,footer,svg,form,button:not([aria-controls]),[role=navigation],.hero-image-content .bp1-show,.section-control:has(form),.section-control:has(.donate-form),.section-control:has(a[href=\"/subscribe.html\"])",
+      "old_checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "critical": true,
+          "text": "If you are in immediate need of help, please contact your local Red Cross \u00bb or find an open shelter \u00bb"
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "critical": true,
+          "text": "Learn what steps to take to prepare you and your loved ones for disasters."
+        },
+        {
+          "id": "closing",
+          "kind": "text",
+          "critical": true,
+          "text": "Did you find this content useful? Subscribe to our email list and stay informed on disaster alerts, preparedness tips, and ways to get involved."
+        },
+        {
+          "id": "section-heading",
+          "kind": "heading",
+          "text": "Flood Safety"
+        },
+        {
+          "id": "later-heading",
+          "kind": "heading",
+          "text": "What Should You Do During a Flood?"
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.redcross.org/get-help/how-to-prepare-for-emergencies/older-adults.html"
+        },
+        {
+          "id": "navigation-noise",
+          "kind": "absent",
+          "text": "Careers"
+        }
+      ],
+      "new_checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "critical": true,
+          "text": "If you are in immediate need of help, please contact your local Red Cross \u00bb or find an open shelter \u00bb"
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "critical": true,
+          "text": "A flood/flash flood WARNING means flooding or flash flooding is already occurring or will occur soon."
+        },
+        {
+          "id": "closing",
+          "kind": "text",
+          "critical": true,
+          "text": "Never walk, swim, or drive through floodwater. Just 6 in (15 cm) of fast-moving floodwater can knock you over, and 12 in (30 cm) can carry your vehicle away."
+        },
+        {
+          "id": "section-heading",
+          "kind": "heading",
+          "text": "Flood Safety"
+        },
+        {
+          "id": "later-heading",
+          "kind": "heading",
+          "text": "What Should You Do During a Flood?"
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.redcross.org/get-help/how-to-prepare-for-emergencies/older-adults.html"
+        },
+        {
+          "id": "navigation-noise",
+          "kind": "absent",
+          "text": "Careers"
+        }
+      ]
+    },
+    {
+      "id": "more-redcross-org-types-of-emergencies-hurricane",
+      "changed_fields": [
+        "reference_sha256",
+        "reference_exclude",
+        "checks"
+      ],
+      "reason": "Source-scope correction: exclude newsletter signup block; retain before/during/after safety instructions and relevant safety-app links",
+      "old_reference_sha256": "2f8bcf48b9454aff2803bb119bad74a426e6791b650b0069a53758868ebe50a2",
+      "new_reference_sha256": "f7cc1ad40df28a06be6045e2a9380b3a2e207f1c5b4e1bb9ae4ab049b9454f90",
+      "old_exclude": "script,style,template,noscript,nav,footer,svg,form,button:not([aria-controls]),[role=navigation],.hero-image-content .bp1-show,.section-control:has(form),.section-control:has(.donate-form)",
+      "new_exclude": "script,style,template,noscript,nav,footer,svg,form,button:not([aria-controls]),[role=navigation],.hero-image-content .bp1-show,.section-control:has(form),.section-control:has(.donate-form),.section-control:has(a[href=\"/subscribe.html\"])",
+      "old_checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "critical": true,
+          "text": "If you are in immediate need of help, please contact your local Red Cross \u00bb or find an open shelter \u00bb"
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "critical": true,
+          "text": "Test your knowledge with our quick quiz. You might ace the test or you might learn something new \u2014 either way, you win!"
+        },
+        {
+          "id": "closing",
+          "kind": "text",
+          "critical": true,
+          "text": "Did you find this content useful? Subscribe to our email list and stay informed on disaster alerts, preparedness tips, and ways to get involved."
+        },
+        {
+          "id": "section-heading",
+          "kind": "heading",
+          "text": "Hurricane Safety"
+        },
+        {
+          "id": "later-heading",
+          "kind": "heading",
+          "text": "Prepare for Flooding"
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.redcross.org/content/dam/redcross/get-help/pdfs/hurricane/Hurricane_Urdu.pdf"
+        },
+        {
+          "id": "navigation-noise",
+          "kind": "absent",
+          "text": "Careers"
+        }
+      ],
+      "new_checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "critical": true,
+          "text": "If you are in immediate need of help, please contact your local Red Cross \u00bb or find an open shelter \u00bb"
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "critical": true,
+          "text": "Hurricanes and typhoons are the same type of storm \u2013 the name changes based on where they occur."
+        },
+        {
+          "id": "closing",
+          "kind": "text",
+          "critical": true,
+          "text": "Avoid drinking tap water until local officials say it is safe."
+        },
+        {
+          "id": "section-heading",
+          "kind": "heading",
+          "text": "Hurricane Safety"
+        },
+        {
+          "id": "later-heading",
+          "kind": "heading",
+          "text": "Prepare for Flooding"
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.redcross.org/content/dam/redcross/get-help/pdfs/hurricane/Hurricane_Urdu.pdf"
+        },
+        {
+          "id": "navigation-noise",
+          "kind": "absent",
+          "text": "Careers"
+        }
+      ]
+    },
+    {
+      "id": "more-redcross-org-types-of-emergencies-tornado",
+      "changed_fields": [
+        "reference_sha256",
+        "reference_exclude",
+        "checks"
+      ],
+      "reason": "Source-scope correction: exclude newsletter signup block; retain before/during/after safety instructions and relevant safety-app links",
+      "old_reference_sha256": "68756aa9494f5e9f168a9c06cfd8228d2cd1dbbaed9dd0c1415bce5de12e189b",
+      "new_reference_sha256": "46c667d5bbca3673e1b0334cb31c244629383179e407250b07182f87771a1092",
+      "old_exclude": "script,style,template,noscript,nav,footer,svg,form,button:not([aria-controls]),[role=navigation],.hero-image-content .bp1-show,.section-control:has(form),.section-control:has(.donate-form)",
+      "new_exclude": "script,style,template,noscript,nav,footer,svg,form,button:not([aria-controls]),[role=navigation],.hero-image-content .bp1-show,.section-control:has(form),.section-control:has(.donate-form),.section-control:has(a[href=\"/subscribe.html\"])",
+      "old_checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "critical": true,
+          "text": "If you are in immediate need of help, please contact your local Red Cross \u00bb or find an open shelter \u00bb"
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "critical": true,
+          "text": "Learn what steps to take to prepare you and your loved ones for disasters."
+        },
+        {
+          "id": "closing",
+          "kind": "text",
+          "critical": true,
+          "text": "Did you find this content useful? Subscribe to our email list and stay informed on disaster alerts, preparedness tips, and ways to get involved."
+        },
+        {
+          "id": "section-heading",
+          "kind": "heading",
+          "text": "Tornado Safety"
+        },
+        {
+          "id": "later-heading",
+          "kind": "heading",
+          "text": "What Should You Do During a Tornado?"
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.redcross.org/content/dam/redcross/get-help/pdfs/high-winds/EN-Disaster-Preparedness-High-Wind-Event-Checklist.pdf"
+        },
+        {
+          "id": "navigation-noise",
+          "kind": "absent",
+          "text": "Careers"
+        }
+      ],
+      "new_checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "critical": true,
+          "text": "If you are in immediate need of help, please contact your local Red Cross \u00bb or find an open shelter \u00bb"
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "critical": true,
+          "text": "Learn what steps to take to prepare you and your loved ones for disasters."
+        },
+        {
+          "id": "closing",
+          "kind": "text",
+          "critical": true,
+          "text": "Do not attempt to move a person with a back or neck injury unless they are in immediate danger."
+        },
+        {
+          "id": "section-heading",
+          "kind": "heading",
+          "text": "Tornado Safety"
+        },
+        {
+          "id": "later-heading",
+          "kind": "heading",
+          "text": "What Should You Do During a Tornado?"
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.redcross.org/content/dam/redcross/get-help/pdfs/tornado/ZH-TW_Tornado-Safety-Checklist.pdf"
+        },
+        {
+          "id": "navigation-noise",
+          "kind": "absent",
+          "text": "Careers"
+        }
+      ]
+    }
+  ]
+}

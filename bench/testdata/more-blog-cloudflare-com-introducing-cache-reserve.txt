@@ -1,0 +1,104 @@
+Speed & Reliability
+
+
+
+
+
+Cache ReservePlatform WeekProduct NewsSpeed & Reliability
+
+
+
+
+
+
+May 11, 2022
+Introducing Cache Reserve: massively extending Cloudflare’s cache
+
+
+
+
+Alex Krivit
+
+
+
+8 minute read
+
+
+
+
+This post is also available in 日本語.
+
+
+
+
+
+
+
+
+One hundred percent. 100%. One-zero-zero. That’s the cache ratio we’re all chasing. Having a high cache ratio means that more of a website’s content is served from a Cloudflare data center close to where a visitor is requesting the website. Serving content from Cloudflare’s cache means it loads faster for visitors, saves website operators money on egress fees from origins, and provides multiple layers of resiliency and protection to make sure that content is reliably available to be served.
+
+Today, I’m delighted to announce a massive extension of the benefits of caching with Cache Reserve: a new way to persistently serve all static content from Cloudflare’s global cache. By using Cache Reserve, customers can see higher cache hit ratios and lower egress bills.
+
+Why is getting a 100% cache ratio difficult?
+
+Every second, Cloudflare serves tens-of-millions of requests from our cache which equates to multiple terabytes-per-second of cached data being delivered to website visitors around the world. With this massive scale, we must ensure that the most requested content is cached in the areas where it is most popular. Otherwise, visitors might wait too long for content to be delivered from farther away and our network would be running inefficiently. If cache storage in a certain region is full, our network avoids imposing these inefficiencies on our customers by evicting less-popular content from the data center and replacing it with more-requested content.
+
+This works well for the majority of use cases, but all customers have long tail content that is rarely requested and may be evicted from cache. This can be a cause of concern for customers, as this unpopular content can be a major cost driver if it is evicted repeatedly and needs to be served from an origin. This concern can be especially significant for customers with massive content libraries. So how can we make sure to keep this less popular content in cache to shield the customer from origin egress?
+
+Cache Reserve removes customer content from this popularity contest and ensures that even if the specific content hasn’t been requested in months, it can still be served from Cloudflare’s cache - avoiding the need to pull it from the origin and saving the customer money on egress. Cache Reserve helps get customers closer to that 100% cache ratio and helps serve all of their content from our global CDN, forever.  
+
+Why is cache eviction needed?
+
+Most content served from our cache starts its journey from an origin server - where content is hosted. In order to be admitted to Cloudflare’s cache the content sent from the origin must meet certain eligibility criteria that ensures it can be reused to respond to other requests for a website (content that doesn’t change based on who is visiting the site).
+
+After content is admitted to cache, the next question to consider is how long it should remain in cache. Since cache ratios are calculated by taking the number of requests for content and identifying the portion that are answered from a cache server instead of an origin server, ensuring content remains cached in an area it is highly requested is paramount to achieving a high cache ratio.
+
+
+
+Some CDNs use a pay-to-play model that allows customers to pay more money to ensure content is cached in certain areas for some length of time. At Cloudflare, we don’t charge customers based on where or for how long something is cached. This means that we have to use signals other than a customer’s willingness to pay to make sure that the right content is cached for the right amount of time and in the right areas.
+
+Where to cache a piece of content is pretty straightforward (where it’s being requested), how long content should remain in cache can be highly variable.
+
+Beyond headers like cache-control or cdn-cache-control, which help determine how long a customer wants something to be served from cache, the other element that CDNs must consider is whether they need to evict content early to optimize storage of more popular assets. We do eviction based on an algorithm called “least recently used” or LRU. This means that the least-requested content can be evicted from cache first to make space for more popular content when storage space is full.
+
+This caching strategy requires keeping track of a lot of information about when requests come in and constantly updating the cache to make sure that the hottest content is kept in cache and the least popular content is evicted. This works well and is fair for the wide-array of customers our CDN supports.
+
+However, if a customer has a large library of content that might go through cycles of popularity and which they’d like to serve from cache regardless, then LRU might mean additional origin egress as assets that are requested sparingly over a long time frame are pulled more from the origin.    
+
+That’s where Cache Reserve comes in. Cache Reserve is not an alternative to our popularity-based cache but a complement to it. By backstopping all cacheable content in Cache Reserve customers don't have to worry about unwanted cache eviction any longer.    
+
+Cache Reserve
+
+Cache Reserve is a large, persistent data store that is implemented on top of R2. By pushing a single button in the dashboard, all of your website’s cacheable content will be written to Cache Reserve. In the same way that Tiered Cache builds a hierarchy of caches between your visitors and your origin, Cache Reserve serves as the ultimate upper-tier cache that will reserve storage space for your assets for as long as you want. This ensures that your content is always served from cache, shielding your origin from unneeded egress fees, and improving response performance.
+
+How Does Cache Reserve Work?
+
+
+
+Cache Reserve sits between our edge data centers and your origin and provides guaranteed SLAs for how long your content can remain in cache.
+
+As content is pulled from the origin, it will be written to Cache Reserve, followed by upper-tier data centers, and lower-tier data centers until it reaches the client to fulfill the request. Subsequent requests for the same content will not need to go all the way back to the origin for the response and can, instead, be served from a cache closer to the visitor. Improving both performance and costs of serving the assets. As content gets evicted from lower-tiers and upper-tiers, it will be backstopped by Cache Reserve.
+
+Cache Reserve voids the request-based eviction that’s implemented in LRU and ensures that assets will remain in cache as long as they are needed. Cache Reserve extends the benefits of Tiered Cache by reducing the number of times Cloudflare’s network needs to ask an origin for content we should have in cache, while simultaneously limiting the number of connections and requests that our data centers need to open to your origin to ask for missing content. Using Cache Reserve with tiered cache helps collapse the number of requests that result from multiple concurrent cache misses from lower-tiers for the same content.
+
+As an example, let’s assume a cold request for example.com, something our network has never seen before. If a client request comes into the closest lower-tier data center and it is a miss, that lower-tier is mapped to an upper-tier data center. When the lower-tier asks the upper-tier for the content and it is also a miss, the upper-tier will ask Cache Reserve for the content. Now, being the ultimate upper-tier, it will be the only data center that can ask the origin for content if it is not stored on our network. This will help limit the origin resources you need to devote to serving this content as once it’s written to Cache Reserve, your origin doesn’t need to fan out the content to any other part of Cloudflare’s network.
+
+When your content does need updating, Cache Reserve will respect cache-control headers and purge requests. This means that if you want to control how long something remains fresh in Cache Reserve, before Cloudflare goes back to your origin to revalidate the content, set it as a cache-control header and it will be respected without risk of early eviction. Or if you want to update content on the fly, you can send a purge request which will be respected in both Cloudflare’s cache and in Cache Reserve.
+
+How do you use Cache Reserve?
+
+Currently, Cache Reserve is in closed beta, meaning that it’s available to anyone who wants to sign up but we will be slowly rolling it out to customers over the coming weeks to make sure that we are quickly triaging edge cases and making fundamental improvements before we make it generally available to everyone.
+
+To sign up for the Cache Reserve beta:
+
+Simply go to the Caching tile in the dashboard.
+
+Navigate to the Cache Reserve page and push the sign up button.
+
+
+
+The Cache Reserve Plan will mimic the low cost of R2. Storage will be $0.015 per GB per month and operations will be $0.36 per million reads, and $4.50 per million writes. For more information about pricing, please refer to the R2 page to get a general idea (Cache Reserve pricing page will be out soon).  
+
+Try it out!
+
+Cache Reserve holds tremendous promise to increase cache hit ratios — which will improve the economics of running any website while speeding up visitors' experiences. We’re excited to begin letting people use Cache Reserve soon. Be sure to check out the beta and let us know what you think.

@@ -1,0 +1,778 @@
+Not to be confused with Anaerobic respiration. For other uses, see Fermentation (disambiguation).
+
+
+
+
+Phylogenetic tree of bacteria and archaea, highlighting those that carry out fermentation. Their end products are also highlighted. Figure modified from Hackmann (2024).[1]
+
+Fermentation is a type of anaerobic metabolism that harnesses the redox potential of the reactants to make adenosine triphosphate (ATP) and organic end products.[1][2] Organic molecules, such as glucose or other sugars, are catabolized and their electrons are transferred to other organic molecules (cofactors, coenzymes, etc.).[1] Anaerobic glycolysis is a related term used to describe the occurrence of fermentation in organisms (usually multicellular organisms such as animals) when aerobic respiration cannot keep up with the ATP demand, due to insufficient oxygen supply or anaerobic conditions.
+
+
+
+Fermentation is important in several areas of human society. Humans have used fermentation in the production and preservation of food for 13,000 years.[3] It has been associated with health benefits, unique flavor profiles, and making products have better texture. Humans and their livestock also benefit from fermentation from the microbes in the gut that release end products that are subsequently used by the host for energy. Perhaps the most commonly known use for fermentation is at an industrial level to produce commodity chemicals, such as ethanol and lactate. Ethanol is used in a variety of alcoholic beverages (beers, wine, and spirits) while lactate can be neutralized to lactic acid and be used for food preservation, as a curing agent, or as a flavoring agent.[3]
+
+
+
+This complex metabolism utilizes a wide variety of substrates and can form nearly 300 different combinations of end products. Fermentation occurs in both prokaryotes and eukaryotes. The discovery of new end products and new fermentative organisms suggests that fermentation is more diverse than what has been studied.[4]
+
+
+
+
+
+
+Definition
+
+
+
+A variety of definitions have been proposed throughout the years, but the simplest and most recent definition of fermentation proposed is "catabolism where organic compounds are both the electron donor and acceptor."[5] This definition distinguishes fermentation from aerobic respiration (when oxygen is the acceptor) and types of anaerobic respiration (when an inorganic species is the acceptor).[4] However, this definition does not encompass all forms of fermentation. For example, propionate fermentation which uses H2 as an electron donor, or the second step of butyrate fermentation where CO2 can act as an electron acceptor. Thus, it is simplest to use this definition while acknowledging that protons can also be used as electron donors and CO2 as acceptors.[4]
+
+
+
+In 1876, before the discovery of anaerobic respiration, Louis Pasteur described it as "la vie sans air" (life without air). It was also common for fermentation to be defined based on how fermentation forms ATP which was catabolism that forms ATP through only substrate-level phosphorylation.
+
+
+
+Industrial fermentation is another type of fermentation that is defined loosely as a large-scale biological manufacturing process; however, this definition focuses on the process of manufacturing rather than metabolic details.[4]
+
+
+
+
+
+Biological role and prevalence
+
+
+
+Fermentation can be used by organisms to generate a net gain of ATP from exogenous sources of organic molecules, such as glucose. It was not a net source of energy in the earliest forms of life because they were mostly single cell organisms living in the ocean and the ocean does not contain significant concentrations of complex organic molecules.
+
+
+
+Because fermentation does not need an exogenous electron acceptor, it is able to occur regardless of the environmental conditions. However, the primary disadvantage of fermentation is that fermentation is relatively inefficient and produces between 2 and 5 ATP molecules per glucose versus 32 ATP molecules during aerobic respiration.[6][7]
+
+
+
+Over 25% of bacteria and archaea carry out fermentation.[2][8] Fermentation is especially prevalent in prokaryotes of the phylum Bacillota, but is most rare in Actinomycetota, according to phylogenetic analysis. The fermenting microbes are most frequently found in host-associated habitats such as the gastrointestinal tract, but also sediments, food, and other habitats. Both bacteria and archaea share the capacity for fermentation, leading to a wide variety of organic end products. The most common fermentation products include lactate, acetate, ethanol, carbon dioxide (CO2), succinate, hydrogen (H2), propionate, and butyrate.[9][2]
+
+
+
+In humans, fermentation pathways occur in health, as in exercising, and in disease, as in sepsis and hemorrhagic shock,[10] providing energy for a period ranging from 10 seconds to 2 minutes. During this time, it can augment the energy produced by aerobic metabolism, but is limited by the buildup of lactate. Rest eventually becomes necessary.[11]
+
+
+
+
+
+
+Substrates and products of fermentation
+
+
+The most common substrates and products of fermentation.  Figure modified from Hackmann (2024).[1]
+Like many biochemical reactions, fermentation is an enzyme catalyzed reaction with the goal of either changing the initial substrate or forming a useful byproduct. When naturally occurring fermentation is carried out by microbes, the goal is usually to obtain useful metabolic products such as ATP, pyruvate, or lactic acid. The substrates used in this type of fermentation are often simple sugars (carbohydrates) that serve as a carbon source and this type of fermentation can be carried out by microbes and humans.[12]
+
+
+
+Food as a substrate for fermentation is the most common and oldest anthropogenic use of fermentation as it was a method to preserve food.  This includes cereal, dairy products, rice, honey, bread, and beers.[13] This type of naturally occurring fermentation continues to be harnessed by humans for preservative effects, flavor profiles, and texture profiles. Advances in fermentation has led to the engineering and industrialization of specific microbes and substrates in order to obtain certain flavor and texture profiles – this is most obvious when observing beer fermentation.
+
+
+
+
+
+
+Biochemical overview
+
+
+Overview of the biochemical pathways for fermentation of glucose.  Figure modified from Hackmann (2024).[1]
+
+
+When an organic compound is fermented, it is broken down to a simpler molecule and releases electrons. The electrons are transferred to a redox cofactor, which, in turn, transfers them to an organic compound. ATP is generated in the process, and it can be formed via substrate-level phosphorylation or by ATP synthase.[12]
+
+
+
+When glucose is fermented, it enters glycolysis or the pentose phosphate pathway and is converted to pyruvate. From pyruvate, pathways branch out to form a number of end products (e.g. lactate). At several points, electrons are released and accepted by redox cofactors (NAD and ferredoxin). At later points, these cofactors donate electrons to their final acceptor and become oxidized. ATP is also formed at several points in the pathway.[6][14]
+The biochemical pathways of fermentation of glucose in poster format.  Figure modified from  Hackmann (2024).[1]
+
+
+
+
+
+Biochemistry of individual products
+
+
+
+
+
+
+Ethanol
+
+
+
+Main article: Ethanol fermentation
+
+
+
+Yeast and other anaerobic microorganisms can convert the pyruvate produced from the oxidation of glucose by a glycolysis pathway to ethanol and CO2. In ethanol fermentation, one glucose molecule is converted into two ethanol molecules and two carbon dioxide (CO2) molecules.[15][16] It is used to make bread dough rise: the carbon dioxide forms bubbles, expanding the dough into a foam.[17][18] The ethanol is the intoxicating agent in alcoholic beverages such as wine, beer and liquor.[19] Fermentation of feedstocks, including sugarcane, maize, and sugar beets, produces ethanol that is added to gasoline.[20] In some species of fish, such as carp, it provides energy when oxygen is scarce (along with lactic acid fermentation).[21]
+
+
+
+Before fermentation, a glucose molecule breaks down into two pyruvate molecules (glycolysis). The energy from this exothermic reaction is used to bind inorganic phosphates to ADP, which converts it to ATP, and convert NAD+ to NADH. The pyruvates break down into two acetaldehyde molecules and give off two carbon dioxide molecules as waste products. The acetaldehyde is reduced into ethanol using the energy and hydrogen from NADH, and the NADH is oxidized into NAD+ so that the cycle may repeat. The reaction is catalyzed by the enzymes pyruvate decarboxylase and alcohol dehydrogenase.[15]
+
+
+
+
+
+History of bioethanol fermentation
+
+
+
+
+The history of ethanol as a fuel spans several centuries and is marked by a series of significant milestones. Samuel Morey, an American inventor, was the first to produce ethanol by fermenting corn in 1826. However, it was not until the California Gold Rush in the 1850s that ethanol was first used as a fuel in the United States. Rudolf Diesel demonstrated his engine, which could run on vegetable oils and ethanol, in 1895, but the widespread use of petroleum-based diesel engines made ethanol less popular as a fuel. In the 1970s, the oil crisis reignited interest in ethanol, and Brazil became a leader in ethanol production and use. The United States began producing ethanol on a large scale in the 1980s and 1990s as a fuel additive to gasoline, due to government regulations. Today, ethanol continues to be explored as a sustainable and renewable fuel source, with researchers developing new technologies and biomass sources for its production.
+
+
+
+
+
+
+
+Lactate
+
+
+
+Main article: Lactic acid fermentation See also: Mixed acid fermentation, Lactate shuttle hypothesis, and Lactic acidosis
+
+
+
+
+Pyruvate is the terminal electron acceptor in lactic acid fermentation, and homolactic fermentation (producing only lactic acid) is the simplest type of fermentation. Pyruvate from glycolysis[22] undergoes a simple redox reaction, forming lactic acid.[23][24] Overall, one molecule of glucose (or any six-carbon sugar) is converted to two molecules of lactic acid:
+
+
+C6H12O6 → 2 CH3CHOHCOOH
+
+
+It occurs in the muscles of animals when they need energy faster than the blood can supply oxygen. (In mammals, lactate can be transformed by the liver back into glucose using the Cori cycle.) It also occurs in some kinds of bacteria (such as lactobacilli) and some fungi. It is the type of bacteria that convert lactose into lactic acid in yogurt, giving it its sour taste. These lactic acid bacteria can carry out either homolactic fermentation, where the end-product is mostly lactic acid, or heterolactic fermentation, where some lactate is further metabolized to ethanol and carbon dioxide[23] (via the phosphoketolase pathway), acetate, or other metabolic products, e.g.:
+
+
+C6H12O6 → CH3CHOHCOOH + C2H5OH + CO2
+
+
+If lactose is fermented (as in yogurts and cheeses), it is first converted into glucose and galactose (both six-carbon sugars with the same atomic formula):
+
+
+C12H22O11 + H2O → 2 C6H12O6
+
+
+Heterolactic fermentation is in a sense intermediate between lactic acid fermentation and other types, e.g. alcoholic fermentation. Reasons to go further and convert lactic acid into something else include:
+
+
+The acidity of lactic acid impedes biological processes. This can be beneficial to the fermenting organism as it drives out competitors that are unadapted to the acidity. As a result, the food will have a longer shelf life (one reason foods are purposely fermented in the first place); however, beyond a certain point, the acidity starts affecting the organism that produces it.
+
+
+The high concentration of lactic acid (the final product of fermentation) drives the equilibrium backwards (Le Chatelier's principle), decreasing the rate at which fermentation can occur and slowing down growth.
+
+
+Ethanol, into which lactic acid can be easily converted, is volatile and will readily escape, allowing the reaction to proceed easily. CO2 is also produced, but it is only weakly acidic and even more volatile than ethanol.
+
+
+Acetic acid (another conversion product) is acidic and not as volatile as ethanol; however, in the presence of limited oxygen, its creation from lactic acid releases additional energy. It is a lighter molecule than lactic acid, forming fewer hydrogen bonds with its surroundings (due to having fewer groups that can form such bonds), thus is more volatile and will also allow the reaction to proceed more quickly.
+
+
+If propionic acid, butyric acid, and longer monocarboxylic acids are produced, the amount of acidity produced per glucose consumed will decrease, as with ethanol, allowing faster growth.
+
+
+
+
+
+
+Hydrogen gas
+
+
+
+Main article: Fermentative hydrogen production
+
+
+Hydrogen gas is produced in many types of fermentation as a way to regenerate NAD+ from NADH. Electrons are transferred to ferredoxin, which in turn is oxidized by hydrogenase, producing H2.[15] Hydrogen gas is a substrate for methanogens and sulfate reducers, which keep the concentration of hydrogen low and favor the production of such an energy-rich compound,[25] but hydrogen gas at a fairly high concentration can nevertheless be formed, as in flatus.
+
+
+
+For example, Clostridium pasteurianum ferments glucose to butyrate, acetate, carbon dioxide, and hydrogen gas.[26] The reaction leading to acetate is:
+
+
+
+C6H12O6 + 4 H2O → 2 CH3COO− + 2 HCO3− + 4 H+ + 4 H2
+
+
+
+
+
+
+Glyoxylate
+
+
+
+Glyoxylate fermentation is a type of fermentation used by microbes that are able to utilize glyoxylate as a nitrogen source.[27]
+
+
+
+
+
+
+Other
+
+
+
+Other types of fermentation include mixed acid fermentation, butanediol fermentation, butyrate fermentation, caproate fermentation, and acetone–butanol–ethanol fermentation.[28]
+
+
+
+
+
+
+In the broader sense
+
+
+
+In food and industrial contexts, any chemical modification performed by a living being in a controlled container can be termed "fermentation". The following do not fall into the biochemical sense, but are called fermentation in the larger sense:
+
+
+
+
+
+Alternative protein
+
+
+
+Further information: List of fermented foods
+
+Fermentation is used to produce the heme protein found in the Impossible Burger.
+
+
+Fermentation can be used to make alternative protein sources. It is commonly used to modify existing protein foods, including plant-based ones such as soy, into more flavorful forms such as tempeh and fermented tofu.
+
+
+
+More modern "fermentation" makes recombinant protein to help produce meat analogue, milk substitute, cheese analogues, and egg substitutes. Some examples are:[29]
+
+
+Recombinant myoglobin for faux meat (Motif Foodworks)
+
+
+Recombinant leghemoglobin for faux meat (Impossible Foods)
+
+
+Recombinant whey protein for dairy replacement (Perfect Day)
+
+
+Recombinant casein protein for dairy replacements (Those Vegan Cowboys[30])
+
+
+Recombinant egg white (EVERY)
+
+
+
+Heme proteins such as myoglobin and hemoglobin give meat its characteristic texture, flavor, color, and aroma. The myoglobin and leghemoglobin ingredients can be used to replicate this property, despite them coming from a vat instead of meat.[29][31]
+
+
+
+
+
+
+Enzymes
+
+
+
+Industrial fermentation can be used for enzyme production, where proteins with catalytic activity are produced and secreted by microorganisms. The development of fermentation processes, microbial strain engineering and recombinant gene technologies has enabled the commercialization of a wide range of enzymes. Enzymes are used in all kinds of industrial segments, such as food (lactose removal, cheese flavor), beverage (juice treatment), baking (bread softness, dough conditioning), animal feed, detergents (protein, starch and lipid stain removal), textile, personal care and pulp and paper industries.[32]
+
+
+
+
+
+
+
+
+Modes of industrial operation
+
+
+
+Most industrial fermentation uses batch or fed-batch procedures, although continuous fermentation can be more economical if various challenges, particularly the difficulty of maintaining sterility, can be met.[33]
+
+
+
+
+
+Batch
+
+
+
+In a batch process, all the ingredients are combined and the reactions proceed without any further input. Batch fermentation has been used for millennia to make bread and alcoholic beverages, and it is still a common method, especially when the process is not well understood.[34]: 1  However, it can be expensive because the fermentor must be sterilized using high pressure steam between batches.[33] Strictly speaking, there is often addition of small quantities of chemicals to control the pH or suppress foaming.[34]: 25 
+
+
+
+Batch fermentation goes through a series of phases. There is a lag phase in which cells adjust to their environment; then a phase in which exponential growth occurs. Once many of the nutrients have been consumed, the growth slows and becomes non-exponential, but production of secondary metabolites (including commercially important antibiotics and enzymes) accelerates. This continues through a stationary phase after most of the nutrients have been consumed, and then the cells die.[34]: 25 
+
+
+
+
+
+
+Fed-batch
+
+
+
+See also: Fed-batch culture
+
+
+Fed-batch fermentation is a variation of batch fermentation where some of the ingredients are added during the fermentation. This allows greater control over the stages of the process. In particular, production of secondary metabolites can be increased by adding a limited quantity of nutrients during the non-exponential growth phase. Fed-batch operations are often sandwiched between batch operations.[34]: 1 [35]
+
+
+
+
+
+
+Open
+
+
+
+The high cost of sterilizing the fermentor between batches can be avoided using various open fermentation approaches that are able to resist contamination. One is to use a naturally evolved mixed culture. This is particularly favored in wastewater treatment, since mixed populations can adapt to a wide variety of wastes. Thermophilic bacteria can produce lactic acid at temperatures of around 50 °Celsius, sufficient to discourage microbial contamination; and ethanol has been produced at a temperature of 70 °C. This is just below its boiling point (78 °C), making it easy to extract. Halophilic bacteria can produce bioplastics in hypersaline conditions. Solid-state fermentation adds a small amount of water to a solid substrate; it is widely used in the food industry to produce flavors, enzymes and organic acids.[33]
+
+
+
+
+
+
+Continuous
+
+
+
+In continuous fermentation, substrates are added and final products removed continuously.[33] There are three varieties: chemostats, which hold nutrient levels constant; turbidostats, which keep cell mass constant; and plug flow reactors in which the culture medium flows steadily through a tube while the cells are recycled from the outlet to the inlet.[35] If the process works well, there is a steady flow of feed and effluent and the costs of repeatedly setting up a batch are avoided. Also, it can prolong the exponential growth phase and avoid byproducts that inhibit the reactions by continuously removing them. However, it is difficult to maintain a steady state and avoid contamination, and the design tends to be complex.[33] Typically the fermentor must run for over 500 hours to be more economical than batch processors.[35]
+
+
+
+
+
+
+
+History of the use of fermentation
+
+
+
+Main article: Fermentation in food processing
+
+A biochemical process used to produce energy from the breakdown of carbohydrates (such as the sugar maltose) to simpler molecules such as ethanol. Fermentation by yeast produces beverages such as beer and wine.
+
+The use of fermentation, particularly for beverages, has existed since the Neolithic and has been documented dating from 7000 to 6600 BCE in Jiahu, China,[36] 6000 BCE in Georgia,[37] 3150 BCE in ancient Egypt,[38] 3000 BCE in Babylon,[39] 2000 BCE in pre-Hispanic Mexico,[39] and 1500 BC in Sudan.[40] Fermented foods have a religious significance in Judaism and Christianity. The Baltic god Rugutis was worshiped as the agent of fermentation.[41][42]
+
+
+Louis Pasteur in his laboratory
+
+
+The 'father of modern chemistry', Antoine Lavoisier, had viewed fermentation as a simple chemical reaction and rejected the notion that living organisms could be involved.[43]: 132  By the 19th century, this was seen as vitalism, which was lampooned in an anonymous 1839 publication by Justus von Liebig and Friedrich Wöhler.[43]: 133 
+
+
+
+In 1837, Charles Cagniard de la Tour, Theodor Schwann and Friedrich Traugott Kützing independently published papers concluding, as a result of microscopic investigations, that yeast is a living organism that reproduces by budding.[44][45]: 6  Schwann boiled grape juice to kill the yeast and found that no fermentation would occur until new yeast was added.  
+The turning point came when Louis Pasteur (1822–1895), during the 1850s and 1860s, repeated Schwann's experiments and showed fermentation is initiated by living organisms in a series of investigations.[24][45]: 6  In 1857, Pasteur showed lactic acid fermentation is caused by living organisms.[46] In 1860, he demonstrated how bacteria cause souring in milk, a process formerly thought to be merely a chemical change. His work in identifying the role of microorganisms in food spoilage led to the process of pasteurization.[47]
+
+
+
+In 1877, working to improve the French brewing industry, Pasteur published his famous paper on fermentation, "Etudes sur la Bière", which was translated into English in 1879 as "Studies on fermentation".[48] He defined fermentation (incorrectly) as "Life without air".[49]
+
+
+
+Although showing fermentation resulted from the action of living microorganisms was a breakthrough, it did not explain the basic nature of fermentation; nor did it prove it is caused by microorganisms which appear to be always present. Many scientists, including Pasteur, had unsuccessfully attempted to extract the fermentation enzyme from yeast.[49]
+
+
+
+Success came in 1897 when the German chemist Eduard Buechner ground up yeast, extracted a juice from them, then found to his amazement this "dead" liquid would ferment a sugar solution, forming carbon dioxide and alcohol much like living yeasts.[50]
+
+
+
+Buechner's results are considered to mark the birth of biochemistry. The "unorganized ferments" behaved just like the organized ones. From that time on, the term enzyme came to be applied to all ferments. It was then understood fermentation is caused by enzymes produced by microorganisms.[51] In 1907, Buechner won the Nobel Prize in chemistry for his work.[52]
+
+
+
+Advances in microbiology and fermentation technology have continued steadily up until the present. For example, in the 1930s, it was discovered microorganisms could be mutated with physical and chemical treatments to be higher-yielding, faster-growing, tolerant of less oxygen, and able to use a more concentrated medium.[53][54]
+
+
+
+
+
+Post 1930s
+
+
+
+
+The field of fermentation has been critical to producing a wide range of consumer goods, from food and drink to industrial chemicals and pharmaceuticals. Since its early beginnings in ancient civilizations, fermentation has continued to evolve and expand, with new techniques and technologies driving advances in product quality, yield, and efficiency. The period from the 1930s onward saw a number of significant advancements in fermentation technology, including the development of new processes for producing high-value products like antibiotics and enzymes, the increasing importance of fermentation in the production of bulk chemicals, and a growing interest in the use of fermentation for the production of functional foods and nutraceuticals.
+
+
+
+In the 1970s and 1980s, fermentation became increasingly important in producing bulk chemicals like ethanol, lactic acid, and citric acid. This led to developing new fermentation techniques and genetically engineered microorganisms to improve yields and reduce production costs. In the 1990s and 2000s, there was a growing interest in fermentation to produce functional foods and nutraceuticals, which have potential health benefits beyond basic nutrition. This led to new fermentation processes, probiotics, and other functional ingredients.[55]
+
+
+
+
+
+
+
+Circular economy
+
+
+
+Recent research has begun to investigate the relationship between fermentation and creating a circular economy in effort to address the current climate crisis and the increasing demands for resources as the population grows. The production of fuels, materials, and other chemicals has led to a notable increase in greenhouse gasses and a subsequent increase in global temperatures.[56][57] The current, linear economy relies heavily on fossil fuels and nonrenewable energy to produce chemicals and materials. In a circular economy, the use of renewable resources would be employed to produce chemicals; moreover, this type of economy focuses on reusing end-of-life chemicals and materials. Investigation into alternative biofuels and biomaterials has become increasingly popular with fermentation as a notable method.
+
+
+
+The primary source of biomass for fermentation is using biomass feedstocks which contain a mix of carbohydrates, proteins, oils and fats, and lignin. Carbohydrates such as sucrose and starch (sources include sugarcane, corn, and cassava) are the most commonly used substrate for fermentation; however, in the discussion of biofuels, there are concerns regarding land competition between food and fuel biomass. Attention has been turned towards second-generation biomass feedstock such as silvergrass or wood chips.  
+
+
+
+
+
+Anaerobic digestion
+
+
+
+Anerobic digestion is found in all facets of biomass fermentation to create biofuels, biobased materials, and biochemicals.[58] One of the most popular and established anaerobic fermentation process is the transformation of organic waste into biogas.[59][60] Further research has explored the possibility and reusing residual solids left over from fermentative processes and converting them into "char-based materials". If successful, this would promote increased efficiency and a decreased environmental impact in the biomanufacturing industry.[61] Additionally, homogenous gas streams of CO2, and CH4, can be formed from anaerobic digestion by some bacteria, while other bacteria are able to fixate CO2 or CO and convert them into alcohols or fatty acids.
+
+
+
+
+
+
+Biofuel production
+
+
+
+One the most widely known biobased chemicals produced through fermentation, the process of fermenting sugars from plants into ethanol and CO2 uses Saccharomyces cerevisiae. Biobased ethanol is used as a popular renewable transportation fuel and also holds value in the chemical industry as the precursor for ethylene, which can be converted into polyethylene. Commercial bioethanol production via fermentation is dominant in Brazil and the USA and employs sugarcane and starch from corn as feedstocks. The process involves starch enzymatic hydrolysis to glucose, followed by fermentation and distillation. There were around 200 ethanol plants operating in the U.S. as of 2021, with capacities of production varying from 6 kilotonnes to over one million tonnes annually.[62][61]
+
+
+
+
+
+
+Biochemical production
+
+
+
+Succinic acid is an important biobased chemical utilized for the production of biodegradable polymers including polybutylene succinate (PBS) and as feedstock to other biobased chemicals like 1,4-butanediol. Succinic acid can be produced via the fermentation of sugar and carbon dioxide using native strains of bacteria; however, yields depend upon strain and conditions. Neutral or acidic fermentations are feasible, with low-pH fermentations facilitated by acid-resistant yeast strains simplifying downstream recovery through avoiding neutralization and reacidification.[63]
+
+
+
+Throughout the 2010s, several companies ordered commercial-scale production facilities, e.g., BioAmber, Myriant, Reverdia, and Succinity, on different host organisms and feedstocks like corn syrup and sorghum starch. While having proven the technical feasibility of succinic acid large-scale biobased production, most of them failed to compete economically with petrochemical products on a commercial scale. Several of the plants were spun off or shut down to new proprietors, demonstrating the financial challenges of scaling up bio-based platforms within current markets. However, these projects are evidence that under right market conditions, succinic acid biobased has promise for greater industrial use.[61]
+
+
+
+
+
+
+Product production
+
+
+
+Fermentation plays a significant role in producing precursor polymers to products and food additives such as amino acids, organic acids, triglycerides and fatty acids.
+
+
+
+Amino acids are industrially produced through fermentation by microorganisms such as Corynebacterium glutamicum and Escherichia coli. The global market application for amino acids is primarily food and feed additive. L-glutamic acid and L-lysine are the most commonly found amino acids in this market with L-glutamic acid being mainly used as a food flavoring in the form of monosodium glutamate (MSG) and L-lysine being mainly used as an animal feed supplement. Other amino acids like L-threonine and L-phenylalanine are also produced on large scales for different applications.[61][64]
+
+
+
+Organic acids such as citric acid, lactic acid, and acetic acid are procured by microbial fermentation. Citric acid finds widespread use in the food industry as a preservative and flavoring agent. Lactic acid is used in food preservation and as a precursor for biodegradable plastics. Acetic acid is used in food as vinegar and as a chemical reagent in industries. These organic acids are produced using microorganisms like Aspergillus niger and Lactobacillus species under controlled fermentation conditions.[61]
+
+
+
+Fatty acids and triglycerides are produced by fermentation on oleaginous microorganisms such as Yarrowia lipolytica and certain fungi. These microorganisms can accumulate lipids under specific culture conditions and therefore are suitable for industrial-scale production of lipids. The fatty acids produced can be used in the manufacture of soaps, detergents, and as starting compounds for various chemicals. Triglycerides are energy storage compounds with applications in the food industry and biofuel sector. The fermentation processes involve the optimization of environmental conditions and nutrient composition for maximum lipid accumulation.[65][61]
+
+
+
+
+
+
+
+See also
+
+
+
+
+
+
+
+
+
+
+
+Wikisource has the text of the 1911 Encyclopædia Britannica article "Fermentation".
+
+
+
+
+
+
+
+List of fermented foods
+
+
+Acetogenesis
+
+
+Aerobic fermentation
+
+
+Acetone-butanol-ethanol fermentation
+
+
+Dark fermentation
+
+
+Disproportionation#Biochemistry
+
+
+Fermentation lock
+
+
+Gut fermentation syndrome
+
+
+Industrial fermentation
+
+
+Non-fermenter
+
+
+Photofermentation
+
+
+Symbiotic fermentation
+
+
+
+
+
+
+
+References
+
+
+
+
+
+
+1 2 3 4 5 6 Hackmann TJ (June 2024). "The vast landscape of carbohydrate fermentation in prokaryotes". FEMS Microbiology Reviews. 48 (4) fuae016. doi:10.1093/femsre/fuae016. PMC 11187502. PMID 38821505.
+
+
+1 2 3 Hackmann TJ, Zhang B (September 2023). "The phenotype and genotype of fermentative prokaryotes". Science Advances. 9 (39) eadg8687. Bibcode:2023SciA....9G8687H. doi:10.1126/sciadv.adg8687. PMC 10530074. PMID 37756392.
+
+
+1 2 Liu L, Wang J, Rosenberg D, Zhao H, Lengyel G, Nadel D (2018-10-01). "Fermented beverage and food storage in 13,000 y-old stone mortars at Raqefet Cave, Israel: Investigating Natufian ritual feasting". Journal of Archaeological Science: Reports. 21: 783–793. Bibcode:2018JArSR..21..783L. doi:10.1016/j.jasrep.2018.08.008. ISSN 2352-409X.
+
+
+1 2 3 4 Hackmann TJ (2024-07-01). "The vast landscape of carbohydrate fermentation in prokaryotes". FEMS Microbiology Reviews. 48 (4) fuae016. doi:10.1093/femsre/fuae016. ISSN 0168-6445. PMC 11187502. PMID 38821505.
+
+
+↑ Hackmann TJ, Zhang B (2023-09-29). "The phenotype and genotype of fermentative prokaryotes". Science Advances. 9 (39) eadg8687. Bibcode:2023SciA....9G8687H. doi:10.1126/sciadv.adg8687. ISSN 2375-2548. PMC 10530074. PMID 37756392.
+
+
+1 2 Chaudhry R, Varacallo MA (2025), "Biochemistry, Glycolysis", StatPearls, Treasure Island (FL): StatPearls Publishing, PMID 29493928, retrieved 2025-04-14
+
+
+↑ Nelson DL, Cox MM (2021). Lehninger Principles of Biochemistry (8th ed.). New York: Macmillan.
+
+
+↑ Hackmann TJ, Zhang B (March 2021). "Using neural networks to mine text and predict metabolic traits for thousands of microbes". PLOS Computational Biology. 17 (3) e1008757. Bibcode:2021PLSCB..17E8757H. doi:10.1371/journal.pcbi.1008757. PMC 7954334. PMID 33651810.
+
+
+↑ Hackmann TJ, Zhang B (2023-09-29). "The phenotype and genotype of fermentative prokaryotes". Science Advances. 9 (39) eadg8687. Bibcode:2023SciA....9G8687H. doi:10.1126/sciadv.adg8687. ISSN 2375-2548. PMC 10530074. PMID 37756392.
+
+
+↑ Stojan G, Christopher-Stine L (2015-01-01). "151 - Metabolic, drug-induced, and other noninflammatory myopathies". In Hochberg MC, Silman AJ, Smolen JS, Weinblatt ME (eds.). Rheumatology (Sixth ed.). Philadelphia: Content Repository Only!. pp. 1255–1263. ISBN 978-0-323-09138-1. Retrieved 2020-11-02.
+
+
+↑ Pigozzi F, Giombini A, Fagnani F, Parisi A (2007-01-01), "CHAPTER 3 - The Role of Diet and Nutritional Supplements", in Frontera WR, Herring SA, Micheli LJ, Silver JK (eds.), Clinical Sports Medicine, Edinburgh: W.B. Saunders, pp. 23–36, doi:10.1016/b978-141602443-9.50006-4, ISBN 978-1-4160-2443-9, retrieved 2020-11-02
+
+
+1 2 Folch PL, Bisschops MM, Weusthuis RA (May 2021). "Metabolic energy conservation for fermentative product formation". Microbial Biotechnology. 14 (3): 829–858. doi:10.1111/1751-7915.13746. ISSN 1751-7915. PMC 8085960. PMID 33438829.
+
+
+↑ Mannaa M, Han G, Seo YS, Park I (2021-11-18). "Evolution of Food Fermentation Processes and the Use of Multi-Omics in Deciphering the Roles of the Microbiota". Foods. 10 (11): 2861. doi:10.3390/foods10112861. ISSN 2304-8158. PMC 8618017. PMID 34829140.
+
+
+↑ Zhang B, Lingga C, De Groot H, Hackmann TJ (2023-09-30). "The oxidoreductase activity of Rnf balances redox cofactors during fermentation of glucose to propionate in Prevotella". Scientific Reports. 13 (1): 16429. Bibcode:2023NatSR..1316429Z. doi:10.1038/s41598-023-43282-9. ISSN 2045-2322. PMC 10542786. PMID 37777597.
+
+
+1 2 3 Purves WK, Sadava DE, Orians GH, Heller HC (2003). Life, the science of biology (7th ed.). Sunderland, Mass.: Sinauer Associates. pp. 139–40. ISBN 978-0-7167-9856-9.
+
+
+↑ Stryer L (1975). Biochemistry. W. H. Freeman and Company. ISBN 978-0-7167-0174-3.
+
+
+↑ Logan BK, Distefano S (1997). "Ethanol content of various foods and soft drinks and their potential for interference with a breath-alcohol test". Journal of Analytical Toxicology. 22 (3): 181–183. doi:10.1093/jat/22.3.181. PMID 9602932.
+
+
+↑ "The Alcohol Content of Bread". Canadian Medical Association Journal. 16 (11): 1394–1395. November 1926. PMC 1709087. PMID 20316063.
+
+
+↑ "Alcohol". Drugs.com. Retrieved 26 April 2018.
+
+
+↑ Jacobs J. "Ethanol from Sugar". United States Department of Agriculture. Archived from the original on 2007-09-10. Retrieved 2007-09-04.
+
+
+↑ van Waarde A, Thillart GV, Verhagen M (1993). "Ethanol Formation and pH-Regulation in Fish". Surviving Hypoxia. CRC Press. pp. 157–70. ISBN 978-0-8493-4226-4.
+
+
+↑ Berg LR (2007). Introductory Botany: plants, people, and the Environment. Cengage Learning. p. 86. ISBN 978-0-534-46669-5.
+
+
+1 2 Anestis M (2006). AP Biology (2nd ed.). McGraw-Hill Professional. p. 61. ISBN 978-0-07-147630-0.
+
+
+1 2 Thorpe TE (1922). A dictionary of applied chemistry. Vol. 3. Longmans, Green and Co. p. 159.
+
+
+↑ Madigan MT, Martinko JM, Parker J (1996). Brock biology of microorganisms (8th ed.). Prentice Hall. ISBN 978-0-13-520875-5. Retrieved 2010-07-12.
+
+
+↑ Thauer RK, Jungermann K, Decker K (March 1977). "Energy conservation in chemotrophic anaerobic bacteria". Bacteriological Reviews. 41 (1): 100–180. doi:10.1128/MMBR.41.1.100-180.1977. PMC 413997. PMID 860983.
+
+
+↑ Villas-Bôas SG, Åkesson M, Nielsen J (May 2005). "Biosynthesis of glyoxylate from glycine in Saccharomyces cerevisiae". FEMS Yeast Research. 5 (8). Retrieved 2024-09-27.
+
+
+↑ Valentine RC, Drucker H, Wolfe RS (1964). "Glyoxylate fermentation by Streptococcus Allantoicus". Journal of Bacteriology. 87 (2): 241–246. doi:10.1128/jb.87.2.241-246.1964. ISSN 0021-9193. PMC 276999. PMID 14151040.
+
+
+1 2 Southey F (27 January 2022). "What's next in alternative protein? 7 trends on the up in 2022". Food-Navigator.com, William Reed Business Media. Retrieved 27 January 2022.
+
+
+↑ "Those Vegan Cowboys Develop Casein From Microbes to Make Dairy Without the Cow". vegconomist – the vegan business magazine. 2021-04-12. Retrieved 11 December 2024.
+
+
+↑ Simon M (2017-09-20). "Inside the Strange Science of the Fake Meat That 'Bleeds'". Wired. ISSN 1059-1028. Retrieved 2020-10-28.
+
+
+↑ Kirk O, Borchert TV, Fuglsang CC (August 2002). "Industrial enzyme applications". Current Opinion in Biotechnology. 13 (4): 345–351. doi:10.1016/S0958-1669(02)00328-2. PMID 12323357.
+
+
+1 2 3 4 5 Li T, Chen XB, Chen JC, Wu Q, Chen GQ (December 2014). "Open and continuous fermentation: products, conditions and bioprocess economy". Biotechnology Journal. 9 (12): 1503–1511. Bibcode:2014BiotJ...9.1503L. doi:10.1002/biot.201400084. PMID 25476917. S2CID 21524147.
+
+
+1 2 3 4 Cinar A, Parulekar SJ, Undey C, Birol G (2003). Batch fermentation modeling, monitoring, and control. New York: Marcel Dekker. ISBN 978-0-203-91135-8.
+
+
+1 2 3 Schmid RD, Schmidt-Dannert C (2016). Biotechnology: an illustrated primer (Second ed.). John Wiley & Sons. p. 92. ISBN 978-3-527-33515-2.
+
+
+↑ McGovern PE, Zhang J, Tang J, Zhang Z, Hall GR, Moreau RA, et al. (December 2004). "Fermented beverages of pre- and proto-historic China". Proceedings of the National Academy of Sciences of the United States of America. 101 (51): 17593–17598. Bibcode:2004PNAS..10117593M. doi:10.1073/pnas.0407921102. PMC 539767. PMID 15590771.
+
+
+↑ Vouillamoz JF, McGovern PE, Ergul A, Söylemezoğlu GK, Tevzadze G, Meredith CP, et al. (2006). "Genetic characterization and relationships of traditional grape cultivars from Transcaucasia and Anatolia". Plant Genetic Resources: Characterization and Utilization. 4 (2): 144–158. Bibcode:2006PGRCU...4..144V. doi:10.1079/PGR2006114. S2CID 85577497.
+
+
+↑ Cavalieri D, McGovern PE, Hartl DL, Mortimer R, Polsinelli M (2003). "Evidence for S. cerevisiae fermentation in ancient wine" (PDF). Journal of Molecular Evolution. 57 (Suppl 1): S226–S232. Bibcode:2003JMolE..57S.226C. doi:10.1007/s00239-003-0031-2. PMID 15008419. S2CID 7914033. 15008419. Archived from the original (PDF) on December 9, 2006. Retrieved 2007-01-28.
+
+
+1 2 "Fermented fruits and vegetables. A global perspective". FAO Agricultural Services Bulletins - 134. Archived from the original on January 19, 2007. Retrieved 2007-01-28.
+
+
+↑ Dirar HA (1993). The Indigenous Fermented Foods of the Sudan: A Study in African Food and Nutrition. UK: CAB International. ISBN 0-85198-858-X.
+
+
+↑ Beresneviius G. "M. Strijkovskio "Kronikos" lietuvių dievų sąrašas" [List of Lithuanian gods in "Kronikas" by M. Strijkovskis]. spauda.lt. Archived from the original on 2020-06-26. Retrieved 2013-10-27.
+
+
+↑ "Rūgutis". Mitologijos enciklopedija [Encyclopedia of Mythology]. Vol. 2. Vilnius: Vagam. 1999. p. 293.
+
+
+1 2 Tobin A, Dusheck J (2005). Asking about life (3rd ed.). Pacific Grove, Calif.: Brooks/Cole. ISBN 978-0-534-40653-0.
+
+
+↑ Shurtleff W, Aoyagi A. "A Brief History of Fermentation, East and West". Soyinfo Center. Soyfoods Center, Lafayette, California. Retrieved 30 April 2018.
+
+
+1 2 Lengeler JW, Drews G, Schlegel HG, eds. (1999). Biology of the prokaryotes. Stuttgart: Thieme [u.a.] ISBN 978-3-13-108411-8.
+
+
+↑ Collazo FJ (2005-12-30). "Accomplishments of Louis Pasteur". Fjcollazo.com. Archived from the original on 2010-11-30. Retrieved 2011-01-04.
+
+
+↑ HowStuffWorks "Louis Pasteur". Science.howstuffworks.com (2009-07-01). Retrieved on 2011-01-04.
+
+
+↑ Pasteur L (1879). Studies on fermentation: The diseases of beer, their causes, and the means of preventing them. Landmarks of Science. Macmillan Publishers.
+
+
+1 2 Pasteur L (1879). "Physiological Theory of Fermentation". Modern History Sourcebook Louis Pasteur (1822-1895). Translated by Faulkner F, Robb DC.
+
+
+↑ Cornish-Bowden A (1997). New beer in an old bottle: Eduard Buchner and the growth of biochemical knowledge. València: Universitat de Valencia. p. 25. ISBN 978-84-370-3328-0.
+
+
+↑ Lagerkvist U (2005). The enigma of ferment: from the philosopher's stone to the first biochemical Nobel prize. Hackensack, NJ: World Scientific. p. 7. ISBN 978-981-256-421-4.
+
+
+↑ Runes DD (August 1962). "A Treasury of World Science". Journal of Medical Education. 37 (8): 803.
+
+
+↑ Steinkraus K (2018). Handbook of Indigenous Fermented Foods (Second ed.). CRC Press. ISBN 978-1-351-44251-0.
+
+
+↑ Wang HL, Swain EW, Hesseltine CW (1980). "Phytase of molds used in oriental food fermentation". Journal of Food Science. 45 (5): 1262–1266. doi:10.1111/j.1365-2621.1980.tb06534.x.
+
+
+↑ "History and development of probiotics". International Probiotics Association. Retrieved 2026-02-09.
+
+
+↑ Fackler N, Heijstra BD, Rasor BJ, Brown H, Martin J, Ni Z, et al. (2021-06-07). "Stepping on the Gas to a Circular Economy: Accelerating Development of Carbon-Negative Chemical Production from Gas Fermentation". Annual Review of Chemical and Biomolecular Engineering. 12 (1): 439–470. doi:10.1146/annurev-chembioeng-120120-021122. ISSN 1947-5438. PMID 33872517.
+
+
+↑ Change NG. "Global Surface Temperature | NASA Global Climate Change". Climate Change: Vital Signs of the Planet. Retrieved 2025-04-16.
+
+
+↑ A Ewing T, Nouse N, Lint Mv, Haveren Jv, Hugenholtz J, Es DS (2022). "Fermentation for the production of biobased chemicals in a circular economy: a perspective for the period 2022–2050". Green Chemistry. 24 (17): 6373–6405. doi:10.1039/D1GC04758B.
+
+
+↑ Naresh Kumar A, Sarkar O, Chandrasekhar K, Raj T, Narisetty V, Mohan SV, et al. (2022-02-01). "Upgrading the value of anaerobic fermentation via renewable chemicals production: A sustainable integration for circular bioeconomy". Science of the Total Environment. 806 (Pt 1) 150312. Bibcode:2022ScTEn.80650312N. doi:10.1016/j.scitotenv.2021.150312. hdl:1826/17114. ISSN 0048-9697. PMID 34844320.
+
+
+↑ Narisetty V, Nagarajan S, Gadkari S, Ranade VV, Zhang J, Patchigolla K, et al. (2022-08-15). "Process optimization for recycling of bread waste into bioethanol and biomethane: A circular economy approach". Energy Conversion and Management. 266 115784. Bibcode:2022ECM...26615784N. doi:10.1016/j.enconman.2022.115784. ISSN 0196-8904.
+
+
+1 2 3 4 5 6 Sterling J (2024-05-16). "Creating a Circular Economy for Fermentation-Based Biomanufacturing". GEN - Genetic Engineering and Biotechnology News. Retrieved 2025-04-16.
+
+
+↑ Mohsenzadeh A, Zamani A, Taherzadeh MJ (2017). "Bioethylene Production from Ethanol: A Review and Techno-economical Evaluation". ChemBioEng Reviews. 4 (2): 75–91. doi:10.1002/cben.201600025. ISSN 2196-9744.
+
+
+↑ Cheng KK, Zhao XB, Zeng J, Zhang JA (2012). "Biotechnological production of succinic acid: current state and perspectives". Biofuels, Bioproducts and Biorefining. 6 (3): 302–318. Bibcode:2012BiBiB...6..302C. doi:10.1002/bbb.1327. ISSN 1932-1031.
+
+
+↑ D'Este M, Alvarado-Morales M, Angelidaki I (2018). "Amino acids production focusing on fermentation technologies – A review". Biotechnology Advances. 36 (1): 14–25. Bibcode:2018BiotA..36...14D. doi:10.1016/j.biotechadv.2017.09.001. ISSN 0734-9750. PMID 28888551.
+
+
+↑ Lamers D, van Biezen N, Martens D, Peters L, van de Zilver E, Jacobs-van Dreumel N, et al. (2016-05-27). "Selection of oleaginous yeasts for fatty acid production". BMC Biotechnology. 16 (1): 45. doi:10.1186/s12896-016-0276-7. ISSN 1472-6750. PMC 4884388. PMID 27233820.
+
+
+
+
+
+
+
+
+
+External links
+
+
+
+
+
+
+
+
+
+
+Wikimedia Commons has media related to Fermentation.
+
+
+
+
+
+Works of Louis Pasteur – Pasteur Brewing (archived 24 June 2010)
+
+
+The chemical logic behind fermentation and respiration (archived 17 September 2008)

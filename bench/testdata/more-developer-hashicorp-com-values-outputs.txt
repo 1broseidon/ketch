@@ -1,0 +1,130 @@
+Use outputs to expose module data
+
+
+
+
+
+
+Hands-on: Try the Output data from Terraform tutorial.
+
+
+Add output blocks to your configuration to expose information about your infrastructure on the command line, in HCP Terraform, and in other Terraform configurations. The output block serves the following purposes in Terraform:
+
+Child modules can expose resource attributes to parent modules.
+
+Root modules can display values in CLI output.
+
+Other Terraform configurations using remote state can access root module outputs with the terraform_remote_state data source, including state sharing in HCP Terraform.
+
+Pass information from a Terraform operation to an automation tool.
+
+Define outputs
+
+Add output blocks to export information about your module's infrastructure. For example, you can add two output blocks to expose the ID and the IP address of your configuration's web server:
+
+
+
+
+
+output "instance_id" {
+  description = "ID of the EC2 instance"
+  value       = aws_instance.web.id
+}
+
+output "instance_ip" {
+  description = "Private IP address of the EC2 instance"
+  value       = aws_instance.web.private_ip
+}
+
+resource "aws_instance" "web" {
+  # …
+}
+
+
+
+
+You can set the value argument of an output block to any valid expression. To learn more, refer to the output block reference.
+
+Access output values
+
+Depending where you define an output value, you can access the information a module exposes in different ways. Terraform displays root module output values in the CLI after you apply your configuration. If you are using HCP Terraform, your workspace's overview page also lists your configuration's outputs.
+
+Child module outputs
+
+Defining an output block in a child module exposes that value to the parent module so that you can pass values from a child module to a parent module. Parent modules can access child module outputs using module.<CHILD_MODULE_NAME>.<OUTPUT_NAME> syntax.
+
+For example, the following parent module can access the instance_ip and instance_id outputs from a child module named web_server by referencing module.web_server.NAME:
+
+
+
+
+
+module "web_server" {
+  source = "./modules/web_server"
+  # …
+}
+
+resource "aws_route53_record" "web" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = "web.example.com"
+  type    = "A"
+  records = [module.web_server.instance_ip]
+  #...
+}
+
+resource "aws_cloudwatch_alarm" "web_health" {
+  alarm_name          = "web-server-health"
+  comparison_operator = "GreaterThanThreshold"
+  threshold           = "80"
+
+  dimensions = {
+    InstanceId = module.web_server.instance_id
+  }
+  # ...
+}
+
+
+
+
+To learn more about passing information between modules, refer to Call a child module.
+
+Sensitive values in outputs
+
+If you are outputting sensitive data such as a password or API key, use the sensitive argument to prevent Terraform from displaying the value in CLI output:
+
+
+
+
+
+output "database_password" {
+  description = "Auto-generated password for the RDS database instance"
+  value       = aws_db_instance.main.password
+  sensitive   = true
+}
+
+
+
+
+Trying to access a sensitive output value directly in the CLI displays a redacted message instead of the actual value:
+
+
+
+
+
+$ terraform output database_password
+database_password = <sensitive>
+
+
+
+
+
+
+Warning
+
+Terraform stores the values of sensitive outputs in your state. If you use the terraform output CLI command with the -json or -raw flags, Terraform displays sensitive outputs in plain text.
+
+
+
+Adding the ephemeral argument to an output omits that value from state and plan files, but it also adds restrictions to the values you can assign to that output. To learn more about handling and outputting sensitive data in your configuration, refer to Manage sensitive data.
+
+To learn more about the output block, refer to the output block reference.

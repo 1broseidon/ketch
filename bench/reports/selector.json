@@ -1,0 +1,1483 @@
+{
+  "version": 1,
+  "timestamp": "2026-09-19T04:11:31Z",
+  "corpus_sha256": "aba86c1ff23774dfc74ab5914955c80fc4fb816b9740f95064f202f153b1ac99",
+  "binary_sha256": "53432e7ddd71749efa89f0b798a8709744c19f2ad0feaa0e2539eb4bccd6ba75",
+  "go_version": "go1.27.1",
+  "cgo_enabled": "0",
+  "platform": "linux/amd64",
+  "cpus": 24,
+  "mode": "selector",
+  "iterations": 7,
+  "warmup": 1,
+  "workers": 1,
+  "wall_seconds": 3.383130987,
+  "summary": {
+    "pages": 20,
+    "failed_pages": 0,
+    "checks_passed": 114,
+    "checks_total": 115,
+    "critical_passed": 79,
+    "critical_total": 79,
+    "macro_token_recall": 0.998560825517324,
+    "macro_token_precision": 0.9549974113161035,
+    "macro_token_f1": 0.9743866926764462
+  },
+  "by_kind": {
+    "api": {
+      "pages": 2,
+      "failed_pages": 0,
+      "checks_passed": 14,
+      "checks_total": 14,
+      "critical_passed": 9,
+      "critical_total": 9,
+      "macro_token_recall": 0.9920212765957447,
+      "macro_token_precision": 0.8962922152896508,
+      "macro_token_f1": 0.9392659274456918
+    },
+    "blog": {
+      "pages": 2,
+      "failed_pages": 0,
+      "checks_passed": 11,
+      "checks_total": 11,
+      "critical_passed": 9,
+      "critical_total": 9,
+      "macro_token_recall": 1,
+      "macro_token_precision": 0.8387221934816348,
+      "macro_token_f1": 0.9038550501156515
+    },
+    "book": {
+      "pages": 1,
+      "failed_pages": 0,
+      "checks_passed": 4,
+      "checks_total": 4,
+      "critical_passed": 3,
+      "critical_total": 3,
+      "macro_token_recall": 1,
+      "macro_token_precision": 1,
+      "macro_token_f1": 1
+    },
+    "configuration": {
+      "pages": 2,
+      "failed_pages": 0,
+      "checks_passed": 11,
+      "checks_total": 11,
+      "critical_passed": 8,
+      "critical_total": 8,
+      "macro_token_recall": 0.9954318936877076,
+      "macro_token_precision": 0.9847685195924848,
+      "macro_token_f1": 0.9900462951146458
+    },
+    "database": {
+      "pages": 2,
+      "failed_pages": 0,
+      "checks_passed": 12,
+      "checks_total": 12,
+      "critical_passed": 7,
+      "critical_total": 7,
+      "macro_token_recall": 1,
+      "macro_token_precision": 0.9876409849086577,
+      "macro_token_f1": 0.9937818269223037
+    },
+    "docs": {
+      "pages": 1,
+      "failed_pages": 0,
+      "checks_passed": 6,
+      "checks_total": 6,
+      "critical_passed": 4,
+      "critical_total": 4,
+      "macro_token_recall": 1,
+      "macro_token_precision": 0.9824488090263268,
+      "macro_token_f1": 0.9911467116357504
+    },
+    "encyclopedia": {
+      "pages": 1,
+      "failed_pages": 0,
+      "checks_passed": 6,
+      "checks_total": 6,
+      "critical_passed": 4,
+      "critical_total": 4,
+      "macro_token_recall": 0.9993167843315873,
+      "macro_token_precision": 0.9094300518134715,
+      "macro_token_f1": 0.9522569444444444
+    },
+    "essay": {
+      "pages": 1,
+      "failed_pages": 0,
+      "checks_passed": 5,
+      "checks_total": 5,
+      "critical_passed": 3,
+      "critical_total": 3,
+      "macro_token_recall": 1,
+      "macro_token_precision": 1,
+      "macro_token_f1": 1
+    },
+    "manual": {
+      "pages": 2,
+      "failed_pages": 0,
+      "checks_passed": 10,
+      "checks_total": 11,
+      "critical_passed": 7,
+      "critical_total": 7,
+      "macro_token_recall": 1,
+      "macro_token_precision": 0.9400026466670695,
+      "macro_token_f1": 0.9680976572661474
+    },
+    "science": {
+      "pages": 1,
+      "failed_pages": 0,
+      "checks_passed": 5,
+      "checks_total": 5,
+      "critical_passed": 4,
+      "critical_total": 4,
+      "macro_token_recall": 0.9969933854479855,
+      "macro_token_precision": 0.9622751015670342,
+      "macro_token_f1": 0.9793266391021855
+    },
+    "standard": {
+      "pages": 1,
+      "failed_pages": 0,
+      "checks_passed": 4,
+      "checks_total": 4,
+      "critical_passed": 4,
+      "critical_total": 4,
+      "macro_token_recall": 1,
+      "macro_token_precision": 1,
+      "macro_token_f1": 1
+    },
+    "tutorial": {
+      "pages": 3,
+      "failed_pages": 0,
+      "checks_passed": 17,
+      "checks_total": 17,
+      "critical_passed": 12,
+      "critical_total": 12,
+      "macro_token_recall": 1,
+      "macro_token_precision": 0.9844206426484908,
+      "macro_token_f1": 0.992023928215354
+    },
+    "visitor-guide": {
+      "pages": 1,
+      "failed_pages": 0,
+      "checks_passed": 9,
+      "checks_total": 9,
+      "critical_passed": 5,
+      "critical_total": 5,
+      "macro_token_recall": 1,
+      "macro_token_precision": 0.9976792160907685,
+      "macro_token_f1": 0.9988382599716019
+    }
+  },
+  "pages": [
+    {
+      "id": "npm",
+      "site": "docs.npmjs.com",
+      "kind": "docs",
+      "url": "https://docs.npmjs.com/trusted-publishers/",
+      "input_bytes": 607380,
+      "output_bytes": 24547,
+      "output_sha256": "9e4a25715501cb43aeda2b59842e01b0c227368e504009ac6fd9d2b270313ba1",
+      "samples_ms": [
+        25.85849,
+        24.52615,
+        24.995956,
+        24.972551,
+        24.535308,
+        24.027098,
+        24.740489
+      ],
+      "median_ms": 24.740489,
+      "p95_ms": 25.85849,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 0.9824488090263268,
+        "token_f1": 0.9911467116357504,
+        "reference_tokens": 2351,
+        "output_tokens": 2393,
+        "checks": [
+          {
+            "id": "npm-minimum",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "node-minimum",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "runner-restriction",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-how-trusted-publishing-works",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "oidc-yaml",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "source-link",
+            "kind": "link",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "go",
+      "site": "pkg.go.dev",
+      "kind": "api",
+      "url": "https://pkg.go.dev/context",
+      "input_bytes": 95833,
+      "output_bytes": 27197,
+      "output_sha256": "bfba036d28ca5f70f2c05ec5b44c5816a915b3f14ce6b7cf1d742256d0026fbd",
+      "samples_ms": [
+        14.467469,
+        14.560275,
+        14.766238,
+        14.719328,
+        14.437021,
+        14.900464,
+        14.945931
+      ],
+      "median_ms": 14.719328,
+      "p95_ms": 14.945931,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 0.9951706374758532,
+        "token_f1": 0.9975794739390027,
+        "reference_tokens": 3091,
+        "output_tokens": 3106,
+        "checks": [
+          {
+            "id": "cancel-does-not-wait",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "child-propagation",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "cancel-cleanup",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "comment-preserved",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "timeout-signature",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-variables",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "exclude-chrome",
+            "kind": "absent",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "python",
+      "site": "docs.python.org",
+      "kind": "tutorial",
+      "url": "https://docs.python.org/3/tutorial/errors.html",
+      "input_bytes": 85583,
+      "output_bytes": 27412,
+      "output_sha256": "64fcc45955d7714eadbf5f88e13e72c0bf03670e87099aab0dc681e653df3894",
+      "samples_ms": [
+        17.346559,
+        16.488152,
+        16.48206,
+        16.66028,
+        16.968527,
+        17.023914,
+        17.022531
+      ],
+      "median_ms": 16.968527,
+      "p95_ms": 17.346559,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 1,
+        "token_f1": 1,
+        "reference_tokens": 3155,
+        "output_tokens": 3155,
+        "checks": [
+          {
+            "id": "finally-warning",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "cleanup-resources",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "override-return",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "finally-example",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-8-7-defining-clean-up-actions",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "source-link",
+            "kind": "link",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "kubernetes",
+      "site": "kubernetes.io",
+      "kind": "configuration",
+      "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/",
+      "input_bytes": 554040,
+      "output_bytes": 22121,
+      "output_sha256": "b3b4df5c67cb44ebf406ddede860f5fff733c0531e52a703310a44060800447b",
+      "samples_ms": [
+        25.897215,
+        25.914628,
+        26.913061,
+        29.073832,
+        26.766933,
+        27.952454,
+        26.744359
+      ],
+      "median_ms": 26.766933,
+      "p95_ms": 29.073832,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 0.9992239037640668,
+        "token_f1": 0.999611801242236,
+        "reference_tokens": 2575,
+        "output_tokens": 2577,
+        "checks": [
+          {
+            "id": "startup-window",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "startup-failure",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "readiness-traffic",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "startup-yaml",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-protect-slow-starting-containers-with-startup-probes",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "source-link",
+            "kind": "link",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "postgres",
+      "site": "www.postgresql.org",
+      "kind": "database",
+      "url": "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "input_bytes": 47710,
+      "output_bytes": 26743,
+      "output_sha256": "a748342f419f66cbd452bc10088681fa75f90fbe61704b59ab84c2271348c105",
+      "samples_ms": [
+        11.72568,
+        12.404956,
+        11.824258,
+        12.6381,
+        11.870276,
+        12.309744,
+        11.239263
+      ],
+      "median_ms": 11.870276,
+      "p95_ms": 12.6381,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 0.9886153031506487,
+        "token_f1": 0.9942750632405805,
+        "reference_tokens": 3734,
+        "output_tokens": 3777,
+        "checks": [
+          {
+            "id": "uncommitted-mapping",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "no-phantoms",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "retry",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "repeatable-row",
+            "kind": "table",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-13-2-3-serializable-isolation-level",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "source-link",
+            "kind": "link",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "mdn",
+      "site": "developer.mozilla.org",
+      "kind": "api",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/AbortController",
+      "input_bytes": 154371,
+      "output_bytes": 5322,
+      "output_sha256": "9431fd08be31ab16017a31fd39740c2c4b04ee588d3f4b90207d80cbbae4f3f4",
+      "samples_ms": [
+        10.710253,
+        10.737857,
+        10.685747,
+        10.964629,
+        10.57162,
+        11.476715,
+        10.831726
+      ],
+      "median_ms": 10.737857,
+      "p95_ms": 11.476715,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.9840425531914894,
+        "token_precision": 0.7974137931034483,
+        "token_f1": 0.8809523809523809,
+        "reference_tokens": 188,
+        "output_tokens": 232,
+        "checks": [
+          {
+            "id": "workers-note",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "signal-type",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "aborts-streams",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-instance-methods",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "source-link",
+            "kind": "link",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "exclude-chrome",
+            "kind": "absent",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "browser-availability",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "rust",
+      "site": "doc.rust-lang.org",
+      "kind": "tutorial",
+      "url": "https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html",
+      "input_bytes": 56185,
+      "output_bytes": 29368,
+      "output_sha256": "043a8419873ef3180d092c98b537b5dc8255f89617600beec7ae5acdb3f4b526",
+      "samples_ms": [
+        11.411862,
+        11.839648,
+        10.682541,
+        11.755095,
+        10.97038,
+        11.16969,
+        11.484981
+      ],
+      "median_ms": 11.411862,
+      "p95_ms": 11.839648,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 1,
+        "token_f1": 1,
+        "reference_tokens": 4479,
+        "output_tokens": 4479,
+        "checks": [
+          {
+            "id": "owner",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "one-owner",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "drop",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-ownership-rules",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "move-example",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "exclude-chrome",
+            "kind": "absent",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "sqlite",
+      "site": "www.sqlite.org",
+      "kind": "database",
+      "url": "https://www.sqlite.org/lang_transaction.html",
+      "input_bytes": 27068,
+      "output_bytes": 9658,
+      "output_sha256": "834954ba3e4531d87a6f68c89d40fcdd2edc5c455f2d765f17b274ef058f714c",
+      "samples_ms": [
+        8.211017,
+        8.482957,
+        7.102274,
+        8.510208,
+        7.761511,
+        8.243951,
+        6.898605
+      ],
+      "median_ms": 8.211017,
+      "p95_ms": 8.510208,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 0.9866666666666667,
+        "token_f1": 0.9932885906040269,
+        "reference_tokens": 1258,
+        "output_tokens": 1275,
+        "checks": [
+          {
+            "id": "one-writer",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "no-nesting",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "alias",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-2-1-read-transactions-versus-write-transactions",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "source-link",
+            "kind": "link",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "exclude-chrome",
+            "kind": "absent",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "git",
+      "site": "git-scm.com",
+      "kind": "manual",
+      "url": "https://git-scm.com/docs/git-reset",
+      "input_bytes": 77202,
+      "output_bytes": 23011,
+      "output_sha256": "224632f611fb2209d621b5ac273e3cc77aa546e6865013b30d0588b8f27e0f82",
+      "samples_ms": [
+        15.737551,
+        14.858283,
+        14.543132,
+        15.079446,
+        14.988071,
+        15.400517,
+        15.770303
+      ],
+      "median_ms": 15.079446,
+      "p95_ms": 15.770303,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 0.9996634129922585,
+        "token_f1": 0.9998316781686584,
+        "reference_tokens": 2970,
+        "output_tokens": 2971,
+        "checks": [
+          {
+            "id": "mixed-default",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "soft-keeps",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "orig-head",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "example",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-options",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "source-link",
+            "kind": "link",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "gnu",
+      "site": "www.gnu.org",
+      "kind": "manual",
+      "url": "https://www.gnu.org/software/coreutils/manual/html_node/Exit-status.html",
+      "input_bytes": 3712,
+      "output_bytes": 1330,
+      "output_sha256": "1faf988ef035aecb265fffc40b1bcfe2febd29a12b2cc563b9a4be38d08abeb0",
+      "samples_ms": [
+        4.767441,
+        5.019042,
+        4.958776,
+        5.186421,
+        4.655498,
+        5.064397,
+        4.941303
+      ],
+      "median_ms": 4.958776,
+      "p95_ms": 5.186421,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 0.8803418803418803,
+        "token_f1": 0.9363636363636364,
+        "reference_tokens": 103,
+        "output_tokens": 117,
+        "checks": [
+          {
+            "id": "zero-success",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "nonzero-failure",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "exceptions",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-2-11-exit-status",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "exclude-chrome",
+            "kind": "absent",
+            "critical": false,
+            "passed": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "terraform",
+      "site": "developer.hashicorp.com",
+      "kind": "configuration",
+      "url": "https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle",
+      "input_bytes": 338727,
+      "output_bytes": 22829,
+      "output_sha256": "291608c21ee17e320f336c2dfcaa0e268b1f7be8fab28a4b8bedaf1ab33b01e3",
+      "samples_ms": [
+        19.700869,
+        19.393261,
+        20.515892,
+        19.325743,
+        19.946657,
+        19.849111,
+        19.816619
+      ],
+      "median_ms": 19.816619,
+      "p95_ms": 20.515892,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.9908637873754153,
+        "token_precision": 0.9703131354209028,
+        "token_f1": 0.9804807889870557,
+        "reference_tokens": 2408,
+        "output_tokens": 2459,
+        "checks": [
+          {
+            "id": "literal-only",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "removal-limit",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "ignore-runtime",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-prevent-destroy",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "ignore-hcl",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "docker",
+      "site": "docs.docker.com",
+      "kind": "tutorial",
+      "url": "https://docs.docker.com/build/building/multi-stage/",
+      "input_bytes": 544036,
+      "output_bytes": 8383,
+      "output_sha256": "7e3d5f7b1c5d4252c8385daa5a9bd5c33711c0168b394703a535d4740cc90537",
+      "samples_ms": [
+        22.647127,
+        22.310896,
+        22.865503,
+        22.236794,
+        22.832159,
+        21.724337,
+        22.882997
+      ],
+      "median_ms": 22.647127,
+      "p95_ms": 22.882997,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 0.9532619279454723,
+        "token_f1": 0.9760717846460618,
+        "reference_tokens": 979,
+        "output_tokens": 1027,
+        "checks": [
+          {
+            "id": "multiple-from",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "stage-begins",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "select-artifacts",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "final-stage",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-name-your-build-stages",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "cloudflare",
+      "site": "blog.cloudflare.com",
+      "kind": "blog",
+      "url": "https://blog.cloudflare.com/rfc-9457-agent-error-pages/",
+      "input_bytes": 322642,
+      "output_bytes": 66655,
+      "output_sha256": "2523c1dab0fe8fafc75e71e52ba25bb3110120a041986560a9d632dd35c23ca8",
+      "samples_ms": [
+        40.266285,
+        39.975801,
+        38.351844,
+        40.215668,
+        40.335678,
+        41.498705,
+        43.295572
+      ],
+      "median_ms": 40.266285,
+      "p95_ms": 43.295572,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 0.6774443869632696,
+        "token_f1": 0.8077101002313031,
+        "reference_tokens": 2619,
+        "output_tokens": 3866,
+        "checks": [
+          {
+            "id": "rfc-response",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "retry-contract",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "stable-frontmatter",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "error-detail",
+            "kind": "table",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-one-contract-two-formats",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "json-body",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "exclude-chrome",
+            "kind": "absent",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "danluu",
+      "site": "danluu.com",
+      "kind": "essay",
+      "url": "https://danluu.com/slow-device/",
+      "input_bytes": 97060,
+      "output_bytes": 72956,
+      "output_sha256": "76ecea3de34f7b52ecae21d1438e52eeb633dd103cb922eb0ca181958a043b99",
+      "samples_ms": [
+        20.424118,
+        20.910775,
+        20.688612,
+        20.449126,
+        19.211875,
+        20.448344,
+        20.254664
+      ],
+      "median_ms": 20.448344,
+      "p95_ms": 20.910775,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 1,
+        "token_f1": 1,
+        "reference_tokens": 12688,
+        "output_tokens": 12688,
+        "checks": [
+          {
+            "id": "cpu-vs-bandwidth",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "table-definition",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "lcp-definition",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-appendix-experimental-details",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "source-link",
+            "kind": "link",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "joel",
+      "site": "www.joelonsoftware.com",
+      "kind": "blog",
+      "url": "https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i/",
+      "input_bytes": 56093,
+      "output_bytes": 8548,
+      "output_sha256": "13337ed50973fef678c0be91c5cb668324bb19d119d74c681e4acd6db5e9854e",
+      "samples_ms": [
+        6.740734,
+        8.15449,
+        7.72458,
+        7.751973,
+        7.826865,
+        6.594555,
+        7.804373
+      ],
+      "median_ms": 7.751973,
+      "p95_ms": 8.15449,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 1,
+        "token_f1": 1,
+        "reference_tokens": 1459,
+        "output_tokens": 1459,
+        "checks": [
+          {
+            "id": "rewrite-choice",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "reading-code",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "old-code",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "conclusion",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "rfc",
+      "site": "www.rfc-editor.org",
+      "kind": "standard",
+      "url": "https://www.rfc-editor.org/rfc/rfc8259.html",
+      "input_bytes": 37946,
+      "output_bytes": 28586,
+      "output_sha256": "bf5989be1396c522cc4694c40b25f202f6201ee86a97b847d9e73f63c5c2b319",
+      "samples_ms": [
+        9.830225,
+        9.015201,
+        9.885221,
+        9.480048,
+        9.107658,
+        9.56513,
+        9.689116
+      ],
+      "median_ms": 9.56513,
+      "p95_ms": 9.885221,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 1,
+        "token_f1": 1,
+        "reference_tokens": 3600,
+        "output_tokens": 3600,
+        "checks": [
+          {
+            "id": "utf8",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "unique-names",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "literal-case",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "abnf",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "wikipedia",
+      "site": "en.wikipedia.org",
+      "kind": "encyclopedia",
+      "url": "https://en.wikipedia.org/wiki/HTTP",
+      "input_bytes": 617777,
+      "output_bytes": 156591,
+      "output_sha256": "893a951e8be0a61c718942b32cb863e5e832d829148ac81477c09b1ab5f2c76b",
+      "samples_ms": [
+        77.780031,
+        79.443584,
+        78.19889,
+        72.754849,
+        75.951886,
+        75.521365,
+        76.914101
+      ],
+      "median_ms": 76.914101,
+      "p95_ms": 79.443584,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.9993167843315873,
+        "token_precision": 0.9094300518134715,
+        "token_f1": 0.9522569444444444,
+        "reference_tokens": 8782,
+        "output_tokens": 9650,
+        "checks": [
+          {
+            "id": "stateless",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "quic",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "reliable-transport",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-message-format",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "request",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "exclude-chrome",
+            "kind": "absent",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "gutenberg",
+      "site": "www.gutenberg.org",
+      "kind": "book",
+      "url": "https://www.gutenberg.org/files/11/11-h/11-h.htm",
+      "input_bytes": 169663,
+      "output_bytes": 151609,
+      "output_sha256": "66b4d86e70f4d4ccedd33b89a530243864d753560feefb8861bf7a8815232956",
+      "samples_ms": [
+        30.785096,
+        30.854027,
+        26.903754,
+        26.96456,
+        27.802347,
+        26.168692,
+        25.955616
+      ],
+      "median_ms": 26.96456,
+      "p95_ms": 30.854027,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 1,
+        "token_f1": 1,
+        "reference_tokens": 27334,
+        "output_tokens": 27334,
+        "checks": [
+          {
+            "id": "opening",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "middle",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "ending",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-chapter-vii-a-mad-tea-party",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "nasa",
+      "site": "science.nasa.gov",
+      "kind": "science",
+      "url": "https://science.nasa.gov/mars/facts/",
+      "input_bytes": 301224,
+      "output_bytes": 15339,
+      "output_sha256": "87d9958773cd2ce73281afb712ee9bfcc2b9a1817dd300ed46877cc8c773a43b",
+      "samples_ms": [
+        17.135486,
+        16.970803,
+        18.087652,
+        16.352192,
+        17.270745,
+        17.253882,
+        16.93271
+      ],
+      "median_ms": 17.135486,
+      "p95_ms": 18.087652,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.9969933854479855,
+        "token_precision": 0.9622751015670342,
+        "token_f1": 0.9793266391021855,
+        "reference_tokens": 1663,
+        "output_tokens": 1723,
+        "checks": [
+          {
+            "id": "planet-order",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "radius",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "sunlight",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-atmosphere",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "moons",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "nps",
+      "site": "www.nps.gov",
+      "kind": "visitor-guide",
+      "url": "https://www.nps.gov/yell/planyourvisit/safety.htm",
+      "input_bytes": 114902,
+      "output_bytes": 25916,
+      "output_sha256": "2785b9b05b25ec1051163747342a6a89924d28ef5cb2de943941005f36edc4a6",
+      "samples_ms": [
+        13.556352,
+        13.717088,
+        13.677303,
+        14.088305,
+        13.949381,
+        14.014835,
+        13.701989
+      ],
+      "median_ms": 13.717088,
+      "p95_ms": 14.088305,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 0.9976792160907685,
+        "token_f1": 0.9988382599716019,
+        "reference_tokens": 3869,
+        "output_tokens": 3878,
+        "checks": [
+          {
+            "id": "thermal-danger",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "thin-crust",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "wildlife",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-thermal-areas",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "heading-bison",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "exclude-chrome",
+            "kind": "absent",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "expanded-boardwalk-guidance",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "emergency-callout",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "accordion-label",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    }
+  ]
+}

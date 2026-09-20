@@ -1,0 +1,81 @@
+Not to rain on everybody’s parade, but there are three important ideas from computer science which are, frankly, wrong, and people are starting to notice. Ignore them at your peril.
+ 
+I’m sure there are more, but these are the three biggies that have been driving me to distraction:
+  
+The difficult part about searching is finding enough results,  
+
+Anti-aliased text looks better, and  
+
+Network software should make resources on the network behave just like local resources. 
+ 
+Well, all I can say is,
+  
+Wrong,  
+
+Wrong,  
+
+WRONG! 
+ 
+Let us take a quick tour.
+ 
+Searching
+ 
+Most of the academic work on searching is positively obsessed with problems like “what happens if you search for ‘car’, and the document you want says ‘automobile'”.
+ 
+Indeed there is an awful lot of academic research into concepts like stemming, in which the word you searched for is de-conjugated, so that searching for “searching” also finds documents containing the word “searched” or “sought”.
+ 
+So when the big Internet search engines like Altavista first came out, they bragged about how they found zillions of results. An Altavista search for Joel on Software yields 1,033,555 pages. This is, of course, useless. The known Internet contains maybe a billion pages. By reducing the search from one billion to one million pages, Altavista has done absolutely nothing for me.
+ 
+The real problem in searching is how to sort the results. In defense of the computer scientists, this is something nobody even noticed until they starting indexing gigantic corpora the size of the Internet.
+ 
+But somebody noticed. Larry Page and Sergey Brin over at Google realized that ranking the pages in the right order was more important than grabbing every possible page. Their PageRank algorithm is a great way to sort the zillions of results so that the one you want is probably in the top ten. Indeed, search for Joel on Software on Google and you’ll see that it comes up first. On Altavista, it’s not even on the first five pages, after which I gave up looking for it.
+ 
+Anti-aliased text
+ 
+Antialiasing was invented way back in 1972 at the Architecture Machine Group of MIT, which was later incorporated into the famous Media Lab. The idea is that if you have a color display that is low resolution, you might as well use shades of grey to create the “illusion” of resolution. Here’s how that looks:
+ 
+
+ 
+Notice that the normal text on the left is nice and sharp, while the antialiased text on the right appears to be blurred on the edges. If you squint or step back a little bit, the normal text has weird “steps” due to the limited resolution of a computer display. But the anti-aliased text looks smoother and more pleasant.
+ 
+So this is why everybody got excited about anti-aliasing. It’s everywhere, now. Microsoft Windows even includes a checkbox to turn it on for all text in the system.
+ 
+The problem? If you try to read a paragraph of antialiased text, it just looks blurry. There’s nothing I can do about it, it’s the truth. Compare these two paragraphs:
+ 
+
+ 
+The paragraph on the left is not antialiased; the one on the right was antialiased using Corel PHOTO-PAINT. Frankly, antialiased text just looks bad.
+ 
+Somebody finally noticed this: the Microsoft Typography group. They created several excellent fonts like Georgia and Verdana which are “designed for easy screen readability.” Basically, instead of creating a high-resolution font and then trying to hammer it into the pixel grid, they finally accepted the pixel grid as a “given” and designed a font that fits neatly into it. Somebody didn’t notice this: the Microsoft Reader group, which is using a form of antialiasing they call “ClearType” designed for color LCD screens, which, I’m sorry, still looks blurry, even on a color LCD screen.
+ 
+(Before I get lots of irate responses for the graphics professionals among my readers, I should mention that anti-aliasing is still a great technique for two things: headlines and logos, where the overall appearance is more important than the sustained readability; and pictures. Antialiasing is a great way to scale photographic images to smaller sizes.)
+ 
+Network Transparency
+ 
+Ever since the first networks, the “holy grail” of networking computing has been to provide a programming interface in which you can access remote resources the same way as you access local resources. The network becomes “transparent”.
+ 
+One example of network transparency is the famous RPC (remote procedure call), a system designed so that you can call procedures (subroutines) running on another computer on the network exactly as if they were running on the local computer. An awful lot of energy went into this. Another example, built on top of RPC, is Microsoft’s Distributed COM (DCOM), in which you can access objects running on another computer as if they were on the current computer.
+ 
+Sounds logical, right?
+ 
+Wrong.
+ 
+There are three very major differences between accessing resources on another machine and accessing resources on the local machine:
+  
+Availability,  
+
+Latency, and  
+
+Reliability. 
+ 
+When you access another machine, there’s a good chance that machine will not be available, or the network won’t be available. And the speed of the network means that it’s likely that the request will take a while: you might be running over a modem at 28.8kbps. Or the other machine might crash, or the network connection might go away while you are talking to the other machine (when the cat trips over the phone cord).
+ 
+Any reliable software that uses the network absolutely must take this into account. Using programming interfaces that hide all this stuff from you is a great way to make a lousy software program.
+ 
+A quick example: suppose I’ve got some software that needs to copy a file from one computer to another. On the Windows platform, the old “transparent” way to do this is to call the usual CopyFile method, using UNC names for the files such as \\SERVER\SHARE\Filename. 
+ 
+If all is well with the network, this works nicely. But if the file is a megabyte long, and the network is being accessed over a modem, all kinds of things go wrong. The entire application freezes while a megabyte file is transferred. There is no way to make a progress indicator, because when CopyFile was invented, it was assumed that it would always be “fast”. There is no way to resume the transfer if the phone connection is lost.
+ 
+Realistically, if you want to transfer a file over a network, it’s better to use an API like FtpOpenFile and its related functions. No, it’s not the same as copying a file locally, and it’s harder to use, but this function was built with the knowledge that network programming is different than local programming, and it provides hooks to make a progress indicator, to fail gracefully if the network is unavailable or becomes unavailable, and to operate asynchronously.
+ 
+Conclusion: the next time someone tries to sell you a programming product that lets you access network resources the same was as you access local resources, run full speed in the opposite direction.

@@ -1,0 +1,280 @@
+Product NewsProgrammingServerless
+
+
+
+
+
+Birthday WeekDevelopersJavaScriptProduct NewsProgrammingServerless
+
+
+
+
+
+
+September 29, 2017
+Introducing Cloudflare Workers: Run JavaScript Service Workers at the Edge
+
+
+
+
+Kenton Varda
+
+
+
+12 minute read
+
+
+
+
+This post is also available in 日本語.
+
+
+
+
+
+
+
+
+UPDATE 2018/3/13: Cloudflare Workers is now available to everyone.
+
+TL;DR: You'll soon be able to deploy JavaScript to Cloudflare's edge, written against an API similar to Service Workers.
+
+Try writing a Worker in the playground »
+
+Introduction
+
+Every technology, when sufficiently complicated, becomes programmable.
+
+You see this everywhere, but as a lifelong gamer, my personal favorite example is probably graphics cards. In the '90s, graphics hardware generally provided a fixed set of functionality. The OpenGL standard specified that the geometry pipeline would project points from 3D space onto your viewport, then the raster pipeline would draw triangles between them, with gradient shading and perhaps a texture applied. You could only use one texture at a time. There was only one lighting algorithm, which more or less made every surface look like plastic. If you wanted to do anything else, you often had to give up the hardware entirely and drop back to software.
+
+Of course, new algorithms and techniques were being developed all the time. So, hardware vendors would add the best ideas to their hardware as "extensions". OpenGL ended up with hundreds of vendor-specific extensions to support things like multi-texturing, bump maps, reflections, dynamic shadows, and more.
+
+Then, in 2001, everything changed. The first GPU with a programmable shading pipeline was released. Now you could write little programs that ran directly on the hardware, processing each vertex or pixel in arbitrary ways. Now people could experiment with algorithms for rendering realistic skin, or cartoon shading, or so much else, without waiting for hardware vendors to implement their ideas for them.
+
+Cloudflare is about to go through a similar transition. At its most basic level, Cloudflare is an HTTP cache that runs in 117 locations worldwide (and growing). The HTTP standard defines a fixed feature set for HTTP caches. Cloudflare, of course, does much more, such as providing DNS and SSL, shielding your site against attacks, load balancing across your origin servers, and so much else.
+
+But, these are all fixed functions. What if you want to load balance with a custom affinity algorithm? What if standard HTTP caching rules aren't quite right, and you need some custom logic to boost your cache hit rate? What if you want to write custom WAF rules tailored for your application?
+
+You want to write code
+
+We can keep adding features forever, but we'll never cover every possible use case this way. Instead, we're making Cloudflare's edge network programmable. We provide servers in 117+ locations around the world -- you decide how to use them.
+
+Of course, when you have hundreds of locations and millions of customers, traditional means of hosting software don't quite work. We can't very well give every customer their own virtual machine in each location -- or even their own container. We need something both more scalable and easier for developers to manage. Of course, security is also a concern: we must ensure that code deployed to Cloudflare cannot damage our network nor harm other customers.
+
+After looking at many possibilities, we settled on the most ubiquitous language on the web today: JavaScript.
+
+We run JavaScript using V8, the JavaScript engine developed for Google Chrome. That means we can securely run scripts from multiple customers on our servers in much the same way Chrome runs scripts from multiple web sites -- using technology that has had nearly a decade of scrutiny. (Of course, we add a few sandboxing layers of our own on top of this.)
+
+But what API is this JavaScript written against? For this, we looked to web standards -- specifically, the Service Worker API. Service Workers are a feature implemented by modern browsers which allow you to load a script which intercepts web requests destined for your server before they hit the network, allowing you a chance to rewrite them, redirect them, or even respond directly. Service Workers were designed to run in browsers, but it turns out that the Service Worker API is a perfect fit for what we wanted to support on the edge. If you've ever written a Service Worker, then you already know how to write a Cloudflare Service Worker.
+
+What it looks like
+
+Here are some examples of Service Workers you might run on Cloudflare.
+
+Remember: these are written against the standard Service Workers API. The only difference is that they run on Cloudflare's edge rather than in the browser.
+
+Here is a worker which skips the cache for requests that have a Cookie header (e.g. because the user is logged in). Of course, a real-life site would probably have more complicated conditions for caching, but this is code, so you can do anything.
+
+
+// A Service Worker which skips cache if the request contains
+// a cookie.
+addEventListener('fetch', event => {
+  let request = event.request
+  if (request.headers.has('Cookie')) {
+    // Cookie present. Add Cache-Control: no-cache.
+    let newHeaders = new Headers(request.headers)
+    newHeaders.set('Cache-Control', 'no-cache')
+    event.respondWith(fetch(request, {headers: newHeaders}))
+  }
+
+  // Use default behavior.
+  return
+})
+
+
+Here is a worker which performs a site-wide search-and-replace, replacing the word "Worker" with "Minion". Try it out on this blog post.
+
+
+// A Service Worker which replaces the word "Worker" with
+// "Minion" in all site content.
+addEventListener("fetch", event => {
+  event.respondWith(fetchAndReplace(event.request))
+})
+
+async function fetchAndReplace(request) {
+  // Fetch from origin server.
+  let response = await fetch(request)
+
+  // Make sure we only modify text, not images.
+  let type = response.headers.get("Content-Type") || ""
+  if (!type.startsWith("text/")) {
+    // Not text. Don't modify.
+    return response
+  }
+
+  // Read response body.
+  let text = await response.text()
+
+  // Modify it.
+  let modified = text.replace(
+      /Worker/g, "Minion")
+
+  // Return modified response.
+  return new Response(modified, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers
+  })
+}
+
+
+Here is a worker which searches the page content for URLs wrapped in double-curly-brackets, fetches those URLs, and then substitutes them into the page. This implements a sort of primitive template engine supporting something like "Edge Side Includes".
+
+
+// A Service Worker which replaces {{URL}} with the contents of
+// the URL. (A simplified version of "Edge Side Includes".)
+addEventListener("fetch", event => {
+  event.respondWith(fetchAndInclude(event.request))
+})
+
+async function fetchAndInclude(request) {
+  // Fetch from origin server.
+  let response = await fetch(request)
+
+  // Make sure we only modify text, not images.
+  let type = response.headers.get("Content-Type") || ""
+  if (!type.startsWith("text/")) {
+    // Not text. Don't modify.
+    return response
+  }
+
+  // Read response body.
+  let text = await response.text()
+
+  // Search for instances of {{URL}}.
+  let regexp = /{{([^}]*)}}/g
+  let parts = []
+  let pos = 0
+  let match
+  while (match = regexp.exec(text)) {
+    let url = new URL(match[1], request.url)
+    parts.push({
+      before: text.slice(pos, match.index),
+      // Start asynchronous fetch of this URL.
+      promise: fetch(url.toString())
+          .then((response) => response.text())
+    })
+    pos = regexp.lastIndex
+  }
+
+  // Now that we've started all the subrequests,
+  // wait for each and collect the text.
+  let chunks = []
+  for (let part of parts) {
+    chunks.push(part.before)
+    // Wait for the async fetch from earlier to complete.
+    chunks.push(await part.promise)
+  }
+  chunks.push(text.slice(pos))
+  // Concatenate all text and return.
+  return new Response(chunks.join(""), {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers
+  })
+}
+
+
+Play with it yourself!
+
+We've created the Cloudflare Workers playground at cloudflareworkers.com where you can try writing your own script and applying it to your site.
+
+Try it out now »
+
+Questions and Answers
+
+Is it "Cloudflare Workers" or "Cloudflare Service Workers"?
+
+A "Cloudflare Worker" is JavaScript you write that runs on Cloudflare's edge. A "Cloudflare Service Worker" is specifically a worker which handles HTTP traffic and is written against the Service Worker API. Currently, this is the only kind of worker we've implemented, but in the future we may introduce other worker types for certain specialized tasks.
+
+What can I do with Service Workers on the edge?
+
+Anything and everything. You're writing code, so the possibilities are infinite. Your Service Worker will intercept all HTTP requests destined for your domain, and can return any valid HTTP response. Your worker can make outgoing HTTP requests to any server on the public internet.
+
+Here are just a few ideas how to use Service Workers on Cloudflare:
+
+Improve performance
+
+Use custom logic to decide which requests are cacheable at the edge, and canonicalize them to improve cache hit rate.
+
+Expand HTML templates directly on the edge, fetching only dynamic content from your server.
+
+Respond to stateless requests directly from the edge without contacting your origin server at all.
+
+Split one request into multiple parallel requests to different servers, then combine the responses.
+
+Enhance security
+
+Implement custom security rules and filters.
+
+Implement custom authentication and authorization mechanisms.
+
+Increase reliability
+
+Deploy fast fixes to your site in seconds, without having to update your own servers.
+
+Implement custom load balancing and failover logic.
+
+Respond dynamically when your origin server is unreachable.
+
+But these are just examples. The whole point of Cloudflare Workers is that you can do things we haven't thought of!
+
+Why JavaScript?
+
+Cloudflare Workers are written in JavaScript, executed using the V8 JavaScript engine (from Google Chrome). We chose JavaScript and V8 for two main reasons:
+
+Security: The V8 JavaScript engine is arguably the most scrutinized code sandbox in the history of computing, and the Chrome security team is one of the best in the world. Moreover, Google pays massive bug bounties to anyone who can find a vulnerability. (That said, we have added additional layers of our own sandboxing on top of V8.)
+
+Ubiquity: JavaScript is everywhere. Anyone building a web application already needs to know it: whereas their server could be written in a variety of languages, the client has to be JavaScript, because that's what browsers run.
+
+We did consider several other possibilities:
+
+Lua: Lua is already deeply integrated into nginx, providing exactly the kind of scripting hooks that we need -- indeed, much of our own business logic running at the edge today is written in Lua. Moreover, Lua already provides facilities for sandboxing. However, in practice, Lua's security as a sandbox has received limited scrutiny, as, historically, there has not been much value in finding a Lua sandbox breakout -- this would change rapidly if we chose it, probably leading to trouble. Moreover, Lua is not very widely known among web developers today.
+
+Virtual machines: Virtual machines are, of course, widely used and scrutinized as sandboxes, and most web service back-end developers are familiar with them already. However, virtual machines are heavy: each one must be allocated hundreds of megabytes of RAM and typically takes tens of seconds to boot. We need a solution that allows us to deploy every customer's code to every one of our hundreds of locations. That means we need each one's RAM overhead to be as low as possible, and we need startup to be fast enough that we can do it on-demand, so that we can safely shut down workers that aren't receiving traffic. Virtual machines do not scale to these needs.
+
+Containers: My personal background is in container-based sandboxing. With careful use of Linux "namespaces" paired with a strong seccomp-bpf filter and other attack surface reduction techniques, it's possible to set up a pretty secure sandbox which can run native Linux binaries. This would have the advantage that we could allow developers to deploy native code, or code written in any language that runs on Linux. However, even though containers are much more efficient than virtual machines, they still aren't efficient enough. Each worker would have to run in its own OS-level process, consuming RAM and inducing context-switching overhead. And while native code can load quickly, many server-oriented language environments are not optimized for startup time. Finally, container security is still immature: although a properly-configured container can be pretty secure, we still see container breakout bugs being found in the Linux kernel every now and then.
+
+Vx32: We considered a fascinating little sandbox known as Vx32, which uses "software fault isolation" to be able to run native-code binaries in a sandboxed way with multiple sandboxes per process. While this approach was tantalizing in its elegance, it had the down side that developers would need to cross-compile their code to a different platform, meaning we'd have to spend a great deal of time on tooling for a smooth experience. Moreover, while it would mitigate some of the context switching overhead compared to multiple processes, RAM usage would still likely be high as very little of the software stack could be shared between sandboxes.
+
+Ultimately, it became clear to us that V8 was the best choice. The final nail in the coffin was the realization that V8 includes WebAssembly out-of-the-box, meaning that people who really need to deploy code written in other languages can still do so.
+
+Why not Node.js?
+
+Node.js is a server-oriented JavaScript runtime that also uses V8. At first glance, it would seem to make a lot of sense to reuse Node.js rather than build on V8 directly.
+
+However, as it turns out, despite being built on V8, Node is not designed to be a sandbox. Yes, we know about the vm module, but if you look closely, it says right there on the page: "Note: The vm module is not a security mechanism. Do not use it to run untrusted code."
+
+As such, if we were to build on Node, we'd lose the benefits of V8's sandbox. We'd instead have to do process-level (a.k.a. container-based) sandboxing, which, as discussed above, is less secure and less efficient.
+
+Why the Service Worker API?
+
+Early on in the design process, we nearly made a big mistake.
+
+Nearly everyone who has spent a lot of time scripting nginx or otherwise working with HTTP proxy services (so, basically everyone at Cloudflare) tends to have a very specific idea of what the API should look like. We all start from the assumption that we'd provide two main "hooks" where the developer could insert a callback: a request hook and a response hook. The request hook callback could modify the request, and the response hook callback modify the response. Then we think about the cache, and we say: ah, some hooks should run pre-cache and some post-cache. So now we have four hooks. Generally, it was assumed these hooks would be pure, non-blocking functions.
+
+Then, between design meetings at our London office, I had lunch with Ingvar Stepanyan, who among other things had been doing work with Service Workers in the browser. Ingvar pointed out the obvious: This is exactly the use case for which the W3C Service Workers API was designed. Service Workers implement proxies and control caching, traditionally in the browser.
+
+But the Service Worker API is not based on a request hook and a response hook. Instead, a Service Worker implements an endpoint: it registers one event handler which receives requests and responds to those requests. That handler, though, is asynchronous, meaning it can do other I/O before producing a response. Among other things, it can make its own HTTP requests (which we call "subrequests"). So, a simple service worker can modify the original request, forward it to the origin as a subrequest, receive a response, modify that, and then return it: everything the hooks model can do.
+
+But a Service Worker is much more powerful. It can make multiple subrequests, in series or in parallel, and combine the results. It can respond directly without making a subrequest at all. It can even make an asynchronous subrequest after it has already responded to the original request. A Service Worker can also directly manipulate the cache through the Cache API. So, there's no need for "pre cache" and "post cache" hooks. You just stick the cache lookup into your code where you want it.
+
+To add icing to the cake, the Service Worker API, and related modern web APIs like Fetch and Streams, have been designed very carefully by some incredibly smart people. It uses modern JavaScript idioms like Promises, and it is well-documented by MDN and others. Had we designed our own API, it would surely have been worse on all counts.
+
+It quickly became obvious to us that the Service Worker API was the correct API for our use case.
+
+When can I use it?
+
+Cloudflare Workers are a big change to Cloudflare and we're rolling it out slowly. If you'd like to get early access -- or just want to be notified when it's ready:
+
+If you want to read more, refer to our documentation.

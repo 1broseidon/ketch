@@ -1,0 +1,154 @@
+By the time I got to Penn for my first year of college, I thought I was already a pretty good programmer. Completely self-taught, I had written two major systems in Turbo Pascal … one of them was a complete inventory system for a small factory, while the other scheduled all the production at one of Israel’s largest bakeries.
+
+
+It took me until the midterm exams to realize I wasn’t as smart as I thought. I completely screwed up some questions, because I still didn’t get pointers and I still didn’t get recursion.
+
+
+Never one to hold a grudge, I share those midterm questions with you… see if you can do better than I did freshman year.
+
+
+1a. (MIT-Scheme) Using the function
+
+
+(define (accumulate combiner null-value l) 
+   (if (null? l)
+       null-value
+       (combiner (car l)
+                 (accumulate combiner
+                             null-value
+                             (cdr l)))))
+
+
+
+
+Implement sum-of-squares, which calculates the sum of squares of a list, for example
+
+
+(sum-of-squares '(1 2 3 4 5))
+
+
+
+should evaluate to 55.
+
+
+(For the answer, select the text in the box:)
+
+
+(define (sum-of-squares l)
+   (accumulate (lambda (x y) (+ (* x x) y))
+               0
+               l))
+
+
+
+1b. (JavaScript) OK, maybe Scheme is not your thing. This question is equivalent to 1a, in JavaScript.
+
+
+Using the function
+
+
+function accumulate(combiner, nullValue, l)
+{
+	if (l.length == 0)
+		return nullValue;
+	var first = l.shift();
+	return combiner(first, accumulate(combiner, nullValue, l));
+}
+
+
+
+Implement sumOfSquares, which calculates the sum of squares of a list, for example
+
+
+sumOfSquares([1,2,3,4,5])
+
+
+
+should evaluate to 55.
+
+
+(For the answer, select the text in the box:)
+
+
+function sumOfSquares(lst)
+{
+	return accumulate(function(x,y){return x*x+y}, 0, lst);
+}
+
+
+
+2. (ANSI C) Write a C program of the following form:
+
+
+#include <stdio.h>
+int main(int argc, char **argv)
+{
+   ???
+}
+
+
+
+such that, after compiling it, it can be executed as
+
+
+% ./a.out could harold eat eight salami elephants
+
+
+
+and it will print the first letter of every argument (in this case, “cheese”).
+
+
+(For the answer, select the text in the box:)
+
+
+#include <stdio.h>
+int main(int argc, char** argv)
+{
+  int i;
+  for (i=1; i<argc; i++)
+  {
+    putchar(argv[i][0]);
+  }
+  putchar('\n');
+  return 0;
+}
+
+
+
+3. (ANSI C) What is the output of the following C program?
+
+
+#include <stdio.h>
+
+char *fn(int i, char *s)
+{
+  while (i)
+  {
+    s++;
+    i--;
+  }
+
+  return s;
+}
+
+int main(int argc, char** argv)
+{
+  int a = 2;
+  static char c[] = "test";
+
+  printf("%s\n", fn(a,c));
+
+  return 0;
+}
+
+
+
+
+(For the answer, select the text in the box:)
+
+
+st (followed by a newline)
+
+
+
+For more programming challenges, check out TopCoder.

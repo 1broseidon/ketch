@@ -1,0 +1,1013 @@
+{
+  "version": 1,
+  "pages": [
+    {
+      "id": "npm",
+      "site": "docs.npmjs.com",
+      "kind": "docs",
+      "url": "https://docs.npmjs.com/trusted-publishers/",
+      "final_url": "https://docs.npmjs.com/trusted-publishers/",
+      "captured_at": "2026-09-19T03:31:52.755736+00:00",
+      "html_sha256": "59fbb566f677bb4c2f5d43c70f00dcc098e3bb05d26669385eb6ef139bbf90f8",
+      "reference_sha256": "f81c56a46e2ce91c909ec904b8ce8927fb151d3b3d2adede0b5e72b8896a0ca4",
+      "reference_selector": "div[as=main]",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation],[class*='page-footer']",
+      "annotation_notes": "Introductory version requirements, runner restrictions and OIDC YAML are checked even when Readability omits the introduction. Content root is the authored non-semantic as=main container.",
+      "checks": [
+        {
+          "id": "npm-minimum",
+          "kind": "text",
+          "text": "npm CLI version 11.5.1 or later",
+          "critical": true
+        },
+        {
+          "id": "node-minimum",
+          "kind": "text",
+          "text": "Node version 22.14.0 or higher",
+          "critical": true
+        },
+        {
+          "id": "runner-restriction",
+          "kind": "text",
+          "text": "Self-hosted runners are not currently supported",
+          "critical": true
+        },
+        {
+          "id": "heading-how-trusted-publishing-works",
+          "kind": "heading",
+          "text": "How trusted publishing works",
+          "critical": false
+        },
+        {
+          "id": "oidc-yaml",
+          "kind": "code",
+          "text": "permissions:\n  id-token: write  # Required for OIDC\n  contents: read",
+          "critical": true
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect",
+          "critical": false
+        }
+      ]
+    },
+    {
+      "id": "go",
+      "site": "pkg.go.dev",
+      "kind": "api",
+      "url": "https://pkg.go.dev/context",
+      "final_url": "https://pkg.go.dev/context",
+      "captured_at": "2026-09-19T03:31:52.727531+00:00",
+      "html_sha256": "82076dac32a20a7e266805d1c1a9a8b8083922d221744f2ed858d651f5e46733",
+      "reference_sha256": "8d789918249b367b124701d216e07fca6361ba928be3cea624e7ff4adcc26f1d",
+      "reference_selector": ".Documentation",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation]",
+      "annotation_notes": "API prose, syntax-highlighted interface comments and declaration signatures; code checks are examples of generic HTML pre behavior, not Go grammar matching.",
+      "checks": [
+        {
+          "id": "cancel-does-not-wait",
+          "kind": "text",
+          "text": "A CancelFunc does not wait for the work to stop",
+          "critical": true
+        },
+        {
+          "id": "child-propagation",
+          "kind": "text",
+          "text": "When a Context is canceled, all Contexts derived from it are also canceled",
+          "critical": true
+        },
+        {
+          "id": "cancel-cleanup",
+          "kind": "text",
+          "text": "removes the parent's reference to the child, and stops any associated timers",
+          "critical": true
+        },
+        {
+          "id": "comment-preserved",
+          "kind": "code",
+          "text": "// The close of the Done channel may happen asynchronously,\n\t// after the cancel function returns.",
+          "critical": true
+        },
+        {
+          "id": "timeout-signature",
+          "kind": "code",
+          "text": "func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc)",
+          "critical": true
+        },
+        {
+          "id": "heading-variables",
+          "kind": "heading",
+          "text": "Variables",
+          "critical": false
+        },
+        {
+          "id": "exclude-chrome",
+          "kind": "absent",
+          "text": "Keyboard shortcuts",
+          "critical": false
+        }
+      ]
+    },
+    {
+      "id": "python",
+      "site": "docs.python.org",
+      "kind": "tutorial",
+      "url": "https://docs.python.org/3/tutorial/errors.html",
+      "final_url": "https://docs.python.org/3/tutorial/errors.html",
+      "captured_at": "2026-09-19T03:31:52.715685+00:00",
+      "html_sha256": "1780d85dd253e54299413af236e1b1f91ce3402a3143238a45f1ee3b438a9b94",
+      "reference_sha256": "78ed180a0002f74faaf4ade6f82c08f7c6d480105233a459eb89807de1b8113b",
+      "reference_selector": "div.body",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation]",
+      "annotation_notes": "Sphinx tutorial with nested exception examples and a version-specific warning.",
+      "checks": [
+        {
+          "id": "finally-warning",
+          "kind": "text",
+          "text": "From version 3.14 the compiler emits a SyntaxWarning for it",
+          "critical": true
+        },
+        {
+          "id": "cleanup-resources",
+          "kind": "text",
+          "text": "useful for releasing external resources",
+          "critical": true
+        },
+        {
+          "id": "override-return",
+          "kind": "text",
+          "text": "the returned value will be the one from the finally clause’s return statement",
+          "critical": true
+        },
+        {
+          "id": "finally-example",
+          "kind": "code",
+          "text": ">>> def bool_return():\n...     try:\n...         return True\n...     finally:\n...         return False",
+          "critical": true
+        },
+        {
+          "id": "heading-8-7-defining-clean-up-actions",
+          "kind": "heading",
+          "text": "8.7. Defining Clean-up Actions",
+          "critical": false
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://docs.python.org/3/reference/compound_stmts.html#finally",
+          "critical": false
+        }
+      ]
+    },
+    {
+      "id": "kubernetes",
+      "site": "kubernetes.io",
+      "kind": "configuration",
+      "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/",
+      "final_url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/",
+      "captured_at": "2026-09-19T03:31:52.912323+00:00",
+      "html_sha256": "26264156d213d64360bd1a67a9524dcc89749164313a65a87b9d947bd846e2f0",
+      "reference_sha256": "9ae0dacef1fd573b809ab848ce92ee99a21ce637750cd30ea5a6ad60c4850cf9",
+      "reference_selector": ".td-content",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation],.feedback,.td-page-meta",
+      "annotation_notes": "Hugo/Docsy task page with YAML, startup timing, service-traffic behavior and supplementary sections.",
+      "checks": [
+        {
+          "id": "startup-window",
+          "kind": "text",
+          "text": "maximum of 5 minutes (30 * 10 = 300s)",
+          "critical": true
+        },
+        {
+          "id": "startup-failure",
+          "kind": "text",
+          "text": "the container is killed after 300s and subject to the pod's restartPolicy",
+          "critical": true
+        },
+        {
+          "id": "readiness-traffic",
+          "kind": "text",
+          "text": "the pod will be marked unready and will not receive traffic from any services",
+          "critical": true
+        },
+        {
+          "id": "startup-yaml",
+          "kind": "code",
+          "text": "startupProbe:\n  httpGet:\n    path: /healthz\n    port: liveness-port\n  failureThreshold: 30\n  periodSeconds: 10",
+          "critical": true
+        },
+        {
+          "id": "heading-protect-slow-starting-containers-with-startup-probes",
+          "kind": "heading",
+          "text": "Protect slow starting containers with startup probes",
+          "critical": false
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://kubernetes.io/docs/concepts/workloads/pods/probes/",
+          "critical": false
+        }
+      ]
+    },
+    {
+      "id": "postgres",
+      "site": "www.postgresql.org",
+      "kind": "database",
+      "url": "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "final_url": "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "captured_at": "2026-09-19T03:31:53.477253+00:00",
+      "html_sha256": "beef1cd1c5f512e3934fd049454730e3cc9d459e69db8e938bf941125387cefc",
+      "reference_sha256": "9c64066c8ceb4f2ff3d251cab6d38b5adfacd93d19502492e208f0a41df3c227",
+      "reference_selector": "#docContent",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation],.navheader,.navfooter,.toc",
+      "annotation_notes": "DocBook table: the Repeatable Read row must stay associated with the right column headers. Navigation tables excluded.",
+      "checks": [
+        {
+          "id": "uncommitted-mapping",
+          "kind": "text",
+          "text": "PostgreSQL's Read Uncommitted mode behaves like Read Committed",
+          "critical": true
+        },
+        {
+          "id": "no-phantoms",
+          "kind": "text",
+          "text": "PostgreSQL's Repeatable Read implementation does not allow phantom reads",
+          "critical": true
+        },
+        {
+          "id": "retry",
+          "kind": "text",
+          "text": "must be prepared to retry transactions due to serialization failures",
+          "critical": true
+        },
+        {
+          "id": "repeatable-row",
+          "kind": "table",
+          "critical": true,
+          "headers": [
+            "Isolation Level",
+            "Dirty Read",
+            "Nonrepeatable Read",
+            "Phantom Read",
+            "Serialization Anomaly"
+          ],
+          "cells": [
+            "Repeatable read",
+            "Not possible",
+            "Not possible",
+            "Allowed, but not in PG",
+            "Possible"
+          ]
+        },
+        {
+          "id": "heading-13-2-3-serializable-isolation-level",
+          "kind": "heading",
+          "text": "13.2.3. Serializable Isolation Level",
+          "critical": false
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.postgresql.org/docs/current/sql-set-transaction.html",
+          "critical": false
+        }
+      ]
+    },
+    {
+      "id": "mdn",
+      "site": "developer.mozilla.org",
+      "kind": "api",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/AbortController",
+      "final_url": "https://developer.mozilla.org/en-US/docs/Web/API/AbortController",
+      "captured_at": "2026-09-19T03:31:53.616007+00:00",
+      "html_sha256": "14515cd842ab3091ed8ec180643b2b70fcacb0031ac901426bce35fd3a64ce75",
+      "reference_sha256": "ea98b740fc1616bc28c2e80dbb36e912e3d1e9a96c672870e2e676b97241fc5c",
+      "reference_selector": "main",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation],.article-footer,.document-toc-container",
+      "annotation_notes": "API reference including browser availability, worker support, definition lists and link destinations. Retain the substantive baseline availability notice; exclude contribution controls and the table-of-contents sidebar.",
+      "checks": [
+        {
+          "id": "workers-note",
+          "kind": "text",
+          "text": "This feature is available in Web Workers",
+          "critical": true
+        },
+        {
+          "id": "signal-type",
+          "kind": "text",
+          "text": "Communicating with an asynchronous operation is done using an AbortSignal object",
+          "critical": true
+        },
+        {
+          "id": "aborts-streams",
+          "kind": "text",
+          "text": "consumption of any response bodies, and streams",
+          "critical": true
+        },
+        {
+          "id": "heading-instance-methods",
+          "kind": "heading",
+          "text": "Instance methods",
+          "critical": false
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://developer.mozilla.org/en-US/docs/Web/API/AbortController/abort",
+          "critical": false
+        },
+        {
+          "id": "exclude-chrome",
+          "kind": "absent",
+          "text": "Your blueprint for a better internet",
+          "critical": false
+        },
+        {
+          "id": "browser-availability",
+          "kind": "text",
+          "text": "available across browsers since March 2019",
+          "critical": true
+        }
+      ]
+    },
+    {
+      "id": "rust",
+      "site": "doc.rust-lang.org",
+      "kind": "tutorial",
+      "url": "https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html",
+      "final_url": "https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html",
+      "captured_at": "2026-09-19T03:31:52.879171+00:00",
+      "html_sha256": "d9c8d249ca1f968b407ac99e721dd6b5799ee784a8c673d262c142a4162973ec",
+      "reference_sha256": "b99bb2781580eacbfa15e8e3cbc274bedb1b66c321526e1d27505d994c511f5b",
+      "reference_selector": "main",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation]",
+      "annotation_notes": "mdBook ownership chapter, semantic rules and a move example. Keyboard-help chrome must not leak.",
+      "checks": [
+        {
+          "id": "owner",
+          "kind": "text",
+          "text": "Each value in Rust has an owner",
+          "critical": true
+        },
+        {
+          "id": "one-owner",
+          "kind": "text",
+          "text": "There can only be one owner at a time",
+          "critical": true
+        },
+        {
+          "id": "drop",
+          "kind": "text",
+          "text": "When the owner goes out of scope, the value will be dropped",
+          "critical": true
+        },
+        {
+          "id": "heading-ownership-rules",
+          "kind": "heading",
+          "text": "Ownership Rules",
+          "critical": false
+        },
+        {
+          "id": "move-example",
+          "kind": "code",
+          "text": "let s1 = String::from(\"hello\");\n    let s2 = s1;",
+          "critical": true
+        },
+        {
+          "id": "exclude-chrome",
+          "kind": "absent",
+          "text": "Press Esc to hide this help",
+          "critical": false
+        }
+      ]
+    },
+    {
+      "id": "sqlite",
+      "site": "www.sqlite.org",
+      "kind": "database",
+      "url": "https://www.sqlite.org/lang_transaction.html",
+      "final_url": "https://www.sqlite.org/lang_transaction.html",
+      "captured_at": "2026-09-19T03:31:53.114816+00:00",
+      "html_sha256": "b65dc308fd9e0ce471844c97366a4f5ad3a1f42833a3b19486ad7d6555a8e24e",
+      "reference_sha256": "8b308b794de97e5bca1c048237bdf27d39016a347ae9ca3acee358949f077101",
+      "reference_selector": ".fancy",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation]",
+      "annotation_notes": "Plain HTML reference with collapsible SVG syntax diagrams; prose, nesting restriction and linked savepoint reference. SVG diagrams are outside the text metric.",
+      "checks": [
+        {
+          "id": "one-writer",
+          "kind": "text",
+          "text": "but only one simultaneous write transaction",
+          "critical": true
+        },
+        {
+          "id": "no-nesting",
+          "kind": "text",
+          "text": "Transactions created using BEGIN...COMMIT do not nest",
+          "critical": true
+        },
+        {
+          "id": "alias",
+          "kind": "text",
+          "text": "END TRANSACTION is an alias for COMMIT",
+          "critical": true
+        },
+        {
+          "id": "heading-2-1-read-transactions-versus-write-transactions",
+          "kind": "heading",
+          "text": "2.1. Read transactions versus write transactions",
+          "critical": false
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://www.sqlite.org/lang_savepoint.html",
+          "critical": false
+        },
+        {
+          "id": "exclude-chrome",
+          "kind": "absent",
+          "text": "Small. Fast. Reliable.",
+          "critical": false
+        }
+      ]
+    },
+    {
+      "id": "git",
+      "site": "git-scm.com",
+      "kind": "manual",
+      "url": "https://git-scm.com/docs/git-reset",
+      "final_url": "https://git-scm.com/docs/git-reset",
+      "captured_at": "2026-09-19T03:31:53.056472+00:00",
+      "html_sha256": "3dc6417fa0bfd4361d95a345c58250410f049825f76537acdeb44af900ba7e01",
+      "reference_sha256": "a1a9e00dc6d11095eac849396debf2031040288bd2780e153e611a32f6043abb",
+      "reference_selector": "#main",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation]",
+      "annotation_notes": "Asciidoc CLI manual: reset modes, literal examples and cross-reference links.",
+      "checks": [
+        {
+          "id": "mixed-default",
+          "kind": "text",
+          "text": "default --mixed",
+          "critical": true
+        },
+        {
+          "id": "soft-keeps",
+          "kind": "text",
+          "text": "Leave your working tree files and the index unchanged",
+          "critical": true
+        },
+        {
+          "id": "orig-head",
+          "kind": "text",
+          "text": "ORIG_HEAD is set to the tip of the current branch",
+          "critical": true
+        },
+        {
+          "id": "example",
+          "kind": "code",
+          "text": "git reset --hard HEAD~3",
+          "critical": true
+        },
+        {
+          "id": "heading-options",
+          "kind": "heading",
+          "text": "OPTIONS",
+          "critical": false
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://git-scm.com/docs/git-restore",
+          "critical": false
+        }
+      ]
+    },
+    {
+      "id": "gnu",
+      "site": "www.gnu.org",
+      "kind": "manual",
+      "url": "https://www.gnu.org/software/coreutils/manual/html_node/Exit-status.html",
+      "final_url": "https://www.gnu.org/software/coreutils/manual/html_node/Exit-status.html",
+      "captured_at": "2026-09-19T03:31:53.227100+00:00",
+      "html_sha256": "2b4f7b8f03ccb84b1a5698d6dfe553e0e20efc5becd2c5382059bf6d29002442",
+      "reference_sha256": "e306c38f2d2c92fb282fb0bc8106d23ec4bbee675dca883afa8e7584363a01c3",
+      "reference_selector": "#Exit-status",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation],.nav-panel",
+      "annotation_notes": "Short Texinfo manual: exit semantics and exceptions; adjacent-page navigation excluded.",
+      "checks": [
+        {
+          "id": "zero-success",
+          "kind": "text",
+          "text": "an exit status of zero indicates success",
+          "critical": true
+        },
+        {
+          "id": "nonzero-failure",
+          "kind": "text",
+          "text": "Failure is indicated by a nonzero value",
+          "critical": true
+        },
+        {
+          "id": "exceptions",
+          "kind": "text",
+          "text": "some of the programs documented here do produce other exit status values",
+          "critical": true
+        },
+        {
+          "id": "heading-2-11-exit-status",
+          "kind": "heading",
+          "text": "2.11 Exit status",
+          "critical": false
+        },
+        {
+          "id": "exclude-chrome",
+          "kind": "absent",
+          "text": "Next: Floating point numbers",
+          "critical": false
+        }
+      ]
+    },
+    {
+      "id": "terraform",
+      "site": "developer.hashicorp.com",
+      "kind": "configuration",
+      "url": "https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle",
+      "final_url": "https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle",
+      "captured_at": "2026-09-19T03:31:53.364023+00:00",
+      "html_sha256": "9c69c21a29ef02afdd5ab01263c4fa3d5a46f0af808235547f62bbab5e403fd6",
+      "reference_sha256": "46b464e060f34161d0e73cb274b50d7e3184f9e95ce02ea7218ae9f6d4136751",
+      "reference_selector": "main",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation],[class*='feedback'],[class*='edit-on-github']",
+      "annotation_notes": "React documentation with configuration caveats and HCL indentation.",
+      "checks": [
+        {
+          "id": "literal-only",
+          "kind": "text",
+          "text": "only literal values can be used because the processing happens too early for arbitrary expression evaluation",
+          "critical": true
+        },
+        {
+          "id": "removal-limit",
+          "kind": "text",
+          "text": "if you remove the resource's configuration, even if prevent_destroy is enabled",
+          "critical": true
+        },
+        {
+          "id": "ignore-runtime",
+          "kind": "text",
+          "text": "should not affect the resource after its creation",
+          "critical": true
+        },
+        {
+          "id": "heading-prevent-destroy",
+          "kind": "heading",
+          "text": "prevent_destroy",
+          "critical": false
+        },
+        {
+          "id": "ignore-hcl",
+          "kind": "code",
+          "text": "ignore_changes = [\n         tags\n      ]",
+          "critical": true
+        }
+      ]
+    },
+    {
+      "id": "docker",
+      "site": "docs.docker.com",
+      "kind": "tutorial",
+      "url": "https://docs.docker.com/build/building/multi-stage/",
+      "final_url": "https://docs.docker.com/build/building/multi-stage/",
+      "captured_at": "2026-09-19T03:31:53.774939+00:00",
+      "html_sha256": "1cc7c89609712f7e1fef748767663aed0fb2f0db39c7429e64334a840d4687a4",
+      "reference_sha256": "d5391a814df64088475ab9a8f4996bfbaf1b9fab5f4a7da0d08fa933e6bfcad3",
+      "reference_selector": "article",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation]",
+      "annotation_notes": "Documentation article with Dockerfile examples and multi-stage build behavior; use article instead of surrounding navigation.",
+      "checks": [
+        {
+          "id": "multiple-from",
+          "kind": "text",
+          "text": "With multi-stage builds, you use multiple FROM statements in your Dockerfile",
+          "critical": true
+        },
+        {
+          "id": "stage-begins",
+          "kind": "text",
+          "text": "each of them begins a new stage of the build",
+          "critical": true
+        },
+        {
+          "id": "select-artifacts",
+          "kind": "text",
+          "text": "You can selectively copy artifacts from one stage to another",
+          "critical": true
+        },
+        {
+          "id": "final-stage",
+          "kind": "code",
+          "text": "FROM scratch\nCOPY --from=0 /bin/hello /bin/hello\nCMD [\"/bin/hello\"]",
+          "critical": true
+        },
+        {
+          "id": "heading-name-your-build-stages",
+          "kind": "heading",
+          "text": "Name your build stages",
+          "critical": false
+        }
+      ]
+    },
+    {
+      "id": "cloudflare",
+      "site": "blog.cloudflare.com",
+      "kind": "blog",
+      "url": "https://blog.cloudflare.com/rfc-9457-agent-error-pages/",
+      "final_url": "https://blog.cloudflare.com/rfc-9457-agent-error-pages/",
+      "captured_at": "2026-09-19T03:31:53.505177+00:00",
+      "html_sha256": "dadf09531655fca506f60a6c27a5f6190620e6f434b580e4a8fc38681c3702fd",
+      "reference_sha256": "26d278462c1d28617f9583a5718453bace51b13384d88fc2d09a5d712315eed4",
+      "reference_selector": ".post-content",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation],.post-bottom,.post-related",
+      "annotation_notes": "Engineering blog with RFC contract table, JSON examples and prose; related-post placeholders are outside the selected post content.",
+      "checks": [
+        {
+          "id": "rfc-response",
+          "kind": "text",
+          "text": "Cloudflare returns RFC 9457-compliant structured Markdown and JSON error payloads to AI agents",
+          "critical": true
+        },
+        {
+          "id": "retry-contract",
+          "kind": "text",
+          "text": "retryable and retry_after drive backoff logic",
+          "critical": true
+        },
+        {
+          "id": "stable-frontmatter",
+          "kind": "text",
+          "text": "The YAML frontmatter is the critical layer for automation",
+          "critical": true
+        },
+        {
+          "id": "error-detail",
+          "kind": "table",
+          "critical": true,
+          "headers": [
+            "RFC 9457 member",
+            "What it contains"
+          ],
+          "cells": [
+            "detail",
+            "A human-readable explanation specific to this occurrence"
+          ]
+        },
+        {
+          "id": "heading-one-contract-two-formats",
+          "kind": "heading",
+          "text": "One contract, two formats",
+          "critical": false
+        },
+        {
+          "id": "json-body",
+          "kind": "code",
+          "text": "\"status\": 429",
+          "critical": true
+        },
+        {
+          "id": "exclude-chrome",
+          "kind": "absent",
+          "text": "Subscribe to receive notifications of new posts",
+          "critical": false
+        }
+      ]
+    },
+    {
+      "id": "danluu",
+      "site": "danluu.com",
+      "kind": "essay",
+      "url": "https://danluu.com/slow-device/",
+      "final_url": "https://danluu.com/slow-device/",
+      "captured_at": "2026-09-19T03:31:53.576422+00:00",
+      "html_sha256": "ba6a819e45de06349f3593fb1aa4decce76472abcb5132164f8b33a283da1c36",
+      "reference_sha256": "bf41d166165025641fabe28da703be022485241f42c292fd887cfbf3d56e2c86",
+      "reference_selector": "main",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation]",
+      "annotation_notes": "Long independent essay with tables, footnotes and appendices. Main includes all footnotes; Patreon also appears legitimately within the article and is not a noise marker.",
+      "checks": [
+        {
+          "id": "cpu-vs-bandwidth",
+          "kind": "text",
+          "text": "CPU performance for web apps hasn't scaled nearly as quickly as bandwidth",
+          "critical": true
+        },
+        {
+          "id": "table-definition",
+          "kind": "text",
+          "text": "After the website name column, we have the compressed size transferred over the wire",
+          "critical": true
+        },
+        {
+          "id": "lcp-definition",
+          "kind": "text",
+          "text": "Largest Contentful Paint (LCP) measures when a user perceives that the largest content of a page is visible",
+          "critical": true
+        },
+        {
+          "id": "heading-appendix-experimental-details",
+          "kind": "heading",
+          "text": "Appendix: experimental details",
+          "critical": false
+        },
+        {
+          "id": "source-link",
+          "kind": "link",
+          "text": "https://danluu.com/web-bloat/"
+        }
+      ]
+    },
+    {
+      "id": "joel",
+      "site": "www.joelonsoftware.com",
+      "kind": "blog",
+      "url": "https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i/",
+      "final_url": "https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i/",
+      "captured_at": "2026-09-19T03:31:53.621922+00:00",
+      "html_sha256": "20ca98012cb9a2a46aecfe81e437b9b8de0c87c55abc95a3bdc9e688d08e522b",
+      "reference_sha256": "38a52bc504ec7d3ad4a9e2d8746bc31dbb53a191634251f5311636e8a7d65b96",
+      "reference_selector": ".entry-content",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation]",
+      "annotation_notes": "WordPress essay: retain arguments throughout the article. Entry content excludes author/date/site navigation.",
+      "checks": [
+        {
+          "id": "rewrite-choice",
+          "kind": "text",
+          "text": "They decided to rewrite the code from scratch",
+          "critical": true
+        },
+        {
+          "id": "reading-code",
+          "kind": "text",
+          "text": "It’s harder to read code than to write it",
+          "critical": true
+        },
+        {
+          "id": "old-code",
+          "kind": "text",
+          "text": "The idea that new code is better than old is patently absurd",
+          "critical": true
+        },
+        {
+          "id": "conclusion",
+          "kind": "text",
+          "text": "throwing away the whole program is a dangerous folly",
+          "critical": true
+        }
+      ]
+    },
+    {
+      "id": "rfc",
+      "site": "www.rfc-editor.org",
+      "kind": "standard",
+      "url": "https://www.rfc-editor.org/rfc/rfc8259.html",
+      "final_url": "https://www.rfc-editor.org/rfc/rfc8259.html",
+      "captured_at": "2026-09-19T03:31:53.760396+00:00",
+      "html_sha256": "5302d6ccb6cf221817bdd1f8cd7221661d4519372e0ac0b4cf641e11e8037de7",
+      "reference_sha256": "287591f9021e4c67dc8d97977ebaab58415f16d3d99747c72530bcadd0bd4c73",
+      "reference_selector": "body",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation]",
+      "annotation_notes": "Text-first RFC rendered in preformatted pages; text and ABNF remain authoritative even if paragraph wrapping changes.",
+      "checks": [
+        {
+          "id": "utf8",
+          "kind": "text",
+          "text": "JSON text exchanged between systems that are not part of a closed ecosystem MUST be encoded using UTF-8",
+          "critical": true
+        },
+        {
+          "id": "unique-names",
+          "kind": "text",
+          "text": "The names within an object SHOULD be unique",
+          "critical": true
+        },
+        {
+          "id": "literal-case",
+          "kind": "text",
+          "text": "The literal names MUST be lowercase",
+          "critical": true
+        },
+        {
+          "id": "abnf",
+          "kind": "code",
+          "text": "value = false / null / true / object / array / number / string",
+          "critical": true
+        }
+      ]
+    },
+    {
+      "id": "wikipedia",
+      "site": "en.wikipedia.org",
+      "kind": "encyclopedia",
+      "url": "https://en.wikipedia.org/wiki/HTTP",
+      "final_url": "https://en.wikipedia.org/wiki/HTTP",
+      "captured_at": "2026-09-19T03:31:53.740710+00:00",
+      "html_sha256": "36e08dfff589d2969c7f8668ee2f788b24f1b4b338aaeb9edaf0e0806fcabe5e",
+      "reference_sha256": "387fcc1470d92a292471b213864a07a366115d71851dd3b39203ea7d24966e51",
+      "reference_selector": "#mw-content-text > .mw-parser-output",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation],.navbox,.sidebar,.reflist,.mw-editsection,.noprint,.ambox",
+      "annotation_notes": "Encyclopedia article with infoboxes and protocol examples; navboxes, reference bibliography and edit controls excluded from reference text.",
+      "checks": [
+        {
+          "id": "stateless",
+          "kind": "text",
+          "text": "HTTP is a stateless application-level protocol",
+          "critical": true
+        },
+        {
+          "id": "quic",
+          "kind": "text",
+          "text": "In HTTP/3, the application transport protocol QUIC over UDP is used",
+          "critical": true
+        },
+        {
+          "id": "reliable-transport",
+          "kind": "text",
+          "text": "requires a reliable network transport connection to exchange data between client and server",
+          "critical": true
+        },
+        {
+          "id": "heading-message-format",
+          "kind": "heading",
+          "text": "Message format",
+          "critical": false
+        },
+        {
+          "id": "request",
+          "kind": "code",
+          "text": "GET / HTTP/1.1",
+          "critical": true
+        },
+        {
+          "id": "exclude-chrome",
+          "kind": "absent",
+          "text": "Donate",
+          "critical": false
+        }
+      ]
+    },
+    {
+      "id": "gutenberg",
+      "site": "www.gutenberg.org",
+      "kind": "book",
+      "url": "https://www.gutenberg.org/files/11/11-h/11-h.htm",
+      "final_url": "https://www.gutenberg.org/files/11/11-h/11-h.htm",
+      "captured_at": "2026-09-19T03:31:53.897939+00:00",
+      "html_sha256": "1265d6e2c9c77f3180955691c85820455fc8ee0dca0e93a60c70247bb19df2cb",
+      "reference_sha256": "1f281fa6854f51d74c24efd32492137289220d78331004ecfed1dea1417edf43",
+      "reference_selector": ".chapter",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation]",
+      "annotation_notes": "All twelve narrative chapters, including dialogue and chapter boundaries. Publication boilerplate and contents are outside the reference.",
+      "checks": [
+        {
+          "id": "opening",
+          "kind": "text",
+          "text": "Alice was beginning to get very tired of sitting by her sister on the bank",
+          "critical": true
+        },
+        {
+          "id": "middle",
+          "kind": "text",
+          "text": "Who in the world am I? Ah, that’s the great puzzle!",
+          "critical": true
+        },
+        {
+          "id": "ending",
+          "kind": "text",
+          "text": "remembering her own child-life, and the happy summer days",
+          "critical": true
+        },
+        {
+          "id": "heading-chapter-vii-a-mad-tea-party",
+          "kind": "heading",
+          "text": "CHAPTER VII. A Mad Tea-Party",
+          "critical": false
+        }
+      ]
+    },
+    {
+      "id": "nasa",
+      "site": "science.nasa.gov",
+      "kind": "science",
+      "url": "https://science.nasa.gov/mars/facts/",
+      "final_url": "https://science.nasa.gov/mars/facts/",
+      "captured_at": "2026-09-19T03:31:53.896146+00:00",
+      "html_sha256": "830ade61627cb63eb2daf7a1b0ccaec8e254f07bcaee89e019eed1f8ca51a5ac",
+      "reference_sha256": "ce8dc63f13772cd447bfafc32e1903479c8836844745233d48130b165b66447b",
+      "reference_selector": "main",
+      "reference_exclude": "script,style,nav,footer,form,button,aside,svg,[hidden],[aria-hidden=true],[role=navigation],.hds-related-content",
+      "annotation_notes": "Public science page: prose, measurements, named entities and sections. Images and diagrams are outside the text metric.",
+      "checks": [
+        {
+          "id": "planet-order",
+          "kind": "text",
+          "text": "the fourth planet from the Sun",
+          "critical": true
+        },
+        {
+          "id": "radius",
+          "kind": "text",
+          "text": "With a radius of 2,106 miles (3,390 kilometers), Mars is about half the size of Earth",
+          "critical": true
+        },
+        {
+          "id": "sunlight",
+          "kind": "text",
+          "text": "it takes sunlight 13 minutes to travel from the Sun to Mars",
+          "critical": true
+        },
+        {
+          "id": "heading-atmosphere",
+          "kind": "heading",
+          "text": "Atmosphere",
+          "critical": false
+        },
+        {
+          "id": "moons",
+          "kind": "text",
+          "text": "Mars has two small moons, Phobos and Deimos",
+          "critical": true
+        }
+      ]
+    },
+    {
+      "id": "nps",
+      "site": "www.nps.gov",
+      "kind": "visitor-guide",
+      "url": "https://www.nps.gov/yell/planyourvisit/safety.htm",
+      "final_url": "https://www.nps.gov/yell/planyourvisit/safety.htm",
+      "captured_at": "2026-09-19T03:31:53.867813+00:00",
+      "html_sha256": "9058c83d91ec1d1932b33b14bc933115246487e0f6753459e6a4df01b7639430",
+      "reference_sha256": "4e63beee3db8c45800c2c2a2e6e42a1eb95d570d98ddf5170e2fdc3ba83b0b9f",
+      "reference_selector": ".ColumnMain",
+      "reference_exclude": "script,style,nav,footer,form,button:not([aria-controls]),svg,[hidden]:not([hidden=until-found]),[aria-hidden=true],[role=navigation],.modal,.VideoJSEmbedModal",
+      "annotation_notes": "Visitor guide with layout tables and accordions. Retain the emergency callout, disclosure-button headings, and hidden=until-found panels as authored content that readers can expand. Exclude video controls, modal dialogs and navigation.",
+      "checks": [
+        {
+          "id": "thermal-danger",
+          "kind": "text",
+          "text": "Burns from thermal features are a common cause of serious injury and death in the park",
+          "critical": true
+        },
+        {
+          "id": "thin-crust",
+          "kind": "text",
+          "text": "a thin crust with super-heated water below",
+          "critical": true
+        },
+        {
+          "id": "wildlife",
+          "kind": "text",
+          "text": "Animals in Yellowstone National Park are wild and dangerous",
+          "critical": true
+        },
+        {
+          "id": "heading-thermal-areas",
+          "kind": "heading",
+          "text": "Thermal Areas",
+          "critical": false
+        },
+        {
+          "id": "heading-bison",
+          "kind": "heading",
+          "text": "Bison",
+          "critical": false
+        },
+        {
+          "id": "exclude-chrome",
+          "kind": "absent",
+          "text": "Stay Connected",
+          "critical": false
+        },
+        {
+          "id": "expanded-boardwalk-guidance",
+          "kind": "text",
+          "text": "Always walk on boardwalks and designated trails",
+          "critical": true
+        },
+        {
+          "id": "emergency-callout",
+          "kind": "text",
+          "text": "Emergency? Call 911 or notify a park ranger",
+          "critical": true
+        },
+        {
+          "id": "accordion-label",
+          "kind": "heading",
+          "text": "Stay on boardwalks"
+        }
+      ]
+    }
+  ]
+}

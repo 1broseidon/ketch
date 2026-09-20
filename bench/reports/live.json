@@ -1,0 +1,206 @@
+{
+  "timestamp": "2026-09-19T03:51:23Z",
+  "note": "Live HTTP fetch timings only. Changed source requires annotation review; pinned fixtures, references and baseline were not modified.",
+  "pages": [
+    {
+      "id": "npm",
+      "url": "https://docs.npmjs.com/trusted-publishers/",
+      "final_url": "https://docs.npmjs.com/trusted-publishers/",
+      "status": 200,
+      "fetch_ms": 119.99656,
+      "bytes": 607380,
+      "html_sha256": "59fbb566f677bb4c2f5d43c70f00dcc098e3bb05d26669385eb6ef139bbf90f8",
+      "source_changed": false
+    },
+    {
+      "id": "go",
+      "url": "https://pkg.go.dev/context",
+      "final_url": "https://pkg.go.dev/context",
+      "status": 200,
+      "fetch_ms": 96.335717,
+      "bytes": 95833,
+      "html_sha256": "82076dac32a20a7e266805d1c1a9a8b8083922d221744f2ed858d651f5e46733",
+      "source_changed": false
+    },
+    {
+      "id": "python",
+      "url": "https://docs.python.org/3/tutorial/errors.html",
+      "final_url": "https://docs.python.org/3/tutorial/errors.html",
+      "status": 200,
+      "fetch_ms": 44.067838,
+      "bytes": 85583,
+      "html_sha256": "1780d85dd253e54299413af236e1b1f91ce3402a3143238a45f1ee3b438a9b94",
+      "source_changed": false
+    },
+    {
+      "id": "kubernetes",
+      "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/",
+      "final_url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/",
+      "status": 200,
+      "fetch_ms": 193.221984,
+      "bytes": 554040,
+      "html_sha256": "26264156d213d64360bd1a67a9524dcc89749164313a65a87b9d947bd846e2f0",
+      "source_changed": false
+    },
+    {
+      "id": "postgres",
+      "url": "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "final_url": "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "status": 200,
+      "fetch_ms": 633.182275,
+      "bytes": 47710,
+      "html_sha256": "beef1cd1c5f512e3934fd049454730e3cc9d459e69db8e938bf941125387cefc",
+      "source_changed": false
+    },
+    {
+      "id": "mdn",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/AbortController",
+      "final_url": "https://developer.mozilla.org/en-US/docs/Web/API/AbortController",
+      "status": 200,
+      "fetch_ms": 117.418582,
+      "bytes": 154371,
+      "html_sha256": "14515cd842ab3091ed8ec180643b2b70fcacb0031ac901426bce35fd3a64ce75",
+      "source_changed": false
+    },
+    {
+      "id": "rust",
+      "url": "https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html",
+      "final_url": "https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html",
+      "status": 200,
+      "fetch_ms": 79.895147,
+      "bytes": 56185,
+      "html_sha256": "d9c8d249ca1f968b407ac99e721dd6b5799ee784a8c673d262c142a4162973ec",
+      "source_changed": false
+    },
+    {
+      "id": "sqlite",
+      "url": "https://www.sqlite.org/lang_transaction.html",
+      "final_url": "https://www.sqlite.org/lang_transaction.html",
+      "status": 200,
+      "fetch_ms": 239.759033,
+      "bytes": 27068,
+      "html_sha256": "b65dc308fd9e0ce471844c97366a4f5ad3a1f42833a3b19486ad7d6555a8e24e",
+      "source_changed": false
+    },
+    {
+      "id": "git",
+      "url": "https://git-scm.com/docs/git-reset",
+      "final_url": "https://git-scm.com/docs/git-reset",
+      "status": 200,
+      "fetch_ms": 69.75223,
+      "bytes": 77202,
+      "html_sha256": "3dc6417fa0bfd4361d95a345c58250410f049825f76537acdeb44af900ba7e01",
+      "source_changed": false
+    },
+    {
+      "id": "gnu",
+      "url": "https://www.gnu.org/software/coreutils/manual/html_node/Exit-status.html",
+      "final_url": "https://www.gnu.org/software/coreutils/manual/html_node/Exit-status.html",
+      "status": 200,
+      "fetch_ms": 4905.524129,
+      "bytes": 3712,
+      "html_sha256": "2b4f7b8f03ccb84b1a5698d6dfe553e0e20efc5becd2c5382059bf6d29002442",
+      "source_changed": false
+    },
+    {
+      "id": "terraform",
+      "url": "https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle",
+      "final_url": "https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle",
+      "status": 200,
+      "fetch_ms": 211.627793,
+      "bytes": 338727,
+      "html_sha256": "9c69c21a29ef02afdd5ab01263c4fa3d5a46f0af808235547f62bbab5e403fd6",
+      "source_changed": false
+    },
+    {
+      "id": "docker",
+      "url": "https://docs.docker.com/build/building/multi-stage/",
+      "final_url": "https://docs.docker.com/build/building/multi-stage/",
+      "status": 200,
+      "fetch_ms": 344.065274,
+      "bytes": 544036,
+      "html_sha256": "1cc7c89609712f7e1fef748767663aed0fb2f0db39c7429e64334a840d4687a4",
+      "source_changed": false
+    },
+    {
+      "id": "cloudflare",
+      "url": "https://blog.cloudflare.com/rfc-9457-agent-error-pages/",
+      "final_url": "https://blog.cloudflare.com/rfc-9457-agent-error-pages/",
+      "status": 200,
+      "fetch_ms": 103.889917,
+      "bytes": 322642,
+      "html_sha256": "5411677ad07b073cb025728941dd05668fd78c21e9d450cdf75a3a4728d38eb4",
+      "source_changed": true
+    },
+    {
+      "id": "danluu",
+      "url": "https://danluu.com/slow-device/",
+      "final_url": "https://danluu.com/slow-device/",
+      "status": 200,
+      "fetch_ms": 85.648973,
+      "bytes": 97060,
+      "html_sha256": "ba6a819e45de06349f3593fb1aa4decce76472abcb5132164f8b33a283da1c36",
+      "source_changed": false
+    },
+    {
+      "id": "joel",
+      "url": "https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i/",
+      "final_url": "https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i/",
+      "status": 200,
+      "fetch_ms": 81.632512,
+      "bytes": 56093,
+      "html_sha256": "d7c39fc4f9fcfdca98fb0b59c4a8f75bbad906d8694ec133efaa46aafd7a4aca",
+      "source_changed": true
+    },
+    {
+      "id": "rfc",
+      "url": "https://www.rfc-editor.org/rfc/rfc8259.html",
+      "final_url": "https://www.rfc-editor.org/rfc/rfc8259.html",
+      "status": 200,
+      "fetch_ms": 141.225063,
+      "bytes": 37946,
+      "html_sha256": "5302d6ccb6cf221817bdd1f8cd7221661d4519372e0ac0b4cf641e11e8037de7",
+      "source_changed": false
+    },
+    {
+      "id": "wikipedia",
+      "url": "https://en.wikipedia.org/wiki/HTTP",
+      "final_url": "https://en.wikipedia.org/wiki/HTTP",
+      "status": 200,
+      "fetch_ms": 77.585793,
+      "bytes": 617777,
+      "html_sha256": "36e08dfff589d2969c7f8668ee2f788b24f1b4b338aaeb9edaf0e0806fcabe5e",
+      "source_changed": false
+    },
+    {
+      "id": "gutenberg",
+      "url": "https://www.gutenberg.org/files/11/11-h/11-h.htm",
+      "final_url": "https://www.gutenberg.org/files/11/11-h/11-h.htm",
+      "status": 200,
+      "fetch_ms": 218.606756,
+      "bytes": 169663,
+      "html_sha256": "1265d6e2c9c77f3180955691c85820455fc8ee0dca0e93a60c70247bb19df2cb",
+      "source_changed": false
+    },
+    {
+      "id": "nasa",
+      "url": "https://science.nasa.gov/mars/facts/",
+      "final_url": "https://science.nasa.gov/mars/facts/",
+      "status": 200,
+      "fetch_ms": 121.805039,
+      "bytes": 301223,
+      "html_sha256": "e63158f86d6c4a478bba75436b810a755ca0fef9b2b61873161b226235b0d761",
+      "source_changed": true
+    },
+    {
+      "id": "nps",
+      "url": "https://www.nps.gov/yell/planyourvisit/safety.htm",
+      "final_url": "https://www.nps.gov/yell/planyourvisit/safety.htm",
+      "status": 200,
+      "fetch_ms": 81.787577,
+      "bytes": 114885,
+      "html_sha256": "b63fef75065da8432b48727420490692429026e7b381cc2ed37f1030edf4f0d6",
+      "source_changed": true
+    }
+  ]
+}

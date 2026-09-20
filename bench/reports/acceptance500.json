@@ -1,0 +1,12 @@
+{
+  "accepted_at": "2026-09-19T16:40:16.608382+00:00",
+  "source": "bench/.runs/default500-corrected/results.json",
+  "corpus_sha256": "14c3ccc4f5eb5b6ef0bec2ca0727871d682d5845560ff7bce8bc70f8b719f441",
+  "binary_sha256": "53432e7ddd71749efa89f0b798a8709744c19f2ad0feaa0e2539eb4bccd6ba75",
+  "known_failed_checks": 397,
+  "known_failed_critical_checks": 139,
+  "note": "Reviewed regression snapshot accepted for the 500-page corpus; original 100 accuracy and outputs unchanged. This records existing misses and does not establish release readiness.",
+  "validated_at": "2026-09-19T16:46:56.235453+00:00",
+  "regression_check": "Passed subsequent serial check; every output hash and accuracy result matches.",
+  "strict_concurrency": "Expected exit 1 for 139 known critical misses; all 500 output hashes/accuracy match at four workers."
+}

@@ -1,0 +1,210 @@
+Dengue
+
+
+        
+
+ 
+
+Key facts
+
+Dengue is a viral infection caused by the dengue virus (DENV), which is transmitted to humans through the bite of infected mosquitoes.
+
+About half of the world's population is now at risk of dengue, with an estimated 100–400 million infections occurring each year.
+
+Dengue is found in tropical and sub-tropical climates worldwide, mostly in urban and semi-urban areas.
+
+While many DENV infections are asymptomatic or produce only mild illness, DENV can occasionally cause more severe cases, and even death.
+
+Prevention and control of dengue rely on vector control. There is no specific treatment for dengue/severe dengue, and early detection and access to proper medical care greatly lower fatality rates of severe dengue.
+
+
+
+Overview
+
+Dengue (break-bone fever) is a viral infection that is spread from mosquitoes to people. It is more common in tropical and subtropical than in temperate climates.
+
+Most people who get dengue do not have symptoms. For those who do, the most common symptoms are high fever, headache, body aches, nausea and rash. Most get better in 1–2 weeks. Some develop severe dengue and need care in a hospital. 
+
+In severe cases, dengue can be fatal.  
+
+You can lower your risk of dengue by avoiding mosquito bites, especially during the day.
+
+Dengue is treated through pain management as there is no specific treatment currently.
+
+Symptoms
+
+Most people with dengue have mild or no symptoms and will get better in 1–2 weeks. Rarely, dengue can be severe and lead to death.  
+
+If symptoms occur, they usually begin 4–10 days after infection and last for 2–7 days. Symptoms may include:
+
+high fever (40°C/104°F)
+
+severe headache
+
+pain behind the eyes
+
+muscle and joint pains
+
+nausea
+
+vomiting
+
+swollen glands
+
+rash. 
+
+Individuals who are infected for the second time are at greater risk of severe dengue. The symptoms of severe dengue  often come after the fever has gone away and may include:
+
+severe abdominal pain
+
+persistent vomiting
+
+rapid breathing
+
+bleeding gums or nose 
+
+fatigue
+
+restlessness
+
+blood in vomit or stool
+
+being very thirsty
+
+pale and cold skin
+
+feeling weak.
+
+People with these severe symptoms should seek care immediately.  
+
+After recovery, people who have had dengue may experience fatigue for several weeks.
+
+Diagnostics and treatment
+
+Laboratory-based and point of care diagnostics are critical to control and manage dengue, yet global disparities in laboratory capabilities present significant challenges. The diagnostic algorithms, testing strategies and test methodologies employed vary, depending on the capabilities of national laboratory systems. The wide range of available tests – including nucleic acid amplification tests (NAATs), enzyme-linked immunosorbent assays (ELISAs) and rapid diagnostic tests (RDTs) –  vary significantly in quality and performance.
+
+Laboratory testing for arboviruses can be accomplished through either direct detection methods such as virus isolation, molecular detection of nucleic acid or antigen testing, including rapid diagnostic tests (RDTs) within the first week of illness.
+
+There is no specific treatment for dengue, although pain can be managed with medication such as paracetamol (acetaminophen). Non-steroidal anti-inflammatory medicines such as ibuprofen and aspirin should be avoided as they can increase the risk of bleeding.
+
+
+
+
+For people with severe dengue, hospitalization is often necessary.
+
+
+
+
+Global burden
+
+The incidence of dengue has grown dramatically worldwide in recent decades, with the number of cases reported to WHO increasing from 505 430 cases in 2000 to 14.6 million in 2024. The vast majority of cases are asymptomatic or mild and self-managed, and hence the actual numbers of dengue cases are under-reported. The disease is now endemic in more than 100 countries.
+
+In 2024, more cases of dengue were recorded than ever before in a 12-month period, affecting over 100 countries on all continents. During 2024, ongoing transmission, combined with an unexpected spike in dengue cases, resulted in a historic high of over 14.6 million cases and more than 12 000 dengue-related deaths reported. The Region of the Americas contributed a significant proportion of the global burden, with over 13 million cases reported to WHO. 
+
+Several factors are associated with the increasing risk of spread of the dengue epidemic, including the changing distribution of the responsible vectors (chiefly Aedes aegypti and Aedes albopictus), especially in previously dengue-naive countries; climate change leading to increasing temperatures, high rainfall and humidity; fragile and overburdened health systems; limitations in surveillance and reporting; and political and financial instabilities in countries facing complex humanitarian crises and high population movements. 
+
+One modelling estimate indicates 390 million dengue virus infections per year, of which 96 million manifest clinically(1).A recent study on the prevalence of dengue estimates that 5.6 billion people are at risk of infection with dengue and other arboviruses(2).
+From January to July 2025, over 4 million cases and over 3000 deaths have been reported to WHO from 97 countries.
+Dengue is spreading to new areas, including the European and Eastern Mediterranean regions. In 2024, 308 cases were reported to WHO from three European countries (France, Italy and Spain) and an additional 1291 cases and four deaths were recorded in the French overseas territories of Mayotte and Réunion. 
+
+Transmission
+
+Transmission through the mosquito bite
+
+The dengue virus is transmitted to humans through the bites of infected female mosquitoes, primarily the Aedes aegypti mosquito. Other species within the Aedes genus can also act as vectors, but their contribution is normally secondary to Aedes aegypti. 
+
+After feeding on a DENV-infected person, the virus replicates in the mosquito midgut before disseminating to secondary tissues, including the salivary glands. The time it takes from ingesting the virus to actual transmission to a new host is termed the extrinsic incubation period (EIP). The EIP takes about 8–12 days when the ambient temperature is 25–28°C. Variations in the EIP are not only influenced by ambient temperature but also by several other factors – such as the magnitude of daily temperature fluctuations, the virus genotype, and the initial viral concentration – which can also alter the time it takes for a mosquito to transmit the virus. Once infectious, a mosquito can transmit the virus for the rest of its life.
+
+Human-to-mosquito transmission
+
+Mosquitoes can become infected by people who are viremic with DENV. This can be someone who has a symptomatic dengue infection, someone who is yet to have a symptomatic infection (those who are pre-symptomatic), and also someone who shows no signs of illness (those who are asymptomatic).
+
+Human-to-mosquito transmission can occur up to 2 days before someone shows symptoms of the illness, and up to 2 days after the fever has resolved.
+
+The risk of mosquito infection is positively associated with high viremia and high fever in the patient; conversely, high levels of DENV-specific antibodies are associated with a decreased risk of mosquito infection. Most people are viremic for about 4–5 days, but viremia can last as long as 12 days.
+
+Maternal transmission
+
+The primary mode of transmission of the DENV between humans involves mosquito vectors. There is evidence, however, of the possibility of maternal transmission (i.e. from a pregnant mother to her baby). At the same time, vertical transmission rates appear low, with the risk of vertical transmission seemingly linked to the timing of acquiring the dengue infection during pregnancy. When a mother does have a dengue infection when she is pregnant, babies may suffer from pre-term birth, low birthweight and fetal distress.
+
+Other transmission modes
+
+Rare cases of transmission via blood products, organ donation and transfusions have been recorded. Similarly, transovarial transmission of the virus within mosquitoes has also been recorded. 
+
+Risk factors
+
+Previous infection with DENV increases the risk of an individual developing severe dengue.
+
+Urbanization (especially rapid, unplanned urbanization), is associated with dengue transmission through multiple social and environmental factors: population density, human mobility, access to reliable water source, water storage practices, etc.
+
+Community risks to dengue also depend on population knowledge, attitudes and practices towards dengue, as exposure is closely related to behaviours such as water storage, plant-keeping and self-protection against mosquito bites. Routine vector surveillance and control activities and targeted community engagement greatly enhance resilience. 
+
+Vectors can adapt to new environments and climate. The interaction between the dengue virus, the host and the environment is dynamic. Consequently, disease risks may change and shift with climate change in tropical and subtropical areas, in combination with increased urbanization and population movement.
+
+Prevention and control
+
+The mosquitoes that spread dengue are active during the day. 
+
+To lower your risk of getting dengue, protect yourself from mosquito bites by using: 
+
+clothes that cover as much of your body as possible;
+
+mosquito nets, ideally sprayed with insect repellent, if sleeping during the day;
+
+window screens;
+
+mosquito repellents (containing DEET, Picaridin or IR3535); and
+
+coils and vaporizers.
+
+To prevent mosquitoes from breeding:
+
+implement environmental management and modification practices to stop mosquitoes from accessing egg-laying habitats;
+
+dispose of solid waste properly and remove artificial habitats that can hold water;
+
+cover, empty and clean domestic water storage containers on a weekly basis; and
+
+apply appropriate insecticides to water storage outdoor containers.
+
+If you get dengue, it’s important to:
+
+rest;
+
+drink plenty of liquids;
+
+use acetaminophen (paracetamol) for pain;
+
+avoid non-steroidal anti-inflammatory medication such as ibuprofen and aspirin; and
+
+watch for severe symptoms and contact your doctor as soon as possible if you notice any.
+
+Currently, one vaccine (QDenga) is available and licensed in some countries. However, it is recommended only for those aged 6–16 years in high transmission settings. Several additional vaccines are under evaluation.
+
+WHO response
+
+WHO responds to dengue by:
+
+supporting countries in the confirmation of outbreaks through its collaborating      network of laboratories;
+
+providing technical advice and guidance to countries for the effective management of      dengue outbreaks;
+
+supporting countries to improve their reporting systems and capture the true burden      of the disease;
+
+providing training on clinical management, diagnosis and vector control at the      country and regional levels in collaboration with its collaborating      centres;
+
+formulating evidence-based strategies and policies;
+
+supporting countries to develop dengue prevention and control strategies and adopt the      Global Vector Control Response (2017–2030) and the Global Arbovirus      Initiative (2022–2025);
+
+reviewing and making recommendations on the development of new tools, including insecticide      products and application technologies;
+
+gathering official records of dengue and severe dengue from over 100 Member States;      and
+
+publishing guidance and handbooks for surveillance, case management, diagnosis,      dengue prevention and control for Member States.
+
+References
+
+Bhatt S, Gething PW, Brady OJ, Messina JP, Farlow AW, Moyes CL, et al. The global distribution and burden of dengue. Nature. 2013;496(7446):504–507. doi: 10.1038/nature12060
+
+Lim A, Shearer FM, Sewalk K, Pigott DM, Clarke J, Ghouse A, et al. The overlapping global distribution of dengue, chikungunya, Zika and yellow fever. Nat Commun. 2025;16(1):3418. doi: 10.1038/s41467-025-58609-5.

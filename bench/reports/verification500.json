@@ -1,0 +1,187 @@
+{
+  "verified_at": "2026-09-19T16:46:56.235453+00:00",
+  "branch": "feat/tag-cache-index",
+  "corpus_sha256": "14c3ccc4f5eb5b6ef0bec2ca0727871d682d5845560ff7bce8bc70f8b719f441",
+  "candidate_binary_sha256": "53432e7ddd71749efa89f0b798a8709744c19f2ad0feaa0e2539eb4bccd6ba75",
+  "source_validation": {
+    "command": "/tmp/ketch-bench500/bench setup",
+    "exit_code": 0,
+    "pages": 500,
+    "assertions": 3573,
+    "critical_assertions": 1831,
+    "final_url_hosts": 70,
+    "content_types": 28
+  },
+  "checks": [
+    {
+      "command": "CGO_ENABLED=0 go test ./...",
+      "result": "pass",
+      "bench_seconds": 11.483
+    },
+    {
+      "command": "go test -race ./bench",
+      "result": "pass",
+      "seconds": 109.64
+    },
+    {
+      "command": "go vet ./...",
+      "result": "pass"
+    },
+    {
+      "command": "golangci-lint run",
+      "result": "pass",
+      "issues": 0
+    },
+    {
+      "command": "go fmt ./...",
+      "result": "pass; no files changed"
+    },
+    {
+      "command": "git diff --check",
+      "result": "pass"
+    },
+    {
+      "command": "CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o /tmp/ketch-bench500/bench-windows.exe ./bench",
+      "result": "pass; native runtime not tested"
+    },
+    {
+      "command": "CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o /tmp/ketch-bench500/bench-darwin ./bench",
+      "result": "pass; native runtime not tested"
+    }
+  ],
+  "measurements": {
+    "default": {
+      "command": [
+        "/tmp/ketch-bench500/bench",
+        "run",
+        "-binary",
+        "/tmp/ketch-bench500/ketch-current",
+        "-out",
+        "bench/.runs/default500-corrected"
+      ],
+      "exit_code": 0,
+      "report": "default500.json"
+    },
+    "before": {
+      "command": [
+        "/tmp/ketch-bench500/bench",
+        "run",
+        "-binary",
+        "/tmp/ketch-extraction-audit/ketch-before",
+        "-iterations",
+        "1",
+        "-warmup",
+        "0",
+        "-workers",
+        "4",
+        "-out",
+        "bench/.runs/before500-corrected"
+      ],
+      "exit_code": 0,
+      "report": "before500.json"
+    },
+    "selector": {
+      "command": [
+        "/tmp/ketch-bench500/bench",
+        "run",
+        "-binary",
+        "/tmp/ketch-bench500/ketch-current",
+        "-mode",
+        "selector",
+        "-iterations",
+        "1",
+        "-warmup",
+        "0",
+        "-workers",
+        "4",
+        "-out",
+        "bench/.runs/selector500-corrected"
+      ],
+      "exit_code": 1,
+      "report": "selector500.json"
+    },
+    "stress": {
+      "command": [
+        "/tmp/ketch-bench500/bench",
+        "run",
+        "-binary",
+        "/tmp/ketch-bench500/ketch-current",
+        "-iterations",
+        "3",
+        "-warmup",
+        "0",
+        "-workers",
+        "4",
+        "-strict",
+        "-out",
+        "bench/.runs/stress500"
+      ],
+      "exit_code": 1,
+      "report": "stress500.json"
+    },
+    "check": {
+      "command": [
+        "/tmp/ketch-bench500/bench",
+        "check",
+        "-binary",
+        "/tmp/ketch-bench500/ketch-current",
+        "-out",
+        "bench/.runs/check500"
+      ],
+      "exit_code": 0,
+      "report": "check500.json"
+    }
+  },
+  "default": {
+    "execution_or_nondeterminism_failures": 0,
+    "checks_passed": 3176,
+    "checks_total": 3573,
+    "critical_passed": 1692,
+    "critical_total": 1831,
+    "known_missing_checks": 397,
+    "known_missing_critical_checks": 139
+  },
+  "comparison": {
+    "gained_checks": 28,
+    "gained_critical_checks": 21,
+    "lost_passing_checks": 0,
+    "per_page_metric_drops_over_0_005": [],
+    "details": "comparison500.json"
+  },
+  "original100": {
+    "manifest_records_and_fixture_hashes": "preserved exactly; checked by pinned corpus tests",
+    "output_hashes_and_accuracy": "all 100 unchanged from reports/default100.json"
+  },
+  "concurrency": {
+    "workers": 4,
+    "measured_invocations": 1500,
+    "warmups": 0,
+    "execution_or_nondeterminism_failures": 0,
+    "all_500_hashes_and_accuracy_match_serial": true,
+    "strict_exit_code": 1,
+    "critical_failures": 139
+  },
+  "selector": {
+    "exit_code": 1,
+    "failed_pages": 30,
+    "cause": "CLI single-selector parser rejects valid groups",
+    "all_failures_retained_in_denominator": true,
+    "accepted_pages": 470,
+    "critical_failures_on_accepted_pages": 2
+  },
+  "regression": {
+    "exit_code": 0,
+    "all_500_hashes_and_accuracy_match_baseline": true,
+    "accuracy_and_latency_gates": "pass",
+    "new_baseline_records_known_misses": true
+  },
+  "annotation_review": {
+    "method": "Mechanically proposed assertions with agent-reviewed source scopes and provenance; no candidate output used as reference",
+    "independent_human_gold_audit": false,
+    "post_evaluation_corrections": 8,
+    "errata": "annotation-errata500.json",
+    "both_binaries_rerun_against_corrected_freeze": true,
+    "no_pages_dropped_for_extraction_performance": true
+  },
+  "scope": "500-page corpus and developer harness expansion; no production extractor changes, installed binary replacement, operator config/cache mutation, commit, push or release. Word fidelity and sampled assertions do not establish exhaustive semantic accuracy."
+}

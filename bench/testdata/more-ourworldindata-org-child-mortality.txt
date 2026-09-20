@@ -1,0 +1,805 @@
+Child and Infant Mortality
+
+
+
+By Saloni Dattani, Fiona Spooner, Hannah Ritchie,  and Max Roser
+
+Cite this workReuse this work
+
+
+
+Child mortality is one of the world’s largest problems. Around 6 million children under 15 die per year. That’s around 16,000 deaths every day, or 11 every minute.
+
+This devastating statistic reveals the vast number of children whose lives end before they can discover their talents, passions, and dreams as they grow older – and represents the impact of child mortality on so many people’s lives: parents, siblings, families, and communities.
+
+What’s tragic is how many of these deaths are preventable. Most are caused by malnutrition, birth conditions such as preterm birth, sepsis and trauma, and infectious diseases such as pneumonia, malaria, and HIV/AIDS.
+
+These have all declined substantially in many, but not all, parts of the world – child deaths were a grim constant in the past. For most of human history, around 1 in 2 newborns died before reaching the age of 15. By 1950, that figure had declined to around one-quarter globally. By 2020, it had fallen to 4%.
+
+But while humanity has made much progress, there’s still a lot of work to do. To make more progress, it’s essential to have data on child mortality and its causes, and research on how to prevent it.
+
+On this page, you will find data and research on child mortality across the world, how it has changed, its causes, and what we can do about it.
+
+
+
+Related Topics
+
+Maternal mortality
+
+Diarrheal diseases
+
+Malaria
+
+Pneumonia
+
+Vaccination
+
+
+
+
+Key Insights on Child Mortality
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Child mortality rates have declined substantially over history
+
+
+Progress against child mortality has been a recent achievement. Child mortality rates were very high throughout most of human history.
+
+As recently as two centuries ago, around 1 in 2 children died before reaching the end of puberty. Researchers made this observation across many societies, as you can see in the chart. Our ancestors were largely powerless against poverty, famine, and disease, and these calamities were especially devastating for children.
+
+Since then, child mortality has plummeted across the world. By 2020, the global average had declined to 4.3%.
+
+This dramatic decline has resulted from better nutrition, clean water, sanitation, neonatal healthcare, vaccinations, medicines, and reductions in poverty, conflicts, and famine.
+
+The chart also shows that in some wealthy countries – such as Iceland, Japan, and Norway – the share is 0.4%, ten times lower than the global average.
+
+This historical experience, and the lower rates in wealthy countries today, shows us that much more progress is possible.
+
+In this article, we cover this historical development in more detail:
+
+
+
+
+
+
+Mortality in the past: every second child died
+
+The chances that a newborn survives childhood have increased from 50% to 96% globally. How do we know about the mortality of children in the past? And what can we learn from it for our future?
+
+
+
+
+
+What you should know about this data
+
+Data for this chart comes from a study by Anthony Volk and Jeremy Atkinson of mortality rates in historical civilizations and hunter-gatherer societies and the United Nations Inter-agency Group for Child Mortality Estimation (UN IGME).1
+
+Volk and Atkinson describe historical mortality rates as conservative estimates because many are based on child and infant burials, which are less commonly performed and whose remains may have decayed over time. The true mortality rate may have often been higher.
+
+The UN IGME estimates are based on data from vital registration systems, population censuses, household surveys, and sample registration systems. This includes large-scale surveys such as the UNICEF-supported Multiple Indicator Cluster Surveys (MICS) and USAID-supported Demographic and Health Surveys (DHS), generally repeated every 3 to 5 years. This data is used to statistically model child mortality at different ages and make estimates for countries where underlying data is lacking.2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Youth mortality rates vary widely around the world
+
+
+Child mortality rates are much higher in some parts of the world than others. The map shows the share of children who die before they are fifteen years old.
+
+As you can see, countries in Africa, South America, and South Asia have much higher rates.
+
+In Nigeria in 2020, for example, 13% of children die before they are fifteen. In Pakistan, that share was 7%.
+
+In other parts of the world, it was much lower. In Italy, for example, it was 0.4%.
+
+Declines in mortality rates have also varied around the world. In countries in Southern Africa, such as South Africa and Zimbabwe, child mortality increased in the 1990s and 2000s – largely due to the HIV/AIDS epidemic.3
+
+
+What you should know about this data
+
+The UN IGME estimates are based on data from vital registration systems, population censuses, household surveys, and sample registration systems. This includes large-scale surveys such as the UNICEF-supported Multiple Indicator Cluster Surveys (MICS) and USAID-supported Demographic and Health Surveys (DHS), generally repeated every 3 to 5 years. This data is used to statistically model child mortality at different ages and make estimates for countries where underlying data is lacking.4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Millions of children die every year
+
+
+The scale of child mortality is immense and can be hard to grasp. Around 5 million children under five years old die annually.
+
+That’s around 14,000 deaths every day, or ten every minute. Or, thinking of it another way, 5 million is the population of Ireland or Norway.5
+
+This enormous loss of life is also a tragedy felt by people around the children – their parents, siblings, friends, and communities.
+
+Over time, child deaths have declined, even as the global population has risen. But there is still much more progress to be made.
+
+In this article, we cover this in more detail:
+
+
+
+
+
+
+Child mortality: an everyday tragedy of enormous scale that we can make progress against
+
+We live in a world in which ten children die every minute.
+
+
+
+
+
+What you should know about this data
+
+The UN IGME estimates are based on data from vital registration systems, population censuses, household surveys, and sample registration systems. This includes large-scale surveys such as the UNICEF-supported Multiple Indicator Cluster Surveys (MICS) and USAID-supported Demographic and Health Surveys (DHS), generally repeated every 3 to 5 years. This data is used to model child mortality at different ages and make estimates for countries lacking underlying data.2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Most children die from preventable causes
+
+
+To make progress against child mortality, we need to know what children are dying from.
+
+In the chart, you can see global estimates from the publication of the Institute for Health Metrics and Evaluation in 2023. The size of each box corresponds to the number of children under five years old who die from each cause.
+
+Infectious diseases, shown on the left, were most common, killing an estimated 2 million children annually. This includes respiratory infections, diarrheal diseases, malaria and meningitis.
+
+Next were birth disorders, such as preterm birth, neonatal asphyxia (suffocation), and trauma, which together caused an estimated 2 million deaths.
+
+Several other causes, such as heart abnormalities and malnutrition, were also responsible for hundreds of thousands of deaths.
+
+These figures are astonishing because many of these causes are preventable. With vaccination, basic medication, rehydration treatment, nutrition supplementation, and neonatal healthcare, a large share of child deaths could be prevented.
+
+
+What you should know about this data
+
+This data comes from the most recent publication of the Global Burden of Disease study by the Institute for Health Metrics and Evaluation (IHME) in 2025.
+
+These estimates assign each death a single cause, based on data on the underlying cause of death listed on death certificates, verbal autopsies, and statistical modeling. This is a simplification, as people often have multiple diseases or injuries that contribute to their death, which may also be listed on death certificates.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Children are most at risk during the first months of life
+
+
+The day a child is born is the most dangerous day of life.
+
+In the chart, you can see how the risk of death changes across the first year of life.
+
+The top panel shows the daily death rate per 1,000 infants in the United States.
+
+As you can see, the risk of death is highest just after birth – when they are introduced into a new environment. In the first hours of their lives, some children die from birth complications, suffocation and trauma, sepsis, and other conditions.
+
+Over the following days and weeks, their risks remain high but decline sharply. Months later, the risks continue to decline, although at a slower rate.
+
+There are several reasons for this reduction. One is that infants who are most vulnerable tend to die earlier. Another reason is that infantsʼ vital organs – such as their immune system and lung capacity – become more developed over time, which makes them more capable of survival.6
+
+In the lower panel, the chart shows how the daily deaths accumulate across the year – you can see that most infant deaths occurred in the first few months.
+
+In this article, we cover this in more detail:
+
+
+
+
+
+
+How does the risk of death change as we age — and how has this changed over time?
+
+Death rates decline rapidly after birth but rise again in adolescence. From adulthood onwards, they rise exponentially.
+
+
+
+
+
+What you should know about this data
+
+This chart shows infant mortality rates between 2017 and 2020, using data from the Centers for Disease Control and Prevention (CDC) in the United States. This covers all infant deaths in the US that were registered with birth and death certificates.
+
+The scripts I used to create this chart are in our repository.
+
+The specific mortality rates per day vary between countries and over time.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Research & Writing
+
+
+
+
+
+July 21, 2021
+
+Child mortality: an everyday tragedy of enormous scale that we can make progress against
+
+We live in a world in which ten children die every minute.
+
+Max Roser
+
+
+
+May 25, 2026
+
+Five million children die every year — what do they die from?
+
+To reduce child mortality, we need to understand what children are dying from.
+
+Hannah Ritchie, Sophia Mersmann, and Fiona Spooner
+
+
+
+
+More articles on child mortality
+
+
+
+
+April 29, 2024
+
+How many children did not die thanks to progress in global health?
+
+Max Roser
+
+
+
+April 11, 2023
+
+Mortality in the past: every second child died
+
+Max Roser
+
+
+
+October 13, 2023
+
+How does the risk of death change as we age — and how has this changed over time?
+
+Saloni Dattani
+
+
+
+September 12, 2019
+
+How often did parents see their children die?
+
+Max Roser
+
+
+
+October 29, 2018
+
+How child mortality has declined in the last two centuries
+
+Hannah Ritchie
+
+
+
+September 23, 2020
+
+It’s not just about child mortality; life expectancy increased at all ages
+
+Max Roser
+
+
+
+September 9, 2024
+
+Half of all child deaths are linked to malnutrition
+
+Hannah Ritchie
+
+
+
+May 12, 2025
+
+Where in the world are babies at the lowest risk of dying?
+
+Hannah Ritchie
+
+
+
+May 5, 2025
+
+Children in rich countries are much less likely to die than a few decades ago, but we rarely hear about this progress
+
+Hannah Ritchie
+
+
+
+
+Articles on preventing child mortality
+
+
+
+
+September 2, 2024
+
+Many of us can save a child’s life, if we rely on the best data
+
+Max Roser
+
+
+
+March 22, 2022
+
+Malaria: One of the leading causes of child deaths, but progress is possible and you can contribute to it
+
+Max Roser
+
+
+
+April 23, 2019
+
+Child mortality: achieving the global goal for 2030 would be a huge achievement – but we are currently far away
+
+Max Roser
+
+
+
+August 16, 2019
+
+More than half a million children die from diarrhea each year. How do we prevent this?
+
+Bernadeta Dadonaite
+
+
+
+August 27, 2019
+
+Oral rehydration therapy: a low-tech solution that has saved millions of lives
+
+Bernadeta Dadonaite
+
+
+
+August 22, 2019
+
+Rotavirus vaccine - an effective tool that prevents children dying from diarrhea
+
+Bernadeta Dadonaite and Hannah Ritchie
+
+
+
+November 12, 2019
+
+Pneumonia — no child should die from a disease we can prevent
+
+Bernadeta Dadonaite
+
+
+
+
+Definitions in child mortality
+
+
+October 9, 2023
+
+How do statistical organizations define age periods for children?
+
+Saloni Dattani
+
+
+
+
+
+Key Charts on Child & Infant Mortality
+See all charts on this topic
+
+
+
+Child mortality rateUN IGME
+
+Child mortality rateLong-run data – Gapminder; UN IGME
+
+Child mortality rateMarimekko chart
+
+Infant mortality rateUN IGME
+
+Neonatal mortality rateUN IGME
+
+Youth mortality rate
+
+Causes of death in children under five
+
+Child mortality by causeIHME
+
+Child mortality by income level of country
+
+Child mortality by sexUN IGME
+
+Child mortality rateUN
+
+Child mortality rate1950-2100, with UN projections
+
+Child mortality rate by household wealth
+
+Child mortality rate by sexUN IGME
+
+Child mortality rate vs. GDP per capita
+
+Childhood deaths from the most lethal infectious diseases
+
+Children per woman that survived childhood vs. those that died in childhood
+
+Death rate from neonatal preterm birth complications
+
+Death rate from pneumonia and other lower respiratory infections in children
+
+Deaths by age groupUN
+
+Global child deaths by cause
+
+Global child mortalityLong-run data – Gapminder; UN IGME
+
+Global infant mortality rate with and without vaccines
+
+Infant mortality by sex
+
+Infant mortality rateUN
+
+Infant mortality rate by sexWorld Bank; UN IGME
+
+Leading cause of child mortality among children under five
+
+Maternal mortality ratio vs. neonatal mortality
+
+Mothers who have lost a child under five, across birth cohorts
+
+Neonatal deaths by cause
+
+Number of child deathsUN IGME
+
+Number of child deaths by ageUN IGME
+
+Number of child deaths by regionUN IGME
+
+Number of child deaths per woman
+
+Number of children who die before age 5, by world regionUN
+
+Number of infant deathsUN IGME
+
+Number of infants who die before age 1UN
+
+Number of neonatal deathsUN IGME
+
+Number of neonatal deaths by region
+
+Number of neonatal, infant and child deaths
+
+Probability of dying in infancy, by sex
+
+Share of mothers visited by a health professional during pregnancy
+
+Share of mothers who have lost a child under five
+
+Share of mothers who have lost an infant
+
+Stillbirth rate
+
+Annual new cases of tetanus in children under five, by world region
+
+Child deaths in the first five years of life by age groupLine chart
+
+Share of infants that are born pre-term
+
+
+
+
+
+
+
+
+Chart 1 of 48
+
+
+
+
+
+
+
+Featured Data on Child & Infant Mortality
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Endnotes
+
+
+Volk, A. A., & Atkinson, J. A. (2013). Infant and child death in the human environment of evolutionary adaptation. Evolution and Human Behavior, 34(3), 182–192. https://doi.org/10.1016/j.evolhumbehav.2012.11.007
+
+
+
+United Nations Inter-agency Group for Child Mortality Estimation. (2022). Levels and trends in child mortality: Report 2022. https://childmortality.org/wp-content/uploads/2023/01/UN-IGME-Child-Mortality-Report-2022.pdf
+
+
+
+This is because HIV can be transmitted between mother and child.
+
+Bourne, D. E., Thompson, M., Brody, L. L., Cotton, M., Draper, B., Laubscher, R., Abdullah, M. F., & Myers, J. E. (2009). Emergence of a peak in early infant mortality due to HIV/AIDS in South Africa. AIDS, 23(1), 101–106. https://doi.org/10.1097/QAD.0b013e32831c54bd
+
+Ferrand, R. A., Corbett, E. L., Wood, R., Hargrove, J., Ndhlovu, C. E., Cowan, F. M., Gouws, E., & Williams, B. G. (2009). AIDS among older children and adolescents in Southern Africa: Projecting the time course and magnitude of the epidemic. AIDS, 23(15), 2039–2046. https://doi.org/10.1097/QAD.0b013e32833016ce
+
+Hill, K., You, D., Inoue, M., Oestergaard, M. Z., & Technical Advisory Group of the United Nations Inter-agency Group for Child Mortality Estimation. (2012). Child Mortality Estimation: Accelerated Progress in Reducing Global Child Mortality, 1990–2010. PLoS Medicine, 9(8), e1001303. https://doi.org/10.1371/journal.pmed.1001303
+
+
+
+See https://childmortality.org/ for more details. United Nations Inter-agency Group for Child Mortality Estimation. (2022). Levels and trends in child mortality: Report 2022. Available here.
+
+
+
+In 2021, the estimated population of Ireland was 4.99 million, and Norway's was 5.41 million, according to the UN estimates. You can see more countries’ populations on our page on Population Growth.
+
+
+
+Berrut, S., Pouillard, V., Richmond, P., & Roehner, B. M. (2016). Deciphering infant mortality. Physica A: Statistical Mechanics and Its Applications, 463, 400–426. https://doi.org/10.1016/j.physa.2016.07.031
+
+Schöley, J. (2019). The age-trajectory of infant mortality in the United States: Parametric models and generative mechanisms. Annual Meeting of the Population Association of America, Austin, TX. Available here.
+
+
+
+
+
+
+Cite this work
+
+Our articles and data visualizations rely on work from many different people and organizations. When citing this topic page, please also cite the underlying data sources. This topic page can be cited as:
+
+
+
+Saloni Dattani, Fiona Spooner, Hannah Ritchie, and Max Roser (2023) - “Child and Infant Mortality” Published online at OurWorldinData.org. Retrieved from: 'https://ourworldindata.org/child-mortality' [Online Resource]
+
+
+
+BibTeX citation
+
+
+
+@article{owid-child-mortality,
+    author = {Saloni Dattani and Fiona Spooner and Hannah Ritchie and Max Roser},
+    title = {Child and Infant Mortality},
+    journal = {Our World in Data},
+    year = {2023},
+    note = {https://ourworldindata.org/child-mortality}
+}
+
+
+
+
+
+
+
+Reuse this work freely
+
+All visualizations, data, and articles produced by Our World in Data are completely open access under the Creative Commons BY license. You have the permission to use, distribute, and reproduce these in any medium, provided the source and authors are credited.
+
+The data produced by third parties and made available by Our World in Data is subject to the license terms from the original third-party authors. We will always indicate the original source of the data in our documentation, so you should always check the license of any such third-party data before use and redistribution.
+
+All of our charts can be embedded in any site.

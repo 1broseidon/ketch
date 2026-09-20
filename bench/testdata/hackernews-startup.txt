@@ -1,0 +1,1497 @@
+My YC app: Dropbox - Throw away your USB drive (getdropbox.com)
+
+
+
+
+
+
+BrandonM on April 5, 2007 
+
+
+
+
+
+I have a few qualms with this app:
+1. For a Linux user, you can already build such a system yourself quite trivially by getting an FTP account, mounting it locally with curlftpfs, and then using SVN or CVS on the mounted filesystem.  From Windows or Mac, this FTP account could be accessed through built-in software.
+
+2. It doesn't actually replace a USB drive.  Most people I know e-mail files to themselves or host them somewhere online to be able to perform presentations, but they still carry a USB drive in case there are connectivity problems.  This does not solve the connectivity issue.
+
+3. It does not seem very "viral" or income-generating.  I know this is premature at this point, but without charging users for the service, is it reasonable to expect to make money off of this?
+
+
+
+
+
+
+
+
+
+
+
+
+
+dhouston on April 5, 2007 
+
+
+
+
+
+1. re: the first part, many people want something plug and play. and even if they were plug and play, the problem is that the user experience (on windows at least) with online drives generally sucks, and you don't have disconnected access.
+windows for sure doesn't hide latency well (CIFS is bad, webdav etc. are worse), and most apps are written as if the disk was local, and assume, for example, accessing a file only takes a few ms. if the server is 80ms away, and you do 100 accesses (e.g. the open file common dialog listing a directory and poking files for various attributes or icons) serially, suddenly your UI locks up for _seconds_ (joel spolsky summarizes this well in his article on leaky abstractions.) ditto saving any file; you change one character in your 20mb word file and hit save, and your upstream-capped 40k/sec comcast connection is hosed for 8 minutes. sure for docs of a few hundred k it's fine, but doing work on large docs on an online drive feels like walking around with cinder blocks tied to your feet. anyway, the point of that rant was that dropbox uses a _local_ folder with efficient sync in the background, which is an important difference :)
+
+2. true, if you're both not at your computer and on another computer without net access, this won't replace a usb drive :) but the case i'm worried about is being, for example, on a plane, and dropbox will let you get to the most recent version of your docs at the time you were last connected, and will sync everything up when you get back online (without you having to copy anything or really do anything.)
+
+3. there are some unannounced viral parts i didn't get to show in there :) it'll be a freemium model. up to x gb free, tiered plans above that.
+
+
+
+
+
+
+
+
+
+
+
+
+
+BrandonM on April 6, 2007 
+
+
+
+
+
+You are correct that this presents a very good, easy-to-install piece of functionality for Windows users.  The Windows shortcomings that you point out are certainly problems, and I think that your software does a good job of overcoming that.
+The part about efficient background sync is a good point, too.  I have noticed some minor lagging using curlftpfs in Linux, and that might be something that would make for a better solution in the Linux world, so thanks for that idea.
+
+Your use-case described in #2 does make sense, but I still agree with others' comments here that claiming that it replaces USB drives is a bad idea in general.  All of your feedback was well-thought-out and appreciated; I only hope that I was able to give you a sneak preview of some of the potential criticisms you may receive.  Best of luck to you!
+
+
+
+
+
+
+
+
+
+
+
+
+
+brett on April 4, 2007 
+
+
+
+
+
+This is genius. It's is problem everyone is having, and everyone knew it (http://www.aaronsw.com/weblog/lazybackup ). If it really works as well as it looks in that demo then they nailed it. I'm both envious and inspired. I'll be surprised if YC does not fund them. 
+
+
+
+
+
+
+
+
+
+
+
+
+nefele on April 4, 2007 
+
+
+
+
+
+Drew,
+I saw your short demo at BarCamp and I must say Dropbox looks great! Are you planning on having a Linux port as well, or is too early to talk about that?
+
+Also, as another SFP applicant I have to tell you that I really hope you get the funding - you deserve it.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+dhouston on April 4, 2007 
+
+
+
+
+
+thanks :)
+a linux port is doable (mac will come first) -- everything's written in python and was designed from the outset to be portable. although this isn't the initial focus of dropbox, a linux port would be interesting for maintaining small web sites or web apps -- instead of using scp/sftp or equivalent you could just modify the files on your desktop and have them synced to your web host.
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sam_Odio on April 5, 2007 
+
+
+
+
+
+Hey Drew, 
+Congrats on a great product.  A linux port would be great for servers - I'm always rsyncing stuff between my linux boxes.  
+
+For those who don't have shell access though, it would be cool if you integrated the service with (S)FTP.  I don't even think you'd need to sync to the server.  
+
+Just giving the user the ability push his/her dropbox public folder to a server using (S)FTP would give your software several new use cases.  
+
+
+
+
+
+
+
+
+
+
+
+
+
+vlad on April 5, 2007 
+
+
+
+
+
++1 on being able to specify a folder inside the dropbox as a "server" folder, which means it has it's own ftp address, user, and password settings.  Anything dragged there is automatically synched with that account.  I thought of this as well as soon as I read that post about Linux support, as this would work with shared hosting without expecting hosts to install dropbox on their linux boxes.  And the data would be backed up as well automatically in a third place (the drop box.)  And, you'd have access to retrieve an older version of a file.  This basically replaces the need for FTP clients if you also add a way to chmod the folders inside the "server" folder.  Sam is 100% right.
+
+
+
+
+
+
+
+
+
+
+
+
+blakeross on April 5, 2007 
+
+
+
+
+
+All written in Python? I'd love to know a bit more about what you're doing if you can share. I put together a similar tool last year for myself (Windows-only) using NTFS' USN journal, but it sounds like you're doing something different.
+The app looks great.
+
+
+
+
+
+
+
+
+
+
+
+
+
+dhouston on April 5, 2007 
+
+
+
+
+
+yup; i'd be happy to talk offline about it; shoot me an email at drew@getdropbox.com .
+
+
+
+
+
+
+
+
+
+
+
+
+BrandonM on April 5, 2007 
+
+
+
+
+
+You might want to check out FUSE for Linux.  There are various programs built on top of it which allow remote filesystems to look exactly like local ones.  Two that I use are curlftpfs and sshfs.  It's really nice to be able to perform any of my computer's programs on these remote files, and it looks very similar to what Dropbox accomplishes.  Of course, you would need to have an FTP or SSH login somewhere, but you can get free FTP access from e.g. Lycos, so that shouldn't be an issue.
+In short, I guess I'm curious what separates Dropbox from using a free FTP service which is connected either through Windows' built-in Network Places or Linux's curlftpfs.  There are obvious differences, but are they enough to warrant fees?
+
+
+
+
+
+
+
+
+
+
+
+
+
+jkush on April 4, 2007 
+
+
+
+
+
+I second that notion. I'm very impressed at how clean and easy you made it. What kind of a response have you gotten?
+
+
+
+
+
+
+
+
+
+
+
+
+
+markovich on April 4, 2007 
+
+
+
+
+
+It's pretty nice, and I was thinking to myself - hey cool, I could make an online backup of my code. Then it occured to me - who the hell is this guy, and why should I trust my code to be on his server!?
+That's a huge issue you should consider. Why would people feel comfortable leaving their valuable stuff on "Drews" server?
+
+
+
+
+
+
+
+
+
+
+
+
+
+dhouston on April 4, 2007 
+
+
+
+
+
+data's stored on s3, and encrypted before storage -- there'll be another option to enter in an additional passphrase (or private key) when installing in order to encrypt your data before it leaves your computer (kind of like what mozy does.)
+
+
+
+
+
+
+
+
+
+
+
+
+
+Tichy on April 6, 2007 
+
+
+
+
+
+Maybe, but the encryption is entirely in the hands of the client application that dropbox provides (I suppose it is not open source), so it is still a matter of faith.
+
+
+
+
+
+
+
+
+
+
+
+
+nickb on April 4, 2007 
+
+
+
+
+
+The only problem is that you have to install something. See, it's not the same as USB drive. Most corporate laptops are locked and you can't install anything on them. That's gonna be the problem. Also, another point where your USB comparison fails is that USB works in places where you don't have internet access. 
+My suggestion is to drop the "Throw away your USB drive" tag line and use something else... it will just muddy your vision.
+
+Kudos for launching it!!! Launching/shipping is extremely hard and you pulled it off! Super!
+
+
+
+
+
+
+
+
+
+
+
+
+
+vlad on April 5, 2007 
+
+
+
+
+
+What about this on the download page (also good for a press release.)
+Drop Box:  Automatically safeguards even your biggest worries, so you don't have any!
+
+What is a Drop Box?
+
+Your Drop Box is a File Cabinet that Follows You Around Everywhere You Want to Go, Across Your Computers, or Across The Country.
+
+Download and start using it today. (link goes here.)
+
+Your Drop Box includes your own Secretary who Files and Photocopies Every Document You Make or Edit, So You Can See What Each Document Looked Like Yesterday, Two Days Ago, or at Any Point In Time.  Did I Mention the Secretary and the File Cabinet are Fire-Proof and Wireless?
+
+But, it's all digital.  And, it's secure.  And it's built to work between as many Windows desktops or laptop computer you use at NO EXTRA COST!  See for yourself! (another link to the download.)
+
+Or, access your files at work from a web-based interface!  It's so flexible!
+
+Q: Do I have to change how I work?
+
+A: Absolutely not.  Any file and folder (Word documents, spreadsheets, family photos, etc) you add to your Drop Box folder is automatically synchronized and saved remotely.
+
+Q: What is the Drop Box folder?
+
+A: It's just a special folder which will appear on your computer.  Anything added to it is automatically saved, synchronized, and "dated" so you can go back in time!
+
+Try it now! (another download link)  It's safe, it's free, and you can use it on as many computers to share, backup, and keep archived file versions on, as you need to, by registering for just one account!
+
+
+
+
+
+
+
+
+
+
+
+
+
+JMiao on April 5, 2007 
+
+
+
+
+
+"Your Drop Box is a File Cabinet that Follows You Around Everywhere You Want to Go, Across Your Computers, or Across The Country."
+Ladies & Gentlemen, the WORLD'S LIGHTEST FILE CABINET.  Great for cross-country roadtrips!  =)
+
+
+
+
+
+
+
+
+
+
+
+
+
+zaidf on April 4, 2007 
+
+
+
+
+
+This has great potential!
+Only suggestion I would have is go slower on the demo. I know you lost me very early into it switching between windows.
+
+If you are looking for a wider audience than those who already know the context of dropbox, make a video where you lay out the case for use of dropbox using simple examples from user point of view(think a college student) and then in the demo show just the basic features. I got the feeling you tried to show too many features too quickly.
+
+In general, I have realized it is much better to launch with something that does a few things REALLY well rather than a lot of things with little focus. When you launch with whole lot of features people assume you are competing with the big companies. When you launch small and do it well, it is easier to attract a user-base and THEN keep feeding it more advance features in form of updates.
+
+Good luck! Looks slick from the UI.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+rwalker on April 4, 2007 
+
+
+
+
+
+Looks like a great product, and I will second the parent comment.
+One thing they teach at YC, and in one of pg's essays (http://www.paulgraham.com/investors.html), is to present a story instead of a list of features.  That way you answer the question of "Why would I use this product?" simultaneously to answering "What does this product do?".
+
+
+
+
+
+
+
+
+
+
+
+
+
+zach on April 4, 2007 
+
+
+
+
+
+I love that approach (my weblog is called "Story-Driven" after all) because it automatically breaks technical people out of a taxonomic, procedural mindset.  So many descriptions of things are on the order of "well, it's a set of pliers with a light on it" instead of "it's how I change fuses in my rusty fusebox in the middle of the night."
+You can't emphasize enough to people to tell a story, and the screencast is a great crucible for whether you have a good story to tell.  Screencasts aren't appreciated enough for the way they've helped people understand concepts that are a little more technical than they normally would sit still for.
+
+
+
+
+
+
+
+
+
+
+
+
+
+mukund on April 4, 2007 
+
+
+
+
+
+Cool stuff indeed. I would give 5 stars for such an useful application. I dont know if users can have administrative rights installing this features on some random computers, cant u incorporate something like web based interface?
+
+
+
+
+
+
+
+
+
+
+
+
+
+dhouston on April 4, 2007 
+
+
+
+
+
+it should degrade gracefully and work without admin rights; in addition you can download (and soon, upload) via the web interface if you're not at one of your computers.
+
+
+
+
+
+
+
+
+
+
+
+
+mukund on April 4, 2007 
+
+
+
+
+
+Then u would win this YC for sure as i can see potential in this. Good luck mate :)
+
+
+
+
+
+
+
+
+
+
+
+
+jganetsk on April 4, 2007 
+
+
+
+
+
+How are you going to scale up your storage to meet the demands of the users? Are you doing something clever, like Google Filesystem? This is not an easy problem, if you aren't prepared for it in advance. If 10,000 users sign up tomorrow... you might be very very hosed, as opposed to very very happy.
+
+
+
+
+
+
+
+
+
+
+
+
+soeren on April 5, 2007 
+
+
+
+
+
+The linked computers can be used for a kind of distributed storage system (like GFS). Say each user shares an amount of storage resources and can use a specific amount of storage of the system. If the users are willing to accept such a deal, you can reduce the cost of your own storage resources. A major problem of course is the reliability of the system.
+
+
+
+
+
+
+
+
+
+
+
+
+jganetsk on April 5, 2007 
+
+
+
+
+
+There's a recent research project called Farsite which tries to answer these questions.
+http://research.microsoft.com/~adya/pubs/osdi2002.pdf
+
+
+
+
+
+
+
+
+
+
+
+
+
+ashu on April 4, 2007 
+
+
+
+
+
+Amazon S3
+
+
+
+
+
+
+
+
+
+
+
+
+jganetsk on April 5, 2007 
+
+
+
+
+
+Look at the prices for S3:
+     $0.15 per GB-Month of storage used.
+     $0.20 per GB of data transferred.
+
+So, that means Dropbox is going to have to resell S3 at a premium for the added value of these nice Coda-like features. Would you pay a premium for these Dropbox features? Maybe, I don't know.
+
+Also, what's the typical use case? How much bandwidth/storage are people going to consume? Because, if I store 100 megabytes... my bill will pennies every month (going on S3 prices). You cannot transact pennies per user per month. If you could, then you've cracked the micropayments problem wide open. Maybe there would be a base fee? Like $5/month or something. Would people pay that much for online storage? 
+
+I don't know how other revenue generation models can be applied. Advertising? Selling a user's data to other businesses? (What's the privacy policy?) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+noisemaker on April 5, 2007 
+
+
+
+
+
+I think the larger issue is about getting user adoption. It is actually great case to have a situation where users overwhelm your service in a way that it outgrows a system such as this. If he ever gets that large, obviously there will be plenty of people looking to help him figure out how to make the storage portion feasible. 
+More interesting is the user experience. Creating something users can enjoy, agree with, and possibly part money for is a much more difficult problem to solve than figuring out to make large scale storage cost effective.
+
+
+
+
+
+
+
+
+
+
+
+
+
+jganetsk on April 8, 2007 
+
+
+
+
+
+I think user experience can and will be duplicated. I did post a link to an SVN front-end that has a very similar interface. Maybe the competitors are locked-in to some bad design decisions and can't quite recreate the same user experience... but that's a little optimistic.
+Anyway you slice it, you need to have a profit margin. And with a commodity like storage (and the soon-to-be commodity of online storage), you have to be competitve with market prices. The reason that most YC startups can worry about user adoption is because they aren't tied down to this problem. They aren't really making commodities and the cost of makign the product isn't so suffocating.
+
+That's why Dropbox needs to plan for moving off S3. There is so much innovation in storage backends... so much research to read. Think of Google Filesystem. It makes storage very very very cheap.
+
+Here's a good plan for Dropbox. Use S3 as a secondary solution. The primary storage should be local to them (servers running a filesystem that takes advantage of unique properties of the workload... like Google does). When it fills up, traffic thereafter is handled by S3 instead. Then, they can relax in worrying about and scaling local storage. They can take their time buying more hardware, and rolling out software changes to the storage system. They can migrate the data from S3 to local storage at will. And now, their customers can be charged a flexible price, because they control their own expenses. In other words, think of S3 as "datacenter outsourcing".
+
+But this might be too long-term... it might be something to worry about post-YC.
+
+But I think it might be easy to build a storage implementation that runs local and exposes the same exact interface as S3. And, poof, we just abstract the whole backend away, and just flip a switch when we want to go one way or the other. And it reduces latency. Then you go after zero-downtime data migration from S3 to your local systems... which can be done I think... and I think you would be happy.
+
+
+
+
+
+
+
+
+
+
+
+
+
+ph0rque on April 5, 2007 
+
+
+
+
+
+How about making up to X GB free, and come up with a tiered charging plan for more than X?
+
+
+
+
+
+
+
+
+
+
+
+
+jkush on April 5, 2007 
+
+
+
+
+
+EXACTLY what I was thinking ashu!
+
+
+
+
+
+
+
+
+
+
+
+
+jganetsk on April 4, 2007 
+
+
+
+
+
+I've seen this before. It's called Coda.
+http://www.coda.cs.cmu.edu/
+
+Great work bringing this to the web, and integrating it with Windows!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JMiao on April 4, 2007 
+
+
+
+
+
+Was Dropbox your first idea, or did you start from another point of inspiration?  How long did it take to get to a workable demo?
+Great job, Drew!
+
+
+
+
+
+
+
+
+
+
+
+
+
+dhouston on April 5, 2007 
+
+
+
+
+
+nope. informally came up with and tossed around 6 or 7 ideas at the same time -- not so much coding as investigating/talking to potential customers and bouncing them off other friends and entrepreneurs. this was crucial -- ideas don't really fall out of the sky, they evolve.
+there were several times where i'd get really excited about one idea -- like pacing in my living room at 5:30am excited -- and then 5 days later find out (via a different set of search terms or something) there were 3 other people doing the same thing, with a head start and more money.
+
+ultimately they say scratch your own itch -- this was a problem (syncing a 3gb file across several computers efficiently) i routinely had working on a prior company i had started and i was frustrated that no one had solved it well, and it turned out to be more promising than my original company :)
+
+
+
+
+
+
+
+
+
+
+
+
+
+JMiao on April 9, 2007 
+
+
+
+
+
+Thanks for sharing great insight!
+
+
+
+
+
+
+
+
+
+
+
+
+ph0rque on April 5, 2007 
+
+
+
+
+
+You know, your app is something that I've been wishing someone would make for some time now. Congrats!
+Here's a suggestion for a future revision: give the ability for office documents to open with online office apps when clicked on in the public folder.
+
+
+
+
+
+
+
+
+
+
+
+
+
+sumantra2 on April 5, 2007 
+
+
+
+
+
+cool demo !!! But I must agree that this is coda stuff. 
+
+
+
+
+
+
+
+
+
+
+
+
+bls on April 6, 2007 
+
+
+
+
+
+This is an interesting application. But, your demo video does not do it justice: (a) It is too long; (b) your folders that you use in the video have too many files in them; you say about 10x more words than necessary; and (d) your voice, combined with the bad microphone input, make the explanation sounds pad.
+Your main competition is not USB drives: it is HotMail, GMail, and Yahoo! Mail. Once people are taught the "email it to yourself" trick, they love to use it--I think because it is not so intuitive for people, yet it is so simple, that they are proud that they are doing something so clever.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+zkinion on April 5, 2007 
+
+
+
+
+
+It looks great man.  I know you'll be accepted.  The writing is on the wall.  Posting your video here just seals the deal, and puts yourself out there.  I didn't apply to YC, but if I did, I'd be putting my stuff up here as well.  I'm surprized nobody else has posted like you did.  That takes some balls and self-belief.
+I didn't agree with some of the things you've said before, like IP rules, etc.  but you've earned my respect.  Best of luck to you.  :)
+
+-Zak Kinion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vlad on April 5, 2007 
+
+
+
+
+
+I don't know if he applied; he has tried before and was rejected.  Way to represent the lone rangers!
+
+
+
+
+
+
+
+
+
+
+
+
+zkinion on April 5, 2007 
+
+
+
+
+
+I'm guessing he did, though I may be wrong.  The thread title was "...YC app..." something like that.  
+I don't see how after that video and that post how he wouldn't be accepted unless the YC people have some pre-existing opinions about the future of online storage.
+
+
+
+
+
+
+
+
+
+
+
+
+
+vlad on April 5, 2007 
+
+
+
+
+
+I totally missed that.  I just know he was interviewed for this past winter session, and it came up that he was a single founder.  I sure hope he gets in, because it shows that you don't always need a team if you can invision, design, draw, code, and test your idea yourself.  Too many cooks can spoil the broth, sometimes. Plus, I believe when leading a product that you need to have one leader, not a committee.  And, the other thing I believe is that a leader must be willing to do, by himself, anything he asks of others.
+
+
+
+
+
+
+
+
+
+
+
+
+dhouston on April 5, 2007 
+
+
+
+
+
+couple of clarifications :)
+1) i have other people working with me on this. i did prototype it alone, but i don't intend to be a single founder. i won't belabor it here, but it's really a good idea to get other people on board and the reasons yc and everyone have for not encouraging single founders are valid. your odds are much worse, and playing superman gets old after a while when you're trying to do everything -- and it's more fun to have more people involved and excited about the idea anyway.
+
+2) re: applying: i am applying for this round, but actually didn't apply for funding for the last wfp. however, i did apply 2 years ago (with a cofounder) with another idea and wasn't selected.
+
+
+
+
+
+
+
+
+
+
+
+
+
+chandrab on April 5, 2007 
+
+
+
+
+
+Nice Application...the question I have is on the marketing side- how are you going to attract users? and how are you going to differentiate yourself from the hordes of other online storage vendors, esp. to the newbie users who can't tell them apart easy? (so you have to have a simple, compelling story for them)
+
+
+
+
+
+
+
+
+
+
+
+
+
+andreyf on April 6, 2007 
+
+
+
+
+
+I'd also love to see how you answered the "Whom do you fear the most" and "What makes this hard to replicate" questions on the app...
+
+
+
+
+
+
+
+
+
+
+
+
+dhouston on April 4, 2007 
+
+
+
+
+
+oh, and a mac port is coming :)
+
+
+
+
+
+
+
+
+
+
+
+
+vlad on April 5, 2007 
+
+
+
+
+
+Drew, this is awesome!  All of the features you mentioned are exactly what people need.
+
+
+
+
+
+
+
+
+
+
+
+
+iamwil on April 4, 2007 
+
+
+
+
+
+Kudos from myself as well.  In fact, just today I was having problems with ftp and samba, and was wishing for a more graphical rsync.  Perhaps it is true that a good way to do a web app is to implement a unix command.  :)  Good job.  can't wait until it's out for the rest of us.
+
+
+
+
+
+
+
+
+
+
+
+
+tyohn on April 4, 2007 
+
+
+
+
+
+I like the app; but instead of telling people to throw away their USB drive maybe you could incorporate a sync feature that would allow users to work on their files offline.  Sometimes you just dont have internet access.  Just a thought.  
+
+
+
+
+
+
+
+
+
+
+
+
+dhouston on April 4, 2007 
+
+
+
+
+
+yup -- i didn't get to mention it, but a big piece of dropbox is that it's a local/"normal" folder that's synced in the background -- you can work on your files offline (that, among other things, drove me nuts about typical online drives) and get local IO speeds (good for photoshop, film, etc.)
+
+
+
+
+
+
+
+
+
+
+
+
+danielha on April 4, 2007 
+
+
+
+
+
+Very cool, Drew. I've been meaning to bug you about a beta invite. Good job on the screencast too; it gave me a much better idea of what Dropbox was aiming for than what I had originally thought. 
+
+
+
+
+
+
+
+
+
+
+
+
+danw on April 8, 2007 
+
+
+
+
+
+Looks wonderful. You might want to check on the trademark 'dropbox'. I know dropsend used to be called dropbox but had to change due to trademark difficulties. Otherwise excellent work.
+
+
+
+
+
+
+
+
+
+
+
+
+eugenejen on April 4, 2007 
+
+
+
+
+
+Nice job! I was thinking something like this for a while and wonder why no one did it. It looks like dropbox just scratches the right itches for me.
+
+
+
+
+
+
+
+
+
+
+
+
+aaroniba on April 4, 2007 
+
+
+
+
+
+Sweet!  I especially like the right-click, "copy link location" feature: really useful and should help user adoption.
+
+
+
+
+
+
+
+
+
+
+
+
+
+noisemaker on April 5, 2007 
+
+
+
+
+
+Great job guys, hope to see you get picked up in the next session. Keep me posted for the mac version.
+
+
+
+
+
+
+
+
+
+
+
+
+abstractbill on April 5, 2007 
+
+
+
+
+
+This definitely qualifies as Something People Want, and it looks nicely executed.  Very cool!
+
+
+
+
+
+
+
+
+
+
+
+
+budu3 on April 4, 2007 
+
+
+
+
+
+Wow dude! This looks like a good competitor for Google"s "GDrive". I hope you get accepted.
+
+
+
+
+
+
+
+
+
+
+
+
+jganetsk on April 5, 2007 
+
+
+
+
+
+Well there doesn't seem to be a GDrive at the moment... but there are many other similar online storage solutions.
+Techcrunch had an article with 13 of them...
+http://www.techcrunch.com/2006/01/31/the-online-storage-gang/
+
+It's a pretty crowded space. And XDrive gets you 5 GB for free, 50 GB for $9.95 a month. I can't expect Dropbox to charge those prices, given S3 as a backend. The margin just isn't really there, especially given the number of uses that will want free storage. And I think competitors can duplicate Dropbox's nice front end. In fact, here's an open source front end to SVN which is similar to Dropbox's:
+
+http://tortoisesvn.tigris.org/
+
+Sorry for all the negativity, I guess I'm trying to play devil's advocate here. It's a wonderful product you got going there, but I think you will have to work really hard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+budu3 on April 5, 2007 
+
+
+
+
+
+Well, the fact that GDrive is not materialising makes this idea a great aquisition target. Then again Google might squash it like it did Kiko if/when it rolls out GDrive.
+
+
+
+
+
+
+
+
+
+
+
+
+jganetsk on April 5, 2007 
+
+
+
+
+
+I'm going to respond to my own post, and add that... for the initial phase where you don't expect to make money... you have chosen a great setup. S3 is a robust , reliable, and easy way to handle the intial ramp up should hoards of users sign up, a concern I raised in another post. You probably have plans to get onto your own backend in the long-run.
+
+
+
+
+
+
+
+
+
+
+
+
+amichail on April 4, 2007 
+
+
+
+
+
+Somewhat related:
+http://www.tubesnow.com/
+
+
+
+
+
+
+
+
+
+
+
+
+
+zach on April 4, 2007 
+
+
+
+
+
+Great demo, great product, great business, well done.
+
+
+
+
+
+
+
+
+
+
+
+
+richcollins on April 4, 2007 
+
+
+
+
+
+Nice work Drew!  Lets see it on the mac now ;)
+
+
+
+
+
+
+
+
+
+
+
+
+
+Readmore on April 4, 2007 
+
+
+
+
+
+That's hot!
+
+
+
+
+
+
+
+
+
+
+
+
+nostrademons on April 4, 2007 
+
+
+
+
+
+I'm impressed.
+
+
+
+
+
+
+
+
+
+
+
+
+rokhayakebe on April 5, 2007 
+
+
+
+
+
+good stuff man. hope you make it.
+
+
+
+
+
+
+
+
+
+
+
+
+
+daliso on April 4, 2007 
+
+
+
+
+
+brilliant!
+
+
+
+
+
+
+
+
+
+
+
+
+palish on April 4, 2007 
+
+
+
+
+
+How are conflicts handled?  If you take your laptop offline, modify your image, then modify the same image on your desktop, then plug your laptop back in, what happens?
+Great job by the way.
+
+
+
+
+
+
+
+
+
+
+
+
+
+jganetsk on April 4, 2007 
+
+
+
+
+
+The Coda guys asked this question nearly 20 years ago.
+http://www.coda.cs.cmu.edu/
+
+Sorry for being a Coda troll.

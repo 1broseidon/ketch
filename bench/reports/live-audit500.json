@@ -1,0 +1,2216 @@
+{
+  "audited_at": "2026-09-19T19:29:56.960588+00:00",
+  "method": "Target known benchmark failures; curl with redirects/compression, ketch scrape --raw and default scrape with no cache or llms.txt; ketch extract replays the exact saved response. Selector extraction is assisted diagnosis, not a default score. Full output saved without truncation; temporary config/cache/tags; no browser configured.",
+  "binary": "/tmp/ketch-bench500/ketch-current",
+  "binary_sha256": "53432e7ddd71749efa89f0b798a8709744c19f2ad0feaa0e2539eb4bccd6ba75",
+  "installed_binary": "/home/george/.local/bin/ketch",
+  "installed_sha256": "4b1ec2e0925b22b0cc68002dd843ecb54930ebc85238d83e4f9a9a9b9905ccd6",
+  "fetches_and_commands": [
+    {
+      "id": "nps",
+      "url": "https://www.nps.gov/yell/planyourvisit/safety.htm",
+      "reference_selector": ".ColumnMain",
+      "calls": {
+        "curl": {
+          "command": [
+            "curl",
+            "--location",
+            "--silent",
+            "--show-error",
+            "--compressed",
+            "--max-time",
+            "30",
+            "--max-filesize",
+            "20971520",
+            "--dump-header",
+            "/tmp/ketch-live-audit-20260919/nps/curl.headers",
+            "--output",
+            "/tmp/ketch-live-audit-20260919/nps/curl.html",
+            "--write-out",
+            "%{json}",
+            "https://www.nps.gov/yell/planyourvisit/safety.htm"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 80.24726298754103,
+          "captured_at": "2026-09-19T19:22:48.978640+00:00",
+          "stdout_bytes": 12841,
+          "stderr": "",
+          "http_code": 200,
+          "url_effective": "https://www.nps.gov/yell/planyourvisit/safety.htm",
+          "html_bytes": 114885,
+          "html_sha256": "b63fef75065da8432b48727420490692429026e7b381cc2ed37f1030edf4f0d6"
+        },
+        "extract-curl": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "extract",
+            "--url",
+            "https://www.nps.gov/yell/planyourvisit/safety.htm",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 17.538613989017904,
+          "captured_at": "2026-09-19T19:22:48.996527+00:00",
+          "stdout_bytes": 1131,
+          "stderr": "",
+          "markdown_bytes": 934,
+          "markdown_sha256": "0e9c58dd4af07b4ce231f155c596c248334545a4ede68f8de17ef3984f6d6f1d"
+        },
+        "selector-curl": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "extract",
+            "--url",
+            "https://www.nps.gov/yell/planyourvisit/safety.htm",
+            "--select",
+            ".ColumnMain",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 14.396162005141377,
+          "captured_at": "2026-09-19T19:22:49.011150+00:00",
+          "stdout_bytes": 26487,
+          "stderr": "",
+          "markdown_bytes": 25916,
+          "markdown_sha256": "2785b9b05b25ec1051163747342a6a89924d28ef5cb2de943941005f36edc4a6"
+        },
+        "installed-extract-curl": {
+          "command": [
+            "/home/george/.local/bin/ketch",
+            "extract",
+            "--url",
+            "https://www.nps.gov/yell/planyourvisit/safety.htm",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 15.235672995913774,
+          "captured_at": "2026-09-19T19:22:49.026776+00:00",
+          "stdout_bytes": 1131,
+          "stderr": "",
+          "markdown_bytes": 934,
+          "markdown_sha256": "0e9c58dd4af07b4ce231f155c596c248334545a4ede68f8de17ef3984f6d6f1d"
+        },
+        "ketch-raw": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "scrape",
+            "https://www.nps.gov/yell/planyourvisit/safety.htm",
+            "--no-cache",
+            "--no-llms-txt",
+            "--raw",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 104.13528000935912,
+          "source": "http",
+          "html_bytes": 114885,
+          "html_sha256": "b63fef75065da8432b48727420490692429026e7b381cc2ed37f1030edf4f0d6"
+        },
+        "extract-ketch-raw": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "extract",
+            "--url",
+            "https://www.nps.gov/yell/planyourvisit/safety.htm",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 17.398397001670673,
+          "captured_at": "2026-09-19T19:22:49.045862+00:00",
+          "stdout_bytes": 1131,
+          "stderr": "",
+          "markdown_bytes": 934,
+          "markdown_sha256": "0e9c58dd4af07b4ce231f155c596c248334545a4ede68f8de17ef3984f6d6f1d"
+        },
+        "ketch-scrape": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "scrape",
+            "https://www.nps.gov/yell/planyourvisit/safety.htm",
+            "--no-cache",
+            "--no-llms-txt",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 89.8409080109559,
+          "captured_at": "2026-09-19T19:22:49.385986+00:00",
+          "stdout_bytes": 1119,
+          "stderr": "",
+          "markdown_bytes": 934,
+          "markdown_sha256": "0e9c58dd4af07b4ce231f155c596c248334545a4ede68f8de17ef3984f6d6f1d"
+        }
+      }
+    },
+    {
+      "id": "git-rebase",
+      "url": "https://git-scm.com/docs/git-rebase",
+      "reference_selector": "#main",
+      "calls": {
+        "curl": {
+          "command": [
+            "curl",
+            "--location",
+            "--silent",
+            "--show-error",
+            "--compressed",
+            "--max-time",
+            "30",
+            "--max-filesize",
+            "20971520",
+            "--dump-header",
+            "/tmp/ketch-live-audit-20260919/git-rebase/curl.headers",
+            "--output",
+            "/tmp/ketch-live-audit-20260919/git-rebase/curl.html",
+            "--write-out",
+            "%{json}",
+            "https://git-scm.com/docs/git-rebase"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 164.70094901160337,
+          "captured_at": "2026-09-19T19:22:49.063220+00:00",
+          "stdout_bytes": 10523,
+          "stderr": "",
+          "http_code": 200,
+          "url_effective": "https://git-scm.com/docs/git-rebase",
+          "html_bytes": 178648,
+          "html_sha256": "70080237049369e8d236c2c7f2c92820eb3cb9fe93191bad75afaa2ed83085d0"
+        },
+        "extract-curl": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "extract",
+            "--url",
+            "https://git-scm.com/docs/git-rebase",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 41.20359098305926,
+          "captured_at": "2026-09-19T19:22:49.104829+00:00",
+          "stdout_bytes": 21664,
+          "stderr": "",
+          "markdown_bytes": 20665,
+          "markdown_sha256": "1cec2c3fe3779f3bafa399f33573993839aa42682fd89e5a22bbc05960fb2409"
+        },
+        "selector-curl": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "extract",
+            "--url",
+            "https://git-scm.com/docs/git-rebase",
+            "--select",
+            "#main",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 29.097806982463226,
+          "captured_at": "2026-09-19T19:22:49.134273+00:00",
+          "stdout_bytes": 70568,
+          "stderr": "",
+          "markdown_bytes": 68216,
+          "markdown_sha256": "966b2ef3026ff26dd8a29a025c71b784eef0c71ef4fe6c7fb6ca4c39a71a0080"
+        },
+        "installed-extract-curl": {
+          "command": [
+            "/home/george/.local/bin/ketch",
+            "extract",
+            "--url",
+            "https://git-scm.com/docs/git-rebase",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 32.531173987081274,
+          "captured_at": "2026-09-19T19:22:49.167687+00:00",
+          "stdout_bytes": 21664,
+          "stderr": "",
+          "markdown_bytes": 20665,
+          "markdown_sha256": "1cec2c3fe3779f3bafa399f33573993839aa42682fd89e5a22bbc05960fb2409"
+        },
+        "ketch-raw": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "scrape",
+            "https://git-scm.com/docs/git-rebase",
+            "--raw",
+            "--no-cache",
+            "--no-llms-txt",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 113.01440797979012,
+          "captured_at": "2026-09-19T19:22:49.281108+00:00",
+          "stdout_bytes": 247729,
+          "stderr": "",
+          "source": "http",
+          "html_bytes": 178648,
+          "html_sha256": "70080237049369e8d236c2c7f2c92820eb3cb9fe93191bad75afaa2ed83085d0"
+        },
+        "extract-ketch-raw": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "extract",
+            "--url",
+            "https://git-scm.com/docs/git-rebase",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 40.492344996891916,
+          "captured_at": "2026-09-19T19:22:49.323545+00:00",
+          "stdout_bytes": 21664,
+          "stderr": "",
+          "markdown_bytes": 20665,
+          "markdown_sha256": "1cec2c3fe3779f3bafa399f33573993839aa42682fd89e5a22bbc05960fb2409"
+        },
+        "ketch-scrape": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "scrape",
+            "https://git-scm.com/docs/git-rebase",
+            "--no-cache",
+            "--no-llms-txt",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 112.80995697597973,
+          "captured_at": "2026-09-19T19:22:49.686753+00:00",
+          "stdout_bytes": 21651,
+          "stderr": "",
+          "markdown_bytes": 20665,
+          "markdown_sha256": "1cec2c3fe3779f3bafa399f33573993839aa42682fd89e5a22bbc05960fb2409"
+        }
+      }
+    },
+    {
+      "id": "react-state",
+      "url": "https://react.dev/learn/state-a-components-memory",
+      "reference_selector": "main",
+      "calls": {
+        "curl": {
+          "command": [
+            "curl",
+            "--location",
+            "--silent",
+            "--show-error",
+            "--compressed",
+            "--max-time",
+            "30",
+            "--max-filesize",
+            "20971520",
+            "--dump-header",
+            "/tmp/ketch-live-audit-20260919/react-state/curl.headers",
+            "--output",
+            "/tmp/ketch-live-audit-20260919/react-state/curl.html",
+            "--write-out",
+            "%{json}",
+            "https://react.dev/learn/state-a-components-memory"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 235.86037298082374,
+          "captured_at": "2026-09-19T19:22:49.135030+00:00",
+          "stdout_bytes": 17319,
+          "stderr": "",
+          "http_code": 200,
+          "url_effective": "https://react.dev/learn/state-a-components-memory",
+          "html_bytes": 346951,
+          "html_sha256": "bd26816c8bd33e6f550a338334751244d9d565b957b4b88805a7646d451d6b07"
+        },
+        "extract-curl": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "extract",
+            "--url",
+            "https://react.dev/learn/state-a-components-memory",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 26.942816999508068,
+          "captured_at": "2026-09-19T19:22:49.162959+00:00",
+          "stdout_bytes": 8390,
+          "stderr": "",
+          "markdown_bytes": 8082,
+          "markdown_sha256": "b41bd005ec6355ebc5c21872758673d5cd796ae1cfc017c5843322b5156d83ac"
+        },
+        "selector-curl": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "extract",
+            "--url",
+            "https://react.dev/learn/state-a-components-memory",
+            "--select",
+            "main",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 26.03033700142987,
+          "captured_at": "2026-09-19T19:22:49.189258+00:00",
+          "stdout_bytes": 26608,
+          "stderr": "",
+          "markdown_bytes": 25151,
+          "markdown_sha256": "962e3fa3a899f2b2f65dfbfd8f4e088f8f754683df317f63f93227b07707b5d0"
+        },
+        "installed-extract-curl": {
+          "command": [
+            "/home/george/.local/bin/ketch",
+            "extract",
+            "--url",
+            "https://react.dev/learn/state-a-components-memory",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 25.497080001514405,
+          "captured_at": "2026-09-19T19:22:49.215144+00:00",
+          "stdout_bytes": 7695,
+          "stderr": "",
+          "markdown_bytes": 7388,
+          "markdown_sha256": "bf73912a4bf507d52ea395eb505d8709b83bc7f93b522b0b4b3179ffd126283f"
+        },
+        "ketch-raw": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "scrape",
+            "https://react.dev/learn/state-a-components-memory",
+            "--raw",
+            "--no-cache",
+            "--no-llms-txt",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 257.1482469793409,
+          "captured_at": "2026-09-19T19:22:49.472533+00:00",
+          "stdout_bytes": 416534,
+          "stderr": "",
+          "source": "http",
+          "html_bytes": 346951,
+          "html_sha256": "bd26816c8bd33e6f550a338334751244d9d565b957b4b88805a7646d451d6b07"
+        },
+        "extract-ketch-raw": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "extract",
+            "--url",
+            "https://react.dev/learn/state-a-components-memory",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 28.72713000397198,
+          "captured_at": "2026-09-19T19:22:49.504739+00:00",
+          "stdout_bytes": 8390,
+          "stderr": "",
+          "markdown_bytes": 8082,
+          "markdown_sha256": "b41bd005ec6355ebc5c21872758673d5cd796ae1cfc017c5843322b5156d83ac"
+        },
+        "ketch-scrape": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "scrape",
+            "https://react.dev/learn/state-a-components-memory",
+            "--no-cache",
+            "--no-llms-txt",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 201.51796398567967,
+          "captured_at": "2026-09-19T19:22:49.956525+00:00",
+          "stdout_bytes": 8377,
+          "stderr": "",
+          "markdown_bytes": 8082,
+          "markdown_sha256": "b41bd005ec6355ebc5c21872758673d5cd796ae1cfc017c5843322b5156d83ac"
+        }
+      }
+    },
+    {
+      "id": "more-w3-org-images-decorative",
+      "url": "https://www.w3.org/WAI/tutorials/images/decorative/",
+      "reference_selector": "main",
+      "calls": {
+        "curl": {
+          "command": [
+            "curl",
+            "--location",
+            "--silent",
+            "--show-error",
+            "--compressed",
+            "--max-time",
+            "30",
+            "--max-filesize",
+            "20971520",
+            "--dump-header",
+            "/tmp/ketch-live-audit-20260919/more-w3-org-images-decorative/curl.headers",
+            "--output",
+            "/tmp/ketch-live-audit-20260919/more-w3-org-images-decorative/curl.html",
+            "--write-out",
+            "%{json}",
+            "https://www.w3.org/WAI/tutorials/images/decorative/"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 81.71658602077514,
+          "captured_at": "2026-09-19T19:22:49.468263+00:00",
+          "stdout_bytes": 10562,
+          "stderr": "",
+          "http_code": 200,
+          "url_effective": "https://www.w3.org/WAI/tutorials/images/decorative/",
+          "html_bytes": 48623,
+          "html_sha256": "83b2156d43cc66241ff7cb6c7947aa0108da3c28efb9185d6097716abcb8ad89"
+        },
+        "extract-curl": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "extract",
+            "--url",
+            "https://www.w3.org/WAI/tutorials/images/decorative/",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 11.727662989869714,
+          "captured_at": "2026-09-19T19:22:49.480223+00:00",
+          "stdout_bytes": 1702,
+          "stderr": "",
+          "markdown_bytes": 1557,
+          "markdown_sha256": "b5cc7dca7bf61b349d7cf747bef0840c8b2513e3aa26120d6b73a39fa64eb6ae"
+        },
+        "selector-curl": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "extract",
+            "--url",
+            "https://www.w3.org/WAI/tutorials/images/decorative/",
+            "--select",
+            "main",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 9.032373985974118,
+          "captured_at": "2026-09-19T19:22:49.489452+00:00",
+          "stdout_bytes": 6969,
+          "stderr": "",
+          "markdown_bytes": 6485,
+          "markdown_sha256": "eafbb3d7ea88dd3abbe81bc9761f531628438c72cbe9b1645685b6f0de0aecdc"
+        },
+        "installed-extract-curl": {
+          "command": [
+            "/home/george/.local/bin/ketch",
+            "extract",
+            "--url",
+            "https://www.w3.org/WAI/tutorials/images/decorative/",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 11.837522004498169,
+          "captured_at": "2026-09-19T19:22:49.501542+00:00",
+          "stdout_bytes": 1702,
+          "stderr": "",
+          "markdown_bytes": 1557,
+          "markdown_sha256": "b5cc7dca7bf61b349d7cf747bef0840c8b2513e3aa26120d6b73a39fa64eb6ae"
+        },
+        "ketch-raw": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "scrape",
+            "https://www.w3.org/WAI/tutorials/images/decorative/",
+            "--raw",
+            "--no-cache",
+            "--no-llms-txt",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 80.14104099129327,
+          "captured_at": "2026-09-19T19:22:49.581902+00:00",
+          "stdout_bytes": 62264,
+          "stderr": "",
+          "source": "http",
+          "html_bytes": 48623,
+          "html_sha256": "83b2156d43cc66241ff7cb6c7947aa0108da3c28efb9185d6097716abcb8ad89"
+        },
+        "extract-ketch-raw": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "extract",
+            "--url",
+            "https://www.w3.org/WAI/tutorials/images/decorative/",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 11.232368997298181,
+          "captured_at": "2026-09-19T19:22:49.593679+00:00",
+          "stdout_bytes": 1702,
+          "stderr": "",
+          "markdown_bytes": 1557,
+          "markdown_sha256": "b5cc7dca7bf61b349d7cf747bef0840c8b2513e3aa26120d6b73a39fa64eb6ae"
+        },
+        "ketch-scrape": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "scrape",
+            "https://www.w3.org/WAI/tutorials/images/decorative/",
+            "--no-cache",
+            "--no-llms-txt",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 85.15830899705179,
+          "captured_at": "2026-09-19T19:22:49.929099+00:00",
+          "stdout_bytes": 1690,
+          "stderr": "",
+          "markdown_bytes": 1557,
+          "markdown_sha256": "b5cc7dca7bf61b349d7cf747bef0840c8b2513e3aa26120d6b73a39fa64eb6ae"
+        }
+      }
+    },
+    {
+      "id": "more-redis-io-data-types-lists",
+      "url": "https://redis.io/docs/latest/develop/data-types/lists/",
+      "reference_selector": "main section.prose",
+      "calls": {
+        "curl": {
+          "command": [
+            "curl",
+            "--location",
+            "--silent",
+            "--show-error",
+            "--compressed",
+            "--max-time",
+            "30",
+            "--max-filesize",
+            "20971520",
+            "--dump-header",
+            "/tmp/ketch-live-audit-20260919/more-redis-io-data-types-lists/curl.headers",
+            "--output",
+            "/tmp/ketch-live-audit-20260919/more-redis-io-data-types-lists/curl.html",
+            "--write-out",
+            "%{json}",
+            "https://redis.io/docs/latest/develop/data-types/lists/"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 489.8953520169016,
+          "captured_at": "2026-09-19T19:22:50.177281+00:00",
+          "stdout_bytes": 10594,
+          "stderr": "",
+          "http_code": 200,
+          "url_effective": "https://redis.io/docs/latest/develop/data-types/lists/",
+          "html_bytes": 7264376,
+          "html_sha256": "22186819a6bc190e13bb14792a9bad38cf0ddcddbd9d0dc3f4ea52524915cc9e"
+        },
+        "extract-curl": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "extract",
+            "--url",
+            "https://redis.io/docs/latest/develop/data-types/lists/",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 500.6671530136373,
+          "captured_at": "2026-09-19T19:22:50.686214+00:00",
+          "stdout_bytes": 231109,
+          "stderr": "",
+          "markdown_bytes": 199845,
+          "markdown_sha256": "4c60972837b9e1e5215df8261aa28cada87a85d5153c3cd09e2a90cc6fcf0516"
+        },
+        "selector-curl": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "extract",
+            "--url",
+            "https://redis.io/docs/latest/develop/data-types/lists/",
+            "--select",
+            "main section.prose",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 597.818351991009,
+          "captured_at": "2026-09-19T19:22:51.285478+00:00",
+          "stdout_bytes": 701861,
+          "stderr": "",
+          "markdown_bytes": 654340,
+          "markdown_sha256": "a6d9efc194a303b667a248eb9270f813ee4af582b8c4056e9a09113b6b264adf"
+        },
+        "installed-extract-curl": {
+          "command": [
+            "/home/george/.local/bin/ketch",
+            "extract",
+            "--url",
+            "https://redis.io/docs/latest/develop/data-types/lists/",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 599.5352960017044,
+          "captured_at": "2026-09-19T19:22:51.890365+00:00",
+          "stdout_bytes": 230437,
+          "stderr": "",
+          "markdown_bytes": 199173,
+          "markdown_sha256": "2d3d29560ee05b0d7f7fc7443f597c9cf84b882a2198b9bb163874ba25b67fc2"
+        },
+        "ketch-raw": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "scrape",
+            "https://redis.io/docs/latest/develop/data-types/lists/",
+            "--raw",
+            "--no-cache",
+            "--no-llms-txt",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 1278.992556995945,
+          "captured_at": "2026-09-19T19:22:53.170792+00:00",
+          "stdout_bytes": 9276723,
+          "stderr": "",
+          "source": "http",
+          "html_bytes": 7265181,
+          "html_sha256": "f9f9136e7fe03e89536d87152b26f5a31b54b45a1bd24d4c9f8d8e1c796129f2"
+        },
+        "extract-ketch-raw": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "extract",
+            "--url",
+            "https://redis.io/docs/latest/develop/data-types/lists/",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 509.44044499192387,
+          "captured_at": "2026-09-19T19:22:53.767406+00:00",
+          "stdout_bytes": 231109,
+          "stderr": "",
+          "markdown_bytes": 199845,
+          "markdown_sha256": "4c60972837b9e1e5215df8261aa28cada87a85d5153c3cd09e2a90cc6fcf0516"
+        },
+        "ketch-scrape": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "scrape",
+            "https://redis.io/docs/latest/develop/data-types/lists/",
+            "--no-cache",
+            "--no-llms-txt",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 1349.1261290037073,
+          "captured_at": "2026-09-19T19:22:55.368828+00:00",
+          "stdout_bytes": 231095,
+          "stderr": "",
+          "markdown_bytes": 199845,
+          "markdown_sha256": "4c60972837b9e1e5215df8261aa28cada87a85d5153c3cd09e2a90cc6fcf0516"
+        }
+      }
+    },
+    {
+      "id": "more-allrecipes-com-20144-banana-banana-bread",
+      "url": "https://www.allrecipes.com/recipe/20144/banana-banana-bread/",
+      "reference_selector": "main > article",
+      "calls": {
+        "curl": {
+          "command": [
+            "curl",
+            "--location",
+            "--silent",
+            "--show-error",
+            "--compressed",
+            "--max-time",
+            "30",
+            "--max-filesize",
+            "20971520",
+            "--dump-header",
+            "/tmp/ketch-live-audit-20260919/more-allrecipes-com-20144-banana-banana-bread/curl.headers",
+            "--output",
+            "/tmp/ketch-live-audit-20260919/more-allrecipes-com-20144-banana-banana-bread/curl.html",
+            "--write-out",
+            "%{json}",
+            "https://www.allrecipes.com/recipe/20144/banana-banana-bread/"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 184.83100400771946,
+          "captured_at": "2026-09-19T19:22:50.114529+00:00",
+          "stdout_bytes": 13969,
+          "stderr": "",
+          "http_code": 403,
+          "url_effective": "https://www.allrecipes.com/recipe/20144/banana-banana-bread/"
+        },
+        "ketch-raw": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "scrape",
+            "https://www.allrecipes.com/recipe/20144/banana-banana-bread/",
+            "--raw",
+            "--no-cache",
+            "--no-llms-txt",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 477.4422360060271,
+          "captured_at": "2026-09-19T19:22:50.592156+00:00",
+          "stdout_bytes": 719356,
+          "stderr": "",
+          "source": "http",
+          "html_bytes": 624111,
+          "html_sha256": "64f687bc3a104b093b383d8c5466825293b24d3dd1c5863a2ccb6df66eecad26"
+        },
+        "extract-ketch-raw": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "extract",
+            "--url",
+            "https://www.allrecipes.com/recipe/20144/banana-banana-bread/",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 68.90503500471823,
+          "captured_at": "2026-09-19T19:22:50.671588+00:00",
+          "stdout_bytes": 31998,
+          "stderr": "",
+          "markdown_bytes": 30733,
+          "markdown_sha256": "4463e372df6c25213b314dd72d757669c1057df0bd2f1b55d0f07ea694348743"
+        },
+        "ketch-scrape": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "scrape",
+            "https://www.allrecipes.com/recipe/20144/banana-banana-bread/",
+            "--no-cache",
+            "--no-llms-txt",
+            "--json"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 358.5639370139688,
+          "captured_at": "2026-09-19T19:22:51.280745+00:00",
+          "stdout_bytes": 31985,
+          "stderr": "",
+          "markdown_bytes": 30733,
+          "markdown_sha256": "4463e372df6c25213b314dd72d757669c1057df0bd2f1b55d0f07ea694348743"
+        }
+      }
+    },
+    {
+      "id": "more-redcross-org-types-of-emergencies-flood",
+      "url": "https://www.redcross.org/get-help/how-to-prepare-for-emergencies/types-of-emergencies/flood.html",
+      "reference_selector": "main",
+      "calls": {
+        "curl": {
+          "command": [
+            "curl",
+            "--location",
+            "--silent",
+            "--show-error",
+            "--compressed",
+            "--max-time",
+            "30",
+            "--max-filesize",
+            "20971520",
+            "--dump-header",
+            "/tmp/ketch-live-audit-20260919/more-redcross-org-types-of-emergencies-flood/curl.headers",
+            "--output",
+            "/tmp/ketch-live-audit-20260919/more-redcross-org-types-of-emergencies-flood/curl.html",
+            "--write-out",
+            "%{json}",
+            "https://www.redcross.org/get-help/how-to-prepare-for-emergencies/types-of-emergencies/flood.html"
+          ],
+          "exit_code": 0,
+          "elapsed_ms": 73.67485100985505,
+          "captured_at": "2026-09-19T19:22:50.030787+00:00",
+          "stdout_bytes": 14134,
+          "stderr": "",
+          "http_code": 403,
+          "url_effective": "https://www.redcross.org/get-help/how-to-prepare-for-emergencies/types-of-emergencies/flood.html"
+        },
+        "ketch-raw": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "scrape",
+            "https://www.redcross.org/get-help/how-to-prepare-for-emergencies/types-of-emergencies/flood.html",
+            "--raw",
+            "--no-cache",
+            "--no-llms-txt",
+            "--json"
+          ],
+          "exit_code": 4,
+          "elapsed_ms": 57.673056988278404,
+          "captured_at": "2026-09-19T19:22:50.088631+00:00",
+          "stdout_bytes": 0,
+          "stderr": "Error: scrape failed: HTTP 403 for https://www.redcross.org/get-help/how-to-prepare-for-emergencies/types-of-emergencies/flood.html\n"
+        },
+        "ketch-scrape": {
+          "command": [
+            "/tmp/ketch-bench500/ketch-current",
+            "scrape",
+            "https://www.redcross.org/get-help/how-to-prepare-for-emergencies/types-of-emergencies/flood.html",
+            "--no-cache",
+            "--no-llms-txt",
+            "--json"
+          ],
+          "exit_code": 4,
+          "elapsed_ms": 63.2737569976598,
+          "captured_at": "2026-09-19T19:22:50.402149+00:00",
+          "stdout_bytes": 0,
+          "stderr": "Error: scrape failed: HTTP 403 for https://www.redcross.org/get-help/how-to-prepare-for-emergencies/types-of-emergencies/flood.html\n"
+        }
+      }
+    }
+  ],
+  "comparisons": [
+    {
+      "id": "nps",
+      "url": "https://www.nps.gov/yell/planyourvisit/safety.htm",
+      "both_fetches_succeeded": true,
+      "curl_status": 200,
+      "ketch_raw_exit": 0,
+      "raw_bytes_equal": true,
+      "curl_replay_equals_live_markdown": true,
+      "ketch_raw_replay_equals_live_markdown": true,
+      "raw_matches_pinned_html": false,
+      "markdown_matches_bench": true
+    },
+    {
+      "id": "git-rebase",
+      "url": "https://git-scm.com/docs/git-rebase",
+      "both_fetches_succeeded": true,
+      "curl_status": 200,
+      "ketch_raw_exit": 0,
+      "raw_bytes_equal": true,
+      "curl_replay_equals_live_markdown": true,
+      "ketch_raw_replay_equals_live_markdown": true,
+      "raw_matches_pinned_html": true,
+      "markdown_matches_bench": true
+    },
+    {
+      "id": "react-state",
+      "url": "https://react.dev/learn/state-a-components-memory",
+      "both_fetches_succeeded": true,
+      "curl_status": 200,
+      "ketch_raw_exit": 0,
+      "raw_bytes_equal": true,
+      "curl_replay_equals_live_markdown": true,
+      "ketch_raw_replay_equals_live_markdown": true,
+      "raw_matches_pinned_html": true,
+      "markdown_matches_bench": true
+    },
+    {
+      "id": "more-w3-org-images-decorative",
+      "url": "https://www.w3.org/WAI/tutorials/images/decorative/",
+      "both_fetches_succeeded": true,
+      "curl_status": 200,
+      "ketch_raw_exit": 0,
+      "raw_bytes_equal": true,
+      "curl_replay_equals_live_markdown": true,
+      "ketch_raw_replay_equals_live_markdown": true,
+      "raw_matches_pinned_html": true,
+      "markdown_matches_bench": true
+    },
+    {
+      "id": "more-redis-io-data-types-lists",
+      "url": "https://redis.io/docs/latest/develop/data-types/lists/",
+      "both_fetches_succeeded": true,
+      "curl_status": 200,
+      "ketch_raw_exit": 0,
+      "raw_bytes_equal": false,
+      "curl_replay_equals_live_markdown": true,
+      "ketch_raw_replay_equals_live_markdown": true,
+      "raw_matches_pinned_html": true,
+      "markdown_matches_bench": true
+    },
+    {
+      "id": "more-allrecipes-com-20144-banana-banana-bread",
+      "url": "https://www.allrecipes.com/recipe/20144/banana-banana-bread/",
+      "both_fetches_succeeded": false,
+      "curl_status": 403,
+      "ketch_raw_exit": 0,
+      "ketch_raw_replay_equals_live_markdown": true,
+      "raw_matches_pinned_html": false,
+      "markdown_matches_bench": false
+    },
+    {
+      "id": "more-redcross-org-types-of-emergencies-flood",
+      "url": "https://www.redcross.org/get-help/how-to-prepare-for-emergencies/types-of-emergencies/flood.html",
+      "both_fetches_succeeded": false,
+      "curl_status": 403,
+      "ketch_raw_exit": 4
+    }
+  ],
+  "source_and_markdown_inspection": [
+    {
+      "checks": [
+        {
+          "critical": true,
+          "id": "opening",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "Transplant a series of commits onto a different starting point."
+        },
+        {
+          "critical": true,
+          "id": "middle",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "The merge backend works with the full commits on both sides of history and thus has no such limitations."
+        },
+        {
+          "critical": true,
+          "id": "closing",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "Text editor used by git rebase -i for editing the rebase instruction file."
+        },
+        {
+          "critical": false,
+          "id": "section-heading",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "heading",
+          "text": "SYNOPSIS"
+        },
+        {
+          "critical": false,
+          "id": "later-heading",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "heading",
+          "text": "Interruptability"
+        },
+        {
+          "critical": true,
+          "id": "code-example",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "code",
+          "text": "git rebase [-i | --interactive] [<options>] [--exec <cmd>]\n\t[--onto <newbase> | --keep-base] [<upstream> [<branch>]]\ngit rebase [-i | --interactive] [<options>] [--exec <cmd>] [--onto <newbase>]\n\t--root [<branch>]\ngit rebase (--continue|--skip|--abort|--quit|--edit-todo|--show-current-patch)"
+        },
+        {
+          "critical": false,
+          "id": "navigation-noise",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": false
+          },
+          "in_source_content": false,
+          "kind": "absent",
+          "text": "Software Freedom Conservancy"
+        }
+      ],
+      "id": "git-rebase",
+      "modes": {
+        "extract-curl": {
+          "bytes": 20665,
+          "code_blocks": 2,
+          "headings": [],
+          "tables": 1,
+          "words": 2488
+        },
+        "extract-ketch-raw": {
+          "bytes": 20665,
+          "code_blocks": 2,
+          "headings": [],
+          "tables": 1,
+          "words": 2488
+        },
+        "installed-extract-curl": {
+          "bytes": 20665,
+          "code_blocks": 2,
+          "headings": [],
+          "tables": 1,
+          "words": 2488
+        },
+        "ketch-scrape": {
+          "bytes": 20665,
+          "code_blocks": 2,
+          "headings": [],
+          "tables": 1,
+          "words": 2488
+        },
+        "selector-curl": {
+          "bytes": 68216,
+          "code_blocks": 37,
+          "headings": [
+            "NAME",
+            "SYNOPSIS",
+            "DESCRIPTION",
+            "TRANSPLANTING A TOPIC BRANCH WITH --ONTO",
+            "MODE OPTIONS",
+            "OPTIONS",
+            "INCOMPATIBLE OPTIONS",
+            "BEHAVIORAL DIFFERENCES",
+            "Empty commits",
+            "Directory rename detection",
+            "Context",
+            "Labelling of conflicts markers",
+            "Hooks",
+            "Interruptability",
+            "Commit Rewording",
+            "Miscellaneous differences",
+            "MERGE STRATEGIES",
+            "NOTES",
+            "INTERACTIVE MODE",
+            "SPLITTING COMMITS",
+            "RECOVERING FROM UPSTREAM REBASE",
+            "The easy case",
+            "The hard case",
+            "REBASING MERGES",
+            "CONFIGURATION",
+            "GIT",
+            "rebase"
+          ],
+          "tables": 3,
+          "words": 8544
+        }
+      },
+      "source_code_blocks": 37,
+      "source_file": "/tmp/ketch-live-audit-20260919/git-rebase/curl.html",
+      "source_headings": [
+        "NAME",
+        "SYNOPSIS",
+        "DESCRIPTION",
+        "TRANSPLANTING A TOPIC BRANCH WITH --ONTO",
+        "MODE OPTIONS",
+        "OPTIONS",
+        "INCOMPATIBLE OPTIONS",
+        "BEHAVIORAL DIFFERENCES",
+        "Empty commits",
+        "Directory rename detection",
+        "Context",
+        "Labelling of conflicts markers",
+        "Hooks",
+        "Interruptability",
+        "Commit Rewording",
+        "Miscellaneous differences",
+        "MERGE STRATEGIES",
+        "NOTES",
+        "INTERACTIVE MODE",
+        "SPLITTING COMMITS",
+        "RECOVERING FROM UPSTREAM REBASE",
+        "The easy case",
+        "The hard case",
+        "REBASING MERGES",
+        "CONFIGURATION",
+        "GIT",
+        "rebase"
+      ],
+      "source_tables": 3,
+      "source_words": 8544,
+      "url": "https://git-scm.com/docs/git-rebase"
+    },
+    {
+      "checks": [
+        {
+          "critical": true,
+          "id": "opening",
+          "in_markdown_text": {
+            "extract-ketch-raw": true,
+            "ketch-scrape": true,
+            "selector-ketch-raw": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "This banana bread recipe creates the most delicious, moist loaf with loads of banana flavor."
+        },
+        {
+          "critical": true,
+          "id": "middle",
+          "in_markdown_text": {
+            "extract-ketch-raw": true,
+            "ketch-scrape": true,
+            "selector-ketch-raw": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "“This turned out so yummy,” raves Britt Pfaff. “I’m pretty sure this is the recipe I use every year but always forget!"
+        },
+        {
+          "critical": true,
+          "id": "closing",
+          "in_markdown_text": {
+            "extract-ketch-raw": true,
+            "ketch-scrape": true,
+            "selector-ketch-raw": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "Bake in the preheated oven until a toothpick inserted into the center comes out clean, about 60 minutes."
+        },
+        {
+          "critical": false,
+          "id": "section-heading",
+          "in_markdown_text": {
+            "extract-ketch-raw": true,
+            "ketch-scrape": true,
+            "selector-ketch-raw": true
+          },
+          "in_source_content": true,
+          "kind": "heading",
+          "text": "Banana Bread Ingredients"
+        },
+        {
+          "critical": false,
+          "id": "later-heading",
+          "in_markdown_text": {
+            "extract-ketch-raw": true,
+            "ketch-scrape": true,
+            "selector-ketch-raw": true
+          },
+          "in_source_content": true,
+          "kind": "heading",
+          "text": "Can You Freeze Banana Bread?"
+        },
+        {
+          "critical": false,
+          "id": "navigation-noise",
+          "in_markdown_text": {
+            "extract-ketch-raw": true,
+            "ketch-scrape": true,
+            "selector-ketch-raw": false
+          },
+          "in_source_content": false,
+          "kind": "absent",
+          "text": "People Inc."
+        }
+      ],
+      "id": "more-allrecipes-com-20144-banana-banana-bread",
+      "modes": {
+        "extract-ketch-raw": {
+          "bytes": 30733,
+          "code_blocks": 0,
+          "headings": [
+            "Banana Banana Bread",
+            "Banana Bread Ingredients",
+            "The Secret to Super Moist Banana Bread",
+            "Test Kitchen Tips",
+            "How to Store Banana Bread",
+            "Can You Freeze Banana Bread?",
+            "Allrecipes Community Tips and Praise",
+            "Ingredients",
+            "Directions",
+            "Nutrition Facts (per serving)",
+            "Photos of Banana Banana Bread",
+            "Most-Saved Recipes Like This",
+            "You’ll Also Love"
+          ],
+          "tables": 2,
+          "words": 2327
+        },
+        "ketch-scrape": {
+          "bytes": 30733,
+          "code_blocks": 0,
+          "headings": [
+            "Banana Banana Bread",
+            "Banana Bread Ingredients",
+            "The Secret to Super Moist Banana Bread",
+            "Test Kitchen Tips",
+            "How to Store Banana Bread",
+            "Can You Freeze Banana Bread?",
+            "Allrecipes Community Tips and Praise",
+            "Ingredients",
+            "Directions",
+            "Nutrition Facts (per serving)",
+            "Photos of Banana Banana Bread",
+            "Most-Saved Recipes Like This",
+            "You’ll Also Love"
+          ],
+          "tables": 2,
+          "words": 2327
+        },
+        "selector-ketch-raw": {
+          "bytes": 11781,
+          "code_blocks": 0,
+          "headings": [
+            "Banana Banana Bread",
+            "Banana Bread Ingredients",
+            "The Secret to Super Moist Banana Bread",
+            "Test Kitchen Tips",
+            "How to Store Banana Bread",
+            "Can You Freeze Banana Bread?",
+            "Allrecipes Community Tips and Praise",
+            "Ingredients",
+            "Directions",
+            "Nutrition Facts (per serving)",
+            "Photos of Banana Banana Bread"
+          ],
+          "tables": 2,
+          "words": 1696
+        }
+      },
+      "source_code_blocks": 0,
+      "source_file": "/tmp/ketch-live-audit-20260919/more-allrecipes-com-20144-banana-banana-bread/ketch-raw.html",
+      "source_headings": [
+        "Banana Banana Bread",
+        "Banana Bread Ingredients",
+        "The Secret to Super Moist Banana Bread",
+        "Test Kitchen Tips",
+        "How to Store Banana Bread",
+        "Can You Freeze Banana Bread?",
+        "Allrecipes Community Tips and Praise",
+        "Ingredients",
+        "Directions",
+        "Nutrition Facts (per serving)"
+      ],
+      "source_tables": 2,
+      "source_words": 1231,
+      "url": "https://www.allrecipes.com/recipe/20144/banana-banana-bread/"
+    },
+    {
+      "checks": [
+        {
+          "critical": true,
+          "id": "opening",
+          "in_markdown_text": {
+            "extract-curl": true,
+            "extract-ketch-raw": true,
+            "installed-extract-curl": true,
+            "ketch-scrape": true,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "Redis lists are linked lists of string values. Redis lists are frequently used to:"
+        },
+        {
+          "critical": true,
+          "id": "middle",
+          "in_markdown_text": {
+            "extract-curl": true,
+            "extract-ketch-raw": true,
+            "installed-extract-curl": true,
+            "ketch-scrape": true,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "Redis allows us to use lists as a capped collection, only remembering the latest N items and discarding all the oldest items using the LTRIM command."
+        },
+        {
+          "critical": true,
+          "id": "closing",
+          "in_markdown_text": {
+            "extract-curl": true,
+            "extract-ketch-raw": true,
+            "installed-extract-curl": true,
+            "ketch-scrape": true,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "Consider Redis streams as an alternative to lists when you need to store and process an indeterminate series of events."
+        },
+        {
+          "critical": false,
+          "id": "section-heading",
+          "in_markdown_text": {
+            "extract-curl": true,
+            "extract-ketch-raw": true,
+            "installed-extract-curl": true,
+            "ketch-scrape": true,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "heading",
+          "text": "Examples"
+        },
+        {
+          "critical": false,
+          "id": "later-heading",
+          "in_markdown_text": {
+            "extract-curl": true,
+            "extract-ketch-raw": true,
+            "installed-extract-curl": true,
+            "ketch-scrape": true,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "heading",
+          "text": "Blocking operations on lists"
+        },
+        {
+          "critical": true,
+          "id": "code-example",
+          "in_markdown_text": {
+            "extract-curl": true,
+            "extract-ketch-raw": true,
+            "installed-extract-curl": true,
+            "ketch-scrape": true,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "code",
+          "text": "> LPUSH bikes:repairs bike:1\n(integer) 1\n> LPUSH bikes:repairs bike:2\n(integer) 2\n> RPOP bikes:repairs\n\"bike:1\"\n> RPOP bikes:repairs\n\"bike:2\""
+        },
+        {
+          "critical": false,
+          "id": "navigation-noise",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": false
+          },
+          "in_source_content": false,
+          "kind": "absent",
+          "text": "Legal notices"
+        }
+      ],
+      "id": "more-redis-io-data-types-lists",
+      "modes": {
+        "extract-curl": {
+          "bytes": 199845,
+          "code_blocks": 191,
+          "headings": [
+            "Examples",
+            "What are Lists?",
+            "First steps with Redis Lists",
+            "Common use cases for lists",
+            "Capped lists",
+            "Blocking operations on lists",
+            "Automatic creation and removal of keys",
+            "Limits",
+            "Performance",
+            "Alternatives",
+            "Learn more"
+          ],
+          "tables": 0,
+          "words": 18926
+        },
+        "extract-ketch-raw": {
+          "bytes": 199845,
+          "code_blocks": 191,
+          "headings": [
+            "Examples",
+            "What are Lists?",
+            "First steps with Redis Lists",
+            "Common use cases for lists",
+            "Capped lists",
+            "Blocking operations on lists",
+            "Automatic creation and removal of keys",
+            "Limits",
+            "Performance",
+            "Alternatives",
+            "Learn more"
+          ],
+          "tables": 0,
+          "words": 18926
+        },
+        "installed-extract-curl": {
+          "bytes": 199173,
+          "code_blocks": 191,
+          "headings": [
+            "Examples",
+            "What are Lists?",
+            "First steps with Redis Lists",
+            "Common use cases for lists",
+            "Capped lists",
+            "Blocking operations on lists",
+            "Automatic creation and removal of keys",
+            "Limits",
+            "Performance",
+            "Alternatives",
+            "Learn more"
+          ],
+          "tables": 0,
+          "words": 18926
+        },
+        "ketch-scrape": {
+          "bytes": 199845,
+          "code_blocks": 191,
+          "headings": [
+            "Examples",
+            "What are Lists?",
+            "First steps with Redis Lists",
+            "Common use cases for lists",
+            "Capped lists",
+            "Blocking operations on lists",
+            "Automatic creation and removal of keys",
+            "Limits",
+            "Performance",
+            "Alternatives",
+            "Learn more"
+          ],
+          "tables": 0,
+          "words": 18926
+        },
+        "selector-curl": {
+          "bytes": 654340,
+          "code_blocks": 191,
+          "headings": [
+            "Redis lists",
+            "Examples",
+            "What are Lists?",
+            "First steps with Redis Lists",
+            "Common use cases for lists",
+            "Capped lists",
+            "Blocking operations on lists",
+            "Automatic creation and removal of keys",
+            "Limits",
+            "Performance",
+            "Alternatives",
+            "Learn more"
+          ],
+          "tables": 0,
+          "words": 55707
+        }
+      },
+      "source_code_blocks": 180,
+      "source_file": "/tmp/ketch-live-audit-20260919/more-redis-io-data-types-lists/curl.html",
+      "source_headings": [
+        "Redis lists",
+        "Examples",
+        "What are Lists?",
+        "First steps with Redis Lists",
+        "Common use cases for lists",
+        "Capped lists",
+        "Blocking operations on lists",
+        "Automatic creation and removal of keys",
+        "Limits",
+        "Performance",
+        "Alternatives",
+        "Learn more"
+      ],
+      "source_tables": 0,
+      "source_words": 45450,
+      "url": "https://redis.io/docs/latest/develop/data-types/lists/"
+    },
+    {
+      "checks": [
+        {
+          "critical": true,
+          "id": "opening",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "Decorative images don’t add information to the content of a page."
+        },
+        {
+          "critical": true,
+          "id": "middle",
+          "in_markdown_text": {
+            "extract-curl": true,
+            "extract-ketch-raw": true,
+            "installed-extract-curl": true,
+            "ketch-scrape": true,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "This illustration of a crocus bulb is used to make the link easier to identify and to increase the clickable area but doesn’t add to the information already provided in the adjacent link text (of the same anchor)."
+        },
+        {
+          "critical": true,
+          "id": "closing",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "These tutorials provide best-practice guidance on implementing accessibility in different situations."
+        },
+        {
+          "critical": false,
+          "id": "section-heading",
+          "in_markdown_text": {
+            "extract-curl": true,
+            "extract-ketch-raw": true,
+            "installed-extract-curl": true,
+            "ketch-scrape": true,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "heading",
+          "text": "Example 1: Image used as part of page design"
+        },
+        {
+          "critical": false,
+          "id": "later-heading",
+          "in_markdown_text": {
+            "extract-curl": true,
+            "extract-ketch-raw": true,
+            "installed-extract-curl": true,
+            "ketch-scrape": true,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "heading",
+          "text": "Example 3: Image with adjacent text alternative"
+        },
+        {
+          "critical": true,
+          "id": "code-example",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "code",
+          "text": "<a href=\"crocuspage.html\">\n  <img src=\"crocus.jpg\" alt=\"\">\n  <strong> Crocus bulbs</strong>\n</a>"
+        },
+        {
+          "critical": false,
+          "id": "navigation-noise",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": false
+          },
+          "in_source_content": false,
+          "kind": "absent",
+          "text": "Permission to Use WAI Material"
+        }
+      ],
+      "id": "more-w3-org-images-decorative",
+      "modes": {
+        "extract-curl": {
+          "bytes": 1557,
+          "code_blocks": 0,
+          "headings": [
+            "Example 1: Image used as part of page design",
+            "Example 2: Decorative image as part of a text link",
+            "Example 3: Image with adjacent text alternative",
+            "Example 4: Image used for ambiance (eye-candy)"
+          ],
+          "tables": 0,
+          "words": 218
+        },
+        "extract-ketch-raw": {
+          "bytes": 1557,
+          "code_blocks": 0,
+          "headings": [
+            "Example 1: Image used as part of page design",
+            "Example 2: Decorative image as part of a text link",
+            "Example 3: Image with adjacent text alternative",
+            "Example 4: Image used for ambiance (eye-candy)"
+          ],
+          "tables": 0,
+          "words": 218
+        },
+        "installed-extract-curl": {
+          "bytes": 1557,
+          "code_blocks": 0,
+          "headings": [
+            "Example 1: Image used as part of page design",
+            "Example 2: Decorative image as part of a text link",
+            "Example 3: Image with adjacent text alternative",
+            "Example 4: Image used for ambiance (eye-candy)"
+          ],
+          "tables": 0,
+          "words": 218
+        },
+        "ketch-scrape": {
+          "bytes": 1557,
+          "code_blocks": 0,
+          "headings": [
+            "Example 1: Image used as part of page design",
+            "Example 2: Decorative image as part of a text link",
+            "Example 3: Image with adjacent text alternative",
+            "Example 4: Image used for ambiance (eye-candy)"
+          ],
+          "tables": 0,
+          "words": 218
+        },
+        "selector-curl": {
+          "bytes": 6485,
+          "code_blocks": 5,
+          "headings": [
+            "Decorative Images",
+            "Overview",
+            "Example 1: Image used as part of page design",
+            "Example 2: Decorative image as part of a text link",
+            "Example 3: Image with adjacent text alternative",
+            "Example 4: Image used for ambiance (eye-candy)",
+            "Help improve this page"
+          ],
+          "tables": 0,
+          "words": 705
+        }
+      },
+      "source_code_blocks": 5,
+      "source_file": "/tmp/ketch-live-audit-20260919/more-w3-org-images-decorative/curl.html",
+      "source_headings": [
+        "Decorative Images",
+        "Overview",
+        "Example 1: Image used as part of page design",
+        "Example 2: Decorative image as part of a text link",
+        "Example 3: Image with adjacent text alternative",
+        "Example 4: Image used for ambiance (eye-candy)"
+      ],
+      "source_tables": 0,
+      "source_words": 636,
+      "url": "https://www.w3.org/WAI/tutorials/images/decorative/"
+    },
+    {
+      "checks": [
+        {
+          "critical": true,
+          "id": "thermal-danger",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "Burns from thermal features are a common cause of serious injury and death in the park"
+        },
+        {
+          "critical": true,
+          "id": "thin-crust",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "a thin crust with super-heated water below"
+        },
+        {
+          "critical": true,
+          "id": "wildlife",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "Animals in Yellowstone National Park are wild and dangerous"
+        },
+        {
+          "critical": false,
+          "id": "heading-thermal-areas",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "heading",
+          "text": "Thermal Areas"
+        },
+        {
+          "critical": false,
+          "id": "heading-bison",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "heading",
+          "text": "Bison"
+        },
+        {
+          "critical": false,
+          "id": "exclude-chrome",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": false
+          },
+          "in_source_content": false,
+          "kind": "absent",
+          "text": "Stay Connected"
+        },
+        {
+          "critical": true,
+          "id": "expanded-boardwalk-guidance",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "Always walk on boardwalks and designated trails"
+        },
+        {
+          "critical": true,
+          "id": "emergency-callout",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "Emergency? Call 911 or notify a park ranger"
+        },
+        {
+          "critical": false,
+          "id": "accordion-label",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "heading",
+          "text": "Stay on boardwalks"
+        }
+      ],
+      "id": "nps",
+      "modes": {
+        "extract-curl": {
+          "bytes": 934,
+          "code_blocks": 0,
+          "headings": [
+            "Find Out More"
+          ],
+          "tables": 0,
+          "words": 91
+        },
+        "extract-ketch-raw": {
+          "bytes": 934,
+          "code_blocks": 0,
+          "headings": [
+            "Find Out More"
+          ],
+          "tables": 0,
+          "words": 91
+        },
+        "installed-extract-curl": {
+          "bytes": 934,
+          "code_blocks": 0,
+          "headings": [
+            "Find Out More"
+          ],
+          "tables": 0,
+          "words": 91
+        },
+        "ketch-scrape": {
+          "bytes": 934,
+          "code_blocks": 0,
+          "headings": [
+            "Find Out More"
+          ],
+          "tables": 0,
+          "words": 91
+        },
+        "selector-curl": {
+          "bytes": 25916,
+          "code_blocks": 1,
+          "headings": [
+            "Safety",
+            "Emergency?",
+            "Embed Video",
+            "Find Out More",
+            "Thermal Areas",
+            "Stay on boardwalks",
+            "Don't touch thermal features or runoff",
+            "Swimming or soaking in hot springs is prohibited",
+            "Pets are prohibited in thermal areas",
+            "If you feel sick, leave the thermal area immediately",
+            "All Wildlife",
+            "Never approach wildlife",
+            "Never feed wildlife",
+            "Stay with your stuff",
+            "Report all wildlife conflicts",
+            "Bears",
+            "Stay at least 100 yards away from bears",
+            "Carry bear spray (and know how to use it)",
+            "How to Use Bear Spray",
+            "Proper Storage and Recycling",
+            "Buying Bear Spray",
+            "Renting Bear Spray",
+            "Hike in groups of 3 or more people",
+            "Know what to do if you encounter a bear",
+            "Surprise Encounters",
+            "Charging Bears",
+            "Curious or Predatory Bears",
+            "Respect closures and restrictions",
+            "Honk if a bear approaches your car",
+            "Deter bears while camping",
+            "Choose Your Campsite",
+            "Store All Food & Attractants",
+            "Cook & Clean Up Properly",
+            "Secure Your Sleeping Area",
+            "Encountering Bears In Camp",
+            "Bison",
+            "Stay at least 25 yards away from bison",
+            "Run away if a bison charges",
+            "Drive carefully around bison",
+            "Elk",
+            "Stay at least 25 yards away from elk",
+            "Run away if an elk charges",
+            "Be especially cautious in the spring and fall",
+            "Wolves & Cougars",
+            "Stay at least 100 yards away from wolves & cougars",
+            "Stand your ground if a wolf is nearby",
+            "Stand your ground if a cougar is nearby",
+            "Don't handle wolf scat",
+            "Driving",
+            "Observe the speed limit",
+            "Don't park in the road",
+            "Ticks & Mosquitoes",
+            "Always check for ticks",
+            "Help prevent mosquito bites",
+            "Weather & Environment",
+            "Expect thunderstorms in the summer",
+            "Prepare for winter weather any time of year",
+            "Don't drink untreated water",
+            "Be careful crossing streams",
+            "Know the signs for altitude sickness",
+            "Visit safely in the winter"
+          ],
+          "tables": 0,
+          "words": 3800
+        }
+      },
+      "source_code_blocks": 0,
+      "source_file": "/tmp/ketch-live-audit-20260919/nps/curl.html",
+      "source_headings": [
+        "Safety",
+        "Emergency?",
+        "Find Out More",
+        "",
+        "Thermal Areas",
+        "Stay on boardwalks",
+        "Don't touch thermal features or runoff",
+        "Swimming or soaking in hot springs is prohibited",
+        "Pets are prohibited in thermal areas",
+        "If you feel sick, leave the thermal area immediately",
+        "",
+        "All Wildlife",
+        "Never approach wildlife",
+        "Never feed wildlife",
+        "Stay with your stuff",
+        "Report all wildlife conflicts",
+        "",
+        "Bears",
+        "Stay at least 100 yards away from bears",
+        "Carry bear spray (and know how to use it)",
+        "How to Use Bear Spray",
+        "Proper Storage and Recycling",
+        "Buying Bear Spray",
+        "Renting Bear Spray",
+        "Hike in groups of 3 or more people",
+        "Know what to do if you encounter a bear",
+        "Surprise Encounters",
+        "Charging Bears",
+        "Curious or Predatory Bears",
+        "Respect closures and restrictions",
+        "Honk if a bear approaches your car",
+        "Deter bears while camping",
+        "Choose Your Campsite",
+        "Store All Food & Attractants",
+        "Cook & Clean Up Properly",
+        "Secure Your Sleeping Area",
+        "Encountering Bears In Camp",
+        "",
+        "Bison",
+        "Stay at least 25 yards away from bison",
+        "Run away if a bison charges",
+        "Drive carefully around bison",
+        "",
+        "Elk",
+        "Stay at least 25 yards away from elk",
+        "Run away if an elk charges",
+        "Be especially cautious in the spring and fall",
+        "",
+        "Wolves & Cougars",
+        "Stay at least 100 yards away from wolves & cougars",
+        "Stand your ground if a wolf is nearby",
+        "Stand your ground if a cougar is nearby",
+        "Don't handle wolf scat",
+        "",
+        "Driving",
+        "Observe the speed limit",
+        "Don't park in the road",
+        "",
+        "Ticks & Mosquitoes",
+        "Always check for ticks",
+        "Help prevent mosquito bites",
+        "",
+        "Weather & Environment",
+        "Expect thunderstorms in the summer",
+        "Prepare for winter weather any time of year",
+        "Don't drink untreated water",
+        "Be careful crossing streams",
+        "Know the signs for altitude sickness",
+        "Visit safely in the winter"
+      ],
+      "source_tables": 1,
+      "source_words": 3791,
+      "url": "https://www.nps.gov/yell/planyourvisit/safety.htm"
+    },
+    {
+      "checks": [
+        {
+          "critical": true,
+          "id": "opening",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "Components often need to change what’s on the screen as a result of an interaction."
+        },
+        {
+          "critical": true,
+          "id": "middle",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "Every time your component renders, useState gives you an array containing two values:"
+        },
+        {
+          "critical": true,
+          "id": "closing",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "text",
+          "text": "After fixing the crash, add a “Previous” button that shows the previous sculpture."
+        },
+        {
+          "critical": false,
+          "id": "section-heading",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "heading",
+          "text": "You will learn"
+        },
+        {
+          "critical": false,
+          "id": "later-heading",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "heading",
+          "text": "Anatomy of useState"
+        },
+        {
+          "critical": true,
+          "id": "code-example",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": true
+          },
+          "in_source_content": true,
+          "kind": "code",
+          "text": "import { sculptureList } from './data.js';\n\nexport default function Gallery() {\n  let index = 0;\n\n  function handleClick() {\n    index = index + 1;\n  }"
+        },
+        {
+          "critical": false,
+          "id": "navigation-noise",
+          "in_markdown_text": {
+            "extract-curl": false,
+            "extract-ketch-raw": false,
+            "installed-extract-curl": false,
+            "ketch-scrape": false,
+            "selector-curl": false
+          },
+          "in_source_content": false,
+          "kind": "absent",
+          "text": "Overview"
+        }
+      ],
+      "id": "react-state",
+      "modes": {
+        "extract-curl": {
+          "bytes": 8082,
+          "code_blocks": 1,
+          "headings": [],
+          "tables": 0,
+          "words": 1036
+        },
+        "extract-ketch-raw": {
+          "bytes": 8082,
+          "code_blocks": 1,
+          "headings": [],
+          "tables": 0,
+          "words": 1036
+        },
+        "installed-extract-curl": {
+          "bytes": 7388,
+          "code_blocks": 1,
+          "headings": [],
+          "tables": 0,
+          "words": 899
+        },
+        "ketch-scrape": {
+          "bytes": 8082,
+          "code_blocks": 1,
+          "headings": [],
+          "tables": 0,
+          "words": 1036
+        },
+        "selector-curl": {
+          "bytes": 25151,
+          "code_blocks": 12,
+          "headings": [
+            "State: A Component's Memory",
+            "You will learn",
+            "When a regular variable isn’t enough",
+            "Adding a state variable",
+            "Meet your first Hook",
+            "Pitfall",
+            "Anatomy of useState",
+            "Note",
+            "Giving a component multiple state variables",
+            "Deep Dive",
+            "How does React know which state to return?",
+            "State is isolated and private",
+            "Recap",
+            "Try out some challenges",
+            "Challenge 1 of 4: Complete the gallery"
+          ],
+          "tables": 0,
+          "words": 2963
+        }
+      },
+      "source_code_blocks": 12,
+      "source_file": "/tmp/ketch-live-audit-20260919/react-state/curl.html",
+      "source_headings": [
+        "State: A Component's Memory",
+        "You will learn",
+        "When a regular variable isn’t enough",
+        "Adding a state variable",
+        "Meet your first Hook",
+        "Pitfall",
+        "Anatomy of useState",
+        "Note",
+        "Giving a component multiple state variables",
+        "Deep Dive",
+        "How does React know which state to return?",
+        "State is isolated and private",
+        "Recap",
+        "Try out some challenges",
+        "Challenge 1 of 4: Complete the gallery"
+      ],
+      "source_tables": 0,
+      "source_words": 2869,
+      "url": "https://react.dev/learn/state-a-components-memory"
+    }
+  ],
+  "redis_code_audit": {
+    "source_code_blocks": 191,
+    "source_unique_code_blocks": 186,
+    "all_code_texts_and_multiplicities_preserved_after_whitespace_normalization": true,
+    "exact_code_matches_after_only_crlf_and_outer_newline_normalization": 188,
+    "format_differences_in_source_block_indices": [
+      6,
+      14,
+      16
+    ],
+    "all_format_differences_are_in_full_source_templates": true,
+    "ordinary_non_template_code_blocks": 180,
+    "ordinary_non_template_code_blocks_preserved_exactly": 180,
+    "hidden_api_signature_panels_in_reference_scope": 497,
+    "unique_normalized_signature_panels": 111,
+    "most_repeated_signature_copies": 22,
+    "interpretation": "The low word-coverage score does not demonstrate lost language examples on this page. Reference includes auxiliary, often repeated API-signature detail; content scope needs a separate review. Template full-file code adds output that the reference excludes. No benchmark annotation or score is changed by this audit."
+  },
+  "limitations": [
+    "Seven deliberately selected problem pages, not a representative sample.",
+    "Five curl HTTP 200 responses; AllRecipes was 403 to curl but fetched by ketch; Red Cross was 403 to both. No blocked response is treated as article content.",
+    "Phrase checks in this audit normalize case and whitespace; heading presence in text is not a heading-structure assertion. Full benchmark scores were not recomputed on changed live responses.",
+    "Redis code audit checks all blocks; whitespace normalization and stricter format checks are reported separately.",
+    "Timing observations are single requests, concurrent across hosts; not a speed comparison.",
+    "No production code, benchmark corpus, reference annotations or baseline changed."
+  ],
+  "artifact_directory": "bench/.runs/live-audit-20260919",
+  "environment": {
+    "KETCH_CONFIG": "/tmp/ketch-live-audit-20260919/config.json",
+    "KETCH_TAGS_PATH": "/tmp/ketch-live-audit-20260919/tags.db",
+    "XDG_CACHE_HOME": "/tmp/ketch-live-audit-20260919/cache",
+    "KETCH_NO_UPDATE_NOTIFIER": "1",
+    "NO_COLOR": "1",
+    "other_KETCH_overrides": "removed from child environment"
+  }
+}

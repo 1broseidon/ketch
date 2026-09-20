@@ -1,0 +1,2530 @@
+For other uses, see Solar System (disambiguation).
+
+
+
+
+
+
+
+Solar System
+
+
+
+The Sun, planets, moons, and dwarf planets[a]
+
+(true color, sizes to scale, distances not to scale)
+
+
+
+
+
+Age
+
+4.568 billion years[b]
+
+
+
+Location
+
+
+
+
+Local Interstellar Cloud
+
+Local Bubble[1]
+
+Orion–Cygnus Arm
+
+Milky Way[2]
+
+
+
+
+
+
+Nearest star
+
+
+
+
+Proxima Centauri
+
+ (4.2465 ly)[D 1]
+
+Alpha Centauri
+
+ (4.36 ly)[D 2]
+
+
+
+
+
+
+Population
+
+
+
+Stars
+
+Sun
+
+
+
+Planets
+
+
+
+
+
+Mercury
+
+
+Venus
+
+
+Earth
+
+
+Mars
+
+
+Jupiter
+
+
+Saturn
+
+
+Uranus
+
+
+Neptune
+
+
+
+
+
+
+
+Known dwarf planets
+
+
+
+
+
+Ceres
+
+
+Orcus
+
+
+Pluto
+
+
+Haumea
+
+
+Quaoar
+
+
+Makemake
+
+
+Gonggong
+
+
+Eris
+
+
+Sedna
+
+
+ more candidates...
+
+
+
+
+
+
+
+
+Known natural satellites
+
+758[D 3]
+
+
+
+Known minor planets
+
+1,462,402[D 4]
+
+
+
+Known comets
+
+4,629[D 4]
+
+
+
+Planetary system
+
+
+
+Star spectral type
+
+G2V
+
+
+
+Frost line
+
+~5 AU[3]
+
+
+
+Semi-major axis of outermost planet
+
+30.07 AU[D 5] (Neptune)
+
+
+
+Kuiper cliff
+
+50–70 AU[4][5]
+
+
+
+Heliopause
+
+detected at 120 AU[6]
+
+
+
+Hill sphere
+
+178,000–227,000 AU (2.82–3.59 ly; 0.865–1.1 pc)[7][8]
+
+
+
+Orbit about Galactic Center
+
+
+
+Invariable-to-galactic plane inclination
+
+~60°, to the ecliptic[c]
+
+
+
+Distance to
+
+Galactic Center
+
+
+24,000–28,000 ly
+[9]
+
+
+
+Orbital speed
+
+
+720,000 km/h (450,000 mi/h)[10]
+
+
+
+
+Orbital period
+
+~230 million years[10]
+
+
+
+
+The Solar System is the gravitationally bound system of the Sun and the masses that orbit it, most prominently its eight planets, of which Earth is one. The Solar System is an isolated single-star planetary system (not part of a larger star system) within the Milky Way Galaxy. The system formed about 4.6 billion years ago when a dense region of a molecular cloud collapsed, creating the Sun and a protoplanetary disc from which the orbiting bodies assembled.
+
+
+
+The Sun accounts for 99.86% of the Solar System's total mass. Inside the Sun's core, hydrogen is fused into helium, releasing energy that is emitted through the Sun's photosphere. This creates the heliosphere and a decreasing temperature gradient across the Solar System.
+
+
+
+The next most massive objects of the system are the eight planets, which by definition dominate the orbits they occupy. Closest to the Sun in order of increasing distance are the terrestrial planets – Mercury, Venus, Earth and Mars. These four planets are part of the inner Solar System. Earth and Mars are the only planets that orbit within the Sun's habitable zone, in which sunlight can keep surface water liquid under atmospheric pressure. Beyond the frost line at about five astronomical units (AU),[d] are the planets of the outer Solar System: two gas giants (Jupiter and Saturn) and two ice giants (Uranus and Neptune). Jupiter and Saturn possess nearly 90% of the non-stellar mass of the Solar System.
+
+
+
+Objects of planetary mass that do not dominate their orbit but directly orbit the Sun are called dwarf planets. The International Astronomical Union's Minor Planet Center lists Ceres, Pluto, Eris, Makemake, and Haumea as dwarf planets.[12] Four other Solar System objects are generally identified as such: Orcus, Quaoar, Gonggong, and Sedna.[13]  Less massive than the dwarf planets are the vast number of small Solar System bodies, such as asteroids, comets, centaurs, meteoroids, and interplanetary dust clouds.[e] The dwarf planet Ceres and many of these smaller bodies are located in the asteroid belt (between Mars's and Jupiter's orbit), while all other dwarf planets are members of populations of trans-Neptunian objects, which may be found in the Kuiper belt just outside Neptune or in the further scattered disc.
+
+
+
+Many objects in the Solar System do not orbit the Sun directly and are instead natural satellites, commonly called 'moons', of larger bodies.  These can be found throughout the Solar System in sizes from planetary-mass moons at their largest to much less massive moonlets at their smallest. The largest two moons (Ganymede of Jupiter and Titan of Saturn) are larger (though less massive) than the smallest planet (Mercury), while the seven most massive, which includes Earth's Moon, are more massive and larger than any of the dwarf planets.
+
+
+
+Within the heliosphere, the Solar System is constantly flooded by the charged plasma particles of the solar wind, which, along with interplanetary dust, gas and cosmic rays, form an interplanetary medium between the bodies of the Solar System. At around 70–90 AU from the Sun, the solar wind is halted by the interstellar medium, resulting in the heliopause and the border of the interplanetary medium to interstellar space. The theorized Oort cloud – the source for long-period comets – extends from somewhere beyond 2,000 AU to the outermost region of the Solar System. The latter reaches to the edge of the Sun's Hill sphere, at 178,000–227,000 AU (2.81–3.59 ly), where its gravitational potential becomes equal to the galactic potential.[14] The Solar System currently moves through a cloud of interstellar medium called the Local Cloud. The closest star to the Solar System, Proxima Centauri, is 269,000 AU (4.25 ly) away. Both are within the Local Bubble, a relatively small 1,000 light-years (ly) wide region of the Milky Way.
+
+
+
+
+
+
+Definition
+
+
+
+The Solar System includes the Sun and all objects that are bound to it by gravity and orbit it.[15][16][17]
+
+
+
+The International Astronomical Union describes the Solar System as all objects that are bound by the gravity of the Sun, the Sun itself, its eight planets, and the other celestial bodies which orbit it.[18] NASA describes the solar system as including the Sun and its planetary system.[19]
+
+
+
+Capitalization of the name varies. When not used as a proper noun and written without capitalization, "solar system" may refer to either the Solar System itself or any planetary system reminiscent of the Solar System.[15] The International Astronomical Union, the authoritative body regarding astronomical nomenclature, specifies capitalizing the names of all individual astronomical objects but uses mixed "Solar System" and "solar system" structures in their naming guidelines document.[20]
+
+
+
+
+
+
+Formation and evolution
+
+
+
+Main article: Formation and evolution of the Solar System
+
+
+
+
+
+Past
+
+
+Diagram of the early Solar System's protoplanetary disk, out of which Earth and other Solar System bodies formed
+
+The Solar System formed at least 4.568 billion years ago from the gravitational collapse of a region within a large molecular cloud.[b] This initial cloud was likely several light-years across and probably birthed several stars.[22] As is typical of molecular clouds, this one consisted mostly of hydrogen, with some helium, and small amounts of heavier elements fused by previous generations of stars.[23]
+
+
+
+As the pre-solar nebula[23] collapsed, conservation of angular momentum caused it to rotate faster. The center, where most of the mass collected, became increasingly hotter than the surroundings.[22] As the contracting nebula spun faster, it began to flatten into a protoplanetary disc with a diameter of roughly 200 AU[22][24] and a hot, dense protostar at the center.[25][26] The planets formed by accretion from this disc,[27] in which dust and gas gravitationally attracted each other, coalescing to form ever larger bodies. Hundreds of protoplanets may have existed in the early Solar System, but they either merged or were destroyed or ejected, leaving the planets, dwarf planets, and leftover minor bodies.[28][29]
+
+
+
+
+In the inner Solar System, heat from the accretion process exceeded the boiling point of hydrocarbon molecules for the first million years, leading to low carbon content for the inner planets. The boundary for this process has been dubbed the soot line.[30] As the Solar System disk cooled, this line moved inward and now lies within Earth's orbit around the Sun.[31] Material other than metals and silicates, due to their higher boiling points, could not persist in solid form. Here planets formed that are mainly rocky, which are Mercury, Venus, Earth, and Mars. Because these refractory materials only comprised a small fraction of the solar nebula, the terrestrial planets could not grow very large.[28]
+
+
+
+The giant planets (Jupiter, Saturn, Uranus, and Neptune) formed further out, beyond the frost line, the point between the orbits of Mars and Jupiter where material is cool enough for volatile icy compounds to remain solid. The ices that formed these planets were more plentiful than the metals and silicates that formed the terrestrial inner planets, allowing them to grow massive enough to capture large atmospheres of hydrogen and helium, the lightest and most abundant elements.[28] Leftover debris that never became planets congregated in regions such as the asteroid belt, Kuiper belt, and Oort cloud.[28]
+
+
+
+Within 50 million years, the pressure and density of hydrogen in the center of the protostar became great enough for it to begin thermonuclear fusion.[32] As helium accumulates at its core, the Sun is growing brighter;[33] early in its main-sequence life its brightness was 70% that of what it is today.[34] The temperature, reaction rate, pressure, and density increased until hydrostatic equilibrium was achieved: the thermal pressure counterbalancing the force of gravity. At this point, the Sun became a main-sequence star.[35] Solar wind from the Sun created the heliosphere and swept away the remaining gas and dust from the protoplanetary disc into interstellar space.[33]
+
+
+
+Following the dissipation of the protoplanetary disk, the Nice model proposes that gravitational encounters between planetesimals and the gas giants caused each to migrate into different orbits. This led to dynamical instability of the entire system, which scattered the planetesimals and ultimately placed the gas giants in their current positions. During this period, the grand tack hypothesis suggests that a final inward migration of Jupiter dispersed much of the asteroid belt, leading to the Late Heavy Bombardment of the inner planets.[36][37]
+
+
+
+
+
+
+Present and future
+
+
+
+The Solar System remains in a relatively stable, slowly evolving state by following isolated, gravitationally bound orbits around the Sun.[38] Although the Solar System has been fairly stable for billions of years, it is technically chaotic,[39] and may eventually be disrupted. There is a small chance that another star will pass through the Solar System in the next few billion years. Although this could destabilize the system and eventually lead millions of years later to expulsion of planets, collisions of planets, or planets hitting the Sun, it would most likely leave the Solar System much as it is today.[40]
+
+
+The current Sun compared to its peak size in the red-giant phase
+
+The Sun's main-sequence phase, from beginning to end, will last about 10 billion years for the Sun compared to around two billion years for all other subsequent phases of the Sun's pre-remnant life combined.[41] The Solar System will remain roughly as it is known today until the hydrogen in the core of the Sun has been entirely converted to helium, which will occur roughly 5 billion years from now. This will mark the end of the Sun's main-sequence life. At that time, the core of the Sun will contract with hydrogen fusion occurring along a shell surrounding the inert helium, and the energy output will be greater than at present. The outer layers of the Sun will expand to roughly 260 times its current diameter, and the Sun will become a red giant. Because of its increased surface area, the surface of the Sun will be cooler (2,600 K (4,220 °F) at its coolest) than it is on the main sequence.[41]
+
+
+
+The expanding Sun is expected to vaporize Mercury as well as Venus, and render Earth and Mars uninhabitable (possibly destroying Earth as well).[42][43] Eventually, the core will be hot enough for helium fusion; the Sun will burn helium for a fraction of the time it burned hydrogen in the core. The Sun is not massive enough to commence the fusion of heavier elements, and nuclear reactions in the core will dwindle. Its outer layers will be ejected into space, leaving behind a dense white dwarf, half the original mass of the Sun but only the size of Earth.[41] The ejected outer layers may form a planetary nebula, returning some of the material that formed the Sun – but now enriched with heavier elements like carbon – to the interstellar medium.[44][45]
+
+
+
+
+
+
+
+General characteristics
+
+
+A color enhanced photograph from the Moon of a range of components of the Solar System. The three dots at the lower left are from left to right the planets Saturn, Mars, and Mercury, and in the middle of the picture rises the Sun's corona over the dark limb of the Moon, which is from the right lit by earthshine.
+
+
+Astronomers sometimes divide the Solar System structure into separate regions. The inner Solar System includes Mercury, Venus, Earth, Mars, and the bodies in the asteroid belt. The outer Solar System includes Jupiter, Saturn, Uranus, Neptune, and the bodies in the Kuiper belt.[46] Since the discovery of the Kuiper belt, the outermost parts of the Solar System are considered a distinct region consisting of the objects beyond Neptune.[47]
+
+
+
+
+
+Composition
+
+
+
+Further information: List of Solar System objects and List of interstellar and circumstellar molecules
+
+
+
+The principal component of the Solar System is the Sun, a G-type main-sequence star that contains 99.86% of the system's known mass and dominates it gravitationally.[48] The Sun's four largest orbiting bodies, the giant planets, account for 99% of the remaining mass, with Jupiter and Saturn together comprising more than 90%. The remaining objects of the Solar System (including the four terrestrial planets, the dwarf planets, moons, asteroids, and comets) together comprise less than 0.002% of the Solar System's total mass.[f]
+
+
+
+The Sun is composed of roughly 98% hydrogen and helium,[52] as are Jupiter and Saturn.[53][54] A composition gradient exists in the Solar System, created by heat and light pressure from the early Sun; those objects closer to the Sun, which are more affected by heat and light pressure, are composed of elements with high melting points. Objects farther from the Sun are composed largely of materials with lower melting points.[55] The boundary in the Solar System beyond which those volatile substances could coalesce is known as the frost line, and it lies at roughly five times the Earth's distance from the Sun.[3]
+
+
+
+
+
+
+Orbits
+
+
+
+Animations of the Solar System's inner planets orbiting. Each frame represents 2 days of motion.
+Animations of the Solar System's outer planets orbiting. This animation is 100 times faster than the inner planet animation.
+
+
+The planets and other large objects in orbit around the Sun lie near the invariable plane of the Solar System, as does Earth's orbit, known as the ecliptic, and most closely the orbit of Jupiter, with an inclination to it of 0.3219°.[56] Smaller icy objects such as comets frequently orbit at significantly greater angles to this plane.[57][58] Most of the planets in the Solar System have secondary systems of their own, being orbited by natural satellites called moons. All of the largest natural satellites are in synchronous rotation, with one face permanently turned toward their parent. The four giant planets have planetary rings, thin discs of tiny particles that orbit them in unison.[59]
+
+
+
+As a result of the formation of the Solar System, planets and most other objects orbit the Sun in the same direction that the Sun is rotating. That is, counter-clockwise, as viewed from above Earth's north pole.[60] There are exceptions, such as Halley's Comet.[61] Most of the larger moons orbit their planets in prograde direction, matching the direction of planetary rotation; Neptune's moon Triton is the largest to orbit in the opposite, retrograde manner.[62] Most larger objects rotate around their own axes in the prograde direction relative to their orbit, though the rotation of Venus is retrograde.[63]
+
+
+
+To a good first approximation, Kepler's laws of planetary motion describe the orbits of objects around the Sun.[64]: 433–437  These laws stipulate that each object travels along an ellipse with the Sun at one focus, which causes the body's distance from the Sun to vary over the course of its year. A body's closest approach to the Sun is called its perihelion, whereas its most distant point from the Sun is called its aphelion.[65]: 9-6  With the exception of Mercury, the orbits of the planets are nearly circular, but many comets, asteroids, and Kuiper belt objects follow highly elliptical orbits. Kepler's laws only account for the influence of the Sun's gravity upon an orbiting body, not the gravitational pulls of different bodies upon each other. On a human time scale, these perturbations can be accounted for using numerical models,[65]: 9-6  but the planetary system can change chaotically over billions of years.[66]
+
+
+
+The angular momentum of the Solar System is a measure of the total amount of orbital and rotational momentum possessed by all its moving components.[67] Although the Sun dominates the system by mass, it accounts for only about 2% of the angular momentum.[68][69] The planets, dominated by Jupiter, account for most of the rest of the angular momentum due to the combination of their mass, orbit, and distance from the Sun, with a possibly significant contribution from comets.[68]
+
+
+
+Orbital periods and velocities of the planets
+
+
+Planet
+
+
+Orbital period
+
+
+Orbital velocity[70]
+
+
+
+
+
+(Earth days)
+
+
+(Earth years)
+
+
+
+
+
+Mercury
+
+
+87.969
+
+
+0.241
+
+
+47.9 km/s (29.8 mi/s)
+
+
+
+
+
+Venus
+
+
+224.701
+
+
+0.615
+
+
+35.0 km/s (21.7 mi/s)
+
+
+
+
+
+Earth
+
+
+365.256
+
+
+1.000
+
+
+29.8 km/s (18.5 mi/s)
+
+
+
+
+
+Mars
+
+
+686.980
+
+
+1.881
+
+
+24.1 km/s (15.0 mi/s)
+
+
+
+
+
+Jupiter
+
+
+4,332.589
+
+
+11.862
+
+
+13.1 km/s (8.1 mi/s)
+
+
+
+
+
+Saturn
+
+
+10,759.22
+
+
+29.457
+
+
+9.7 km/s (6.0 mi/s)
+
+
+
+
+
+Uranus
+
+
+30,688.5
+
+
+84.020
+
+
+6.8 km/s (4.2 mi/s)
+
+
+
+
+
+Neptune
+
+
+60,182
+
+
+164.8
+
+
+5.4 km/s (3.4 mi/s)
+
+
+
+
+
+
+
+
+Distances and scales
+
+
+Relative orbital distances in the Solar System visualized as a condensed rectangle
+
+
+The radius of the Sun is 0.0047 AU (700,000 km; 400,000 mi).[71] Thus, the Sun occupies 0.00001% (1 part in 107) of the volume of a sphere with a radius the size of Earth's orbit, whereas Earth's volume is roughly 1 millionth (10−6) that of the Sun. Jupiter, the largest planet, is 5.2 AU from the Sun and has a radius of 71,000 km (0.00047 AU; 44,000 mi), whereas the most distant planet, Neptune, is 30 AU from the Sun.[54][72]
+
+
+
+With a few exceptions, the farther a planet or belt is from the Sun, the larger the distance between its orbit and the orbit of the next nearest object to the Sun. For example, Venus is approximately 0.33 AU farther out from the Sun than Mercury, whereas Saturn is 4.3 AU out from Jupiter, and Neptune lies 10.5 AU out from Uranus. Attempts have been made to determine a relationship between these orbital distances, like the Titius–Bode law[73] and Johannes Kepler's model based on the Platonic solids,[74] but ongoing discoveries have invalidated these hypotheses.[75]
+
+
+
+Some Solar System models attempt to convey the relative scales involved in the Solar System in human terms. Some are small in scale (and may be mechanical – called orreries) – whereas others extend across cities or regional areas.[76] The largest such scale model, the Sweden Solar System, uses the 110-meter (361-foot) Avicii Arena in Stockholm as its substitute Sun, and, following the scale, Jupiter is a 7.5-meter (25-foot) sphere at Stockholm Arlanda Airport, 40 km (25 mi) away, whereas the farthest current object, Sedna, is a 10 cm (4 in) sphere in Luleå, 912 km (567 mi) away.[77][78] At that scale, the distance to Proxima Centauri would be roughly 8 times further than the Moon is from Earth.
+
+
+
+If the Sun–Neptune distance is scaled to 100 metres (330 ft), then the Sun would be about 3 cm (1.2 in) in diameter (roughly two-thirds the diameter of a golf ball), the giant planets would be all smaller than about 3 mm (0.12 in), and Earth's diameter along with that of the other terrestrial planets would be smaller than a flea (0.3 mm or 0.012 in) at this scale.[79]
+
+Comparison of the distances between planets, with the white bar showing orbital variations. The size of the planets is not to scale.
+
+
+
+
+
+Habitability
+
+
+
+Main article: Planetary habitability in the Solar System
+
+
+
+
+
+
+
+
+
+Comparison of the habitable zones of the Solar System and TRAPPIST-1, an ultracool red dwarf star known to have seven terrestrial planets in stable orbits around the star.
+
+
+
+
+
+
+
+Comparison of the habitable zones for different stellar temperatures, with a sample of known exoplanets plus the Earth, Mars, and Venus. From top to bottom are an F-type main-sequence star, a yellow dwarf (G-type main-sequence star), an orange dwarf (K-type main-sequence star), a typical red dwarf, and an ultra-cool dwarf.
+
+
+
+
+
+
+
+The zone of habitability of the Solar System is conventionally located in the inner Solar System around Earth, where water can exist in liquid form on the surfaces of planets.[80]
+ 
+
+
+Besides solar energy, other factors that enable habitability are the Sun's interplanetary magnetic field and the planetary magnetic fields (for those planets that have them). These magnetic fields partially shield planets from high-energy interstellar particles called cosmic rays. The density of cosmic rays in the interstellar medium and the strength of the Sun's magnetic field change on very long timescales, so the level of cosmic-ray penetration in the Solar System varies, though by how much is unknown.[81]
+
+
+
+Habitability in the Solar System is, however, not solely dependent on surface conditions, and furthermore the Solar environment, since there might be habitablity in potential subsurface oceans of various Solar System bodies,[82] or cloud layers of some planets, particularly Venus.[83]
+
+
+
+
+
+
+Comparison with extrasolar systems
+
+
+
+Analysis of Kepler data suggests that observed planetary systems in the Milky Way fall into three groups: "similar", which comprise planets of similar sizes similar distances apart and with highly circular orbits; "ordered", in which the masses of planets tend to increase with distance from their star, and "mixed", which show no pattern in masses whatsoever. The Solar System is an ordered system, as are 37% of observed systems. Similar systems however are the majority, comprising 59% of observed systems, while mixed systems comprise just 4%.[84]
+ 
+
+
+Compared to many extrasolar systems, the Solar System stands out in lacking planets interior to the orbit of Mercury.[85][86] The known Solar System lacks any example of super-Earths, planets between one and ten times as massive as the Earth that are the most common planet type in our galaxy,[85][87] although the hypothetical Planet Nine, if it does exist, could be a super-Earth orbiting in the edge of the Solar System.[88] In addition, the Sun is a flare star which on average shows weaker flares compared with other stars that are similar to the Sun in spectral type, rotation period and age.[89]
+ 
+
+
+Uncommonly, the Solar System has only small terrestrial and large gas giants; elsewhere planets of intermediate size are typical – both rocky and gas – so there is no "gap" as seen between the size of Earth and of Neptune (with a radius 3.8 times as large). As many of these super-Earths are closer to their respective stars than Mercury is to the Sun, a hypothesis has arisen that all planetary systems start with many close-in planets, and that typically a sequence of their collisions causes consolidation of mass into few larger planets, but in case of the Solar System the collisions caused their destruction and ejection.[85][90]
+
+
+
+The orbits of Solar System planets are nearly circular. Compared to many other systems, they have smaller orbital eccentricity.[85] Although there are attempts to explain it partly with a bias in the radial-velocity detection method and partly with long interactions of a quite high number of planets, the exact causes remain undetermined.[85][91]
+
+
+
+
+
+
+
+Sun
+
+
+
+Main article: Sun
+
+
+The Sun in true color as viewed through a solar filter
+
+
+The Sun is the Solar System's star and by far its most massive component. Its large mass (332,900 Earth masses),[92] which comprises 99.86% of all the mass in the Solar System,[48] produces temperatures and densities in its core high enough to sustain nuclear fusion of hydrogen into helium.[93] This releases an enormous amount of energy, mostly radiated into space as electromagnetic radiation peaking in visible light.[94][95]
+
+
+
+Because the Sun fuses hydrogen at its core, it is a main-sequence star. More specifically, it is a G2-type main-sequence star, where the type designation refers to its effective temperature. Hotter main-sequence stars are more luminous but shorter lived. The Sun's temperature is intermediate between that of the hottest stars and that of the coolest stars. Stars brighter and hotter than the Sun are rare, whereas substantially dimmer and cooler stars, known as red dwarfs, make up about 75% of the fusor stars in the Milky Way.[96]
+
+
+
+The Sun is a population I star, having formed in the galaxy's spiral arms. It has a higher abundance of elements heavier than hydrogen and helium ("metals" in astronomical parlance) than the older population II stars in the galactic bulge and halo.[97] Elements heavier than hydrogen and helium were formed in the cores of ancient and exploding stars, so the first generation of stars had to die before the universe could be enriched with these atoms. The oldest stars contain few metals, whereas stars born later have more. This higher metallicity is thought to have been crucial to the Sun's development of a planetary system because the planets formed from the accretion of "metals".[98]
+
+
+
+The region of space dominated by the Solar magnetosphere is the heliosphere, which spans much of the Solar System. Along with light, the Sun radiates a continuous stream of charged particles (a plasma) called the solar wind. This stream spreads outwards at speeds from 900,000 kilometres per hour (560,000 mph) to 2,880,000 kilometres per hour (1,790,000 mph),[99] filling the vacuum between the bodies of the Solar System. The result is a thin, dusty atmosphere, called the interplanetary medium, which extends to at least 100 AU.[100]
+
+
+
+Activity on the Sun's surface, such as solar flares and coronal mass ejections, disturbs the heliosphere, creating space weather and causing geomagnetic storms.[101] Coronal mass ejections and similar events blow a magnetic field and huge quantities of material from the surface of the Sun. The interaction of this magnetic field and material with Earth's magnetic field funnels charged particles into Earth's upper atmosphere, where its interactions create aurorae seen near the magnetic poles.[102] The largest stable structure within the heliosphere is the heliospheric current sheet, a spiral form created by the actions of the Sun's rotating magnetic field on the interplanetary medium.[103][104]
+
+
+
+
+
+
+Inner Solar System
+
+
+
+The inner Solar System is the region comprising the terrestrial planets and the asteroids.[105] Composed mainly of silicates and metals,[106] the objects of the inner Solar System are relatively close to the Sun; the radius of this entire region is less than the distance between the orbits of Jupiter and Saturn. This region is within the frost line, which is a little less than 5 AU from the Sun.[57]
+
+
+
+
+
+Inner planets
+
+
+
+Main article: Terrestrial planet
+
+
+The four terrestrial planets Mercury, Venus, Earth and Mars
+
+The four terrestrial or inner planets have dense, rocky compositions, few or no moons, and no ring systems. They are composed largely of refractory minerals such as silicates—which form their crusts and mantles—and metals such as iron and nickel which form their cores. Three of the four inner planets (Venus, Earth, and Mars) have atmospheres substantial enough to generate weather; all have impact craters and tectonic surface features, such as rift valleys and volcanoes.[107]
+
+
+Mercury (0.31–0.59 AU from the Sun)[D 6] is the smallest planet in the Solar System. Its surface is grayish, with an expansive rupes (cliff) system generated from thrust faults and bright ray systems formed by impact event remnants.[108] The surface has widely varying temperature, with the equatorial regions ranging from −170 °C (−270 °F) at night to 420 °C (790 °F) during sunlight. In the past, Mercury was volcanically active, producing smooth basaltic plains similar to the Moon.[109] It is likely that Mercury has a silicate crust and a large iron core.[110][111] Mercury has a very tenuous atmosphere, consisting of solar-wind particles and ejected atoms.[112] Mercury has no natural satellites.[113]
+
+
+Venus (0.72–0.73 AU)[D 6] has a reflective, whitish atmosphere that is mainly composed of carbon dioxide. At the surface, the atmospheric pressure is ninety times as dense as on Earth's sea level.[114] Venus has a surface temperatures over 400 °C (752 °F), mainly due to the amount of greenhouse gases in the atmosphere.[115] The planet lacks a protective magnetic field to protect against stripping by the solar wind, which suggests that its atmosphere is sustained by volcanic activity.[116] Its surface displays extensive evidence of volcanic activity with stagnant lid tectonics.[117] Venus has no natural satellites.[113]
+
+
+Earth (0.98–1.02 AU)[D 6] is the only place in the universe where life and surface liquid water are known to exist.[118] Earth's atmosphere contains 78% nitrogen and 21% oxygen, which is the result of the presence of life.[119][120] The planet has a complex climate and weather system, with conditions differing drastically between climate regions.[121] The solid surface of Earth is dominated by green vegetation, deserts and white ice sheets.[122][123][124] Earth's surface is shaped by plate tectonics that formed the continental masses.[109] Earth's planetary magnetosphere shields the surface from radiation, limiting atmospheric stripping and maintaining life habitability.[125]
+
+The Moon is Earth's only natural satellite.[126] Its diameter is one-quarter the size of Earth's.[127] Its surface is covered in very fine regolith and dominated by impact craters.[128][129] Large dark patches on the Moon, maria, are formed from past volcanic activity.[130] The Moon's atmosphere is extremely thin, consisting of a partial vacuum with particle densities of under 107 per cm−3.[131]
+
+
+
+Mars (1.38–1.67 AU)[D 6] has a radius about half of that of Earth.[132] Most of the planet is red due to iron oxide in Martian soil,[133] and the polar regions are covered in white ice caps made of water and carbon dioxide.[134] Mars has an atmosphere composed mostly of carbon dioxide, with surface pressure 0.6% of that of Earth, which is sufficient to support some weather phenomena.[135] During the Mars year (687 Earth days), there are large surface temperature swings on the surface between −78.5 to 5.7 °C (−109.3 to 42.3 °F). The surface is peppered with volcanoes and rift valleys, and has a rich collection of minerals.[136][137] Mars has a highly differentiated internal structure, and lost its magnetosphere 4 billion years ago.[138][139] Mars has two tiny moons:[140]
+
+Phobos is Mars's inner moon. It is a small, irregularly shaped object with a mean radius of 11 km (7 mi). Its surface is very unreflective and dominated by impact craters.[D 7][141] In particular, Phobos's surface has a very large Stickney impact crater that is roughly 4.5 km (2.8 mi) in radius.[142]
+
+
+Deimos is Mars's outer moon. Like Phobos, it is irregularly shaped, with a mean radius of 6 km (4 mi) and its surface reflects little light.[D 8][D 9] However, the surface of Deimos is noticeably smoother than Phobos because the regolith partially covers the impact craters.[143]
+
+
+
+
+
+
+
+Asteroids
+
+
+
+Main article: Asteroid
+
+
+Overview of the inner Solar System up to Jupiter's orbit
+Asteroids, except for the largest, Ceres, are classified as small Solar System bodies and are composed mainly of carbonaceous, refractory rocky and metallic minerals, with some ice.[144][145] They range from a few meters to hundreds of kilometers in size. Many asteroids are divided into asteroid groups and families based on their orbital characteristics. Some asteroids have natural satellites that orbit them, that is, asteroids that orbit larger asteroids.[146]
+
+
+Mercury-crossing asteroids are those with perihelia within the orbit of Mercury. At least 362 are known to date, and include the closest objects to the Sun known in the Solar System.[147] No vulcanoids, asteroids between the orbit of Mercury and the Sun, have been discovered.[148][149] As of 2024, one asteroid has been discovered to orbit completely within Venus's orbit, 594913 ꞌAylóꞌchaxnim.[150]
+
+
+Venus-crossing asteroids are those that cross the orbit of Venus. There are 2,809 as of 2015.[151]
+
+
+Near-Earth asteroids have orbits that approach relatively close to Earth's orbit,[152] and some of them are potentially hazardous objects because they are large enough to cause widespread damage if they collide with Earth.[153][154] There are over 37,000 known as of 2024.[155] A number of solar-orbiting meteoroids were large enough to be tracked in space before striking Earth. It is now widely accepted that collisions in the past have had a significant role in shaping the geological and biological history of Earth.[156]
+
+
+Mars-crossing asteroids are those with perihelia above 1.3 AU which cross the orbit of Mars.[157] As of 2024, NASA lists 26,182 confirmed Mars-crossing asteroids.[151]
+
+
+
+
+
+Asteroid belt
+
+
+
+Main article: Asteroid belt
+
+
+The asteroid belt occupies a torus-shaped region between 2.3 and 3.3 AU from the Sun, which lies between the orbits of Mars and Jupiter. It is thought to be remnants from the Solar System's formation that failed to coalesce because of the gravitational interference of Jupiter.[158] The asteroid belt contains tens of thousands, possibly millions, of objects over one kilometer in diameter.[159] Despite this, the total mass of the asteroid belt is unlikely to be more than a thousandth of that of Earth.[51] The asteroid belt is very sparsely populated; spacecraft routinely pass through without incident.[160]
+
+The four largest asteroids: Ceres, Vesta, Pallas, Hygiea. Only Ceres and Vesta have been visited by a spacecraft and thus have a detailed picture.
+
+Below are the descriptions of the three largest bodies in the asteroid belt. They are all considered to be relatively intact protoplanets, a precursor stage before becoming a fully-formed planet (see List of exceptional asteroids):[161][162][163]
+
+
+Ceres (2.55–2.98 AU) is the only dwarf planet in the asteroid belt.[164] It is the largest object in the belt, with a diameter of 940 km (580 mi).[165] Its surface contains a mixture of carbon,[166] frozen water and hydrated minerals.[167] There are signs of past cryovolcanic activity, where volatile material such as water are erupted onto the surface, as seen in surface bright spots.[168] Ceres has a very thin water vapor atmosphere, but practically speaking it is indistinguishable from a vacuum.[169]
+
+
+Vesta (2.15–2.57 AU) is the second-largest object in the asteroid belt.[170] Its fragments survive as the Vesta asteroid family[171] and numerous HED meteorites found on Earth.[172] Vesta's surface, dominated by basaltic and metamorphic material, has a denser composition than Ceres's.[173] Its surface is marked by two giant craters: Rheasilvia and Veneneia.[174]
+
+
+Pallas (2.13–3.41 AU) is the third-largest object in the asteroid belt.[170] It has its own Pallas asteroid family.[171] Not much is known about Pallas because it has never been visited by a spacecraft,[175] though its surface is predicted to be composed of silicates.[176]
+
+
+
+Hilda asteroids are in a 3:2 resonance with Jupiter; that is, they go around the Sun three times for every two Jovian orbits.[177] They lie in three linked clusters between Jupiter and the main asteroid belt.
+
+
+
+Trojans are bodies located within another body's gravitationally stable Lagrange points: L4, 60° ahead in its orbit, or L5, 60° behind in its orbit.[178] Every planet except Mercury is known to possess at least one trojan.[179][180][181] The Jupiter trojan population is roughly equal to that of the asteroid belt.[182] After Jupiter, Neptune possesses the most confirmed trojans, at 28.[183]
+
+
+
+
+
+
+
+
+Outer Solar System
+
+
+
+The outer region of the Solar System is home to the giant planets and their large moons. The centaurs and many short-period comets orbit in this region. Due to their greater distance from the Sun, the solid objects in the outer Solar System contain a higher proportion of volatiles such as water, ammonia, and methane, than planets of the inner Solar System because their lower temperatures allow these compounds to remain solid, without significant sublimation.[28]
+
+
+
+
+
+Outer planets
+
+
+
+Main article: Giant planet
+
+
+The outer planets Jupiter, Saturn, Uranus and Neptune, compared to the inner planets Earth, Venus, Mars, and Mercury at the bottom right
+
+The four outer planets, called giant planets or Jovian planets, collectively make up 99% of the mass orbiting the Sun.[f] All four giant planets have multiple moons and a ring system, although only Saturn's rings are easily observed from Earth.[107] Jupiter and Saturn are composed mainly of gases with extremely low melting points, such as hydrogen, helium, and neon,[184] hence their designation as gas giants.[185] Uranus and Neptune are ice giants,[186] meaning they are largely composed of 'ice' in the astronomical sense (chemical compounds with melting points of up to a few hundred kelvins[184] such as water, methane, ammonia, hydrogen sulfide, and carbon dioxide.[187]) Icy substances comprise the majority of the satellites of the giant planets and small objects that lie beyond Neptune's orbit.[187][188]
+
+
+Jupiter (4.95–5.46 AU)[D 6] is the biggest and most massive planet in the Solar System. On its surface, there are orange-brown and white cloud bands moving via the principles of atmospheric circulation, with giant storms swirling on the surface such as the Great Red Spot and white 'ovals'. Jupiter possesses a strong enough magnetosphere to redirect ionizing radiation and cause auroras on its poles.[189] As of 2026, Jupiter has 115 confirmed satellites, which can roughly be sorted into three groups:
+
+The Amalthea group, consisting of Metis, Adrastea, Amalthea, and Thebe. They orbit substantially closer to Jupiter than other satellites.[190] Materials from these natural satellites are the source of Jupiter's faint ring.[191]
+
+
+The Galilean moons, consisting of Ganymede, Callisto, Io, and Europa. They are the largest moons of Jupiter and exhibit planetary properties.[192]
+
+
+Irregular satellites, consisting of substantially smaller natural satellites. They have more distant orbits than the other objects.[193]
+
+
+
+Saturn (9.08–10.12 AU)[D 6] has a distinctive visible ring system orbiting around its equator composed of small ice and rock particles. Like Jupiter, it is mostly made of hydrogen and helium.[194] At its north and south poles, Saturn has peculiar hexagon-shaped storms larger than the diameter of Earth. Saturn has a magnetosphere capable of producing weak auroras. As of 2026, Saturn has 293 confirmed satellites, grouped into:
+
+Ring moonlets and shepherds, which orbit inside or close to Saturn's rings. A moonlet can only partially clear out dust in its orbit,[195] while the ring shepherds are able to completely clear out dust, forming visible gaps in the rings.[196]
+
+
+Inner large satellites Mimas, Enceladus, Tethys, and Dione. These satellites orbit within Saturn's E ring. They are composed mostly of water ice and are believed to have differentiated internal structures.[197]
+
+
+Trojan moons Calypso and Telesto (trojans of Tethys), and Helene and Polydeuces (trojans of Dione). These small moons share their orbits with Tethys and Dione, leading or trailing either.[198][199]
+
+
+Outer large satellites Rhea, Titan, Hyperion, and Iapetus.[197] Titan is the only satellite in the Solar System to have a substantial atmosphere.[200]
+
+
+Irregular satellites, consisting of substantially smaller natural satellites. They have more distant orbits than the other objects. Phoebe is the largest irregular satellite of Saturn.[201]
+
+
+
+Uranus (18.3–20.1 AU),[D 6] uniquely among the planets, orbits the Sun on its side with an axial tilt >90°. This gives the planet extreme seasonal variation as each pole points alternately toward and then away from the Sun.[202] Uranus's outer layer has a muted cyan color, but underneath these clouds are many mysteries about its climate, such as unusually low internal heat and erratic cloud formation. As of 2026, Uranus has 29 confirmed satellites, divided into three groups:
+
+Inner satellites, which orbit inside Uranus's ring system.[203] They are very close to each other, which suggests that their orbits are chaotic.[204]
+
+
+Large satellites, consisting of Titania, Oberon, Umbriel, Ariel, and Miranda.[205] Most of them have roughly equal amounts of rock and ice, except Miranda, which is made primarily of ice.[206]
+
+
+Irregular satellites, having more distant and eccentric orbits than the other objects.[207]
+
+
+
+Neptune (29.9–30.5 AU)[D 6] is the furthest planet known in the Solar System. Its outer atmosphere has a slightly muted cyan color, with occasional storms on the surface that look like dark spots. Like Uranus, many atmospheric phenomena of Neptune are unexplained, such as the thermosphere's abnormally high temperature or the strong tilt (47°) of its magnetosphere. As of 2026, Neptune has 16 confirmed satellites, divided into two groups:
+
+Regular satellites, which have circular orbits that lie near Neptune's equator.[201]
+
+
+Irregular satellites, which as the name implies, have less regular orbits. One of them, Triton, is Neptune's largest moon. It is geologically active, with erupting geysers of nitrogen gas, and possesses a thin, cloudy nitrogen atmosphere.[208][200]
+
+
+
+
+
+
+
+Centaurs
+
+
+
+Main article: Centaur (small Solar System body)
+
+
+
+The centaurs are icy, comet-like bodies whose semi-major axes are longer than Jupiter's and shorter than Neptune's (between 5.5 and 30 AU). These are former Kuiper belt and scattered disc objects (SDOs) that were gravitationally perturbed closer to the Sun by the outer planets, and are expected to become comets or be ejected out of the Solar System.[50] While most centaurs are inactive and asteroid-like, some exhibit cometary activity, such as the first centaur discovered, 2060 Chiron, which has been classified as a comet (95P) because it develops a coma just as comets do when they approach the Sun.[209] The largest known centaur, 10199 Chariklo, has a diameter of about 250 km (160 mi) and is one of the few minor planets possessing a ring system.[210][211]
+
+
+
+
+
+
+
+Trans-Neptunian region
+
+
+
+Beyond the orbit of Neptune lies the area of the "trans-Neptunian region", with the doughnut-shaped Kuiper belt, home of Pluto and several other dwarf planets, and an overlapping disc of scattered objects, which is tilted toward the plane of the Solar System and reaches much further out than the Kuiper belt. The entire region is still largely unexplored. It appears to consist overwhelmingly of many thousands of small worlds – the largest having a diameter only a fifth that of Earth and a mass far smaller than that of the Moon – composed mainly of rock and ice. This region is sometimes described as the "third zone of the Solar System", enclosing the inner and the outer Solar System.[212]
+
+
+
+
+
+Kuiper belt
+
+
+
+Main article: Kuiper belt
+
+
+Plot of objects around the Kuiper belt and other asteroid populations. J, S, U and N denotes Jupiter, Saturn, Uranus and Neptune.
+
+Orbit classification of Kuiper belt objects. Some clusters that are subject to orbital resonance are marked.
+
+The Kuiper belt is a great ring of debris similar to the asteroid belt, but consisting mainly of objects composed primarily of ice.[213] It extends between 30 and 50 AU from the Sun. It is composed mainly of small Solar System bodies, although the largest few are probably large enough to be dwarf planets.[214] There are estimated to be over 100,000 Kuiper belt objects with a diameter greater than 50 km (30 mi), but the total mass of the Kuiper belt is thought to be only a tenth or even a hundredth the mass of Earth.[50] Many Kuiper belt objects have satellites,[215] and most have orbits that are substantially inclined (~10°) to the plane of the ecliptic.[216]
+
+
+
+The Kuiper belt can be roughly divided into the "classical" belt and the resonant trans-Neptunian objects.[213] The latter have orbits whose periods are in a simple ratio to that of Neptune: for example, going around the Sun twice for every three times that Neptune does, or once for every two. The classical belt consists of objects having no resonance with Neptune, and extends from roughly 39.4 to 47.7 AU.[217] Members of the classical Kuiper belt are sometimes called "cubewanos", after the first of their kind to be discovered, originally designated 1992 QB1, (and has since been named Albion); they are still in near primordial, low-eccentricity orbits.[218]
+
+
+
+There is strong consensus among astronomers that five members of the Kuiper belt are dwarf planets.[214][219] Many dwarf planet candidates are being considered, pending further data for verification.[220]
+
+
+Pluto (29.7–49.3 AU) is the largest known object in the Kuiper belt. Pluto has a relatively eccentric orbit, inclined 17 degrees to the ecliptic plane. Pluto has a 2:3 resonance with Neptune, meaning that Pluto orbits twice around the Sun for every three Neptunian orbits. Kuiper belt objects whose orbits share this resonance are called plutinos.[221] Pluto has five moons: Charon, Styx, Nix, Kerberos, and Hydra.[222]
+
+Charon, the largest of Pluto's moons, is sometimes described as part of a binary system with Pluto, as the two bodies orbit a barycenter of gravity above their surfaces (i.e. they appear to "orbit each other").
+
+
+
+Orcus (30.3–48.1 AU), is in the same 2:3 orbital resonance with Neptune as Pluto, and is the largest such object after Pluto itself.[223] Its eccentricity and inclination are similar to Pluto's, but its perihelion lies about 120° from that of Pluto. Thus, the phase of Orcus's orbit is opposite to Pluto's: Orcus is at aphelion (most recently in 2019) around when Pluto is at perihelion (most recently in 1989) and vice versa.[224] For this reason, it has been called the anti-Pluto.[225][226] It has one known moon, Vanth.[227]
+
+
+Haumea (34.6–51.6 AU) was discovered in 2005.[228] It is in a temporary 7:12 orbital resonance with Neptune.[223] Haumea possesses a ring system, two known moons named Hiʻiaka and Namaka, and rotates so quickly (once every 3.9 hours) that it is stretched into an ellipsoid. It is part of a collisional family of Kuiper belt objects that share similar orbits, which suggests a giant impact on Haumea ejected fragments into space billions of years ago.[229]
+
+
+Makemake (38.1–52.8 AU), although smaller than Pluto, is the largest known object in the classical Kuiper belt (that is, a Kuiper belt object not in a confirmed resonance with Neptune). Makemake is the brightest object in the Kuiper belt after Pluto. Discovered in 2005, it was officially named in 2008.[230] Its orbit is far more inclined than Pluto's, at 29°.[231] It has one known moon, S/2015 (136472) 1.[232]
+
+
+Quaoar (41.9–45.5 AU) is the second-largest known object in the classical Kuiper belt, after Makemake. Its orbit is significantly less eccentric and inclined than those of Makemake or Haumea.[223] It possesses a ring system and one known moon, Weywot.[233]
+
+
+
+
+
+
+Scattered disc
+
+
+
+Main article: Scattered disc
+
+
+The orbital eccentricities and inclinations of the scattered disc population compared to the classical and resonant Kuiper belt objects
+
+The scattered disc, which overlaps the Kuiper belt but extends out to near 500 AU, is thought to be the source of short-period comets. Scattered-disc objects are believed to have been perturbed into erratic orbits by the gravitational influence of Neptune's early outward migration. Most scattered disc objects have perihelia within the Kuiper belt but aphelia far beyond it (some more than 150 AU from the Sun). SDOs' orbits can be inclined up to 46.8° from the ecliptic plane.[234] Some astronomers consider the scattered disc to be merely another region of the Kuiper belt and describe scattered-disc objects as "scattered Kuiper belt objects".[235] Some astronomers classify centaurs as inward-scattered Kuiper belt objects along with the outward-scattered residents of the scattered disc.[236]
+
+
+
+Currently, there is strong consensus among astronomers that two of the bodies in the scattered disc are dwarf planets:
+
+
+Eris (38.3–97.5 AU) is the largest known scattered disc object and the most massive known dwarf planet. Eris's discovery contributed to a debate about the definition of a planet because it is 25% more massive than Pluto[237] and about the same diameter. It has one known moon, Dysnomia. Like Pluto, its orbit is highly eccentric, with a perihelion of 38.2 AU (roughly Pluto's distance from the Sun) and an aphelion of 97.6 AU, and steeply inclined to the ecliptic plane at an angle of 44°.[238]
+
+
+Gonggong (33.8–101.2 AU) is a dwarf planet in a comparable orbit to Eris, except that it is in a 3:10 resonance with Neptune.[D 10] It has one known moon, Xiangliu.[239]
+
+
+
+
+
+
+Extreme trans-Neptunian objects
+
+
+
+Main article: Extreme trans-Neptunian object
+
+
+The current orbits of Sedna, 2012 VP113, Leleākūhonua (pink), and other very distant objects (red, brown and cyan) along with the predicted orbit of the hypothetical Planet Nine (dark blue)
+
+
+Some objects in the Solar System have a very large orbit, and therefore are much less affected by the known giant planets than other minor planet populations. These bodies are called extreme trans-Neptunian objects, or ETNOs for short.[240] Generally, ETNOs' semi-major axes are at least 150–250 AU wide.[240][241] For example, 541132 Leleākūhonua orbits the Sun once every ~32,000 years, with a distance of 65–2000 AU from the Sun.[D 11]
+
+
+
+This population is divided into three subgroups by astronomers. The scattered ETNOs have perihelia around 38–45 AU and an exceptionally high eccentricity of more than 0.85. As with the regular scattered disc objects, they were likely formed as result of gravitational scattering by Neptune and still interact with the giant planets. The detached ETNOs, with perihelia approximately between 40–45 and 50–60 AU, are less affected by Neptune than the scattered ETNOs, but are still relatively close to Neptune. The sednoids or inner Oort cloud objects, with perihelia beyond 50–60 AU, are too far from Neptune to be strongly influenced by it.[240]
+
+
+
+Currently, there is one ETNO that is classified as a dwarf planet:
+
+
+Sedna (76.2–937 AU) was the first extreme trans-Neptunian object to be discovered. It is a large, reddish object, and takes ~11,400 years to complete one orbit. Mike Brown, who discovered the object in 2003, asserts that it cannot be part of the scattered disc or the Kuiper belt because its perihelion is too distant to have been affected by Neptune's migration.[242] The sednoid population is named after Sedna.[240]
+
+
+Statistical variance has been observed in the orbits of some extreme trans-Neptunian objects, whose closest approaches to the Sun are mostly clustered around one sector and who display a similar orbital tilt to each other.[243][244][245] Some astronomers have suggested that this may be the result of the influence of a large planet beyond Neptune; this hypothetical planet has been termed Planet Nine.[246] Others credit this statistical variance to observational biases or sheer coincidence.[247]
+
+
+
+
+
+
+Oort cloud
+
+
+
+
+
+An artist's impression of the Oort cloud, a region still well within the sphere of influence of the Solar System, including a depiction of the much further inside Kuiper belt (inset); the sizes of objects are over-scaled for visibility.
+
+
+The Oort cloud is a theorized spherical shell of up to a trillion icy objects that is thought to be the source for all long-period comets,[248][249] which were originally ejected from the planetary region by gravitational interactions with the gas giants.[250] Oort cloud objects move very slowly, and can be perturbed by infrequent events, such as collisions, the gravitational effects of a passing star, or the galactic tide, the tidal force exerted by the Milky Way.[248][249] No direct observation of the Oort cloud is possible with present imaging technology.[251] The probe that is currently nearest to the Oort cloud, Voyager 1, is expected to reach it in 300 years.[252]
+
+
+
+The Oort cloud is theorized to surround the Solar System from potentially ~2,000 AU from the Sun to up to ~200,000 AU. Lower estimates for the radius of the Oort cloud, by contrast, do not place it farther than 50,000 AU.[253] Most of the mass is orbiting in the region between 3,000 and 100,000 AU.[254] The furthest known objects, such as Comet West, have aphelia around 70,000 AU from the Sun.[255]
+
+
+
+
+
+
+
+Gravitationally unstable populations
+
+
+
+
+
+Meteoroids, meteors and dust
+
+
+
+Main articles: Meteoroid, Interplanetary dust cloud, and Cosmic dust
+
+
+The planets, zodiacal light and meteor shower (top left of image)
+
+Solid objects smaller than one meter are usually called meteoroids and micrometeoroids (grain-sized), with the exact division between the two categories being debated over the years.[256] By 2017, the IAU designated any solid object having a diameter between ~30 micrometers and 1 meter as meteoroids, and depreciated the micrometeoroid categorization, instead terms smaller particles simply as 'dust particles'.[257]
+
+
+
+Some meteoroids formed via disintegration of comets and asteroids, while a few formed via impact debris ejected from planetary bodies. Most meteoroids are made of silicates and heavier metals like nickel and iron.[258] When passing through the Solar System, comets produce a trail of meteoroids; it is hypothesized that this is caused either by vaporization of the comet's material or by simple breakup of dormant comets. When crossing an atmosphere, these meteoroids will produce bright streaks in the sky due to atmospheric entry, called meteors. If a stream of meteoroids enter the atmosphere on parallel trajectories, the meteors will seemingly 'radiate' from a point in the sky, hence the phenomenon's name: meteor shower.[259]
+
+
+
+The inner Solar System is home to the zodiacal dust cloud, which is visible as the hazy zodiacal light in dark, unpolluted skies. It may be generated by collisions within the asteroid belt brought on by gravitational interactions with the planets; a more recent proposed origin is materials from planet Mars.[260] The outer Solar System hosts a cosmic dust cloud. It extends from about 10 AU to about 40 AU, and was probably created by collisions within the Kuiper belt.[261][262]
+
+
+
+
+
+
+Comets
+
+
+
+Main article: Comet
+
+
+The sparse plasma (blue) and dust (white) in the tail of comet Hale–Bopp are being shaped by pressure from solar radiation and the solar wind, respectively.
+
+Comets are small Solar System bodies, typically only a few kilometers across, composed largely of volatile ices. They have highly eccentric orbits, generally a perihelion within the orbits of the inner planets and an aphelion far beyond Pluto. When a comet enters the inner Solar System, its proximity to the Sun causes its icy surface to sublimate and ionise, creating a coma: a long tail of gas and dust often visible to the naked eye.[263]
+
+
+
+Short-period comets have orbits lasting less than two hundred years. Long-period comets have orbits lasting thousands of years. Short-period comets are thought to originate in the Kuiper belt, whereas long-period comets, such as Hale–Bopp, are thought to originate in the Oort cloud. Many comet groups, such as the Kreutz sungrazers, formed from the breakup of a single parent.[264] Some comets with hyperbolic orbits may originate outside the Solar System, but determining their precise orbits is difficult.[265] Old comets whose volatiles have mostly been driven out by solar warming are often categorized as asteroids.[266]
+
+
+
+
+
+
+
+Boundary region and uncertainties
+
+
+
+See also: List of Solar System objects by greatest aphelion
+
+
+The Solar System (left) within the interstellar medium, with the different regions and their distances on a logarithmic scale
+
+
+Much of the outer reaches of the Solar System is still unknown. The region beyond 100 AU away is virtually unexplored and learning about this region of space is difficult. Study of this region depends upon inferences from those few objects whose orbits happen to be perturbed such that they fall closer to the Sun, and even then, detecting these objects has often been possible only when they happened to become bright enough to register as comets.[267] Many objects are yet to be discovered in the Solar System's outer region.[268]
+
+
+
+The Sun's Hill sphere, its gravitational potential reaching the galactic potential, the potential of the galactic nucleus, the effective range of its gravitational influence, is thought to encompass the Oort cloud,[30][269] and extend to up to 230,000 AU from the Sun.[8]
+
+
+
+The boundaries of the heliosphere and of the Hill sphere, the Sun's gravitational potential in respect to the interstellar medium and the galactic gravitational potential, at the edge of the Oort cloud, represent the boundaries of the Solar System with the galactic environment it is in.
+
+
+
+
+
+Edge of the heliosphere
+
+
+Diagram of the Sun's magnetosphere and helioshealth
+
+
+The Sun's stellar-wind bubble, the heliosphere, a region of space dominated by the Sun, has its boundary at the termination shock. Based on the Sun's peculiar motion relative to the local standard of rest, this boundary is roughly 80–100 AU from the Sun upwind of the interstellar medium and roughly 200 AU from the Sun downwind.[270] Here the solar wind collides with the interstellar medium[271] and dramatically slows, condenses and becomes more turbulent, forming a great oval structure known as the heliosheath.[270]
+
+
+
+The heliosheath has been theorized to look and behave very much like a comet's tail, extending outward for a further 40 AU on the upwind side but tailing many times that distance downwind to possibly several thousands of AU.[272][273] Evidence from the Cassini and Interstellar Boundary Explorer spacecraft has suggested that it is forced into a bubble shape by the constraining action of the interstellar magnetic field,[274][275] but the actual shape remains unknown.[276]
+
+
+
+The shape and form of the outer edge of the heliosphere is likely affected by the fluid dynamics of interactions with the interstellar medium as well as solar magnetic fields prevailing to the south, e.g. it is bluntly shaped with the northern hemisphere extending 9 AU farther than the southern hemisphere.[270] The heliopause is considered the beginning of the interstellar medium.[100] Beyond the heliopause, at around 230 AU, lies the bow shock: a plasma "wake" left by the Sun as it travels through the Milky Way.[277] Large objects outside the heliopause remain gravitationally bound to the Sun, but the flow of matter in the interstellar medium homogenizes the distribution of micro-scale objects.[100]
+
+
+
+
+
+
+
+Celestial neighborhood
+
+
+
+Main articles: List of nearest stars, List of nearest exoplanets, and List of nearby stellar associations and moving groups
+
+
+Diagram of the Local Interstellar Cloud, the G-Cloud and surrounding stars. As of 2022, the exact position of the Solar System within the interstellar clouds remains an unresolved question in astronomy.[278]
+
+
+Within 10 light-years of the Sun there are relatively few stars, the closest being the triple star system Alpha Centauri, which is about 4.4 light-years away and may be in the Local Bubble's G-Cloud.[279] Alpha Centauri A and B are a closely tied pair of Sun-like stars, whereas the closest star to the Sun, the small red dwarf Proxima Centauri, orbits the pair at a distance of 0.2 light-years. In 2016, a potentially habitable exoplanet was found to be orbiting Proxima Centauri, called Proxima Centauri b, the closest confirmed exoplanet to the Sun.[280]
+
+
+
+The Solar System is surrounded by the Local Interstellar Cloud, although it is not clear if it is embedded in the Local Interstellar Cloud or if it lies just outside the cloud's edge.[281] Multiple other interstellar clouds exist in the region within 300 light-years of the Sun, known as the Local Bubble.[281] The latter feature is an hourglass-shaped cavity or superbubble in the interstellar medium roughly 300 light-years across. The bubble is suffused with high-temperature plasma, suggesting that it may be the product of several recent supernovae.[282]
+
+
+
+The Local Bubble is a small superbubble compared to the neighboring wider Radcliffe Wave and Split linear structures (formerly Gould Belt), each of which are some thousands of light-years in length.[283] All these structures are part of the Orion Arm, which contains most of the stars in the Milky Way that are visible to the unaided eye.[284]
+
+
+
+Groups of stars form together in star clusters, before dissolving into co-moving associations. A prominent grouping that is visible to the naked eye is the Ursa Major moving group, which is around 80 light-years away within the Local Bubble. The nearest star cluster is Hyades, which lies at the edge of the Local Bubble. The closest star-forming regions are the Corona Australis Molecular Cloud, the Rho Ophiuchi cloud complex and the Taurus molecular cloud; the latter lies just beyond the Local Bubble and is part of the Radcliffe wave.[285]
+
+
+
+Stellar flybys that pass within 0.8 light-years of the Sun occur roughly once every 100,000 years. The closest well-measured approach was Scholz's Star, which approached to ~50,000 AU of the Sun some ~70 thousand years ago, likely passing through the outer Oort cloud.[286] There is a 1% chance every billion years that a star will pass within 100 AU of the Sun, potentially disrupting the Solar System.[287]
+
+
+
+
+
+
+Galactic position
+
+
+
+See also: Location of Earth, Galactic year, and Orbit of the Sun
+
+Diagram of the Milky Way, with galactic features and the relative position of the Solar System labeled.
+
+
+The Solar System is located in the Milky Way, a barred spiral galaxy with a diameter of about 100,000 light-years containing more than 100 billion stars.[288] The Sun is part of one of the Milky Way's outer spiral arms, known as the Orion–Cygnus Arm or Local Spur.[289][290] It is a member of the thin disk population of stars orbiting close to the galactic plane.[291]
+
+
+
+Its speed around the center of the Milky Way is about 220 km/s, so that it completes one revolution every 240 million years.[288] This revolution is known as the Solar System's galactic year.[292] The solar apex, the direction of the Sun's path through interstellar space, is near the constellation Hercules in the direction of the current location of the bright star Vega.[293] The plane of the ecliptic lies at an angle of about 60° to the galactic plane.[c]
+
+
+
+The Sun follows a nearly circular orbit around the Galactic Center (where the supermassive black hole Sagittarius A* resides) at a distance of 26,660 light-years,[295] orbiting at roughly the same speed as that of the spiral arms.[296] If it orbited close to the center, gravitational tugs from nearby stars could perturb bodies in the Oort cloud and send many comets into the inner Solar System, producing collisions with potentially catastrophic implications for life on Earth. In this scenario, the intense radiation of the Galactic Center could interfere with the development of complex life.[296]
+
+
+
+The Solar System's location in the Milky Way is a factor in the evolutionary history of life on Earth. Spiral arms are home to a far larger concentration of supernovae, gravitational instabilities, and radiation that could disrupt the Solar System, but since Earth stays in the Local Spur and therefore does not pass frequently through spiral arms, this has given Earth long periods of stability for life to evolve.[296] However, according to the controversial Shiva hypothesis, the changing position of the Solar System relative to other parts of the Milky Way could explain periodic extinction events on Earth.[297][298]
+
+
+
+
+
+
+Discovery and exploration
+
+
+
+Main article: Discovery and exploration of the Solar System
+
+
+The motion of 'lights' moving across the sky is the basis of the classical definition of planets: wandering stars.
+
+Humanity's knowledge of the Solar System has grown incrementally over the centuries. Although the ancient Greek philosopher Aristarchus of Samos had speculated on a heliocentric reordering of the cosmos, up to the Late Middle Ages–Renaissance, astronomers from Europe to India believed Earth to be stationary at the center of the universe[299] and categorically different from the divine or ethereal objects that moved through the sky. Nicolaus Copernicus was the first person known to have developed a mathematically predictive heliocentric system.[300][301]
+
+
+
+Heliocentrism did not triumph immediately over geocentrism, but the work of Copernicus had its champions, notably Johannes Kepler. Using a heliocentric model that improved upon Copernicus by allowing orbits to be elliptical, and the precise observational data of Tycho Brahe, Kepler produced the Rudolphine Tables, which enabled accurate computations of the positions of the then-known planets. Pierre Gassendi used them to predict a transit of Mercury in 1631, and Jeremiah Horrocks did the same for a transit of Venus in 1639. This provided a strong vindication of heliocentrism and Kepler's elliptical orbits.[302][303]
+
+
+
+In the 17th century, Galileo publicized the use of the telescope in astronomy; he and Simon Marius independently discovered that Jupiter had four satellites in orbit around it.[304] Christiaan Huygens followed on from these observations by discovering Saturn's moon Titan and the shape of the rings of Saturn.[305] In 1677, Edmond Halley observed a transit of Mercury across the Sun, leading him to realize that observations of the solar parallax of a planet (more ideally using the transit of Venus) could be used to trigonometrically determine the distances between Earth, Venus, and the Sun.[306] Halley's friend Isaac Newton, in his magisterial Principia Mathematica of 1687, demonstrated that celestial bodies are not quintessentially different from Earthly ones: the same laws of motion and of gravity apply on Earth and in the skies.[64]: 142 
+
+Solar system diagram by Emanuel Bowen in 1747, when neither Uranus, Neptune, nor the asteroid belts had yet been discovered. Orbits of planets are to scale, but the orbits of moons and the sizes of bodies are not.
+
+The term "Solar System" entered the English language by 1704, when John Locke used it to refer to the Sun, planets, and comets.[307] In 1705, Halley realized that repeated sightings of a comet were of the same object, returning regularly once every 75–76 years. This was the first evidence that anything other than the planets repeatedly orbited the Sun,[308] though Seneca had theorized this about comets in the 1st century.[309] Careful observations of the 1769 transit of Venus allowed astronomers to calculate the average Earth–Sun distance as 93,726,900 miles (150,838,800 km), only 0.8% greater than the modern value.[310]
+
+
+
+Uranus, having occasionally been observed since 1690 and possibly from antiquity, was recognized to be a planet orbiting beyond Saturn by 1783.[311] In 1838, Friedrich Bessel successfully measured a stellar parallax, an apparent shift in the position of a star created by Earth's motion around the Sun, providing the first direct, experimental proof of heliocentrism.[312] Neptune was identified as a planet some years later, in 1846, thanks to its gravitational pull causing a slight but detectable variation in the orbit of Uranus.[313] Mercury's orbital anomaly observations led to searches for Vulcan, a planet interior of Mercury, but these attempts were quashed with Albert Einstein's theory of general relativity in 1915.[314]
+
+
+
+In the 20th century, humans began their space exploration around the Solar System, starting with placing telescopes in space since the 1960s.[315] By 1989, all eight planets have been visited by space probes.[316] Probes have returned samples from comets[317] and asteroids,[318] as well as flown through the Sun's corona[319] and visited two dwarf planets (Pluto and Ceres).[320][321] To save on fuel, some space missions make use of gravity assist maneuvers, such as the two Voyager probes accelerating when flying by planets in the outer Solar System[322] and the Parker Solar Probe decelerating closer towards the Sun after its flyby of Venus.[323]
+
+
+
+Humans have landed on the Moon during the Apollo program in the 1960s and 1970s[324] and are planning to return to the Moon in the 2020s with the Artemis program.[325] Discoveries in the 20th and 21st century has prompted the redefinition of the term planet in 2006, hence the reclassification of Pluto as a dwarf planet,[326] and further interest in trans-Neptunian objects.[327]
+
+
+
+All active Solar System space probes in 2026 (and a list of upcoming ones)
+
+
+
+
+
+See also
+
+
+
+Interplanetary spaceflight – Crewed or uncrewed travel between stars or planets
+
+
+List of gravitationally rounded objects of the Solar System
+
+
+List of Solar System extremes
+
+
+List of Solar System objects by size
+
+
+Lists of geological features of the Solar System
+
+
+Outline of the Solar System – Overview of and topical guide to the Solar System
+
+
+Planetary mnemonic – Phrase used to remember the planets of the Solar System
+
+
+Solar System in fiction
+
+
+
+
+
+
+Notes
+
+
+
+
+
+
+↑ The Asteroid Belt, Kuiper Belt, and Scattered Disc are not added because the individual asteroids are too small to be shown on the diagram.
+
+
+1 2 The date is based on the oldest inclusions found to date in meteorites, 4568.2+0.2
+
+−0.4 million years, and is thought to be the date of the formation of the first solid material in the collapsing nebula.[21]
+
+
+1 2 If 
+  
+    
+      
+        ψ
+      
+    
+    {\displaystyle \psi }
+  
+ is the angle between the north pole of the ecliptic and the north galactic pole then:
+
+
+
+  
+    
+      
+        cos
+        ⁡
+        ψ
+        =
+        cos
+        ⁡
+        (
+        
+          β
+          
+            g
+          
+        
+        )
+        cos
+        ⁡
+        (
+        
+          β
+          
+            e
+          
+        
+        )
+        cos
+        ⁡
+        (
+        
+          α
+          
+            g
+          
+        
+        −
+        
+          α
+          
+            e
+          
+        
+        )
+        +
+        sin
+        ⁡
+        (
+        
+          β
+          
+            g
+          
+        
+        )
+        sin
+        ⁡
+        (
+        
+          β
+          
+            e
+          
+        
+        )
+      
+    
+    {\displaystyle \cos \psi =\cos(\beta _{g})\cos(\beta _{e})\cos(\alpha _{g}-\alpha _{e})+\sin(\beta _{g})\sin(\beta _{e})}
+  
+
+
+
+where 
+  
+    
+      
+        
+          β
+          
+            g
+          
+        
+      
+    
+    {\displaystyle \beta _{g}}
+  
+ = 27° 07′ 42.01″ and 
+  
+    
+      
+        
+          α
+          
+            g
+          
+        
+      
+    
+    {\displaystyle \alpha _{g}}
+  
+ = 12h 51m 26.282s are the declination and right ascension of the north galactic pole,[294] whereas 
+  
+    
+      
+        
+          β
+          
+            e
+          
+        
+      
+    
+    {\displaystyle \beta _{e}}
+  
+ = 66° 33′ 38.6″ and 
+  
+    
+      
+        
+          α
+          
+            e
+          
+        
+      
+    
+    {\displaystyle \alpha _{e}}
+  
+ = 18h 0m 00s are those for the north pole of the ecliptic. (Both pairs of coordinates are for J2000 epoch.) The result of the calculation is 60.19°.
+
+
+↑ The scale of the Solar System is sufficiently large that astronomers use a custom unit to express distances. The astronomical unit, abbreviated AU, is equal to 150,000,000 km; 93,000,000 mi. This is what the distance from the Earth to the Sun would be if the planet's orbit were perfectly circular.[11]
+
+
+↑ For more classifications of Solar System objects, see List of minor-planet groups and Comet § Classification.
+
+
+1 2 The mass of the Solar System excluding the Sun, Jupiter and Saturn can be determined by adding together all the calculated masses for its largest objects and using rough calculations for the masses of the Oort cloud (estimated at roughly 3 Earth masses),[49] the Kuiper belt (estimated at 0.1 Earth mass)[50] and the asteroid belt (estimated to be 0.0005 Earth mass)[51] for a total, rounded upwards, of ~37 Earth masses, or 8.1% of the mass in orbit around the Sun. With the combined masses of Uranus and Neptune (~31 Earth masses) subtracted, the remaining ~6 Earth masses of material comprise 1.3% of the total orbiting mass.
+
+
+
+
+
+
+
+
+
+References
+
+
+
+
+
+
+Data sources
+
+
+
+
+
+
+↑ Lurie, John C.; Henry, Todd J.; Jao, Wei-Chun; et al. (2014). "The Solar neighborhood. XXXIV. A search for planets orbiting nearby M dwarfs using astrometry". The Astronomical Journal. 148 (5): 91. arXiv:1407.4820. Bibcode:2014AJ....148...91L. doi:10.1088/0004-6256/148/5/91. ISSN 0004-6256. S2CID 118492541.
+
+
+↑ "The One Hundred Nearest Star Systems". astro.gsu.edu. Research Consortium On Nearby Stars, Georgia State University. 7 September 2007. Archived from the original on 12 November 2007. Retrieved 2 December 2014.
+
+
+↑ "Solar System Objects". NASA/JPL Solar System Dynamics. Archived from the original on 7 July 2021. Retrieved 14 August 2023.
+
+
+1 2 "Latest Published Data". The International Astronomical Union Minor Planet Center. Archived from the original on 5 March 2019. Retrieved 27 May 2024.
+
+
+↑ Yeomans, Donald K. "HORIZONS Web-Interface for Neptune Barycenter (Major Body=8)". jpl.nasa.gov. JPL Horizons On-Line Ephemeris System. Archived from the original on 7 September 2021. Retrieved 18 July 2014. – Select "Ephemeris Type: Orbital Elements", "Time Span: 2000-01-01 12:00 to 2000-01-02". ("Target Body: Neptune Barycenter" and "Center: Solar System Barycenter (@0)".)
+
+
+1 2 3 4 5 6 7 8 Williams, David (27 December 2021). "Planetary Fact Sheet – Metric". Goddard Space Flight Center. Archived from the original on 18 August 2011. Retrieved 11 December 2022.
+
+
+↑ "Planetary Satellite Physical Parameters". JPL (Solar System Dynamics). 13 July 2006. Archived from the original on 1 November 2013. Retrieved 29 January 2008.
+
+
+↑ "HORIZONS Web-Interface". NASA. 21 September 2013. Archived from the original on 28 March 2007. Retrieved 4 December 2013.
+
+
+↑ "Planetary Satellite Physical Parameters". Jet Propulsion Laboratory (Solar System Dynamics). 13 July 2006. Archived from the original on 1 November 2013. Retrieved 29 January 2008.
+
+
+↑ "JPL Small-Body Database Browser: 225088 Gonggong (2007 OR10)" (20 September 2015 last obs.). Jet Propulsion Laboratory. 10 April 2017. Archived from the original on 10 June 2020. Retrieved 20 February 2020.
+
+
+↑ "JPL Small-Body Database Browser: (2015 TG387)" (2018-10-17 last obs.). Jet Propulsion Laboratory. Archived from the original on 14 April 2020. Retrieved 13 December 2018.
+
+
+
+
+
+
+
+
+
+Other sources
+
+
+
+
+
+
+↑ "Our Local Galactic Neighborhood". interstellar.jpl.nasa.gov. Interstellar Probe Project. NASA. 2000. Archived from the original on 21 November 2013. Retrieved 8 August 2012.
+
+
+↑ Hurt, R. (8 November 2017). "The Milky Way Galaxy". science.nasa.gov. Retrieved 19 April 2024.
+
+
+1 2 Mumma, M. J.; Disanti, M. A.; Dello Russo, N.; et al. (2003). "Remote infrared observations of parent volatiles in comets: A window on the early solar system". Advances in Space Research. 31 (12): 2563–2575. Bibcode:2003AdSpR..31.2563M. doi:10.1016/S0273-1177(03)00578-7.
+
+
+↑ Chiang, E. I.; Jordan, A. B.; Millis, R. L.; et al. (2003). "Resonance Occupation in the Kuiper Belt: Case Examples of the 5:2 and Trojan Resonances". The Astronomical Journal. 126 (1): 430–443. arXiv:astro-ph/0301458. Bibcode:2003AJ....126..430C. doi:10.1086/375207. S2CID 54079935.
+
+
+↑ de la Fuente Marcos, C.; de la Fuente Marcos, R. (January 2024). "Past the outer rim, into the unknown: structures beyond the Kuiper Cliff". Monthly Notices of the Royal Astronomical Society Letters. 527 (1) (published 20 September 2023): L110–L114. arXiv:2309.03885. Bibcode:2024MNRAS.527L.110D. doi:10.1093/mnrasl/slad132. Archived from the original on 28 October 2023. Retrieved 28 September 2023.
+
+
+↑ Greicius, Tony (5 May 2015). "NASA Spacecraft Embarks on Historic Journey Into Interstellar Space". nasa.gov. Archived from the original on 11 June 2020. Retrieved 19 April 2024.
+
+
+↑ Souami, D.; Cresson, J.; Biernacki, C.; Pierret, F. (21 August 2020). "On the local and global properties of gravitational spheres of influence". Monthly Notices of the Royal Astronomical Society. 496 (4): 4287–4297. arXiv:2005.13059. doi:10.1093/mnras/staa1520.
+
+
+1 2 Chebotarev, G. A. (1 January 1963). "Gravitational Spheres of the Major Planets, Moon and Sun". Astronomicheskii Zhurnal. 40: 812. Bibcode:1964SvA.....7..618C. ISSN 0004-6299. Archived from the original on 7 May 2024. Retrieved 6 May 2024.
+
+
+↑ Francis, Charles; Anderson, Erik (June 2014). "Two estimates of the distance to the Galactic Centre". Monthly Notices of the Royal Astronomical Society. 441 (2): 1105–1114. arXiv:1309.2629. Bibcode:2014MNRAS.441.1105F. doi:10.1093/mnras/stu631. S2CID 119235554.
+
+
+1 2 "Sun: Facts". science.nasa.gov. 14 November 2017. Archived from the original on 19 April 2024. Retrieved 19 April 2024.
+
+
+↑ Standish, E. M. (April 2005). "The Astronomical Unit now". Proceedings of the International Astronomical Union. 2004 (IAUC196): 163–179. Bibcode:2005tvnv.conf..163S. doi:10.1017/S1743921305001365. S2CID 55944238.
+
+
+↑ "Dwarf Planets". IAU Minor Planet Center. 21 November 2025. Retrieved 19 January 2026.
+
+
+↑ Holler, Bryan J. (22 December 2021). "Trans-Neptunian Dwarf Planets". Oxford Research Encyclopedia of Planetary Science. doi:10.1093/acrefore/9780190647926.013.208. ISBN 978-0-19-064792-6.
+
+
+↑ Obidowski, Justine C.; Webb, Jeremy J.; Zwart, Simon Portegies; Cai, Maxwell X. (2025), "Oort Cloud Formation and Evolution in Star Clusters", The Astrophysical Journal, 987 (1): 29, arXiv:2505.17246, Bibcode:2025ApJ...987...29O, doi:10.3847/1538-4357/add92c
+
+
+1 2 "Definition of SOLAR SYSTEM". Merriam-Webster. 5 August 2024. Retrieved 10 July 2025.
+
+
+↑ Boulter, Michael (7 July 2025). "SOLAR SYSTEM Definition und Bedeutung". Collins Englisch Wörterbuch (in German). Retrieved 10 July 2025.
+
+
+↑ "Features of our Solar System guide for KS3 physics students". BBC Bitesize. 6 June 2022. Retrieved 10 July 2025.
+
+
+↑ "IAU Office of Astronomy for Education". astro4edu.org. IAU Office of Astronomy for Education. Archived from the original on 11 December 2023. Retrieved 11 December 2023.
+
+
+↑ "Solar System: Facts". NASA Science. 13 November 2017. Retrieved 10 July 2025.
+
+
+↑ "International Astronomical Union | IAU". www.iau.org. Archived from the original on 18 March 2025. Retrieved 17 January 2026.
+
+
+↑ Bouvier, A.; Wadhwa, M. (2010). "The age of the Solar System redefined by the oldest Pb–Pb age of a meteoritic inclusion". Nature Geoscience. 3 (9): 637–641. Bibcode:2010NatGe...3..637B. doi:10.1038/NGEO941. S2CID 56092512.
+
+
+1 2 3 Zabludoff, Ann. "Lecture 13: The Nebular Theory of the origin of the Solar System". NATS 102: The Physical Universe. University of Arizona. Retrieved 27 December 2006.
+
+
+1 2 Irvine, W. M. (1983). "The chemical composition of the pre-solar nebula". Cometary exploration; Proceedings of the International Conference. Vol. 1. p. 3. Bibcode:1983coex....1....3I.
+
+
+↑ Vorobyov, Eduard I. (March 2011). "Embedded Protostellar Disks Around (Sub-)Solar Stars. II. Disk Masses, Sizes, Densities, Temperatures, and the Planet Formation Perspective". The Astrophysical Journal. 729 (2). id. 146. arXiv:1101.3090. Bibcode:2011ApJ...729..146V. doi:10.1088/0004-637X/729/2/146. estimates of disk radii in the Taurus and Ophiuchus star forming regions lie in a wide range between 50 AU and 1000 AU, with a median value of 200 AU.
+
+
+↑ Greaves, Jane S. (7 January 2005). "Disks Around Stars and the Growth of Planetary Systems". Science. 307 (5706): 68–71. Bibcode:2005Sci...307...68G. doi:10.1126/science.1101979. PMID 15637266. S2CID 27720602.
+
+
+↑ "3. Present Understanding of the Origin of Planetary Systems". Strategy for the Detection and Study of Other Planetary Systems and Extrasolar Planetary Materials: 1990–2000. Washington D.C.: Space Studies Board, Committee on Planetary and Lunar Exploration, National Research Council, Division on Engineering and Physical Sciences, National Academies Press. 1990. pp. 21–33. ISBN 978-0-309-04193-5. Archived from the original on 9 April 2022. Retrieved 9 April 2022.
+
+
+↑ Boss, A. P.; Durisen, R. H. (2005). "Chondrule-forming Shock Fronts in the Solar Nebula: A Possible Unified Scenario for Planet and Chondrite Formation". The Astrophysical Journal. 621 (2): L137. arXiv:astro-ph/0501592. Bibcode:2005ApJ...621L.137B. doi:10.1086/429160. S2CID 15244154.
+
+
+1 2 3 4 5 Bennett, Jeffrey O. (2020). "Chapter 8.2". The cosmic perspective (9th ed.). Hoboken, New Jersey: Pearson. ISBN 978-0-134-87436-4.
+
+
+↑ Nagasawa, M.; Thommes, E. W.; Kenyon, S. J.; et al. (2007). "The Diverse Origins of Terrestrial-Planet Systems" (PDF). In Reipurth, B.; Jewitt, D.; Keil, K. (eds.). Protostars and Planets V. Tucson: University of Arizona Press. pp. 639–654. Bibcode:2007prpl.conf..639N. Archived (PDF) from the original on 12 April 2022. Retrieved 10 April 2022.
+
+
+1 2 Li, J.; Bergin, E. A.; Blake, G. A.; Ciesla, F. J.; Hirschmann, M. M. (2 April 2021). "Earth's carbon deficit caused by early loss through irreversible sublimation". Science Advances. 7 (14) eabd3632. arXiv:2104.02702. Bibcode:2021SciA....7.3632L. doi:10.1126/sciadv.abd3632. ISSN 2375-2548. PMC 11059936. PMID 33811069.
+
+
+↑ Li, J.; Bergin, E. A.; Blake, G. A.; Ciesla, F. J.; Hirschmann, M. M. (2 April 2021). "Earth's carbon deficit caused by early loss through irreversible sublimation". Science Advances. 7 (14) eabd3632. arXiv:2104.02702. Bibcode:2021SciA....7.3632L. doi:10.1126/sciadv.abd3632. ISSN 2375-2548. PMC 11059936. PMID 33811069.
+
+
+↑ Yi, Sukyoung; Demarque, Pierre; Kim, Yong-Cheol; et al. (2001). "Toward Better Age Estimates for Stellar Populations: The Y2 Isochrones for Solar Mixture". Astrophysical Journal Supplement. 136 (2): 417–437. arXiv:astro-ph/0104292. Bibcode:2001ApJS..136..417Y. doi:10.1086/321795. S2CID 118940644.
+
+
+1 2 Gough, D. O. (November 1981). "Solar Interior Structure and Luminosity Variations". Solar Physics. 74 (1): 21–34. Bibcode:1981SoPh...74...21G. doi:10.1007/BF00151270. S2CID 120541081.
+
+
+↑ Shaviv, Nir J. (2003). "Towards a Solution to the Early Faint Sun Paradox: A Lower Cosmic Ray Flux from a Stronger Solar Wind". Journal of Geophysical Research. 108 (A12) 2003JA009997: 1437. arXiv:astroph/0306477. Bibcode:2003JGRA..108.1437S. doi:10.1029/2003JA009997. S2CID 11148141.
+
+
+↑ Chrysostomou, A.; Lucas, P. W. (2005). "The Formation of Stars". Contemporary Physics. 46 (1): 29–40. Bibcode:2005ConPh..46...29C. doi:10.1080/0010751042000275277. S2CID 120275197.
+
+
+↑ Gomes, R.; Levison, H. F.; Tsiganis, K.; Morbidelli, A. (2005). "Origin of the cataclysmic Late Heavy Bombardment period of the terrestrial planets". Nature. 435 (7041): 466–469. Bibcode:2005Natur.435..466G. doi:10.1038/nature03676. PMID 15917802.
+
+
+↑ Crida, A. (2009). "Solar System Formation". Reviews in Modern Astronomy: Formation and Evolution of Cosmic Structures. Vol. 21. pp. 215–227. arXiv:0903.3008. Bibcode:2009RvMA...21..215C. doi:10.1002/9783527629190.ch12. ISBN 978-3-527-62919-0. S2CID 118414100.
+
+
+↑ Malhotra, R.; Holman, Matthew; Ito, Takashi (October 2001). "Chaos and stability of the solar system". Proceedings of the National Academy of Sciences. 98 (22): 12342–12343. Bibcode:2001PNAS...9812342M. doi:10.1073/pnas.231384098. PMC 60054. PMID 11606772.
+
+
+↑ Sussman, Gerald J.; Wisdom, Jack (3 July 1992). "Chaotic evolution of the solar system". Science. 257 (5066): 56–62. Bibcode:1992Sci...257...56S. doi:10.1126/science.257.5066.56. hdl:1721.1/5961. PMID 17800710 – via ntrs.nasa.gov.
+
+
+↑ Raymond, Sean; et al. (27 November 2023). "Future trajectories of the Solar System: dynamical simulations of stellar encounters within 100 au". Monthly Notices of the Royal Astronomical Society. 527 (3): 6126–6138. arXiv:2311.12171. Bibcode:2024MNRAS.527.6126R. doi:10.1093/mnras/stad3604. Archived from the original on 10 December 2023. Retrieved 10 December 2023.
+
+
+1 2 3 Schröder, K.-P.; Connon Smith, Robert (May 2008). "Distant future of the Sun and Earth revisited". Monthly Notices of the Royal Astronomical Society. 386 (1): 155–163. arXiv:0801.4031. Bibcode:2008MNRAS.386..155S. doi:10.1111/j.1365-2966.2008.13022.x. S2CID 10073988.
+
+
+↑ "Giant red stars may heat frozen worlds into habitable planets – NASA Science". NASA Science. 17 May 2016.
+
+
+↑ Aungwerojwit, Amornrat; Gänsicke, Boris T.; Dhillon, Vikram S.; et al. (2024). "Long-term variability in debris transiting white dwarfs". Monthly Notices of the Royal Astronomical Society. 530 (1): 117–128. arXiv:2404.04422. doi:10.1093/mnras/stae750.
+
+
+↑ "Planetary Nebulas". cfa.harvard.edu. Harvard & Smithsonian Center for Astrophysics. Archived from the original on 6 April 2024. Retrieved 6 April 2024.
+
+
+↑ Gesicki, K.; Zijlstra, A. A.; Miller Bertolami, M. M. (7 May 2018). "The mysterious age invariance of the planetary nebula luminosity function bright cut-off". Nature Astronomy. 2 (7): 580–584. arXiv:1805.02643. Bibcode:2018NatAs...2..580G. doi:10.1038/s41550-018-0453-9. hdl:11336/82487. S2CID 256708667. Archived from the original on 16 January 2024. Retrieved 16 January 2024.
+
+
+↑ "The Planets". NASA. 10 July 2023. Retrieved 6 April 2024.
+
+
+↑ "Kuiper Belt: Facts". NASA. 14 November 2017. Archived from the original on 12 March 2024. Retrieved 6 April 2024.
+
+
+1 2 Woolfson, M. (2000). "The origin and evolution of the solar system". Astronomy & Geophysics. 41 (1): 1.12 – 1.19. Bibcode:2000A&G....41a..12W. doi:10.1046/j.1468-4004.2000.00012.x.
+
+
+↑ Morbidelli, Alessandro (2005). "Origin and dynamical evolution of comets and their reservoirs". arXiv:astro-ph/0512256.
+
+
+1 2 3 Delsanti, Audrey; Jewitt, David (2006). "The Solar System Beyond The Planets" (PDF). Institute for Astronomy, University of Hawaii. Archived from the original (PDF) on 29 January 2007. Retrieved 3 January 2007.
+
+
+1 2 Krasinsky, G. A.; Pitjeva, E. V.; Vasilyev, M. V.; Yagudina, E. I. (July 2002). "Hidden Mass in the Asteroid Belt". Icarus. 158 (1): 98–105. Bibcode:2002Icar..158...98K. doi:10.1006/icar.2002.6837.
+
+
+↑ "The Sun's Vital Statistics". Stanford Solar Center. Archived from the original on 14 October 2012. Retrieved 29 July 2008, citing Eddy, J. (1979). A New Sun: The Solar Results From Skylab. NASA. p. 37. NASA SP-402. Archived from the original on 30 July 2021. Retrieved 12 July 2017.
+
+
+↑ Williams, David R. (7 September 2006). "Saturn Fact Sheet". NASA. Archived from the original on 4 August 2011. Retrieved 31 July 2007.
+
+
+1 2 Williams, David R. (23 December 2021). "Jupiter Fact Sheet". NASA Goddard Space Flight Center. Archived from the original on 22 January 2018. Retrieved 28 March 2022.
+
+
+↑ Weissman, Paul Robert; Johnson, Torrence V. (2007). Encyclopedia of the solar system. Academic Press. p. 615. ISBN 978-0-12-088589-3.
+
+
+↑ Souami, D.; Souchay, J. (2012). "The solar system's invariable plane" (PDF). Astronomy & Astrophysics. 543: A133. Bibcode:2012A&A...543A.133S. doi:10.1051/0004-6361/201219011. ISSN 0004-6361. Retrieved 15 July 2025. We note that for all the bodies (except for the Earth, of course), the inclination with respect to the invariable plane is smaller than the inclination with respect to the ecliptic. This is in particular the case for Jupiter and Saturn, for which the inclinations are 0°.3219 and 0°.9254 instead of 1°.3042 and 2°.4859, respectively.
+
+
+1 2 Levison, H.F.; Morbidelli, A. (27 November 2003). "The formation of the Kuiper belt by the outward transport of bodies during Neptune's migration". Nature. 426 (6965): 419–421. Bibcode:2003Natur.426..419L. doi:10.1038/nature02120. PMID 14647375. S2CID 4395099.
+
+
+↑ Levison, Harold F.; Duncan, Martin J. (1997). "From the Kuiper Belt to Jupiter-Family Comets: The Spatial Distribution of Ecliptic Comets". Icarus. 127 (1): 13–32. Bibcode:1997Icar..127...13L. doi:10.1006/icar.1996.5637.
+
+
+↑ Bennett, Jeffrey O.; Donahue, Megan; Schneider, Nicholas; Voit, Mark (2020). "4.5 Orbits, Tides, and the Acceleration of Gravity". The Cosmic Perspective (9th ed.). Hoboken, NJ: Pearson. ISBN 978-0-134-87436-4. OCLC 1061866912.
+
+
+↑ Grossman, Lisa (13 August 2009). "Planet found orbiting its star backwards for first time". New Scientist. Archived from the original on 17 October 2012. Retrieved 10 October 2009.
+
+
+↑ Nakano, Syuichi (2001). "OAA computing section circular". Oriental Astronomical Association. Archived from the original on 21 September 2019. Retrieved 15 May 2007.
+
+
+↑ Agnor, Craig B.; Hamilton, Douglas P. (May 2006). "Neptune's capture of its moon Triton in a binary–planet gravitational encounter". Nature. 441 (7090): 192–194. Bibcode:2006Natur.441..192A. doi:10.1038/nature04792. ISSN 1476-4687. PMID 16688170. S2CID 4420518. Archived from the original on 15 April 2022. Retrieved 28 March 2022.
+
+
+↑ Gallant, Roy A. (1980). Sedeen, Margaret (ed.). National Geographic Picture Atlas of Our Universe. Washington, D.C.: National Geographic Society. p. 82. ISBN 0-87044-356-9. OCLC 6533014.
+
+
+1 2 Frautschi, Steven C.; Olenick, Richard P.; Apostol, Tom M.; Goodstein, David L. (2007). The Mechanical Universe: Mechanics and Heat (Advanced ed.). Cambridge [Cambridgeshire]: Cambridge University Press. ISBN 978-0-521-71590-4. OCLC 227002144.
+
+
+1 2 Feynman, Richard P.; Leighton, Robert B.; Sands, Matthew L. (1989) [1965]. The Feynman Lectures on Physics, Volume 1. Reading, Mass.: Addison-Wesley Pub. Co. ISBN 0-201-02010-6. OCLC 531535.
+
+
+↑ Lecar, Myron; Franklin, Fred A.; Holman, Matthew J.; Murray, Norman J. (2001). "Chaos in the Solar System". Annual Review of Astronomy and Astrophysics. 39 (1): 581–631. arXiv:astro-ph/0111600. Bibcode:2001ARA&A..39..581L. doi:10.1146/annurev.astro.39.1.581. S2CID 55949289.
+
+
+↑ Piccirillo, Lucio (2020). Introduction to the Maths and Physics of the Solar System. CRC Press. p. 210. ISBN 978-0-429-68280-3. Archived from the original on 30 July 2022. Retrieved 10 May 2022.
+
+
+1 2 Marochnik, L.; Mukhin, L. (1995). "Is Solar System Evolution Cometary Dominated?". In Shostak, G.S. (ed.). Progress in the Search for Extraterrestrial Life. Astronomical Society of the Pacific Conference Series. Vol. 74. p. 83. Bibcode:1995ASPC...74...83M. ISBN 0-937707-93-7.
+
+
+↑ Bi, S. L.; Li, T. D.; Li, L. H.; Yang, W. M. (2011). "Solar Models with Revised Abundance". The Astrophysical Journal. 731 (2): L42. arXiv:1104.1032. Bibcode:2011ApJ...731L..42B. doi:10.1088/2041-8205/731/2/L42. S2CID 118681206.
+
+
+↑ "Which Planet Orbits our Sun the Fastest?". National Radio Astronomy Observatory.
+
+
+↑ Emilio, Marcelo; Kuhn, Jeff R.; Bush, Rock I.; Scholl, Isabelle F. (2012). "Measuring the Solar Radius from Space during the 2003 and 2006 Mercury Transits". The Astrophysical Journal. 750 (2): 135. arXiv:1203.4898. Bibcode:2012ApJ...750..135E. doi:10.1088/0004-637X/750/2/135. S2CID 119255559.
+
+
+↑ Williams, David R. (23 December 2021). "Neptune Fact Sheet". NASA Goddard Space Flight Center. Archived from the original on 19 November 2016. Retrieved 28 March 2022.
+
+
+↑ Jaki, Stanley L. (1 July 1972). "The Early History of the Titius-Bode Law". American Journal of Physics. 40 (7): 1014–1023. Bibcode:1972AmJPh..40.1014J. doi:10.1119/1.1986734. ISSN 0002-9505. Archived from the original on 20 April 2022. Retrieved 2 April 2022.
+
+
+↑ Phillips, J. P. (1965). "Kepler's Echinus". Isis. 56 (2): 196–200. doi:10.1086/349957. ISSN 0021-1753. JSTOR 227915. S2CID 145268784.
+
+
+↑ Boss, Alan (October 2006). "Is it a coincidence that most of the planets fall within the Titius-Bode law's boundaries?". Astronomy. Ask Astro. Vol. 30, no. 10. p. 70. Archived from the original on 16 March 2022. Retrieved 9 April 2022.
+
+
+↑ Ottewell, Guy (1989). "The Thousand-Yard Model: or, Earth as a Peppercorn". NOAO Educational Outreach Office. Archived from the original on 10 July 2016. Retrieved 10 May 2012.
+
+
+↑ "Tours of Model Solar Systems". University of Illinois. Archived from the original on 12 April 2011. Retrieved 10 May 2012.
+
+
+↑ "Luleå är Sedna. I alla fall om vår sol motsvaras av Globen i Stockholm". Norrbotten Kuriren (in Swedish). Archived from the original on 15 July 2010. Retrieved 10 May 2010.
+
+
+↑ See, for example, Office of Space Science (9 July 2004). "Solar System Scale". NASA Educator Features. Archived from the original on 27 August 2016. Retrieved 2 April 2013.
+
+
+↑ Dyches, Preston; Chou, Felcia (7 April 2015). "The Solar System and Beyond is Awash in Water". NASA. Archived from the original on 10 April 2015. Retrieved 8 April 2015.
+
+
+↑ Langner, U. W.; Potgieter, M. S. (2005). "Effects of the position of the solar wind termination shock and the heliopause on the heliospheric modulation of cosmic rays". Advances in Space Research. 35 (12): 2084–2090. Bibcode:2005AdSpR..35.2084L. doi:10.1016/j.asr.2004.12.005.
+
+
+↑ Robert T. Pappalardo; William B. McKinnon; K. Khurana (2009). Europa. University of Arizona Press. p. 658. ISBN 978-0-8165-2844-8. Archived from the original on 6 April 2023. Retrieved 6 April 2023. Extract of page 658 Archived 15 April 2023 at the Wayback Machine
+
+
+↑ Landis, Geoffrey A. (16 November 2020). "Settling Venus: A City in the Clouds?". Ascend 2020. American Institute of Aeronautics and Astronautics. doi:10.2514/6.2020-4152. ISBN 978-1-62410-608-8. Retrieved 11 September 2025.
+
+
+↑ Mishra, Lokesh; Alibert, Yann; Udry, Stéphane; Mordasini, Christoph (1 February 2023). "Framework for the architecture of exoplanetary systems - I. Four classes of planetary system architecture". Astronomy & Astrophysics. 670: A68. arXiv:2301.02374. Bibcode:2023A&A...670A..68M. doi:10.1051/0004-6361/202243751. ISSN 0004-6361.
+
+
+1 2 3 4 5 Martin, Rebecca G.; Livio, Mario (2015). "The Solar System as an Exoplanetary System". The Astrophysical Journal. 810 (2): 105. arXiv:1508.00931. Bibcode:2015ApJ...810..105M. doi:10.1088/0004-637X/810/2/105. S2CID 119119390.
+
+
+↑ Kohler, Susanna (25 September 2015). "How Normal is Our Solar System?". Aas Nova Highlights. American Astronomical Society: 313. Bibcode:2015nova.pres..313K. Archived from the original on 7 April 2022. Retrieved 31 March 2022.
+
+
+↑ Ezzy Pearson (9 March 2024). "Super-Earths and mini-Neptunes are the most common planets. So why does our Solar System have none?". BBC Sky at Night Magazine. Retrieved 2 September 2026.
+
+
+↑ Sheppard, Scott S.; Trujillo, Chadwick (7 December 2016). "New extreme trans-Neptunian objects: Toward a super-Earth in the outer solar system". The Astronomical Journal. 152 (6): 221. arXiv:1608.08772. Bibcode:2016AJ....152..221S. doi:10.3847/1538-3881/152/6/221. ISSN 1538-3881. S2CID 119187392.
+
+
+↑ Aschwanden, Markus J.; Stern, Robert A.; Gudel, Manuel (2008). "Scaling Laws of Solar and Stellar Flares". Astrophysical Journal. 672 (1): 659-673. arXiv:0710.2563. Bibcode:2008ApJ...672..659A. doi:10.1086/523926.
+
+
+↑ Volk, Kathryn; Gladman, Brett (2015). "Consolidating and Crushing Exoplanets: Did it happen here?". The Astrophysical Journal Letters. 806 (2): L26. arXiv:1502.06558. Bibcode:2015ApJ...806L..26V. doi:10.1088/2041-8205/806/2/L26. S2CID 118052299.
+
+
+↑ Goldreich, Peter; Lithwick, Yoram; Sari, Re'em (2004). "Final Stages of Planet Formation". The Astrophysical Journal. 614 (1): 497–507. arXiv:astro-ph/0404240. Bibcode:2004ApJ...614..497G. doi:10.1086/423612. S2CID 16419857.
+
+
+↑ "Sun: Facts & Figures". NASA. Archived from the original on 2 January 2008. Retrieved 14 May 2009.
+
+
+↑ Zirker, Jack B. (2002). Journey from the Center of the Sun. Princeton University Press. pp. 120–127. ISBN 978-0-691-05781-1.
+
+
+↑ "What Color is the Sun?". NASA. 25 May 2023. Archived from the original on 26 April 2024. Retrieved 6 April 2024.
+
+
+↑ "What Color is the Sun?". Stanford Solar Center. Archived from the original on 30 October 2017. Retrieved 23 May 2016.
+
+
+↑ Mejías, Andrea; Minniti, Dante; Alonso-García, Javier; Beamín, Juan Carlos; Saito, Roberto K.; Solano, Enrique (2022). "VVVX near-IR photometry for 99 low-mass stars in the Gaia EDR3 Catalog of Nearby Stars". Astronomy & Astrophysics. 660: A131. arXiv:2203.00786. Bibcode:2022A&A...660A.131M. doi:10.1051/0004-6361/202141759. S2CID 246842719.
+
+
+↑ van Albada, T. S.; Baker, Norman (1973). "On the Two Oosterhoff Groups of Globular Clusters". The Astrophysical Journal. 185: 477–498. Bibcode:1973ApJ...185..477V. doi:10.1086/152434.
+
+
+↑ Lineweaver, Charles H. (9 March 2001). "An Estimate of the Age Distribution of Terrestrial Planets in the Universe: Quantifying Metallicity as a Selection Effect". Icarus. 151 (2): 307–313. arXiv:astro-ph/0012399. Bibcode:2001Icar..151..307L. doi:10.1006/icar.2001.6607. S2CID 14077895.
+
+
+↑ Kallenrode, May-Britt (2004). Space Physics: An introduction to plasmas and particles in the heliosphere and magnetospheres (3rd ed.). Berlin: Springer. p. 150. ISBN 978-3-540-20617-0. OCLC 53443301.
+
+
+1 2 3 Steigerwald, Bill (24 May 2005). "Voyager Enters Solar System's Final Frontier". NASA. Archived from the original on 16 May 2020. Retrieved 2 April 2007.
+
+
+↑ Phillips, Tony (15 February 2001). "The Sun Does a Flip". NASA Science: Share the Science. Archived from the original on 1 April 2022. Retrieved 1 April 2022.
+
+
+↑ Fraknoi, Andrew; Morrison, David; Wolff, Sidney C.; et al. (2022) [2016]. "15.4 Space weather". Astronomy. Houston, Texas: OpenStax. ISBN 978-1-947-17224-1. OCLC 961476196. Archived from the original on 19 July 2020. Retrieved 9 March 2022.
+
+
+↑ "A Star with two North Poles". NASA Science: Share the Science. 22 April 2003. Archived from the original on 1 April 2022. Retrieved 1 April 2022.
+
+
+↑ Riley, Pete (2002). "Modeling the heliospheric current sheet: Solar cycle variations". Journal of Geophysical Research. 107 (A7): 1136. Bibcode:2002JGRA..107.1136R. doi:10.1029/2001JA000299.
+
+
+↑ "Inner Solar System". NASA Science: Share the Science. 10 May 2016. Archived from the original on 10 April 2022. Retrieved 2 April 2022.
+
+
+↑ Del Genio, Anthony D.; Brain, David; Noack, Lena; Schaefer, Laura (2020). "The Inner Solar System's Habitability Through Time". In Meadows, Victoria S.; Arney, Giada N.; Schmidt, Britney; Des Marais, David J. (eds.). Planetary Astrobiology. University of Arizona Press. p. 420. arXiv:1807.04776. Bibcode:2018arXiv180704776D. ISBN 978-0-8165-4065-5.
+
+
+1 2 Ryden, Robert (December 1999). "Astronomical Math". The Mathematics Teacher. 92 (9): 786–792. doi:10.5951/MT.92.9.0786. ISSN 0025-5769. JSTOR 27971203. Archived from the original on 12 April 2022. Retrieved 29 March 2022.
+
+
+↑ Watters, Thomas R.; Solomon, Sean C.; Robinson, Mark S.; Head, James W.; André, Sarah L.; Hauck, Steven A.; Murchie, Scott L. (August 2009). "The tectonics of Mercury: The view after MESSENGER's first flyby". Earth and Planetary Science Letters. 285 (3–4): 283–296. Bibcode:2009E&PSL.285..283W. doi:10.1016/j.epsl.2009.01.025.
+
+
+1 2 Head, James W.; Solomon, Sean C. (1981). "Tectonic Evolution of the Terrestrial Planets" (PDF). Science. 213 (4503): 62–76. Bibcode:1981Sci...213...62H. doi:10.1126/science.213.4503.62. hdl:2060/20020090713. PMID 17741171. Archived from the original (PDF) on 21 July 2018. Retrieved 25 October 2017.
+
+
+↑ Talbert, Tricia, ed. (21 March 2012). "MESSENGER Provides New Look at Mercury's Surprising Core and Landscape Curiosities". NASA. Archived from the original on 12 January 2019. Retrieved 20 April 2018.
+
+
+↑ Margot, Jean-Luc; Peale, Stanton J.; Solomon, Sean C.; Hauck, Steven A.; Ghigo, Frank D.; Jurgens, Raymond F.; Yseboodt, Marie; Giorgini, Jon D.; Padovan, Sebastiano; Campbell, Donald B. (2012). "Mercury's moment of inertia from spin and gravity data". Journal of Geophysical Research: Planets. 117 (E12) 2012JE004161: n/a. Bibcode:2012JGRE..117.0L09M. doi:10.1029/2012JE004161. ISSN 0148-0227. S2CID 22408219.
+
+
+↑ Domingue, Deborah L.; Koehn, Patrick L.; et al. (2009). "Mercury's Atmosphere: A Surface-Bounded Exosphere". Space Science Reviews. 131 (1–4): 161–186. Bibcode:2007SSRv..131..161D. doi:10.1007/s11214-007-9260-9. S2CID 121301247. The composition of Mercury's exosphere, with its abundant H and He, clearly indicates a strong solar wind source. Once solar wind plasma and particles gain access to the magnetosphere, they predominantly precipitate to the surface, where solar wind species are neutralized, thermalized, and released again into the exosphere. Moreover, bombardment of the surface by solar wind particles, especially energetic ions, contributes to ejection of neutral species from the surface into the exosphere (via "sputtering") as well as other chemical and physical surface modification processes.
+
+
+1 2 "How Many Moons Does Each Planet Have? | NASA Space Place – NASA Science for Kids". spaceplace.nasa.gov. Archived from the original on 21 April 2024. Retrieved 21 April 2024.
+
+
+↑ Lebonnois, Sebastien; Schubert, Gerald (26 June 2017). "The deep atmosphere of Venus and the possible role of density-driven separation of CO2 and N2" (PDF). Nature Geoscience. 10 (7). Springer Science and Business Media LLC: 473–477. Bibcode:2017NatGe..10..473L. doi:10.1038/ngeo2971. ISSN 1752-0894. S2CID 133864520. Archived (PDF) from the original on 4 May 2019. Retrieved 11 August 2023.
+
+
+↑ Bullock, Mark Alan (1997). The Stability of Climate on Venus (PDF) (PhD thesis). Southwest Research Institute. Archived from the original (PDF) on 14 June 2007. Retrieved 26 December 2006.
+
+
+↑ Rincon, Paul (1999). "Climate Change as a Regulator of Tectonics on Venus" (PDF). Johnson Space Center Houston, TX, Institute of Meteoritics, University of New Mexico, Albuquerque, NM. Archived from the original (PDF) on 14 June 2007. Retrieved 19 November 2006.
+
+
+↑ Elkins-Tanton, L. T.; Smrekar, S. E.; Hess, P. C.; Parmentier, E. M. (March 2007). "Volcanism and volatile recycling on a one-plate planet: Applications to Venus". Journal of Geophysical Research. 112 (E4) 2006JE002793. Bibcode:2007JGRE..112.4S06E. doi:10.1029/2006JE002793. E04S06.
+
+
+↑ "What are the characteristics of the Solar System that lead to the origins of life?". NASA Science (Big Questions). Archived from the original on 8 April 2010. Retrieved 30 August 2011.
+
+
+↑ Haynes, H. M., ed. (2016–2017). CRC Handbook of Chemistry and Physics (97th ed.). CRC Press. p. 14-3. ISBN 978-1-4987-5428-6.
+
+
+↑ Zimmer, Carl (3 October 2013). "Earth's Oxygen: A Mystery Easy to Take for Granted". The New York Times. Archived from the original on 3 October 2013. Retrieved 3 October 2013.
+
+
+↑ Staff. "Climate Zones". UK Department for Environment, Food and Rural Affairs. Archived from the original on 8 August 2010. Retrieved 24 March 2007.
+
+
+↑ Carlowicz, Michael; Simmon, Robert (15 July 2019). "Seeing Forests for the Trees and the Carbon: Mapping the World's Forests in Three Dimensions". NASA Earth Observatory. Archived from the original on 31 December 2022. Retrieved 31 December 2022.
+
+
+↑ Cain, Fraser (1 June 2010). "What Percentage of the Earth's Land Surface is Desert?". Universe Today. Archived from the original on 3 January 2023. Retrieved 3 January 2023.
+
+
+↑ "Ice Sheet". National Geographic Society. 6 August 2006. Archived from the original on 27 November 2023. Retrieved 3 January 2023.
+
+
+↑ Pentreath, R. J. (2021). Radioecology: Sources and Consequences of Ionising Radiation in the Environment. Cambridge University Press. pp. 94–97. ISBN 978-1-009-04033-4. Archived from the original on 20 April 2022. Retrieved 12 April 2022.
+
+
+↑ "Facts About Earth – NASA Science". NASA Science. 30 May 2023. Retrieved 11 January 2024.
+
+
+↑ Metzger, Philip; Grundy, Will; Sykes, Mark; Stern, Alan; Bell, James; Detelich, Charlene; Runyon, Kirby; Summers, Michael (2021), "Moons are planets: Scientific usefulness versus cultural teleology in the taxonomy of planetary science", Icarus, 374 114768, arXiv:2110.15285, Bibcode:2022Icar..37414768M, doi:10.1016/j.icarus.2021.114768, S2CID 240071005
+
+
+↑ "The Smell of Moondust". NASA. 30 January 2006. Archived from the original on 8 March 2010. Retrieved 15 March 2010.
+
+
+↑ Melosh, H. J. (1989). Impact cratering: A geologic process. Oxford University Press. ISBN 978-0-19-504284-9.
+
+
+↑ Norman, M. (21 April 2004). "The Oldest Moon Rocks". Planetary Science Research Discoveries. Hawai'i Institute of Geophysics and Planetology. Archived from the original on 18 April 2007. Retrieved 12 April 2007.
+
+
+↑ Globus, Ruth (1977). "Chapter 5, Appendix J: Impact Upon Lunar Atmosphere". In Richard D. Johnson & Charles Holbrow (ed.). Space Settlements: A Design Study. NASA. Archived from the original on 31 May 2010. Retrieved 17 March 2010.
+
+
+↑ Seidelmann, P. Kenneth; Archinal, Brent A.; A'Hearn, Michael F.; Conrad, Albert R.; Consolmagno, Guy J.; Hestroffer, Daniel; Hilton, James L.; Krasinsky, Georgij A.; Neumann, Gregory A.; Oberst, Jürgen; Stooke, Philip J.; Tedesco, Edward F.; Tholen, David J.; Thomas, Peter C.; Williams, Iwan P. (2007). "Report of the IAU/IAG Working Group on cartographic coordinates and rotational elements: 2006". Celestial Mechanics and Dynamical Astronomy. 98 (3): 155–180. Bibcode:2007CeMDA..98..155S. doi:10.1007/s10569-007-9072-y.
+
+
+↑ Peplow, Mark (6 May 2004). "How Mars got its rust". Nature: news040503–6. doi:10.1038/news040503-6. ISSN 0028-0836. Archived from the original on 7 April 2022. Retrieved 9 April 2022.
+
+
+↑ "Polar Caps". Mars Education at Arizona State University. Archived from the original on 28 May 2021. Retrieved 6 January 2022.
+
+
+↑ Gatling, David C.; Leovy, Conway (2007). "Mars Atmosphere: History and Surface Interactions". In Lucy-Ann McFadden; et al. (eds.). Encyclopaedia of the Solar System. pp. 301–314.
+
+
+↑ Noever, David (2004). "Modern Martian Marvels: Volcanoes?". NASA Astrobiology Magazine. Archived from the original on 14 March 2020. Retrieved 23 July 2006.
+
+
+↑ NASA – Mars in a Minute: Is Mars Really Red? Archived 20 July 2014 at the Wayback Machine (Transcript Archived 6 November 2015 at the Wayback Machine)  This article incorporates text from this source, which is in the public domain.
+
+
+↑ Nimmo, Francis; Tanaka, Ken (2005). "Early Crustal Evolution of Mars". Annual Review of Earth and Planetary Sciences. 33 (1): 133–161. Bibcode:2005AREPS..33..133N. doi:10.1146/annurev.earth.33.092203.122637. S2CID 45843366.
+
+
+↑ Philips, Tony (31 January 2001). "The Solar Wind at Mars". Science@NASA. Archived from the original on 18 August 2011. Retrieved 22 April 2022.  This article incorporates text from this source, which is in the public domain.
+
+
+↑ Andrews, Robin George (25 July 2020). "Why the 'Super Weird' Moons of Mars Fascinate Scientists – What's the big deal about little Phobos and tinier Deimos?". The New York Times. Archived from the original on 25 July 2020. Retrieved 25 July 2020.
+
+
+↑ "Phobos". BBC Online. 12 January 2004. Archived from the original on 22 April 2009. Retrieved 19 July 2021.
+
+
+↑ "Stickney Crater-Phobos". Archived from the original on 3 November 2011. Retrieved 21 April 2024. One of the most striking features of Phobos, aside from its irregular shape, is its giant crater Stickney. Because Phobos is only 28 by 20 kilometers (17 by 12 mi), it must have been nearly shattered from the force of the impact that caused the giant crater. Grooves that extend across the surface from Stickney appear to be surface fractures caused by the impact.
+
+
+↑ "Deimos". Britannica. 6 June 2023. Archived from the original on 12 November 2018. Retrieved 21 April 2024. It thus appears smoother than Phobos because its craters lie partially buried under this loose material.
+
+
+↑ "IAU Planet Definition Committee". International Astronomical Union. 2006. Archived from the original on 3 June 2009. Retrieved 1 March 2009.
+
+
+↑ "Are Kuiper Belt Objects asteroids? Are large Kuiper Belt Objects planets?". Cornell University. Archived from the original on 3 January 2009. Retrieved 1 March 2009.
+
+
+↑ Snodgrass, Colin; Agarwal, Jessica; Combi, Michael; Fitzsimmons, Alan; Guilbert-Lepoutre, Aurelie; Hsieh, Henry H.; Hui, Man-To; Jehin, Emmanuel; Kelley, Michael S. P.; Knight, Matthew M.; Opitom, Cyrielle (November 2017). "The Main Belt Comets and ice in the Solar System". The Astronomy and Astrophysics Review. 25 (1): 5. arXiv:1709.05549. Bibcode:2017A&ARv..25....5S. doi:10.1007/s00159-017-0104-7. ISSN 0935-4956. S2CID 7683815. Archived from the original on 20 April 2022. Retrieved 9 March 2022.
+
+
+↑ List of asteroids with q<0.3075 AU generated by the JPL Small-Body Database Search Engine Archived 3 March 2016 at the Wayback Machine Retrieved 30 May 2012
+
+
+↑ Durda, D .D.; Stern, S. A.; Colwell, W. B.; Parker, J. W.; Levison, H. F.; Hassler, D. M. (2004). "A New Observational Search for Vulcanoids in SOHO/LASCO Coronagraph Images". Icarus. 148 (1): 312–315. Bibcode:2000Icar..148..312D. doi:10.1006/icar.2000.6520.
+
+
+↑ Steffl, A. J.; Cunningham, N. J.; Shinn, A. B.; Stern, S. A. (2013). "A Search for Vulcanoids with the STEREO Heliospheric Imager". Icarus. 233 (1): 48–56. arXiv:1301.3804. Bibcode:2013Icar..223...48S. doi:10.1016/j.icarus.2012.11.031. S2CID 118612132.
+
+
+↑ Bolin, Bryce T.; Ahumada, T.; van Dokkum, P.; Fremling, C.; Granvik, M.; Hardegree-Ullmann, K. K.; Harikane, Y.; Purdum, J. N.; Serabyn, E.; Southworth, J.; Zhai, C. (November 2022). "The discovery and characterization of (594913) 'Ayló'chaxnim, a kilometre sized asteroid inside the orbit of Venus". Monthly Notices of the Royal Astronomical Society Letters. 517 (1): L49–L54. arXiv:2208.07253. Bibcode:2022MNRAS.517L..49B. doi:10.1093/mnrasl/slac089. Archived from the original on 1 October 2022. Retrieved 1 October 2022.
+
+
+1 2 "Small-Body Database Query". NASA. Archived from the original on 27 September 2021. Retrieved 3 June 2024.
+
+
+↑ Morbidelli, A.; Bottke, W.F.; Froeschlé, Ch.; Michel, P. (January 2002). "Origin and Evolution of Near-Earth Objects" (PDF). In W.F. Bottke Jr.; A. Cellino; P. Paolicchi; R.P. Binzel (eds.). Asteroids III. University of Arizona Press. pp. 409–422. Bibcode:2002aste.book..409M. doi:10.2307/j.ctv1v7zdn4.33. ISBN 978-0-8165-2281-1. Archived (PDF) from the original on 9 August 2017. Retrieved 30 August 2009.
+
+
+↑ "NEO Basics – Potentially Hazardous Asteroids (PHAs)". CNEOS NASA/JPL. Archived from the original on 11 November 2021. Retrieved 10 March 2022.
+
+
+↑ Baalke, Ron. "Near-Earth Object Groups". Jet Propulsion Laboratory. NASA. Archived from the original on 2 February 2002. Retrieved 11 November 2016.
+
+
+↑ "Discovery Statistics – Cumulative Totals". NASA/JPL CNEOS. 30 December 2024. Archived from the original on 1 January 2025. Retrieved 1 January 2025.
+
+
+↑ Monastersky, Richard (1 March 1997). "The Call of Catastrophes". Science News Online. Archived from the original on 13 March 2004. Retrieved 2 January 2025.
+
+
+↑ Angeli, C. A.; Lazzaro, D. (2002). "Spectral properties of Mars-crossers and near-Earth objects". Astronomy & Astrophysics. 391 (2): 757–765. doi:10.1051/0004-6361:20020834.
+
+
+↑ Petit, J.-M.; Morbidelli, A.; Chambers, J. (2001). "The Primordial Excitation and Clearing of the Asteroid Belt" (PDF). Icarus. 153 (2): 338–347. Bibcode:2001Icar..153..338P. doi:10.1006/icar.2001.6702. Archived from the original (PDF) on 21 February 2007. Retrieved 22 March 2007.
+
+
+↑ Tedesco, Edward F.; Cellino, Alberto; Zappalá, Vincenzo (June 2005). "The Statistical Asteroid Model. I. The Main-Belt Population for Diameters Greater than 1 Kilometer". The Astronomical Journal. 129 (6): 2869–2886. Bibcode:2005AJ....129.2869T. doi:10.1086/429734. ISSN 0004-6256. S2CID 119906696.
+
+
+↑ "Cassini Passes Through Asteroid Belt". NASA. 14 April 2000. Archived from the original on 25 January 2021. Retrieved 1 March 2021.
+
+
+↑ McCord, Thomas B.; McFadden, Lucy A.; Russell, Christopher T.; Sotin, Christophe; Thomas, Peter C. (7 March 2006). "Ceres, Vesta, and Pallas: Protoplanets, Not Asteroids". Eos. 87 (10): 105. Bibcode:2006EOSTr..87..105M. doi:10.1029/2006EO100002. Archived from the original on 28 September 2021. Retrieved 12 September 2021.
+
+
+↑ Cook, Jia-Rui C. (29 March 2011). "When Is an Asteroid Not an Asteroid?". NASA/JPL. Archived from the original on 29 June 2011. Retrieved 30 July 2011.
+
+
+↑ Marsset, M.; Brož, M.; Vernazza, P.; et al. (2020). "The violent collisional history of aqueously evolved (2) Pallas" (PDF). Nature Astronomy. 4 (6): 569–576. Bibcode:2020NatAs...4..569M. doi:10.1038/s41550-019-1007-5. hdl:10261/237549. S2CID 212927521. Archived (PDF) from the original on 7 January 2023. Retrieved 4 January 2023.
+
+
+↑ "Question and answers 2". IAU. Archived from the original on 30 January 2016. Retrieved 31 January 2008. Ceres is (or now we can say it was) the largest asteroid ... There are many other asteroids that can come close to the orbital path of Ceres.
+
+
+↑ Ermakov, A. I.; Fu, R. R.; Castillo-Rogez, J. C.; Raymond, C. A.; Park, R. S.; Preusker, F.; Russell, C. T.; Smith, D. E.; Zuber, M. T. (November 2017). "Constraints on Ceres' Internal Structure and Evolution From Its Shape and Gravity Measured by the Dawn Spacecraft". Journal of Geophysical Research: Planets. 122 (11): 2267–2293. Bibcode:2017JGRE..122.2267E. doi:10.1002/2017JE005302. S2CID 133739176.
+
+
+↑ Marchi, S.; Raponi, A.; Prettyman, T. H.; De Sanctis, M. C.; Castillo-Rogez, J.; Raymond, C. A.; Ammannito, E.; Bowling, T.; Ciarniello, M.; Kaplan, H.; Palomba, E.; Russell, C. T.; Vinogradoff, V.; Yamashita, N. (2018). "An aqueously altered carbon-rich Ceres". Nature Astronomy. 3 (2): 140–145. doi:10.1038/s41550-018-0656-0. S2CID 135013590.
+
+
+↑ Raymond, C.; Castillo-Rogez, J. C.; Park, R. S.; Ermakov, A.; et al. (September 2018). "Dawn Data Reveal Ceres' Complex Crustal Evolution" (PDF). European Planetary Science Congress. Vol. 12. Archived (PDF) from the original on 30 January 2020. Retrieved 19 July 2020.
+
+
+↑ Krummheuer, Birgit (6 March 2017). "Cryovolcanism on Dwarf Planet Ceres". Max Planck Institute for Solar System Research. Archived from the original on 2 February 2024. Retrieved 22 April 2024.
+
+
+↑ "Confirmed: Ceres Has a Transient Atmosphere". Universe Today. 6 April 2017. Archived from the original on 15 April 2017. Retrieved 14 April 2017.
+
+
+1 2 Vernazza, Pierre; Ferrais, Marin; Jorda, Laurent; Hanus, Josef; Carry, Benoit; Marsset, Michael; Brož, Miroslav; Fetick, Roman; HARISSA team (6 July 2022). VLT/SPHERE imaging survey of D>100 km asteroids: Final results and synthesis (Report). Astronomy & Astrophysics. p. A56. doi:10.5194/epsc2022-103. Archived from the original on 22 April 2024. Retrieved 22 April 2024.
+
+
+1 2 Lakdawalla, Emily; et al. (21 April 2020). "What Is A Planet?". The Planetary Society. Archived from the original on 22 January 2022. Retrieved 3 April 2022.
+
+
+↑ "A look into Vesta's interior". Max-Planck-Gesellschaft. 6 January 2011. Archived from the original on 5 March 2023. Retrieved 22 April 2024.
+
+
+↑ Takeda, H. (1997). "Mineralogical records of early planetary processes on the HED parent body with reference to Vesta". Meteoritics & Planetary Science. 32 (6): 841–853. Bibcode:1997M&PS...32..841T. doi:10.1111/j.1945-5100.1997.tb01574.x.
+
+
+↑ Schenk, P.; et al. (2012). "The Geologically Recent Giant Impact Basins at Vesta's South Pole". Science. 336 (6082): 694–697. Bibcode:2012Sci...336..694S. doi:10.1126/science.1223272. PMID 22582256. S2CID 206541950.
+
+
+↑ "Athena: A SmallSat Mission to (2) Pallas". Archived from the original on 21 November 2021. Retrieved 7 October 2020.
+
+
+↑ Feierberg, M. A.; Larson, H. P.; Lebofsky, L. A. (1982). "The 3 Micron Spectrum of Asteroid 2 Pallas". Bulletin of the American Astronomical Society. 14: 719. Bibcode:1982BAAS...14..719F.
+
+
+↑ Barucci, M. A.; Kruikshank, D. P.; Mottola, S.; Lazzarin, M. (2002). "Physical Properties of Trojan and Centaur Asteroids". Asteroids III. Tucson, Arizona: University of Arizona Press. pp. 273–287.
+
+
+↑ "Trojan Asteroids". Cosmos. Swinburne University of Technology. Archived from the original on 23 June 2017. Retrieved 13 June 2017.
+
+
+↑ Connors, Martin; Wiegert, Paul; Veillet, Christian (27 July 2011). "Earth's Trojan asteroid". Nature. 475 (7357): 481–483. Bibcode:2011Natur.475..481C. doi:10.1038/nature10233. PMID 21796207. S2CID 205225571.
+
+
+↑ de la Fuente Marcos, Carlos; de la Fuente Marcos, Raúl (21 May 2017). "Asteroid 2014 YX49: a large transient Trojan of Uranus". Monthly Notices of the Royal Astronomical Society. 467 (2): 1561–1568. arXiv:1701.05541. Bibcode:2017MNRAS.467.1561D. doi:10.1093/mnras/stx197.
+
+
+↑ Christou, Apostolos A.; Wiegert, Paul (January 2012). "A population of main belt asteroids co-orbiting with Ceres and Vesta". Icarus. 217 (1): 27–42. arXiv:1110.4810. Bibcode:2012Icar..217...27C. doi:10.1016/j.icarus.2011.10.016. S2CID 59474402.
+
+
+↑ Yoshida, Fumi; Nakamura, Tsuko (2005). "Size distribution of faint L4 Trojan asteroids". The Astronomical Journal. 130 (6): 2900–11. Bibcode:2005AJ....130.2900Y. doi:10.1086/497571.
+
+
+↑ "List of Neptune Trojans". Minor Planet Center. 28 October 2018. Archived from the original on 22 June 2025. Retrieved 28 December 2018.
+
+
+1 2 Podolak, M.; Podolak, J. I.; Marley, M. S. (February 2000). "Further investigations of random models of Uranus and Neptune". Planetary and Space Science. 48 (2–3): 143–151. Bibcode:2000P&SS...48..143P. doi:10.1016/S0032-0633(99)00088-4. Archived from the original on 21 December 2019. Retrieved 25 August 2019.
+
+
+↑ "Gas Giant | Planet Types". Exoplanet Exploration: Planets Beyond our Solar System. 22 October 2020. Archived from the original on 28 November 2020. Retrieved 22 December 2020.
+
+
+↑ Lissauer, Jack J.; Stevenson, David J. (2006). "Formation of Giant Planets" (PDF). NASA Ames Research Center; California Institute of Technology. Archived from the original (PDF) on 26 March 2009. Retrieved 16 January 2006.
+
+
+1 2 Podolak, M.; Weizman, A.; Marley, M. (December 1995). "Comparative models of Uranus and Neptune". Planetary and Space Science. 43 (12): 1517–1522. Bibcode:1995P&SS...43.1517P. doi:10.1016/0032-0633(95)00061-5.
+
+
+↑ Zellik, Michael (2002). Astronomy: The Evolving Universe (9th ed.). Cambridge University Press. p. 240. ISBN 978-0-521-80090-7. OCLC 223304585.
+
+
+↑ Rogers, John H. (1995). The giant planet Jupiter. Cambridge University Press. p. 293. ISBN 978-0-521-41008-3. Archived from the original on 20 April 2022. Retrieved 13 April 2022.
+
+
+↑ Anderson, J.D.; Johnson, T.V.; Shubert, G.; et al. (2005). "Amalthea's Density Is Less Than That of Water". Science. 308 (5726): 1291–1293. Bibcode:2005Sci...308.1291A. doi:10.1126/science.1110422. PMID 15919987. S2CID 924257.
+
+
+↑ Burns, J. A.; Showalter, M. R.; Hamilton, D. P.; et al. (1999). "The Formation of Jupiter's Faint Rings". Science. 284 (5417): 1146–1150. Bibcode:1999Sci...284.1146B. doi:10.1126/science.284.5417.1146. PMID 10325220. S2CID 21272762.
+
+
+↑ Pappalardo, R. T. (1999). "Geology of the Icy Galilean Satellites: A Framework for Compositional Studies". Brown University. Archived from the original on 30 September 2007. Retrieved 16 January 2006.
+
+
+↑ Sheppard, Scott S.; Jewitt, David C.; Porco, Carolyn (2004). "Jupiter's outer satellites and Trojans" (PDF). In Bagenal, Fran; Dowling, Timothy E.; McKinnon, William B. (eds.). Jupiter. The planet, satellites and magnetosphere. Vol. 1. Cambridge, UK: Cambridge University Press. pp. 263–280. ISBN 0-521-81808-7. Archived from the original (PDF) on 26 March 2009.
+
+
+↑ "In Depth: Saturn". NASA Science: Solar System Exploration. 18 August 2021. Archived from the original on 24 February 2018. Retrieved 31 March 2022.
+
+
+↑ Sremčević, Miodrag; Schmidt, Jürgen; Salo, Heikki; Seiß, Martin; Spahn, Frank; Albers, Nicole (2007). "A belt of moonlets in Saturn's A ring". Nature. 449 (7165): 1019–21. Bibcode:2007Natur.449.1019S. doi:10.1038/nature06224. PMID 17960236. S2CID 4330204.
+
+
+↑ Porco, C. C.; Baker, E.; Barbara, J.; et al. (2005). "Cassini Imaging Science: Initial Results on Saturn's Rings and Small Satellites" (PDF). Science. 307 (5713): 1234. Bibcode:2005Sci...307.1226P. doi:10.1126/science.1108056. PMID 15731439. S2CID 1058405. Archived (PDF) from the original on 25 July 2011. Retrieved 21 April 2024.
+
+
+1 2 Williams, Matt (7 August 2015). "The moons of Saturn". phys.org. Archived from the original on 21 April 2024. Retrieved 21 April 2024.
+
+
+↑ "Calypso". NASA. January 2024. Archived from the original on 17 May 2024. Retrieved 16 May 2024.
+
+
+↑ "Polydeuces". NASA. January 2024. Retrieved 16 May 2024.
+
+
+1 2 Forget, F.; Bertrand, T.; Vangvichith, M.; Leconte, J.; Millour, E.; Lellouch, E. (May 2017). "A post-New Horizons Global climate model of Pluto including the N 2, CH 4 and CO cycles" (PDF). Icarus. 287: 54–71. Bibcode:2017Icar..287...54F. doi:10.1016/j.icarus.2016.11.038.
+
+
+1 2 Jewitt, David; Haghighipour, Nader (2007). "Irregular Satellites of the Planets: Products of Capture in the Early Solar System" (PDF). Annual Review of Astronomy and Astrophysics. 45 (1): 261–95. arXiv:astro-ph/0703059. Bibcode:2007ARA&A..45..261J. doi:10.1146/annurev.astro.44.051905.092459. S2CID 13282788. Archived (PDF) from the original on 25 February 2014. Retrieved 21 April 2024.
+
+
+↑ Devitt, Terry (14 October 2008). "New images yield clues to seasons of Uranus". University of Wisconsin–Madison. Archived from the original on 6 April 2024. Retrieved 6 April 2024.
+
+
+↑ Esposito, L. W. (2002). "Planetary rings". Reports on Progress in Physics. 65 (12): 1741–1783. Bibcode:2002RPPh...65.1741E. doi:10.1088/0034-4885/65/12/201. S2CID 250909885.
+
+
+↑ Duncan, Martin J.; Lissauer, Jack J. (1997). "Orbital Stability of the Uranian Satellite System". Icarus. 125 (1): 1–12. Bibcode:1997Icar..125....1D. doi:10.1006/icar.1996.5568.
+
+
+↑ Sheppard, S. S.; Jewitt, D.; Kleyna, J. (2005). "An Ultradeep Survey for Irregular Satellites of Uranus: Limits to Completeness". The Astronomical Journal. 129 (1): 518. arXiv:astro-ph/0410059. Bibcode:2005AJ....129..518S. doi:10.1086/426329. S2CID 18688556.
+
+
+↑ Hussmann, Hauke; Sohl, Frank; Spohn, Tilman (November 2006). "Subsurface oceans and deep interiors of medium-sized outer planet satellites and large trans-neptunian objects". Icarus. 185 (1): 258–273. Bibcode:2006Icar..185..258H. doi:10.1016/j.icarus.2006.06.005.
+
+
+↑ "New Uranus and Neptune Moons". Earth & Planetary Laboratory. Carnegie Institution for Science. 23 February 2024. Archived from the original on 23 February 2024. Retrieved 23 February 2024.
+
+
+↑ Soderblom, L. A.; Kieffer, S. W.; Becker, T. L.; Brown, R. H.; Cook, A. F. II; Hansen, C. J.; Johnson, T. V.; Kirk, R. L.; Shoemaker, E. M. (19 October 1990). "Triton's Geyser-Like Plumes: Discovery and Basic Characterization" (PDF). Science. 250 (4979): 410–415. Bibcode:1990Sci...250..410S. doi:10.1126/science.250.4979.410. PMID 17793016. S2CID 1948948. Archived (PDF) from the original on 31 August 2021. Retrieved 31 March 2022.
+
+
+↑ Vanouplines, Patrick (1995). "Chiron biography". Vrije Universitiet Brussel. Archived from the original on 2 May 2009. Retrieved 23 June 2006.
+
+
+↑ Stansberry, John; Grundy, Will; Brown, Mike; Cruikshank, Dale; Spencer, John; Trilling, David; Margot, Jean-Luc (2007). "Physical Properties of Kuiper Belt and Centaur Objects: Constraints from Spitzer Space Telescope". The Solar System Beyond Neptune. p. 161. arXiv:astro-ph/0702538. Bibcode:2008ssbn.book..161S.
+
+
+↑ Braga-Ribas, F.; et al. (April 2014). "A ring system detected around the Centaur (10199) Chariklo". Nature. 508 (7494): 72–75. arXiv:1409.7259. Bibcode:2014Natur.508...72B. doi:10.1038/nature13155. ISSN 0028-0836. PMID 24670644. S2CID 4467484.
+
+
+↑ Stern, Alan (February 2015). "Journey to the Solar System's Third Zone". American Scientist. Archived from the original on 26 October 2018. Retrieved 26 October 2018.
+
+
+1 2 Tegler, Stephen C. (2007). "Kuiper Belt Objects: Physical Studies". In Lucy-Ann McFadden; et al. (eds.). Encyclopedia of the Solar System. p. 605–620. ISBN 978-0-12-088589-3.
+
+
+1 2 Grundy, W. M.; Noll, K. S.; Buie, M. W.; Benecchi, S. D.; Ragozzine, D.; Roe, H. G. (December 2018). "The Mutual Orbit, Mass, and Density of Transneptunian Binary Gǃkúnǁʼhòmdímà ((229762) 2007 UK126)" (PDF). Icarus. 334: 30–38. Bibcode:2019Icar..334...30G. doi:10.1016/j.icarus.2018.12.037. S2CID 126574999. Archived from the original on 7 April 2019.
+
+
+↑ Brown, M.E.; Van Dam, M.A.; Bouchez, A.H.; Le Mignant, D.; Campbell, R.D.; Chin, J.C.Y.; Conrad, A.; Hartman, S.K.; Johansson, E.M.; Lafon, R.E.; Rabinowitz, D.L. Rabinowitz; Stomski, P.J. Jr.; Summers, D.M.; Trujillo, C.A.; Wizinowich, P.L. (2006). "Satellites of the Largest Kuiper Belt Objects" (PDF). The Astrophysical Journal. 639 (1): L43–L46. arXiv:astro-ph/0510029. Bibcode:2006ApJ...639L..43B. doi:10.1086/501524. S2CID 2578831. Archived (PDF) from the original on 28 September 2018. Retrieved 19 October 2011.
+
+
+↑ Chiang, E. I.; Jordan, A. B.; Millis, R. L.; Buie, M. W.; Wasserman, L. H.; Elliot, J. L.; Kern, S. D.; Trilling, D. E.; Meech, K. J.; et al. (2003). "Resonance Occupation in the Kuiper Belt: Case Examples of the 5:2 and Trojan Resonances" (PDF). The Astronomical Journal. 126 (1): 430–443. arXiv:astro-ph/0301458. Bibcode:2003AJ....126..430C. doi:10.1086/375207. S2CID 54079935. Archived (PDF) from the original on 15 March 2016. Retrieved 15 August 2009.
+
+
+↑ Buie, M. W.; Millis, R. L.; Wasserman, L. H.; Elliot, J. L.; Kern, S. D.; Clancy, K. B.; Chiang, E. I.; Jordan, A. B.; Meech, K. J.; Wagner, R. M.; Trilling, D. E. (2005). "Procedures, Resources and Selected Results of the Deep Ecliptic Survey". Earth, Moon, and Planets. 92 (1): 113–124. arXiv:astro-ph/0309251. Bibcode:2003EM&P...92..113B. doi:10.1023/B:MOON.0000031930.13823.be. S2CID 14820512.
+
+
+↑ Dotto, E.; Barucci, M. A.; Fulchignoni, M. (1 January 2003). "Beyond Neptune, the new frontier of the Solar System" (PDF). Memorie della Societa Astronomica Italiana Supplementi. 3: 20. Bibcode:2003MSAIS...3...20D. ISSN 0037-8720. Archived (PDF) from the original on 25 August 2014. Retrieved 26 December 2006.
+
+
+↑ Emery, J. P.; Wong, I.; Brunetto, R.; Cook, J. C.; Pinilla-Alonso, N.; Stansberry, J. A.; Holler, B. J.; Grundy, W. M.; Protopapa, S.; Souza-Feliciano, A. C.; Fernández-Valenzuela, E.; Lunine, J. I.; Hines, D. C. (2024). "A Tale of 3 Dwarf Planets: Ices and Organics on Sedna, Gonggong, and Quaoar from JWST Spectroscopy". Icarus. 414 116017. arXiv:2309.15230. Bibcode:2024Icar..41416017E. doi:10.1016/j.icarus.2024.116017.
+
+
+↑ Tancredi, G.; Favre, S. A. (2008). "Which are the dwarfs in the Solar System?". Icarus. 195 (2): 851–862. Bibcode:2008Icar..195..851T. doi:10.1016/j.icarus.2007.12.020.
+
+
+↑ Fajans, J.; Frièdland, L. (October 2001). "Autoresonant (nonstationary) excitation of pendulums, Plutinos, plasmas, and other nonlinear oscillators" (PDF). American Journal of Physics. 69 (10): 1096–1102. Bibcode:2001AmJPh..69.1096F. doi:10.1119/1.1389278. Archived from the original (PDF) on 7 June 2011. Retrieved 26 December 2006.
+
+
+↑ "In Depth: Pluto". NASA Science: Solar System Exploration. 6 August 2021. Archived from the original on 31 March 2022. Retrieved 31 March 2022.
+
+
+1 2 3 Brown, Mike (2008). "The largest Kuiper belt objects" (PDF). In Barucci, M. Antonietta (ed.). The Solar System Beyond Neptune. University of Arizona Press. pp. 335–344. ISBN 978-0-816-52755-7. OCLC 1063456240. Archived (PDF) from the original on 13 November 2012. Retrieved 9 April 2022.
+
+
+↑ "MPEC 2004-D15 : 2004 DW". Minor Planet Center. 20 February 2004. Archived from the original on 3 March 2016. Retrieved 5 July 2011.
+
+
+↑ Michael E., Brown (23 March 2009). "S/2005 (90482) 1 needs your help". Mike Brown's Planets (blog). Archived from the original on 28 March 2009. Retrieved 25 March 2009.
+
+
+↑ Moltenbrey, Michael (2016). Dawn of Small Worlds: Dwarf planets, asteroids, comets. Cham: Springer. p. 171. ISBN 978-3-319-23003-0. OCLC 926914921.
+
+
+↑ Green, Daniel W. E. (22 February 2007). "IAUC 8812: Sats OF 2003 AZ_84, (50000), (55637), (90482)". International Astronomical Union Circular. Archived from the original on 14 March 2012. Retrieved 4 July 2011.
+
+
+↑ "IAU names fifth dwarf planet Haumea". International Astronomical Union. 17 September 2008. Archived from the original on 25 April 2014. Retrieved 9 April 2022.
+
+
+↑ Noviello, Jessica L.; Desch, Stephen J.; Neveu, Marc; Proudfoot, Benjamin C. N.; Sonnett, Sarah (September 2022). "Let It Go: Geophysically Driven Ejection of the Haumea Family Members". The Planetary Science Journal. 3 (9): 19. Bibcode:2022PSJ.....3..225N. doi:10.3847/PSJ/ac8e03. S2CID 252620869. 225.
+
+
+↑ Christensen, Lars Lindberg (19 July 2008). "Fourth dwarf planet named Makemake". International Astronomical Union. Archived from the original on 23 July 2008. Retrieved 20 March 2026.
+
+
+↑ Buie, Marc W. (5 April 2008). "Orbit Fit and Astrometric record for 136472". SwRI (Space Science Department). Archived from the original on 27 May 2020. Retrieved 15 July 2012.
+
+
+↑ Parker, A. H.; Buie, M. W.; Grundy, W. M.; Noll, K. S. (25 April 2016). "Discovery of a Makemakean Moon". The Astrophysical Journal. 825 (1): L9. arXiv:1604.07461. Bibcode:2016ApJ...825L...9P. doi:10.3847/2041-8205/825/1/L9. S2CID 119270442.
+
+
+↑ B. E. Morgado; et al. (2023). "A dense ring of the trans-Neptunian object Quaoar outside its Roche limit". Nature. 614 (7947): 239–243. Bibcode:2023Natur.614..239M. doi:10.1038/s41586-022-05629-6. PMID 36755175. Wikidata Q116754015.  (Erratum: Bibcode:2024Natur.626E...2M, doi:10.1038/s41586-024-07031-w, Wikidata Q136926481)
+
+
+↑ Gomes, R. S.; Fernández, J. A.; Gallardo, T.; Brunini, A. (2008). "The Scattered Disk: Origins, Dynamics, and End States". The Solar System Beyond Neptune (PDF). University of Arizona Press. pp. 259–273. ISBN 978-0-8165-2755-7. Archived (PDF) from the original on 21 January 2022. Retrieved 12 May 2022.
+
+
+↑ Jewitt, David (2005). "The 1,000 km Scale KBOs". University of Hawaii. Archived from the original on 9 June 2014. Retrieved 16 July 2006.
+
+
+↑ "List of Centaurs and Scattered-Disk Objects". IAU: Minor Planet Center. Archived from the original on 29 June 2017. Retrieved 2 April 2007.
+
+
+↑ Brown, Michael E.; Schaller, Emily L. (15 June 2007). "The Mass of Dwarf Planet Eris". Science. 316 (5831): 1585. Bibcode:2007Sci...316.1585B. doi:10.1126/science.1139415. PMID 17569855. S2CID 21468196.
+
+
+↑ Dumas, C.; Merlin, F.; Barucci, M. A.; de Bergh, C.; Hainault, O.; Guilbert, A.; Vernazza, P.; Doressoundiram, A. (August 2007). "Surface composition of the largest dwarf planet 136199 Eris (2003 UB{313})". Astronomy and Astrophysics. 471 (1): 331–334. Bibcode:2007A&A...471..331D. doi:10.1051/0004-6361:20066665.
+
+
+↑ Kiss, Csaba; Marton, Gábor; Farkas-Takács, Anikó; Stansberry, John; Müller, Thomas; Vinkó, József; Balog, Zoltán; Ortiz, Jose-Luis; Pál, András (16 March 2017). "Discovery of a Satellite of the Large Trans-Neptunian Object (225088) 2007 OR10". The Astrophysical Journal Letters. 838 (1): 5. arXiv:1703.01407. Bibcode:2017ApJ...838L...1K. doi:10.3847/2041-8213/aa6484. S2CID 46766640. L1.
+
+
+1 2 3 4 Sheppard, Scott S.; Trujillo, Chadwick A.; Tholen, David J.; Kaib, Nathan (2019). "A New High Perihelion Trans-Plutonian Inner Oort Cloud Object: 2015 TG387". The Astronomical Journal. 157 (4): 139. arXiv:1810.00013. Bibcode:2019AJ....157..139S. doi:10.3847/1538-3881/ab0895. S2CID 119071596.
+
+
+↑ de la Fuente Marcos, Carlos; de la Fuente Marcos, Raúl (12 September 2018). "A Fruit of a Different Kind: 2015 BP519 as an Outlier among the Extreme Trans-Neptunian Objects". Research Notes of the AAS. 2 (3): 167. arXiv:1809.02571. Bibcode:2018RNAAS...2..167D. doi:10.3847/2515-5172/aadfec. S2CID 119433944.
+
+
+↑ Jewitt, David (2004). "Sedna – 2003 VB12". University of Hawaii. Archived from the original on 16 July 2011. Retrieved 23 June 2006.
+
+
+↑ Trujillo, Chadwick A.; Sheppard, Scott S. (2014). "A Sedna-like Body with a Perihelion of 80 Astronomical Units" (PDF). Nature. 507 (7493): 471–474. Bibcode:2014Natur.507..471T. doi:10.1038/nature13156. PMID 24670765. S2CID 4393431. Archived from the original (PDF) on 16 December 2014. Retrieved 20 January 2016.
+
+
+↑ de la Fuente Marcos, Carlos; de la Fuente Marcos, Raúl (1 September 2021). "Peculiar orbits and asymmetries in extreme trans-Neptunian space". Monthly Notices of the Royal Astronomical Society. 506 (1): 633–649. arXiv:2106.08369. Bibcode:2021MNRAS.506..633D. doi:10.1093/mnras/stab1756. Archived from the original on 19 October 2021. Retrieved 20 April 2024.
+
+
+↑ de la Fuente Marcos, Carlos; de la Fuente Marcos, Raúl (1 May 2022). "Twisted extreme trans-Neptunian orbital parameter space: statistically significant asymmetries confirmed". Monthly Notices of the Royal Astronomical Society Letters. 512 (1): L6–L10. arXiv:2202.01693. Bibcode:2022MNRAS.512L...6D. doi:10.1093/mnrasl/slac012. Archived from the original on 9 April 2023. Retrieved 20 April 2024.
+
+
+↑ Batygin, Konstantin; Adams, Fred C.; Brown, Michael E.; Becker, Juliette C. (2019). "The Planet Nine Hypothesis". Physics Reports. 805: 1–53. arXiv:1902.10103. Bibcode:2019PhR...805....1B. doi:10.1016/j.physrep.2019.01.009. S2CID 119248548.
+
+
+↑ Napier, K. J. (2021). "No Evidence for Orbital Clustering in the Extreme Trans-Neptunian Objects". The Planetary Science Journal. 2 (2): 59. arXiv:2102.05601. Bibcode:2021PSJ.....2...59N. doi:10.3847/PSJ/abe53e.
+
+
+1 2 Stern SA, Weissman PR (2001). "Rapid collisional evolution of comets during the formation of the Oort cloud". Nature. 409 (6820): 589–591. Bibcode:2001Natur.409..589S. doi:10.1038/35054508. PMID 11214311. S2CID 205013399.
+
+
+1 2 Arnett, Bill (2006). "The Kuiper Belt and the Oort Cloud". Nine Planets. Archived from the original on 7 August 2019. Retrieved 23 June 2006.
+
+
+↑ Barnett, Amanda, ed. (14 November 2017). "Oort Cloud Facts". NASA. Retrieved 14 November 2025.
+
+
+↑ "Oort Cloud". NASA Solar System Exploration. 20 June 2023. Archived from the original on 30 June 2023. Retrieved 1 July 2023.
+
+
+↑ "Catalog Page for PIA17046". Photo Journal. NASA. 12 September 2013. Archived from the original on 24 May 2019. Retrieved 26 June 2026.
+
+
+↑ Encrenaz, T.; Bibring, J. P.; Blanc, M.; Barucci, M. A.; Roques, F.; Zarka, P. H. (2004). The Solar System (3rd ed.). Springer. p. 1.
+
+
+↑ Torres, S.; Cai, M. X.; Brown, A. G. A.; Portegies Zwart, S. (September 2019). "Galactic tide and local stellar perturbations on the Oort cloud: creation of interstellar comets". Astronomy & Astrophysics. 629: 13. arXiv:1906.10617. Bibcode:2019A&A...629A.139T. doi:10.1051/0004-6361/201935330. S2CID 195584070. A139.
+
+
+↑ Norman, Neil (May 2020). "10 great comets of recent times". BBC Sky at Night Magazine. Archived from the original on 25 January 2022. Retrieved 10 April 2022.
+
+
+↑ Rubin, Alan E.; Grossman, Jeffrey N. (February 2010). "Meteorite and meteoroid: new comprehensive definitions". Meteoritics and Planetary Science. 45 (1): 114. Bibcode:2010M&PS...45..114R. doi:10.1111/j.1945-5100.2009.01009.x. S2CID 129972426. Archived from the original on 25 March 2022. Retrieved 10 April 2022.
+
+
+↑ "Definition of terms in meteor astronomy" (PDF). International Astronomical Union. IAU Commission F1. 30 April 2017. p. 2. Archived (PDF) from the original on 22 December 2021. Retrieved 25 July 2020.
+
+
+↑ "Meteoroid". National Geographic. 28 May 2010. Archived from the original on 7 October 2015. Retrieved 24 August 2015.
+
+
+↑ Williams, Iwan P. (2002). "The Evolution of Meteoroid Streams". In Murad, Edmond; Williams, Iwan P. (eds.). Meteors in the Earth's Atmosphere: Meteoroids and Cosmic Dust and Their Interactions with the Earth's Upper Atmosphere. Cambridge University Press. pp. 13–32. ISBN 978-0-521-80431-8.
+
+
+↑ Jorgensen, J. L.; Benn, M.; Connerney, J. E. P.; Denver, T.; Jorgensen, P. S.; Andersen, A. C.; Bolton, S. J. (March 2021). "Distribution of Interplanetary Dust Detected by the Juno Spacecraft and Its Contribution to the Zodiacal Light". Journal of Geophysical Research: Planets. 126 (3) e2020JE006509. Bibcode:2021JGRE..12606509J. doi:10.1029/2020JE006509. ISSN 2169-9097. S2CID 228840132.
+
+
+↑ "ESA scientist discovers a way to shortlist stars that might have planets". ESA Science and Technology. 2003. Archived from the original on 2 May 2013. Retrieved 3 February 2007.
+
+
+↑ Landgraf, M.; Liou, J.-C.; Zook, H. A.; Grün, E. (May 2002). "Origins of Solar System Dust beyond Jupiter" (PDF). The Astronomical Journal. 123 (5): 2857–2861. arXiv:astro-ph/0201291. Bibcode:2002AJ....123.2857L. doi:10.1086/339704. S2CID 38710056. Archived (PDF) from the original on 15 May 2016. Retrieved 9 February 2007.
+
+
+↑ "In Depth: Comets". NASA Science: Solar System Exploration. 19 December 2019. Archived from the original on 31 March 2022. Retrieved 31 March 2022.
+
+
+↑ Sekanina, Zdeněk (2001). "Kreutz sungrazers: the ultimate case of cometary fragmentation and disintegration?". Publications of the Astronomical Institute of the Academy of Sciences of the Czech Republic. 89: 78–93. Bibcode:2001PAICz..89...78S.
+
+
+↑ Królikowska, M. (2001). "A study of the original orbits of hyperbolic comets". Astronomy & Astrophysics. 376 (1): 316–324. Bibcode:2001A&A...376..316K. doi:10.1051/0004-6361:20010945.
+
+
+↑ Whipple, Fred L. (1992). "The activities of comets related to their aging and origin". Celestial Mechanics and Dynamical Astronomy. 54 (1–3): 1–11. Bibcode:1992CeMDA..54....1W. doi:10.1007/BF00049540. S2CID 189827311.
+
+
+↑ Bernardinelli, Pedro H.; Bernstein, Gary M.; Montet, Benjamin T.; et al. (1 November 2021). "C/2014 UN 271 (Bernardinelli-Bernstein): The Nearly Spherical Cow of Comets". The Astrophysical Journal Letters. 921 (2): L37. arXiv:2109.09852. Bibcode:2021ApJ...921L..37B. doi:10.3847/2041-8213/ac32d3. ISSN 2041-8205. S2CID 237581632.
+
+
+↑ Loeffler, John (1 October 2021). "Our solar system may have a hidden planet beyond Neptune – no, not that one". MSN. Archived from the original on 1 October 2021. Retrieved 7 April 2022.
+
+
+↑ Littmann, Mark (2004). Planets Beyond: Discovering the Outer Solar System. Courier Dover Publications. pp. 162–163. ISBN 978-0-486-43602-9.
+
+
+1 2 3 Fahr, H. J.; Kausch, T.; Scherer, H. (2000). "A 5-fluid hydrodynamic approach to model the Solar System-interstellar medium interaction" (PDF). Astronomy & Astrophysics. 357: 268. Bibcode:2000A&A...357..268F. Archived from the original (PDF) on 8 August 2017. Retrieved 24 August 2008. See Figures 1 and 2.
+
+
+↑ Hatfield, Miles (3 June 2021). "The Heliopedia". NASA. Archived from the original on 25 March 2022. Retrieved 29 March 2022.
+
+
+↑ Brandt, P. C.; Provornikova, E.; Bale, S. D.; Cocoros, A.; DeMajistre, R.; Dialynas, K.; Elliott, H. A.; Eriksson, S.; Fields, B.; Galli, A.; Hill, M. E.; Horanyi, M.; Horbury, T.; Hunziker, S.; Kollmann, P.; Kinnison, J.; Fountain, G.; Krimigis, S. M.; Kurth, W. S.; Linsky, J.; Lisse, C. M.; Mandt, K. E.; Magnes, W.; McNutt, R. L.; Miller, J.; Moebius, E.; Mostafavi, P.; Opher, M.; Paxton, L.; Plaschke, F.; Poppe, A. R.; Roelof, E. C.; Runyon, K.; Redfield, S.; Schwadron, N.; Sterken, V.; Swaczyna, P.; Szalay, J.; Turner, D.; Vannier, H.; Wimmer-Schweingruber, R.; Wurz, P.; Zirnstein, E. J. (2023). "Future Exploration of the Outer Heliosphere and Very Local Interstellar Medium by Interstellar Probe". Space Science Reviews. 219 (2): 18. Bibcode:2023SSRv..219...18B. doi:10.1007/s11214-022-00943-x. ISSN 0038-6308. PMC 9974711. PMID 36874191.
+
+
+↑ Baranov, V. B.; Malama, Yu. G. (1993). "Model of the solar wind interaction with the local interstellar medium: Numerical solution of self-consistent problem". Journal of Geophysical Research. 98 (A9): 15157. Bibcode:1993JGR....9815157B. doi:10.1029/93JA01171. ISSN 0148-0227. Archived from the original on 20 April 2022. Retrieved 9 April 2022.
+
+
+↑ "Cassini's Big Sky: The View from the Center of Our Solar System". Jet Propulsion Laboratory. 19 November 2009. Archived from the original on 9 April 2022. Retrieved 9 April 2022.
+
+
+↑ Kornbleuth, M.; Opher, M.; Baliukin, I.; Gkioulidou, M.; Richardson, J. D.; Zank, G. P.; Michael, A. T.; Tóth, G.; Tenishev, V.; Izmodenov, V.; Alexashov, D. (1 December 2021). "The Development of a Split-tail Heliosphere and the Role of Non-ideal Processes: A Comparison of the BU and Moscow Models". The Astrophysical Journal. 923 (2): 179. arXiv:2110.13962. Bibcode:2021ApJ...923..179K. doi:10.3847/1538-4357/ac2fa6. ISSN 0004-637X. S2CID 239998560.
+
+
+↑ Reisenfeld, Daniel B.; Bzowski, Maciej; Funsten, Herbert O.; Heerikhuisen, Jacob; Janzen, Paul H.; Kubiak, Marzena A.; McComas, David J.; Schwadron, Nathan A.; Sokół, Justyna M.; Zimorino, Alex; Zirnstein, Eric J. (1 June 2021). "A Three-dimensional Map of the Heliosphere from IBEX". The Astrophysical Journal Supplement Series. 254 (2): 40. Bibcode:2021ApJS..254...40R. doi:10.3847/1538-4365/abf658. ISSN 0067-0049. OSTI 1890983. S2CID 235400678.
+
+
+↑ Nemiroff, R.; Bonnell, J., eds. (24 June 2002). "The Sun's Heliosphere & Heliopause". Astronomy Picture of the Day. NASA. Retrieved 23 June 2006.
+
+
+↑ Swaczyna, Paweł; Schwadron, Nathan A.; Möbius, Eberhard; Bzowski, Maciej; Frisch, Priscilla C.; Linsky, Jeffrey L.; McComas, David J.; Rahmanifard, Fatemeh; Redfield, Seth; Winslow, Réka M.; Wood, Brian E.; Zank, Gary P. (1 October 2022). "Mixing Interstellar Clouds Surrounding the Sun". The Astrophysical Journal Letters. 937 (2): L32:1–2. arXiv:2209.09927. Bibcode:2022ApJ...937L..32S. doi:10.3847/2041-8213/ac9120. ISSN 2041-8205.
+
+
+↑ Linsky, Jeffrey L.; Redfield, Seth; Tilipman, Dennis (November 2019). "The Interface between the Outer Heliosphere and the Inner Local ISM: Morphology of the Local Interstellar Cloud, Its Hydrogen Hole, Strömgren Shells, and 60Fe Accretion". The Astrophysical Journal. 886 (1): 19. arXiv:1910.01243. Bibcode:2019ApJ...886...41L. doi:10.3847/1538-4357/ab498a. S2CID 203642080. 41.
+
+
+↑ Anglada-Escudé, Guillem; Amado, Pedro J.; Barnes, John; et al. (2016). "A terrestrial planet candidate in a temperate orbit around Proxima Centauri". Nature. 536 (7617): 437–440. arXiv:1609.03449. Bibcode:2016Natur.536..437A. doi:10.1038/nature19106. PMID 27558064. S2CID 4451513.
+
+
+1 2 Linsky, Jeffrey L.; Redfield, Seth; Tilipman, Dennis (20 November 2019). "The Interface between the Outer Heliosphere and the Inner Local ISM: Morphology of the Local Interstellar Cloud, Its Hydrogen Hole, Strömgren Shells, and 60 Fe Accretion*". The Astrophysical Journal. 886 (1): 41. arXiv:1910.01243. Bibcode:2019ApJ...886...41L. doi:10.3847/1538-4357/ab498a. ISSN 0004-637X. S2CID 203642080.
+
+
+↑ Zucker, Catherine; Goodman, Alyssa A.; Alves, João; et al. (January 2022). "Star formation near the Sun is driven by expansion of the Local Bubble". Nature. 601 (7893): 334–337. arXiv:2201.05124. Bibcode:2022Natur.601..334Z. doi:10.1038/s41586-021-04286-5. ISSN 1476-4687. PMID 35022612. S2CID 245906333.
+
+
+↑ Alves, João; Zucker, Catherine; Goodman, Alyssa A.; Speagle, Joshua S.; Meingast, Stefan; Robitaille, Thomas; Finkbeiner, Douglas P.; Schlafly, Edward F.; Green, Gregory M. (23 January 2020). "A Galactic-scale gas wave in the Solar Neighborhood". Nature. 578 (7794): 237–239. arXiv:2001.08748v1. Bibcode:2020Natur.578..237A. doi:10.1038/s41586-019-1874-z. PMID 31910431. S2CID 210086520.
+
+
+↑ McKee, Christopher F.; Parravano, Antonio; Hollenbach, David J. (November 2015). "Stars, Gas, and Dark Matter in the Solar Neighborhood". The Astrophysical Journal. 814 (1): 24. arXiv:1509.05334. Bibcode:2015ApJ...814...13M. doi:10.1088/0004-637X/814/1/13. S2CID 54224451. 13.
+
+
+↑ Alves, João; Zucker, Catherine; Goodman, Alyssa A.; et al. (2020). "A Galactic-scale gas wave in the solar neighborhood". Nature. 578 (7794): 237–239. arXiv:2001.08748. Bibcode:2020Natur.578..237A. doi:10.1038/s41586-019-1874-z. PMID 31910431. S2CID 210086520.
+
+
+↑ Mamajek, Eric E.; Barenfeld, Scott A.; Ivanov, Valentin D.; Kniazev, Alexei Y.; Väisänen, Petri; Beletsky, Yuri; Boffin, Henri M. J. (February 2015). "The Closest Known Flyby of a Star to the Solar System". The Astrophysical Journal Letters. 800 (1): 4. arXiv:1502.04655. Bibcode:2015ApJ...800L..17M. doi:10.1088/2041-8205/800/1/L17. S2CID 40618530. L17.
+
+
+↑ Raymond, Sean N.; et al. (January 2024). "Future trajectories of the Solar System: dynamical simulations of stellar encounters within 100 au". Monthly Notices of the Royal Astronomical Society. 527 (3): 6126–6138. arXiv:2311.12171. Bibcode:2024MNRAS.527.6126R. doi:10.1093/mnras/stad3604.
+
+
+1 2 Lang, Kenneth R. (2013). The Life and Death of Stars. Cambridge University Press. p. 264. ISBN 978-1-107-01638-5. Archived from the original on 20 April 2022. Retrieved 8 April 2022.
+
+
+↑ Drimmel, R.; Spergel, D. N. (2001). "Three Dimensional Structure of the Milky Way Disk". The Astrophysical Journal. 556 (1): 181–202. arXiv:astro-ph/0101259. Bibcode:2001ApJ...556..181D. doi:10.1086/321556. S2CID 15757160.
+
+
+↑ Gerhard, O. (2011). "Pattern speeds in the Milky Way". Memorie della Societa Astronomica Italiana, Supplementi. 18: 185. arXiv:1003.2489. Bibcode:2011MSAIS..18..185G.
+
+
+↑ Kaib, Nathan A.; Quinn, Thomas (September 2008). "The formation of the Oort cloud in open cluster environments". Icarus. 197 (1): 221–238. arXiv:0707.4515. Bibcode:2008Icar..197..221K. doi:10.1016/j.icarus.2008.03.020.
+
+
+↑ Leong, Stacy (2002). "Period of the Sun's Orbit around the Galaxy (Cosmic Year)". The Physics Factbook. Archived from the original on 7 January 2019. Retrieved 2 April 2007.
+
+
+↑ Greiner, Walter (2004). Classical Mechanics: Point particles and relativity. New York: Springer. p. 323. ISBN 978-0-387-21851-9. OCLC 56727455.
+
+
+↑ Reid, M. J.; Brunthaler, A. (2004). "The Proper Motion of Sagittarius A*". The Astrophysical Journal. 616 (2): 872–884. arXiv:astro-ph/0408107. Bibcode:2004ApJ...616..872R. doi:10.1086/424960. S2CID 16568545.
+
+
+↑ Abuter, R.; Amorim, A.; Bauböck, M.; Berger, J. P.; Bonnet, H.; Brandner, W.; et al. (May 2019). "A geometric distance measurement to the Galactic center black hole with 0.3% uncertainty". Astronomy & Astrophysics. 625: L10. arXiv:1904.05721. Bibcode:2019A&A...625L..10G. doi:10.1051/0004-6361/201935656. ISSN 0004-6361. S2CID 119190574.
+
+
+1 2 3 Mullen, Leslie (18 May 2001). "Galactic Habitable Zones". Astrobiology Magazine. Archived from the original on 7 August 2011. Retrieved 1 June 2020.
+
+
+↑ Bailer-Jones, C. A. L. (1 July 2009). "The evidence for and against astronomical impacts on climate change and mass extinctions: a review". International Journal of Astrobiology. 8 (3): 213–219. arXiv:0905.3919. Bibcode:2009IJAsB...8..213B. doi:10.1017/S147355040999005X. S2CID 2028999. Archived from the original on 1 April 2022. Retrieved 1 April 2022.
+
+
+↑ Racki, Grzegorz (December 2012). "The Alvarez Impact Theory of Mass Extinction; Limits to its Applicability and the "Great Expectations Syndrome"". Acta Palaeontologica Polonica. 57 (4): 681–702. Bibcode:2012AcPaP..57..681R. doi:10.4202/app.2011.0058. hdl:20.500.12128/534. ISSN 0567-7920. S2CID 54021858. Archived from the original on 1 April 2022. Retrieved 1 April 2022.
+
+
+↑ Orrell, David (2012). Truth Or Beauty: Science and the Quest for Order. Yale University Press. pp. 25–27. ISBN 978-0-300-18661-1. Archived from the original on 30 July 2022. Retrieved 13 May 2022.
+
+
+↑ Rufus, W. C. (1923). "The astronomical system of Copernicus". Popular Astronomy. Vol. 31. p. 510. Bibcode:1923PA.....31..510R.
+
+
+↑ Weinert, Friedel (2009). Copernicus, Darwin, & Freud: revolutions in the history and philosophy of science. Wiley-Blackwell. p. 21. ISBN 978-1-4051-8183-9.
+
+
+↑ LoLordo, Antonia (2007). Pierre Gassendi and the Birth of Early Modern Philosophy. New York: Cambridge University Press. pp. 12, 27. ISBN 978-0-511-34982-9. OCLC 182818133.
+
+
+↑ Athreya, A.; Gingerich, O. (December 1996). "An Analysis of Kepler's Rudolphine Tables and Implications for the Reception of His Physical Astronomy". Bulletin of the American Astronomical Society. 28 (4): 1305. Bibcode:1996AAS...189.2404A.
+
+
+↑ Pasachoff, Jay M. (May 2015). "Simon Marius's Mundus Iovialis: 400th Anniversary in Galileo's Shadow". Journal for the History of Astronomy. 46 (2): 218–234. Bibcode:2015JHA....46..218P. doi:10.1177/0021828615585493. ISSN 0021-8286. S2CID 120470649. Archived from the original on 27 November 2021. Retrieved 1 April 2022.
+
+
+↑ "Christiaan Huygens: Discoverer of Titan". ESA Space Science. The European Space Agency. 8 December 2012. Archived from the original on 6 December 2019. Retrieved 27 October 2010.
+
+
+↑ Chapman, Allan (April 2005). Kurtz, D. W. (ed.). Jeremiah Horrocks, William Crabtree, and the Lancashire observations of the transit of Venus of 1639. Transits of Venus: New Views of the Solar System and Galaxy, Proceedings of IAU Colloquium #196, held 7–11 June 2004 in Preston, U.K. Proceedings of the International Astronomical Union. Vol. 2004. Cambridge: Cambridge University Press. pp. 3–26. Bibcode:2005tvnv.conf....3C. doi:10.1017/S1743921305001225.
+
+
+↑ See, for example:
+
+"solar". Online Etymology Dictionary. Archived from the original on 18 March 2022. Retrieved 17 March 2022.
+
+
+"solar system". Oxford English Dictionary (online ed.). Oxford University Press. (Subscription or participating institution membership required.)
+
+
+Locke, John (1754) [1720]. Elements of Natural Philosophy ... To which are added. Some Thoughts concerning Reading and Study for a Gentleman. By the same author. With prefatory remarks by P. Des Maizeaux. R. Taylor. p. 8. Archived from the original on 18 March 2022. Retrieved 18 March 2022. Posthumous publication.
+
+
+
+↑ Festou, M. C.; Keller, H. U.; Weaver, H. A. (2004). "A brief conceptual history of cometary science". Comets II. Tucson: University of Arizona Press. pp. 3–16. Bibcode:2004come.book....3F. ISBN 978-0-8165-2450-1. Archived from the original on 20 April 2022. Retrieved 7 April 2022.
+
+
+↑ Sagan, Carl; Druyan, Ann (1997). Comet. New York: Random House. pp. 26–27, 37–38. ISBN 978-0-3078-0105-0. Archived from the original on 15 June 2021. Retrieved 28 June 2021.
+
+
+↑ Teets, Donald (December 2003). "Transits of Venus and the Astronomical Unit" (PDF). Mathematics Magazine. 76 (5): 335–348. doi:10.1080/0025570X.2003.11953207. JSTOR 3654879. S2CID 54867823. Archived (PDF) from the original on 3 February 2022. Retrieved 3 April 2022.
+
+
+↑ Bourtembourg, René (2013). "Was Uranus Observed by Hipparchos?". Journal for the History of Astronomy. 44 (4): 377–387. Bibcode:2013JHA....44..377B. doi:10.1177/002182861304400401. S2CID 122482074.
+
+
+↑ Di Bari, Pasquale (2018). Cosmology and the Early Universe. CRC Press. pp. 3–4. ISBN 978-1-351-02013-8.
+
+
+↑ Bhatnagar, Siddharth; Vyasanakere, Jayanth P.; Murthy, Jayant (May 2021). "A geometric method to locate Neptune". American Journal of Physics. 89 (5): 454–458. arXiv:2102.04248. Bibcode:2021AmJPh..89..454B. doi:10.1119/10.0003349. ISSN 0002-9505. S2CID 231846880. Archived from the original on 29 November 2021. Retrieved 1 April 2022.
+
+
+↑ Clemence, G. M. (1947). "The Relativity Effect in Planetary Motions". Reviews of Modern Physics. 19 (4): 361–364. Bibcode:1947RvMP...19..361C. doi:10.1103/RevModPhys.19.361. (math)
+
+
+↑ Garner, Rob (10 December 2018). "50th Anniversary of OAO 2: NASA's 1st Successful Stellar Observatory". NASA. Archived from the original on 29 December 2021. Retrieved 20 April 2022.
+
+
+↑ "Fact Sheet". JPL. Archived from the original on 29 November 2016. Retrieved 3 March 2016.
+
+
+↑ Woo, Marcus (20 November 2014). "This Is What It Sounded Like When We Landed on a Comet". Wired. Archived from the original on 23 November 2014. Retrieved 20 April 2022.
+
+
+↑ Marks, Paul (3 December 2014). "Hayabusa 2 probe begins journey to land on an asteroid". New Scientist. Archived from the original on 11 February 2022. Retrieved 20 April 2022.
+
+
+↑ "NASA's Parker Solar Probe becomes first spacecraft to 'touch' the sun". CNN. 14 December 2021. Archived from the original on 14 December 2021. Retrieved 15 December 2021.
+
+
+↑ Corum, Jonathan; Gröndahl, Mika; Parshina-Kottas, Yuliya (13 July 2015). "New Horizons' Pluto Flyby". The New York Times. ISSN 0362-4331. Retrieved 20 April 2022.
+
+
+↑ McCartney, Gretchen; Brown, Dwayne; Wendel, JoAnna (7 September 2018). "Legacy of NASA's Dawn, Near the End of its Mission". NASA. Retrieved 8 September 2018.
+
+
+↑ "Basics of Spaceflight: A Gravity Assist Primer". science.nasa.gov. 20 July 2023. Retrieved 2 May 2024.
+
+
+↑ "Parker Solar Probe Changed the Game Before it Even Launched – NASA". NASA. 4 October 2018. Retrieved 2 May 2024.
+
+
+↑ Glenday, Craig, ed. (2010). Guinness World Records 2010. New York: Bantam Books. ISBN 978-0-553-59337-2.
+
+
+↑ Foust, Jeff (13 March 2023). "NASA planning to spend up to $1 billion on space station deorbit module". SpaceNews. Retrieved 13 March 2023.
+
+
+↑ Chang, Kenneth (18 January 2022). "Quiz – Is Pluto A Planet? – Who doesn't love Pluto? It shares a name with the Roman god of the underworld and a Disney dog. But is it a planet? – Interactive". The New York Times. Retrieved 18 January 2022.
+
+
+↑ Spaceflight, Leonard David (9 January 2019). "A Wild 'Interstellar Probe' Mission Idea Is Gaining Momentum". Space.com. Retrieved 23 September 2019.
+
+
+
+
+
+
+
+
+
+
+External links
+
+
+
+
+
+
+
+Library resources about 
+
+ Solar System 
+
+
+
+
+
+
+
+
+Online books
+
+
+Resources in your library
+
+
+Resources in other libraries
+
+
+
+
+
+
+
+"Solar System" . Encyclopædia Britannica. Vol. 25 (11th ed.). 1911. pp. 157–158.
+
+
+If the Moon were only 1 Pixel: A Tediously Accurate Map of the Solar System (web based scroll map scaled to the Moon being 1 pixel)
+
+
+NASA's Eyes on the Solar System
+
+
+NASA's Solar System Exploration
+
+
+NASA's Solar System Simulator

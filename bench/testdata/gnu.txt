@@ -1,0 +1,22 @@
+2.11 Exit status ¶
+
+
+
+
+Nearly every command invocation yields an integral exit status
+that can be used to change how other commands work.
+For the vast majority of commands, an exit status of zero indicates
+success.  Failure is indicated by a nonzero value – typically
+‘1’, though it may differ on unusual platforms as POSIX
+requires only that it be nonzero.
+
+
+
+However, some of the programs documented here do produce
+other exit status values and a few associate different
+meanings with the values ‘0’ and ‘1’.
+Here are the exceptions:
+chroot, env, expr, ls,
+nice, nohup, numfmt, printenv,
+runcon, sort, stdbuf, test,
+timeout, tty.

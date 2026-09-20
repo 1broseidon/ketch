@@ -1,0 +1,35 @@
+{
+  "corpus_sha256": "501016bcba5a3675c5e2107dc3462be0df725bc1be1e072cd9a4509b37ef80f0",
+  "checks": {
+    "source_validation": "pass: 100 pages and 692 source-backed assertions",
+    "original20": "all source/reference/assertion fields preserved; cohort only added",
+    "heldout": "20 distinct final-URL hosts absent from other cohorts",
+    "comparison": "six gains, no lost previously passing check",
+    "regression": "bench check passed",
+    "strict": "bench run -strict exited 1 for 28 critical checks",
+    "selector": "exit 1; five grouped-selector validation failures retained",
+    "concurrency": "500 measured invocations plus 100 warmups; every output hash and accuracy result matches serial",
+    "tests": "CGO_ENABLED=0 go test ./... passed",
+    "race": "go test -race ./bench passed",
+    "vet": "go vet ./... passed",
+    "lint": "golangci-lint run passed: 0 issues",
+    "format": "go fmt ./... made no changes",
+    "cross_builds": "CGO_ENABLED=0 bench builds for windows/amd64 and darwin/arm64 passed; native execution not tested",
+    "whitespace": "git diff --check passed"
+  },
+  "production_binary_unchanged": true,
+  "gains": [
+    "npm/oidc-yaml",
+    "go/comment-preserved",
+    "go/timeout-signature",
+    "npm-scripts/code-example",
+    "npm-package-json/code-example",
+    "postgres-queries/code-example"
+  ],
+  "limitations": [
+    "agent-reviewed source annotations; independent human audit pending",
+    "known content-selection and grouped-selector failures retained",
+    "no browser/PDF/visual or complete mathematical/table-semantic accuracy track"
+  ],
+  "release": "none"
+}

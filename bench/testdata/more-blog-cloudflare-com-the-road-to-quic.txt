@@ -1,0 +1,148 @@
+SecuritySpeed & ReliabilityTLS
+
+
+
+
+
+HTTP2IETFQUICSecuritySpeed & ReliabilityTLS
+
+
+
+
+
+
+July 26, 2018
+The Road to QUIC
+
+
+
+
+Alessandro Ghedini
+
+
+
+13 minute read
+
+
+
+
+
+
+
+
+
+
+
+QUIC (Quick UDP Internet Connections) is a new encrypted-by-default Internet transport protocol, that provides a number of improvements designed to accelerate HTTP traffic as well as make it more secure, with the intended goal of eventually replacing TCP and TLS on the web. In this blog post we are going to outline some of the key features of QUIC and how they benefit the web, and also some of the challenges of supporting this radical new protocol.
+
+
+
+There are in fact two protocols that share the same name: “Google QUIC” (“gQUIC” for short), is the original protocol that was designed by Google engineers several years ago, which, after years of experimentation, has now been adopted by the IETF (Internet Engineering Task Force) for standardization.
+
+“IETF QUIC” (just “QUIC” from now on) has already diverged from gQUIC quite significantly such that it can be considered a separate protocol. From the wire format of the packets, to the handshake and the mapping of HTTP, QUIC has improved the original gQUIC design thanks to open collaboration from many organizations and individuals, with the shared goal of making the Internet faster and more secure.
+
+So, what are the improvements QUIC provides?
+
+Built-in security (and performance)
+
+One of QUIC’s more radical deviations from the now venerable TCP, is the stated design goal of providing a secure-by-default transport protocol. QUIC accomplishes this by providing security features, like authentication and encryption, that are typically handled by a higher layer protocol (like TLS), from the transport protocol itself.
+
+The initial QUIC handshake combines the typical three-way handshake that you get with TCP, with the TLS 1.3 handshake, which provides authentication of the end-points as well as negotiation of cryptographic parameters. For those familiar with the TLS protocol, QUIC replaces the TLS record layer with its own framing format, while keeping the same TLS handshake messages.
+
+Not only does this ensure that the connection is always authenticated and encrypted, but it also makes the initial connection establishment faster as a result: the typical QUIC handshake only takes a single round-trip between client and server to complete, compared to the two round-trips required for the TCP and TLS 1.3 handshakes combined.
+
+
+
+ 
+
+
+
+But QUIC goes even further, and also encrypts additional connection metadata that could be abused by middle-boxes to interfere with connections. For example packet numbers could be used by passive on-path attackers to correlate users activity over multiple network paths when connection migration is employed (see below). By encrypting packet numbers QUIC ensures that they can't be used to correlate activity by any entity other than the end-points in the connection.
+
+Encryption can also be an effective remedy to ossification, which makes flexibility built into a protocol (like for example being able to negotiate different versions of that protocol) impossible to use in practice due to wrong assumptions made by implementations (ossification is what delayed deployment of TLS 1.3 for so long, which was only possible after several changes, designed to prevent ossified middle-boxes from incorrectly blocking the new revision of the TLS protocol, were adopted).
+
+Head-of-line blocking
+
+One of the main improvements delivered by HTTP/2 was the ability to multiplex different HTTP requests onto the same TCP connection. This allows HTTP/2 applications to process requests concurrently and better utilize the network bandwidth available to them.
+
+This was a big improvement over the then status quo, which required applications to initiate multiple TCP+TLS connections if they wanted to process multiple HTTP/1.1 requests concurrently (e.g. when a browser needs to fetch both CSS and Javascript assets to render a web page). Creating new connections requires repeating the initial handshakes multiple times, as well as going through the initial congestion window ramp-up, which means that rendering of web pages is slowed down. Multiplexing HTTP exchanges avoids all that.
+
+
+
+This however has a downside: since multiple requests/responses are transmitted over the same TCP connection, they are all equally affected by packet loss (e.g. due to network congestion), even if the data that was lost only concerned a single request. This is called “head-of-line blocking”.
+
+QUIC goes a bit deeper and provides first class support for multiplexing such that different HTTP streams can in turn be mapped to different QUIC transport streams, but, while they still share the same QUIC connection so no additional handshakes are required and congestion state is shared, QUIC streams are delivered independently, such that in most cases packet loss affecting one stream doesn't affect others.
+
+This can dramatically reduce the time required to, for example, render complete web pages (with CSS, Javascript, images, and other kinds of assets) particularly when crossing highly congested networks, with high packet loss rates.
+
+That easy, uh?
+
+In order to deliver on its promises, the QUIC protocol needs to break some of the assumptions that were taken for granted by many network applications, potentially making implementations and deployment of QUIC more difficult.
+
+QUIC is designed to be delivered on top of UDP datagrams, to ease deployment and avoid problems coming from network appliances that drop packets from unknown protocols, since most appliances already support UDP. This also allows QUIC implementations to live in user-space, so that, for example, browsers will be able to implement new protocol features and ship them to their users without having to wait for operating systems updates.
+
+However despite the intended goal of avoiding breakage, it also makes preventing abuse and correctly routing packets to the correct end-points more challenging.
+
+One NAT to bring them all and in the darkness bind them
+
+Typical NAT routers can keep track of TCP connections passing through them by using the traditional 4-tuple (source IP address and port, and destination IP address and port), and by observing TCP SYN, ACK and FIN packets transmitted over the network, they can detect when a new connection is established and when it is terminated. This allows them to precisely manage the lifetime of NAT bindings, the association between the internal IP address and port, and the external ones.
+
+With QUIC this is not yet possible, since NAT routers deployed in the wild today do not understand QUIC yet, so they typically fallback to the default and less precise handling of UDP flows, which usually involves using arbitrary, and at times very short, timeouts, which could affect long-running connections.
+
+When a NAT rebinding happens (due to a timeout for example), the end-point on the outside of the NAT perimeter will see packets coming from a different source port than the one that was observed when the connection was originally established, which makes it impossible to track connections by only using the 4-tuple.
+
+
+
+And it's not just NAT! One of the features QUIC is intended to deliver is called “connection migration” and will allow QUIC end-points to migrate connections to different IP addresses and network paths at will. For example, a mobile client will be able to migrate QUIC connections between cellular data networks and WiFi when a known WiFi network becomes available (like when its user enters their favorite coffee shop).
+
+QUIC tries to address this problem by introducing the concept of a connection ID: an arbitrary opaque blob of variable length, carried by QUIC packets, that can be used to identify a connection. End-points can use this ID to track connections that they are responsible for without the need to check the 4-tuple (in practice there might be multiple IDs identifying the same connection, for example to avoid linking different paths when connection migration is used, but that behavior is controlled by the end-points not the middle-boxes).
+
+However this also poses a problem for network operators that use anycast addressing and ECMP routing, where a single destination IP address can potentially identify hundreds or even thousands of servers. Since edge routers used by these networks also don't yet know how to handle QUIC traffic, it might happen that UDP packets belonging to the same QUIC connection (that is, with the same connection ID) but with different 4-tuple (due to NAT rebinding or connection migration) might end up being routed to different servers, thus breaking the connection.
+
+
+
+In order to address this, network operators might need to employ smarter layer 4 load balancing solutions, which can be implemented in software and deployed without the need to touch edge routers (see for example Facebook's Katran project).
+
+QPACK
+
+Another benefit introduced by HTTP/2 was header compression (or HPACK) which allows HTTP/2 end-points to reduce the amount of data transmitted over the network by removing redundancies from HTTP requests and responses.
+
+In particular, among other techniques, HPACK employs dynamic tables populated with headers that were sent (or received) from previous HTTP requests (or responses), allowing end-points to reference previously encountered headers in new requests (or responses), rather than having to transmit them all over again.
+
+HPACK's dynamic tables need to be synchronized between the encoder (the party that sends an HTTP request or response) and the decoder (the one that receives them), otherwise the decoder will not be able to decode what it receives.
+
+With HTTP/2 over TCP this synchronization is transparent, since the transport layer (TCP) takes care of delivering HTTP requests and responses in the same order they were sent in, the instructions for updating the tables can simply be sent by the encoder as part of the request (or response) itself, making the encoding very simple. But for QUIC this is more complicated.
+
+QUIC can deliver multiple HTTP requests (or responses) over different streams independently, which means that while it takes care of delivering data in order as far as a single stream is concerned, there are no ordering guarantees across multiple streams.
+
+For example, if a client sends HTTP request A over QUIC stream A, and request B over stream B, it might happen, due to packet reordering or loss in the network, that request B is received by the server before request A, and if request B was encoded such that it referenced a header from request A, the server will be unable to decode it since it didn't yet see request A.
+
+In the gQUIC protocol this problem was solved by simply serializing all HTTP request and response headers (but not the bodies) over the same gQUIC stream, which meant headers would get delivered in order no matter what. This is a very simple scheme that allows implementations to reuse a lot of their existing HTTP/2 code, but on the other hand it increases the head-of-line blocking that QUIC was designed to reduce. The IETF QUIC working group thus designed a new mapping between HTTP and QUIC (“HTTP/QUIC”) as well as a new header compression scheme called “QPACK”.
+
+In the latest draft of the HTTP/QUIC mapping and the QPACK spec, each HTTP request/response exchange uses its own bidirectional QUIC stream, so there's no head-of-line blocking. In addition, in order to support QPACK, each peer creates two additional unidirectional QUIC streams, one used to send QPACK table updates to the other peer, and one to acknowledge updates received by the other side. This way, a QPACK encoder can use a dynamic table reference only after it has been explicitly acknowledged by the decoder.
+
+Deflecting Reflection
+
+A common problem among UDP-based protocols is their susceptibility to reflection attacks, where an attacker tricks an otherwise innocent server into sending large amounts of data to a third-party victim, by spoofing the source IP address of packets targeted to the server to make them look like they came from the victim.
+
+
+
+This kind of attack can be very effective when the response sent by the server happens to be larger than the request it received, in which case we talk of “amplification”.
+
+TCP is not usually used for this kind of attack due to the fact that the initial packets transmitted during its handshake (SYN, SYN+ACK, …) have the same length so they don’t provide any amplification potential.
+
+QUIC’s handshake on the other hand is very asymmetrical: like for TLS, in its first flight the QUIC server generally sends its own certificate chain, which can be very large, while the client only has to send a few bytes (the TLS ClientHello message embedded into a QUIC packet). For this reason, the initial QUIC packet sent by a client has to be padded to a specific minimum length (even if the actual content of the packet is much smaller). However this mitigation is still not sufficient, since the typical server response spans multiple packets and can thus still be far larger than the padded client packet.
+
+The QUIC protocol also defines an explicit source-address verification mechanism, in which the server, rather than sending its long response, only sends a much smaller “retry” packet which contains a unique cryptographic token that the client will then have to echo back to the server inside a new initial packet. This way the server has a higher confidence that the client is not spoofing its own source IP address (since it received the retry packet) and can complete the handshake. The downside of this mitigation is that it increases the initial handshake duration from a single round-trip to two.
+
+An alternative solution involves reducing the server's response to the point where a reflection attack becomes less effective, for example by using ECDSA certificates (which are typically much smaller than their RSA counterparts). We have also been experimenting with a mechanism for compressing TLS certificates using off-the-shelf compression algorithms like zlib and brotli, which is a feature originally introduced by gQUIC but not currently available in TLS.
+
+UDP performance
+
+One of the recurring issues with QUIC involves existing hardware and software deployed in the wild not being able to understand it. We've already looked at how QUIC tries to address network middle-boxes like routers, but another potentially problematic area is the performance of sending and receiving data over UDP on the QUIC end-points themselves. Over the years a lot of work has gone into optimizing TCP implementations as much as possible, including building off-loading capabilities in both software (like in operating systems) and hardware (like in network interfaces), but none of that is currently available for UDP.
+
+However it’s only a matter of time until QUIC implementations can take advantage of these capabilities as well. Look for example at the recent efforts to implement Generic Segmentation Offloading for UDP on LInux, which would allow applications to bundle and transfer multiple UDP segments between user-space and the kernel-space networking stack at the cost of a single one (or close enough), as well as the one to add zerocopy socket support also on Linux which would allow applications to avoid the cost of copying user-space memory into kernel-space.
+
+Conclusion
+
+Like HTTP/2 and TLS 1.3, QUIC is set to deliver a lot of new features designed to improve performance and security of web sites, as well as other Internet-based properties. The IETF working group is currently set to deliver the first version of the QUIC specifications by the end of the year and Cloudflare engineers are already hard at work to provide the benefits of QUIC to all of our customers.

@@ -1,0 +1,1232 @@
+module block reference
+
+
+
+
+
+The module block instructs Terraform to create resources defined in a local or remote module.
+
+Introduction
+
+A module is a collection of multiple resources that Terraform manages together. Refer to the following topics for more information:
+
+Modules overview
+
+Use modules in your configuration
+
+Develop modules
+
+Configuration model
+
+A module block supports the following configuration:
+
+module "<LABEL>"   block
+module-specific inputs   some inputs may be required
+
+source   expression | required
+
+version   expression
+
+count   number | mutually exclusive with for_each
+
+depends_on   list of references
+
+for_each:   map or set of strings | mutually exclusive with count
+
+providers   map
+
+ignore_nested_deprecations   boolean
+
+
+Complete configuration
+
+The following module block includes all built-in arguments:
+
+
+
+
+
+module "<LABEL>" {
+  <module-specific-inputs>
+  source = "<location-of-module-sources>"
+  version = "<constraint>" # only available for modules listed in a registry
+  count = <number> # mutually exclusive with `for_each`
+  for_each = {          # mutually exclusive with `count`
+      <KEY> = <VALUE>
+   }
+   for_each = [       # `for_each` accepts a map or a set of strings
+    "<VALUE>",
+    "<VALUE>"
+   ]
+  providers = {
+    "<provider-name-in-child-module>" = "<provider-name-from-parent-module>"
+  }
+  depends_on = [ <resource.address.reference> ]
+  ignore_nested_deprecations = <true|false>
+}
+
+
+
+
+Specification
+
+A module block supports the following configuration.
+
+module "<LABEL>"
+
+The LABEL is a local name for the module. When the child module you are calling exposes output values, you can use the module.<label>.<output> syntax to reference them. Refer to the following topics for more information:
+
+Reference module output values
+
+Develop modules
+
+output block reference
+
+References to Named Values
+
+Resource naming
+
+Module-specific inputs
+
+The module developer determines which inputs you can specify for the module. For some modules, one or more inputs are required. Refer to the module documentation for details.
+
+source
+
+The source argument specifies where Terraform retrieves the module source code.
+
+
+
+
+
+module "<LABEL>" {
+  source = "<location-of-module-files>"
+  #...
+}
+
+
+
+
+The location is a local file or directory or a remote module source, such as the public Terraform registry. You must specify a literal string for the source value. This argument does not support template sequences or arbitrary expressions.
+
+You must run terraform init after modifying the source argument so that Terraform can update the local code.
+
+You can specify the same source address in two or more separate module blocks, but you must use unique labels for each block. This lets you create multiples of the resources defined in the child module but with differing configurations.
+
+Module source code stored in a version control repository or archive file, referred to as a package, may be in a sub-directory relative to the root of the package. Add // to the source path to indicate that the rest of the path after that point is a sub-directory within the package. Place any query parameters, such as the ref argument supported for the version control sources, after the sub-directory segment. Refer to Specify sources in subdirectories for examples.
+
+Terraform extracts the entire package to local disk, but reads the module from the subdirectory. As a result, modules in a sub-directory of a package can use a local path to reference another module in the same package.
+
+The source attribute can reference constant input variables and local values. Any input variable referenced in source must declare const = true.
+
+You can configure Terraform to install modules from the following types of sources.
+
+Local paths
+
+Use the ./ or ../ prefix followed by the path to local module source code to install a module from files already on disk:
+
+
+
+
+
+module "<LABEL>" {
+  source = "./<PATH-TO-MODULE>"
+  #...
+}
+
+
+
+
+Terraform recognizes paths that begin with a / or drive letter as absolute paths. Terraform copies modules specified with an absolute path to the local module cache as a package. We don't recommend using absolute filesystem paths to refer to Terraform modules because doing so can couple your configuration to the filesystem layout of a particular computer.
+
+Refer to Install modules from local disk for an example.
+
+Terraform registry
+
+The primary workflow for sharing modules across multiple configurations is to distribute them through either the public Terraform registry or through a private registry in HCP Terraform or Terraform Enterprise. You can also create a private registry by operating a custom service that implements the module registry protocol.
+
+The Terraform-specific protocol for retrieving modules from a registry has full support for module versioning. Refer to your module documentation for more information.
+
+Use the following syntax to install modules listed in the public Terraform Registry:
+
+
+
+
+
+module "<LABEL>" {
+  source = "<NAMESPACE>/<NAME>/<PROVIDER>"
+  #...
+}
+
+
+
+
+
+For modules listed in an HCP Terraform private registry, prepend the path with app.terraform.io:
+
+
+
+
+
+module "<LABEL>" {
+  source = "app.terraform.io/<NAMESPACE>/<NAME>/<PROVIDER>"
+  #...
+}
+
+
+
+
+For modules listed in your Terraform Enterprise private registry, prepend the path with the hostname of your deployment:
+
+
+
+
+
+module "<LABEL>" {
+  source = "<HOSTNAME>/<NAMESPACE>/<NAME>/<PROVIDER>"
+  #...
+}
+
+
+
+
+When using HCP Terraform and Terraform Enterprise, you can also specify the localterraform.com hostname. The localterraform.com hostname requests modules from the instance that the platform is running on. Refer to is a Generic hostname for more information:
+
+
+
+
+
+module "<LABEL>" {
+  source = "localterraform.com/<NAMESPACE>/<NAME>/<PROVIDER>'"
+  #...
+}
+
+
+
+
+Refer to Install modules from a registry for examples.
+
+GitHub repository
+
+Use the following syntax to clone module sources from GitHub over HTTPS:
+
+
+
+
+
+module "<LABEL>" {
+  source = "github.com/<ORGANIZATION>/<MODULE-FOLDER>"
+  #...
+}
+
+
+
+
+Use the following syntax to clone module sources from GitHub over SSH:
+
+
+
+
+
+module "<LABEL>" {
+  source = "git@github.com:<ORGANIZATION>/<MODULE-FOLDER>"
+  #...
+}
+
+
+
+
+Terraform runs git clone to install modules. Terraform uses the Git configurations set on your local system, including credentials, when running the command. To access a non-public repository, configure Git with suitable credentials.
+
+For SSH connections, Terraform automatically uses your SSH keys. This is the most common way to access non-public Git repositories from automated systems because it allows access to non-public repositories without interactive prompts.
+
+For HTTP, HTTPS, and any other protocol that requires a username and password to authenticate, refer to Git documentation for guidance on providing credentials.
+
+For Terraform operations in HCP Terraform, you can only authenticate using SSH keys. Refer to Use SSH keys to clone modules for instructions.
+
+You can also specify the following query parameters:
+
+
+ref: Specifies a branch name, full or short SHA-1 hash, or tag name to clone. Refer to the Git tools documentation
+for more information. Terraform defaults to the default branch referenced by HEAD in the repository.
+
+
+
+depth: Instructs Terraform to perform a shallow clone and specifies the depth of the commit history to include. The default is 1. 
+
+The depth parameter implements the Git --depth option. When the source argument includes the depth parameter, Terraform passes the ref argument to the --branch option when running the git clone command. As a result, you must specify a named branch or tag known to the remote repository. You cannot use raw commit IDs. Refer to the Git --branch documentation for more information. 
+
+
+Refer to Install modules from GitHub for examples.
+
+Git repository
+
+Use the git:: prefix followed by any valid
+Git URL, including the protocol, to install a module from a general Git repository.
+
+To get a module over SSH, use the following syntax:
+
+
+
+
+
+module "<LABEL>" {
+  source = "git::ssh://[<user>@]<host>[:<port>]/<path-to-git-repo>"
+  #...
+}
+
+
+
+
+As an alternate format for SSH connections, you can use an scp-like URL by omitting ssh://:
+
+
+
+
+
+module "<LABEL>" {
+  source = "git::[<USER>@]<HOST>/<PATH-TO-GIT-REPO>"
+  #...
+}
+
+
+
+
+Use the following syntax to get a module over HTTP, HTTPS, FTP, FTPS, and the Git protocol:
+
+
+
+
+
+module "<LABEL>" {
+  source = "git::<protocol>://<host>[:<port>]/<path-to-git-repo>"
+  #...
+}
+
+
+
+
+Refer to the Git URL documentation for details. We recommend using the ssh://-prefixed URL for consistency.
+
+Terraform runs git clone to install modules. Terraform uses the Git configurations set on your local system, including credentials, when running the command. To access a non-public repository, configure Git with suitable credentials.
+
+For SSH connections, Terraform automatically uses your SSH keys. This is the most common way to access non-public Git repositories from automated systems because it allows access to non-public repositories without interactive prompts.
+
+For HTTP, HTTPS, and any other protocol that requires a username and password to authenticate, refer to Git documentation for guidance on providing credentials.
+
+For Terraform operations in HCP Terraform, you can only authenticate using SSH keys. Refer to Use SSH keys to clone modules for instructions.
+
+You can also specify the following query parameters:
+
+
+ref: Specifies a branch name, full or short SHA-1 hash, or tag name to clone. Refer to the Git tools documentation
+for more information. Terraform defaults to the default branch referenced by HEAD in the repository.
+
+
+
+depth: Instructs Terraform to perform a shallow clone and specifies the depth of the commit history to include. The default is 1. 
+
+The depth parameter implements the Git --depth option. When the source argument includes the depth parameter, Terraform passes the ref argument to the --branch option when running the git clone command. As a result, you must specify a named branch or tag known to the remote repository. You cannot use raw commit IDs. Refer to the Git --branch documentation for more information. 
+
+
+Refer to Install modules from a Git repository for examples.
+
+Bitbucket
+
+Use the with bitbucket.org prefix to reference to modules hosted in BitBucket:
+
+
+
+
+
+source = "bitbucket.org/<PATH-TO-MODULE-SOURCES>"
+
+
+
+
+BitBucket is a service that hosts Git repositories, so many of the behaviors that apply to ther Git-based repositories apply to BitBucket.
+
+Terraform runs git clone to install modules. Terraform uses the Git configurations set on your local system, including credentials, when running the command. To access a non-public repository, configure Git with suitable credentials.
+
+For SSH connections, Terraform automatically uses your SSH keys. This is the most common way to access non-public Git repositories from automated systems because it allows access to non-public repositories without interactive prompts.
+
+For HTTP, HTTPS, and any other protocol that requires a username and password to authenticate, refer to Git documentation for guidance on providing credentials.
+
+For Terraform operations in HCP Terraform, you can only authenticate using SSH keys. Refer to Use SSH keys to clone modules for instructions.
+
+You can also specify the following query parameters:
+
+
+ref: Specifies a branch name, full or short SHA-1 hash, or tag name to clone. Refer to the Git tools documentation
+for more information. Terraform defaults to the default branch referenced by HEAD in the repository.
+
+
+
+depth: Instructs Terraform to perform a shallow clone and specifies the depth of the commit history to include. The default is 1. 
+
+The depth parameter implements the Git --depth option. When the source argument includes the depth parameter, Terraform passes the ref argument to the --branch option when running the git clone command. As a result, you must specify a named branch or tag known to the remote repository. You cannot use raw commit IDs. Refer to the Git --branch documentation for more information. 
+
+
+Refer to Install modules from a repository listed hosted on BitBucket  for example configurations.
+
+Mercurial repository
+
+Use the hg:: prefix followed by a valid
+Mercurial URL to install modules stored in a Mercurial repository.
+
+To get modules on the local file system, use the following syntax:
+
+
+
+
+
+module "<LABEL>"{
+  source = "hg::file://local/filesystem/path[#revision]"
+  #...
+}
+
+
+
+
+To get modules over HTTP and HTTPS, use the following syntax:
+
+
+
+
+
+module "<LABEL>" {
+  source = "hg::<PROTOCOL>://[user[:pass]@]host[:port]/[path][#revision]
+  #...
+}
+
+
+
+
+To get modules over SSH, use the following syntax:
+
+
+
+
+
+module "<LABEL>" {
+  source = "hg::ssh://[user@]host[:port]/[path][#revision]"
+  #...
+}
+
+
+
+
+To get modules from a path specified in your Mercurial configuration file, use the following syntax:
+
+
+
+
+
+module "<LABEL>" {
+  source = "hg::path://pathname"
+  #...
+}
+
+
+
+
+Terraform runs hg clone to install modules. Terraform uses the Mercurial configurations set on your local system, including credentials, when running the command. To access a private repository, configure Mercurial with suitable credentials.
+
+For SSH connections, Terraform automatically uses your SSH keys. This is the most common way to access non-public Mercurial repositories from automated systems because it allows access to private repositories without interactive prompts.
+
+If your Terraform configuration runs in HCP Terraform, you can only authenticate using SSH keys. Refer to Use SSH keys to clone modules for instructions.
+
+Refer to Install modules from a Mercurial repository for an example configuration.
+
+HTTP URLs
+
+You can specify an HTTP or HTTPS URL in the source argument to use vanity URLs instead of hard-coding complex module source paths in the Terraform configuration. Specifying a URL instructs Terraform to send a GET request to the URL. The service listening for requests can construct and respond with a module source address.
+
+Terraform appends a terraform-get=1 query string parameter to the URL before sending the GET request so that the server can optionally return a different result when Terraform is requesting it.
+
+When Terraform receives a response with a successful 200 code, it checks the following locations for the module source address:
+
+
+The value of a response header field named X-Terraform-Get.
+
+
+
+If the response is an HTML page, a meta element with the name terraform-get:
+
+
+
+
+
+<meta name="terraform-get" content="<module-source>" />
+
+
+
+
+
+Terraform interprets the result as the source address so that it can install the module.
+
+By default, Terraform searches your HOME directory for a .netrc file when the listening service requests credentials for authentication. You can set the NETRC environment variable to override the default filesystem location. For information on the .netrc format,
+refer to the documentation for using it in curl.
+
+If an HTTPS URL has a common file extension associated with an archive file format, Terraform bypasses the terraform-get=1 redirection and uses the contents of the referenced archive as the module source code.
+
+Terraform recognizes the following archive extensions:
+
+.zip
+
+.bz2, .tar.bz2, .tar.tbz2, and .tbz2
+
+.gz, .tar.gz, and .tgz
+
+.xz, .tar.xz, and .txz
+
+For URLs that have any other archive extension format, you can add the archive query parameter.
+
+When the content of the archive file is a directory, you must include the directory in the module source. Refer to the source argument description for more information.
+
+Refer to Query an HTTPS URL for the module source for an example.
+
+S3 bucket
+
+Use the `s3:: prefix followed by an S3 bucket object URL to install modules from sources stored as an archive in S3.
+
+The object stored in the S3 bucket must be an archive with one of the following extensions:
+
+.zip
+
+.bz2, .tar.bz2, .tar.tbz2, and .tbz2
+
+.gz, .tar.gz, and .tgz
+
+.xz, .tar.xz, and .txz
+
+Terraform extracts the archive to obtain the module source tree.
+
+Buckets in AWS's us-east-1 region must use the hostname s3.amazonaws.com, instead of s3-us-east-1.amazonaws.com.
+
+The module installer checks for AWS credentials in the following locations in order of precedence:
+
+The AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables.
+
+The default profile in the .aws/credentials file in your home directory.
+
+If running on an EC2 instance, temporary credentials associated with the instance's IAM instance profile.
+
+Other AWS services may handle authentication in a manner similar to the S3 API. As a result, you may be able to use the s3:: format for other services.
+
+Refer to Install a module from an S3 bucket object for an example.
+
+GCS bucket
+
+Use the gcs:: prefix followed by a GCS bucket object URL to install modules stored as archive files in Google Cloud Storage:
+
+
+
+
+
+module "<LABEL>" {
+  source = "gcs::https://www.googleapis.com/storage/v1/BUCKET_NAME/PATH_TO_MODULE"
+  #...
+}
+
+
+
+
+To get modules from an archive stored in a GCS bucket, use the following syntax:
+
+
+
+
+
+module "<LABEL>" {
+  source = "gcs::https://www.googleapis.com/storage/v1/BUCKET_NAME/PATH/TO/module.zip"
+  #...
+}
+
+
+
+
+The module installer uses Google Cloud SDK to authenticate with GCS. You can use any of the following methods to set Google Cloud Platform credentials:
+
+Set the GOOGLE_OAUTH_ACCESS_TOKEN environment variable to a raw Google Cloud Platform OAuth access token.
+
+Enter the path of your service account key file in the GOOGLE_APPLICATION_CREDENTIALS environment variable.
+
+If Terraform is running on a GCE instance, default credentials are automatically available. Refer to the GCE documentation for for details.
+
+On your computer, you can make your Google identity available by running gcloud auth application-default logincommand.
+
+Refer to Install a module from a GCS bucket for an example.
+
+Summary
+
+Data type: Expression
+
+Default: None
+
+Examples: Specify the location of module source files
+
+version
+
+The version argument specifies which version of the module to use. This argument only applies when installing modules from a registry:
+
+
+
+
+
+module "LABEL" {
+  version = "<version-constraint>"
+}
+
+
+
+
+The version argument accepts a version constraint string. Terraform uses the newest installed version of the module that meets the constraint. When an acceptable version isn't installed, Terraform downloads the newest version that meets the constraint. We recommend explicitly constraining the acceptable version numbers to avoid unexpected or unwanted changes.
+
+You can only use the version argument when the source argument points to a module listed in a registry, such as the public Terraform Registry
+or HCP Terraform's private module registry.
+
+You must run terraform init after modifying the version argument so that Terraform can update the local code.
+
+The version attribute can reference constant input variables and local values. Any input variable referenced in version must declare const = true.
+
+Refer to the documentation for the module for versioning mechanisms specific to the module. Modules sourced from local file paths do not support version because they're loaded from the same source repository and always share the same version as their caller.
+
+Summary
+
+Data type: Expression
+
+Default: Defaults to latest version available from the source
+
+Example: Specify a module version from a registry
+
+count
+
+The count meta-argument instructs Terraform to provision multiple instances of the same module with identical or similar configuration.
+
+
+
+
+
+module "<LABEL>" {
+  count = <number>
+}
+
+
+
+
+count is a meta-argument. Meta-arguments are built into the Terraform language and control how Terraform creates resources. Refer to the count reference for details about how the argument works.
+
+for_each
+
+The for_each meta-argument instructs Terraform to provision similar modules without requiring separate configuration blocks for each resource.
+
+
+
+
+List of valuesMap of key-value pairs
+
+
+
+
+
+
+
+module "<LABEL>" {
+  for_each = [ "<VALUE>" ]
+}
+
+
+
+
+
+
+
+
+
+
+module "<LABEL>" {
+  for_each = {
+    "<KEY>" = "<VALUE>"
+  }
+}
+
+
+
+
+
+
+
+for_each is a meta-argument. Meta-arguments are built into the Terraform language and control how Terraform creates resources. Refer to the for_each reference for details about how the argument works.
+
+providers
+
+The providers argument instructs Terraform to use an alternate provider configuration.
+
+
+
+
+
+module "<LABEL>" {
+  providers = {
+   <provider> = <provider>.<alias>
+  }
+}
+
+
+
+
+providers is a meta-argument. Meta-arguments are built into the Terraform language and control how Terraform creates resources. Refer to the providers reference for details about how the argument works.
+
+depends_on
+
+The depends_on meta-argument specifies an upstream resource that the module depends on. Terraform must complete all operations on the upstream resource before performing operations on the module containing the depends_on argument.
+
+
+
+
+
+module "<LABEL>" {
+  depends_on = [ <resource reference> ]
+}
+
+
+
+
+depends_on is a meta-argument. Meta-arguments are built into the Terraform language and control how Terraform creates resources. Refer to the depends_on reference for details about how the argument works.
+
+ignore_nested_deprecations
+
+
+
+Note
+
+Deprecated values are available in Terraform v1.15 and later.
+
+
+
+If the ignore_nested_deprecations argument is set to true, Terraform does not show deprecation warnings in the module call or nested modules.
+
+
+
+
+
+module "<LABEL>" {
+  ignore_nested_deprecations = true
+}
+
+
+
+
+Summary
+
+Data type: Boolean
+
+Default: false
+
+Examples
+
+The following examples show how to write configuration for common use cases.
+
+Specify sources in subdirectories
+
+In the following example, Terraform gets the module from the modules/consul-cluster directory in the registry:
+
+
+
+
+
+module "consul" {
+  source = "hashicorp/consul/aws//modules/consul-cluster"
+  #...
+}
+
+
+
+
+In the following example, Terraform gets the module from the modules/vpc directory in a Git repository:
+
+
+
+
+
+module "vpc" {
+  source = "git::https://example.com/network.git//modules/vpc"
+  #...
+}
+
+
+
+
+In the following example, Terraform gets a version of the module tagged as v1.2.0 from the modules/vpc directory in a Git repository:
+
+
+
+
+
+module "vpc" {
+  source = "git::https://example.com/network.git//modules/vpc?ref=v1.2.0"`
+  #...
+}
+
+
+
+
+In the following example, Terraform gets the module from the modules/vpc directory in an archive file:
+
+
+
+
+
+module "vpc" {
+  source = "https://example.com/network-module.zip//modules/vpc"
+  #...
+}
+
+
+
+
+In the following example, Terraform gets the module from the modules/vpc directory in an archive file stored in an S3 bucket:
+
+
+
+
+
+module "vpc" {
+  source = "s3::https://s3-eu-west-1.amazonaws.com/examplecorp-terraform-modules/network.zip//modules/vpc"
+  #...
+}
+
+
+
+
+In the following example, Terraform gets a version of the module tagged as v1.2.0 from the modules/vpc directory on GitHub:
+
+
+
+
+
+module "vpc" {
+  source = "github.com/hashicorp/example//modules/vpc?ref=v1.2.0"`
+  #...
+}
+
+
+
+
+Specify the location of module source files
+
+You can source modules from several types of locations.
+
+Install modules from local disk
+
+The following example clones a module stored in the /consul directory within the current working directory:
+
+
+
+
+
+module "consul" {
+  source = "./consul"
+}
+
+
+
+
+Install modules from a registry
+
+The following example clones a module listed in the public Terraform registry:
+
+
+
+
+
+module "consul" {
+  source = "hashicorp/consul/aws"
+  version = "0.1.0"
+}
+
+
+
+
+The following example clones a module listed in a private registry on HCP Terraform:
+
+
+
+
+
+module "consul" {
+  source = "app.terraform.io/example-corp/k8s-cluster/azurerm"
+  version = "1.1.0"
+}
+
+
+
+
+
+Install modules from GitHub
+
+The following example clones the example module from GitHub over HTTPS:
+
+
+
+
+
+module "consul" {
+  source = "github.com/hashicorp/example"
+}
+
+
+
+
+The following example clones the example module from GitHub over SSH:
+
+
+
+
+
+module "consul" {
+  source = "git@github.com:hashicorp/example.git"
+}
+
+
+
+
+Install modules from a Git repository
+
+The following example clones the example module from a general Git repository over HTTP:
+
+
+
+
+
+module "vpc" {
+  source = "git::https://example.com/vpc.git"
+}
+
+
+
+
+The following example clones the example module from a general Git repository over SSH:
+
+
+
+
+
+module "storage" {
+  source = "git::ssh://username@example.com/storage.git"
+}
+
+
+
+
+The following example clones the storage module from a general Git repository over SSH using the alternate, scp-like syntax:
+
+
+
+
+
+module "storage" {
+  source = "git::username@example.com:storage.git"
+}
+
+
+
+
+Install modules from a repository listed hosted on BitBucket
+
+The following example clones a module named consul from a Git repository hosted on BitBucket:
+
+
+
+
+
+module "consul" {
+  source = "bitbucket.org/hashicorp/terraform-consul-aws"
+}
+
+
+
+
+In the following example, Terraform connects to the repository over HTTP:
+
+
+
+
+
+module "vpc" {
+  source = "hg::http://example.com/vpc.hg"
+}
+
+
+
+
+Install modules from a Mercurial repository
+
+The following clones a module from a Mercurial repository:
+
+
+
+
+
+module "vpc" {
+  source = "hg::http://example.com/vpc.hg"
+}
+
+
+
+
+Query an HTTPS URL for the module source
+
+In the following example, Terraform extracts a module source address from the vpc-module.zip file:
+
+
+
+
+
+module "vpc" {
+  source = "https://example.com/vpc-module.zip"
+}
+
+
+
+
+The following example uses the archive=zip query parameter to extract a module source address from a URL that has an archive file extension other than the natively-supported extension:
+
+
+
+
+
+module "vpc" {
+  source = "https://example.com/vpc-module?archive=zip"
+}
+
+
+
+
+Install a module from an S3 bucket object
+
+The following example installs a module from the vpc.zip object in an S3 bucket:
+
+
+
+
+
+module "consul" {
+  source = "s3::https://s3-eu-west-1.amazonaws.com/examplecorp-terraform-modules/vpc.zip"
+}
+
+
+
+
+Install a module from a GCS bucket
+
+The following example installs a module from the foomodule.zip object in a GCS bucket:
+
+
+
+
+
+module "consul" {
+  source = "gcs::https://www.googleapis.com/storage/v1/modules/foomodule.zip"
+}
+
+
+
+
+Install a specific revision
+
+The following example instructs Terraform to clone a version of the module tagged as v1.2.0 in a Git repository:
+
+
+
+
+
+module "vpc" {
+  source = "git::https://example.com/vpc.git?ref=v1.2.0"
+}
+
+
+
+
+The following example instructs Terraform to clone the version of a module identified by its SHA-1 hash in a Git repository:
+
+
+
+
+
+module "storage" {
+  source = "git::https://example.com/storage.git?ref=51d462976d84fdea54b47d80dcabbf680badcdb8"
+}
+
+
+
+
+The following example instructs Terraform to clone a version of the module tagged as v1.2.0 in a Mercurial repository:
+
+
+
+
+
+module "vpc" {
+  source = "hg::http://example.com/vpc.hg?ref=v1.2.0"
+}
+
+
+
+
+
+Specify a module version in a registry
+
+In the following example, Terraform installs the Consul module for AWS version 0.10.0 or newer of module:
+
+
+
+
+
+module "consul" {
+  source  = "hashicorp/consul/aws"
+  version = ">= 0.10.0"
+
+  servers = 3
+}
+
+
+
+
+Specify depth of clone
+
+The following example clones a module from a Git repository using the most recent commit of `v1.2.01:
+
+
+
+
+
+module "vpc" {
+  source = "git::https://example.com/vpc.git?depth=1&ref=v1.2.0"
+}
+
+
+
+
+Create multiple instances of module resources
+
+You can use either count or the for_each block to create multiple instances of module resources. The count argument is most suitable for creating multiple instances that are identical or nearly identical. The for_each argument is most suitable for creating multiple instances with varying configuration from a map or set.
+
+
+
+
+countfor_each
+
+
+
+In the following example, Terraform creates three EC2 instances, each with a unique name from the instance_names list:
+
+
+
+
+
+locals {
+  instance_names = ["example-instance-1", "example-instance-2", "example-instance-3"]
+}
+
+module "ec2_instance" {
+  source  = "terraform-aws-modules/ec2-instance/aws"
+  version = "6.0.2"
+  count   = length(local.instance_names)
+
+  name           = local.instance_names[count.index]
+  ami            = data.aws_ami.latest_amazon_linux.id
+  instance_type  = "t2.micro"
+
+  depends_on = [aws_s3_bucket.example]
+}
+
+
+
+
+
+
+
+In the following example, Terraform creates one EC2 instance for each key in local.instance_configs, allowing you to customize properties per instance:
+
+
+
+
+
+locals {
+  instance_configs = {
+    "example-instance-1" = { instance_type = "t2.micro" }
+    "example-instance-2" = { instance_type = "t2.small" }
+    "example-instance-3" = { instance_type = "t2.medium" }
+  }
+}
+
+module "ec2_instance" {
+  source  = "terraform-aws-modules/ec2-instance/aws"
+  version = "6.0.2"
+  for_each = local.instance_configs
+
+  name           = each.key
+  ami            = data.aws_ami.latest_amazon_linux.id
+  instance_type  = each.value.instance_type
+
+  depends_on = [aws_s3_bucket.example]
+}
+
+
+
+
+
+
+
+
+Specify dependencies
+
+In the following example, Terraform only creates the EC2 instance module after creating the S3 bucket resource:
+
+
+
+
+
+resource "aws_s3_bucket" "example" {
+  bucket = "my-example-bucket-12345"
+}
+
+module "ec2_instance" {
+  source  = "terraform-aws-modules/ec2-instance/aws"
+  version = "6.0.2"
+  name    = "example-instance"
+  ami           = data.aws_ami.latest_amazon_linux.id
+  instance_type = "t2.micro"
+
+  depends_on = [aws_s3_bucket.example]
+}
+
+
+
+
+Apply different provider configurations for module resources
+
+In the following example, the tunnel module includes resources that support their own provider configuration. As a result, each resource alias maps to a different provider configurations declared in the root module:
+
+
+
+
+
+provider "aws" {
+  alias  = "usw1"
+  region = "us-west-1"
+}
+
+provider "aws" {
+  alias  = "usw2"
+  region = "us-west-2"
+}
+
+module "tunnel" {
+  source    = "./tunnel"
+  providers = {
+    aws.src = aws.usw1
+    aws.dst = aws.usw2
+  }
+}

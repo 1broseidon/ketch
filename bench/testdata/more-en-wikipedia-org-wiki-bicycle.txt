@@ -1,0 +1,1692 @@
+For the butterfly genus, see Bicyclus. For other uses, see Bicycle (disambiguation).
+
+
+"Bike" redirects here. For other uses, see Bike (disambiguation).
+
+
+
+
+
+
+
+Bicycle
+
+
+
+
+The most popular bicycle model—and most popular vehicle of any kind in the world—is the Chinese Flying Pigeon, with about 500 million produced.[1]
+
+
+
+
+Classification
+
+Vehicle
+
+
+
+Application
+
+Transportation, recreation
+
+
+
+Fuel source
+
+Human or motor-power
+
+
+
+Wheels
+
+2
+
+
+
+Components
+
+Frame, wheels, tires, saddle, handlebar, pedals, drivetrain
+
+
+
+Inventor
+
+Karl von Drais, Kirkpatrick MacMillan
+
+
+
+Invented
+
+19th century
+
+
+
+Types
+
+Utility bicycle, mountain bicycle, racing bicycle, touring bicycle, hybrid bicycle, cruiser bicycle, BMX bike, tandem, low rider, tall bike, fixed gear, folding bicycle, amphibious cycle, cargo bike, recumbent, electric bicycle
+
+
+
+Classic bell of a bicycle
+
+A bicycle, also called a pedal cycle, bike, push-bike or cycle, is a human-powered or motor-assisted, pedal-driven, single-track vehicle, with two wheels attached to a frame, one behind the other. A bicycle rider is called a cyclist or bicyclist.
+
+
+
+The bicycle was invented in Europe in the 19th century. By the early 21st century, there were more than 1 billion bicycles.[1][2] Bicycles are the principal means of transport in many regions. They are also popular for recreation, and have been adapted for use as children's toys. Bicycles are used for commuting, shopping, fitness, military and police applications, courier services, bicycle racing, and artistic cycling.
+
+
+
+The basic shape and configuration of a typical upright or "safety" bicycle, has changed little since the first chain-driven model was developed around 1885.[3][4][5] However, many details have been improved, especially since the advent of modern materials and computer-aided design. These have allowed for a proliferation of specialized designs for many types of cycling. In the 21st century, electric bicycles have become popular.
+
+
+
+The bicycle's invention has had an enormous effect on society, both in terms of culture and of advancing modern industrial methods. Several components that played a key role in the development of the car were initially invented for use in the bicycle, including ball bearings, pneumatic tires, chain-driven sprockets, and tension-spoked wheels.[6]
+
+
+
+
+
+
+Etymology
+
+
+
+The first known appearance in English print of the word bicycle was in The Daily News in 1868, to describe "Bysicles and trysicles" on the "Champs Elysées and Bois de Boulogne".[7] The word was first used in 1828 in French to describe a two-wheeled chaise, a horse-drawn carriage.[7] The design of the bicycle was an advance on the velocipede, although the words were used with some degree of overlap for a time.[7][8]
+
+
+
+Other words for bicycle include "bike",[9] "pushbike",[10] "pedal cycle",[11] or "cycle".[12] In Unicode, the code point for "bicycle" is U+1F6B2. The entity &#x1F6B2; in HTML produces 🚲.[13]
+
+
+
+
+
+
+History
+
+
+
+
+This section is an excerpt from History of the bicycle.[edit]
+
+
+1886 Swift Safety Bicycle
+
+The "dandy horse",[14] also called Draisienne or Laufmaschine ("running machine"), was the first human means of transport to use only two wheels in tandem and was invented by the German Baron Karl von Drais. It is regarded as the first bicycle and von Drais is seen as the "father of the bicycle",[15][16][17] but it did not have pedals.[18][19][20] Von Drais introduced it to the public in Mannheim in 1817 and in Paris in 1818.[21][22] The rider sat astride a wooden frame supported by two in-line wheels and pushed the vehicle along with their feet while steering the front wheel.[21]
+
+
+
+The first mechanically propelled, two-wheeled vehicle may have been built by Kirkpatrick MacMillan, a Scottish blacksmith, in 1839, although this claim is often disputed.[23] He is also associated with the first recorded instance of a cycling traffic offense, when a Glasgow newspaper in 1842 reported an accident in which an anonymous "gentleman from Dumfries-shire... bestride a velocipede... of ingenious design" knocked over a little girl in Glasgow and was fined five shillings (equivalent to £24 in 2025).[24]
+
+
+
+In the early 1860s, the Frenchmen Pierre Michaux and Pierre Lallement took bicycle design in a new direction by adding a mechanical crank drive with pedals on an enlarged front wheel (the velocipede). This was the first in mass production. Another French inventor named Douglas Grasso had a failed prototype of Pierre Lallement's bicycle several years earlier. Several inventions followed using rear-wheel drive, the best known being the rod-driven velocipede by Scotsman Thomas McCall in 1869. In the same year, bicycle wheels with wire spokes were patented by Eugène Meyer of Paris.[25] The French vélocipède, made of iron and wood, developed into the "penny-farthing" (historically known as an "ordinary bicycle", a retronym, since there was then no other kind).[26] It featured a tubular steel frame on which were mounted wire-spoked wheels with solid rubber tires. These bicycles were difficult to mount, dismount and brake due to their high seat over the large front wheel. In 1868, Rowley Turner, a sales agent of the Coventry Sewing Machine Company (which soon became the Coventry Machinists Company), brought a Michaux cycle to Coventry, England. His uncle, Josiah Turner, and business partner James Starley, used this as a basis for the 'Coventry Model' in what became Britain's first cycle factory.[27]
+
+
+
+The dwarf ordinary addressed some of these faults by reducing the front wheel diameter and setting the seat further back. This, in turn, required gearing—effected in a variety of ways—to efficiently use pedal power. Having to both pedal and steer via the front wheel remained a problem. Englishman J.K. Starley (nephew of James Starley), J.H. Lawson, and Shergold solved this problem by introducing the chain drive (originated by the unsuccessful "bicyclette" of Englishman Henry Lawson),[28] connecting the frame-mounted cranks to the rear wheel. These models were known as safety bicycles, dwarf safeties, or upright bicycles for their lower seat height. Although, without pneumatic tires, the ride of the smaller-wheeled bicycle would be much rougher than that of the larger-wheeled variety. Starley's 1885 Rover, manufactured in Coventry[29] is usually described as the first recognizably modern bicycle.[30] Soon, the seat tube was added, which created the modern bike's double-triangle diamond frame.
+
+
+
+Further innovations increased comfort and ushered in a second bicycle craze, the 1890s Golden Age of Bicycles. In 1888, Scotsman John Boyd Dunlop introduced the first practical pneumatic tire, which soon became universal. Willie Hume demonstrated the supremacy of Dunlop's tyres in 1889, winning the tyre's first-ever races in Ireland and then England.[31][32] Soon after, the rear freewheel was developed, enabling the rider to coast. This refinement led to the 1890s invention[33] of coaster brakes. Derailleur gears and hand-operated Bowden cable-pull brakes were also developed during these years, but were only slowly adopted by casual riders.
+
+
+
+The Svea Velocipede with vertical pedal arrangement and locking hubs was introduced in 1892 by the Swedish engineers Fredrik Ljungström and Birger Ljungström.[34]
+
+
+
+In the 1870s, many cycling clubs flourished. They were popular in a time when there were no cars on the market and the principal mode of transportation was horse-drawn vehicles. Among the earliest clubs was The Bicycle Touring Club, which has operated since 1878. By the turn of the century, cycling clubs flourished on both sides of the Atlantic, and touring and racing became widely popular. The Raleigh Bicycle Company was founded in Nottingham, England in 1888. It became the biggest bicycle manufacturer in the world, making over two million bikes per year.[35]
+
+
+
+Bicycles and horse buggies were the two mainstays of private transportation just prior to the automobile, and the grading of smooth roads in the late 19th century was stimulated by the widespread advertising, production, and use of these devices.[5] More than 1 billion bicycles had been manufactured worldwide by the early 21st century.[36][37] Bicycles are the most common vehicle of any kind in the world, and the most numerous model of any kind of vehicle, whether human-powered or motor vehicle, is the Chinese Flying Pigeon, with numbers exceeding 500 million.[36]
+ 
+
+
+
+
+
+
+Women on bicycles on unpaved road, US, late 19th century
+
+
+
+
+
+
+A penny-farthing or ordinary bicycle in the Škoda Auto museum in the Czech Republic
+
+
+
+
+
+
+The lever-operated Svea Velocipede by Fredrik Ljungström and Birger Ljungström
+
+
+
+
+
+
+Bicycle in Plymouth, England, at the start of the 20th century
+
+
+
+
+
+
+Brazilian princes (from left) Antônio, Luís, and Pedro on a triple tandem bicycle during their exile, 1891
+
+
+
+
+
+
+Man with a bicycle in Glengarry County, Ontario between 1895 and 1910
+
+
+
+
+
+
+The first bicycle by Baron Karl von Drais
+
+
+
+
+
+
+Drawing from an 1896 newspaper of The London Hansom Cycle
+
+
+
+
+
+
+Wooden draisine (around 1820), the first two-wheeler and as such the archetype of the bicycle
+
+
+
+
+
+
+Michaux's son on a velocipede 1868
+
+
+
+
+
+
+Cyclists' Touring Club sign at the National Museum of Scotland
+
+
+
+
+
+
+John Boyd Dunlop on a bicycle c. 1915
+
+
+
+
+
+
+1886 Rover safety bicycle at the British Motor Museum. The first modern bicycle, it had a rear-wheel-drive and was chain-driven with two similar-sized wheels. Dunlop's pneumatic tire was added to the bicycle in 1888.
+
+
+
+
+
+
+
+
+
+
+
+
+Uses
+
+
+
+Main article: Cycling
+
+
+Bicycles are used for transportation, bicycle commuting, and utility cycling.[38] The energy taken to cycle to a particular distance takes less than the energy to walk as far by four-fifths or 80 percent.[39] They are also used professionally by mail carriers, paramedics, police, messengers, and for deliveries. Military uses of bicycles included communications, reconnaissance, troop movement, supply of provisions, and patrol, such as in bicycle infantries.[40]
+
+
+
+They are also used for fun, including bicycle touring, mountain biking, physical fitness, and play. Bicycle sports include racing, BMX racing, track racing, criterium, roller racing, sportives and time trials. They are also used for entertainment and pleasure in other ways, such as in organised mass rides, artistic cycling and freestyle BMX.
+
+
+
+
+
+
+Technical aspects
+
+
+Firefighter bicycle
+
+
+The bicycle has been continually adapted and improved. Modern materials and computer-aided design have made bicycles safer and more comfortable, and helped to create many more types of bicycle.[41]
+
+
+
+
+
+Types
+
+
+
+Main article: List of bicycle types
+
+
+A man riding an electric bicycle
+
+
+Bicycles can be categorized in many different ways: by function, by number of riders, by general construction, by gearing or by means of propulsion. The more common types include utility bicycles, mountain bicycles, racing bicycles, touring bicycles, hybrid bicycles, cruiser bicycles, BMX bikes and electric bicycles. Less common are tandems, low riders, tall bikes, fixed gear, folding models, amphibious bicycles, cargo bikes and recumbents .[42]
+
+
+
+Unicycles,[43] tricycles and quadracycles[44] are not strictly bicycles, as they have respectively one, three and four wheels, but they are cycles and the qualifier "bi" is not used in some other languages, such as "velo" or "fiets".
+
+
+
+
+
+
+Dynamics
+
+
+
+Main article: Bicycle and motorcycle dynamics
+
+
+A cyclist leaning in a turn
+
+
+A bicycle stays upright while moving forward by being steered so as to keep its center of mass over the wheels, that is in line with the resultant force of gravity and centrifugal force.[45] This steering is usually provided by the rider, but under certain conditions, may be provided by the bicycle itself.[46]
+
+
+
+The combined center of mass of a bicycle and its rider must lean into a turn. This lean is induced by a method known as countersteering, which can be performed by the rider turning the handlebars directly with the hands[47] or indirectly by leaning the bicycle.[48]
+
+
+
+Short-wheelbase or tall bicycles, when braking, can generate enough stopping force at the front wheel to flip longitudinally.[49] The act of purposefully using this force to lift the rear wheel and balance on the front without tipping over is a trick known as a stoppie, endo, or front wheelie.[50]
+
+
+
+
+
+
+Performance
+
+
+
+Main article: Bicycle performance
+
+
+
+The bicycle is extraordinarily efficient in both biological and mechanical terms. The bicycle is the most efficient human-powered means of transportation in terms of energy a person must expend to travel a given distance, when travelling slowly or equipped with an aerodynamic fairing. From a mechanical viewpoint, up to 99% of the energy delivered by the rider into the pedals is transmitted to the wheels, although the use of gearing mechanisms may reduce this by 10–15% and there is also a small amount of tire slip.[51][52]
+
+
+
+A human traveling on a bicycle at low to medium speeds of about 16–24 km/h (10–15 mph) uses only the power required to walk. Air drag, which is proportional to the square of speed, requires dramatically higher power outputs as speeds increase. If the rider is sitting upright, the rider's body creates about 75% of the total drag of the bicycle/rider combination. Drag can be reduced by seating the rider in a more aerodynamically streamlined position. Drag can also be reduced by covering the bicycle with an aerodynamic fairing. The fastest recorded unpaced speed on a flat surface with a standing start was the hour record in 2016: over 92 km/h (57 mph) with a highly streamlined bicycle.[53]
+
+
+
+
+
+
+A recumbent bicycle 
+
+
+
+
+
+
+Balance bicycle for young children
+
+
+
+
+
+
+
+
+
+Parts
+
+
+Schematic diagram of a bicycle
+
+One bicycle may have up to a thousand parts.[54]
+
+
+
+
+
+Frame
+
+
+
+Main article: Bicycle frame
+
+
+
+Most modern bicycles have a frame with upright seating that looks much like the first chain-driven bike.[3][4][5] These upright bicycles frequently have a diamond frame, a truss consisting of two triangles: the front triangle and the rear triangle. The front triangle consists of the top tube and down tube (connected by the head tube), and seat tube. The head tube contains the headset, the set of bearings that allows the fork to turn smoothly for steering and balance. The rear triangle consists of the seat tube, with the bottom bracket at the bottom, and paired chain stays and seat stays, connecting at the rear dropouts, where the axle for the rear wheel is held.[55] The frame's shape allows the rider's weight to be distributed in a way that does not misshapen or compress the entire frame as it turns.[56]
+
+
+
+Historically, women's bicycle frames had a top tube that connected in the middle of the seat tube instead of the top, resulting in a lower standover height at the expense of compromised structural integrity, since this places a strong bending load in the seat tube, and bicycle frame members are typically weak in bending. This design, referred to as a step-through frame or as an open frame, allows the rider to mount and dismount in a dignified way while wearing a skirt or dress. While some women's bicycles continue to use this frame style, there is also a variation, the mixte, which splits the top tube laterally into two thinner top tubes that bypass the seat tube on each side and connect to the rear fork ends.[57][58][59]
+
+
+
+Another style is the recumbent bicycle. These are inherently more aerodynamic than upright versions, as the rider may lean back onto a support and operate pedals that are on about the same level as the seat. The world's fastest bicycle is a recumbent bicycle but this type was banned from competition in 1934 by the Union Cycliste Internationale.[60]
+
+
+
+Historically, materials used in bicycles have followed a similar pattern as in aircraft, the goal being high strength and low weight. Since the late 1930s, alloy steels have been used for frame and fork tubes in higher quality machines. By the 1980s, aluminum welding techniques had improved to the point that aluminum tube could safely be used instead of steel. Since then aluminum alloy frames and other components have become popular due to their light weight, and most mid-range bikes are now aluminum alloy. More expensive bikes sometimes use titanium or more often carbon fibre laid-up in resin due to its significantly lighter weight and profiling ability, allowing designers to make a bike both stiff and compliant by arranging the angles of the laid-up fibres optimally. Virtually all professional racing bicycles now use carbon fibre frames, as they have the best strength to weight ratio. A typical modern carbon fiber frame can weigh less than 2 pounds (1 kg).[61]
+
+
+
+Wood and bamboo, a natural composite material with high strength-to-weight ratio and stiffness,[62] have been used for bicycles since 1894.[63] Modern versions use bamboo for the primary frame with glued metal connections and parts.[63][64][65]
+
+
+
+
+
+
+
+A Triumph with a step-through frame
+
+
+
+
+
+
+A carbon fiber Trek Y-Foil from the late 1990s
+
+
+
+
+
+
+
+
+Drivetrain and gearing
+
+
+
+Main article: Bicycle drivetrain systems
+
+
+
+The drivetrain begins with pedals which rotate the cranks, which are held in axis by the bottom bracket. Most bicycles use a chain to transmit power to the rear wheel. A very small number of bicycles use a shaft drive to transmit power. Hydraulic bicycle transmissions have been built, but they can be inefficient and complex.[66]
+
+
+
+Since cyclists' legs are most efficient over a narrow range of pedaling speeds, or cadence, a variable gear ratio helps a cyclist to maintain an optimum pedalling speed while covering varied terrain. Some, mainly utility, bicycles use hub gears with between 3 and 14 ratios, but most use the generally more efficient derailleur system, by which the chain is moved between different cogs called chainrings and sprockets to select a ratio. A derailleur system normally has two derailleurs, or mechs, one at the front to select the chainring and another at the back to select the sprocket. Most bikes have two or three chainrings, and from 5 to 12 sprockets on the back, with the number of theoretical gears calculated by multiplying front by back. In reality, many gears overlap or require the chain to run diagonally, so the number of usable gears is fewer.[66][67]
+
+
+
+An alternative to chain drive is to use a toothed belt. These work much the same as a chain, they are popular with commuters as they require little maintenance. They are slightly less efficient than chains and cannot be shifted across a cassette of sprockets, and are used either as single speed or with a hub gear.[68]
+
+
+
+Different gears and ranges of gears are appropriate for different people and styles of cycling. Multi-speed bicycles allow gear selection to suit the circumstances: a cyclist could use a high gear when cycling downhill, a medium gear when cycling on a flat road, and a low gear when cycling uphill. In a lower gear, every turn of the pedals leads to fewer rotations of the rear wheel. This allows the energy required to move the same distance to be distributed over more pedal turns, reducing fatigue when riding uphill, with a heavy load, or against strong winds. A higher gear allows a cyclist to make fewer pedal turns to maintain a given speed, but with more effort per turn of the pedals.[69]
+
+
+
+With a chain drive transmission, a chainring attached to a crank drives the chain, which in turn rotates the rear wheel via the rear sprocket(s) (cassette or freewheel). There are four gearing options: two-speed hub gear integrated with chain ring, up to 3 chain rings, up to 12 sprockets and hub gear built into rear wheel (3-speed to 14-speed). The most common options are either a rear hub or multiple chain rings combined with multiple sprockets (other combinations of options are possible but less common).
+
+
+
+
+
+
+
+A bicycle with shaft drive instead of a chain
+
+
+
+
+
+
+A set of rear sprockets (also known as a cassette) and a derailleur
+
+
+
+
+
+
+Hub gear
+
+
+
+
+
+
+
+
+Steering
+
+
+Bicycle grips made of leather. Anatomic shape distributes weight over palm area to prevent cyclist's palsy (ulnar syndrome).[70]
+
+The handlebars connect to the stem that connects to the fork housing the front wheel. The whole assembly rotates about the steering axis, held by the headset bearings. 
+
+
+
+Three styles of handlebar are common. Upright handlebars, the norm in Europe and elsewhere until the 1970s, curve gently back towards the rider, offering a natural grip and comfortable upright position. Drop handlebars "drop" as they curve forward and down, allowing the cyclist to use either a more aerodynamic "crouched" position or a more upright position. Mountain bikes generally feature a 'straight handlebar' or 'riser bar' with varying degrees of sweep backward and centimeters rise upwards, as well as wider widths which can provide better handling due to increased leverage against the wheel.[71]
+
+
+
+
+
+
+Seating
+
+
+A Selle San Marco saddle designed for women
+
+Saddles also vary with rider preference, from the cushioned ones favored by short-distance riders to narrower saddles which allow more room for leg swings. Comfort depends on riding position.[72] With comfort bikes and hybrids, cyclists sit high over the seat, their weight directed down onto the saddle, such that a wider and more cushioned saddle is preferable. For racing bikes where the rider is bent over, weight is more evenly distributed between the handlebars and saddle, the hips are flexed, and a narrower and harder saddle is more efficient. Differing saddle designs exist for male and female cyclists, accommodating the genders' differing anatomies and sit bone width measurements,[73] although bikes are typically sold with saddles most appropriate for men. Suspension seat posts and seat springs provide comfort by absorbing shock but can add to the overall weight of the bicycle.
+
+
+
+A recumbent bicycle has a reclined chair-like seat that some riders find more comfortable than a saddle, especially riders who suffer from certain types of seat, back, neck, shoulder, or wrist pain. Recumbent bicycles may have either under-seat or over-seat steering.
+
+
+
+
+
+
+Brakes
+
+
+
+Main article: Bicycle brake
+
+
+Linear-pull brake, also known by the Shimano trademark: V-Brake, on rear wheel of a mountain bike
+
+Bicycle brakes may be rim brakes, in which friction pads are compressed against the wheel rims; hub brakes, where the mechanism is contained within the wheel hub; or disc brakes, where pads act on a rotor attached to the hub. Most road bicycles use rim brakes, but some use disc brakes.[74] Disc brakes are more common for mountain bikes, tandems and recumbent bicycles than on other types of bicycles, due to their increased power, coupled with an increased weight and complexity.[75]
+
+
+A front disc brake, mounted to the fork and hub
+
+With hand-operated brakes, force is applied to brake levers mounted on the handlebars and transmitted via Bowden cables or hydraulic lines to the friction pads, which apply pressure to the braking surface, causing friction which slows the bicycle down. A rear hub brake may be either hand-operated or pedal-actuated, as in the back pedal coaster brakes which were popular in North America until the 1960s.
+
+
+
+Track bicycles do not have brakes, because all riders ride in the same direction around a track which does not necessitate sharp deceleration. Track riders are still able to slow down because all track bicycles are fixed-gear, meaning that there is no freewheel. Without a freewheel, coasting is impossible, so when the rear wheel is moving, the cranks are moving. To slow down, the rider applies resistance to the pedals, acting as a braking system which can be as effective as a conventional rear wheel brake, but not as effective as a front wheel brake.[76]
+
+
+
+
+
+
+Suspension
+
+
+
+Main article: Bicycle suspension
+
+
+
+Bicycle suspension refers to the system or systems used to suspend the rider and all or part of the bicycle. This serves two purposes: to keep the wheels in continuous contact with the ground, improving control, and to isolate the rider and luggage from jarring due to rough surfaces, improving comfort.[77]
+
+
+
+Bicycle suspensions are used primarily on mountain bicycles, but are also common on hybrid bicycles, as they can help deal with problematic vibration from poor surfaces. Suspension is especially important on recumbent bicycles, since while an upright bicycle rider can stand on the pedals to achieve some of the benefits of suspension, a recumbent rider cannot.[77]
+
+
+
+Basic mountain bicycles and hybrids usually have front suspension only, whilst more sophisticated ones also have rear suspension. Road bicycles tend to have no suspension.[77]
+
+
+
+
+
+
+Wheels and tires
+
+
+
+Main articles: Bicycle wheel and Bicycle tire
+
+
+Two tires of the same make and tread pattern, the lower one completely unused, the upper one has rolled over 1,500 km (900 mi) on varying surfaces.
+
+The wheel axle fits into fork ends in the frame and fork. A pair of wheels may be called a wheelset, especially in the context of ready-built "off the shelf", performance-oriented wheels. Tires vary enormously depending on their intended purpose. Road bicycles typically use tires from 25 mm (1 in) to 35 mm (1.4 in) wide,[78] sometimes completely smooth, or slick, and inflated to high pressure to roll fast on smooth surfaces. Off-road tires are usually wider, from 30 mm (1.2 in) to 100 mm (4 in),[79] and have treads for gripping in muddy conditions or metal studs for ice.[80]
+
+
+
+
+
+
+Accessories
+
+
+Touring bicycle equipped with front and rear racks, fenders (called mud-guards), water bottles in cages, four panniers and a handlebar bag
+
+
+Some components, which are often optional accessories on sports bicycles, are standard features on utility bicycles to enhance their usefulness, comfort, safety and visibility. Fenders with spoilers (mudflaps) protect the cyclist and moving parts from spray when riding through wet areas. In some countries (e.g. Germany, UK), fenders are called mudguards. The chainguards protect clothes from oil on the chain while preventing clothing from being caught between the chain and crankset teeth. Kick stands keep bicycles upright when parked, and bike locks deter theft. Front-mounted baskets, front or rear luggage carriers or racks, and panniers mounted above either or both wheels can be used to carry equipment or cargo. Parents sometimes add rear-mounted child seats, an auxiliary saddle fitted to the crossbar, or both to transport children. Bicycles can also be fitted with a hitch to tow a trailer for carrying cargo, a child, or both.
+
+
+
+Toe-clips, toestraps and clipless pedals help keep the foot locked in the proper pedal position and enable cyclists to pull and push the pedals. Technical accessories include cyclocomputers for measuring speed, distance, heart rate, GPS data etc. Other accessories include lights, reflectors, mirrors, racks, trailers, bags, water bottles and cages, and bells.[81] Bicycle lights, reflectors, and helmets are required by law in some geographic regions. It is more common to see bicycles with bottle generators, dynamos, lights, fenders, racks and bells in Europe. Bicyclists also have specialized form fitting and high visibility clothing.
+
+
+
+Children's bicycles may be outfitted with cosmetic enhancements such as bike horns, streamers, and spoke beads.[82] Training wheels are sometimes used when learning to ride, but a dedicated balance bike teaches independent riding more effectively.[83][84]
+
+
+
+Bicycle helmets can reduce injury in the event of a collision or accident, and a suitable helmet is legally required of riders in many jurisdictions.[85][86] Helmets may be classified as an accessory[81] or as an item of clothing.[87]
+
+
+
+Bike trainers are used to enable cyclists to cycle while the bike remains stationary. They are frequently used to warm up before races or indoors when riding conditions are unfavorable.[88]
+
+
+
+
+
+
+Standards
+
+
+
+A number of formal and industry standards exist for bicycle components to help make spare parts exchangeable and to maintain a minimum product safety. The International Organization for Standardization (ISO) has a special technical committee for cycles, TC149, that has the scope of "Standardization in the field of cycles, their components and accessories with particular reference to terminology, testing methods and requirements for performance and safety, and interchangeability".[89]
+
+
+
+The European Committee for Standardization (CEN) also has a specific Technical Committee, TC333, that defines European standards for cycles. Their mandate states that CEN cycle standards shall harmonize with ISO standards. Some CEN cycle standards were developed before ISO published their standards, leading to strong European influences in this area. European cycle standards tend to describe minimum safety requirements, while ISO standards have historically harmonized parts geometry.[note 1][90]
+
+
+
+
+
+
+
+Industry
+
+
+
+
+This section is an excerpt from Bicycle industry.[edit]
+
+
+A bicycle shop displays bikes for sale.
+
+
+The bicycle industry or cycling industry can broadly be defined as the industry concerned with bicycles and cycling. It includes at least bicycle manufacturers, part or component manufacturers, and accessory manufacturers. It can also include distributors, retailers, bicycle organizations, bicycle event promoters, and bicycle related service providers.
+
+
+
+The global bicycle industry generated sales of $66 billion in 2024.[91]
+
+
+
+
+
+
+
+
+
+Manufacturing and sales
+
+
+
+
+These paragraphs are an excerpt from List of bicycle brands and manufacturing companies.[edit]
+
+
+
+Over 100 million bicycles are made each year, the top three manufacturing countries being China, India and Taiwan.[92] In 2025, the global market size was an estimated $116 billion.[93]
+
+
+
+Many bicycle brands do not manufacture their own product, but rather import and re-brand bikes manufactured by others, sometimes designing the bike, specifying the equipment, and providing quality control. There are also brands that have, at different times, been manufacturers as well as re-branders: a company with manufacturing capability may market models made by other (overseas) factories, while simultaneously manufacturing bicycles in-house, for example, high-end models.[94]
+
+
+
+
+
+
+
+
+
+
+
+Maintenance and repair
+
+
+Bicycle maintenance section in a Woolworth in Frankfurt offering various parts and tools like pumps, lights, bells, handlebar grips, saddles, brakes and inner tubes
+
+
+A bicycle can be kept in good condition for decades.[54] Like all products with mechanical moving parts, bicycles require regular maintenance and replacement of worn parts. A bicycle is relatively simple compared with a car, so some cyclists choose to do at least part of the maintenance themselves. Some components are easy to manage using relatively simple tools, while other components may require specialist manufacturer-dependent tools.
+
+
+
+Many bicycle components are available at several different price/quality points; manufacturers generally try to keep all components on any particular bike at about the same quality level, though at the very cheap end of the market there may be some skimping on less obvious components (e.g. bottom bracket).
+
+
+There are several hundred assisted-service community bicycle organizations worldwide.[95] At a community bicycle organization, laypeople bring in bicycles needing repair or maintenance; volunteers teach them how to do the required steps.
+
+
+Full services are available from bicycle mechanics at local bike shops.
+
+
+In areas where it is available, some cyclists purchase roadside assistance from companies such as the Better World Club or the American Automobile Association.
+
+
+
+
+
+Maintenance
+
+
+
+Keeping the tires correctly inflated can make a noticeable difference as to how the bike feels to ride. Bicycle tires usually have a marking on the sidewall indicating the pressure appropriate for that tire, from 100 to 1,400 kPa (15 to 200 psi).[96] Over the longer term, tires wear out, after 1,500 to 5,000 kilometres (900 to 3,000 miles); with punctures often the most visible sign of a worn tire.[97]
+
+
+
+Many community cycling organisations will check brakes and other basic parts for free, or bike shops at low cost.[98] Disc brakes can be cleaned[99] but may need professional maintenance, but rim brakes are easier to adjust.[98]
+
+
+
+Chains can be washed with soapy water then lightly lubricated, but may need replacing after a couple of years.[98] Other parts, such as derailleur pivot points, can also be lubricated, but lightly as dirt may stick with too much oil.[100]
+
+
+
+
+
+
+Repair
+
+
+
+Very few bicycle components can actually be repaired; replacement of the failing component is normal practice.
+
+
+
+The most common roadside problem is a puncture of the tire's inner tube. A patch kit may be employed to fix the puncture or the tube can be replaced, though the latter solution comes at a greater cost and waste of material.[101] Some brands of tires are much more puncture-resistant than others, often incorporating one or more layers of Kevlar; the downside of such tires is that they may be heavier and more difficult to fit and remove.
+
+
+
+
+
+
+Tools
+
+
+
+Main article: Bicycle tools
+
+
+Puncture repair kit with tire levers, sandpaper to clean off an area of the inner tube around the puncture, a tube of rubber solution (vulcanizing fluid), round and oval patches, a metal grater and piece of chalk to make chalk powder (to dust over excess rubber solution). Kits often also include a wax crayon to mark the puncture location.
+
+
+There are specialized bicycle tools for use both in the shop and at the roadside. Many cyclists carry tool kits. These may include a tire patch kit (which, in turn, may contain any combination of a hand pump or CO2 pump, tire levers, spare tubes, self-adhesive patches, or tube-patching material, an adhesive, a piece of sandpaper or a metal grater (for roughening the tube surface to be patched) and sometimes even a block of French chalk), wrenches, hex keys, screwdrivers, and a chain tool. Special, thin wrenches are often required for maintaining various screw-fastened parts, specifically, the frequently lubricated ball-bearing "cones".[102][103] There are also cycling-specific multi-tools that combine many of these implements into a single compact device. More specialized bicycle components may require more complex tools, including proprietary tools specific for a given manufacturer.
+
+
+
+
+
+
+
+Social and historical aspects
+
+
+
+The bicycle has had a considerable effect on human society, in both the cultural and industrial realms.[104][105]
+
+
+
+
+
+In daily life
+
+
+
+See also: Cycling infrastructure and History of cycling infrastructure
+
+Cyclists in Greymouth, New Zealand (c.1898-1905)
+
+Around the turn of the 20th century, bicycles reduced crowding in inner-city tenements by allowing workers to commute from more spacious dwellings in the suburbs. They also reduced dependence on horses. Bicycles allowed people to travel for leisure into the country, since bicycles were three times as energy efficient as walking and three to four times as fast.
+
+
+Bikeway in New York City, USA (2008)
+
+In built-up cities around the world, urban planning uses cycling infrastructure like bikeways to reduce traffic congestion and air pollution.[106] A number of cities around the world have implemented schemes known as bicycle sharing systems or community bicycle programs.[107][108] The first of these was the White Bicycle plan in Amsterdam in 1965. It was followed by yellow bicycles in La Rochelle and green bicycles in Cambridge. These initiatives complement public transport systems and offer an alternative to motorized traffic to help reduce congestion and pollution.[109] In Europe, especially in the Netherlands and parts of Germany and Denmark, bicycle commuting is common. In Copenhagen, a cyclists' organization runs a Cycling Embassy that promotes biking for commuting and sightseeing. The United Kingdom has a tax break scheme (IR 176) that allows employees to buy a new bicycle tax free to use for commuting.[110]
+
+
+
+In the Netherlands, all train stations offer free bicycle parking, or a more secure parking place for a small fee, with the larger stations also offering bicycle repair shops. Cycling is so popular that the parking capacity may be exceeded, such as in Delft, where the capacity is usually exceeded.[111] In Trondheim in Norway, the Trampe bicycle lift has been developed to encourage cyclists by giving assistance on a steep hill. Buses in many cities have bicycle carriers mounted on the front.
+
+
+
+There are towns in some countries where bicycle culture has been an integral part of the landscape for generations, even without much official support. That is the case of Ílhavo, in Portugal.
+
+
+
+In cities where bicycles are not integrated into the public transportation system, commuters often use bicycles as elements of a mixed-mode commute, where the bike is used to travel to and from train stations or other forms of rapid transit. Some students who commute several miles drive a car from home to a campus parking lot, then ride a bicycle to class. Folding bicycles are useful in these scenarios, as they are less cumbersome when carried aboard. Los Angeles removed a small amount of seating on some trains to make more room for bicycles and wheelchairs.[112]
+
+Urban cyclists in Copenhagen, Denmark, at a traffic light
+
+
+Some US companies, notably in the tech sector, are developing both innovative cycle designs and cycle-friendliness in the workplace. Foursquare, whose CEO Dennis Crowley "pedaled to pitch meetings ... [when he] was raising money from venture capitalists" on a two-wheeler, chose a new location for its New York headquarters "based on where biking would be easy". Parking in the office was also integral to HQ planning. Mitchell Moss, who runs the Rudin Center for Transportation Policy & Management at New York University, said in 2012: "Biking has become the mode of choice for the educated high tech worker".[113]
+
+
+
+Bicycles offer an important mode of transport in many developing countries. Until recently, bicycles have been a staple of everyday life throughout Asian countries. They are the most frequently used method of transport for commuting to work, school, shopping, and life in general. In Europe, bicycles are commonly used.[114] They also offer a degree of exercise to keep individuals healthy.[115]
+
+
+
+Bicycles are also celebrated in the visual arts. An example of this is the Bicycle Film Festival, a film festival hosted all around the world.
+
+
+
+
+
+
+Poverty alleviation
+
+
+Men in Uganda using a bicycle to transport bananas
+
+This section is an excerpt from Bicycle poverty reduction.[edit]
+
+
+Tanzanian boy transporting fodder on his bicycle to feed his family cattle
+
+Bicycle poverty reduction is the concept that access to bicycles and the transportation infrastructure to support them can dramatically reduce poverty.[116][117][118][119] This has been demonstrated in various pilot projects in South Asia and Africa.[120][121][122] Experiments done in Africa (Uganda and Tanzania) and Sri Lanka on hundreds of households have shown that a bicycle can increase the income of a poor family by as much as 35%.[120][123][124]
+ 
+
+
+Transport, if analyzed for the cost–benefit analysis for rural poverty alleviation, has given one of the best returns in this regard. For example, road investments in India were a staggering 3–10 times more effective than almost all other investments and subsidies in rural economy in the decade of the 1990s. A road can ease transport on a macro level, while bicycle access supports it at the micro level. In that sense, the bicycle can be one of the most effective means to eradicate poverty in poor nations.
+
+
+
+
+
+
+
+
+
+
+Female emancipation
+
+
+
+See also: Bicycling and feminism
+
+ "Let go – but stand by"; Frances Willard learning to ride a bicycle[125]
+
+The safety bicycle gave women unprecedented mobility, contributing to their emancipation in Western nations. As bicycles became safer and cheaper, more women had access to the personal freedom that bicycles embodied, and so the bicycle came to symbolize the New Woman of the late 19th century, especially in Britain and the United States.[4][126] The bicycle craze in the 1890s also led to a movement for so-called rational dress, which helped liberate women from corsets and ankle-length skirts and other restrictive garments, substituting the then-shocking bloomers.[4]
+
+
+
+The bicycle was recognized by 19th-century feminists and suffragists as a "freedom machine" for women. American Susan B. Anthony said in a New York World interview on 2 February 1896: "I think it has done more to emancipate woman than any one thing in the world. I rejoice every time I see a woman ride by on a wheel. It gives her a feeling of self-reliance and independence the moment she takes her seat; and away she goes, the picture of untrammelled womanhood."[127]: 859  In 1895 Frances Willard, the tightly laced president of the Woman's Christian Temperance Union, wrote A Wheel Within a Wheel: How I Learned to Ride the Bicycle, with Some Reflections by the Way, a 75-page illustrated memoir praising "Gladys", her bicycle, for its "gladdening effect" on her health and political optimism.[125] Willard used a cycling metaphor to urge other suffragists to action.[125]
+
+
+
+In 1985, Georgena Terry started the first women-specific bicycle company. Her designs featured frame geometry and wheel sizes chosen to better fit women, with shorter top tubes and more suitable reach.[128]
+
+
+
+
+
+
+Economic implications
+
+
+Columbia Bicycles advertisement from 1886
+
+
+Bicycle manufacturing proved to be a training ground for other industries and led to the development of advanced metalworking techniques, both for the frames themselves and for special components such as ball bearings, washers, and sprockets. These techniques later enabled skilled metalworkers and mechanics to develop the components used in early automobiles and aircraft.
+
+
+
+Wilbur and Orville Wright, a pair of businessmen, ran the Wright Cycle Company which designed, manufactured and sold their bicycles during the bike boom of the 1890s.[129]
+
+
+
+They also served to teach the industrial models later adopted, including mechanization and mass production (later copied and adopted by Ford and General Motors),[130][131][132] vertical integration[131] (also later copied and adopted by Ford), aggressive advertising[133] (as much as 10% of all advertising in US periodicals in 1898 was by bicycle makers),[134] lobbying for better roads (which had the side benefit of acting as advertising, and of improving sales by providing more places to ride),[132] all first practiced by Pope.[132] In addition, bicycle makers adopted the annual model change[130][135] (later derided as planned obsolescence, and usually credited to General Motors), which proved very successful.[136]
+
+
+
+Early bicycles were an example of conspicuous consumption, being adopted by the fashionable elites.[137][138][139][130][140][141][142][143] In addition, by serving as a platform for accessories, which could ultimately cost more than the bicycle itself, it paved the way for the likes of the Barbie doll.[130][144][145]
+
+
+
+Bicycles helped create, or enhance, new kinds of businesses, such as bicycle messengers,[146] traveling seamstresses,[147] riding academies,[148] and racing rinks.[149][148] Their board tracks were later adapted to early motorcycle and automobile racing. There were a variety of new inventions, such as spoke tighteners,[150] and specialized lights,[145][150] socks and shoes,[151] and even cameras, such as the Eastman Company's Poco.[152] Probably the best known and most widely used of these inventions, adopted well beyond cycling, is Charles Bennett's Bike Web, which came to be called the jock strap.[153]
+
+
+A man uses a bicycle to carry goods in Ouagadougou, Burkina Faso.
+
+They also presaged a move away from public transit[154] that would explode with the introduction of the automobile.
+
+
+
+J. K. Starley's company became the Rover Cycle Company Ltd. in the late 1890s, and then renamed the Rover Company when it started making cars. Morris Motors Limited (in Oxford) and Škoda also began in the bicycle business, as did the Wright brothers.[155] Alistair Craig, whose company eventually emerged to become the engine manufacturers Ailsa Craig, also started from manufacturing bicycles, in Glasgow in March 1885.
+
+
+
+In general, US and European cycle manufacturers used to assemble cycles from their own frames and components made by other companies, although very large companies (such as Raleigh) used to make almost every part of a bicycle (including bottom brackets, axles, etc.) In recent years, those bicycle makers have greatly changed their methods of production. Now, almost none of them produce their own frames.
+
+
+
+Many newer or smaller companies only design and market their products; with the actual production being completed elsewhere, often in Asia. For example, over 60% of the world's bicycles are now made in China. Despite this shift in production, as nations such as China and India become more wealthy, their own use of bicycles is declining due to the increasing affordability of cars and motorcycles.[156] One of the major reasons for the proliferation of Chinese-made bicycles in foreign markets is the lower cost of labor in China.[157]
+
+
+
+In line with the European financial crisis of that time, in 2011 the number of bicycle sales in Italy (1.75 million) surpassed the number of new car sales.[158]
+
+
+
+
+
+
+Environmental impact
+
+
+
+See also: Cycling § Environmental_impact, and Electric_bicycle § Environmental_effects
+
+
+Emissions related to bicycles come from their production and in actual use from their source of power, that is the food consumed for pedalling, or the electricity required in the case of electric bicycles.
+
+
+
+The materials used are mainly steel, aluminium, and carbon fibre. Compared to other industries, the amounts of materials used are very small and the metals are well recyclable.[159] Life-cycle assessments for climate impact suggest that for production in China it is around 150 kg CO₂eq/bicycle and 250 kg CO₂eq/e-bike, and for production in Europe around 70 kg CO₂eq/bicycle and 130 kg CO₂eq/e-bike[160]
+
+
+
+A further sources of emissions comes from the rubber pollution from tire wear. A study with mountain bike tires measured off-road wear rates per pair of initially 3.6 grams rubber per 100 km, then decreasing to 2 g/1oo km, compared to cars with 11-12 g/100 km per vehicle on-road.[161]
+
+
+
+
+
+
+Legal requirements
+
+
+
+Main article: Bicycle law
+
+
+
+Early in its development, as with automobiles, there were restrictions on the operation of bicycles. Along with advertising, and to gain free publicity, Albert A. Pope litigated on behalf of cyclists.[132]
+
+
+
+The 1968 Vienna Convention on Road Traffic of the United Nations considers a bicycle to be a vehicle, and a person controlling a bicycle (whether actually riding or not) is considered an operator or driver.[162][163] The traffic codes of many countries reflect these definitions and demand that a bicycle satisfy certain legal requirements before it can be used on public roads. In many jurisdictions, it is an offense to use a bicycle that is not in a roadworthy condition.[164][165] In some countries, bicycles must have functioning front and rear lights when ridden after dark.[166][167]
+
+
+
+
+
+
+Theft
+
+
+
+Main article: Bicycle theft
+
+
+A bicycle wheel remains chained in a bike rack after the rest of the bicycle has been stolen at east campus of Duke University in Durham, North Carolina.
+
+
+Bicycles are popular targets for theft, due to their value and ease of resale.[68] The number of bicycles stolen annually is difficult to quantify as a large number of crimes are not reported.[66] About 50% of the participants in the Montreal International Journal of Sustainable Transportation survey were subjected to a bicycle theft in their lifetime as active cyclists.[168] Most bicycles have serial numbers that can be recorded to verify identity in case of theft.[169]
+
+
+
+
+
+
+
+
+
+
+See also
+
+
+
+
+Bicycle and motorcycle geometry
+
+
+Bicycle drum brake
+
+
+Bicycle fender
+
+
+Bicycle lighting
+
+
+Bicycle parking station
+
+
+Bicycle-friendly
+
+
+Bicycle-sharing system
+
+
+List of bicycle types
+
+
+List of films about bicycles and cycling
+
+
+List of land vehicles types by number of wheels
+
+
+Outline of bicycles
+
+
+Skirt guard
+
+
+Velomobile
+
+
+Wooden bicycle
+
+
+World Bicycle Day
+
+
+
+
+
+
+Notes
+
+
+
+
+
+
+↑ The TC149 ISO bicycle committee, including the TC149/SC1 ("Cycles and major sub-assemblies") subcommittee, has published the following standards:
+
+ISO 4210 Cycles – Safety requirements for bicycles
+
+
+ISO 6692 Cycles – Marking of cycle components
+
+
+ISO 6695 Cycles – Pedal axle and crank assembly with square end fitting – Assembly dimensions
+
+
+ISO 6696 Cycles – Screw threads used in bottom bracket assemblies
+
+
+ISO 6697 Cycles – Hubs and freewheels – Assembly dimensions
+
+
+ISO 6698 Cycles – Screw threads used to assemble freewheels on bicycle hubs
+
+
+ISO 6699 Cycles – Stem and handlebar bend – Assembly dimensions
+
+
+ISO 6701 Cycles – External dimensions of spoke nipples
+
+
+ISO 6742 Cycles – Lighting and retro-reflective devices – Photometric and physical requirements
+
+
+ISO 8090 Cycles – Terminology (same as BS 6102-4)
+
+
+ISO 8098 Cycles – Safety requirements for bicycles for young children
+
+
+ISO 8488 Cycles – Screw threads used to assemble head fittings on bicycle forks
+
+
+ISO 8562 Cycles – Stem wedge angle
+
+
+ISO 10230 Cycles – Splined hub and sprocket – Mating dimensions
+
+
+ISO 11243 Cycles – Luggage carriers for bicycles – Concepts, classification and testing
+
+
+Other ISO Technical Committees have published various cycle relevant standards, for example:
+
+ISO 5775 Bicycle tire and rim designations
+
+
+ISO 9633 Cycle chains – Characteristics and test methods
+
+
+Published cycle standards from CEN TC333 include:
+
+EN 14764 City and trekking bicycles – Safety requirements and test methods
+
+
+EN 14765 Bicycles for young children – Safety requirements and test methods
+
+
+EN 14766 Mountain-bicycles – Safety requirements and test methods
+
+
+EN 14781 Racing bicycles – Safety requirements and test methods
+
+
+EN 14782 Bicycles – Accessories for bicycles – Luggage carriers
+
+
+EN 15496 Cycles – Requirements and test methods for cycle locks
+
+
+Yet to be approved cycle standards from CEN TC333:
+
+EN 15194 Cycles – Electrically power assisted cycles (Electric bicycle)
+
+
+EN 15532 Cycles – Terminology
+
+
+00333011 Cycles – Bicycles trailers – safety requirements and test methods
+
+
+
+
+
+
+
+
+
+
+References
+
+
+
+
+
+Citations
+
+
+
+
+
+
+1 2 Koeppel, Dan (January–February 2007). "Flight of the Pigeon". Bicycling. Vol. 48, no. 1. Rodale. pp. 60–66. ISSN 0006-2073. Retrieved 28 January 2012.
+
+
+↑ "Bicycling; A way of life; Faster in town than going by car, bus, tube or on foot". The Economist. 20 April 2011.
+
+
+1 2 Herlihy 2004, pp. 200–50.
+
+
+1 2 3 4 Herlihy 2004, pp. 266–71.
+
+
+1 2 3 Herlihy 2004, p. 280.
+
+
+↑ Heitmann, J. A. The Automobile and American Life. McFarland, 2009, ISBN 0-7864-4013-9, pp. 11ff
+
+
+1 2 3 "bicycle". Oxford English Dictionary (online ed.). Oxford University Press. (Subscription or participating institution membership required.)
+
+
+↑ "bicycle (n.)". Online Etymology Dictionary. Retrieved 10 February 2014.
+
+
+↑ "bike". Oxford English Dictionary (online ed.). Oxford University Press. (Subscription or participating institution membership required.)
+
+
+↑ "pushbike". Oxford English Dictionary (online ed.). Oxford University Press. (Subscription or participating institution membership required.)
+
+
+↑ "pedal cycle". Oxford English Dictionary (online ed.). Oxford University Press. (Subscription or participating institution membership required.)
+
+
+↑ "cycle". Oxford English Dictionary (online ed.). Oxford University Press. (Subscription or participating institution membership required.)
+
+
+↑ "Transport and Map Symbols" (PDF). unicode.org. Archived (PDF) from the original on 9 October 2022. Retrieved 10 February 2014.
+
+
+↑ Javorsky, Nicole (24 April 2019). "How an Ancestor of the Bicycle Relates to Climate Resilience". Bloomberg. Retrieved 5 April 2022.
+
+
+↑ "200 years since the father of the bicycle Baron Karl von Drais invented the 'running machine'". Cycling UK. Retrieved 3 June 2026.
+
+
+↑ "DPMA | World Day of the Bicycle". Retrieved 3 June 2026.
+
+
+↑ "Karl Drais and the Mechanical Horse | SciHi Blog". 29 April 2018. Retrieved 3 June 2026.
+
+
+↑ Scally, Derek (10 June 2017). "World's first bicycle ride took place 200 years ago". The Irish Times. Retrieved 29 March 2020.
+
+
+↑ "Frames & Materials". Science of Cycling. Archived from the original on 11 April 2018. Retrieved 29 March 2020.
+
+Gliemann, Jennifer (21 March 2017). "200th anniversary: How the bicycle changed society". Bike Citizens. Archived from the original on 29 March 2020. Retrieved 29 March 2020.
+
+
+↑ Limebeer, D. J. N.; Massaro, Matteo (2018). Dynamics and Optimal Control of Road Vehicles. Oxford University Press. pp. 13–15. ISBN 9780192559814.
+
+
+1 2 "Baron von Drais' Bicycle". Canada Science and Technology Museum. Archived from the original on 29 December 2006. Retrieved 10 February 2014.
+
+
+↑ Herlihy 2004, p. 26.
+
+
+↑ Herlihy 2004, pp. 66–67.
+
+
+↑ "Is dangerous cycling a problem?". BBC News. 13 April 2011. Retrieved 11 February 2014.
+
+
+↑ Bulletin des lois de la République française (1873) 12th series, vol. 6, p. 648, patent no. 86,705: "Perfectionnements dans les roues de vélocipèdes" ("Improvements in the wheels of bicycles"), issued 4 August 1869.
+
+
+↑ Norcliffe 2001, p. 50.
+
+
+↑ McGrory, David. A History of Coventry (Chichester: Phillimore, 2003), p. 221.
+
+
+↑ Norcliffe 2001, p. 47.
+
+
+↑ McGrory, p. 222.
+
+
+↑ "Cycle market: Moving into the fast lane". The Independent. London. 26 February 2018. Retrieved 3 June 2026.
+
+
+↑ Hume, William (1938). "The Golden Book of Cycling". www.thepedalclub.org. Archived from the original on 3 April 2012. Retrieved 3 June 2026.
+
+
+↑ "Dunlop, What sets Dunlop apart, History, 1889". Archived from the original on 2 April 2011. Retrieved 27 February 2018.
+
+
+↑ Brown, Sheldon. "One-Speed Bicycle Coaster Brakes". Archived from the original on 29 November 2010. Retrieved 1 December 2010. Coaster brakes were invented in the 1890s.
+
+
+↑ "Biography – ERIH". www.erih.net. Retrieved 31 January 2026.
+
+
+↑ "BBC Inside Out - Raleigh Bikes". www.bbc.co.uk. Retrieved 3 June 2026.
+
+
+1 2 Koeppel, Dan (January–February 2007). "Flight of the Pigeon". Bicycling. Vol. 48, no. 1. Rodale. pp. 60–66. ISSN 0006-2073. Retrieved 28 January 2012.
+
+
+↑ "Bicycling; A way of life; Faster in town than going by car, bus, tube or on foot". The Economist. 20 April 2011. Retrieved 3 June 2026.
+
+
+↑ Fishman, Elliot (2 January 2016). "Cycling as transport". Transport Reviews. 36 (1): 1–8. doi:10.1080/01441647.2015.1114271. ISSN 0144-1647.
+
+
+↑ Wilson 1973, p. 82.
+
+
+↑ Kindy, David (14 June 2022). "The Black Buffalo Soldiers Who Biked Across the American West". Smithsonian Magazine. Retrieved 8 July 2023.
+
+
+↑ "Game changers | 12 innovations that changed road cycling". BikeRadar. 10 June 2021. Retrieved 10 January 2023.
+
+
+↑ "Types of Different Bikes: Ultimate Buying Guide - Bike Coop". 3 January 2024. Retrieved 31 January 2026.
+
+
+↑ "unicycle". dictionary.cambridge.org. 28 January 2026. Retrieved 31 January 2026.
+
+
+↑ "Tricycles at the National Cycle Museum". www.cyclemuseum.org.uk. Retrieved 31 January 2026.
+
+
+↑ Various (9 December 2006). "Like falling off". New Scientist (2581): 93. Archived from the original on 4 December 2008. Retrieved 27 January 2009.
+
+
+↑ Meijaard, J.P.; Papadopoulos, Jim M.; Ruina, Andy; Schwab, A.L. (2007). "Linearized dynamics equations for the balance and steer of a bicycle: a benchmark and review". Proceedings of the Royal Society A. 463 (2084): 1955–82. Bibcode:2007RSPSA.463.1955M. doi:10.1098/rspa.2007.1857. ISSN 1364-5021. S2CID 18309860.
+
+
+↑ Wilson, David Gordon; Jim Papadopoulos (2004). Bicycling Science (Third ed.). The MIT Press. pp. 270–72. ISBN 978-0-262-73154-6.
+
+
+↑ Fajans, Joel (July 2000). "Steering in bicycles and motorcycles" (PDF). American Journal of Physics. 68 (7): 654–59. Bibcode:2000AmJPh..68..654F. doi:10.1119/1.19504. Archived from the original (PDF) on 1 September 2006. Retrieved 4 August 2006.
+
+
+↑ Cossalter, Vittore (2006). Motorcycle Dynamics (Second ed.). Lulu. pp. 241–342. ISBN 978-1-4303-0861-4.
+
+
+↑ "How to Stoppie on a Mountain Bike". PUSH. Retrieved 31 January 2026.
+
+
+↑ "Pedal power probe shows bicycles waste little energy". Johns Hopkins Gazette. 30 August 1999. Archived from the original on 1 February 2010. Retrieved 20 February 2005.
+
+
+↑ Whitt, Frank R.; David G. Wilson (1982). Bicycling Science (Second ed.). Massachusetts Institute of Technology. pp. 277–300. ISBN 978-0-262-23111-4.
+
+
+↑ "LAND - MEN'S 1 HOUR STANDING START (Single Rider)". WHPVA. Retrieved 3 May 2026.
+
+
+1 2 Gauthier, Philippe (9 February 2021). "Material challenges of bicycle manufacturing in a post-growth world". resilience. Retrieved 11 May 2026.
+
+
+↑ "Why Diamond Frame Cycles Are More Stable | The Engineering Behind Bicy". Hornback. 31 October 2025. Retrieved 31 January 2026.
+
+
+↑ Wilson 1973, p. 85.
+
+
+↑ Denham, Alee (21 January 2016). "A Complete List of Womens Touring Bikes: Step Through & Mixte". CYCLINGABOUT.com. Retrieved 31 January 2026.
+
+
+↑ "Mixte is one of many styles of women's bike frame! – Bike Tinker". 5 October 2015. Retrieved 31 January 2026.
+
+
+↑ Cyclist, Average Joe (10 April 2017). "How the Bicycle Became a Symbol for Women's Emancipation". Average Joe Cyclist. Retrieved 12 August 2022.
+
+
+↑ "History Loudly Tells Why The Recumbent Bike Is Popular Today". Recumbent-bikes-truth-for-you.com. 1 April 1934. Archived from the original on 2 August 2003. Retrieved 24 October 2011.
+
+
+↑ "Understanding the World of Carbon Fiber Frames in Bicycles". 28 November 2023. Retrieved 31 January 2026.
+
+
+↑ Lakkad; Patel (June 1981). "Mechanical properties of bamboo, a natural composite". Fibre Science and Technology. 14 (4): 319–22. doi:10.1016/0015-0568(81)90023-3.
+
+
+1 2 Jen Lukenbill. "About My Planet: Bamboo Bikes". Archived from the original on 25 October 2012. Retrieved 14 January 2013.
+
+
+↑ Teo Kermeliotis (31 May 2012). "Made in Africa: Bamboo bikes put Zambian business on right track". CNN.
+
+
+↑ Bamboo bicycles made in Zambia (TV news). Tokyo: NHK World News in English. 14 January 2013. Archived from the original on 15 January 2013.
+
+
+1 2 3 "A beginners' guide to … a cycle's drivetrain | Cycling UK". www.cyclinguk.org. Retrieved 31 January 2026.
+
+
+↑ "Bike test: urban bikes with belt drives".
+
+
+1 2 "Belt drive bicycles: the pros and cons explained". BikeRadar. 13 May 2024. Retrieved 31 January 2026.
+
+
+↑ "Bike gears explained | A complete guide to bicycle transmissions". BikeRadar. 30 April 2025. Retrieved 31 January 2026.
+
+
+↑ Patterson, J.M.; Jaggars, M.M.; Boyer, M.I. (2003). "Ulnar and median nerve palsy in long-distance cyclists. A prospective study". The American Journal of Sports Medicine. 31 (4): 585–89. doi:10.1177/03635465030310041801. PMID 12860549. S2CID 22497516.
+
+
+↑ "A beginners' guide to … a cycle's handlebars | Cycling UK". www.cyclinguk.org. Retrieved 31 January 2026.
+
+
+↑ "Guide to saddle comfort for women | Cycling UK". www.cyclinguk.org. Retrieved 31 January 2026.
+
+
+↑ "Bike Saddle Key Features | BiSaddle". Bisaddle Adjustable Shape Bike Saddle. 1 December 2023. Retrieved 31 January 2026.
+
+
+↑ Wade Wallace (1 October 2013). "Disc Brakes and Road Bikes: What does the Future Hold?". cyclingtips.com.au. Retrieved 24 February 2014.
+
+
+↑ John Allan. "Disc Brakes". sheldonbrown.com. Retrieved 24 February 2014.
+
+
+↑ Brown, Sheldon. "Fixed Gear Conversions: Braking". Archived from the original on 9 February 2009. Retrieved 11 February 2009.
+
+
+1 2 3 mikec (1 July 2025). "How Bike Suspension Works: A Guide for Every Type of Rider". Premium Bike Components & Gear. Retrieved 31 January 2026.
+
+
+↑ "The Best Road Bike Tire Size Isn't What You Think—Here's What Actually Matters". Bicycling. 26 March 2026. Retrieved 15 April 2026.
+
+
+↑ Anderson, Finlay (5 April 2023). "What is a fat bike? Everything you need to know about fat-tyre bikes". BikeRadar. Retrieved 15 April 2026.
+
+
+↑ "A beginners' guide to … wheels on a cycle | Cycling UK". www.cyclinguk.org. Retrieved 31 January 2026.
+
+
+1 2 Bluejay, Michael. "Safety Accessories". Bicycle Accessories. BicycleUniverse.info. Archived from the original on 8 October 2006. Retrieved 13 September 2006.
+
+
+↑ Kicinski-Mccoy, James (3 August 2015). "The Coolest Bike Accessories For Kids". MOTHER. Retrieved 30 April 2020.
+
+
+↑ Blommenstein, Biko; Kamp, John (2022). "Mastering balance: The use of balance bicycles promotes the development of independent cycling". British Journal of Developmental Psychology. 40 (2): 242–253. doi:10.1111/bjdp.12409. ISSN 0261-510X. PMC 9310799. PMID 35262200.
+
+
+↑ Mercê, Cristiana; Branco, Marco; Catela, David; Lopes, Frederico; Cordovil, Rita (2022). "Learning to cycle: From training wheels to balance bike". International Journal of Environmental Research and Public Health. 19 (3): 1814. doi:10.3390/ijerph19031814. ISSN 1660-4601. PMC 8834827. PMID 35162834.
+
+
+↑ Clarke, Colin; Gillham, Chris (November 2019). "Effects of bicycle helmet wearing on accident and injury rates". Researchgate.
+
+
+↑ Bachynski, Kathleen; Bateman-House, Alison (2020). "Mandatory Bicycle Helmet Laws in the United States: Origins, Context, and Controversies". American Journal of Public Health. 110 (8): 1198–1204. doi:10.2105/AJPH.2020.305718. PMC 7349454. PMID 32552017.
+
+
+↑ "The Essentials of Bike Clothing". About Bicycling. About.com. Archived from the original on 26 August 2006. Retrieved 13 September 2006.
+
+
+↑ "Bicycle Advisor". bicycleadvisor.com. 2 May 2015. Retrieved 16 December 2015.
+
+
+↑ "ISO/TC 149 - Cycles". ISO. Retrieved 31 January 2026.
+
+
+↑ "European, American and International Standards online". iTeh Standards. Retrieved 31 January 2026.
+
+
+↑ Bengtsen, Peter (1 February 2025). "The bicycle industry's dirty secret". Le Monde diplomatique. Retrieved 11 May 2026.
+
+
+↑ "The world's most flexible mode of transport". www.bbc.com. Retrieved 11 May 2026.
+
+
+↑ "Bicycle Market Size, Share & Industry Trends | 2026-2034". www.fortunebusinessinsights.com. Retrieved 31 January 2026.
+
+
+↑ "Keep on Bikin': American-Made Bikes Making a Comeback". www.utne.com. Retrieved 7 May 2015.
+
+
+↑ "Community Bicycle Organizations". Bike Collective Network wiki. Retrieved 15 January 2013.
+
+
+↑ "The ultimate guide to bike tyre pressure (PSI)". British Cycling. Retrieved 15 April 2026.
+
+
+↑ Kaloc, Jiri (7 May 2024). "Maintenance – How Do I Know When to Replace My Bike Tires?". Škoda We Love Cycling. Retrieved 15 April 2026.
+
+
+1 2 3 Vaarwerk, Alan (13 April 2026). "Back on ya bike! How to keep your bicycle running smoothly and save amid the fuel crisis". The Guardian. ISSN 0261-3077. Retrieved 15 April 2026.
+
+
+↑ Kaplan, Greg (7 November 2023). "Seven easy maintenance tips for road hydraulic disc brakes". Cycling Weekly. Retrieved 15 April 2026.
+
+
+↑ "Properly Lubing Your Chain Helps With a Quieter, Faster Ride. It Can Also Save You Time and Money". Bicycling. 31 March 2026. Retrieved 15 April 2026.
+
+
+↑ Van Mead, Nick (3 May 2016). "Cycling: how to fix a puncture (even if you don't have the right tools)". theguardian.com. Retrieved 13 November 2024.
+
+
+↑ "Sheldon Brown: Flat tires". Archived from the original on 13 May 2008. Retrieved 29 May 2008.
+
+
+↑ "BikeWebSite: Bicycle Glossary – Patch kit". Archived from the original on 13 May 2008. Retrieved 20 June 2008.
+
+
+↑ "How bicycles transformed our world". National Geographic. 17 June 2020. Retrieved 25 October 2024.
+
+
+↑ Stoffers, Manuel (2022). "Chapter Two - The bicycle: Technology and culture". Advances in Transport Policy and Planning. 10: 7–26. doi:10.1016/bs.atpp.2022.04.002.
+
+
+↑ Winters, M; Brauer, M; Setton, EM; Teschke, K (2010). "Built environment influences on healthy transportation choices: bicycling versus driving". J Urban Health. 87 (6): 969–93. doi:10.1007/s11524-010-9509-6. PMC 3005092. PMID 21174189.
+
+
+↑ Shaheen, Susan; Guzman, Stacey; Zhang, Hua (2010). "Bikesharing in Europe, the Americas, and Asia". Transportation Research Record. 2143: 159–67. doi:10.3141/2143-20. S2CID 40770008.
+
+
+↑ Shaheen, Stacey; Stacey Guzman (2011). "Worldwide Bikesharing". Access Magazine. Archived from the original on 26 March 2012.
+
+
+↑ Shaheen, Susan; Zhang, Hua; Martin, Elliot; Guzman, Stacey (2011). "China's Hangzhou Public Bicycle" (PDF). Transportation Research Record. 2247: 33–41. doi:10.3141/2247-05. S2CID 111120290.
+
+
+↑ "Tax free bikes for work through the Government's Green Transport Initiative". Cyclescheme.
+
+
+↑ Broekaert, Joel & Kist, Reinier (12 February 2010). "So many bikes, so little space". NRC Handelsblad. Archived from the original on 13 February 2010. Retrieved 13 February 2010.
+
+
+↑ Damien Newton (16 October 2008). "Metro Making Room for Bikes on Their Trains". LA.StreetsBlog.Org. Archived from the original on 18 September 2009. Retrieved 12 February 2010.
+
+
+↑ Bernstein, Andrea, "Techies on the cutting edge... of bike commuting", Marketplace, 22 February 2012. "Bernstein reports from the Transportation Nation Archived 10 April 2013 at the Wayback Machine project at WNYC". Retrieved 22 February 2012.
+
+
+↑ Calamur, Krishnadev (24 October 2013). "In Almost Every European Country, Bikes Are Outselling New Cars". NPR.
+
+
+↑ Lowe, Marcia D. (1989). The Bicycle: Vehicle for a Small Planet. Worldwatch Institute. ISBN 978-0-916468-91-0.
+
+
+↑ Annie Lowrey (30 April 2013). "Is It Crazy to Think We Can Eradicate Poverty?". The New York Times. Retrieved 6 August 2013.
+
+
+↑ Nicholas D. Kristof (12 April 2010). "A Bike for Abel". The New York Times. Retrieved 6 August 2013.
+
+
+↑ Fred P. Hochberg (5 January 2002). "Practical Help for Afghans". The New York Times. Retrieved 6 August 2013.
+
+
+↑ "Our Impact". Bicycles Against Poverty. Archived from the original on August 27, 2013. Retrieved 2013-08-07.
+
+
+1 2 "Bicycle: The Unnoticed Potential". BicyclePotential.org. Retrieved 6 August 2013.
+
+
+↑ "How can the bicycle assist in poverty eradication and social development in Africa?" (PDF). International Bicycle Fund. Archived from the original (PDF) on August 17, 2014. Retrieved 2013-08-06.
+
+
+↑ "Pedal Powered Hope Project (PPHP)". Bikes Without Borders. Archived from the original on August 13, 2013. Retrieved 2013-08-06.
+
+
+↑ Niklas Sieber (1998). "Appropriate Transportation and Rural Development in Makete District, Tanzania" (PDF). Journal of Transport Geography. 6 (1): 69–73. doi:10.1016/S0966-6923(97)00040-9. Retrieved 9 July 2011.
+
+
+↑ "Project Tsunami Report Confirms The Power of Bicycle" (PDF). World Bicycle Relief. Archived from the original (PDF) on December 26, 2010. Retrieved July 9, 2011.
+
+
+1 2 3 Willard, Frances Elizabeth (1895). A Wheel Within a Wheel: How I Learned to Ride the Bicycle, with Some Reflections by the Way. Woman's Temperance Publishing Association. pp. 53, 56.
+
+
+↑ Roberts, Jacob (2017). "Women's work". Distillations. 3 (1): 6–11. Retrieved 22 March 2018.
+
+
+↑ Husted Harper, Ida (1898). The life and work of Susan B. Anthony: including public addresses, her own letters and many from her contemporaries during fifty years. A story of the evolution of the status of woman. Vol. 2. The Bowen-Merrill Company.
+
+
+↑ "6 Questions for Women's Bicycling Pioneer Georgena Terry". Velojoy. 4 July 2012. Archived from the original on 25 August 2012. Retrieved 14 July 2021.
+
+
+↑ "Wilbur Wright Working in the Bicycle Shop". World Digital Library. 1897. Archived from the original on 30 September 2013. Retrieved 22 July 2013.
+
+
+1 2 3 4 Norcliffe 2001, p. 23.
+
+
+1 2 Norcliffe 2001, p. 106.
+
+
+1 2 3 4 Norcliffe 2001, p. 108.
+
+
+↑ Norcliffe 2001, pp. 142–47.
+
+
+↑ Norcliffe 2001, p. 145.
+
+
+↑ Babaian, Sharon. The Most Benevolent Machine: A Historical Assessment of Cycles in Canada (Ottawa: National Museum of Science and Technology, 1998), p. 97.
+
+
+↑ Babaian, p. 98.
+
+
+↑ Norcliffe 2001, p. 8.
+
+
+↑ Norcliffe 2001, p. 12.
+
+
+↑ Norcliffe 2001, p. 14.
+
+
+↑ Norcliffe 2001, pp. 147–48.
+
+
+↑ Norcliffe 2001, pp. 187–88.
+
+
+↑ Norcliffe 2001, p. 208.
+
+
+↑ Norcliffe 2001, pp. 243–45.
+
+
+↑ Norcliffe 2001, p. 121.
+
+
+1 2 Norcliffe 2001, p. 123.
+
+
+↑ Norcliffe 2001, p. 212.
+
+
+↑ Norcliffe 2001, p. 214.
+
+
+1 2 Norcliffe 2001, p. 131.
+
+
+↑ Norcliffe 2001, p. 30.
+
+
+1 2 Norcliffe 2001, p. 125.
+
+
+↑ Norcliffe 2001, pp. 125–26.
+
+
+↑ Norcliffe 2001, p. 238.
+
+
+↑ Norcliffe 2001, p. 128.
+
+
+↑ Norcliffe 2001, pp. 214–15.
+
+
+↑ 
+"The Wrights' bicycle shop". 2007. Archived from the original on 25 January 2007. Retrieved 5 February 2007.
+
+
+↑ 
+Francois Bougo (26 May 2010). "Beijing looks to revitalise bicycle culture". Agence France-Presse. Archived from the original on 31 May 2010.
+
+
+↑ The Economist, 15 February 2003
+
+
+↑ "Italian bicycle sales 'surpass those of cars'". BBC News. 2 October 2012.
+
+
+↑ Jones, Will (15 March 2022). "How are bicycles made? From mine to market". Cyclingnews. Retrieved 11 May 2026.
+
+
+↑ Dolci, Giovanni (2024). "Environmental impacts analysis of European and Chinese bicycle manufacturing". Environment, Development and Sustainability. 28 (7): 17311. Bibcode:2026EDSus..2817311D. doi:10.1007/s10668-024-05550-0.
+
+
+↑ Sommer, Fabian; Brockmann, Luca; Steinbauer, Manuel J.; Audorff, Volker (March 2025). "Quantifying abrasion of microplastics from mountain bike tires". Science of the Total Environment. 969 178971. Bibcode:2025ScTEn.96978971S. doi:10.1016/j.scitotenv.2025.178971. PMID 40024044.
+
+
+↑ United Nations (8 November 1968). "General Provisions". Convention on Road Traffic (PDF). United Nations Conference on Road Traffic. Vienna. p. 69.
+
+
+↑ "Rules of the road for bicycles". www.progressive.com. 17 April 2023. Retrieved 1 April 2024.
+
+
+↑ Arthurs-Brennan, Michelle (22 March 2019). "What can cyclist legally do, and not do, in Europe?". cyclingweekly.com. Retrieved 1 March 2024.
+
+
+↑ "Vienna Convention on Road Traffic, Chapter XI Transport and Communications, B. Road Traffic, 19. Convention on Road Traffic". United Nations Treaty Collection. 8 November 1968. Retrieved 1 March 2024.
+
+
+↑ "Bicycle road rules : VicRoads". Home Page. 1 July 2017. Retrieved 28 February 2023.
+
+
+↑ "Accessoires obligatoires à vélo". Service-public.fr (in French). 16 August 2022. Retrieved 28 February 2023.
+
+
+↑ van Lierop Grimsrud El-Geneidy (2015). "Breaking into bicycle theft: Insights from Montreal, Canada" (PDF). International Journal of Sustainable Transportation. 9 (7): 490. Bibcode:2015IJSTr...9..490V. doi:10.1080/15568318.2013.811332. S2CID 44047626. Retrieved 30 September 2015.
+
+
+↑ "Bike serial numbers". Retrieved 2 August 2017. Okay, fine, so maybe there are a few bikes without serial numbers, but this is rare and typical only on hand made bikes or really old bicycles.
+
+
+
+
+
+
+
+
+
+Sources
+
+
+
+General
+
+
+
+
+Herlihy, David V. (2004). Bicycle: The History. New Haven, CT: Yale University Press. ISBN 978-0-300-12047-9.
+
+
+Norcliffe, Glen (2001). The Ride to Modernity: The Bicycle in Canada, 1869–1900. Toronto, Ontario: University of Toronto Press. ISBN 978-0-8020-8205-3.
+
+
+Wilson, S. S. (March 1973). "Bicycle Technology" (PDF). Scientific American. Vol. 228, no. 3. pp. 81–91.
+
+
+
+
+
+
+
+
+
+Further reading
+
+
+
+Glaskin, Max (2013). Cycling Science: How Rider and Machine Work Together. Chicago: University of Chicago Press. ISBN 978-0-226-92187-7.
+
+
+Wilson, David Gordon; Schmidt, Theodor; Papadopoulos, Jim (2020). Bicycling science (4 ed.). Cambridge, Massachusetts: The MIT Press. ISBN 978-0-262-53840-4.
+
+
+
+
+
+
+External links
+
+
+
+
+
+A History of Bicycles and Other Cycles at the Canada Science and Technology Museum
+
+
+Bicycle summary at the britannica.com

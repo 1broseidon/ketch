@@ -1,0 +1,1586 @@
+For the computer microarchitecture, see Ada Lovelace (microarchitecture).
+
+
+
+
+
+
+
+
+
+The Right Honourable
+
+The Countess of Lovelace
+
+
+
+
+
+Daguerreotype of Lovelace (c. 1843)[1]
+
+
+
+
+Born
+
+
+Augusta Ada Byron
+
+
+(1815-12-10)10 December 1815
+
+
+London, England
+
+
+
+
+Died
+
+27 November 1852(1852-11-27) (aged 36)
+
+
+Marylebone, London, England
+
+
+
+
+
+Resting place
+
+
+Church of St Mary Magdalene, Hucknall, Nottingham, England
+
+
+
+Known for
+
+Mathematics, computing
+
+
+
+Spouse
+
+
+
+
+
+William King-Noel, 1st Earl of Lovelace
+
+   
+​
+ 
+​
+(m. 1835)​
+
+
+
+
+Children
+
+
+
+
+Byron King-Noel, Viscount Ockham
+
+
+Anne Blunt, 15th Baroness Wentworth
+
+
+Ralph King-Milbanke, 2nd Earl of Lovelace
+
+
+
+
+
+
+Parents
+
+
+
+
+George Byron, 6th Baron Byron (father)
+
+
+Anne Isabella Milbanke (mother)
+
+
+
+
+
+
+
+Signature
+
+
+
+
+
+
+
+
+Augusta Ada King, Countess of Lovelace (née Byron; 10 December 1815 – 27 November 1852), also known as Ada Lovelace, was an English mathematician and writer chiefly known for work on Charles Babbage's proposed mechanical general-purpose computer, the analytical engine. She was the first to recognise the machine had applications beyond pure calculation. Lovelace is often considered the first computer programmer.
+
+
+
+Lovelace was the only legitimate child of poet Lord Byron and reformer Anne Isabella Milbanke.[2] Lord Byron separated from his wife a month after Ada was born, and died when she was eight. Although often ill in childhood, Lovelace pursued her studies assiduously. She married William King in 1835. King was a Baron, and was created Viscount Ockham and 1st Earl of Lovelace in 1838. The name Lovelace was chosen because Ada was descended from the extinct Baron Lovelaces.[3] The title given to her husband thus made Ada the Countess of Lovelace.
+
+
+
+Lovelace's educational and social exploits brought her into contact with scientists such as Andrew Crosse, Charles Babbage, David Brewster, Charles Wheatstone and Michael Faraday, and the author Charles Dickens, contacts which she used to further her education. Lovelace described her approach as "poetical science"[4] and herself as an "Analyst (& Metaphysician)".[5]
+
+
+
+At age 18, Lovelace's mathematical talents led her to a long working relationship and friendship with fellow British mathematician Charles Babbage. She was particularly interested in Babbage's work on the analytical engine. Lovelace first met him on 5 June 1833, when she and her mother attended one of Charles Babbage's Saturday night soirées[6] with their mutual friend, and Lovelace's private tutor, Mary Somerville. Though Babbage's analytical engine was never constructed and did not influence the invention of electronic computers, it has been recognised as a Turing-complete general-purpose computer, which anticipated the essential features of a modern electronic computer. Babbage is therefore known as the "father of computers," and Lovelace is credited with several computing "firsts" for her collaboration with him. Lovelace translated an article by the military engineer Luigi Menabrea about the analytical engine, supplementing it with seven long explanatory notes. These described a method of using the machine to calculate Bernoulli numbers which is often called the first published computer program.
+
+
+
+She developed a vision of the capability of computers to go beyond mere calculating or number-crunching, while many others, including Babbage, focused only on those capabilities.[7] Lovelace was the first to point out the possibility of encoding information besides mere arithmetical figures, such as music, and manipulating it with such a machine. Her mindset of "poetical science" led her to ask questions about the analytical engine, examining how individuals and society relate to technology as a collaborative tool.[8] Ada is widely commemorated, including in the names of a programming language, roads, buildings and institutes, as well as programmes, lectures and courses. There are plaques, statues, paintings, literary and non-fiction works about her.
+
+
+
+
+
+
+Biography
+
+
+
+
+
+Childhood
+
+
+
+Lord Byron expected his child to be a "glorious boy" and was disappointed when Lady Byron gave birth to a girl.[9] The child was named after Byron's half-sister, Augusta Leigh, and was called "Ada" by Byron himself.[10] On 16 January 1816, at Lord Byron's command, Lady Byron left for her parents' home at Kirkby Mallory, taking their five-week-old daughter with her.[9] Although English law at the time granted full custody of children to the father in cases of separation, Lord Byron made no attempt to claim his parental rights,[11] but did request that his sister keep him informed of Ada's welfare.[12]
+
+
+Ada Byron, aged four
+
+
+On 21 April, Lord Byron signed the deed of separation, although very reluctantly, and left England for good a few days later.[13] Aside from an acrimonious separation, Lady Byron continued throughout her life to make allegations about her husband's immoral behaviour.[14] This set of events made Lovelace infamous in Victorian society. Ada did not have a relationship with her father. He died in April 1824 when she was eight years old. Her mother was the only significant parental figure in her life.[15] Lovelace was not shown the family portrait of her father until her 20th birthday.[16]
+
+
+Ada Byron, aged seven, by Alfred d'Orsay, 1822, Somerville College, Oxford
+
+
+Lovelace did not have a close relationship with her mother. She was often left in the care of her maternal grandmother Judith, Hon. Lady Milbanke, who doted on her. However, because of societal attitudes of the time—which favoured the husband in any separation, with the welfare of any child acting as mitigation—Lady Byron had to present herself as a loving mother to the rest of society. This included writing anxious letters to Lady Milbanke about her daughter's welfare, with a cover note saying to retain the letters in case she had to use them to show maternal concern.[17] In one letter to Lady Milbanke, she referred to her daughter as "it": "I talk to it for your satisfaction, not my own, and shall be very glad when you have it under your own."[18] Lady Byron had her teenage daughter watched by close friends for any sign of moral deviation. Lovelace dubbed these observers the "Furies" and later complained they exaggerated and invented stories about her.[19]
+
+
+Ada Byron, aged seventeen, 1832
+
+
+Lovelace was often ill, beginning in early childhood. At the age of eight, she experienced headaches that obscured her vision.[10] In June 1829, she was paralyzed after a bout of measles. She was subjected to continuous bed rest for nearly a year, something which may have extended her period of disability. By 1831, she was able to walk with crutches. Despite the illnesses, she developed her mathematical and technological skills.
+
+
+
+
+When Ada was twelve years old, this future "Lady Fairy", as Charles Babbage affectionately called her, decided she wanted to fly. Ada Byron went about the project methodically, thoughtfully, with imagination and passion. Her first step, in February 1828, was to construct wings. She investigated different material and sizes. She considered various materials for the wings: paper, oilsilk, wires, and feathers. She examined the anatomy of birds to determine the right proportion between the wings and the body. She decided to write a book, Flyology, illustrating, with plates, some of her findings. She decided what equipment she would need; for example, a compass, to "cut across the country by the most direct road", so that she could surmount mountains, rivers, and valleys. Her final step was to integrate steam with the "art of flying".[8]
+
+
+
+
+Ada Byron had an affair with a tutor in early 1833. She tried to elope with him after she was caught, but the tutor's relatives recognised her and contacted her mother. Lady Byron and her friends covered the incident up to prevent a public scandal.[20] Lovelace never met her younger half-sister, Allegra, the daughter of Lord Byron and Claire Clairmont. Allegra died in 1822 at the age of five. Lovelace did have some contact with Elizabeth Medora Leigh, the daughter of Byron's half-sister Augusta Leigh, who purposely avoided Lovelace as much as possible when introduced at court.[21]
+
+
+
+
+
+
+Adult years
+
+
+
+Watercolor portrait of Ada Byron, by Alfred Edward Chalon, c. 1835.
+
+Watercolour portrait of Ada King, Countess of Lovelace, c. 1840, possibly by Alfred Edward Chalon
+
+
+Lovelace became close friends with her tutor Mary Somerville, who introduced her to Charles Babbage in 1833. She had a strong respect and affection for Somerville,[22] and they corresponded for many years. Other acquaintances included the scientists Andrew Crosse, Sir David Brewster, Charles Wheatstone, Michael Faraday and the author Charles Dickens. She was presented at Court at the age of seventeen "and became a popular belle of the season" in part because of her "brilliant mind".[23] By 1834 Ada was a regular at Court and started attending various events. She danced often and was able to charm many people, and was described by most people as being dainty, although John Hobhouse, Byron's friend, described her as "a large, coarse-skinned young woman but with something of my friend's features, particularly the mouth".[24] This description followed their meeting on 24 February 1834 in which Ada made it clear to Hobhouse that she did not like him, probably due to her mother's influence, which led her to dislike all of her father's friends. This first impression was not to last, and they later became friends.[25]
+
+William King, 1st Earl of Lovelace in uniform
+
+On 8 July 1835, she married William, 8th Baron King, becoming Lady King. They had three homes: Ockham Park, Surrey; a Scottish estate on Loch Torridon in Ross-shire; and a house in London. They spent their honeymoon at Ashley Combe near Porlock Weir, Somerset, which had been built as a hunting lodge in 1799 and was improved by King in preparation for their honeymoon. It later became their summer retreat and was further improved during this time. From 1845, the family's main house was Horsley Towers, built in the Tudorbethan fashion by the architect of the Houses of Parliament, Charles Barry,[26][27] and later greatly enlarged to Lovelace's own designs.
+
+
+
+They had three children: Byron (born 1836); Anne Isabella (called Annabella, born 1837); and Ralph Gordon (born 1839). Immediately after the birth of Annabella, Lady King experienced "a tedious and suffering illness, which took months to cure".[25] Ada was a descendant of the extinct Barons Lovelace and in 1838, her husband was made Earl of Lovelace and Viscount Ockham, meaning Ada became the Countess of Lovelace.[28] In 1843–44, Ada's mother assigned William Benjamin Carpenter to teach Ada's children and to act as a "moral" instructor for Ada.[29] He quickly fell for her and encouraged her to express any frustrated affections, claiming that his marriage meant he would never act in an "unbecoming" manner. When it became clear that Carpenter was trying to start an affair, Ada cut it off.[30]
+
+
+
+In 1841, Lovelace and Medora Leigh (the daughter of Lord Byron's half-sister Augusta Leigh) were told by Ada's mother that Ada's father was also Medora's father.[31] On 27 February 1841, Ada wrote to her mother: "I am not in the least astonished. In fact, you merely confirm what I have for years and years felt scarcely a doubt about, but should have considered it most improper in me to hint to you that I in any way suspected."[32] She did not blame the incestuous relationship on Byron, but instead blamed Augusta Leigh: "I fear she is more inherently wicked than he ever was."[33] In the 1840s, Ada flirted with scandals: firstly, from a relaxed approach to extra-marital relationships with men, leading to rumours of affairs;[34] and secondly, from her love of gambling. She apparently lost more than £3,000 on the horses during the later 1840s.[35] The gambling led to her forming a syndicate with male friends, and an ambitious attempt in 1851 to create a mathematical model for successful large bets. This went disastrously wrong, leaving her thousands of pounds in debt to the syndicate, forcing her to admit it all to her husband.[36] She had a shadowy relationship with Andrew Crosse's son John from 1844 onwards. John Crosse destroyed most of their correspondence after her death as part of a legal agreement. She bequeathed him the only heirlooms her father had personally left to her.[37] During her final illness, she would panic at the idea of the younger Crosse being kept from visiting her.[38]
+
+
+
+
+
+
+Education
+
+
+Sonnet titled The Rainbow in Lovelace's own hand (Somerville College)
+
+From 1832, when she was seventeen, her mathematical abilities began to emerge,[23] and her interest in mathematics dominated the majority of her adult life.[39] Her mother's obsession with rooting out any of the insanity of which she accused Byron was one of the reasons that Ada was taught mathematics from an early age. She was privately educated in mathematics and science by William Frend, William King,[a] and Mary Somerville, the noted 19th-century researcher and scientific author. In the 1840s, the mathematician Augustus De Morgan extended her "much help in her mathematical studies" including study of advanced calculus topics including the "numbers of Bernoulli" (that formed her celebrated algorithm for Babbage's Analytical Engine).[40] In a letter to Lady Byron, De Morgan suggested that Ada's skill in mathematics might lead her to become "an original mathematical investigator, perhaps of first-rate eminence".[41]
+
+
+
+Lovelace often questioned basic assumptions through integrating poetry and science. Whilst studying differential calculus, she wrote to De Morgan:
+
+
+
+
+I may remark that the curious transformations many formulae can undergo, the unsuspected and to a beginner apparently impossible identity of forms exceedingly dissimilar at first sight, is I think one of the chief difficulties in the early part of mathematical studies. I am often reminded of certain sprites and fairies one reads of, who are at one's elbows in one shape now, and the next minute in a form most dissimilar.[42]
+
+
+
+
+Lovelace believed that intuition and imagination were critical to effectively applying mathematical and scientific concepts. She valued metaphysics as much as mathematics, viewing both as tools for exploring "the unseen worlds around us".[43]
+
+
+
+
+
+
+Death
+
+
+Painting of Lovelace seated at a piano, by Henry Phillips (1852). Although in great pain at the time, she agreed to sit for the painting as her father, Lord Byron, had been painted by Phillips' father, Thomas Phillips.
+
+
+Lovelace died at the age of 36 on 27 November 1852[44] from cervical cancer (which contemporary accounts called uterine cancer, since a distinction between the two was not made at that time).[45][46] The illness lasted several months, in which time Lady Byron took command over whom Ada saw, and excluded all of her friends and confidants. Under her mother's influence, Ada had a religious transformation and was coaxed into repenting of her previous conduct and making Lady Byron her executor.[47] She lost contact with her husband after confessing something to him on 30 August which caused him to abandon her bedside. It is not known what she told him.[48] She was buried, at her request, next to her father at the Church of St. Mary Magdalene in Hucknall, Nottinghamshire.[49]
+
+
+
+
+
+
+
+Work
+
+
+
+Throughout her life, Lovelace was strongly interested in scientific developments and fads of the day, including phrenology[50] and mesmerism.[51] After her work with Babbage, Lovelace continued to work on other projects. In 1844, she commented to a friend Woronzow Greig about her desire to create a mathematical model for how the brain gives rise to thoughts and nerves to feelings ("a calculus of the nervous system").[52] She never achieved this, however. In part, her interest in the brain came from a long-running preoccupation, inherited from her mother, about her "potential" madness. As part of her research into this project, she visited the electrical engineer Andrew Crosse in 1844 to learn how to carry out electrical experiments.[53] In the same year, she wrote a review of a paper by Baron Karl von Reichenbach, Researches on Magnetism, but this was not published and does not appear to have progressed past the first draft.[54] In 1851, the year before her cancer struck, she wrote to her mother mentioning "certain productions" she was working on regarding the relation of maths and music.[55]
+
+
+Portrait of Ada Lovelace by the British painter Margaret Sarah Carpenter (1836)
+
+
+Lovelace first met Charles Babbage in June 1833, through their mutual friend Mary Somerville. Later that month, Babbage invited Lovelace to see the prototype for his difference engine.[56] She became fascinated with the machine and used her relationship with Somerville to visit Babbage as often as she could. Babbage was impressed by Lovelace's intellect and analytic skills. He called her "The Enchantress of Number".[57][b] In 1843, he wrote to her:
+
+
+
+
+Forget this world and all its troubles and if possible its multitudinous Charlatans—every thing in short but the Enchantress of Number.[57]
+
+
+
+
+[58]
+
+
+
+
+
+Babbage's lecture, Menabrea's French transcription, Lovelace's translation and Notes A-G
+
+
+
+In 1840, Babbage was invited to give a seminar at the University of Turin about his Analytical Engine. Luigi Menabrea, a young Italian engineer and the future Prime Minister of Italy, transcribed Babbage's lecture into French, and this transcript was subsequently published in the Bibliothèque universelle de Genève in October 1842. Babbage's friend Charles Wheatstone commissioned Lovelace to translate Menabrea's paper into English.
+
+
+
+During a nine-month period in 1842–43, Lovelace translated Menabrea's article.[59]  She augmented the paper with seven notes, A to G, about three times longer than the translation.[60] The translation and notes were then published in the September 1843 edition of Taylor's Scientific Memoirs under her initials AAL.[61]
+
+
+
+
+
+
+
+Explaining the Analytical Engine's function was a difficult task; many other scientists did not grasp the concept and the British establishment had shown little interest in it.[62] Lovelace's notes even had to explain how the Analytical Engine differed from the original Difference Engine.[63] Her work was well received at the time; the scientist Michael Faraday described himself as a supporter of her writing.[64]
+
+
+
+
+
+
+Babbage's preface
+
+
+
+Lovelace and Babbage had a minor falling out when the papers were published, when he tried to leave his own statement (criticising the government's treatment of his Engine) as an unsigned preface, which could have been mistakenly interpreted as a joint declaration. When Taylor's Scientific Memoirs ruled that the statement should be signed, Babbage wrote to Lovelace asking her to withdraw the paper. This was the first that she knew he was leaving it unsigned, and she wrote back refusing to withdraw the paper. The historian Benjamin Woolley theorised that "His actions suggested he had so enthusiastically sought Ada's involvement, and so happily indulged her ... because of her 'celebrated name'."[65] Their friendship recovered, and they continued to correspond. On 12 August 1851, when she was dying of cancer, Lovelace wrote to him asking him to be her executor, though this letter did not give him the necessary legal authority. Part of the terrace at Worthy Manor was known as Philosopher's Walk; it was there that Lovelace and Babbage were reputed to have walked while discussing mathematical principles.[64]
+
+
+
+
+
+
+First published computer program
+
+
+
+Main article: Note G
+
+
+Lovelace's diagram from "Note G", the first published computer algorithm
+
+
+The notes are important in the early history of computers, especially since Note G[66] described, in complete detail, a method for calculating a sequence of Bernoulli numbers using the Analytical Engine, which might have run correctly had it ever been built.[67] Though Babbage's personal notes from 1837 to 1840 contain the first programs for the engine,[68][69][70] the algorithm in Note G is often called the first published computer program. The engine was never completed and so the program was never tested.[71]
+
+
+
+In 1953, more than a century after her death, Ada Lovelace's notes on Babbage's Analytical Engine were republished as an appendix to B. V. Bowden's Faster than Thought: A Symposium on Digital Computing Machines.[72] The engine has now been recognised as an early model for a computer and her notes as a description of a computer and software.[67]
+
+
+
+
+
+Controversy over contribution
+
+
+
+Based on this work, Lovelace is often called the first computer programmer[73][74] and her method has been called the world's first computer program.[75][76][77]
+
+
+
+Eugene Eric Kim and Lovelace biographer, Betty Alexandra Toole, argued it was "incorrect" to regard Lovelace as the first computer programmer in an article for Scientific American.[71] Babbage claims credit in his autobiography for the algorithm in Note G,[78] and regardless of the extent of Lovelace's contribution to it, she was not the very first person to write a program for the Analytical Engine, as Babbage had written the initial programs for it, although the majority were never published.[71] Bromley notes several dozen sample programs prepared by Babbage between 1837 and 1840, all substantially predating Lovelace's notes.[79] Dorothy K. Stein regards Lovelace's notes as "more a reflection of the mathematical uncertainty of the author, the political purposes of the inventor, and, above all, of the social and cultural context in which it was written, than a blueprint for a scientific development".[80]
+
+
+
+Allan G. Bromley, in the 1990 article Difference and Analytical Engines:
+
+
+
+All but one of the programs cited in her notes had been prepared by Babbage from three to seven years earlier. The exception was prepared by Babbage for her, although she did detect a "bug" in it. Not only is there no evidence that Ada ever prepared a program for the Analytical Engine, but her correspondence with Babbage shows that she did not have the knowledge to do so.[81]
+
+
+
+
+Bruce Collier wrote that Lovelace "made a considerable contribution to publicizing the Analytical Engine, but there is no evidence that she advanced the design or theory of it in any way".[82]
+
+
+
+Doron Swade has said that Ada only published the first computer program instead of actually writing it, but agrees that she was the only person to see the potential of the analytical engine as a machine capable of expressing entities other than quantities.[83]
+
+
+
+In his book, Idea Makers, Stephen Wolfram defends Lovelace's contributions. While acknowledging that Babbage wrote several unpublished algorithms for the Analytical Engine prior to Lovelace's notes, Wolfram argues that "there's nothing as sophisticated—or as clean—as Ada's computation of the Bernoulli numbers. Babbage certainly helped and commented on Ada's work, but she was definitely the driver of it." Wolfram then suggests that Lovelace's main achievement was to distill from Babbage's correspondence "a clear exposition of the abstract operation of the machine—something which Babbage never did".[84]
+
+
+
+
+
+
+
+Insight into potential of computing devices
+
+
+
+In her notes, Ada Lovelace emphasised the difference between the Analytical Engine and previous calculating machines, particularly its ability to be programmed to solve problems of any complexity.[85] She realised the potential of the device extended far beyond mere number crunching. In her notes, she wrote:
+
+
+
+
+[The Analytical Engine] might act upon other things besides number, were objects found whose mutual fundamental relations could be expressed by those of the abstract science of operations, and which should be also susceptible of adaptations to the action of the operating notation and mechanism of the engine...Supposing, for instance, that the fundamental relations of pitched sounds in the science of harmony and of musical composition were susceptible of such expression and adaptations, the engine might compose elaborate and scientific pieces of music of any degree of complexity or extent.[86][87]
+
+
+
+
+This analysis was an important development from previous ideas about the capabilities of computing devices and anticipated the implications of modern computing one hundred years before they were realised. Walter Isaacson ascribes Ada's insight regarding the application of computing to any process based on logical symbols to an observation about textiles: "When she saw some mechanical looms that used punchcards to direct the weaving of beautiful patterns, it reminded her of how Babbage's engine used punched cards to make calculations."[88] This insight is seen as significant by writers such as Betty Toole and Benjamin Woolley, as well as the programmer John Graham-Cumming, whose project Plan 28 has the aim of constructing the first complete Analytical Engine.[89][90][91]
+
+
+
+According to the historian of computing and Babbage specialist Doron Swade:
+
+
+
+
+Ada saw something that Babbage in some sense failed to see. In Babbage's world his engines were bound by number...What Lovelace saw...was that number could represent entities other than quantity. So once you had a machine for manipulating numbers, if those numbers represented other things, letters, musical notes, then the machine could manipulate symbols of which number was one instance, according to rules. It is this fundamental transition from a machine which is a number cruncher to a machine for manipulating symbols according to rules that is the fundamental transition from calculation to computation—to general-purpose computation—and looking back from the present high ground of modern computing, if we are looking and sifting history for that transition, then that transition was made explicitly by Ada in that 1843 paper.[92]
+
+
+
+
+Note G also contains what came to be known as "Lady Lovelace's Objection" to the concept of artificial intelligence, so named by Alan Turing in his paper "Computing Machinery and Intelligence"[93][94] The objection is Lovelace's statement that: 
+
+
+The Analytical Engine has no pretensions whatever to originate anything. It can do whatever we know how to order it to perform. It can follow analysis; but it has no power of anticipating any analytical relations or truths. 
+
+
+This objection has been the subject of much debate and rebuttal, including in the paper that originally coined it.[94]
+
+
+
+
+
+
+Distinction between mechanism and logical structure
+
+
+
+Lovelace recognized the difference between the details of the computing mechanism, as covered in an 1834 article on the Difference Engine,[95]
+and the logical structure of the Analytical Engine, on which the article she was reviewing dwelt. She noted that different specialists might be required in each area.
+
+
+
+
+The [1834 article] chiefly treats it under its mechanical aspect, entering but slightly into the mathematical principles of which that engine is the representative, but giving, in considerable length, many details of the mechanism and contrivances by means of which it tabulates the various orders of differences. M. Menabrea, on the contrary, exclusively develops the analytical view; taking it for granted that mechanism is able to perform certain processes, but without attempting to explain how; and devoting his whole attention to explanations and illustrations of the manner in which analytical laws can be so arranged and combined as to bring every branch of that vast subject within the grasp of the assumed powers of mechanism. It is obvious that, in the invention of a calculating engine, these two branches of the subject are equally essential fields of investigation... They are indissolubly connected, though so different in their intrinsic nature, that perhaps the same mind might not be likely to prove equally profound or successful in both.[66]: Note A 
+
+
+
+
+
+
+
+
+
+Commemoration
+
+
+Blue plaque to Ada Lovelace in St James's Square, London
+
+
+The computer language Ada, created on behalf of the United States Department of Defense, was named after Lovelace.[96] The reference manual for the language was approved on 10 December 1980 and the Department of Defense Military Standard for the language, MIL-STD-1815, was given the number of the year of her birth.[97]
+
+
+
+In 1981, the Association for Women in Computing inaugurated its Ada Lovelace Award.[98][99] As of 1998, the British Computer Society (BCS) has awarded the Lovelace Medal,[100] and in 2008 initiated an annual competition for women students.[101] BCSWomen sponsors the Lovelace Colloquium, an annual conference for women undergraduates.[101] In 2013, the University of Deusto in Spain established the Ada Byron Award for women in technology, which was subsequently expanded to several Latin American countries.[102]
+
+
+
+Ada, the National College for Digital Skills, is a specialist college of further education and higher education in England, focused on digital skills. The college has campuses in London (Pimlico) and Manchester (Ancoats). The college teaches degree-level apprenticeship, as well as a sixth-form college for students aged 16 to 19.[103][104]
+
+
+
+Ada Lovelace Day is an annual event celebrated on the second Tuesday of October,[105] which began in 2009.[106] Its goal is to "... raise the profile of women in science, technology, engineering, and maths," and to "create new role models for girls and women" in these fields.[106]  Events have included Wikipedia edit-a-thons with the aim of improving the representation of women on Wikipedia in terms of articles and editors to reduce unintended gender bias on Wikipedia.
+
+
+
+The Ada Initiative was a non-profit organisation dedicated to increasing the involvement of women in the free culture and open source movements.[107]
+
+
+
+The building of the department of Engineering Mathematics at the University of Bristol is called the Ada Lovelace Building.[108]
+
+
+
+The Engineering in Computer Science and Telecommunications College building in Zaragoza University is called the Ada Byron Building.[109]
+
+
+
+The computer centre in the village of Porlock, near where Lovelace lived, is named after her.
+
+
+
+Ada Lovelace House is a council-owned building in Kirkby-in-Ashfield, Nottinghamshire, near where Lovelace spent her infancy.[110][111]
+
+
+
+In 2012, a Google Doodle and blog post honoured her on her birthday.[112][113] In 2013, Ada Developers Academy was founded and named after her. Its mission is to diversify tech by providing women and gender-diverse people the skills, experience, and community support to become professional software developers to change the face of tech.[114] On 17 September 2013, the BBC Radio 4 biography programme Great Lives devoted an episode to Ada Lovelace; she was sponsored by TV presenter Konnie Huq.[115]
+
+
+Lovelace statue in Millbank, City of Westminster, London
+
+
+As of November 2015, all new British passports have included an illustration of Lovelace and Babbage.[116][117] In 2017, a Google Doodle honoured her with other women on International Women's Day.[118] On 2 February 2018, Satellogic, a high-resolution Earth observation imaging and analytics company, launched a ÑuSat type micro-satellite named in honour of Ada Lovelace.[119] In March 2018, The New York Times published a belated obituary for Ada Lovelace.[120]
+
+
+
+On 27 July 2018, Senator Ron Wyden submitted, in the United States Senate, the designation of 9 October 2018 as National Ada Lovelace Day: "To honor the life and contributions of Ada Lovelace as a leading woman in science and mathematics". The resolution (S.Res.592)[121] was considered, and agreed to without amendment and with a preamble by unanimous consent. In November 2020 it was announced that Trinity College Dublin, whose library had previously held forty busts, all of them of men, was commissioning four new busts of women, one of whom was to be Lovelace. The four new busts (Ada Lovelace, Mary Wollstonecraft, Augusta Gregory and Rosalind Franklin) were unveiled on February 1, 2023 [122]
+
+
+
+
+External videos
+
+
+
+ “9 Millbank : Ada Lovelace Sculpture Takes Her Place In Westminster  St Edward”, 7 March 2022.
+
+
+
+
+In March 2022, a statue of Ada Lovelace was installed at the site of the former Ergon House in the City of Westminster, London, honouring its scientific history. The redevelopment was part of a complex with Imperial Chemical House.[123] The statue was sculpted by Etienne and Mary Millner and based on the portrait by Margaret Sarah Carpenter.  The sculpture was unveiled on International Women's Day, 2022. It stands on the 7th floor of Millbank Quarter overlooking the junction of Dean Bradley Street and Horseferry Road.[124]
+
+
+
+The 2022 graphics processor microarchitecture from Nvidia is named Ada Lovelace.[125] In July 2023, the Royal Mint issued four commemorative £2 coins in various metals to "honour the innovative contributions of computer science visionary Ada Lovelace and her legacy as a female trailblazer."[126]
+
+
+
+In 2025, the National Portrait Gallery acquired three images of Lovelace–the only known photographs of Lovelace.[127] Two were daguerreotypes by Antoine Claudet and were taken around 1843.[128][129] The third was by an unknown photographer and is of Henry Wyndham Phillips’ portrait of Lovelace.[130]
+
+
+
+In February 2026, a statue of Lovelace was unveiled on the Hinckley campus of the North Warwickshire and South Leicestershire College.[131]
+
+
+
+
+
+Bicentenary (2015)
+
+
+
+The bicentenary of Ada Lovelace's birth was celebrated with a number of events, including:[132]
+
+
+
+The Ada Lovelace Bicentenary Lectures on Computability, Israel Institute for Advanced Studies, 20 December 2015 – 31 January 2016.[133][134]
+
+
+Ada Lovelace Symposium, University of Oxford, 13–14 October 2015.[135]
+
+
+Ada.Ada.Ada, a one-woman show about the life and work of Ada Lovelace (using an LED dress), premiered at Edinburgh International Science Festival on 11 April 2015,[136] and continued to touring internationally to promote diversity on STEM at technology conferences,[137][138] businesses, government and educational organisations.[139][140]
+
+
+
+Special exhibitions were displayed by the Science Museum in London, England[141] and the Weston Library (part of the Bodleian Library) in Oxford, England.[142]
+
+
+
+
+
+
+
+In popular culture
+
+
+An illustration inspired by the A. E. Chalon portrait created for the Ada Initiative, which supported open technology and women
+
+
+
+
+Novels, plays and poetry
+
+
+
+Lovelace is portrayed in Romulus Linney's 1977 play Childe Byron.[143] In Tom Stoppard's 1993 play Arcadia, the precocious teenage genius Thomasina Coverly—a character "apparently based" on Ada Lovelace (the play also involves Lord Byron)—comes to understand chaos theory, and theorises the second law of thermodynamics, before either is officially recognised.[144][145]
+
+
+
+In the 1990 steampunk novel The Difference Engine by William Gibson and Bruce Sterling,[146] Lovelace delivers a lecture on the "punched cards" programme which proves Gödel's incompleteness theorems decades before their actual discovery. Lovelace and Mary Shelley as teenagers are the central characters in Jordan Stratford's steampunk series, The Wollstonecraft Detective Agency.[147]
+
+
+
+Lovelace features in John Crowley's 2005 novel, Lord Byron's Novel: The Evening Land, as an unseen character whose personality is forcefully depicted in her annotations and anti-heroic efforts to archive her father's lost novel.[148]
+
+
+
+The 2015 play Ada and the Engine by Lauren Gunderson portrays Lovelace and Charles Babbage in unrequited love, and it imagines a post-death meeting between Lovelace and her father.[149][150] Lovelace and Babbage are also the main characters in Sydney Padua's webcomic and graphic novel The Thrilling Adventures of Lovelace and Babbage. The comic features extensive footnotes on the history of Ada Lovelace, and many lines of dialogue are drawn from actual correspondence.[151]
+
+
+
+Poet Jessy Randall included a tribute to Lovelace in her 2025 collection of poems about women scientists, The Path of Most Resistance.[152]
+
+
+
+
+
+
+Film and television
+
+
+
+In the 1997 film Conceiving Ada, a computer scientist obsessed with Ada finds a way of communicating with her in the past by means of "undying information waves".[153]
+
+
+
+Lovelace, identified as Ada Augusta Byron, is portrayed by Lily Lesser in the second series of The Frankenstein Chronicles aired on ITV in 2017.[154] She is employed as an "analyst" to provide the workings of a life-sized humanoid automaton. The brass workings of the machine are reminiscent of Babbage's analytical engine. Her employment is described as keeping her occupied until she returns to her studies in advanced mathematics.[155]
+
+
+
+"Lovelace" is the name of the operating system designed by the character Cameron Howe in Halt and Catch Fire, which aired on AMC in the US in 2015.[156]
+
+
+
+In the documentary Calculating Ada: The Countess of Computing (2015), Dr Hannah Fry covers the life of Ada Lovelace.[157]
+
+
+
+Lovelace and Babbage appear as characters in the second season of the ITV series Victoria (2017). Emerald Fennell portrays Lovelace in the episode, "The Green-Eyed Monster."[158]
+
+
+
+Lovelace features as a character in "Spyfall, Part 2", the second episode of Doctor Who, series 12, which first aired on BBC One on 5 January 2020.[159] The character was portrayed by Sylvie Briggs, alongside characterisations of Charles Babbage and Noor Inayat Khan.[159]
+
+
+
+
+
+
+Games
+
+
+
+In the board game Ada's Dream (2025) the player(s) will help Ada finish her work on the Analytical Engine.[160]
+
+
+A clone of Ada Lovelace appears in the 2023 video game Starfield [161]
+
+
+Ada Lovelace is a playable leader in Sid Meier's Civilization VII.[162]
+
+
+
+
+
+
+Computing and STEM
+
+
+
+Ada Lovelace Day
+
+
+A computer language, initially developed by the US Department of Defense, is called Ada.
+
+
+The Lovelace Medal awarded by the British Computer Society (BCS).
+
+
+The Lovelace Lectures at the BCS sponsored by the Alan Turing Institute.[163]
+
+
+The Lovelace Lectures at Durham University.[164]
+
+
+The Ada Lovelace Award awarded by the Association for Women in Computing
+
+
+The Ada Initiative supporting open technology and women is named after her.
+
+
+Ada Lovelace Building, the engineering mathematics building at the University of Bristol.[165]
+
+
+Ada Lovelace Building, in Exeter Science Park.[166]
+
+
+Ada Byron Building, in the Department of Computer Science and Systems Engineering at the University of Zaragoza.[167]
+
+
+Ada Byron Research Centre in University of Malaga, Andalucía.[168]
+
+
+Ada Lovelace Institute, a think tank dedicated to ensuring data and AI work for people and society.[169]
+
+
+Ada Lovelace Center for Digital Humanities at the FU Berlin.[170]
+
+
+ADA Lovelace Centre for Analytics, Data, Applications at Fraunhofer IIS originally called the ADA Lovelace Centre for Artificial Intelligence.[171]
+
+
+Ada Lovelace Excellence Scholarship at the University of Southampton.[172]
+
+
+Adafruit Industries
+
+
+Ada Lovelace Centre, part of the Science and Technology Facilities Council, a UK government agency that carries out research in science and engineering.[173]
+
+
+The Cardano cryptocurrency platform, launched in 2017, uses Ada as the name for the cryptocurrency and Lovelace as the smallest sub-unit of an Ada.[174]
+
+
+Ada, an artwork incorporating artificial intelligence house at Microsoft's Building 99.[175]
+
+
+In 2021, the code name of Nvidia's GPU architecture in its RTX 4000 series is Ada Lovelace.  It is the first Nvidia architecture to feature both a first and last name.[176][177]
+
+
+Ada Byron University Programming Contest at the Polytechnic University of Valencia.[178]
+
+
+
+
+
+
+Other
+
+
+Green plaque in Ealing
+Blue plaque at Mallory Park
+Ada Lovelace Memorial
+
+A green plaque is to be found on Fordhook Avenue on the corner of 5 Station Parade, Uxbridge Road, Ealing.[179]
+
+
+Blue plaques are at Mallory Park[180] and St James's Square.[181]
+
+
+Ada Lovelace C of E High School in Greenford, specialising in music, digital technologies and languages.[182]
+
+
+Ada Lovelace House, council offices in Nottinghamshire,[183] later proposed to be let to small business.[184][185]
+
+
+Ada Byron King Building at Nottingham Trent University
+
+
+Ada Lovelace Suite at Seaham Hall.[186]
+
+
+The Lovelace Memorial is a Grade II Listed monument in Kirkby Mallory.[187]
+
+
+
+
+
+
+
+Publications
+
+
+
+Lovelace, Ada King. Ada, the Enchantress of Numbers: A Selection from the Letters of Lord Byron's Daughter and her Description of the First Computer. Mill Valley, CA: Strawberry Press, 1992. ISBN 978-0-912647-09-8.
+
+
+Menabrea, Luigi Federico; Lovelace, Ada (1843). "Sketch of the Analytical Engine invented by Charles Babbage... with notes by the translator. Translated by Ada Lovelace". In Richard Taylor (ed.). Scientific Memoirs. Vol. 3. London: Richard and John E. Taylor. pp. 666–731. Archived from the original on 29 May 2023.
+
+Also available on Wikisource: The Menebrea article, The notes by Ada Lovelace.
+
+
+
+
+
+
+Publication history
+
+
+
+Six copies of the 1843 first edition of Sketch of the Analytical Engine with Ada Lovelace's "Notes"[66] have been located. Three are held at Harvard University, one at the University of Oklahoma, and one at the United States Air Force Academy.[188] On 20 July 2018, the sixth copy was sold at auction to an anonymous buyer for £95,000.[189] A digital facsimile of one of the copies in the Harvard University Library is available online.[60]
+
+
+
+In December 2016, a letter written by Ada Lovelace was forfeited by Martin Shkreli to the New York State Department of Taxation and Finance for unpaid taxes owed by Shkreli.[190]
+
+
+
+
+
+
+
+See also
+
+
+
+
+
+Ai-Da – humanoid robot, completed in 2019
+
+
+Code: Debugging the Gender Gap
+
+
+List of pioneers in computer science
+
+
+Timeline of women in science
+
+
+Women in computing
+
+
+Women in STEM fields
+
+
+
+
+
+
+
+
+Explanatory notes
+
+
+
+
+
+
+↑ William King, her tutor, and William King, her future husband, were not related.
+
+
+↑ Some writers give it as "Enchantress of Numbers".
+
+
+
+
+
+
+
+
+
+References
+
+
+
+
+
+Citations
+
+
+
+
+
+
+↑ "Only known photographs of Ada Lovelace in Bodleian Display". 14 October 2015.
+
+
+↑ "Ada Lovelace Biography". biography.com. 6 May 2021.
+
+
+↑ Jaeger, Lars (2023), "Ada Lovelace (1815–1852): Inventor of Computer Algorithms", in Jaeger, Lars (ed.), Women of Genius in Science : Whose Frequently Overlooked Contributions Changed the World, Cham: Springer International Publishing, pp. 71–82, doi:10.1007/978-3-031-23926-7_7, ISBN 978-3-031-23926-7, retrieved 30 September 2025
+
+
+↑ Toole 1998, pp. 234–235.
+
+
+↑ Toole 1998, pp. 156–157.
+
+
+↑ Toole, Betty Alexandra (2010). Ada, the Enchantress of Numbers:Poetical Science (Kindle ed.). Critical Connection. pp. Location 641.
+
+
+↑ Fuegi & Francis 2003, pp. 19, 25.
+
+
+1 2 Toole, Betty Alexandra (1987), "Poetical Science", The Byron Journal, 15: 55–65, doi:10.3828/bj.1987.6.
+
+
+1 2 Turney 1972, p. 35.
+
+
+1 2 Stein 1985, p. 17.
+
+
+↑ Stein 1985, p. 16.
+
+
+↑ Woolley 1999, p. 80.
+
+
+↑ Turney 1972, pp. 36–38.
+
+
+↑ Woolley 1999, pp. 74–77.
+
+
+↑ Turney 1972, p. 138.
+
+
+↑ Woolley 1999, p. 10.
+
+
+↑ Woolley 1999, pp. 85–87.
+
+
+↑ Woolley 1999, p. 86.
+
+
+↑ Woolley 1999, p. 119.
+
+
+↑ Woolley 1999, pp. 120–21.
+
+
+↑ Turney 1972, p. 155.
+
+
+↑ Woolley 1999, pp. 138–40.
+
+
+1 2 Turney 1972, p. 138.
+
+
+↑ Turney 1972, pp. 138–39.
+
+
+1 2 Turney 1972, p. 139.
+
+
+↑ A History of the County of Surrey: Volume 3. Parishes: East Horsley. Retrieved 26 February 2017. Horsley Towers is a large house standing in a park of 300 acres, the seat of the Earl of Lovelace. The old house was rebuilt about 1745. The present house was built by Sir Charles Barry for Mr. Currie on a new site, between 1820 and 1829, in Elizabethan style. Mr. Currie, who owned the combined manors, 1784–1829, rebuilt most of the houses in the village and restored the church.
+
+
+↑ Wright, Brian (2015). Andrew Crosse and the mite that shocked the world: The life and work of an electrical pioneer. Matador. p. 262. ISBN 978-1-78462-438-5.
+
+
+↑ "New York Fifty Years Ago". Macon Georgia Telegraph. Macon, Georgia. 9 April 1841. p. 3 – via NewspaperArchive.com.
+
+
+↑ Woolley 1999, pp. 285–86.
+
+
+↑ Woolley 1999, pp. 289–96.
+
+
+↑ Turney 1972, p. 159.
+
+
+↑ Turney 1972, p. 160.
+
+
+↑ Moore 1961, p. 431.
+
+
+↑ Woolley 1999, p. 302.
+
+
+↑ Schaffer, Simon. "Babbage's Dancer". the hypermedia research centre. Archived from the original on 28 June 2003. Retrieved 4 August 2017.
+
+
+↑ Woolley 1999, pp. 340–42.
+
+
+↑ Woolley 1999, pp. 336–37.
+
+
+↑ Woolley 1999, p. 361.
+
+
+↑ Stein 1985, pp. 28–30.
+
+
+↑ Thomas J. Misa, "Charles Babbage, Ada Lovelace, and the Bernoulli Numbers" in Ada's Legacy: Cultures of Computing from the Victorian to the Digital Age, edited by Robin Hammerman and Andrew L. Russell (ACM Books, 2015), pp. 18–20, doi:10.1145/2809523.
+
+
+↑ Stein 1985, p. 82.
+
+
+↑ Toole 1998, p. 99.
+
+
+↑ Toole 1998, pp. 91–100.
+
+
+↑ "December 1852 1a * MARYLEBONE – Augusta Ada Lovelace", Register of Deaths, GRO.
+
+
+↑ Baum 1986, pp. 99–100.
+
+
+↑ Lowy, Ilana (10 November 2011). A Woman's Disease: The History of Cervical Cancer. OUP Oxford. ISBN 978-0-19-954881-1.
+
+
+↑ Woolley 1999, p. 370.
+
+
+↑ Woolley 1999, p. 369.
+
+
+↑ Wolfram, Stephen (22 December 2015). "Untangling the Tale of Ada Lovelace". WIRED. Retrieved 6 April 2024.
+
+
+↑ Woolley 1999, p. 198.
+
+
+↑ Woolley 1999, pp. 232–33.
+
+
+↑ Woolley 1999, p. 305.
+
+
+↑ Woolley 1999, pp. 310–14.
+
+
+↑ Woolley 1999, pp. 315–17.
+
+
+↑ Woolley 1999, p. 335.
+
+
+↑ Toole 1998, pp. 36–38.
+
+
+1 2 Wolfram, Stephen (10 December 2015). "Untangling the Tale of Ada Lovelace". Stephen Wolfram Writings. Then, on Sept. 9, Babbage wrote to Ada, expressing his admiration for her and (famously) describing her as 'Enchantress of Number' and 'my dear and much admired Interpreter'. (Yes, despite what's often quoted, he wrote 'Number' not 'Numbers'.)
+
+
+↑ Füegi, John; Francis, Jo (14 August 2015). "Lovelace & Babbage and the creation of the 1843 'notes'" (PDF). ACM Inroads. 6 (3): 78–86. doi:10.1145/2810201. ISSN 2153-2184. S2CID 7666218. Archived from the original on 15 February 2020. She became the first person known to have crossed the intellectual threshold between conceptualizing computing as only for calculation on the one hand, and on the other hand, computing as we know it today: with wider applications made possible by symbolic substitution.
+
+
+↑ Huskey, Velma R.; Huskey, Harry D. (1980). "Lady Lovelace and Charles Babbage". Annals of the History of Computing. 2 (4): 299–329. Bibcode:1980IAHC....2d.299H. doi:10.1109/MAHC.1980.10042. S2CID 2640048.
+
+
+1 2 Menabrea 1843.
+
+
+↑ Green, Christopher (2001). "Charles Babbage, the Analytical Engine, and the Possibility of a 19th-Century Cognitive Science". York University. Retrieved 2 September 2018.
+
+
+↑ Woolley 1999, p. 265.
+
+
+↑ Woolley 1999, p. 267.
+
+
+1 2 Woolley 1999, p. 307.
+
+
+↑ Woolley 1999, pp. 277–80.
+
+
+1 2 3 "Sketch of The Analytical Engine, with notes upon the Memoir by the Translator". Switzerland: fourmilab.ch. October 1842. Retrieved 28 March 2014.
+
+
+1 2 Hammerman, Robin; Russell, Andrew L., eds. (2015). Ada's Legacy: Cultures of Computing from the Victorian to the Digital Age. Morgan & Claypool. doi:10.1145/2809523. ISBN 978-1-97000-149-5. S2CID 62018931.
+
+
+↑ Bromley 1982, p. 215.
+
+
+↑ Bromley 1990, p. 89.
+
+
+↑ Ventana al Conocimiento (9 December 2015). "Ada Lovelace: Original and Visionary, but No Programmer". Archived from the original on 25 March 2016.
+
+
+1 2 3 Kim & Toole 1999.
+
+
+↑ Bowden, B.V., ed. (1953). Faster than Thought: A Symposium on Digital Computing Machines. London: Pitman. OCLC 1053355. OL 13581728M.
+
+
+↑ Haugtvedt, Erica; Abata, Duane (2021). "Ada Lovelace: First Computer Programmer and Hacker?". ASEE Virtual Annual Conference Content Access. ASEE Conferences. doi:10.18260/1-2--36646.
+
+
+↑ Adams, Beverley (2023). Ada Lovelace: The World's First Computer Programmer. Philadelphia, USA: Pen & Sword History. ISBN 9781399082532.
+
+
+↑ Gleick, James (2011). The Information: A History, a Theory, a Flood. London: Fourth Estate. pp. 116–118.
+
+
+↑ Simonite, Tom (24 March 2009). "Short Sharp Science: Celebrating Ada Lovelace: the 'world's first programmer'". New Scientist. Archived from the original on 27 March 2009.
+
+
+↑ Parker, Matt (2014). Things to Make and Do in the Fourth Dimension. Farrar, Straus & Giroux. p. 261. ISBN 978-0-374-27565-5.
+
+
+↑ Babbage, Charles (1864). Passages from the life of a philosopher. Internet Archive. New Brunswick, N.J. : Rutgers University Press; Piscataway, N.J. : IEEE Press. We discussed together the various illustrations that might be introduced: I suggested several, but the selection was entirely her own. So also was the algebraic working out of the different problems, except, indeed, that relating to the numbers of Bernouilli, which I had offered to do to save Lady Lovelace the trouble. This she sent back to me for an amendment, having detected a grave mistake which I had made in the process. New edition 1994.ISBN 978-0-8135-2066-7
+
+
+↑ Bromley, Allan G. (July–September 1982). "Charles Babbage's Analytical Engine, 1838" (PDF). IEEE Annals of the History of Computing. 4 (3): 197–217. Bibcode:1982IAHC....4c.196B. doi:10.1109/mahc.1982.10028. S2CID 2285332. Archived from the original (PDF) on 26 February 2021. Retrieved 25 December 2015. p. 197.
+
+
+↑ Stein, Dorothy K. (1984). "Lady Lovelace's Notes: Technical Text and Cultural Context". Victorian Studies. 28 (1): 33–67. p. 34.
+
+
+↑ Bromley, Allan G. (1990). "Difference and Analytical Engines" (PDF). In Aspray, William (ed.). Computing Before Computers. Ames: Iowa State University Press. pp. 59–98. ISBN 0-8138-0047-1. Archived (PDF) from the original on 9 October 2022. p. 89.
+
+
+↑ Collier, Bruce (1990). The Little Engines that Could've: The Calculating Machines of Charles Babbage. Garland Science. p. 181. ISBN 0-8240-0043-9.
+
+
+↑ Swade, Doron (12 May 2008). Charles Babbage and Difference Engine No. 2 (Speech). Talks at Google. Mountain View, CA: Talks at Google via YouTube. Archived from the original on 22 November 2021. Retrieved 29 November 2018.
+
+
+↑ Wolfram, Stephen (2016). Idea Makers: Personal Perspectives on the Lives & Ideas of Some Notable People. Wolfram Media. pp. 45–98. ISBN 978-1-57955-003-5.
+
+
+↑ Toole 1998, pp. 175–82.
+
+
+↑ Lovelace, Ada; Menabrea, Luigi (1842). "Sketch of the Analytical Engine invented by Charles Babbage Esq". Scientific Memoirs. Richard Taylor: 694.
+
+
+↑ Hooper, Rowan (16 October 2012). "Ada Lovelace: My brain is more than merely mortal". New Scientist. Retrieved 16 October 2012.
+
+
+↑ Isaacson, Walter (18 September 2014). "Walter Isaacson on the Women of ENIAC". Fortune.
+
+
+↑ Toole 1998, pp. 2–3, 14.
+
+
+↑ Woolley 1999, pp. 272–77.
+
+
+↑ Ken t, Leo (17 September 2012). "The 10-year-plan to build Babbage's Analytical Engine". Humans Invent. Archived from the original on 14 October 2012. Retrieved 16 October 2012.
+
+
+↑ Fuegi & Francis 2003.
+
+
+↑ Turing, Alan (2004). Stuart Shieber (ed.). "Computing Machinery and Intelligence". The Turing Test: Verbal Behavior as the Hallmark of Intelligence. MIT Press: 67–104. ISBN 978-0-262-26542-3.{{cite journal}}:  CS1 maint: periodical has ISBN (link)
+
+
+1 2 Gonçalves, Bernardo (January 2024). "Lady Lovelace's Objection: The Turing–Hartree Disputes Over the Meaning of Digital Computers, 1946–1951". IEEE Annals of the History of Computing. 46 (1): 6–18. doi:10.1109/MAHC.2023.3326607. ISSN 1058-6180.
+
+
+↑ Lardner, D. (July 1834). "Babbage's calculating engine". Edinburgh Review: 263–327. Retrieved 11 October 2022. In WikiSource and also reprinted in The works of Charles Babbage, Vol 2, p. 119ff
+
+
+↑ "Ada Lovelace | Lemelson". lemelson.mit.edu. Retrieved 16 July 2025.
+
+
+↑ Deffree, Suzanne (10 December 2019). "Ada Lovelace is born, December 10, 1815". EDN. Retrieved 16 July 2025.
+
+
+↑ Webster, Valerie J. (2000). Awards, Honors & Prizes: United States and Canada. Gale Group. ISBN 978-0-7876-3401-8.
+
+
+↑ "Association for Women in Computing". Retrieved 1 June 2017.
+
+
+↑ "Lovelace Lecture & Medal". BCS. Archived from the original on 26 August 2006.
+
+
+1 2 "BCSWomen Lovelace Colloquium". UK. Archived from the original on 22 February 2014. Retrieved 4 March 2014.
+
+
+↑ "Deusto celebra el Día de Ada Lovelace, la protagonista del Premio Ada Byron a la Mujer Tecnóloga que organiza Ingeniería" [Deusto Celebrates Ada Lovelace Day, Honoring the Protagonist of the Ada Byron Award for Women in Technology, Organized by the Engineering Department] (in Spanish). University of Deusto. 13 October 2015. Retrieved 7 November 2025.
+
+
+↑ Davis, Anna (10 March 2016). "New college in north London 'will boost women in tech sector'". London Evening Standard. Retrieved 16 March 2016.
+
+
+↑ Inspection of Ada, the National College for Digital Skills (PDF) (Report). Ofsted. 14–17 March 2023. Archived (PDF) from the original on 18 July 2024. Retrieved 2 December 2024.
+
+
+↑ "Ada Lovelace Day – Celebrating the achievements of women in science, technology, engineering and maths". findingada.com. Retrieved 27 March 2023.
+
+
+1 2 "Ada Lovelace Day: We should never forget the first computer programmer". The Independent. 8 October 2018. Archived from the original on 8 October 2018. Retrieved 27 February 2019.
+
+
+↑ Aurora, Valerie (13 December 2011), "An update on the Ada Initiative", LWN, retrieved 5 October 2012
+
+
+↑ "The Ada Lovelace Building: a new home for Engineering Mathematics at Bristol". University of Bristol. 8 October 2020. Retrieved 22 January 2024.
+
+
+↑ "Ada Byron Building".
+
+
+↑ "Town-centre landmark renovated to boost Kirkby's economy". Mansfield and Ashfield Chad. 11 May 2017. Retrieved 29 November 2018.
+
+
+↑ "Ada Lovelace House Is Officially Opened". Woodhead Construction. 18 October 2017. Archived from the original on 16 May 2022. Retrieved 29 November 2018.
+
+
+↑ "Ada Lovelace honoured by Google doodle". The Guardian. London. 10 December 2012. Retrieved 10 December 2012.
+
+
+↑ "Honouring computing's 1843 visionary, Lady Ada Lovelace". Google Doodles. 9 December 2012. Retrieved 10 December 2012.
+
+
+↑ "History". Ada Developers Academy. Retrieved 23 February 2021.
+
+
+↑ "Series 31, Konnie Huq on Ada Lovelace". Great Lives. BBC Radio 4.
+
+
+↑ "Introducing the new UK passport design" (PDF). HM Passport Office. Archived (PDF) from the original on 9 October 2022. Retrieved 20 April 2018.
+
+
+↑ Office, All photographs: HM Passport (3 November 2015). "New UK passport design – in pictures". The Guardian.
+
+
+↑ "International Women's Day 2017". Google Doodles. 8 March 2017. Retrieved 8 March 2017.
+
+
+↑ Clark, Stephen (2 February 2018). "China lofts earthquake research craft with cluster of smaller satellites". Spaceflight Now. Retrieved 4 February 2018.
+
+
+↑ Miller, Claire Cain (8 March 2018). "A gifted mathematician who is now recognized as the first computer programmer". The New York Times. ProQuest 2611777591. Retrieved 25 January 2023.
+
+
+↑ Ron, Wyden (25 July 2018). "S.Res.592 – 115th Congress (2017–2018): A resolution designating 9 October 2018, as "National Ada Lovelace Day" and honoring the life and legacy of Ada Lovelace, the first computer programmer". congress.gov. Retrieved 9 October 2018.
+
+
+↑ Burns, Sarah (26 November 2020). "Four new statues to end Trinity Long Room's 'men only' image". The Irish Times. Retrieved 29 November 2020.
+
+
+↑ "Millbank & Ergon House". Eric Parry. Retrieved 30 November 2022.
+
+
+↑ "Public Art Proposal for Ergon House For approval by Westminster City Council" (PDF). Planning Alerts – Document Repository. Archived (PDF) from the original on 9 October 2022. Retrieved 7 March 2022.
+
+
+↑ "Ada Lovelace Architecture". NVIDIA. Retrieved 7 May 2026.
+
+
+↑ Rigby, John. "Coins". Royal Mint. Retrieved 31 July 2023.
+
+
+↑ "Bonhams : Only Known Photographs Of Ada Lovelace Acquired Through Bonhams By The National Portrait Gallery". www.bonhams.com. Retrieved 14 January 2026.
+
+
+↑ "Ada Lovelace - National Portrait Gallery". www.npg.org.uk. Retrieved 14 January 2026.
+
+
+↑ "Ada Lovelace - National Portrait Gallery". www.npg.org.uk. Retrieved 14 January 2026.
+
+
+↑ "Ada Lovelace - National Portrait Gallery". www.npg.org.uk. Retrieved 14 January 2026.
+
+
+↑ "Statue of computing pioneer Ada Lovelace unveiled in Hinckley". www.bbc.com. 1 February 2026. Retrieved 2 February 2026.
+
+
+↑ "Ada Lovelace Day". Findingada.com. Archived from the original on 28 December 2015 – via Internet Archive.
+
+
+↑ "Ada Lovelace Bicentenary Lectures on Computability". Ada Lovelace Day. FindingAda.com. 31 January 2016. Retrieved 11 January 2016.
+
+
+↑ "The Ada Lovelace Bicentenary Lectures on Computability". Israel Institute for Advanced Studies. 31 January 2016. Retrieved 11 January 2016.
+
+
+↑ "Ada Lovelace Symposium – Celebrating 200 Years of a Computer Visionary". Podcasts. UK: University of Oxford. 18 December 2015. Retrieved 11 January 2016.
+
+
+↑ "Brochure Downloads". Edinburgh International Science Festival. Archived from the original on 1 June 2020. Retrieved 9 October 2018.
+
+
+↑ Busquets, Jordi Pueyo (19 April 2018). "4.400 bombillas para la silenciada historia de la mujer que escribió la primera 'app' en 1843" [4,400 light bulbs for the silenced story of the woman who wrote the first 'app' in 1843]. El País (in Spanish). ISSN 1134-6582. Retrieved 9 October 2018.
+
+
+↑ Gorey, Colm (11 October 2016). "Meet the woman bringing the magic of Ada Lovelace to the masses". Silicon Republic. Retrieved 9 October 2018.
+
+
+↑ "Ada.Ada.Ada". adatheshow.com. 2016.
+
+
+↑ Scratchweb (16 May 2017), Ada.Ada.Ada, retrieved 9 October 2018
+
+
+↑ "Ada Lovelace". UK: Science Museum, London. Retrieved 11 January 2016.
+
+
+↑ "Bodleian Libraries celebrates Ada Lovelace's 200th birthday with free display and Wikipedia editathons". UK: Bodleian Libraries. Retrieved 11 January 2016.
+
+
+↑ Klein, Alvin (13 May 1984). "Theatre in review: A lusty Byron in Rockland". The New York Times. ProQuest 425075032.
+
+
+↑ Leithauser, Brad (8 August 2013). "Tom Stoppard's 'Arcadia,' at Twenty". The New Yorker.
+
+
+↑ Profile, Gale Edwards, 1994, Director of "Arcadia" for the Sydney Theatre Company
+
+
+↑ Plant, Sadie (1995). "The Future Looms: Weaving Women and Cybernetics". In Featherstone, Mike; Burrows, Roger (eds.). Cyberspace/Cyberbodies/Cyberpunk: Cultures of Technological Embodiment. SAGE Publications, in association with Theory, Culture & Society, School of Human Studies, University of Teesside. pp. 45–64. ISBN 978-1-84860-914-3.
+
+
+↑ Moyer, Edward (13 April 2012). "Can Jane Austen + steampunk spark girls' science fire?". Retrieved 26 February 2017.
+
+
+↑ Straub, Peter (5 June 2005). "Byron's heir". Los Angeles Times. Archived from the original on 10 November 2013.
+
+
+↑ Hurwitt, Sam. "Ada and the Memory Engine". KQED. Archived from the original on 6 September 2015.
+
+
+↑ Costello, Elizabeth (22 October 2015). "Ada and the Memory Engine: Love by the Numbers". SF Weekly. Archived from the original on 6 April 2016. Retrieved 14 November 2015.
+
+
+↑ Doctorow, Cory (5 October 2009). "Comic about Ada Lovelace and Charles Babbage". BoingBoing. Retrieved 10 October 2014.
+
+
+↑ Randall, Jessy (2025). The Path of Most Resistance: Poems on Women in Science. London: Goldsmiths Press. p. 13. ISBN 9781915983275.
+
+
+↑ Holden, Stephen (26 February 1999). "'Conceiving Ada': Calling Byron's Daughter, Inventor of a Computer". The New York Times. ProQuest 2235172968.
+
+
+↑ "The Frankenstein Chronicles" Not John Marlott (TV Episode 2017) - Lilit Lesser as Ada Byron - IMDb. Retrieved 29 April 2025 – via www.imdb.com.
+
+
+↑ "Episode 2 - Not John Marlott". ITV Press Centre. Retrieved 10 February 2025.
+
+
+↑ Biscotti, Steven (25 May 2015). "Still On Fire: Recap/Review of Halt and Catch Fire "Adventure"". What'cha Reading?. Retrieved 20 August 2023.
+
+
+↑ "Calculating Ada: The Countess of Computing". BBC. Retrieved 15 June 2025.
+
+
+↑ "The Green-Eyed Monster". IMDb. 14 January 2018.
+
+
+1 2 Dawson, Nick (13 January 2020). "Historical computing pioneer Ada Lovelace from Hinckley stars in BBC's Doctor Who". Leicester Mercury. Retrieved 14 December 2020.
+
+
+↑ "Build the first-ever computer in crunchy board game Ada's Dream from Arborea studio". 16 February 2024.
+
+
+↑ "You Won't Believe Starfield Includes This Historical Figure As A Companion". screenrant.com. 14 September 2023. Retrieved 15 March 2025.
+
+
+↑ "Ada Lovelace leader, Sid Meier's Civilization VII". civilization.2k.com. Retrieved 5 March 2025.
+
+
+↑ "BCS Lovelace Lecture 2020/21 - Prof Marta Kwiatkowska | BCS". www.bcs.org.
+
+
+↑ University, Durham. "Lovelace Lecture Series - Durham University". www.durham.ac.uk.
+
+
+↑ "The Ada Lovelace Building: a home for Engineering Mathematics at Bristol". engineering.blogs.bristol.ac.uk. 8 October 2020. Retrieved 23 March 2025.
+
+
+↑ "Ada Lovelace Building". kat.uk.
+
+
+↑ "Ada Byron Building". webdiis.unizar.es.
+
+
+↑ "Ada Byron Research Centre - Home - University of Malaga". uma.es. Retrieved 19 May 2025.
+
+
+↑ "Ada Lovelace Institute". Alan Turing Institute. Retrieved 6 March 2025.
+
+
+↑ "Ada Lovelace Center for Digital Humanities in Berlin". ada.fu-berlin.de.
+
+
+↑ "ADA Lovelace Center for Analytics, Data, Applications". Fraunhofer Institute for Integrated Circuits IIS.
+
+
+↑ "Ada Lovelace Excellence Scholarship | Electronics and Computer Science | University of Southampton". www.ecs.soton.ac.uk. Retrieved 23 March 2025.
+
+
+↑ "Science and Technology Facilities Council: About us". adalovelacecentre.ac.uk. 20 March 2024.
+
+
+↑ "Cardano (ADA) is now available on Coinbase". Coinbase. 19 March 2021. Archived from the original on 20 September 2022. Retrieved 5 April 2021. The blockchain's native token, ADA, is named after the 19th century mathematician, Ada Lovelace
+
+
+↑ "Ada". Microsoft.
+
+
+↑ Hampton, Jaime (20 September 2022). "Nvidia Introduces New Ada Lovelace GPU Architecture, OVX Systems, Omniverse Cloud". HPCwire. Retrieved 20 October 2022.
+
+
+↑ Aaron Klotz (20 September 2022). "GeForce RTX 4090, RTX 4080 GPU Roundup". Tom's Hardware. Retrieved 20 October 2022.
+
+
+↑ Manager, Content (24 February 2020). "Ada Byron University Programming Contest of the UPV".
+
+
+↑ "Ealing Civic Society - A Plaque for Ada Lovelace - Do Something Good". dosomethinggood.ealing.gov.uk. 6 March 2019. Retrieved 16 July 2025.
+
+
+↑ "Blue Plaques". Magnificent Women. Retrieved 16 July 2025.
+
+
+↑ "Ada Byron | Pioneer of Computing | Blue Plaques". English Heritage. Retrieved 16 July 2025.
+
+
+↑ "Curriculum | Ada Lovelace C of E High School". adalovelace.org.uk. Retrieved 19 May 2025.
+
+
+↑ "MNT27280 - Ada Lovelace House - Nottinghamshire Historic Environment Record". her.nottinghamshire.gov.uk.
+
+
+↑ "New office plan for Ada house". 9 January 2017.
+
+
+↑ "£280,000 Ada Lovelace House renovation completed". 11 May 2017.
+
+
+↑ "Ada Lovelace Suite | Seaham Hall Coastal Spa Resort, Durham". seaham-hall.co.uk. 23 June 2022.
+
+
+↑ "LOVELACE MEMORIAL APPROXIMATELY 30 METRES SOUTH OF CHURCH OF ALL SAINTS, Kirkby Mallory, Peckleton & Stapleton - 1187993 | Historic England". historicengland.org.uk.
+
+
+↑ "Sketch of the analytical engine invented by Charles Babbage, Esq". Harvard University Library. Retrieved 9 April 2019.
+
+
+↑ "Rare book by world's first computer programmer sells for £95,000". mooreallen.co.uk. 23 July 2018. Archived from the original on 10 October 2018. Retrieved 9 April 2019.
+
+
+↑ Mangan, Dan (23 April 2018). "Fight brews over Shkreli's Wu-Tang album as 'pharma bro' gets banned by securities industry". CNBC. Retrieved 23 June 2020.
+
+
+
+
+
+
+
+
+
+General and cited sources
+
+
+
+
+
+Baum, Joan (1986), The Calculating Passion of Ada Byron, Archon, ISBN 978-0-208-02119-9.
+
+
+Elwin, Malcolm (1975), Lord Byron's Family, John Murray.
+
+
+Essinger, James (2014), Ada's algorithm: How Lord Byron's daughter Ada Lovelace launched the digital age, Melville House Publishing, ISBN 978-1-61219-408-0.
+
+
+Fuegi, J; Francis, J (October–December 2003), "Lovelace & Babbage and the creation of the 1843 'notes'" (PDF), Annals of the History of Computing, 25 (4): 16–26, Bibcode:2003IAHC...25d..16F, doi:10.1109/MAHC.2003.1253887, S2CID 40077111, archived from the original (PDF) on 15 February 2020.
+
+
+Hammerman, Robin; Russell, Andrew L. (2015), Hammerman, Robin; Russell, Andrew L. (eds.), Ada's Legacy: Cultures of Computing from the Victorian to the Digital Age, Association for Computing Machinery and Morgan & Claypool, doi:10.1145/2809523, ISBN 978-1-970001-51-8, S2CID 62018931.
+
+
+Isaacson, Walter (2014), The Innovators: How a Group of Hackers, Geniuses, and Geeks Created the Digital Revolution, Simon & Schuster.
+
+
+Kim, Eugene; Toole, Betty Alexandra (1999). "Ada and the First Computer". Scientific American. 280 (5): 66–71. Bibcode:1999SciAm.280e..76E. doi:10.1038/scientificamerican0599-76.
+
+
+Lewis, Judith S. (July–August 1995). "Princess of Parallelograms and her daughter: Math and gender in the nineteenth century English aristocracy". Women's Studies International Forum. 18 (4): 387–394. doi:10.1016/0277-5395(95)80030-S.
+
+
+Marchand, Leslie (1971), Byron A Portrait, John Murray.
+
+
+Menabrea, Luigi Federico (1843), "Sketch of the Analytical Engine Invented by Charles Babbage", Scientific Memoirs, 3, archived from the original on 15 September 2008, retrieved 29 August 2008 With notes upon the memoir by the translator.
+
+
+Miller, Clair Cain. "Ada Lovelace, 1815–1852," New York Times, 8 March 2018.
+
+
+Moore, Doris Langley (1977), Ada, Countess of Lovelace, John Murray, ISBN 0-7195-3384-8.
+
+
+Moore, Doris Langley (1961), The Late Lord Byron, Philadelphia: Lippincott, OCLC 358063.1977 edition ISBN 978-0-06-013013-8
+
+
+Stein, Dorothy (1985), Ada: A Life and a Legacy, MIT Press Series in the History of Computing, Cambridge, MA: The MIT Press, ISBN 978-0-262-19242-2.
+
+
+Toole, Betty Alexandra (1992), Ada, the Enchantress of Numbers: A Selection from the Letters of Ada Lovelace, and her Description of the First Computer, Strawberry Press, ISBN 978-0-912647-09-8.
+
+
+Toole, Betty Alexandra (1998), Ada, the Enchantress of Numbers: Prophet of the Computer Age, Strawberry Press, ISBN 978-0-912647-18-0.
+
+
+Turney, Catherine (1972), Byron's Daughter: A Biography of Elizabeth Medora Leigh, Scribner, ISBN 978-0-684-12753-8
+
+
+Woolley, Benjamin (February 1999), The Bride of Science: Romance, Reason, and Byron's Daughter, AU: Pan Macmillan, ISBN 978-0-333-72436-1, retrieved 7 April 2013.
+
+
+Woolley, Benjamin (February 2002) [1999], The Bride of Science: Romance, Reason, and Byron's Daughter, McGraw-Hill Ryerson, ISBN 978-0-07-138860-3, retrieved 7 April 2013.
+
+
+
+
+
+
+
+
+
+Further reading
+
+
+
+Jennifer Chiaverini, 2017,  Enchantress of Numbers, Dutton, 426 pp.
+
+
+Christopher Hollings, Ursula Martin, and Adrian Rice, 2018, Ada Lovelace: The Making of a Computer Scientist, Bodleian Library, 114 pp.
+
+
+Sadie Plant, Zeroes + Ones : Digital Women in the New Technoculture (London: Fourth Estate 1997).
+
+
+Miranda Seymour, 2018, In Byron's Wake: The Turbulent Lives of Byron's Wife and Daughter: Annabella Milbanke and Ada Lovelace, Pegasus, 547 pp.
+
+
+Jenny Uglow (22 November 2018), "Stepping Out of Byron's Shadow", The New York Review of Books, vol. LXV, no. 18, pp. 30–32.
+
+
+
+
+
+
+External links
+
+
+
+
+
+
+
+
+
+
+Wikiquote has quotations related to Ada Lovelace.
+
+
+
+
+
+
+
+
+
+
+
+
+English Wikisource has original text related to this article:
+
+Author:Augusta Ada Byron
+
+
+
+
+
+
+
+
+
+
+
+
+
+Wikimedia Commons has media related to Ada Lovelace.
+
+
+
+
+
+"Ada's Army gets set to rewrite history at Inspirefest 2018" by Luke Maxwell, 4 August 2018
+
+
+Works by Ada Lovelace at Open Library
+
+
+"Untangling the Tale of Ada Lovelace" by Stephen Wolfram, December 2015
+
+
+"Ada Lovelace: Founder of Scientific Computing". Women in Science. SDSC. Archived from the original on 25 December 2018. Retrieved 17 August 2001.
+
+
+"Ada Byron, Lady Lovelace". Biographies of Women Mathematicians. Agnes Scott College.
+
+
+"Papers of the Noel, Byron and Lovelace families". UK: Archives hub. Archived from the original (archive) on 24 April 2012.
+
+
+"Ada Lovelace & The Analytical Engine". Babbage. Computer History.
+
+
+"Ada & the Analytical Engine". Educause. Archived from the original (archive) on 10 August 2009.
+
+
+"Ada Lovelace, Countess of Controversy". Tech TV vault. G4 TV. Archived from the original on 25 December 2018. Retrieved 25 February 2007.
+
+
+"Ada Lovelace" (streaming). In Our Time (audio). UK: BBC Radio 4. 6 March 2008.
+
+
+"Ada Lovelace's Notes and The Ladies Diary". Yale.
+
+
+"The fascinating story Ada Lovelace". Sabine Allaeys. 13 September 2015 – via YouTube.
+
+
+"Ada Lovelace, the World's First Computer Programmer, on Science and Religion". Maria Popova (Brain). 10 December 2013.
+
+
+"How Ada Lovelace, Lord Byron's Daughter, Became the World's First Computer Programmer". Maria Popova (Brain). 10 December 2014.
+
+
+O'Connor, John J.; Robertson, Edmund F., "Ada Lovelace", MacTutor History of Mathematics Archive, University of St Andrews

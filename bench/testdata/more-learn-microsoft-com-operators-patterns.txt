@@ -1,0 +1,1053 @@
+Pattern matching - the is and switch expressions, and operators and, or, and not in patterns
+
+
+
+Use the is expression, the switch statement, and the switch expression to match an input expression against any number of characteristics. C# supports multiple patterns, including declaration, type, constant, relational, property, list, var, and discard. You can combine patterns by using the Boolean logic keywords and, or, and not.
+
+
+The C# language reference documents the most recently released version of the C# language. It also contains initial documentation for features in public previews for the upcoming language release.
+
+
+The documentation identifies any feature first introduced in the last three versions of the language or in current public previews.
+
+
+
+
+Tip
+
+
+To find when a feature was first introduced in C#, consult the article on the C# language version history.
+
+
+
+
+The following C# expressions and statements support pattern matching:
+
+
+
+is expression
+
+
+switch statement
+
+
+switch expression
+
+
+
+In those constructs, you can match an input expression against any of the following patterns:
+
+
+
+Declaration pattern: check the run-time type of an expression and, if a match succeeds, assign an expression result to a declared variable.
+
+
+Type pattern: check the run-time type of an expression.
+
+
+Constant pattern: test that an expression result equals a specified constant.
+
+
+Relational patterns: compare an expression result with a specified constant.
+
+
+Logical patterns: test that an expression matches a logical combination of patterns.
+
+
+Property pattern: test that an expression's properties or fields match nested patterns.
+
+
+Positional pattern: deconstruct an expression result and test if the resulting values match nested patterns.
+
+
+var pattern: match any expression and assign its result to a declared variable.
+
+
+Discard pattern: match any expression.
+
+
+List patterns: test that a sequence of elements matches corresponding nested patterns.
+
+
+
+Logical, property, positional, and list patterns are recursive patterns. That is, they can contain nested patterns.
+
+
+For an example of how to use those patterns to build a data-driven algorithm, see Tutorial: Use pattern matching to build type-driven and data-driven algorithms.
+
+
+Declaration and type patterns
+
+
+Use declaration and type patterns to check if the run-time type of an expression is compatible with a given type. By using a declaration pattern, you can also declare a new local variable. When a declaration pattern matches an expression, it assigns the variable to the converted expression result, as the following example shows:
+
+
+object greeting = "Hello, World!";
+if (greeting is string message)
+{
+    Console.WriteLine(message.ToLower());  // output: hello, world!
+}
+
+
+
+A declaration pattern with type T matches an expression when an expression result is non-null and any of the following conditions are true:
+
+
+
+The run-time type of an expression result has an identity conversion to T.
+
+
+The type T is a ref struct type and there's an identity conversion from the expression to T.
+
+
+The run-time type of an expression result derives from type T, implements interface T, or another implicit reference conversion exists from it to T. This condition covers inheritance relationships and interface implementations. The following example demonstrates two cases when this condition is true:
+var numbers = new int[] { 10, 20, 30 };
+Console.WriteLine(GetSourceLabel(numbers));  // output: 1
+
+var letters = new List<char> { 'a', 'b', 'c', 'd' };
+Console.WriteLine(GetSourceLabel(letters));  // output: 2
+
+static int GetSourceLabel<T>(IEnumerable<T> source) => source switch
+{
+    Array array => 1,
+    ICollection<T> collection => 2,
+    _ => 3,
+};
+
+
+In the preceding example, at the first call to the GetSourceLabel method, the first pattern matches an argument value because the argument's run-time type int[] derives from the Array type. At the second call to the GetSourceLabel method, the argument's run-time type List<T> doesn't derive from the Array type but implements the ICollection<T> interface.
+
+
+The run-time type of an expression result is a nullable value type with the underlying type T and the Nullable<T>.HasValue is true.
+
+
+A boxing or unboxing conversion exists from the run-time type of an expression result to type T when the expression isn't an instance of a ref struct.
+
+
+
+Declaration patterns don't consider user-defined conversions or implicit span conversions.
+
+
+The following example demonstrates the last two conditions:
+
+
+int? xNullable = 7;
+int y = 23;
+object yBoxed = y;
+if (xNullable is int a && yBoxed is int b)
+{
+    Console.WriteLine(a + b);  // output: 30
+}
+
+
+
+To check only the type of an expression, use a discard _ in place of a variable's name, as the following example shows:
+
+
+public abstract class Vehicle {}
+public class Car : Vehicle {}
+public class Truck : Vehicle {}
+
+public static class TollCalculator
+{
+    public static decimal CalculateToll(this Vehicle vehicle) => vehicle switch
+    {
+        Car _ => 2.00m,
+        Truck _ => 7.50m,
+        null => throw new ArgumentNullException(nameof(vehicle)),
+        _ => throw new ArgumentException("Unknown type of a vehicle", nameof(vehicle)),
+    };
+}
+
+
+
+For that purpose, use a type pattern, as the following example shows:
+
+
+public static decimal CalculateToll(this Vehicle vehicle) => vehicle switch
+{
+    Car => 2.00m,
+    Truck => 7.50m,
+    null => throw new ArgumentNullException(nameof(vehicle)),
+    _ => throw new ArgumentException("Unknown type of a vehicle", nameof(vehicle)),
+};
+
+
+
+Like a declaration pattern, a type pattern matches an expression when an expression result is non-null and its run-time type satisfies any of the preceding conditions.
+
+
+To check for non-null, use a negated null constant pattern, as the following example shows:
+
+
+if (input is not null)
+{
+    // ...
+}
+
+
+
+For more information, see the Declaration pattern and Type pattern sections of the C# language specification.
+
+
+Constant pattern
+
+
+The constant pattern is an alternative syntax for == when the right operand is a constant. Use a constant pattern to test if an expression result equals a specified constant, as the following example shows:
+
+
+public static decimal GetGroupTicketPrice(int visitorCount) => visitorCount switch
+{
+    1 => 12.0m,
+    2 => 20.0m,
+    3 => 27.0m,
+    4 => 32.0m,
+    0 => 0.0m,
+    _ => throw new ArgumentException($"Not supported number of visitors: {visitorCount}", nameof(visitorCount)),
+};
+
+
+
+In a constant pattern, you can use any constant expression, such as:
+
+
+
+an integer or floating-point numerical literal
+
+
+a char
+
+
+a string literal
+
+
+a Boolean value true or false
+
+
+an enum value
+
+
+the name of a declared const field or local
+
+
+null
+
+
+
+The expression must be a type that's convertible to the constant type, with one exception: An expression whose type is Span<char> or ReadOnlySpan<char> can be matched against constant strings.
+
+
+Use a constant pattern to check for null, as the following example shows:
+
+
+if (input is null)
+{
+    return;
+}
+
+
+
+The compiler guarantees that it doesn't invoke a user-overloaded equality operator == when it evaluates expression x is null.
+
+
+You can use a negated null constant pattern to check for non-null, as the following example shows:
+
+
+if (input is not null)
+{
+    // ...
+}
+
+
+
+For more information, see the Constant pattern section of the feature proposal note.
+
+
+Relational patterns
+
+
+Use a relational pattern to compare an expression result with a constant, as the following example shows:
+
+
+Console.WriteLine(Classify(13));  // output: Too high
+Console.WriteLine(Classify(double.NaN));  // output: Unknown
+Console.WriteLine(Classify(2.4));  // output: Acceptable
+
+static string Classify(double measurement) => measurement switch
+{
+    < -4.0 => "Too low",
+    > 10.0 => "Too high",
+    double.NaN => "Unknown",
+    _ => "Acceptable",
+};
+
+
+
+In a relational pattern, use any of the relational operators <, >, <=, or >=. The right-hand part of a relational pattern must be a constant expression. The constant expression can be of an integer, floating-point, char, or enum type.
+
+
+To check if an expression result is in a certain range, match it against a conjunctive and pattern, as the following example shows:
+
+
+Console.WriteLine(GetCalendarSeason(new DateTime(2021, 3, 14)));  // output: spring
+Console.WriteLine(GetCalendarSeason(new DateTime(2021, 7, 19)));  // output: summer
+Console.WriteLine(GetCalendarSeason(new DateTime(2021, 2, 17)));  // output: winter
+
+static string GetCalendarSeason(DateTime date) => date.Month switch
+{
+    >= 3 and < 6 => "spring",
+    >= 6 and < 9 => "summer",
+    >= 9 and < 12 => "autumn",
+    12 or (>= 1 and < 3) => "winter",
+    _ => throw new ArgumentOutOfRangeException(nameof(date), $"Date with unexpected month: {date.Month}."),
+};
+
+
+
+If an expression result is null or fails to convert to the type of a constant by using a nullable or unboxing conversion, a relational pattern doesn't match the expression.
+
+
+For more information, see the Relational patterns section of the C# language specification.
+
+
+Logical patterns
+
+
+Use the not, and, and or pattern combinators to create the following logical patterns:
+
+
+
+
+Negation not pattern that matches an expression when the negated pattern doesn't match the expression. The following example shows how you can negate a constant null pattern to check if an expression is non-null:
+
+
+if (input is not null)
+{
+    // ...
+}
+
+
+
+
+
+
+Conjunctive and pattern that matches an expression when both patterns match the expression. The following example shows how you can combine relational patterns to check if a value is in a certain range:
+
+
+Console.WriteLine(Classify(13));  // output: High
+Console.WriteLine(Classify(-100));  // output: Too low
+Console.WriteLine(Classify(5.7));  // output: Acceptable
+
+static string Classify(double measurement) => measurement switch
+{
+    < -40.0 => "Too low",
+    >= -40.0 and < 0 => "Low",
+    >= 0 and < 10.0 => "Acceptable",
+    >= 10.0 and < 20.0 => "High",
+    >= 20.0 => "Too high",
+    double.NaN => "Unknown",
+};
+
+
+
+
+
+
+Disjunctive or pattern that matches an expression when either pattern matches the expression, as the following example shows:
+
+
+Console.WriteLine(GetCalendarSeason(new DateTime(2021, 1, 19)));  // output: winter
+Console.WriteLine(GetCalendarSeason(new DateTime(2021, 10, 9)));  // output: autumn
+Console.WriteLine(GetCalendarSeason(new DateTime(2021, 5, 11)));  // output: spring
+
+static string GetCalendarSeason(DateTime date) => date.Month switch
+{
+    3 or 4 or 5 => "spring",
+    6 or 7 or 8 => "summer",
+    9 or 10 or 11 => "autumn",
+    12 or 1 or 2 => "winter",
+    _ => throw new ArgumentOutOfRangeException(nameof(date), $"Date with unexpected month: {date.Month}."),
+};
+
+
+
+
+
+
+As the preceding example shows, you can use the pattern combinators repeatedly in a pattern.
+
+
+Precedence and order of checking
+
+
+The pattern combinators check expressions in this order, based on the binding order of expressions:
+
+
+
+not
+
+
+and
+
+
+or
+
+
+
+The not pattern binds to its operand first. The and pattern binds after any not pattern expression binding. The or pattern binds after all not and and patterns bind to operands. The following example tries to match all characters that aren't lowercase letters, a through z. It has an error, because the not pattern binds before the and pattern:
+
+
+// Incorrect pattern. `not` binds before `and`
+static bool IsNotLowerCaseLetter(char c) => c is not >= 'a' and <= 'z';
+
+
+
+The default binding means the previous example is parsed as the following example:
+
+
+// The default binding without parentheses is shows in this method. `not` binds before `and`
+static bool IsNotLowerCaseLetterDefaultBinding(char c) => c is ((not >= 'a') and <= 'z');
+
+
+
+To fix the error, specify that you want the not pattern to bind to the >= 'a' and <= 'z' expression:
+
+
+// Correct pattern. Force `and` before `not`
+static bool IsNotLowerCaseLetterParentheses(char c) => c is not (>= 'a' and <= 'z');
+
+
+
+Adding parentheses becomes more important as your patterns become more complicated. In general, use parentheses to clarify your patterns for other developers, as the following example shows:
+
+
+static bool IsLetter(char c) => c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z');
+
+
+
+
+
+Note
+
+
+The order in which the compiler checks patterns that have the same binding order is undefined. At run time, the compiler can check the right-hand nested patterns of multiple or patterns and multiple and patterns first.
+
+
+
+
+For more information, see the Pattern combinators section of the C# language specification.
+
+
+Property pattern
+
+
+Use a property pattern to match an expression's properties or fields against nested patterns, as the following example shows:
+
+
+static bool IsConferenceDay(DateTime date) => date is { Year: 2020, Month: 5, Day: 19 or 20 or 21 };
+
+
+
+A property pattern matches an expression when the expression result is non-null and every nested pattern matches the corresponding property or field of the expression result.
+
+
+You can add a run-time type check and a variable declaration to a property pattern, as the following example shows:
+
+
+Console.WriteLine(TakeFive("Hello, world!"));  // output: Hello
+Console.WriteLine(TakeFive("Hi!"));  // output: Hi!
+Console.WriteLine(TakeFive(new[] { '1', '2', '3', '4', '5', '6', '7' }));  // output: 12345
+Console.WriteLine(TakeFive(new[] { 'a', 'b', 'c' }));  // output: abc
+
+static string TakeFive(object input) => input switch
+{
+    string { Length: >= 5 } s => s.Substring(0, 5),
+    string s => s,
+
+    ICollection<char> { Count: >= 5 } symbols => new string(symbols.Take(5).ToArray()),
+    ICollection<char> symbols => new string(symbols.ToArray()),
+
+    null => throw new ArgumentNullException(nameof(input)),
+    _ => throw new ArgumentException("Not supported input type."),
+};
+
+
+
+This construct specifically means that the empty property pattern is { } matches everything non-null, and you can use it instead of is not null to create a variable: somethingPossiblyNull is { } somethingDefinitelyNotNull.
+
+
+if (GetSomeNullableStringValue() is { } nonNullValue) // Empty property pattern with variable creation
+{
+    Console.WriteLine("NotNull:" + nonNullValue);
+}
+else
+{
+    nonNullValue = "NullFallback"; // we can access the variable here.
+    Console.WriteLine("it was null, here's the fallback: " + nonNullValue);
+}
+
+
+
+A property pattern is a recursive pattern. You can use any pattern as a nested pattern. Use a property pattern to match parts of data against nested patterns, as the following example shows:
+
+
+public record Point(int X, int Y);
+public record Segment(Point Start, Point End);
+
+static bool IsAnyEndOnXAxis(Segment segment) =>
+    segment is { Start: { Y: 0 } } or { End: { Y: 0 } };
+
+
+
+The preceding example uses the or pattern combinator and record types.
+
+
+You can reference nested properties or fields within a property pattern. This capability is known as an extended property pattern. For example, you can refactor the method from the preceding example into the following equivalent code:
+
+
+static bool IsAnyEndOnXAxis(Segment segment) =>
+    segment is { Start.Y: 0 } or { End.Y: 0 };
+
+
+
+For more information, see the Property pattern section of the C# standard.
+
+
+
+
+Tip
+
+
+To improve code readability, use the Simplify property pattern (IDE0170) style rule. It suggests places to use extended property patterns.
+
+
+
+
+Positional pattern
+
+
+Use a positional pattern to deconstruct an expression and match the resulting values against the corresponding nested patterns, as the following example shows:
+
+
+public readonly struct Point
+{
+    public int X { get; }
+    public int Y { get; }
+
+    public Point(int x, int y) => (X, Y) = (x, y);
+
+    public void Deconstruct(out int x, out int y) => (x, y) = (X, Y);
+}
+
+static string Classify(Point point) => point switch
+{
+    (0, 0) => "Origin",
+    (1, 0) => "positive X basis end",
+    (0, 1) => "positive Y basis end",
+    _ => "Just a point",
+};
+
+
+
+In the preceding example, the type of an expression contains the Deconstruct method, which the pattern uses to deconstruct an expression result.
+
+
+
+
+Important
+
+
+The order of members in a positional pattern must match the order of parameters in the Deconstruct method. The code generated for the positional pattern calls the Deconstruct method.
+
+
+
+
+You can also match expressions of tuple types against positional patterns. By using this approach, you can match multiple inputs against various patterns, as the following example shows:
+
+
+static decimal GetGroupTicketPriceDiscount(int groupSize, DateTime visitDate)
+    => (groupSize, visitDate.DayOfWeek) switch
+    {
+        (<= 0, _) => throw new ArgumentException("Group size must be positive."),
+        (_, DayOfWeek.Saturday or DayOfWeek.Sunday) => 0.0m,
+        (>= 5 and < 10, DayOfWeek.Monday) => 20.0m,
+        (>= 10, DayOfWeek.Monday) => 30.0m,
+        (>= 5 and < 10, _) => 12.0m,
+        (>= 10, _) => 15.0m,
+        _ => 0.0m,
+    };
+
+
+
+The preceding example uses relational and logical patterns.
+
+
+You can use the names of tuple elements and Deconstruct parameters in a positional pattern, as the following example shows:
+
+
+var numbers = new List<int> { 1, 2, 3 };
+if (SumAndCount(numbers) is (Sum: var sum, Count: > 0))
+{
+    Console.WriteLine($"Sum of [{string.Join(" ", numbers)}] is {sum}");  // output: Sum of [1 2 3] is 6
+}
+
+static (double Sum, int Count) SumAndCount(IEnumerable<int> numbers)
+{
+    int sum = 0;
+    int count = 0;
+    foreach (int number in numbers)
+    {
+        sum += number;
+        count++;
+    }
+    return (sum, count);
+}
+
+
+
+You can also extend a positional pattern in any of the following ways:
+
+
+
+
+Add a run-time type check and a variable declaration, as the following example shows:
+
+
+public record Point2D(int X, int Y);
+public record Point3D(int X, int Y, int Z);
+
+static string PrintIfAllCoordinatesArePositive(object point) => point switch
+{
+    Point2D (> 0, > 0) p => p.ToString(),
+    Point3D (> 0, > 0, > 0) p => p.ToString(),
+    _ => string.Empty,
+};
+
+
+
+The preceding example uses positional records that implicitly provide the Deconstruct method.
+
+
+
+
+
+Use a property pattern within a positional pattern, as the following example shows:
+
+
+public record WeightedPoint(int X, int Y)
+{
+    public double Weight { get; set; }
+}
+
+static bool IsInDomain(WeightedPoint point) => point is (>= 0, >= 0) { Weight: >= 0.0 };
+
+
+
+
+
+
+Combine the two preceding usages, as the following example shows:
+
+
+if (input is WeightedPoint (> 0, > 0) { Weight: > 0.0 } p)
+{
+    // ..
+}
+
+
+
+
+
+
+A positional pattern is a recursive pattern. That is, you can use any pattern as a nested pattern.
+
+
+For more information, see the Positional pattern section of the feature proposal note.
+
+
+var pattern
+
+
+Use a var pattern to match any expression, including null, and assign its result to a new local variable, as the following example shows:
+
+
+static bool IsAcceptable(int id, int absLimit) =>
+    SimulateDataFetch(id) is var results 
+    && results.Min() >= -absLimit 
+    && results.Max() <= absLimit;
+
+static int[] SimulateDataFetch(int id)
+{
+    var rand = new Random();
+    return Enumerable
+               .Range(start: 0, count: 5)
+               .Select(s => rand.Next(minValue: -10, maxValue: 11))
+               .ToArray();
+}
+
+
+
+A var pattern is useful when you need a temporary variable within a Boolean expression to hold the result of intermediate calculations. You can also use a var pattern when you need to perform more checks in when case guards of a switch expression or statement, as the following example shows:
+
+
+public record Point(int X, int Y);
+
+static Point Transform(Point point) => point switch
+{
+    var (x, y) when x < y => new Point(-x, y),
+    var (x, y) when x > y => new Point(x, -y),
+    var (x, y) => new Point(x, y),
+};
+
+static void TestTransform()
+{
+    Console.WriteLine(Transform(new Point(1, 2)));  // output: Point { X = -1, Y = 2 }
+    Console.WriteLine(Transform(new Point(5, 2)));  // output: Point { X = 5, Y = -2 }
+}
+
+
+
+In the preceding example, pattern var (x, y) is equivalent to a positional pattern (var x, var y).
+
+
+In a var pattern, the type of a declared variable is the compile-time type of the expression that the pattern matches.
+
+
+For more information, see the Var pattern section of the feature proposal note.
+
+
+Discard pattern
+
+
+Use a discard pattern _ to match any expression, including null, as the following example shows:
+
+
+Console.WriteLine(GetDiscountInPercent(DayOfWeek.Friday));  // output: 5.0
+Console.WriteLine(GetDiscountInPercent(null));  // output: 0.0
+Console.WriteLine(GetDiscountInPercent((DayOfWeek)10));  // output: 0.0
+
+static decimal GetDiscountInPercent(DayOfWeek? dayOfWeek) => dayOfWeek switch
+{
+    DayOfWeek.Monday => 0.5m,
+    DayOfWeek.Tuesday => 12.5m,
+    DayOfWeek.Wednesday => 7.5m,
+    DayOfWeek.Thursday => 12.5m,
+    DayOfWeek.Friday => 5.0m,
+    DayOfWeek.Saturday => 2.5m,
+    DayOfWeek.Sunday => 2.0m,
+    _ => 0.0m,
+};
+
+
+
+In the preceding example, a discard pattern handles null and any integer value that doesn't have the corresponding member of the DayOfWeek enumeration. That guarantee ensures that a switch expression in the example handles all possible input values. If you don't use a discard pattern in a switch expression and none of the expression's patterns matches an input, the runtime throws an exception. The compiler generates a warning if a switch expression doesn't handle all possible input values.
+
+
+A discard pattern can't be a pattern in an is expression or a switch statement. In those cases, to match any expression, use a var pattern with a discard: var _. A discard pattern can be a pattern in a switch expression.
+
+
+For more information, see the Discard pattern section of the feature proposal note.
+
+
+Parenthesized pattern
+
+
+You can put parentheses around any pattern. Typically, you use parentheses to emphasize or change the precedence in logical patterns, as the following example shows:
+
+
+if (input is not (float or double))
+{
+    return;
+}
+
+
+
+List patterns
+
+
+You can match an array or a list against a sequence of patterns, as the following example shows:
+
+
+int[] numbers = { 1, 2, 3 };
+
+Console.WriteLine(numbers is [1, 2, 3]);  // True
+Console.WriteLine(numbers is [1, 2, 4]);  // False
+Console.WriteLine(numbers is [1, 2, 3, 4]);  // False
+Console.WriteLine(numbers is [0 or 1, <= 2, >= 3]);  // True
+
+
+
+As the preceding example shows, a list pattern matches when each nested pattern matches the corresponding element of an input sequence. You can use any pattern within a list pattern. To match any element, use the discard pattern or, if you also want to capture the element, use the var pattern, as the following example shows:
+
+
+List<int> numbers = new() { 1, 2, 3 };
+
+if (numbers is [var first, _, _])
+{
+    Console.WriteLine($"The first element of a three-item list is {first}.");
+}
+// Output:
+// The first element of a three-item list is 1.
+
+
+
+The preceding examples match a whole input sequence against a list pattern. To match elements only at the start or end - or both - of an input sequence, use the slice pattern .., as the following example shows:
+
+
+Console.WriteLine(new[] { 1, 2, 3, 4, 5 } is [> 0, > 0, ..]);  // True
+Console.WriteLine(new[] { 1, 1 } is [_, _, ..]);  // True
+Console.WriteLine(new[] { 0, 1, 2, 3, 4 } is [> 0, > 0, ..]);  // False
+Console.WriteLine(new[] { 1 } is [1, 2, ..]);  // False
+
+Console.WriteLine(new[] { 1, 2, 3, 4 } is [.., > 0, > 0]);  // True
+Console.WriteLine(new[] { 2, 4 } is [.., > 0, 2, 4]);  // False
+Console.WriteLine(new[] { 2, 4 } is [.., 2, 4]);  // True
+
+Console.WriteLine(new[] { 1, 2, 3, 4 } is [>= 0, .., 2 or 4]);  // True
+Console.WriteLine(new[] { 1, 0, 0, 1 } is [1, 0, .., 0, 1]);  // True
+Console.WriteLine(new[] { 1, 0, 1 } is [1, 0, .., 0, 1]);  // False
+
+
+
+A slice pattern matches zero or more elements. You can use at most one slice pattern in a list pattern. The slice pattern can only appear in a list pattern.
+
+
+You can also nest a subpattern within a slice pattern, as the following example shows:
+
+
+void MatchMessage(string message)
+{
+    var result = message is ['a' or 'A', .. var s, 'a' or 'A']
+        ? $"Message {message} matches; inner part is {s}."
+        : $"Message {message} doesn't match.";
+    Console.WriteLine(result);
+}
+
+MatchMessage("aBBA");  // output: Message aBBA matches; inner part is BB.
+MatchMessage("apron");  // output: Message apron doesn't match.
+
+void Validate(int[] numbers)
+{
+    var result = numbers is [< 0, .. { Length: 2 or 4 }, > 0] ? "valid" : "not valid";
+    Console.WriteLine(result);
+}
+
+Validate(new[] { -1, 0, 1 });  // output: not valid
+Validate(new[] { -1, 0, 0, 1 });  // output: valid
+
+
+
+For more information, see List pattern in the C# language specification.
+
+
+Closed hierarchy patterns
+
+
+Starting in C# 15, a switch expression whose governing type is a closed class is exhaustive when its arms handle every direct descendant of that class. The compiler doesn't require a default arm because the switch is exhaustive:
+
+
+public closed record class PaymentMethod;
+public record class Cash : PaymentMethod;
+public record class Card(string Last4) : PaymentMethod;
+public record class BankTransfer(string Iban) : PaymentMethod;
+
+
+
+public static string Describe(PaymentMethod method) => method switch
+{
+    Cash => "cash",
+    Card(var last4) => $"card ending {last4}",
+    BankTransfer(var iban) => $"bank transfer to {iban}",
+    // No warning: every direct descendant of 'PaymentMethod' is handled.
+};
+
+
+
+A closed hierarchy switch is exhaustive only when every direct descendant is reachable from the location of the switch. If a direct descendant is less accessible than the closed base type and isn't visible at the switch site, the compiler treats it as unhandled and warns that the switch isn't exhaustive.
+
+
+For example, a closed public base class can have an internal direct descendant. Code in the same assembly sees the full set of descendants, but code in another assembly doesn't:
+
+
+// Assembly 1
+public closed record class Shape;
+public record class Circle(double Radius) : Shape;
+internal record class Triangle(double Base, double Height) : Shape;
+
+
+
+// Same assembly: 'Triangle' is visible, so the switch is exhaustive.
+internal static double Area(Shape shape) => shape switch
+{
+    Circle(var r) => Math.PI * r * r,
+    Triangle(var b, var h) => 0.5 * b * h,
+};
+
+
+
+// Assembly 2
+public static string Name(Shape shape) => shape switch
+{
+    Circle => "circle",
+    // Warning CS8509: the switch expression doesn't handle all possible values.
+    // 'Triangle' is a direct descendant of 'Shape' but isn't visible here.
+};
+
+
+
+To restore exhaustiveness in assembly 2, add a discard arm (_ => ...), add a base class arm (Shape in the preceding example), or make every direct descendant at least as accessible as the closed base type.
+
+
+When the governing type is nullable, null is an extra value the switch must handle. A switch over PaymentMethod? that omits a null arm isn't exhaustive even when every direct descendant is matched.
+
+
+Derivation from a closed class isn't transitive: a non-closed descendant of a closed class can be derived from in other assemblies. The compiler only treats the direct descendants as the exhaustive set. To make a switch over a descendant also benefit from exhaustiveness checking, declare the descendant closed (or sealed).
+
+
+Because indirect descendants don't expand the exhaustive set of the closed base, you don't have to add an arm for every transitive subtype to satisfy exhaustiveness. Subsumption between arms still works the same way it does for any class hierarchy: an arm that matches a base type covers every subtype, and a later arm that matches one of those subtypes is unreachable. Consider a closed Vehicle whose direct descendants are Car and Truck, plus an indirect descendant Sedan declared in another assembly:
+
+
+// Assembly 1
+public closed record class Vehicle;
+public record class Car(int Doors) : Vehicle;
+public record class Truck(double PayloadTons) : Vehicle;
+
+// Assembly 2
+public record class Sedan(int Doors) : Car(Doors);
+
+
+
+A switch over Vehicle is exhaustive after it handles Car and Truck, even though Sedan exists. The Car arm covers every Sedan value:
+
+
+public static string Category(Vehicle v) => v switch
+{
+    Car => "car",
+    Truck => "truck",
+    // No warning. The 'Car' arm covers 'Sedan' through ordinary subtype matching.
+};
+
+
+
+To dispatch on Sedan specifically, place its arm before the Car arm. The Car arm remains reachable because it still matches every Car that isn't a Sedan:
+
+
+public static string CategorySedanFirst(Vehicle v) => v switch
+{
+    Sedan => "sedan",
+    Car => "car",      // Reachable: 'Car' values that aren't 'Sedan'.
+    Truck => "truck",
+};
+
+
+
+Reversing those two arms produces a subsumption error, just as it would in any other class hierarchy. The compiler detects that the Car arm already covers Sedan:
+
+
+string Category(Vehicle v) => v switch
+{
+    Car => "car",
+    Sedan => "sedan",  // Error CS8510: the pattern is unreachable. It has already been handled by 'Car => ...'.
+    Truck => "truck",
+};
+
+
+
+If you want exhaustiveness to follow the hierarchy further down, declare Car itself closed. The compiler then treats every direct descendant of Car (such as Sedan) as the exhaustive set rooted at Car. A switch whose governing type is Car is exhaustive when it does any of the following:
+
+
+
+Handles every direct descendant of Car with its own arm.
+
+
+Includes a Car arm, which covers every Car value (including all subtypes).
+
+
+Includes a discard arm (_ => ...) or an arm for a base type of Car, such as Vehicle.
+
+
+
+A switch whose governing type is Vehicle has choices: Code that handles Car and Truck is still exhaustive, because the Car arm covers every subtype of Car. Marking Car closed simply gives you a second option for that switch. You can keep the single Car arm, or replace it with one arm per direct descendant of Car (alongside the Truck arm) and still be exhaustive.
+
+
+Marking Car closed also makes it implicitly abstract, which means you can no longer create instances of Car directly. That condition might not fit your design. If you need Car to remain instantiable, leave it open and dispatch on the specific subtypes you care about by ordering arms as shown earlier.
+
+
+Type parameter governing types
+
+
+The closed hierarchies feature specification defines a switch expression whose governing type is a type parameter constrained to a closed class as exhaustive on the same terms as a switch over the closed class itself. So, generic code can dispatch on a closed hierarchy by constraining the type parameter to the closed base and handling every direct descendant:
+
+
+public static string Describe<X>(X method) where X : PaymentMethod => method switch
+{
+    Cash => "cash",
+    Card(var last4) => $"card ending {last4}",
+    BankTransfer(var iban) => $"bank transfer to {iban}",
+    // No warning: 'X' is constrained to the closed type 'PaymentMethod', so the
+    // compiler treats this switch as exhaustive because every direct descendant is handled.
+};
+
+
+
+For more information, see the closed modifier. For the specification, see Closed hierarchies.
+
+
+Union patterns
+
+
+Starting with C# 15, when the incoming value of a pattern is a union type, patterns generally unwrap the union. The pattern applies to the union's Value property rather than the union value itself. This behavior makes the union transparent to pattern matching:
+
+
+public record class Cat(string Name);
+public record class Dog(string Name);
+public union Pet(Cat, Dog);
+
+string Describe(Pet pet) => pet switch
+{
+    Dog d => d.Name,
+    Cat c => c.Name,
+};
+
+
+
+Three patterns are exceptions: the discard _ pattern, the var pattern, and the not pattern apply to the union value itself, not its Value property.
+
+
+The null pattern checks whether the union's Value is null. For class-based unions, null also succeeds when the union reference itself is null.
+
+
+When a union type provides the non-boxing access pattern, the compiler calls TryGetValue for type-pattern checks and HasValue for null-pattern checks, avoiding boxing for value-type cases. Each member applies to its own pattern kind—neither is a fallback for the other. When a member is missing, the compiler checks the Value property for that pattern instead.
+
+
+For more information, see Union matching. For the specification, see Unions.
+
+
+C# language specification
+
+
+For more information, see the Patterns and pattern matching section of the C# language specification, including:
+
+
+
+List pattern
+
+
+Slice pattern
+
+
+Constant pattern
+
+
+
+See also
+
+
+
+C# operators and expressions
+
+
+Pattern matching overview
+
+
+Tutorial: Use pattern matching to build type-driven and data-driven algorithms

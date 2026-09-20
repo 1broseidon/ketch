@@ -7,6 +7,7 @@
 
 # Test
 coverage.out
+/bench/.runs/
 
 # IDE
 .idea/

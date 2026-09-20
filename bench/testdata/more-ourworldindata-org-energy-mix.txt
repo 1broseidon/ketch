@@ -1,0 +1,343 @@
+Energy Mix
+
+Explore global data on where our energy comes from, and how this is changing.
+
+By Hannah Ritchie and Pablo Rosado
+
+This page was first published in July 2020. We revised this page in August 2026 to reflect the change in how primary energy is measured.
+
+Energy production – mainly the burning of fossil fuels – accounts for around three-quarters of global greenhouse gas emissions. Not only is energy production the largest driver of climate change, but the burning of fossil fuels and biomass also comes at a large cost to human health: at least five million deaths are attributed to air pollution each year.
+
+The world therefore needs to shift away from fossil fuels to an energy mix dominated by low-carbon sources of energy – renewable technologies and nuclear power.
+
+What does our energy mix look like today? What countries have the 'cleanest' energy mix? And are we making progress in shifting towards a low-carbon energy system?
+
+This article focuses on the breakdown of energy sources: how they vary across the world and how this is changing over time.
+
+In the energy domain, there are many different units thrown around – joules, exajoules, million tonnes of oil equivalents, barrel equivalents, British thermal units, and terawatt-hours, to name a few. This can be confusing, and make comparisons difficult. So at Our World in Data, we try to maintain consistency by converting all energy data to watt-hours. We do this to compare energy data across different metrics and sources.
+
+Global primary energy: how has the mix changed over centuries?
+
+Today when we think about energy mixes we think about a diverse range of sources – coal, oil, gas, nuclear, hydropower, solar, wind, and biofuels.  But If we look back a couple of centuries ago, our energy mixes were relatively homogeneous. And the transition from one source to another was incredibly slow.
+
+In the chart shown we see global primary energy use dating back to the year 1800. This earlier data is sourced from Vaclav Smil's work Energy Transitions: Global and National Perspectives.1 Data from 1965 onwards comes from the latest release of Energy Institute’s Statistical Review of World Energy.
+
+We see that until the mid-19th century, traditional biomass – the burning of solid fuels such as wood, crop waste, or charcoal – was the dominant energy source used worldwide. But with the Industrial Revolution came the rise of coal; followed by oil, gas; and hydropower by the turn of the 20th century.
+
+It wasn't until the 1960s that nuclear energy was added to the mix. What is often referred to as 'modern renewables' – solar and wind – were only added much later, in the 1980s.
+
+What Vaclav Smil –  and other researchers studying these long-term energy transitions across countries – highlights in his work is the slow rate at which energy transitions have occurred in the past. The speed and scale of the energy transition we need today in switching from fossil fuels to low-carbon energy is therefore a new challenge, very different from the past.
+
+
+
+
+
+
+
+Energy mix: what sources do we get our energy from?
+
+Let's look at our energy mix today, and explore what sources we draw upon.
+
+In the interactive chart shown, we see the primary energy mix broken down by fuel or generation source.
+
+Globally we get the largest amount of our energy from oil, followed by coal, gas, nuclear, and hydroelectric power. However, other renewable sources are now growing quickly.
+
+
+
+
+
+
+
+These charts show the breakdown of the energy mix by country. First is the higher-level breakdown by fossil fuels, nuclear, and renewables. Then the specific breakdown by source, including coal, gas, oil, nuclear, hydro, solar, wind, and other renewables (which include geothermal, biomass, and waste).
+
+This is given in terms of per capita consumption.
+
+
+
+
+
+
+
+
+
+
+
+
+
+How much of global energy comes from low-carbon sources?
+
+Around three-quarters of global greenhouse gas emissions come from the burning of fossil fuels for energy.2 To reduce global emissions we need to shift our energy systems away from fossil fuels to low-carbon energy sources. We need to ‘decarbonize’.
+
+How big is this challenge? How much of our energy currently comes from low-carbon sources?
+
+In this chart, we see the breakdown of global primary energy use.3
+
+Here the data measures primary energy in terms of total energy supply. For more details, read how primary energy measurement has changed across our charts.
+
+Approximately one-seventh of global primary energy comes from low-carbon sources. Low-carbon sources are the sum of nuclear energy and renewables – which includes hydropower, wind, solar, bioenergy, geothermal, and wave and tidal.4
+
+Nuclear and hydropower account for most of our low-carbon energy, but wind and solar are growing quickly.
+
+
+
+
+
+
+
+Which countries get the most energy from low-carbon sources?
+
+This interactive map shows the share of primary energy that comes from low-carbon sources across countries.
+
+
+
+
+
+
+
+Globally, our progress in shifting towards a low-carbon economy has been slow. That may leave us pessimistic about a path forward. But some countries – often some of the world’s richest countries who have high carbon footprints – show us that significant progress on decarbonizing our energy systems is possible. They still have a long way to go but are moving in the right direction.
+
+Poorer countries face a bigger challenge: they must grow their economies, giving their populations access to energy, and healthcare and alleviating poverty whilst avoiding the carbon-intensive pathways today’s rich countries have taken. To do this, they need clean energy to be cheap, undercutting fossil fuel alternatives. In this regard, the world’s richest countries also have a role to play: the scale-up of low-carbon energy should help to drive down costs. We have already seen this effect with the rapid decline in solar prices in recent years.
+
+Is the world making progress in decarbonizing energy?
+
+Three-quarters of global greenhouse gas emissions come from the burning of fossil fuels for energy.5 To tackle climate change, we must transition away from fossil fuels and decarbonize our energy systems.
+
+The world now gets approximately one-seventh of its energy from low-carbon sources – either nuclear or renewables. How has this changed over time?
+
+Does our track record give us reason to be optimistic that we can quickly decarbonize?
+
+In the chart below we see the share of global energy that comes from low-carbon sources. We've certainly made progress since the 1960s: while global energy use has quadrupled, the share of low-carbon sources has increased more than five-fold.
+
+
+
+
+
+
+
+Fossil fuels, nuclear, and renewables: how is the global energy mix changing?
+
+In the chart, we see the share of global energy that comes from fossil fuels, renewables, and nuclear. The sum of the top two is what we want to increase.
+
+Part of this slow progress is due to the fact that much of the gains made in renewables have been offset by a decline in nuclear energy. Renewables have been growing while nuclear has been rolled back.6
+
+Overall, this means that the combined share from low-carbon sources has increased by less than we might have expected. Having renewables and nuclear pulling in the same direction would certainly have helped. But it wouldn’t be enough: the rate of progress would still have been slow.
+
+
+
+
+
+
+
+It’s the total amount of fossil fuels we burn that matters – and we continue to burn more each year
+
+But we’re still fooling ourselves in looking at this progress through the lens of what share of our energy is low-carbon.
+
+When it comes to greenhouse gas emissions, the atmosphere does not care about shares, only absolutes. That is what ultimately determines the amount of CO2 we emit, and the rate at which it accumulates in the atmosphere.
+
+Global energy consumption is not stagnant, but growing. And in the past years, it has been growing too quickly for renewables and nuclear to keep up.
+
+In the chart here we see primary energy use in absolute terms for each source. We continue to produce more energy from fossil fuels – particularly oil and gas – each year.
+
+Low-carbon energy is certainly growing across the world – undoubtedly a sign of progress.
+
+Decarbonization is happening. But not nearly fast enough. To achieve the necessary progress for the climate, we need to see its growth not only meet our new energy demands each year but also start displacing existing fossil fuels in the energy mix much faster.
+
+
+
+
+
+
+
+Energy consumption by source
+
+Fossil fuels: what share of energy comes from fossil fuels?
+
+Fossil fuels are the sum of coal, oil, and gas. Combined, they are the largest source of global emissions of carbon dioxide (CO2). We therefore want to shift our energy systems away from fossil fuels towards low-carbon energy sources.
+
+This interactive map shows the share of primary energy that comes from fossil fuels (coal, oil, and gas summed together) across the world.
+
+
+
+
+
+
+
+Coal: what share of energy comes from coal?
+
+Coal has been a critical energy source and a mainstay in global energy production for centuries.
+
+But it's also the most polluting energy source: both in terms of the amount of CO2 it produces per unit of energy, and the amount of local air pollution it creates. Moving away from coal energy is important for climate change as well as human health.
+
+This interactive map shows the share of primary energy that comes from coal across the world.
+
+
+
+
+
+
+
+Oil: what share of energy comes from oil?
+
+Oil is the world's largest energy source today. It is the dominant source of energy for the transport sector in particular.
+
+This interactive map shows the share of primary energy that comes from oil across the world.
+
+
+
+
+
+
+
+Gas: what share of energy comes from gas?
+
+Natural gas has, for decades, lagged behind coal and oil as an energy source. But today its consumption is growing rapidly – often as a replacement for coal in the energy mix. Gas is a major provider of electricity production and a key source of heat.
+
+This interactive map shows the share of primary energy that comes from gas across the world.
+
+
+
+
+
+
+
+Nuclear: what share of energy comes from nuclear?
+
+Nuclear energy – alongside hydropower – has been a key source of low-carbon energy for many countries across the world in recent decades. But there are large differences in the role of nuclear – some countries rely heavily on it for energy production; others produce no energy at all from it.
+
+This interactive map shows the share of primary energy that comes from nuclear in each country.
+
+
+
+
+
+
+
+Renewables: how much of our energy comes from renewables?
+
+Renewable energy is a collective term used to capture several different energy sources. 'Renewables' typically include hydropower, solar, wind, geothermal, biomass, and wave and tidal energy.
+
+This interactive map shows the share of primary energy that comes from renewables (the sum of all renewable energy technologies) across the world.
+
+The share of energy we get from individual renewable technologies – solar, or wind, for example – is given in the sections below.
+
+
+
+
+
+
+
+Hydropower: what share of energy comes from hydropower?
+
+Hydroelectric power has been an influential low-carbon energy technology for many countries for over half a century. Globally, it is still the largest source of renewable energy.
+
+This interactive map shows the share of primary energy that comes from hydropower across the world.
+
+
+
+
+
+
+
+Solar: what share of energy comes from solar?
+
+Solar energy is a relatively new energy technology but is growing very quickly.
+
+This interactive map shows the share of primary energy that comes from solar technologies across the world.
+
+
+
+
+
+
+
+Wind: what share of energy comes from wind?
+
+This interactive map shows the share of primary energy that comes from wind (both onshore and offshore) across the world.
+
+
+
+
+
+
+
+Year-to-year change: how is energy consumption by source changing?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Endnotes
+
+
+Vaclav Smil (2017). Energy Transitions: Global and National Perspectives.
+
+
+
+The remaining quarter comes from industrial processes (such as cement production), agriculture, land use change, and waste.
+
+
+
+This is based on primary energy data published annually in the Energy Institute’s Statistical Review of World Energy.
+
+
+
+The emissions from these sources are not necessarily zero – the mining of materials, production, maintenance, and decommissioning of these technologies may produce some carbon, but per unit of energy this is very small relative to fossil fuels. Schlömer S., T. Bruckner, L. Fulton, E. Hertwich, A. McKinnon, D. Perczyk, J. Roy, R. Schaeffer, R. Sims, P. Smith, and R. Wiser, 2014: Annex III: Technology-specific cost and performance parameters. In: Climate Change 2014: Mitigation of Climate Change. Contribution of Working Group III to the Fifth Assessment Report of the Intergovernmental Panel on Climate Change [Edenhofer, O., R. Pichs-Madruga, Y. Sokona, E. Farahani, S. Kadner, K. Seyboth, A. Adler, I. Baum, S. Brunner, P. Eickemeier, B. Kriemann, J. Savolainen, S. Schlömer, C. von Stechow, T. Zwickel and J.C. Minx (eds.)]. Cambridge University Press, Cambridge, United Kingdom and New York, NY, USA.
+
+
+
+The remaining quarter comes from industrial processes (mainly cement production), agriculture, land use change, and waste.
+
+
+
+This is even clearer when we focus on global electricity production: nuclear declined almost as much as renewables gained.
+
+
+
+
+
+
+Cite this work
+
+Our articles and data visualizations rely on work from many different people and organizations. When citing this topic page, please also cite the underlying data sources. This topic page can be cited as:
+
+
+
+Hannah Ritchie and Pablo Rosado (2020) - “Energy Mix” Published online at OurWorldinData.org. Retrieved from: 'https://ourworldindata.org/energy-mix' [Online Resource]
+
+
+
+BibTeX citation
+
+
+
+@article{owid-energy-mix,
+    author = {Hannah Ritchie and Pablo Rosado},
+    title = {Energy Mix},
+    journal = {Our World in Data},
+    year = {2020},
+    note = {https://ourworldindata.org/energy-mix}
+}
+
+
+
+
+
+
+
+Reuse this work freely
+
+All visualizations, data, and articles produced by Our World in Data are completely open access under the Creative Commons BY license. You have the permission to use, distribute, and reproduce these in any medium, provided the source and authors are credited.
+
+The data produced by third parties and made available by Our World in Data is subject to the license terms from the original third-party authors. We will always indicate the original source of the data in our documentation, so you should always check the license of any such third-party data before use and redistribution.
+
+All of our charts can be embedded in any site.

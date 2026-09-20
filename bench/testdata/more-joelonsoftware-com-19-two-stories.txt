@@ -1,0 +1,69 @@
+I want to tell you two stories from my career which I think are classic illustrations of the difference between tech companies that are well-managed and tech companies that are disasters. It comes down to the difference between trusting employees and letting them get things done, versus treating them like burger flippers that need to be monitored and controlled every minute, lest they wander off and sabotage everything.
+
+
+  
+
+
+My first assignment at my first job was working at Microsoft, where I was told to come up with a new macro language strategy for Excel. Pretty soon, I had the first draft of the “Excel Basic” spec (which later evolved into Visual Basic for Applications, but that’s another story). Somehow, this mysterious group of people at Microsoft called the “Application Architecture” group got wind of my spec, which must have concerned them, because for some reason they thought that they were in charge of things like macro language strategies, and they asked to see my spec.
+
+
+I asked around. Who’s the Application Architecture group? Nobody seemed to think they were very serious. It turns out that they were a group of just four people, recent hires with PhDs (very unusual for Microsoft). I sent them a copy of my spec and went to meet them, in case they had something interesting to say.
+
+
+“Blah blah!” said one of them. “Blah blah blah, blah blah blah!” said another. I don’t think they quite had anything interesting to say. They were very enamored of the idea of subclassing and sort of thought that people making macros in Excel wanted to subclass a lot of things. In any case, one of the fellows said, “Well, this is all very interesting. What’s next? Who has to approve your spec?”
+
+
+I laughed. Even though I had only been at Microsoft for a few months, I knew that there was no such thing as somebody approving my spec. Hell, nobody had time to read my spec, let alone approve it. The programmers were bugging me every day to get them more pages so that they could write more code. My boss (and his boss) made it very clear to me that nobody else understood macros or had time to work on macros, so whatever I did, it better be right. And here this PhD working in a strange research group at Microsoft assumed that things were a bit more formal than that.
+
+
+I pretty rapidly realized that the App Architecture group knew even less than I did about macros. At least, I had talked to a handful of macro developers and some Excel old-timers to get a grip on what people actually did with Excel macros: things like recalculating a spreadsheet every day, or rearranging some data according to a certain pattern. But the App Architecture group had merely thought about macros as an academic exercise, and they couldn’t actually come up with any examples of the kind of macros people would want to write. Pressured, one of them came up with the idea that since Excel already had underlining and double-underlining, perhaps someone would want to write a macro to triple underline. Yep. REAL common. So I proceeded to ignore them as diplomatically as possible.
+
+
+This seemed to piss off a guy named Greg Whitten who headed up the App Architecture group. Now, Greg was something like Microsoft employee number 6. He had been around forever; nobody could quite point to anything he had done but apparently he had lunch with Bill Gates a lot and GW-BASIC was named after him. Greg called a BIG MEETING and proceeded to complain about how the Excel team (meaning me) was screwing up the macro strategy. We pressured him to come up with some specific reasons but his arguments just weren’t convincing. I thought it was nice that here I was, a new hire pipsqueak right out of college, arguing with employee number 6 and apparently winning the argument. (Can you imagine that happening at a Grey Flannel Suit company?) My programming team, headed by Ben Waldman (now a VP at Microsoft) backed me up completely, which was all that really mattered, because the programming team wrote the code and thus had the final say on how things got done.
+
+
+I would have been perfectly happy to leave it at that. If the Apps Architecture team needed care and feeding and wanted to argue about stuff, that was OK, I would argue with them as much as they wanted as long as they left the programmers alone to do their work. But then something even more interesting happened that blew my mind. I was sitting at lunch with some coworkers, in the Redmond sun, when Pete Higgins came up to me. At that time Pete was the general manager for Office — I knew who he was, of course, but didn’t expect that he knew me very well. 
+
+
+“How’s it going, Joel?” he asked. “I hear you’ve been having some issues with the App Architecture group.”
+
+
+“Oh no!” I said. “Nothing I can’t handle.”
+
+
+“Say no more,” he said, “I understand.” He left. By the next day the rumor had gotten back to me: the App Architecture group was disbanded. Not only that, but each member of the group was sent to a different department at Microsoft, as far apart as possible. I never heard from them again.
+
+
+I was blown away, of course. At Microsoft, if you’re the Program Manager working on the Excel macro strategy, even if you’ve been at the company for less than six months, it doesn’t matter – you are the GOD of the Excel macro strategy, and nobody, not even employee number 6, is allowed to get in your way. Period.
+
+
+This sends a really strong message. For one, it makes everyone that much more conscientious about their jobs. They can’t hide behind the idea that “management approved their spec,” since management really didn’t look too closely at their spec. All management did was hire smart people and gave them something to do. For another, it makes for an extremely nice place to work. Who doesn’t want to be king of their own domain? Software, by its nature, is very easy to divide into smaller and smaller components, so it’s always possible to divide up responsibility among people and let people own an area. This is probably THE  reason why software people love working at Microsoft.
+
+
+
+
+
+
+
+Years passed. I found myself working at Juno, an online service and free email provider. This time, the experience was the exact opposite of my work at Microsoft. I had two programmers reporting to me, but my own manager constantly undermined my (limited) authority by going directly to my reports and giving them things to do, often without even telling me. Even for trivial requests like days off, my manager thought that it was his job to approve or disapprove the request. 
+
+
+After a couple of years at Juno I was working on the new user signup feature. For Juno 3.x, a major release, I was going to be in charge of a complete overhaul of the signup process. By this time, I was a relatively senior member of the technical team; I got great performance reviews, and my managers seemed to appreciate the work I was doing. But they just couldn’t bring themselves to trust me. Command and control.
+
+
+One part of the signup process asked the users to type in their birthday. This was just one small bit of a lengthy signup process that went on for something like 30 screens as Juno grilled you about your income, your favorite sports, how many children you have and how old they were, and about 100 other things. To make the signup process a little bit easier, I wanted to change the birthday field to be free format, so you could type “8/12/74” or “August 12, 1974” or “12 Aug 74” or whatever. (Have you used Outlook? It would work like Outlook, where you could type dates in just about any format and it would accept them).
+
+
+Without going into too much detail, my manager decided he didn’t like this. It became an issue of ego for him. First he yelled at the designer who was working on that page (without even telling me). Then he yelled at me. Then he reminded me every single day that I had to change it to the way he wanted it. Then he got the CEO of the company to review it, and made a big show out of getting the CEO of the company to criticize my new design. Even the CEO at Juno is perfectly happy to interfere in work done at the lowest level in the company, in fact, it’s standard operating procedure.
+
+
+I was furious, needless to say. It was a small thing, a matter of taste, really. Some people would prefer my way. Some people would prefer his. In either case, the message was clear: you WILL do as you are told here, dammit. It was a very command-and-conquer mentality that was more of a battle of cojones than a discussion of user interface design.
+
+
+I won’t say that this is the reason I left Juno, but it does illustrate the reason I left Juno: it was the idea that no matter how hard you work, no matter how smart you are, no matter whether you are ‘in charge’ of something or not, you have no authority whatsoever for even the tiniest thing. None. Take your damn ideas, training, brains, and intelligence, all the things we’re paying you for, and shove it. And at Juno, there were plenty of managers, something like 1/4 of all the employees, and so they had plenty of times to stick their fingers into every single decision and make sure that they were in control. The contrast with Microsoft, where VP’s descended from Building 9 to make it clear that you have the authority to get things done, was stark.
+
+
+
+
+
+To some extent, Juno’s hopelessly inept management process is a factor of being a New York City company, not a West Coast company, so modern styles of management haven’t quite permeated. It’s also a problem caused by the deep inexperience of Juno’s managers, and it originates at the top – the CEO, a 29 year old who has never worked outside D. E. Shaw, who interferes in everything he can get his fingers into, including the wording on error messages that come up when things go wrong; the CTO regularly screams at his reports if they dare to question his wisdom; they take it out on the programmers, who go home and kick their dogs. Compare this to Microsoft, where things are done at the lowest level, and most managers act like their most important job is to run around the room, moving the furniture out of the way, so people can concentrate on their work.

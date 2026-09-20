@@ -1,0 +1,1060 @@
+< Tool Guides
+    
+
+
+  
+How to: Use Signal
+
+
+    
+Last Reviewed: June 15, 2026
+
+
+
+
+
+  
+
+
+Download location: Google Play Store, Apple App Store
+
+
+System requirements: Android 5 or later, iOS 13 or later
+
+
+Version used in this guide: Android: 7.38.6 iPhone: 7.5.1
+
+
+License: GPLv3
+
+
+Level: Beginner
+
+
+Time required: 15-20 minutes
+
+
+Other reading:
+
+
+
+	
+https://signal.org/
+
+	
+https://support.signal.org/
+
+	
+https://signal.org/blog/
+
+
+
+
+Table of Contents
+
+
+
+	
+Download and Install Signal
+
+	
+Register and Verify Your Phone Number
+
+	
+
+Using Signal
+	
+		
+Start a New Message
+
+		
+Verify Safety Numbers
+
+		
+Manage Your Group Chat Preferences
+
+	
+	
+
+	
+
+Additional Security Settings
+	
+		
+Registration Lock
+
+		
+Consider Backups
+
+		
+Set or Change Your Username
+
+		
+Hide Your Phone Number
+
+		
+Disappearing Messages
+
+		
+Change What's Visible in Notifications
+
+	
+	
+
+	
+
+Security Settings for More Sensitive Situations
+	
+		
+Change Your Phone Number
+
+		
+Control Who Can (and Can't) See Stories
+
+		
+Enable Screen Lock
+
+		
+Hide Screen in App Switcher
+
+		
+Disable Sending Link Previews
+
+		
+Manage Keyboard Data
+
+		
+Use a Proxy (If You Need to)
+
+		
+Hide You IP Address from Another Caller
+
+		
+Review Your Linked Devices
+
+	
+	
+
+
+
+
+How to use this guide: This guide starts with the basics of setting up and using Signal for the first time. If you’re already experienced with the app and are looking for ways to enhance your privacy while using it, jump down to the Additional Security Settings section.
+
+
+
+Signal is a free and open-source application for Android, iOS, and desktop that employs end-to-end encryption  to keep communications safe. Signal has certified to courts that it only maintains two types of user data  available to law enforcement: timestamps of when each account was created and the date that each account last connected to the Signal service.
+
+
+
+As with most chat apps, communications can be made between either individuals or a group, allowing you to send end-to-end encrypted text, picture, audio and video messages, as well as live video and audio calls. Everyone must have the Signal app installed to communicate with each other. Encrypted calls and messages use your data connection, so both parties in the conversation must have internet access on their mobile devices. Due to this, you will not incur SMS and MMS fees when using Signal.
+
+
+
+
+
+ 
+Download and Install Signal #
+
+
+
+
+Search for "Signal" in the Google Play Store or Apple App Store, or click the links below:
+
+
+
+	
+
+On Android: Download the app from the Google Play Store here.
+
+	
+
+On iPhone: Download the app from the Apple App Store here.
+
+
+
+
+Signal is also available on desktop, but this guide is focused only on iOS and Android, since using one of those platforms is required to use the desktop app. If you choose to use the desktop apps, be sure to have a strong login password set for your computer, and use strong desktop encryption to protect your messages.
+
+
+ 
+Register and Verify your Phone Number #
+
+
+
+
+After an introductory screen with information about the Terms and Privacy Policy, you will see a dialogue explaining why Signal requests the “Contacts” permission on your phone. 
+
+
+
+Signal can check your contacts list to see who is using Signal. To do this, Signal uses a private contact discovery system. The data uploaded to Signal is immediately deleted after your contacts are matched up. If sharing your contacts with Signal is a concern, you can deny the contacts permission. If you don’t allow this permission, you can still use Signal, but you have to manually enter phone numbers to begin chatting with people. You can change this in the future, but for now, choose to allow or deny access:
+
+
+
+	
+
+On Android: Tap "Not now" to deny access or "Continue" to grant access to your contacts.
+
+	
+
+On iPhone: Tap "Don't Allow" to deny access or "OK" to grant access to your contacts.
+
+
+
+
+
+
+
+
+Signal requires a working phone number to set up. While Signal doesn't use SMS, your phone number is used to verify who you are and limit you to one account. By default, your phone number is not visible in your Signal profile unless someone already has that number in their address book. If you do not want to use your primary phone number, Freedom of the Press Foundation has tips for getting a secondary number.
+
+
+
+You can also optionally create a username to share with others instead of your phone number. We'll get into setting this up below.
+
+
+
+	
+
+On Android: Enter your phone number and tap "Continue," then tap "OK" when asked to confirm that your number is correct. 
+
+
+	On iPhone: Enter your phone number and tap "Next," then "Yes" when asked to confirm that your number is correct.
+
+
+
+
+
+
+
+
+In order to verify your phone number, you will be sent an SMS text with a six-digit code. Enter that number in.
+
+
+
+
+
+
+
+Next up is creating a profile and a PIN. The profile image and name you choose will be shown to any contacts you have saved in your address book, when you initiate or accept new chats, and when you join new groups. While a first name (either genuine or made up) is required, the image and last name are optional. A PIN keeps your information safe on Signal’s servers, and if you switch phones you will be able to recover your settings, profile, and contacts using it. 
+
+
+
+The onboarding process is in a different order on Android than it is on iPhone:
+
+
+
+	
+
+On Android: Enter your profile information in this step and tap “Next.” On the next screen, you're asked to create a PIN. Choose a secure PIN or Passphrase and then tap “Next.” You'll need to confirm the PIN one more time. 
+
+	
+
+On iPhone: The first step is to create your PIN. Choose a secure PIN or Passphrase and then tap “Next.” You'll need to confirm the PIN one more time. Next, enter your profile information, and then tap "Next." You will next see a prompt asking for access to your local network. This is to help transfer an account from an old phone to a new one. You can tap "Don't Allow" if you do need to move an account over.
+
+
+
+
+On both Android and iPhone, you also have the option on this screen to limit who can find you by your number. By default, this is set to "Everybody," meaning that anyone who has your phone number in their phone's address book will automatically find you on Signal. If you don't want it to work like this, tap "Who can find me by my number?" and change the setting to "Nobody." Unless you also set up a username, nobody will be able to initiate a chat with you if you set this to "Nobody." Once a username is set up, people will only be able to start a chat with you if they have your username.
+
+
+
+
+
+
+
+With that, you're set up and ready to dive into communicating over Signal.
+
+
+ 
+Using Signal #
+
+
+
+
+In order to use Signal, the person you are contacting must have Signal installed. But otherwise, using Signal works essentially the same as other chat and phone apps you've used. Alongside text, you can send stickers, photos, voice memos, GIFs, files, and more. All of these are also end-to-end encrypted.
+
+
+ 
+Start a New Message #
+
+
+
+
+To start a message:
+
+
+
+	
+
+On Android: From the chat tab, tap the pen icon in the bottom-right corner.
+
+	
+
+On iPhone: From the chat tab, tap the pen icon in the top-right corner.
+
+
+
+
+If you previously allowed Signal access to your contacts, you will see a list of all the registered Signal users in your contacts. Pick the person you want to message, or type in a phone number. From this screen, you can start chatting, or initiate a phone (or video) call. If you're using Signal on Android, you can initiate calls from the call tab, as well.
+
+
+
+Voice and video calls in Signal work just like any other communication app and offer the same end-to-end encryption protection as the messaging does. You can also create a “Call link” that you can share with others to join a call.
+
+
+
+
+
+
+ 
+Verify Safety Numbers #
+
+
+
+
+Once you've started a message thread, you can consider verifying the authenticity of the person you are talking with to make sure their encryption key  wasn't tampered with (a process called key verification). This may not be necessary for everyone you communicate with, but can be useful in cases where you're talking about private information. The process works the same on both Android and iPhone:
+
+
+
+	
+Open the chat screen with the contact you want to verify, and then tap the name of your contact at the top of the screen.
+
+	
+Tap “View safety number.”
+
+
+
+
+You will see a string of 60 numbers and a QR code. Match the color cards with the person you're verifying with, and then you can either verify by manually reading off these numbers to make sure they correspond with your contact's numbers, or if you're in the same location, you can scan the QR code that appears on this screen. If needed, you can also copy the numbers and share it over a secondary secure channel. Once verified, tap the "Mark as verified" button.
+
+
+
+
+
+
+ 
+Manage Your Group Chat Preferences #
+
+
+
+
+If you’re organizing a large group chat, or just find yourself in one, check out our guide for managing Signal group chats.
+
+
+
+Alongside one-on-one chats, Signal also supports group chats and group video calls. Once in a group chat together, anyone in that group can direct message anyone else in the group, but they'll still need to send a message request. Both of these are end-to-end encrypted. Creating a new group works the same on both Android and iOS:
+
+
+
+	
+From the "Chats" tab, tap the pen icon, then "New Group." 
+
+	
+Tap the names of your contacts you'd like to add to the group. 
+
+
+
+
+On the next screen, you're asked to create a name for your group, select a duration of time for disappearing messages (more on these below), and then tap "Create." As long as you added at least one person to the group chat, you'll go to the main chat screen.
+
+
+
+
+
+
+
+If you don't add anyone into the group right away, you may see a screen with two options:
+
+
+
+	
+
+Approve new members: Enable this if you want the ability to approve or deny new members.
+
+	
+
+Enable and share link: Tap this if you want the ability to share a link to the group chat with people. This way, new members can join from the link instead of being added manually by an administrator. If you do not want this feature enabled, tap "Cancel." If you click cancel, administrators of the group chat are the only people who can add new members. You can do so by tapping the group chat name, then "Add Members."
+
+
+
+
+If you enable the share link and change your mind, you can always delete the link, or reset it. This is helpful if the link was shared by someone you don't want in the group. Tap the group chat name, then "Group Link" to change these settings.
+
+
+
+
+
+
+
+You can also set the permissions of the group chat to restrict people from renaming the group or adding new members. Tap the group chat name, then "Permissions" and change the settings however you prefer.
+
+
+
+
+
+
+
+In large group chats, it can be worth checking occasionally to see who is in the chat. From the group chat screen, tap the chat name, then scroll down the list of members and make sure you recognize everyone.
+
+
+ 
+Additional Security Settings #
+
+
+
+
+Signal's default setup is relatively secure, but there are a few things to consider changing, and some features you may want to tinker with.
+
+
+ 
+Registration Lock #
+
+
+
+
+Why
+
+
+Enabling "Registration Lock" prevents your phone number from being registered on a different device without the PIN you set up when you first installed Signal. Make sure you write this PIN down, because without it, you will not be able to get back into your Signal account for at least seven days if you change phones.
+
+
+
+What to do
+
+
+
+	
+
+On Android: Tap your profile picture, then Account. If you haven’t already created a PIN, you may need to do so by tapping the “Create a PIN” option. Then set the "Registration Lock" toggle to on. 
+
+	
+
+On iPhone: Tap your profile picture, then Settings > Account. Then set the "Registration Lock" toggle to on.
+
+
+
+
+Signal will occasionally ask you to verify your PIN to help you remember it.
+
+
+
+
+
+
+ 
+Set or Change Your Username #
+
+
+
+
+Why
+
+
+Despite the name, Signal's usernames don't work like you may be used to on social media accounts, nor do they work exactly like a phone number. Think of your username more like a "discovery handle." It's a way for people to easily find you without requiring you to hand your phone number to them, and you can change it as often as you like. By default, after you set up a username, anyone you chat with will not be able to see your phone number unless they already have your number in their phone's address book. 
+
+
+
+What to do
+
+
+To set up or change your Signal username:
+
+
+
+	
+
+On Android: Tap your profile picture, then tap your name at the top of the screen, then the @username option.
+
+	
+
+On iPhone: Tap your profile picture, then Settings, then tap your name at the top of the screen, then the @username option.
+
+
+
+
+Here, you can set up or change your username to whatever you want, as long as someone else doesn't have that same name. You will always have to have at least two numbers at the end of your username. For example, your username cannot be SSD, it would have to be SSD.01.
+
+
+
+You can change your username anytime you want without losing the chats and contacts you have already started, but if someone only has your old username and tries to contact you, they will not find you. Note that if someone who you've blocked changes their username, they will continue to be blocked.
+
+
+
+When you want to share your username with someone, you can tap [profile picture in the top left] > [box with your name at the top of the screen] > QR Code or Link to share a link or a QR code.
+
+
+
+
+
+
+ 
+Consider Backups #
+
+
+
+
+Why
+
+
+Like many chat apps, Signal offers a way to back up the contents of your conversations so if you lose your device, you can recover those chats. The backup archive is end-to-end encrypted. If you enable backups, you’ll get a recovery key  that you’ll need to restore that backup. Signal itself does not have access to this recovery key, so if you lose it, you won’t be able to restore that backup.
+
+
+
+Signal offers two ways to backup messages, both of which are optional: Signal Secure Backups, which are stored online, or on-device backups, which are only available on Android and store the backup file on your device.
+
+
+
+The free version of Signal Secure Backups stores all your text messages as well as the last 45 days of media (files, photos, and attachments). A paid offering can store up to 100 GB of media. The backup runs once a day. All the current message content gets stored in the backup except for view-once messages and any messages scheduled to disappear within the next 24 hours.
+
+
+
+Android’s on-device backups operate similarly to Signal Secure Backups, but instead store the backup file on your device. On-device backups can only be restored to that same Android device, or using the device transfer. You cannot use an on-device backup from Android on an iPhone. Backups run once a day at a time of your choosing. Like with Signal Secure Backups, messages with 24 hours or less are not included in the backup.
+
+
+
+Backups of any kind are always a trade off and create a new attack  surface for someone to target your data. Take the time to consider whether backups are useful for you, and whether that trade-off is worthwhile. If you don’t want a particular conversation to be backed up when you turn on backups, set its messages to disappear within 24 hours or less.
+
+
+
+Signal’s backups are designed to be as secure as they can be, but that doesn’t make them immune to problems. For example, a phishing campaign targeted Signal users’ recovery keys, but even then, the recovery key is not enough, the attacker would still need to be able to take over your account. The best way to protect against account takeovers is by setting up Registration Lock.
+
+
+
+If you are not worried about losing a device, or simply are not comfortable using backups, then Signal’s device transfer feature (iOS/Android), which moves messages from one phone to another, might be a better fit if you’re only worried about retaining messages when you get a new phone. Note that it only works for transferring between the same operating system , like iOS to iOS, or Android to Android. If you’re conflicted on which option is best for you, Signal has a chart that breaks down the differences between each recovery offering here.
+
+
+
+What to Do
+
+
+
+	
+
+On Android: Tap your profile icon > Backups. Here, you can choose between Signal Secure Backups, or on-device backups. As noted above, on-device backups are stored encrypted with a passphrase  on your device, where you can manage it like any other file. Signal Secure Backups are stored online. 
+
+	
+		
+For on-device backups, tap “On-device backups,” then “TURN ON BACKUPS.” Choose the folder you’d like to save the backup in. You’ll be asked to save a passphrase, then the backup will start.
+
+		
+For Signal Secure Backups, tap View Settings, then “Enable Backups” and “Enable Backups” one more time. You’ll then get a Recovery Key, which you should copy and save somewhere safe, like a password manager. You’ll then be asked to confirm that you saved that Recovery Key by pasting it into a confirmation box. Finally, you can choose between the free backup plan, or the extra storage paid plan.
+
+	
+	
+
+	
+
+On iPhone: iOS doesn’t support on-device backups, so your only option is Signal Secure Backups. Tap your profile icon > Settings > Backups > Enable Backups. You’ll then get a Recovery Key, which you should copy and save somewhere safe, like a password manager. You’ll then be asked to confirm that you saved that Recovery Key by pasting it into a confirmation box. Finally, you can choose between the free backup plan, or the extra storage paid plan.
+
+
+
+
+
+
+
+ 
+Hide Your Phone Number  #
+
+
+
+
+Why
+
+
+If you have privacy concerns around sharing your phone number with people you chat with on Signal, you can change who can search for you by your phone number and who can see your phone number.
+
+
+
+What to do
+
+
+
+	
+
+On Android: Tap your profile picture, then Privacy > Phone Number and you can change who can see your number, and who can find you by your number.
+
+	
+
+On iPhone: Tap your profile picture, then Settings > Privacy > Phone Number and you can change who can see your number, and who can find you by your number.
+
+
+
+
+"Who Can See My Number," controls whether or not your phone number is visible to people (or groups) you message. For example, if set to "Everybody," when you're in a chat with someone, even if you previously only exchanged usernames, they can see your phone number. This is set to "Nobody" by default.
+
+
+
+"Who Can Find Me By Number," controls whether someone can type your phone number into the search bar to find you, or pull up your phone number through their address book. This is set to "Everybody" by default. If you set it to "Nobody," then even people who do have your number in their address book will not be able to easily find you on Signal. You will instead have to share your Signal username with them.
+
+
+
+
+
+
+ 
+Disappearing Messages #
+
+
+
+
+Why
+
+
+Signal has a feature called "disappearing messages" which ensures that messages will be removed from your device and the device of your contact(s) in a chat a chosen amount of time after the messages are seen (the countdown starts when the recipient opens the message, not after you send it). If you’re concerned about someone, such as law enforcement or family members, physically accessing your phone to see the messages on your device, then this is a useful feature to enable. But remember that those you are chatting with can log or take screenshots of your conversation, even if you’ve enabled disappearing messages. 
+
+
+
+What to do
+
+
+You can set up a default time period for disappearing messages for every new chat you create:
+
+
+
+	
+
+On Android: Tap your profile picture, then Privacy > Disappearing messages and choose the time period you want. Tap "Save" when you're done.
+
+	
+
+On iPhone: Tap your profile picture, then Settings > Privacy > Disappearing messages and choose the time period you want. Tap "Set" when you're done.
+
+
+
+
+You can also change the length of time before a message disappears in each of your chats. The process is the same on both Android and iPhone:
+
+
+
+	
+Open up the chat, then tap the contact's name or the chat name > Disappearing Messages. 
+
+	
+Select the length of time you'd like. You can do this in both one-on-one chats and in group chats.
+
+
+
+
+Disappearing messages rules apply to any sort of communication you do in a chat, including text, files, photos, location, GIFs, and whatever else. But when you delete a reply to a message, the behavior can be a little different than you may expect.
+
+
+
+
+
+
+
+You can also set a photo or video so the recipient can only view it one time.
+
+
+
+	
+In a chat, select a photo or video you want to send.
+
+	
+Tap the infinity icon above the text box to switch it to the view once mode. The symbol should now be a "1" and the text box will read "View Once Media."
+
+
+
+
+Now, when you send the photo or video, the recipient can only view that content one time, but keep in mind they can still take a screenshot of it.
+
+
+
+
+
+
+ 
+Change What’s Visible in Notifications #
+
+
+
+
+Why
+
+
+Depending on the settings on your phone, push notifications can reveal the text of a conversation you’re having to someone who can see your phone, even without unlocking it. You can tweak these settings on a system level on both iPhone or Android, but when it comes to Signal, it’s easier to change this behavior in the app. This gives you more precise control over what’s displayed on your lock screen, or what (if anything) gets summarized by a phone’s “artificial intelligence” notification summary features.
+
+
+
+What to do:
+
+
+
+	
+
+On Android: Tap your profile picture, then Notifications > Show. 
+
+	
+
+On iPhone: Tap your profile picture, then Settings > Notifications > Show. 
+
+
+
+
+On this page, choose whichever option for notification content suits your needs. The options range from showing no name or content information to showing both the sender’s name and the contents of the message.
+
+
+
+
+
+
+ 
+Security Settings for More Sensitive Situations #
+
+
+
+
+Aside from the above settings, Signal has a number of specific security settings that not everyone will need to soncisder, but are useful if your security plan calls for it.
+
+
+ 
+Change Your Phone Number #
+
+
+
+
+Why
+
+
+Since Signal treats your phone number like a username, you may need to change it if you get a new number, or if you decide that you want to get a secondary number for communication. You can change your number easily.
+
+
+
+What to do
+
+
+
+	
+
+On Android: Tap your profile picture, then Account > Change Phone Number. Tap "Continue" after reading the warning screen, then enter your old number, followed by the new one. Confirm the number is correct, and follow the directions to complete the registration process. 
+
+	
+
+On iPhone: Tap your profile picture, then Settings > Account > Change Phone Number. Tap "Continue" after reading the warning screen, then enter your old number, followed by the new one. Confirm the number is correct, and follow the directions to complete the registration process. 
+
+
+
+
+
+
+
+ 
+Control Who Can (and Can't) See Stories #
+
+
+
+
+Why
+
+
+Signal's Stories feature works similarly to Instagram or Snapchat, where a photo or video exists in the app for a set amount of time. Like a social network, you can control who can see these stories:
+
+
+
+What to do
+
+
+
+	
+
+On Android: Tap your profile picture, then Stories > My Story, then choose the option you'd like. You can leave stories open to all contacts, hide them from specific people, or only allow specific people to see them.
+
+	
+
+On iPhone: Tap your profile picture, then Settings > Stories > My Story, then choose the option you'd like. You can leave stories open to all contacts, hide them from specific people, or only allow specific people to see them.
+
+
+
+
+
+
+
+
+When you create a new story, you will always get the above options to choose who can view it. You will also get the option to restrict it to only a specific group chat.
+
+
+
+By default, when you view a story, the person who created that story may be able to see that you viewed it. If you don't like the idea of others knowing when you've viewed their stories, you can hide that information. When you do, it will also make it so you cannot see who has viewed your stories:
+
+
+
+	
+
+On Android: Tap your profile picture, then Stories, then disable the "View Receipts" toggle.
+
+	
+
+On iPhone: Tap your profile picture, then Settings > Stories, then disable the "View Receipts" toggle.
+
+
+
+
+If you have no interest in the Stories feature, you can disable Stories entirely. Doing so makes it so you cannot view other's stories, and removes the "Stories" tab from the app's main screen:
+
+
+
+	
+
+On Android: Tap your profile picture, then Stories, and tap "Turn off stories."
+
+	
+
+On iPhone: Tap your profile picture, then Settings > Stories, and tap "Turn off stories."
+
+
+
+
+
+
+
+ 
+Enable Screen Lock #
+
+
+
+
+Why
+
+
+If you use biometrics (like your fingerprint  or face) or a PIN to lock your phone, you can also lock down the entire Signal app. This means after unlocking your phone, you'll need to authenticate again to open the app or access chats. 
+
+
+
+What to do
+
+
+To lock the whole app:
+
+
+
+	
+
+On Android: Tap your profile picture, then Privacy and enable "Screen Lock."
+
+	
+
+On iPhone: Tap your profile picture, then Settings > Privacy and enable "Screen Lock."
+
+
+
+
+
+
+
+ 
+Hide Screen in App Switcher​ #
+
+
+
+
+Why
+
+
+By default, you will see certain content in Signal when you open the app switcher. For example, if you switch back and forth between apps while chatting with someone, the app switcher will show the contents of those messages. The main concern here would be if someone happens to look over your shoulder when you switch apps and get a glimpse at your private chats. 
+
+
+
+What to do
+
+
+You can set up Signal so it blocks this view:
+
+
+
+	
+
+On Android: Tap your profile picture, then Privacy and enable "Screen Security." This will also prevent you from taking screenshots on your own device (but it will not prevent the people you are communicating with from taking screenshots).
+
+	
+
+On iPhone: Tap your profile picture, then Settings > Privacy and enable "Hide Screen in App Switcher."
+
+
+
+
+Now, you will see a blank screen in the app switcher when you scroll past Signal.
+
+
+
+
+
+
+ 
+Disable Sending Link Previews #
+
+
+
+
+Why
+
+
+Signal can send a link preview when you send a contact a link to a website. This generates a preview image along with the link instead of just showing the text of the URL. This may leak the fact you're sharing on Signal to the website (though the site still wouldn't know anything more than that). Link previews can also be used to enumerate friends you are communicating with on Signal if there is a unique aspect to the URL such as a tracking token, like https://instagram.com/aslk_234?sid=a1b2c3d5
+
+
+
+What to do
+
+
+These are disabled by default, but if you've enabled them and want to turn them off, you can.
+
+
+
+	
+
+On Android: Tap your profile picture, then Chats and disable "Generate Link Previews."
+
+	
+
+On iPhone: Tap your profile picture, then Settings > Chats and disable "Generate Link Previews."
+
+
+
+
+
+
+
+ 
+Manage keyboard data #
+
+
+
+
+Why
+
+
+Some phones give you an option for custom keyboards, but a custom keyboard can leak information to third-parties. On Android, you have the option for an "Incognito keyboard" in Signal that can prevent some keyboards from collecting data, though it is not a guarantee to protect you from a malicious keyboard.
+
+
+
+What to do
+
+
+
+	
+
+On Android: Tap your profile picture, then Privacy and enable "Incognito keyboard."
+
+
+
+
+
+
+
+
+This is also a good time to audit any keyboard you've installed in the past and perhaps forgotten about. If you do not need them, use them, or know enough about the keyboard app to feel comfortable using it, it's best to remove it:
+
+
+
+	
+
+On Android: Open the Settings app > System > Keyboard > On-screen keyboard and disable any keyboards you do not use. You should also delete any keyboard app you do not use.
+
+	
+
+On iPhone: Open the Settings app > General > Keyboard > Keyboards, and remove anything you do not need. You should also delete any keyboard app you do not use.
+
+
+
+
+
+
+
+ 
+Use a Proxy (If You Need to) #
+
+
+
+
+Why
+
+
+If you cannot access Signal because the service is blocked in your region, you can try using a proxy server. When you connect to a proxy server, you connect to a server set up by volunteers, not Signal, which in some situations can help you use Signal in places where it's blocked. Accessing Signal over a proxy server is straightforward, but in order to find a reliable one you will need to search online. It is usually best to search on social media for proxy details when you're in need of one. 
+
+
+
+What to do
+
+
+To use a proxy server:
+
+
+
+	
+
+On Android: Tap your profile picture, then Data and storage > Use Proxy then enable the "Use Proxy" option. Enter the proxy address, then tap "Save." When you are connected to the proxy, you will see a green check icon at the top of the main chat screen in Signal.
+
+	
+
+On iPhone: Tap your profile picture, then Settings > Privacy > Advanced > Proxy, then enable the "Use Proxy" option. Enter the proxy address, then tap "Save." When you are connected to the proxy, you will see a green check icon at the top of the main chat screen in Signal.
+
+
+
+
+If the connection to the proxy is successful, you'll see a status message telling you that it works. When using a proxy server, your messages are still end-to-end encrypted, though the proxy provider can see your IP address .
+
+
+
+
+
+
+ 
+Hide Your IP Address from Another Caller #
+
+
+
+
+Why
+
+
+If you're in a circumstance where you're calling someone you don't trust (or they're calling you), consider changing how Signal routes your call. By default, Signal uses peer-to-peer calling, which can leak your IP address to the other caller. If that caller is not in your contacts list, Signal defaults to an option that relays the call through their service, hiding your IP address. But you can also enable this for every call, if needed. But note that the increase in privacy comes at the cost of call clarity.
+
+
+
+What to do
+
+
+
+	
+
+On Android: Tap your profile picture, then Privacy > Advanced, and enable "Always Relay Call."
+
+	
+
+On iPhone: Tap your profile picture, then Settings > Privacy > Advanced, and enable "Always Relay Calls."
+
+
+
+
+
+
+
+
+ 
+Review Your Linked Devices #
+
+
+
+
+Why
+
+
+Signal allows you to link your Signal messages to another device, like a computer or tablet. Once linked, messages appear on both devices. In order to link devices, you will need to approve the link with a PIN or biometric, so it is unlikely, but not impossible that someone adds a new device without your knowledge. It’s also possible you may create a link to a device you share, like an iPad, and forget about it, so it’s good to occasionally review this page and remove anything you don’t recognize or use.
+
+
+
+What to do
+
+
+
+	
+
+On Android: Tap your profile picture, then Linked Devices and review the page to see if there are any devices you don’t recognize.
+
+	
+
+On iPhone: Tap your profile picture, then Settings > Linked Devices and review the page to see if there are any devices you don’t recognize.
+
+
+
+
+If you ever see a device here you do not recognize, tap the three-dot icon next to the device and select “Unlink.”

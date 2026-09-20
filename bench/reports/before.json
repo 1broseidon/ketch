@@ -1,0 +1,1483 @@
+{
+  "version": 1,
+  "timestamp": "2026-09-19T04:11:20Z",
+  "corpus_sha256": "aba86c1ff23774dfc74ab5914955c80fc4fb816b9740f95064f202f153b1ac99",
+  "binary_sha256": "4b1ec2e0925b22b0cc68002dd843ecb54930ebc85238d83e4f9a9a9b9905ccd6",
+  "go_version": "go1.27.1",
+  "cgo_enabled": "0",
+  "platform": "linux/amd64",
+  "cpus": 24,
+  "mode": "default",
+  "iterations": 7,
+  "warmup": 1,
+  "workers": 1,
+  "wall_seconds": 4.168749329,
+  "summary": {
+    "pages": 20,
+    "failed_pages": 0,
+    "checks_passed": 98,
+    "checks_total": 115,
+    "critical_passed": 69,
+    "critical_total": 79,
+    "macro_token_recall": 0.9195076585788413,
+    "macro_token_precision": 0.9969003988487369,
+    "macro_token_f1": 0.9336253337065669
+  },
+  "by_kind": {
+    "api": {
+      "pages": 2,
+      "failed_pages": 0,
+      "checks_passed": 11,
+      "checks_total": 14,
+      "critical_passed": 7,
+      "critical_total": 9,
+      "macro_token_recall": 0.8718904231227242,
+      "macro_token_precision": 1,
+      "macro_token_f1": 0.9295946854184565
+    },
+    "blog": {
+      "pages": 2,
+      "failed_pages": 0,
+      "checks_passed": 11,
+      "checks_total": 11,
+      "critical_passed": 9,
+      "critical_total": 9,
+      "macro_token_recall": 0.9952271859488354,
+      "macro_token_precision": 1,
+      "macro_token_f1": 0.9976021484749664
+    },
+    "book": {
+      "pages": 1,
+      "failed_pages": 0,
+      "checks_passed": 4,
+      "checks_total": 4,
+      "critical_passed": 3,
+      "critical_total": 3,
+      "macro_token_recall": 1,
+      "macro_token_precision": 0.9963185711682158,
+      "macro_token_f1": 0.9981558911062827
+    },
+    "configuration": {
+      "pages": 2,
+      "failed_pages": 0,
+      "checks_passed": 11,
+      "checks_total": 11,
+      "critical_passed": 8,
+      "critical_total": 8,
+      "macro_token_recall": 0.9668612714898559,
+      "macro_token_precision": 0.9979114452798663,
+      "macro_token_f1": 0.9819742939276467
+    },
+    "database": {
+      "pages": 2,
+      "failed_pages": 0,
+      "checks_passed": 12,
+      "checks_total": 12,
+      "critical_passed": 7,
+      "critical_total": 7,
+      "macro_token_recall": 0.9994643813604713,
+      "macro_token_precision": 0.9944968553459119,
+      "macro_token_f1": 0.9969652487407274
+    },
+    "docs": {
+      "pages": 1,
+      "failed_pages": 0,
+      "checks_passed": 2,
+      "checks_total": 6,
+      "critical_passed": 1,
+      "critical_total": 4,
+      "macro_token_recall": 0.8009357720119098,
+      "macro_token_precision": 0.9968237162519852,
+      "macro_token_f1": 0.8882075471698113
+    },
+    "encyclopedia": {
+      "pages": 1,
+      "failed_pages": 0,
+      "checks_passed": 5,
+      "checks_total": 6,
+      "critical_passed": 4,
+      "critical_total": 4,
+      "macro_token_recall": 0.9848553860168526,
+      "macro_token_precision": 0.9976929288268543,
+      "macro_token_f1": 0.9912325941206807
+    },
+    "essay": {
+      "pages": 1,
+      "failed_pages": 0,
+      "checks_passed": 5,
+      "checks_total": 5,
+      "critical_passed": 3,
+      "critical_total": 3,
+      "macro_token_recall": 0.9996059268600253,
+      "macro_token_precision": 1,
+      "macro_token_f1": 0.9998029245989516
+    },
+    "manual": {
+      "pages": 2,
+      "failed_pages": 0,
+      "checks_passed": 11,
+      "checks_total": 11,
+      "critical_passed": 7,
+      "critical_total": 7,
+      "macro_token_recall": 0.9964646464646465,
+      "macro_token_precision": 1,
+      "macro_token_f1": 0.9982260516979219
+    },
+    "science": {
+      "pages": 1,
+      "failed_pages": 0,
+      "checks_passed": 5,
+      "checks_total": 5,
+      "critical_passed": 4,
+      "critical_total": 4,
+      "macro_token_recall": 0.9224293445580276,
+      "macro_token_precision": 1,
+      "macro_token_f1": 0.9596496715670941
+    },
+    "standard": {
+      "pages": 1,
+      "failed_pages": 0,
+      "checks_passed": 4,
+      "checks_total": 4,
+      "critical_passed": 4,
+      "critical_total": 4,
+      "macro_token_recall": 1,
+      "macro_token_precision": 1,
+      "macro_token_f1": 1
+    },
+    "tutorial": {
+      "pages": 3,
+      "failed_pages": 0,
+      "checks_passed": 16,
+      "checks_total": 17,
+      "critical_passed": 12,
+      "critical_total": 12,
+      "macro_token_recall": 0.9995773903856313,
+      "macro_token_precision": 0.9874520531587074,
+      "macro_token_f1": 0.9934267577062529
+    },
+    "visitor-guide": {
+      "pages": 1,
+      "failed_pages": 0,
+      "checks_passed": 1,
+      "checks_total": 9,
+      "critical_passed": 0,
+      "critical_total": 5,
+      "macro_token_recall": 0.023778754200051693,
+      "macro_token_precision": 1,
+      "macro_token_f1": 0.04645291593032063
+    }
+  },
+  "pages": [
+    {
+      "id": "npm",
+      "site": "docs.npmjs.com",
+      "kind": "docs",
+      "url": "https://docs.npmjs.com/trusted-publishers/",
+      "input_bytes": 607380,
+      "output_bytes": 16534,
+      "output_sha256": "370487f69dba12fd5b8d23c917179576390bdf6620857c5e720ae35583642fd3",
+      "samples_ms": [
+        33.64563,
+        33.280173,
+        33.563994,
+        35.586931,
+        33.100911,
+        34.667159,
+        35.15087
+      ],
+      "median_ms": 33.64563,
+      "p95_ms": 35.586931,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.8009357720119098,
+        "token_precision": 0.9968237162519852,
+        "token_f1": 0.8882075471698113,
+        "reference_tokens": 2351,
+        "output_tokens": 1889,
+        "checks": [
+          {
+            "id": "npm-minimum",
+            "kind": "text",
+            "critical": true,
+            "passed": false
+          },
+          {
+            "id": "node-minimum",
+            "kind": "text",
+            "critical": true,
+            "passed": false
+          },
+          {
+            "id": "runner-restriction",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-how-trusted-publishing-works",
+            "kind": "heading",
+            "critical": false,
+            "passed": false
+          },
+          {
+            "id": "oidc-yaml",
+            "kind": "code",
+            "critical": true,
+            "passed": false
+          },
+          {
+            "id": "source-link",
+            "kind": "link",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "go",
+      "site": "pkg.go.dev",
+      "kind": "api",
+      "url": "https://pkg.go.dev/context",
+      "input_bytes": 95833,
+      "output_bytes": 17869,
+      "output_sha256": "345196f93526763170b7113842a84d3dc1e67563c3068cd92087f0ebf6526f96",
+      "samples_ms": [
+        18.345143,
+        18.549633,
+        18.417481,
+        18.811273,
+        19.199041,
+        19.153083,
+        18.98878
+      ],
+      "median_ms": 18.811273,
+      "p95_ms": 19.199041,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.7916531866709803,
+        "token_precision": 1,
+        "token_f1": 0.8837125315998556,
+        "reference_tokens": 3091,
+        "output_tokens": 2447,
+        "checks": [
+          {
+            "id": "cancel-does-not-wait",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "child-propagation",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "cancel-cleanup",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "comment-preserved",
+            "kind": "code",
+            "critical": true,
+            "passed": false
+          },
+          {
+            "id": "timeout-signature",
+            "kind": "code",
+            "critical": true,
+            "passed": false
+          },
+          {
+            "id": "heading-variables",
+            "kind": "heading",
+            "critical": false,
+            "passed": false
+          },
+          {
+            "id": "exclude-chrome",
+            "kind": "absent",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "python",
+      "site": "docs.python.org",
+      "kind": "tutorial",
+      "url": "https://docs.python.org/3/tutorial/errors.html",
+      "input_bytes": 85583,
+      "output_bytes": 26827,
+      "output_sha256": "9697c335f708e4eb6faa1f77d888b94931b6fd594db0b2a6009ae6219421514a",
+      "samples_ms": [
+        21.854706,
+        21.682316,
+        22.542477,
+        22.225993,
+        22.329771,
+        23.230589,
+        22.293151
+      ],
+      "median_ms": 22.293151,
+      "p95_ms": 23.230589,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.9987321711568938,
+        "token_precision": 1,
+        "token_f1": 0.9993656834760545,
+        "reference_tokens": 3155,
+        "output_tokens": 3151,
+        "checks": [
+          {
+            "id": "finally-warning",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "cleanup-resources",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "override-return",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "finally-example",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-8-7-defining-clean-up-actions",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "source-link",
+            "kind": "link",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "kubernetes",
+      "site": "kubernetes.io",
+      "kind": "configuration",
+      "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/",
+      "input_bytes": 554040,
+      "output_bytes": 18062,
+      "output_sha256": "662a1c06e3decac952d2b3f0dba9ac30c99efe92c20067562e6a3162ad36e6fa",
+      "samples_ms": [
+        37.737312,
+        37.653152,
+        38.449531,
+        38.203371,
+        38.295337,
+        41.510087,
+        38.068634
+      ],
+      "median_ms": 38.203371,
+      "p95_ms": 41.510087,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.9436893203883495,
+        "token_precision": 1,
+        "token_f1": 0.971028971028971,
+        "reference_tokens": 2575,
+        "output_tokens": 2430,
+        "checks": [
+          {
+            "id": "startup-window",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "startup-failure",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "readiness-traffic",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "startup-yaml",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-protect-slow-starting-containers-with-startup-probes",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "source-link",
+            "kind": "link",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "postgres",
+      "site": "www.postgresql.org",
+      "kind": "database",
+      "url": "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "input_bytes": 47710,
+      "output_bytes": 25133,
+      "output_sha256": "5258486b6ae10f8685d68b06a6ae421fd6ec1ee4ef8ee889973be3c6a6fd50ec",
+      "samples_ms": [
+        16.049475,
+        15.675151,
+        15.484979,
+        15.688497,
+        15.946559,
+        15.205226,
+        15.334212
+      ],
+      "median_ms": 15.675151,
+      "p95_ms": 16.049475,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.9989287627209427,
+        "token_precision": 1,
+        "token_f1": 0.9994640943193998,
+        "reference_tokens": 3734,
+        "output_tokens": 3730,
+        "checks": [
+          {
+            "id": "uncommitted-mapping",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "no-phantoms",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "retry",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "repeatable-row",
+            "kind": "table",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-13-2-3-serializable-isolation-level",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "source-link",
+            "kind": "link",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "mdn",
+      "site": "developer.mozilla.org",
+      "kind": "api",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/AbortController",
+      "input_bytes": 154371,
+      "output_bytes": 2663,
+      "output_sha256": "23510aa9f56844ed5839bdd613301ef8999fab90af51c3d4869bdc075ad420ad",
+      "samples_ms": [
+        15.669691,
+        15.816611,
+        16.03078,
+        16.531284,
+        16.110341,
+        15.699508,
+        15.944635
+      ],
+      "median_ms": 15.944635,
+      "p95_ms": 16.531284,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.9521276595744681,
+        "token_precision": 1,
+        "token_f1": 0.9754768392370572,
+        "reference_tokens": 188,
+        "output_tokens": 179,
+        "checks": [
+          {
+            "id": "workers-note",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "signal-type",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "aborts-streams",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-instance-methods",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "source-link",
+            "kind": "link",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "exclude-chrome",
+            "kind": "absent",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "browser-availability",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "rust",
+      "site": "doc.rust-lang.org",
+      "kind": "tutorial",
+      "url": "https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html",
+      "input_bytes": 56185,
+      "output_bytes": 28788,
+      "output_sha256": "6057b326c5dfa4da0b64c596a01f53f55f169e451563e19127215d1f89fb7264",
+      "samples_ms": [
+        13.884316,
+        14.58402,
+        14.131578,
+        14.736,
+        14.095219,
+        13.838288,
+        14.81444
+      ],
+      "median_ms": 14.131578,
+      "p95_ms": 14.81444,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 0.9940079893475366,
+        "token_f1": 0.9969949916527546,
+        "reference_tokens": 4479,
+        "output_tokens": 4506,
+        "checks": [
+          {
+            "id": "owner",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "one-owner",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "drop",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-ownership-rules",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "move-example",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "exclude-chrome",
+            "kind": "absent",
+            "critical": false,
+            "passed": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "sqlite",
+      "site": "www.sqlite.org",
+      "kind": "database",
+      "url": "https://www.sqlite.org/lang_transaction.html",
+      "input_bytes": 27068,
+      "output_bytes": 9640,
+      "output_sha256": "2ccfa8de742973881160d16542560e7273be96778c398dd370307e0c5d545f4f",
+      "samples_ms": [
+        9.618722,
+        10.482931,
+        9.508953,
+        10.233163,
+        9.721067,
+        10.043031,
+        9.664629
+      ],
+      "median_ms": 9.721067,
+      "p95_ms": 10.482931,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 0.9889937106918238,
+        "token_f1": 0.9944664031620553,
+        "reference_tokens": 1258,
+        "output_tokens": 1272,
+        "checks": [
+          {
+            "id": "one-writer",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "no-nesting",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "alias",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-2-1-read-transactions-versus-write-transactions",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "source-link",
+            "kind": "link",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "exclude-chrome",
+            "kind": "absent",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "git",
+      "site": "git-scm.com",
+      "kind": "manual",
+      "url": "https://git-scm.com/docs/git-reset",
+      "input_bytes": 77202,
+      "output_bytes": 21431,
+      "output_sha256": "02005b014465381a68385f7a3c73d3a1c1cb6deefa47659544bba41ee783dc4f",
+      "samples_ms": [
+        20.15812,
+        20.119126,
+        20.366638,
+        20.637063,
+        20.408027,
+        19.668326,
+        19.768968
+      ],
+      "median_ms": 20.15812,
+      "p95_ms": 20.637063,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.9929292929292929,
+        "token_precision": 1,
+        "token_f1": 0.9964521033958438,
+        "reference_tokens": 2970,
+        "output_tokens": 2949,
+        "checks": [
+          {
+            "id": "mixed-default",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "soft-keeps",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "orig-head",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "example",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-options",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "source-link",
+            "kind": "link",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "gnu",
+      "site": "www.gnu.org",
+      "kind": "manual",
+      "url": "https://www.gnu.org/software/coreutils/manual/html_node/Exit-status.html",
+      "input_bytes": 3712,
+      "output_bytes": 705,
+      "output_sha256": "ccbf8f1997d7b29014c60b484069057cc7ef0df8190064d3f9dd38588cf1789c",
+      "samples_ms": [
+        5.153938,
+        5.30668,
+        5.080478,
+        5.585131,
+        5.524114,
+        5.622682,
+        5.269438
+      ],
+      "median_ms": 5.30668,
+      "p95_ms": 5.622682,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 1,
+        "token_f1": 1,
+        "reference_tokens": 103,
+        "output_tokens": 103,
+        "checks": [
+          {
+            "id": "zero-success",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "nonzero-failure",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "exceptions",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-2-11-exit-status",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "exclude-chrome",
+            "kind": "absent",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "terraform",
+      "site": "developer.hashicorp.com",
+      "kind": "configuration",
+      "url": "https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle",
+      "input_bytes": 338727,
+      "output_bytes": 20903,
+      "output_sha256": "03c8cb02e4812df61136d6fe3648b4713c3f06826b11154f17f9073ddd3d8b8f",
+      "samples_ms": [
+        31.539233,
+        30.812868,
+        30.675717,
+        29.992774,
+        30.450697,
+        30.360896,
+        29.919294
+      ],
+      "median_ms": 30.450697,
+      "p95_ms": 31.539233,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.9900332225913622,
+        "token_precision": 0.9958228905597326,
+        "token_f1": 0.9929196168263223,
+        "reference_tokens": 2408,
+        "output_tokens": 2394,
+        "checks": [
+          {
+            "id": "literal-only",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "removal-limit",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "ignore-runtime",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-prevent-destroy",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "ignore-hcl",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "docker",
+      "site": "docs.docker.com",
+      "kind": "tutorial",
+      "url": "https://docs.docker.com/build/building/multi-stage/",
+      "input_bytes": 544036,
+      "output_bytes": 7466,
+      "output_sha256": "3e1470797d2aa186c294879940674f163526f264daa4ac4cb01168290b30dff8",
+      "samples_ms": [
+        34.59512,
+        34.910371,
+        35.337898,
+        34.693959,
+        37.129834,
+        36.325219,
+        34.369911
+      ],
+      "median_ms": 34.910371,
+      "p95_ms": 37.129834,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 0.9683481701285855,
+        "token_f1": 0.9839195979899497,
+        "reference_tokens": 979,
+        "output_tokens": 1011,
+        "checks": [
+          {
+            "id": "multiple-from",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "stage-begins",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "select-artifacts",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "final-stage",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-name-your-build-stages",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "cloudflare",
+      "site": "blog.cloudflare.com",
+      "kind": "blog",
+      "url": "https://blog.cloudflare.com/rfc-9457-agent-error-pages/",
+      "input_bytes": 322642,
+      "output_bytes": 17599,
+      "output_sha256": "2e0fb1edabf02ba2e4ae869e39e915d6a7ac05a8987add6a543305995d6f0ffa",
+      "samples_ms": [
+        35.788677,
+        35.243767,
+        36.652374,
+        36.382439,
+        34.758553,
+        36.645871,
+        37.958945
+      ],
+      "median_ms": 36.382439,
+      "p95_ms": 37.958945,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.9904543718976708,
+        "token_precision": 1,
+        "token_f1": 0.9952042969499328,
+        "reference_tokens": 2619,
+        "output_tokens": 2594,
+        "checks": [
+          {
+            "id": "rfc-response",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "retry-contract",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "stable-frontmatter",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "error-detail",
+            "kind": "table",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-one-contract-two-formats",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "json-body",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "exclude-chrome",
+            "kind": "absent",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "danluu",
+      "site": "danluu.com",
+      "kind": "essay",
+      "url": "https://danluu.com/slow-device/",
+      "input_bytes": 97060,
+      "output_bytes": 72851,
+      "output_sha256": "9ad9190f2a7fea2c04f2e9f807d7fff2aba93bb73811973e8f89d237b52aa4c6",
+      "samples_ms": [
+        26.669957,
+        27.377036,
+        26.674707,
+        27.018072,
+        26.390255,
+        26.528668,
+        26.337664
+      ],
+      "median_ms": 26.669957,
+      "p95_ms": 27.377036,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.9996059268600253,
+        "token_precision": 1,
+        "token_f1": 0.9998029245989516,
+        "reference_tokens": 12688,
+        "output_tokens": 12683,
+        "checks": [
+          {
+            "id": "cpu-vs-bandwidth",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "table-definition",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "lcp-definition",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-appendix-experimental-details",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "source-link",
+            "kind": "link",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "joel",
+      "site": "www.joelonsoftware.com",
+      "kind": "blog",
+      "url": "https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i/",
+      "input_bytes": 56093,
+      "output_bytes": 8548,
+      "output_sha256": "13337ed50973fef678c0be91c5cb668324bb19d119d74c681e4acd6db5e9854e",
+      "samples_ms": [
+        9.566472,
+        9.801521,
+        9.762907,
+        9.312739,
+        9.804958,
+        10.07889,
+        9.789598
+      ],
+      "median_ms": 9.789598,
+      "p95_ms": 10.07889,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 1,
+        "token_f1": 1,
+        "reference_tokens": 1459,
+        "output_tokens": 1459,
+        "checks": [
+          {
+            "id": "rewrite-choice",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "reading-code",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "old-code",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "conclusion",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "rfc",
+      "site": "www.rfc-editor.org",
+      "kind": "standard",
+      "url": "https://www.rfc-editor.org/rfc/rfc8259.html",
+      "input_bytes": 37946,
+      "output_bytes": 28586,
+      "output_sha256": "bf5989be1396c522cc4694c40b25f202f6201ee86a97b847d9e73f63c5c2b319",
+      "samples_ms": [
+        10.350427,
+        11.429044,
+        11.063728,
+        11.247559,
+        11.740038,
+        11.236467,
+        11.803318
+      ],
+      "median_ms": 11.247559,
+      "p95_ms": 11.803318,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 1,
+        "token_f1": 1,
+        "reference_tokens": 3600,
+        "output_tokens": 3600,
+        "checks": [
+          {
+            "id": "utf8",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "unique-names",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "literal-case",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "abnf",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "wikipedia",
+      "site": "en.wikipedia.org",
+      "kind": "encyclopedia",
+      "url": "https://en.wikipedia.org/wiki/HTTP",
+      "input_bytes": 617777,
+      "output_bytes": 97757,
+      "output_sha256": "76fdbb3948cc999ee064e7289156ce78b5f83cc2126f71f12c1ae6786e6d8c51",
+      "samples_ms": [
+        78.67049,
+        81.11493,
+        78.594384,
+        79.016028,
+        79.168689,
+        80.751888,
+        80.187312
+      ],
+      "median_ms": 79.168689,
+      "p95_ms": 81.11493,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.9848553860168526,
+        "token_precision": 0.9976929288268543,
+        "token_f1": 0.9912325941206807,
+        "reference_tokens": 8782,
+        "output_tokens": 8669,
+        "checks": [
+          {
+            "id": "stateless",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "quic",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "reliable-transport",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-message-format",
+            "kind": "heading",
+            "critical": false,
+            "passed": false
+          },
+          {
+            "id": "request",
+            "kind": "code",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "exclude-chrome",
+            "kind": "absent",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "gutenberg",
+      "site": "www.gutenberg.org",
+      "kind": "book",
+      "url": "https://www.gutenberg.org/files/11/11-h/11-h.htm",
+      "input_bytes": 169663,
+      "output_bytes": 152453,
+      "output_sha256": "6d39b2b63d7138c38fbbab1aa5c19e5c9cc859723a81029d1e86a56a61e1110e",
+      "samples_ms": [
+        40.085741,
+        40.872451,
+        40.72494,
+        38.874902,
+        40.444034,
+        39.663395,
+        43.782921
+      ],
+      "median_ms": 40.444034,
+      "p95_ms": 43.782921,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 1,
+        "token_precision": 0.9963185711682158,
+        "token_f1": 0.9981558911062827,
+        "reference_tokens": 27334,
+        "output_tokens": 27435,
+        "checks": [
+          {
+            "id": "opening",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "middle",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "ending",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-chapter-vii-a-mad-tea-party",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "nasa",
+      "site": "science.nasa.gov",
+      "kind": "science",
+      "url": "https://science.nasa.gov/mars/facts/",
+      "input_bytes": 301224,
+      "output_bytes": 9286,
+      "output_sha256": "d878b29799a59f0736da4c163fcc1dca38dccbd8a75c0e22becf99046dee8064",
+      "samples_ms": [
+        24.003493,
+        21.96202,
+        21.915331,
+        22.600458,
+        21.706262,
+        22.833031,
+        22.134519
+      ],
+      "median_ms": 22.134519,
+      "p95_ms": 24.003493,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.9224293445580276,
+        "token_precision": 1,
+        "token_f1": 0.9596496715670941,
+        "reference_tokens": 1663,
+        "output_tokens": 1534,
+        "checks": [
+          {
+            "id": "planet-order",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "radius",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "sunlight",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          },
+          {
+            "id": "heading-atmosphere",
+            "kind": "heading",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "moons",
+            "kind": "text",
+            "critical": true,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "nps",
+      "site": "www.nps.gov",
+      "kind": "visitor-guide",
+      "url": "https://www.nps.gov/yell/planyourvisit/safety.htm",
+      "input_bytes": 114902,
+      "output_bytes": 934,
+      "output_sha256": "0e9c58dd4af07b4ce231f155c596c248334545a4ede68f8de17ef3984f6d6f1d",
+      "samples_ms": [
+        13.945423,
+        14.184219,
+        15.577475,
+        14.968353,
+        14.513937,
+        14.694321,
+        14.672459
+      ],
+      "median_ms": 14.672459,
+      "p95_ms": 15.577475,
+      "errors": [],
+      "deterministic": true,
+      "accuracy": {
+        "token_recall": 0.023778754200051693,
+        "token_precision": 1,
+        "token_f1": 0.04645291593032063,
+        "reference_tokens": 3869,
+        "output_tokens": 92,
+        "checks": [
+          {
+            "id": "thermal-danger",
+            "kind": "text",
+            "critical": true,
+            "passed": false
+          },
+          {
+            "id": "thin-crust",
+            "kind": "text",
+            "critical": true,
+            "passed": false
+          },
+          {
+            "id": "wildlife",
+            "kind": "text",
+            "critical": true,
+            "passed": false
+          },
+          {
+            "id": "heading-thermal-areas",
+            "kind": "heading",
+            "critical": false,
+            "passed": false
+          },
+          {
+            "id": "heading-bison",
+            "kind": "heading",
+            "critical": false,
+            "passed": false
+          },
+          {
+            "id": "exclude-chrome",
+            "kind": "absent",
+            "critical": false,
+            "passed": true
+          },
+          {
+            "id": "expanded-boardwalk-guidance",
+            "kind": "text",
+            "critical": true,
+            "passed": false
+          },
+          {
+            "id": "emergency-callout",
+            "kind": "text",
+            "critical": true,
+            "passed": false
+          },
+          {
+            "id": "accordion-label",
+            "kind": "heading",
+            "critical": false,
+            "passed": false
+          }
+        ]
+      }
+    }
+  ]
+}

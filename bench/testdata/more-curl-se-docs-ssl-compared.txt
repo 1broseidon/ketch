@@ -1,0 +1,668 @@
+curl / Docs / Protocols / SSL libraries compared
+
+
+ Compare SSL libraries 
+
+
+
+Related:
+
+
+Compare HTTP/FTP Tools
+
+
+Compare HTTP Libraries
+
+
+
+ This comparison only involves SSL/TLS libraries that libcurl can be built
+to use.
+
+
+
+
+         PKCS11_P8 
+ 
+ 
+
+  
+ Feature 
+
+  
+ OpenSSL[1] 
+
+  
+ GnuTLS 
+
+  
+ wolfSSL 
+
+  
+ mbedTLS 
+
+  
+ Schannel 
+
+  
+ rustls 
+
+ 
+
+ 
+ 
+ 
+ 
+ Supported 
+          
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+no
+ 
+
+ 
+ 
+ Native cert check 
+  
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+
+ 
+ 
+ CRL 
+                
+manual
+ 
+manual
+ 
+manual
+ 
+manual
+ 
+automatic
+ 
+manual
+ 
+
+ 
+ 
+ TLSv1.0 
+            
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+no
+ 
+
+ 
+ 
+ TLSv1.1 
+            
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+no
+ 
+
+ 
+ 
+ TLSv1.2 
+            
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+
+ 
+ 
+ TLSv1.3 
+            
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+
+ 
+ 
+ TLS SRP 
+            
+yes
+ 
+yes
+ 
+no
+ 
+no
+ 
+no
+ 
+no
+ 
+
+ 
+ 
+ TLS ECC 
+            
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+
+ 
+ 
+ ALPN 
+               
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+
+ 
+ 
+ QUIC API 
+           
+yes [2]
+ 
+yes
+ 
+yes
+ 
+no
+ 
+no
+ 
+no
+ 
+
+ 
+ 
+ QUIC impl 
+          
+yes [2]
+ 
+no
+ 
+no
+ 
+no
+ 
+no
+ 
+no
+ 
+
+ 
+ 
+ Small 
+              
+no
+ 
+no
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+no
+ 
+
+ 
+ 
+ Platforms 
+
+  
+ POSIX, Windows, VMS 
+
+  
+ POSIX, Windows 
+
+  
+ POSIX, Windows 
+
+  
+ POSIX, Windows 
+
+  
+ Windows 
+
+  
+ POSIX, Windows 
+
+ 
+
+ 
+ 
+ Uses Certificate Files 
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+yes
+ 
+no
+ 
+yes
+ 
+
+ 
+ 
+ Uses Certificate db 
+    
+no
+ 
+no
+ 
+no
+ 
+no
+ 
+yes
+ 
+no
+ 
+
+ 
+ 
+ Crypto module/token support 
+
+PKCS#11
+ 
+no
+ 
+no
+ 
+Microsoft CryptoAPI
+    
+no
+ 
+no
+ 
+
+ 
+ 
+ Select Certificates/Keys with PKCS#11 URI 
+    
+PKCS#11 [3]
+ 
+yes
+ 
+no
+ 
+no
+ 
+no
+ 
+no
+ 
+
+ 
+ 
+ Integrates with system token database 
+        
+yes
+  
+yes
+ 
+yes
+ 
+no
+ 
+yes
+ 
+no
+ 
+
+ 
+ 
+ FIPS-140 
+         
+yes
+ 
+yes
+ 
+yes
+ 
+no
+ 
+yes
+ 
+yes
+ 
+
+ 
+ 
+ OpenSSL-like API 
+ 
+yes
+ 
+no
+ 
+yes
+ 
+no
+ 
+no
+ 
+no
+ 
+
+ 
+ 
+ Vendor 
+
+  
+ OpenSSL Project 
+
+  
+ Free Software Foundation 
+
+  
+ wolfSSL 
+
+  
+ mbedTLS 
+
+  
+ Microsoft Corporation 
+
+  
+ Open Source team 
+
+ 
+
+ 
+ 
+ License 
+
+  
+ Apache-2.0 
+
+  
+ LGPL 
+
+  
+ GPLv3  
+
+  
+ Apache-2.0 / GPLv2 
+
+  
+ Proprietary 
+
+  
+ Apache-2.0 / MIT / ISC 
+
+ 
+
+ 
+ 
+ First release 
+
+  
+ 1998 
+
+  
+ 2004? 
+
+  
+ 2006 
+
+  
+ 2006 
+
+  
+ 2000 
+
+  
+ 2016 
+
+ 
+
+ 
+
+
+
+[1] = Mostly the same feature set is also provided by LibreSSL, BoringSSL,
+AWS-LC and QuictLS.
+See OpenSSL
+forks for details on those.
+
+
+
+[2] = OpenSSL 3.2+ has a QUIC stack implementation that curl works with
+experimentally. OpenSSL 3.5+ and the OpenSSL forks LibreSSL, BoringSSL, AWS-LC
+and QuicTLS offer a QUIC API that curl works with using ngtcp2.
+
+
+
+[3] = Via external engine_pkcs11;
+
+
+ Glossary of Terms 
+
+Supported: "no" here means the TLS library is still experimental
+in curl and we discourage using it in production.
+
+
+Native cert check: The TLS library can verify server certificates
+ against the platform's native CA cert store.
+
+
+
+CRL: CRL means "Certificate Revocation List" and is used to check to
+see if any certificates in the server's chain have been revoked for some
+reason. If automatic, then the engine automatically downloads a CRL and
+use it to evaluate the trust of the server's certificate chain when performing
+the TLS handshake. If manual, then the engine does not automatically use a
+CRL, but you can provide one that has been downloaded separately by using the
+CURLOPT_CRL option. If no, then the CURLOPT_CRL option is ignored.
+
+
+
+SSLv2: This was the first public release of the SSL protocol. It is
+deprecated and really should no longer be used, because it has a number of
+serious security problems.
+
+
+
+SSLv3: It is deprecated and should no longer be used, because it has a
+number of serious security problems.
+
+
+
+TLSv1.0: TLS is a slight variation on SSLv3 that was the first version
+of the protocol to be approved of by the Internet Engineering Task Force
+(IETF). This version of TLS has been available since 1999 and is by far the
+most widely supported version on the public Internet. There have been a few
+minor security vulnerabilities found in TLSv1.0 which were fixed later, but
+all of them (so far) have been easily worked around, which has contributed to
+the longevity of this version of TLS.
+
+
+
+TLSv1.1: TLSv1.1 is similar to v1.0, except that it has a better fix
+for the CBC (Cipher Block Chain) cipher-suite attack that lead to the BEAST
+(Browser Exploit Against SSL/TLS) vulnerability in TLSv1.0.
+
+
+
+TLSv1.2: TLSv1.2 provides better security than earlier versions, with
+support for many all-new cipher suites that are even more difficult to
+crack.
+
+
+
+TLSv1.3: This is the most recent version. TLSv1.3 provides even better
+security than TLSv1.2, with more data encrypted in the handshake etc. It also
+offers less roundtrip handshakes.
+
+
+
+TLS SRP: SRP means "Secure Remote Password" and it is a method of
+performing client-side authentication with a TLS server by using a username
+and password, sometimes coupled with a certificate. It is not yet widely
+supported, but for the engines that do support it, you can provide the
+credentials to curl by using the CURLOPT_TLSAUTH_USERNAME and
+CURLOPT_TLSAUTH_PASSWORD options.
+
+
+
+TLS ECC: ECC means "Elliptic Curve Cryptography" and it is an advanced
+set of cipher-suites that are used in TLS connections (typically with
+TLSv1.2). Not all engines support ECC.
+
+
+
+QUIC API: Needed for using this TLS library when implementing a QUIC
+stack.
+
+
+
+QUIC Implementation: A complete QUIC implementation, not only the API
+necessary for someone else to implement it.
+
+
+
+Small: can be built with a small foot-print. The system native ones also count
+here since they come "for free" for users.
+
+
+
+Uses Certificate/Key Files: Some engines, such as OpenSSL, read
+certificates and keys from files rather than a central database. These engines
+require you to use a certificate bundle in order to verify a server's
+certificate chain; this is usually set at build time but can also be set by
+using the CURLOPT_CAINFO option.
+
+
+
+Uses Certificate/Key Database: Some engines, such as Apple's Security
+framework, use a central database instead of separate files to store
+certificates and keys. Apple's Security framework database, for instance, is
+called the Keychain. For engines that use a database and do not also support
+files, the CURLOPT_CAINFO option is ignored.
+
+
+
+Crypto module/token support: Support for cryptographic hardware tokens
+and software databases is typically provided via
+; PKCS#11 on POSIX platforms,
+and via platform-specific APIs on Windows and Darwin. Examples of PKCS#11
+software tokens include the GNOME keyring.
+
+
+
+Integrates with system token database: Platforms often have a
+system-wide configuration which specifies which crypto modules/token should
+be visible in which applications. Many Linux distributions have chosen
+to use p11-kit;
+to provide this configuration, and some now consider it a bug for
+applications not to automatically use the tokens configured therein.
+
+
+
+Select Certificates/Keys with PKCS#11 URI: RFC 7512 defines a
+standard URI format for specifying objects within PKCS#11
+tokens/databases.
+
+
+
+FIPS-140: FIPS-140 is a security standard used by the United States and
+Canada for transferring information that is sensitive but not classified. If
+yes, and you are using curl or a libcurl-based application in the US or
+Canadian government, or in a government contractor, then it is okay for you to
+use the engine when building curl/libcurl.
+
+
+
+License: If you are deploying an application that uses libcurl, then
+the license used by the engine may affect whether or not you are able to
+distribute your application legally.
+
+
+ More reading 
+
+
+
+ The mentioned libraries: OpenSSL, GnuTLS, wolfSSL, mbedTLS, Secure Channel, Secure Transport, Rustls.
+
+
+ More comparisons in the extensive feature-by-feature
+comparison on wikipedia.
+
+
+
+ curl's documentation of SSL problems.
+
+
+
+ Please mail us corrections if this
+ table is incorrect, or tell us other features we should compare!

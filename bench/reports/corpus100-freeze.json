@@ -1,0 +1,15 @@
+{
+  "frozen_at": "2026-09-19T09:08:12.499531+00:00",
+  "corpus_sha256": "501016bcba5a3675c5e2107dc3462be0df725bc1be1e072cd9a4509b37ef80f0",
+  "pages": 100,
+  "sites": 50,
+  "cohorts": {
+    "regression": 20,
+    "expansion": 60,
+    "heldout": 20
+  },
+  "checks": 692,
+  "critical_checks": 380,
+  "review": "Source scopes and anchors reviewed before evaluating either binary on the 80 new cases. Agent review only; independent human audit pending. Production extractor unchanged during expansion.",
+  "original20_preserved": true
+}
