@@ -35,7 +35,7 @@ doctor/                      Health checks: concurrent read-only probes per back
 cache/                       TTL page cache (Store interface, BBoltStore backend)
 httpx/                       Shared tuned *http.Transport for all HTTP backends
 updatecheck/                 "new release available" probe + throttled stderr hint
-site/                        VitePress documentation site (deployed to gh-pages)
+site/                        Builds ketch.run from MANUAL.md (deployed to gh-pages)
 ```
 
 Reusable packages live at the module root so external programs can `import "github.com/1broseidon/ketch/<pkg>"`. Shared implementation helpers, including the config model used by provider packages, live under `internal/`.

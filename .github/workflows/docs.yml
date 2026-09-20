@@ -3,7 +3,7 @@ name: Deploy Docs
 on:
   push:
     branches: [main]
-    paths: ['site/**', 'install.sh']
+    paths: ['MANUAL.md', 'site/**', 'install.sh']
   release:
     types: [published]
   workflow_dispatch:
@@ -34,13 +34,13 @@ jobs:
       - name: Install and build
         run: cd site && npm ci && npm run build
         env:
-          # The version comes from git tags (fetch-depth: 0 above), but the
-          # star count is an API call — authenticate it so a shared runner
-          # can't exhaust the anonymous 60/hr limit and render a blank count.
+          # The version comes from git tags (fetch-depth: 0 above); the star
+          # count is an API call that never fails the build, but authenticate
+          # it so a shared runner can't exhaust the anonymous 60/hr limit.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: site/.vitepress/dist
+          publish_dir: site/dist
           cname: ketch.run

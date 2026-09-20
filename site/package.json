@@ -1,11 +1,12 @@
 {
+  "name": "ketch-site",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "vitepress dev",
-    "build": "vitepress build",
-    "preview": "vitepress preview"
+    "build": "node build.mjs",
+    "prebuild": "node scripts/fetch-stars.mjs"
   },
   "devDependencies": {
-    "vitepress": "^1.6.4"
+    "marked": "^18.0.13"
   }
 }

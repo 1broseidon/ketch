@@ -13,10 +13,9 @@ coverage.out
 .vscode/
 *.swp
 
-# Docs
+# Site
 site/node_modules
-site/.vitepress/dist
-site/.vitepress/cache
+site/dist
 
 # OS
 .DS_Store
