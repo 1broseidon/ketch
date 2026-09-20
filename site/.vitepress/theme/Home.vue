@@ -319,7 +319,7 @@ harness/harness  registry/app/remote/clients/registry/client.go  <span class="di
                 <table>
                   <tbody>
                     <tr><td class="cmd">--raw</td><td>Raw HTML instead of markdown</td></tr>
-                    <tr><td class="cmd">--select &lt;css&gt;</td><td>Extract only matching elements, skipping readability</td></tr>
+                    <tr><td class="cmd">--select &lt;css&gt;</td><td>Extract only matching elements, skipping content selection</td></tr>
                     <tr><td class="cmd">--max-chars</td><td>Truncate output, appending <code class="inline">[truncated]</code></td></tr>
                     <tr><td class="cmd">--trim</td><td>Strip markdown formatting, keep content text</td></tr>
                     <tr><td class="cmd">--no-llms-txt</td><td>Disable <code class="inline">/llms.txt</code> detection for bare domains</td></tr>
@@ -350,7 +350,7 @@ harness/harness  registry/app/remote/clients/registry/client.go  <span class="di
                   </tbody>
                 </table>
               </div>
-              <p class="note">No fetch, no cache, no browser — just the readability and markdown pipeline. Useful when you already have the bytes.</p>
+              <p class="note">No fetch, no cache, no browser — just the extraction pipeline. Useful when you already have the bytes.</p>
             </div>
           </details>
 
@@ -658,13 +658,14 @@ ketch v0.17.0
             </div>
           </details>
           <details>
-            <summary>Other keys <span class="sm">Rewrites, SPA markers, user agent, PDF converter</span></summary>
+            <summary>Other keys <span class="sm">Rewrites, SPA markers, user agent, extraction mode, PDF converter</span></summary>
             <div class="disc-body">
               <ul class="plain">
                 <li><code class="inline">url_rewrites</code> — regex rewrites applied before fetch</li>
                 <li><code class="inline">spa_markers</code> — extra tokens for JS-shell detection</li>
                 <li><code class="inline">cache_ttl</code> — cache lifetime</li>
                 <li><code class="inline">user_agent</code> — User-Agent override for HTTP and browser fetches</li>
+                <li><code class="inline">extract_mode</code> — what extraction may drop: <code class="inline">complete</code> (default) keeps everything the page's structure does not condemn; <code class="inline">clean</code> also drops blocks by name and phrase (related-post rails, comment threads, share bars). A non-default mode scopes cached pages</li>
                 <li><code class="inline">external_pdf_to_md_converter_command</code> — external PDF-to-Markdown converter; must contain exactly one <code class="inline">{input}</code> placeholder. Once set it is authoritative, with no silent fallback</li>
               </ul>
             </div>

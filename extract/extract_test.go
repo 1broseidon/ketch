@@ -279,19 +279,28 @@ func TestExtractKeepsReadabilityWhenExtraTableIsChrome(t *testing.T) {
 	}
 }
 
-// The raw fallback bypasses readability, which is what resolves relative
-// hrefs — so the raw path has to absolutize them itself, or every link in the
-// table it just recovered points nowhere.
-func TestExtractRawFallbackResolvesRelativeLinks(t *testing.T) {
+// A page that declares no landmark is read from the smallest element holding
+// its prose, and a results table beside that prose — every cell a link — is
+// content, not a menu. Its links resolve against the page.
+func TestExtractResolvesRelativeLinks(t *testing.T) {
 	t.Parallel()
 
-	html := chromePage(`<div id="data"><table class="wikitable">
+	html := `<!doctype html>
+<html><head><title>World Cup finals</title></head>
+<body>
+<nav><ul><li><a href="/docs">SITECHROME</a></li></ul></nav>
+<div id="content">
+	<h1>World Cup finals</h1>
+	<p>` + strings.Repeat("Each final decided the tournament, and the winner of every edition is listed in the table below. ", 8) + `</p>
+	<table class="wikitable">
 		<tr><th>Year</th><th>Winner</th></tr>
 		<tr><td><a href="/year/1930">1930</a></td><td><a href="/team/uruguay">Uruguay</a></td></tr>
 		<tr><td><a href="/year/2022">2022</a></td><td><a href="/team/argentina">Argentina</a></td></tr>
-	</table></div>`)
+	</table>
+</div>
+</body></html>`
 
-	result, err := New().Extract("https://example.com/pricing", html)
+	result, err := New().Extract("https://example.com/finals", html)
 	if err != nil {
 		t.Fatalf("Extract: %v", err)
 	}
@@ -299,7 +308,39 @@ func TestExtractRawFallbackResolvesRelativeLinks(t *testing.T) {
 		"https://example.com/year/1930",
 		"https://example.com/team/uruguay",
 	)
-	assertContainsNone(t, result.Markdown, "](/year/1930)", "](/team/uruguay)")
+	assertContainsNone(t, result.Markdown, "](/year/1930)", "](/team/uruguay)", "SITECHROME")
+}
+
+// A table outside the landmark the author declared is not content: the
+// article said where the content is. Readability's raw fallback used to pull
+// the whole page in for it, chrome included.
+func TestExtractLeavesTableOutsideLandmark(t *testing.T) {
+	t.Parallel()
+
+	html := chromePage(`<div id="data"><table class="wikitable">
+		<tr><th>Year</th><th>Winner</th></tr>
+		<tr><td><a href="/year/1930">1930</a></td><td><a href="/team/uruguay">Uruguay</a></td></tr>
+	</table></div>`)
+
+	result, err := New().Extract("https://example.com/pricing", html)
+	if err != nil {
+		t.Fatalf("Extract: %v", err)
+	}
+	assertContainsAll(t, result.Markdown, "|Plan|Price|", "|Pro|$10|")
+	assertContainsNone(t, result.Markdown, "Uruguay", "SITECHROME")
+}
+
+// The raw fallback bypasses readability, which is what resolves relative
+// hrefs — so the raw path has to absolutize them itself.
+func TestExtractRawResolvesRelativeLinks(t *testing.T) {
+	t.Parallel()
+
+	raw, err := extractRaw("https://example.com/pricing", chromePage(`<table><tr><th>Year</th><th>Winner</th></tr><tr><td><a href="/year/1930">1930</a></td><td>Uruguay</td></tr></table>`))
+	if err != nil {
+		t.Fatalf("extractRaw: %v", err)
+	}
+	assertContainsAll(t, raw.Markdown, "https://example.com/year/1930")
+	assertContainsNone(t, raw.Markdown, "](/year/1930)")
 }
 
 // chromePage builds an article whose data table readability keeps on its own,

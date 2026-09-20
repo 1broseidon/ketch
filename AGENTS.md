@@ -28,7 +28,7 @@ code/                        code.Searcher interface + GrepApp/Sourcegraph/GitHu
 docs/                        docs.Searcher interface + Context7 backend (FTS5 local is an unimplemented stub); NewFromConfig resolves the ordered provider registry
 mcp/                         MCP server (search/code/docs/scrape/crawl tools; the mcp_tools config key is an allowlist over the published set) over the go-sdk mcp package; Server struct holds the shared scraper + cache, tools call the same NewFromConfig constructors as the CLI
 scrape/                      HTTP fetch + Page type, JS detection fallback, Rod browser; pipeline.go has the cache-aware scrape pipeline (CachedScrape*, ScrapeSelector, FetchLLMSTxt) shared by cmd/ and mcp/
-extract/                     readability + html-to-markdown pipeline, JS shell detection (Detector: built-in + config spa_markers, modern hydration/streaming frameworks)
+extract/                     structural extraction (landmark → uniform sections → prose root, chrome pruned by what it is; config extract_mode complete|clean) with readability fallback and html-to-markdown, charset decoding, JS shell detection (Detector: built-in + config spa_markers, modern hydration/streaming frameworks)
 crawl/                       BFS crawler, work queue + worker pool, background status
 cookies/                     Netscape cookies.txt jar loader + RFC 6265 domain/path matching (Jar.For); nil-safe, values never logged
 config/                      JSON config loading/saving (~/.config/ketch/)
@@ -152,9 +152,9 @@ ketch mcp serve                             # run as an MCP server over stdio (s
 | --max-chars N | scrape, search --scrape | 0 (off) | Truncate markdown output to N chars, appends `[truncated]` |
 | --trim | scrape, search --scrape | false | Strip markdown formatting syntax, keep content text only |
 | --minimal | search, code, docs | false | One result per line, tab-separated, no frontmatter (a 4th backends column is appended under `search --multi`, plain search only) |
-| --select \<css\> | scrape | — | Extract only elements matching CSS selector (skips readability) |
+| --select \<css\> | scrape | — | Extract only elements matching CSS selector (skips content selection) |
 | --url | extract | — | Source URL for metadata and relative-link resolution (no fetch) |
-| --select \<css\> | extract | — | CSS selector to extract (skips readability) |
+| --select \<css\> | extract | — | CSS selector to extract (skips content selection) |
 | --trim | extract | false | Strip markdown formatting, keep content text only |
 | --max-chars N | extract | 0 (off) | Truncate markdown output to N chars, appends `[truncated]` |
 | --no-llms-txt | scrape | false | Disable automatic /llms.txt detection for bare domains |

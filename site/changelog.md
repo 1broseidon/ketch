@@ -5,9 +5,15 @@ This page mirrors the canonical [`CHANGELOG.md`](https://github.com/1broseidon/k
 ## Unreleased
 
 **Added**
+- Structural extraction: content selection reads the page's own structure — its declared landmark, uniform sections, or the smallest element holding its prose — and removes site furniture by what it is, with readability as the fallback. No site-specific rules. On the 500-page benchmark passing checks rise from 3,176 to 3,472 of 3,573 and macro recall from 94.1% to 99.3% at unchanged precision.
+- `extract_mode` config key (`KETCH_EXTRACT_MODE`): `complete` (default) keeps everything the structure does not condemn; `clean` also drops blocks by name and phrase — related-post rails, comment threads, share bars — for the leanest markdown (3,465/3,573 checks, recall 99.0%, precision 99.4%). Applies to scrape, search --scrape, crawl, extract and MCP; a non-default mode scopes cached pages.
 - Tags: a durable index over the pages ketch already cached. `--tag <name>` works on every surface — `search`, `code`, `docs`, `scrape`, `crawl` — and one tag holds them all, so a project tag ends up with the vendor's docs, the code that calls it, and the write-up that explained the undocumented flag in one list. URLs can also be filed directly with `ketch tag add <name> <url>...` (no network). Then ask what you have: `ketch tag show <name>` renders an llms.txt-shaped index of titles, URLs and descriptions, `ketch tag list` shows every tag, `ketch tag remove <name> [url...]` drops a tag or single pages. A page can carry several tags and is still cached once.
 - The index outlives the page bodies. `cache_ttl` defaults to 72h, so a tag scoped to the bodies would be empty by the Tuesday after a Friday of research — instead, an expired page is listed as "not cached" and a re-fetch restores it without re-tagging. `ketch cache clear` now reclaims the disk and keeps the map. Nothing expires the index, so `tag remove` is how a tag ends. `tag add` takes any URL, cached or not — an un-fetched one is indexed with no title or description, and both fill in the first time the page is seen.
 - `tag` also ships as a sixth MCP tool (`operation`: add/show/list/remove), and all five research tools gain a `tag` option.
+
+**Fixed**
+- Pages served in a legacy encoding (windows-1252, Shift_JIS, …), declared or sniffed, are decoded before extraction instead of arriving as replacement characters.
+- HTML extraction preserves highlighted code comments, rendered line boundaries and code language labels. Selector scrapes resolve relative links against the full fetch URL; raw fallback links retain the page directory. Automatic content selection can still omit sections of documentation.
 
 ## v0.17.1 — 2026-09-18
 

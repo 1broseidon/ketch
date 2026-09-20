@@ -576,3 +576,58 @@ func TestApplyConfigSetBackendValidatesAgainstRegistry(t *testing.T) {
 		}
 	}
 }
+
+func TestApplyConfigSetExtractMode(t *testing.T) {
+	t.Run("sets and normalizes", func(t *testing.T) {
+		c := config.Defaults()
+		if err := applyConfigSet(&c, "extract_mode", " Clean "); err != nil {
+			t.Fatalf("unexpected err: %v", err)
+		}
+		if c.ExtractMode != "clean" {
+			t.Fatalf("ExtractMode = %q", c.ExtractMode)
+		}
+	})
+
+	t.Run("rejects unknown modes", func(t *testing.T) {
+		c := config.Defaults()
+		err := applyConfigSet(&c, "extract_mode", "fast")
+		var exitErr *ExitError
+		if !errors.As(err, &exitErr) || exitErr.Code != ExitValidation || !strings.Contains(err.Error(), "valid: complete, clean") {
+			t.Fatalf("error = %v, want exit %d naming the valid modes", err, ExitValidation)
+		}
+		if c.ExtractMode != "" {
+			t.Fatalf("bad value changed config to %q", c.ExtractMode)
+		}
+	})
+
+	t.Run("empty clears", func(t *testing.T) {
+		c := config.Defaults()
+		c.ExtractMode = "clean"
+		if err := applyConfigSet(&c, "extract_mode", ""); err != nil {
+			t.Fatalf("unexpected err: %v", err)
+		}
+		if c.ExtractMode != "" {
+			t.Fatalf("ExtractMode = %q, want empty", c.ExtractMode)
+		}
+	})
+
+	t.Run("listed among valid keys", func(t *testing.T) {
+		c := config.Defaults()
+		err := applyConfigSet(&c, "no_such_key", "x")
+		if err == nil || !strings.Contains(err.Error(), "extract_mode") {
+			t.Fatalf("unknown-key error should list extract_mode: %v", err)
+		}
+	})
+}
+
+func TestBuildConfigInfoShowsEffectiveExtractMode(t *testing.T) {
+	info := buildConfigInfo(config.Defaults(), "/tmp/config.json")
+	if info.ExtractMode != "complete" {
+		t.Fatalf("ExtractMode = %q, want complete", info.ExtractMode)
+	}
+	c := config.Defaults()
+	c.ExtractMode = "clean"
+	if info := buildConfigInfo(c, "/tmp/config.json"); info.ExtractMode != "clean" {
+		t.Fatalf("ExtractMode = %q, want clean", info.ExtractMode)
+	}
+}

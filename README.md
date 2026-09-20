@@ -120,12 +120,14 @@ ketch scrape https://example.com --json
 # {"url":"https://example.com","title":"Example Domain","markdown":"..."}
 ```
 
-Pipe any HTML through ketch's readability + markdown pipeline without a fetch:
+Pipe any HTML through ketch's extraction pipeline without a fetch:
 
 ```sh
 curl -L https://chain.sh/ketch | ketch extract
 cat page.html | ketch extract --select article --max-chars 4000
 ```
+
+Extraction reads the page's own structure: the content landmark it declares (`main`, `article`), a document assembled from uniform sections, or the smallest element holding its prose. Site furniture is removed by what it is — navigation, hidden and collapsed controls, link rails, tables of contents — and readability is the fallback for a page that declares no structure. The `extract_mode` config key sets what pruning may drop: `complete` (the default) keeps everything the structure does not condemn, and `clean` also drops blocks by name and phrase — related-post rails, comment threads, share bars, "was this helpful?" boxes — for the leanest markdown at a small cost in recall. Pages served in a legacy encoding are decoded before extraction.
 
 ### PDF extraction
 
@@ -255,7 +257,7 @@ Precedence is **CLI flag > `KETCH_*` env > config file > built-in default**. Not
 - Invalid env values (e.g. `KETCH_LIMIT=abc`) fail loudly on commands that use config, naming the offending variable; `ketch version` and `ketch config set/path` still work.
 - Secret `KETCH_*` vars are stripped from the environment of spawned subprocesses (headless browser, external PDF converter).
 
-Other configurable keys include per-backend API keys (`brave_api_key`, `brave_api_keys` for multi-key rotation, `exa_api_key`, `firecrawl_api_key`, `keenable_api_key`, `tavily_api_key`, `serpbase_api_key`, `serply_api_key`, `youcom_api_key`, `context7_api_key`, `github_token`), `firecrawl_url` / `sourcegraph_url` / `degoog_url` (self-hosted overrides), `cache_ttl`, `url_rewrites` (regex rewrite rules applied before fetch), `spa_markers` (extra JS-shell detection tokens), `cookie_file` (see below), `user_agent` (User-Agent override for HTTP and browser fetches; setting one scopes cached pages to it, so entries cached under the default stay valid), and the optional external PDF converter command/timeout. Multiple keys per provider are picked randomly per request to spread rate limits. See the [config reference](https://ketch.run/) for the full list.
+Other configurable keys include per-backend API keys (`brave_api_key`, `brave_api_keys` for multi-key rotation, `exa_api_key`, `firecrawl_api_key`, `keenable_api_key`, `tavily_api_key`, `serpbase_api_key`, `serply_api_key`, `youcom_api_key`, `context7_api_key`, `github_token`), `firecrawl_url` / `sourcegraph_url` / `degoog_url` (self-hosted overrides), `cache_ttl`, `url_rewrites` (regex rewrite rules applied before fetch), `spa_markers` (extra JS-shell detection tokens), `cookie_file` (see below), `user_agent` (User-Agent override for HTTP and browser fetches; setting one scopes cached pages to it, so entries cached under the default stay valid), `extract_mode` (`complete` by default, or `clean`; see [extraction](#introduction) — a non-default mode scopes cached pages the same way), and the optional external PDF converter command/timeout. Multiple keys per provider are picked randomly per request to spread rate limits. See the [config reference](https://ketch.run/) for the full list.
 
 ### Cookies (BYO cookies.txt)
 

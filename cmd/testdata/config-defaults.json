@@ -26,6 +26,7 @@
   "sourcegraph_url": "https://sourcegraph.com",
   "github_token_source": "none",
   "github_token_set": false,
+  "extract_mode": "complete",
   "mcp_tools": [
     "search",
     "code",

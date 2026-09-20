@@ -11,7 +11,6 @@ import (
 
 	"github.com/1broseidon/ketch/extract"
 	"github.com/1broseidon/ketch/scrape"
-	"github.com/PuerkitoBio/goquery"
 	"github.com/andybalholm/cascadia"
 	"github.com/spf13/cobra"
 )
@@ -19,8 +18,8 @@ import (
 var extractCmd = &cobra.Command{
 	Use:   "extract",
 	Short: "Convert piped HTML to clean markdown",
-	Long: `Read raw HTML from stdin, run ketch's readability + HTML-to-markdown
-pipeline, and write clean markdown for LLM workflows.
+	Long: `Read raw HTML from stdin, run ketch's extraction pipeline, and write
+clean markdown for LLM workflows. The extract_mode config key applies.
 
 Examples:
   curl -L https://chain.sh/ketch | ketch extract
@@ -48,6 +47,7 @@ type extractOptions struct {
 	Trim     bool
 	MaxChars int
 	JSON     bool
+	Mode     extract.Mode // pruning mode from config extract_mode; empty = complete
 }
 
 type extractedPage struct {
@@ -71,6 +71,11 @@ func runExtract(cmd *cobra.Command, _ []string) error {
 		MaxChars: intFlag(cmd, "max-chars"),
 	}
 	opts.JSON, _ = cmd.Root().PersistentFlags().GetBool("json")
+	mode, err := extract.ParseMode(cfg.ExtractMode)
+	if err != nil {
+		return exitErrf(ExitValidation, "invalid extract_mode: %w", err)
+	}
+	opts.Mode = mode
 
 	if !stdinIsPipe() {
 		return exitErrf(ExitValidation, "pipe HTML to stdin (for URLs use ketch scrape <url>)")
@@ -124,28 +129,18 @@ func extractFromHTML(rawHTML string, opts extractOptions) (*extractedPage, error
 	}
 
 	urlFlag := opts.URL
-	var baseURL *url.URL
 	if urlFlag != "" {
-		parsed, err := url.Parse(urlFlag)
+		_, err := url.Parse(urlFlag)
 		if err != nil {
 			return nil, exitErrf(ExitValidation, "invalid --url: %w", err)
 		}
-		baseURL = parsed
 	}
 
 	if opts.Selector != "" {
 		if _, err := cascadia.Parse(opts.Selector); err != nil {
 			return nil, exitErrf(ExitValidation, "selector extraction failed: %w", err)
 		}
-		selectorHTML := rawHTML
-		if baseURL != nil && baseURL.IsAbs() {
-			var err error
-			selectorHTML, err = resolveRelativeHTMLLinks(rawHTML, baseURL)
-			if err != nil {
-				return nil, exitErrf(ExitValidation, "failed to resolve relative links: %w", err)
-			}
-		}
-		markdown, err := extract.ExtractSelector(selectorHTML, opts.Selector)
+		markdown, err := extract.ExtractSelectorWithURL(urlFlag, rawHTML, opts.Selector)
 		if err != nil {
 			return nil, exitErrf(ExitValidation, "selector extraction failed: %w", err)
 		}
@@ -166,7 +161,7 @@ func extractFromHTML(rawHTML string, opts extractOptions) (*extractedPage, error
 		pageURL = "about:blank"
 	}
 
-	res, err := extract.New().Extract(pageURL, rawHTML)
+	res, err := extract.NewWithMode(opts.Mode).Extract(pageURL, rawHTML)
 	if err != nil {
 		return nil, exitErrf(ExitUpstream, "extraction failed: %w", err)
 	}
@@ -183,29 +178,6 @@ func extractFromHTML(rawHTML string, opts extractOptions) (*extractedPage, error
 	}
 	page.Markdown = extract.PostProcess(page.Markdown, opts.Trim, opts.MaxChars)
 	return page, nil
-}
-
-func resolveRelativeHTMLLinks(rawHTML string, baseURL *url.URL) (string, error) {
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(rawHTML))
-	if err != nil {
-		return "", err
-	}
-
-	for _, attr := range []string{"href", "src"} {
-		doc.Find("[" + attr + "]").Each(func(_ int, s *goquery.Selection) {
-			value, ok := s.Attr(attr)
-			if !ok || value == "" {
-				return
-			}
-			rel, err := url.Parse(value)
-			if err != nil || rel.IsAbs() {
-				return
-			}
-			s.SetAttr(attr, baseURL.ResolveReference(rel).String())
-		})
-	}
-
-	return doc.Html()
 }
 
 func emitExtract(w io.Writer, page *extractedPage, asJSON bool) error {

@@ -36,26 +36,51 @@ type Result struct {
 }
 
 // Extractor converts raw HTML into clean markdown.
-type Extractor struct{}
-
-// New creates an Extractor.
-func New() *Extractor {
-	return &Extractor{}
+type Extractor struct {
+	mode Mode
 }
 
-// Extract takes a URL and raw HTML, extracts the main content,
-// and converts it to markdown. Falls back to direct HTML→markdown
-// conversion if readability extraction fails.
+// New creates an Extractor in ModeComplete.
+func New() *Extractor {
+	return NewWithMode(ModeComplete)
+}
+
+// NewWithMode creates an Extractor that prunes chrome as mode says; an
+// empty mode is ModeComplete.
+func NewWithMode(mode Mode) *Extractor {
+	if mode == "" {
+		mode = ModeComplete
+	}
+	return &Extractor{mode: mode}
+}
+
+// Mode reports the pruning mode the Extractor was built with.
+func (e *Extractor) Mode() Mode {
+	return e.mode
+}
+
+// Extract takes a URL and raw HTML, extracts the main content, and
+// converts it to markdown. The page's own structure decides what the
+// content is — its landmark, its uniform sections, or the smallest element
+// holding its prose — with chrome removed by what it is. Readability is
+// the fallback for a page that declares no structure to trust, and direct
+// HTML→markdown conversion the fallback for readability.
 func (e *Extractor) Extract(pageURL, html string) (*Result, error) {
-	html = stripDataURIs(html)
+	html = normalizeCodeBlocks(stripDataURIs(ensureUTF8(html)))
 	u, err := url.Parse(pageURL)
 	if err != nil {
 		return nil, err
 	}
-	origin := originOf(u)
+	baseURL := linkBase(u)
 
-	// Try readability first — clean article extraction
+	if r, ok := semanticExtract(html, baseURL, e.mode); ok {
+		return r, nil
+	}
+
+	// Readability: candidate scoring for pages that say nothing about
+	// their own structure.
 	parser := readability.NewParser()
+	parser.KeepClasses = true // Preserve language-* labels on code fences.
 	article, err := parser.Parse(strings.NewReader(html), u)
 	if err == nil {
 		var buf bytes.Buffer
@@ -63,7 +88,7 @@ func (e *Extractor) Extract(pageURL, html string) (*Result, error) {
 			markdown, convErr := markdownConverter.ConvertString(buf.String())
 			markdown = strings.TrimSpace(markdown)
 			if convErr == nil && markdown != "" {
-				if raw, ok := rawTableFallback(origin, html, buf.String()); ok {
+				if raw, ok := rawTableFallback(baseURL, html, buf.String()); ok {
 					if title := article.Title(); title != "" {
 						raw.Title = title
 					}
@@ -78,20 +103,20 @@ func (e *Extractor) Extract(pageURL, html string) (*Result, error) {
 	}
 
 	// Fallback: convert full HTML to markdown directly
-	return extractRaw(origin, html)
+	return extractRaw(baseURL, html)
 }
 
-// originOf renders the scheme://host prefix used to absolutize relative links
-// on conversion paths that don't go through readability.
-func originOf(u *url.URL) string {
+// linkBase retains the page path: sibling links must resolve against its
+// directory, not against the site root. No-URL extraction stays relative.
+func linkBase(u *url.URL) string {
 	if u == nil || u.Host == "" {
 		return ""
 	}
-	scheme := u.Scheme
-	if scheme == "" {
-		scheme = "https"
+	base := *u
+	if base.Scheme == "" {
+		base.Scheme = "https"
 	}
-	return scheme + "://" + u.Host
+	return base.String()
 }
 
 // rawTableFallback swaps readability's output for the noisier full-page
@@ -99,7 +124,7 @@ func originOf(u *url.URL) string {
 // Readability is inconsistent about tables: it keeps some (a Wikipedia
 // infobox) while stripping the main data table on the same page, so a
 // presence check is not enough — we compare counts. See issue #28.
-func rawTableFallback(origin, html, readabilityHTML string) (*Result, bool) {
+func rawTableFallback(baseURL, html, readabilityHTML string) (*Result, bool) {
 	if !strings.Contains(strings.ToLower(html), "<table") {
 		return nil, false
 	}
@@ -109,7 +134,7 @@ func rawTableFallback(origin, html, readabilityHTML string) (*Result, bool) {
 	if countDataTables(html) <= countDataTables(readabilityHTML) {
 		return nil, false
 	}
-	raw, err := extractRaw(origin, html)
+	raw, err := extractRaw(baseURL, html)
 	if err != nil {
 		return nil, false
 	}
@@ -179,12 +204,12 @@ func maxCols(t *goquery.Selection) int {
 
 // extractRaw converts the full HTML to markdown without readability.
 // Noisier output (includes nav, footer, etc.) but never fails on valid HTML.
-// origin absolutizes relative links, which readability would otherwise have
+// baseURL absolutizes relative links, which readability would otherwise have
 // resolved for us.
-func extractRaw(origin, html string) (*Result, error) {
+func extractRaw(baseURL, html string) (*Result, error) {
 	title := Title(html)
 
-	markdown, err := markdownConverter.ConvertString(html, converter.WithDomain(origin))
+	markdown, err := markdownConverter.ConvertString(normalizeCodeBlocks(html), converter.WithDomain(baseURL))
 	if err != nil {
 		return nil, err
 	}
@@ -204,6 +229,17 @@ func extractRaw(origin, html string) (*Result, error) {
 // matched elements converted to markdown. If no elements match, returns
 // an empty string and no error.
 func ExtractSelector(rawHTML, selector string) (string, error) {
+	return ExtractSelectorWithURL("", rawHTML, selector)
+}
+
+// ExtractSelectorWithURL works like ExtractSelector, resolving links and image
+// sources against pageURL after matching the selector against the original DOM.
+// An empty pageURL leaves relative links unchanged.
+func ExtractSelectorWithURL(pageURL, rawHTML, selector string) (string, error) {
+	u, err := url.Parse(pageURL)
+	if err != nil {
+		return "", err
+	}
 	// Select against the original DOM so attribute-value selectors (e.g.
 	// img[src^="data:"]) still match; strip data URIs from the extracted
 	// fragment afterward, before markdown conversion.
@@ -216,6 +252,7 @@ func ExtractSelector(rawHTML, selector string) (string, error) {
 	if sel.Length() == 0 {
 		return "", nil
 	}
+	resolveSelectedLinks(sel, u)
 
 	var parts []string
 	var outerErr error
@@ -234,12 +271,32 @@ func ExtractSelector(rawHTML, selector string) (string, error) {
 		return "", outerErr
 	}
 
-	html := stripDataURIs(strings.Join(parts, "\n\n"))
+	html := normalizeCodeBlocks(stripDataURIs(strings.Join(parts, "\n\n")))
 	markdown, err := markdownConverter.ConvertString(html)
 	if err != nil {
 		return "", err
 	}
 	return strings.TrimSpace(markdown), nil
+}
+
+// Resolve only after matching: selectors may depend on relative href/src
+// attributes. Empty/missing URLs must remain empty (e.g. DocBook anchors).
+func resolveSelectedLinks(sel *goquery.Selection, base *url.URL) {
+	if base == nil || base.Host == "" {
+		return
+	}
+	sel.Find("[href], [src]").AddSelection(sel).Each(func(_ int, node *goquery.Selection) {
+		for _, attr := range []string{"href", "src"} {
+			value, _ := node.Attr(attr)
+			if value == "" {
+				continue
+			}
+			rel, err := url.Parse(value)
+			if err == nil && !rel.IsAbs() {
+				node.SetAttr(attr, base.ResolveReference(rel).String())
+			}
+		}
+	})
 }
 
 // Title pulls the <title> tag content from raw HTML.

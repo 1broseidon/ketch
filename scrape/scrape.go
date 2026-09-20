@@ -56,6 +56,15 @@ type FetchedContent struct {
 	ContentType string
 }
 
+// HTML returns the body as UTF-8 text, decoded from the charset the
+// response declared or the document carries. A page served in a legacy
+// encoding — windows-1252 with no declaration, Shift_JIS by <meta> —
+// would otherwise reach the extractor as bytes that are not UTF-8 and come
+// out as replacement characters.
+func (c *FetchedContent) HTML() string {
+	return extract.DecodeHTMLBytes(c.Body, c.ContentType)
+}
+
 // FetchResult holds the output of a conditional scrape.
 type FetchResult struct {
 	Page        *Page
@@ -224,7 +233,7 @@ func (s *Scraper) Scrape(ctx context.Context, rawURL string) (*Page, string, err
 		return page, SourceHTTP, nil
 	}
 
-	html, source := s.MaybeBrowserFetch(ctx, fetchURL, string(content.Body))
+	html, source := s.MaybeBrowserFetch(ctx, fetchURL, content.HTML())
 	result, err := s.extractor.Extract(fetchURL, html)
 	if err != nil {
 		return nil, "", fmt.Errorf("extraction failed for %s: %w", fetchURL, err)
@@ -278,7 +287,7 @@ func (s *Scraper) scrapeConditional(ctx context.Context, rawURL, etag, lastModif
 		return &FetchResult{Page: page, ContentType: contentType, Source: SourceHTTP}, nil
 	}
 
-	html := string(content.Body)
+	html := content.HTML()
 	var doc *goquery.Document
 	var detection string
 	source := SourceHTTP
@@ -418,6 +427,10 @@ func ContentHash(s string) string {
 // configured UA is folded in — the built-in default keeps the bare key, so
 // existing cache entries stay valid for operators who never set one — and it
 // is folded in as a short digest so the key never carries the UA text.
+//
+// A non-default extract_mode is folded in by name: the modes produce
+// different markdown for the same fetch, and the default keeps the bare key
+// so existing entries stay valid.
 func (s *Scraper) CacheKey(fetchURL string) string {
 	key := fetchURL
 	if fingerprint := s.jar.Fingerprint(); fingerprint != "" {
@@ -425,6 +438,9 @@ func (s *Scraper) CacheKey(fetchURL string) string {
 	}
 	if s.userAgentConfigured {
 		key += "\x00ua:" + ContentHash(s.userAgent)
+	}
+	if mode := s.extractor.Mode(); mode != extract.ModeComplete {
+		key += "\x00extract:" + string(mode)
 	}
 	return key
 }
