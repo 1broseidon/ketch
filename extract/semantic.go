@@ -59,7 +59,7 @@ func semanticExtract(rawHTML, baseURL string, mode Mode) (*Result, bool) {
 	if err != nil {
 		return nil, false
 	}
-	mathToText(doc)
+	formulas := mathToText(doc)
 	rawTitle := strings.TrimSpace(doc.Find("title").First().Text())
 
 	root := semanticRoot(doc)
@@ -91,7 +91,7 @@ func semanticExtract(rawHTML, baseURL string, mode Mode) (*Result, bool) {
 	if err != nil {
 		return nil, false
 	}
-	markdown = tidyMarkdown(markdown)
+	markdown = spliceMath(tidyMarkdown(markdown), formulas)
 	if strings.TrimSpace(markdown) == "" {
 		return nil, false
 	}
@@ -1586,7 +1586,8 @@ func controlledIDs(doc *goquery.Document) map[string]bool {
 // sentence around it is meaningless without it — and TeX is the notation a
 // reader of markdown expects. MathML carries its own source in an
 // annotation, or as alttext; the rendered fallback image is dropped later.
-func mathToText(doc *goquery.Document) {
+func mathToText(doc *goquery.Document) []string {
+	var formulas []string
 	doc.Find("math").Each(func(_ int, m *goquery.Selection) {
 		tex := strings.TrimSpace(m.Find("annotation[encoding='application/x-tex']").First().Text())
 		if tex == "" {
@@ -1596,11 +1597,21 @@ func mathToText(doc *goquery.Document) {
 		if tex == "" {
 			return
 		}
-		tex = strings.TrimSuffix(strings.TrimPrefix(tex, "{\\displaystyle "), "}")
-		display, _ := m.Attr("display")
-		text := "$" + tex + "$"
-		if display == "block" {
-			text = "\n\n$$" + tex + "$$\n\n"
+		// MediaWiki wraps its TeX: {\displaystyle …}. Only that wrapper's
+		// closing brace goes; a formula's own last brace is the formula's.
+		if inner, ok := strings.CutPrefix(tex, "{\\displaystyle "); ok {
+			tex = strings.TrimSuffix(inner, "}")
+		}
+		// The TeX is spliced in after conversion, so the converter does not
+		// escape its backslashes and underscores as prose; the placeholder
+		// is a word it leaves alone, in a block of its own for display math.
+		token := fmt.Sprintf("%s%dx", mathPlaceholder, len(formulas))
+		markup := token
+		if display, _ := m.Attr("display"); display == "block" {
+			formulas = append(formulas, "$$"+tex+"$$")
+			markup = "<div>" + token + "</div>"
+		} else {
+			formulas = append(formulas, "$"+tex+"$")
 		}
 		// Replace the nearest wrapper that exists only to hold the formula,
 		// so a display:none MathML container does not take the text with it.
@@ -1611,8 +1622,21 @@ func mathToText(doc *goquery.Document) {
 				target = p
 			}
 		}
-		target.ReplaceWithHtml(html.EscapeString(text))
+		target.ReplaceWithHtml(markup)
 	})
+	return formulas
+}
+
+// mathPlaceholder is the stem of the word mathToText leaves where a
+// formula goes; spliceMath swaps the TeX back in after conversion.
+const mathPlaceholder = "ketchmath"
+
+// spliceMath puts the formulas mathToText set aside back into the markdown.
+func spliceMath(md string, formulas []string) string {
+	for i, f := range formulas {
+		md = strings.ReplaceAll(md, fmt.Sprintf("%s%dx", mathPlaceholder, i), f)
+	}
+	return md
 }
 
 // unwrap replaces an element with its children.
@@ -1642,6 +1666,7 @@ var (
 // Fenced code is left byte-for-byte: trailing spaces and blank-line runs
 // inside a listing are the listing.
 func tidyMarkdown(md string) string {
+	md = quoteFences(md)
 	// Adjacent empty links share the character between them that the
 	// pattern consumes; repeat until none is left.
 	for {
@@ -1672,6 +1697,34 @@ func tidyMarkdown(md string) string {
 		out = append(out, line)
 	}
 	return strings.TrimSpace(strings.Join(out, "\n"))
+}
+
+// A fence opening inside a blockquote: the quote prefix, then the fence.
+var rxQuotedFence = regexp.MustCompile("^((?:> ?)+)(```|~~~)")
+
+// quoteFences restores the quote prefix on every line of a fenced block
+// inside a blockquote. The converter prefixes the fence and the first line
+// and leaves the rest bare, which ends the quote in the middle of the
+// listing and leaves a fence that never closes.
+func quoteFences(md string) string {
+	lines := strings.Split(md, "\n")
+	prefix, fence := "", ""
+	for i, line := range lines {
+		if fence == "" {
+			if m := rxQuotedFence.FindStringSubmatch(line); m != nil {
+				prefix, fence = m[1], m[2]
+			}
+			continue
+		}
+		if !strings.HasPrefix(line, prefix) && line != strings.TrimRight(prefix, " ") {
+			line = prefix + line
+			lines[i] = line
+		}
+		if strings.HasPrefix(strings.TrimSpace(strings.TrimPrefix(line, prefix)), fence) {
+			fence = ""
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 // DebugSemanticRoot returns the root kind — "landmark", "sections", "prose"

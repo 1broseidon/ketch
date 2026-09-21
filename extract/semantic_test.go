@@ -354,3 +354,28 @@ func TestRescueTitle(t *testing.T) {
 		t.Fatalf("title not rescued: %q\n%s", result.Title, result.Markdown)
 	}
 }
+
+func TestMathTeXIsNotEscaped(t *testing.T) {
+	t.Parallel()
+	complete, _ := extractBoth(t, landmarkPage(`<p>Display: <math display="block"><semantics><mrow><mi>x</mi></mrow><annotation encoding="application/x-tex">\int_0^1 x^2 dx = \frac{1}{3}</annotation></semantics></math></p><p>Inline <math alttext="{\displaystyle a_{n}}"><mi>a</mi></math> here.</p>`))
+	assertContainsAll(t, complete, `$$\int_0^1 x^2 dx = \frac{1}{3}$$`, "Inline $a_{n}$ here.")
+	assertContainsNone(t, complete, "ketchmath", `\\int`, `\_`)
+}
+
+func TestBlockquoteCodeKeepsQuotePrefix(t *testing.T) {
+	t.Parallel()
+	complete, _ := extractBoth(t, landmarkPage("<blockquote><pre>line one\nline two\nline three</pre></blockquote><p>after</p>"))
+	assertContainsAll(t, complete, "> ```\n> line one\n> line two\n> line three\n> ```")
+	if strings.Contains(complete, "\nline two") {
+		t.Fatalf("quote lost its prefix:\n%s", complete)
+	}
+}
+
+func TestQuoteFences(t *testing.T) {
+	t.Parallel()
+	in := "> ```\n> one\ntwo\n\nthree\n> ```\n\n> > ```go\n> > a\nb\n> > ```\n```\nplain\nfence\n```"
+	want := "> ```\n> one\n> two\n> \n> three\n> ```\n\n> > ```go\n> > a\n> > b\n> > ```\n```\nplain\nfence\n```"
+	if got := quoteFences(in); got != want {
+		t.Fatalf("quoteFences:\n%s\nwant:\n%s", got, want)
+	}
+}
