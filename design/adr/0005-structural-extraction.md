@@ -8,7 +8,7 @@ Scrape quality is the value of every fetching surface (`scrape`,
 `search --scrape`, `crawl`, `extract`, the MCP tools). Through 0.17 content
 selection was go-readability: score every candidate element by text length,
 link density and class-name hints, keep the best-scoring subtree, then convert
-it to markdown. The 500-page benchmark (`bench/`, 70 sites, 3,573
+it to markdown. The 500-page benchmark ([ketch-bench](https://github.com/1broseidon/ketch-bench), 70 sites, 3,573
 source-backed checks) put that pipeline at 3,176 passing checks, 1,692 of
 1,831 critical, macro token recall 94.1%: whole sections of documentation
 dropped, infobox tables lost, listing pages reduced to one entry, and every
@@ -53,7 +53,7 @@ and readability stays only as the fallback for a page that declares nothing.
    structure or a name's meaning and must hold across the corpus; a fix for
    one site that costs another is rejected.
 5. **The benchmark is the gate.** Every change runs the corpus in both modes
-   against accepted baselines (`go -C bench run . check`); baselines are
+   against accepted baselines (`go run . check` in ketch-bench); baselines are
    updated deliberately, from the harness's own `CGO_ENABLED=0` build, after
    every moved check is reviewed. `extract.PruneLog` attributes each removed
    element to its rule so a loss can be explained before it is fixed.

@@ -37,7 +37,6 @@ health/                      Shared bounded provider health checks (Status class
 cache/                       TTL page cache (Store interface, BBoltStore backend); tags.go/tag_store.go provide durable bookmarks in a separate tags.db with short-lived handles. cache clear frees page storage for reuse without shrinking the file or changing bookmarks
 httpx/                       Shared tuned *http.Transport for all HTTP backends
 updatecheck/                 "new release available" probe + throttled stderr hint
-bench/                       Developer extraction benchmark: pinned 500-page, 70-site corpus, source assertions, CLI latency/stress runs and regression gates; not an installed ketch command
 site/                        Builds ketch.run from MANUAL.md with inkcap (GitHub Pages, docs.yml)
 ```
 
@@ -74,7 +73,8 @@ The reasoning behind each principle — and what ketch deliberately does *not* d
 ## Quality Standards
 
 - `golangci-lint run` must pass (gocyclo max 15)
-- `go test ./...` must pass, plus `go -C bench test ./...` for the bench module (its own `go.mod`, so it is not covered by the root `./...`)
+- `go test ./...` must pass
+- Extraction changes also run the [ketch-bench](https://github.com/1broseidon/ketch-bench) regression check in both modes (`go run . check` and `go run . check -extract-mode clean` from a sibling checkout); it is a separate repository so its corpus never weighs on this one
 - Pre-commit hook enforces both
 - CGO_ENABLED=0 — pure Go, cross-compile everywhere
 

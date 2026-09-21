@@ -132,16 +132,16 @@ Compare its output with Readability using annotated critical facts, headings,
 callouts, tables, code blocks, and unwanted navigation. A fallback should recover
 specific missing content without defaulting to the entire body.
 
-The [500-page, 70-site benchmark](../bench/README.md) now covers 28 content
+The [500-page, 70-site benchmark](https://github.com/1broseidon/ketch-bench) now covers 28 content
 types, with 3,573 source-backed assertions and 1,831 critical checks. The
-[review](../bench/REVIEW.md) records comparisons of both binaries on identical
+[review](https://github.com/1broseidon/ketch-bench/blob/main/REVIEW.md) records comparisons of both binaries on identical
 pinned input, separate new-site cohorts, per-page omissions and concurrent
 consistency checks. Original 100-page source records and output accuracy remain
 available for direct comparison. These measurements describe selected content
 fidelity, not semantic truth or a population estimate of web accuracy.
 
 The larger sample confirms content-selection losses across Git manuals, W3C
-accessibility tutorials and safety pages. A subsequent [live audit](../bench/AUDIT.md)
+accessibility tutorials and safety pages. A subsequent [live audit](https://github.com/1broseidon/ketch-bench/blob/main/AUDIT.md)
 corrected the Redis lists interpretation: its code examples survive, while the
 reference contains hundreds of auxiliary API-signature panels. Review annotation
 scope alongside full-text coverage and explicit structural assertions. Generic landmarks,
@@ -153,7 +153,7 @@ still rejects valid comma-separated selector groups; failed cases remain in
 its denominator. Fix that generic validation mismatch separately from content
 selection, and do not use an assisted score to conceal default-path losses.
 
-An [eight-page source-scope erratum](../bench/reports/annotation-errata500.json)
+An [eight-page source-scope erratum](https://github.com/1broseidon/ketch-bench/blob/main/reports/annotation-errata500.json)
 records recipe photo-gallery comments/controls and safety newsletter copy that
 had survived their intended exclusions. Both binaries were rerun on corrected
 references; provisional evidence is retained. Source validation now applies the
@@ -211,7 +211,7 @@ Measured on the 500-page benchmark with the same corpus and assertions:
 | Structural, `clean` | 3,468/3,573 | 1,822/1,831 | 99.00% | 99.44% |
 
 Both modes are gated by `bench check` against their own baselines
-(`bench/baseline.json`, `bench/baseline-clean.json`). The remaining misses are
+(`baseline.json`, `baseline-clean.json` in ketch-bench). The remaining misses are
 recorded in the per-mode `RESULTS` snapshots. The earlier decision stands: no
 model or API intermediary sits in the extraction path.
 

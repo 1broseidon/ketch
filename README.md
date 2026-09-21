@@ -357,10 +357,10 @@ Bug reports, documentation, and improvements are welcome. See the
 admission criteria. Please discuss new providers in an issue before implementing
 them.
 
-The [extraction benchmark](./bench/README.md) measures content preservation and
-CLI latency across 500 pinned pages from 70 websites. Run `make bench` for a report or
-`make bench-check` to compare with the regression baseline. Known extraction
-misses remain visible; passing the regression check is not a release approval.
+The [extraction benchmark](https://github.com/1broseidon/ketch-bench) measures content
+preservation and CLI latency across 500 pinned pages from 70 websites; it lives in its
+own repository and builds a sibling ketch checkout. Known extraction misses remain
+visible; passing its regression check is not a release approval.
 
 ## License
 

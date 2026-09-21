@@ -28,9 +28,6 @@ jobs:
       - name: Build
         run: make build-check
 
-      - name: Vet (bench)
-        run: go -C bench vet ./...
-
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -45,12 +42,6 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           version: latest
-
-      - name: Lint (bench)
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: latest
-          working-directory: bench
 
   test:
     strategy:
