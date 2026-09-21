@@ -127,6 +127,8 @@ curl -L https://chain.sh/ketch | ketch extract
 cat page.html | ketch extract --select article --max-chars 4000
 ```
 
+### Extraction
+
 Extraction reads the page's own structure: the content landmark it declares (`main`, `article`), a document assembled from uniform sections, or the smallest element holding its prose. Site furniture is removed by what it is — navigation, hidden and collapsed controls, link rails, tables of contents — and readability is the fallback for a page that declares no structure. The `extract_mode` config key sets what pruning may drop: `complete` (the default) keeps everything the structure does not condemn, and `clean` also drops blocks by name and phrase — related-post rails, comment threads, share bars, "was this helpful?" boxes — for the leanest markdown at a small cost in recall. Pages served in a legacy encoding are decoded before extraction.
 
 ### PDF extraction
@@ -184,10 +186,12 @@ page cache. A bookmark does not guarantee an upstream page still exists.
 
 Bookmarks survive cache expiry and `cache clear`. Clear removes page bodies
 and frees their space for reuse; it **does not shrink the database file**.
-`tag add` accepts URLs without fetching them, preserves existing metadata on a
-cold re-add, and fills missing titles and descriptions on a later fetch.
+`tag add` accepts absolute `http(s)` URLs without fetching them (anything else
+is bad input, exit `2`), preserves existing metadata on a cold re-add, and fills
+missing titles and descriptions on a later fetch.
 Removing a bookmark uses the displayed URL, regardless of cookies, User-Agent
-or URL rewrite settings. Nothing expires bookmarks; use `tag remove` to tidy up.
+or URL rewrite settings. Nothing expires bookmarks; use `tag remove` to tidy up — with URLs, it reports
+the ones that were not under the tag as `missing`.
 
 The independent `tags.db` is opened only for short index operations, so an idle
 MCP server or a background crawl does not monopolize it. Its default location
@@ -223,7 +227,7 @@ a stderr warning (`warning.code: tag_write_failed` with `--json`), and MCP adds
 | `config` | Show effective config as JSON, or `init` / `set` / `path` |
 | `cache` | Show page-cache stats, or `clear` |
 | `tag` | Bookmark research sources and revisit them (`add`, `show`, `list`, `remove`) |
-| `doctor` | Live health check of every backend, the browser, and the cache — exit `0` healthy, `5` when a configured surface is broken |
+| `doctor` | Live health check of every backend, the browser, the cache and the tag index (informational) — exit `0` healthy, `5` when a configured surface is broken |
 | `mcp` | Run ketch as an MCP server over stdio (`mcp serve`) — the research surfaces plus `tag`, as tools |
 | `version` | Print version, commit, build date |
 
@@ -278,7 +282,7 @@ Precedence is **CLI flag > `KETCH_*` env > config file > built-in default**. Not
 - Invalid env values (e.g. `KETCH_LIMIT=abc`) fail loudly on commands that use config, naming the offending variable; `ketch version` and `ketch config set/path` still work.
 - Secret `KETCH_*` vars are stripped from the environment of spawned subprocesses (headless browser, external PDF converter).
 
-Other configurable keys include per-backend API keys (`brave_api_key`, `brave_api_keys` for multi-key rotation, `exa_api_key`, `firecrawl_api_key`, `keenable_api_key`, `tavily_api_key`, `serpbase_api_key`, `serply_api_key`, `youcom_api_key`, `context7_api_key`, `github_token`), `firecrawl_url` / `sourcegraph_url` / `degoog_url` (self-hosted overrides), `cache_ttl`, `url_rewrites` (regex rewrite rules applied before fetch), `spa_markers` (extra JS-shell detection tokens), `cookie_file` (see below), `user_agent` (User-Agent override for HTTP and browser fetches; setting one scopes cached pages to it, so entries cached under the default stay valid), `extract_mode` (`complete` by default, or `clean`; see [extraction](#introduction) — a non-default mode scopes cached pages the same way), and the optional external PDF converter command/timeout. Multiple keys per provider are picked randomly per request to spread rate limits. See the [config reference](https://ketch.run/) for the full list.
+Other configurable keys include per-backend API keys (`brave_api_key`, `brave_api_keys` for multi-key rotation, `exa_api_key`, `firecrawl_api_key`, `keenable_api_key`, `tavily_api_key`, `serpbase_api_key`, `serply_api_key`, `youcom_api_key`, `context7_api_key`, `github_token`), `firecrawl_url` / `sourcegraph_url` / `degoog_url` (self-hosted overrides), `cache_ttl`, `url_rewrites` (regex rewrite rules applied before fetch), `spa_markers` (extra JS-shell detection tokens), `cookie_file` (see below), `user_agent` (User-Agent override for HTTP and browser fetches; setting one scopes cached pages to it, so entries cached under the default stay valid), `extract_mode` (`complete` by default, or `clean`; see [extraction](#extraction) — a non-default mode scopes cached pages the same way), and the optional external PDF converter command/timeout. Multiple keys per provider are picked randomly per request to spread rate limits. See the [config reference](https://ketch.run/) for the full list.
 
 ### Cookies (BYO cookies.txt)
 
@@ -354,7 +358,7 @@ admission criteria. Please discuss new providers in an issue before implementing
 them.
 
 The [extraction benchmark](./bench/README.md) measures content preservation and
-CLI latency across 20 pinned websites. Run `make bench` for a report or
+CLI latency across 500 pinned pages from 70 websites. Run `make bench` for a report or
 `make bench-check` to compare with the regression baseline. Known extraction
 misses remain visible; passing the regression check is not a release approval.
 

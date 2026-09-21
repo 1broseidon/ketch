@@ -5,13 +5,21 @@ This page mirrors the canonical [`CHANGELOG.md`](https://github.com/1broseidon/k
 ## Unreleased
 
 **Added**
-- Structural extraction: content selection reads the page's own structure — its declared landmark, uniform sections, or the smallest element holding its prose — and removes site furniture by what it is, with readability as the fallback. No site-specific rules. On the 500-page benchmark passing checks rise from 3,176 to 3,472 of 3,573 and macro recall from 94.1% to 99.3% at unchanged precision.
-- `extract_mode` config key (`KETCH_EXTRACT_MODE`): `complete` (default) keeps everything the structure does not condemn; `clean` also drops blocks by name and phrase — related-post rails, comment threads, share bars — for the leanest markdown (3,465/3,573 checks, recall 99.0%, precision 99.4%). Applies to scrape, search --scrape, crawl, extract and MCP; a non-default mode scopes cached pages.
+- `extract_mode` config key (`KETCH_EXTRACT_MODE`): `complete` (default) keeps everything the structure does not condemn; `clean` also drops blocks by name and phrase — related-post rails, comment threads, share bars — for the leanest markdown (3,468/3,573 checks, recall 99.0%, precision 99.4%); cards and rails that together hold the page are kept. Applies to scrape, search --scrape, crawl, extract and MCP; a non-default mode scopes cached pages.
 - Tags are durable bookmarks for project research across search, code, docs, scrape and crawl. `tag add/show/list/remove` is also available through MCP. Bookmark metadata survives page-cache expiry and clearing.
 - Independent `tags.db` in the native configuration directory on Linux, macOS and Windows; `KETCH_TAGS_PATH` overrides its filename. Short index operations remain available during background crawls and idle MCP sessions. Unavailable warmth is reported with `cache_status`. The experimental in-cache layout is not automatically imported.
 - CLI `tag show --limit` and MCP `limit` default to 50 newest entries; 0 returns all. Output reports returned and total counts.
+- Developer extraction benchmark in `bench/` (500 pinned pages, 70 sites, 3,573 checks, baselines for both extraction modes), its own Go module so the corpus never ships with `go install`.
+- `ketch cache` reports the tag index (path, counts, lock state); `ketch doctor` gains an informational `tags` row that never gates the exit code.
+
+**Changed**
+- Structural extraction: content selection reads the page's own structure — its declared landmark, uniform sections, or the smallest element holding its prose — and removes site furniture by what it is, with readability as the fallback. No site-specific rules. On the 500-page benchmark passing checks rise from 3,176 to 3,475 of 3,573 and macro recall from 94.1% to 99.4% at unchanged precision. Upgrading: most pages' markdown changes; cached pages are served until they expire (`ketch cache clear` re-extracts).
 
 **Fixed**
+- A plain scrape no longer writes to `tags.db`: bookmark refresh checks membership read-only (100 ms lock budget) and writes only for a bookmarked URL; a locked index is skipped silently.
+- `tag` output parity: MCP `entries`/`shown`/`cached` appear only for `show`; `tag remove` reports `missing` URLs in the CLI summary, `--json` and MCP; whole-tag removal says how many entries it dropped.
+- `tag add` requires absolute http(s) URLs (exit 2 / `[validation]`); a batch with a bad URL tags nothing.
+- MathML formulas become TeX (`$…$`, `$$…$$`) from the annotation, unescaped; fenced code inside a blockquote keeps its quote prefix; highlighter line numbers stay out of code blocks; a collapsed panel a control names is kept.
 - Pages served in a legacy encoding (windows-1252, Shift_JIS, …), declared or sniffed, are decoded before extraction instead of arriving as replacement characters.
 - HTML extraction preserves highlighted code comments, rendered line boundaries and code language labels. Selector scrapes resolve relative links against the full fetch URL; raw fallback links retain the page directory. Automatic content selection can still omit sections of documentation.
 - Stable source-URL membership across fetch settings; metadata preserved on cold re-add and filled on later fetches without resurrecting deleted bookmarks.

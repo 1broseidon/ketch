@@ -1,6 +1,6 @@
 # Surfaces — flags, params, and per-surface behavior
 
-Verified against ketch v0.11.0 (main). Discipline 6 applies: `--help` and `ketch config` outrank this file.
+Verified against ketch v0.18.0 (main). Discipline 6 applies: `--help` and `ketch config` outrank this file.
 
 ---
 
@@ -11,7 +11,7 @@ The two transports expose the same options under different spellings. Both direc
 | CLI | MCP | Notes |
 | --- | --- | --- |
 | `--regex` | `regexp` | code; grepapp/sourcegraph only |
-| `--select <css>` | `selector` | scrape; skips readability; incompatible with `raw` |
+| `--select <css>` | `selector` | scrape; skips content selection; incompatible with `raw` |
 | positional URLs / JSON array / file / stdin | `url` (one) or `urls` (array) | CLI auto-detects the input form; MCP is explicit |
 | `--searxng-url` | `searxng_url` | search, searxng backend only |
 | `--multi[=list]` | `multi` (array; `["all"]` = every usable) | search; federated RRF search, mutually exclusive with `backend`; CLI needs the `=` form for a list |
@@ -56,10 +56,10 @@ The two transports expose the same options under different spellings. Both direc
 - **llms.txt:** a bare-domain URL is auto-probed for `/llms.txt` first and may silently return that file instead of the homepage. The `title` in the output reveals the swap. `no_llms_txt` / `--no-llms-txt` opts out.
 - Input forms (CLI, auto-detected — no batch flag): single URL, multiple positional args, a JSON array string, a file of URLs, a stdin pipe. MCP: exactly one of `url` or `urls`.
 - Batch scrapes run concurrently (CLI default 5; MCP `concurrency` capped at 16). Per-URL failures come back as `results[].error` **inside a successful call** (`isError=false`; CLI `--json` returns an array) — check every entry.
-- `max_chars` truncates output and appends `[truncated]`. `trim` strips markdown syntax, keeps text (incompatible with `raw`). `--select`/`selector` extracts by CSS selector, skipping readability — no match is `[not_found]` / exit 3. `raw` returns HTML instead of markdown.
+- `max_chars` truncates output and appends `[truncated]`. `trim` strips markdown syntax, keeps text (incompatible with `raw`). `--select`/`selector` extracts by CSS selector, skipping content selection — no match is `[not_found]` / exit 3. `raw` returns HTML instead of markdown.
 - JS-rendered pages: JS-shell detection falls back to the configured headless browser automatically, same output shape. `force_browser` skips detection and errors without a configured browser (`[precondition]`).
 - Fetches are cached (see Cache below); `no_cache` bypasses.
-- Already hold the HTML? `curl -L <url> | ketch extract` runs the same readability + markdown pipeline with no fetch, cache, or browser (CLI-only; supports `--url`, `--select`, `--trim`, `--max-chars`).
+- Already hold the HTML? `curl -L <url> | ketch extract` runs the same structural extraction + markdown pipeline with no fetch, cache, or browser (CLI-only; supports `--url`, `--select`, `--trim`, `--max-chars`).
 
 ## crawl
 
@@ -106,7 +106,10 @@ only way a tag ends.
 `add` accepts a URL whose page was never fetched: it is indexed with no title
 or description, listed as uncached, and both fill in the first time the page is
 seen by any route. The returned `not_cached` array names those — scrape them if
-you want the index to describe them now.
+you want the index to describe them now. `add` requires absolute `http(s)` URLs
+with a host — anything else is `[validation]` / exit 2, and a batch with one bad
+URL tags nothing. `remove` with URLs returns `missing` for the ones that were not
+under the tag; a batch that removes nothing is `[not_found]` / exit 3.
 
 `cached: false` is the normal state for entries from `code`, `docs` and
 unscraped `search`: those surfaces return snippets, not fetched pages. The
@@ -142,10 +145,10 @@ Search needs no key at all on the default `auto` backend. Naming a keyed backend
 - File: `~/.config/ketch/config.json`. Flags always override config values.
 - `ketch config` is the one discovery call: effective settings plus `available_backends`, `available_code_backends`, `available_doc_backends`, as JSON. Never probe env vars instead.
 - **Blind spots:** older builds do not report whether search/docs API keys are set (`github_token_source` is the exception; newer builds add key-presence booleans like `brave_api_key_set`), and no build reports reachability. To know a surface works, probe it — `ketch doctor` when available, else the setup verb's probe table.
-- Keys (from README and `ketch config` output): `backend`, `code_backend`, `docs_backend`, `limit`, `searxng_url`, `sourcegraph_url`, `brave_api_key`, `context7_api_key`, `github_token`, `exa_api_key`, `firecrawl_api_key`, `firecrawl_url`, `keenable_api_key`, `tavily_api_key`, `serpbase_api_key`, `serply_api_key`, `youcom_api_key`, `browser`, `cache_ttl`, `url_rewrites`, `spa_markers`.
+- Keys (from README and `ketch config` output): `backend`, `code_backend`, `docs_backend`, `limit`, `searxng_url`, `sourcegraph_url`, `brave_api_key`, `context7_api_key`, `github_token`, `exa_api_key`, `firecrawl_api_key`, `firecrawl_url`, `keenable_api_key`, `tavily_api_key`, `serpbase_api_key`, `serply_api_key`, `youcom_api_key`, `browser`, `cache_ttl`, `url_rewrites`, `spa_markers`, `cookie_file`, `user_agent`, `extract_mode` (`complete` default, `clean` drops more by name; `KETCH_EXTRACT_MODE`), `mcp_tools` (allowlist over the six MCP tools; `KETCH_MCP_TOOLS`).
 - `KETCH_CONFIG` selects the config filename. Isolate bookmark labs with `KETCH_TAGS_PATH` too; on Linux, `XDG_CACHE_HOME` isolates page bodies. macOS and Windows use their native cache directories, so an XDG override alone is not portable isolation.
 
 ## Cache
 
-- Page cache in bbolt at `~/.cache/ketch/cache.db`, default TTL 72h (`cache_ttl` overrides). `ketch cache` shows stats, `ketch cache clear` empties it; both take `--json`.
+- Page cache in bbolt at `~/.cache/ketch/cache.db`, default TTL 72h (`cache_ttl` overrides). `ketch cache` shows page-cache stats and the tag index (path, counts, lock state), `ketch cache clear` empties the page cache and keeps bookmarks; both take `--json`.
 - Single-process lock: the bbolt DB admits one process at a time. A long-running MCP server holds the lock for its whole lifetime, so concurrent CLI scrapes silently run cache-disabled — every fetch goes to the network. Observed live: `ketch doctor` reports `cache … locked by another process` while the server runs, and `ketch cache` shows `locked: true`. Needing heavy CLI and MCP use long-term → prefer CLI-only, or accept the tradeoff knowingly.

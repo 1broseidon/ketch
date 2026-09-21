@@ -18,6 +18,7 @@ see [`../DESIGN.md`](../DESIGN.md).
 | [0002](./0002-error-code-taxonomy.md) | Stable exit-code / error-prefix taxonomy | Accepted |
 | [0003](./0003-fast-path-first-scrape.md) | Fast-path-first scraping (HTTP before browser) | Accepted |
 | [0004](./0004-tagged-cache-corpus.md) | Tags over the page cache instead of a local docs corpus | Accepted |
+| [0005](./0005-structural-extraction.md) | Structural content selection instead of readability scoring | Accepted |
 
 ## Writing a new ADR
 

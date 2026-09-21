@@ -1,5 +1,11 @@
 # Live extraction audit: Ketch versus curl
 
+> **Superseded.** This audit measured the readability-based extractor that
+> shipped through 0.17. Structural extraction (0.18, [ADR-0005](../design/adr/0005-structural-extraction.md))
+> replaced content selection; the accepted measurement is now
+> [RESULTS.md](RESULTS.md) and [RESULTS-clean.md](RESULTS-clean.md). The
+> failures below are kept as the record of what motivated the change.
+
 Audited September 19, 2026. Seven URLs were chosen from known benchmark failures.
 This is a targeted diagnostic sample, not an estimate of general extraction quality.
 

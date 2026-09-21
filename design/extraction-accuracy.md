@@ -207,8 +207,8 @@ Measured on the 500-page benchmark with the same corpus and assertions:
 | Run | Checks | Critical | Macro recall | Macro precision |
 | --- | ---: | ---: | ---: | ---: |
 | Readability (0.17) | 3,176/3,573 | 1,692/1,831 | 94.13% | 98.07% |
-| Structural, `complete` | 3,472/3,573 | 1,822/1,831 | 99.33% | 98.11% |
-| Structural, `clean` | 3,465/3,573 | 1,819/1,831 | 98.96% | 99.45% |
+| Structural, `complete` | 3,475/3,573 | 1,825/1,831 | 99.39% | 98.11% |
+| Structural, `clean` | 3,468/3,573 | 1,822/1,831 | 99.00% | 99.44% |
 
 Both modes are gated by `bench check` against their own baselines
 (`bench/baseline.json`, `bench/baseline-clean.json`). The remaining misses are

@@ -423,7 +423,7 @@ harness/harness  registry/app/remote/clients/registry/client.go  <span class="di
               <p>Bookmarks for agent workflows: save useful sources while researching a project, then return to them in a later session. <code class="inline">--tag</code> works on search, code, docs, scrape and crawl. Each bookmark keeps a source URL, a bounded title and description, and the tagging time. One source can belong to several tags.</p>
               <p><code class="inline">tag show</code> returns the newest 50 entries by default. Use <code class="inline">--limit N</code> to change that, or <code class="inline">--limit 0</code> for all. MCP accepts the same <code class="inline">limit</code>. Output reports how many entries are shown and the whole-tag total. Read the index, pick a source and scrape its URL.</p>
               <p class="note">Bookmarks survive page-cache expiry and clearing. <code class="inline">cached: false</code> means no fresh local body was confirmed; it does not mean a dead link. When <code class="inline">cache_status: unavailable</code>, the page cache could not be checked. Bookmark operations still work during a background crawl or an idle MCP session.</p>
-              <p class="note"><code class="inline">tag add</code> accepts URLs without fetching them. Cold re-adds preserve existing metadata; later fetches fill missing titles and descriptions. Removing a bookmark uses the displayed URL, regardless of cookie or User-Agent settings. Use <code class="inline">tag remove</code> to tidy up; bookmarks never expire automatically.</p>
+              <p class="note"><code class="inline">tag add</code> accepts absolute http(s) URLs without fetching them. Cold re-adds preserve existing metadata; later fetches fill missing titles and descriptions. Removing a bookmark uses the displayed URL, regardless of cookie or User-Agent settings. Use <code class="inline">tag remove</code> to tidy up; bookmarks never expire automatically.</p>
               <p class="note">The separate <code class="inline">tags.db</code> uses the native configuration directory: XDG config/home on Linux, Application Support on macOS, AppData on Windows. <code class="inline">KETCH_TAGS_PATH</code> overrides the filename and must be set for isolated bookmark labs. Full bodies stay in the page cache. Optional bookmark write failures retain research output with CLI stderr diagnostics or MCP <code class="inline">warnings</code>.</p>
             </div>
           </details>
@@ -440,7 +440,7 @@ harness/harness  registry/app/remote/clients/registry/client.go  <span class="di
             <summary>mcp <span class="sm">Run as an MCP server over stdio</span></summary>
             <div class="disc-body">
               <pre><code><span class="p">$ </span>ketch mcp serve</code></pre>
-              <p class="note">The five surfaces as MCP tools, on the same config and backends as the CLI. <code class="inline">config</code>, <code class="inline">cache</code>, and <code class="inline">doctor</code> are deliberately <em>not</em> tools — they're operator actions, not research surfaces.</p>
+              <p class="note">The five research surfaces, plus <code class="inline">tag</code>, as MCP tools on the same config and backends as the CLI. <code class="inline">config</code>, <code class="inline">cache</code>, and <code class="inline">doctor</code> are deliberately <em>not</em> tools — they're operator actions, not research surfaces.</p>
             </div>
           </details>
 
@@ -734,7 +734,7 @@ Bound every scrape with --max-chars and --trim. Cite every claim.</code></pre>
         <p class="note">Read it at <a href="https://github.com/1broseidon/ketch/tree/main/skills/ketch">skills/ketch/</a>. Most of this page's playbook and gotchas sections come from it.</p>
 
         <h3>MCP server</h3>
-        <p class="tight">For agents that speak MCP rather than shelling out, the same five surfaces run as tools over stdio, on the same config and backends as the CLI.</p>
+        <p class="tight">For agents that speak MCP rather than shelling out, the same five surfaces run as tools over stdio — plus <code class="inline">tag</code> for bookmarks — on the same config and backends as the CLI.</p>
         <pre><code><span class="p">$ </span>claude mcp add ketch -- ketch mcp serve
 
 <span class="dim"># or with no install step at all</span>

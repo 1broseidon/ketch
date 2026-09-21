@@ -16,7 +16,7 @@ cmd/
   code.go                    Code search command: query → snippet results, --lang qualifier
   docs.go                    Docs search command: query → docs/snippet results, --library, --resolve
   config.go                  Config command: discovery, init, set, path
-  cache.go                   Cache command: stats, clear
+  cache.go                   Cache command: stats (page cache and tag index), clear
   tag.go                     Tag command: add, show, list, remove over the durable tag index
   browser.go                 Browser command: install, status
   doctor.go                  Doctor command: report formatting + exit-code gating over doctor.Run
@@ -26,13 +26,14 @@ cmd/
 search/                      Searcher interface + Brave/DDG/SearXNG/EXA/Firecrawl/Keenable/Tavily/Parallel/SerpBase/Degoog/Serply/Youcom backends; NewFromConfig resolves the ordered provider registry for cmd/ and mcp/. auto.go is the default `auto` backend (keyless fallback chain, AutoRank-ordered), multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), random.go shuffled fallback, canonical.go the URL dedup keys
 code/                        code.Searcher interface + GrepApp/Sourcegraph/GitHub backends; NewFromConfig resolves the ordered provider registry
 docs/                        docs.Searcher interface + Context7 backend (FTS5 local is an unimplemented stub); NewFromConfig resolves the ordered provider registry
-mcp/                         MCP server (search/code/docs/scrape/crawl tools; the mcp_tools config key is an allowlist over the published set) over the go-sdk mcp package; Server struct holds the shared scraper + cache, tools call the same NewFromConfig constructors as the CLI
+mcp/                         MCP server (search/code/docs/scrape/crawl/tag tools; the mcp_tools config key is an allowlist over the published set) over the go-sdk mcp package; Server struct holds the shared scraper + cache, tools call the same NewFromConfig constructors as the CLI
 scrape/                      HTTP fetch + Page type, JS detection fallback, Rod browser; pipeline.go has the cache-aware scrape pipeline (CachedScrape*, ScrapeSelector, FetchLLMSTxt) shared by cmd/ and mcp/
 extract/                     structural extraction (landmark → uniform sections → prose root, chrome pruned by what it is; config extract_mode complete|clean) with readability fallback and html-to-markdown, charset decoding, JS shell detection (Detector: built-in + config spa_markers, modern hydration/streaming frameworks)
 crawl/                       BFS crawler, work queue + worker pool, background status
 cookies/                     Netscape cookies.txt jar loader + RFC 6265 domain/path matching (Jar.For); nil-safe, values never logged
 config/                      JSON config loading/saving (~/.config/ketch/)
-doctor/                      Health checks: concurrent read-only probes per backend + browser + cache, status classification (ok/no_key/unreachable/misconfigured/skipped)
+doctor/                      Health checks: concurrent read-only probes per backend + browser + cache + tag index (informational, never gates the exit code), status classification (ok/no_key/unreachable/misconfigured/skipped)
+health/                      Shared bounded provider health checks (Status classification, HTTP probe helpers) used by doctor and the search/code/docs provider probes
 cache/                       TTL page cache (Store interface, BBoltStore backend); tags.go/tag_store.go provide durable bookmarks in a separate tags.db with short-lived handles. cache clear frees page storage for reuse without shrinking the file or changing bookmarks
 httpx/                       Shared tuned *http.Transport for all HTTP backends
 updatecheck/                 "new release available" probe + throttled stderr hint
@@ -121,9 +122,9 @@ ketch tag show docs                         # newest 50 bookmarks, with total co
 ketch tag show docs --limit 0               # all bookmarks under a tag
 ketch tag list                              # every tag, with entry counts
 ketch tag remove docs [url...]              # drop a tag, or just those pages from it
-ketch cache                                 # show cache stats
-ketch doctor                                # live health check of every backend + browser + cache (exit 5 if a configured surface is broken)
-ketch mcp serve                             # run as an MCP server over stdio (search/code/docs/scrape/crawl tools)
+ketch cache                                 # show page-cache and tag-index stats
+ketch doctor                                # live health check of every backend + browser + cache + tag index (exit 5 if a configured surface is broken)
+ketch mcp serve                             # run as an MCP server over stdio (search/code/docs/scrape/crawl/tag tools)
 ```
 
 ## Flags
