@@ -574,8 +574,6 @@ func linkDensity(sel *goquery.Selection) float64 {
 }
 
 var (
-	rxDisplayNoneStyle = regexp.MustCompile(`(?i)display\s*:\s*none`)
-	rxHiddenStyle      = regexp.MustCompile(`(?i)visibility\s*:\s*hidden`)
 	// Permalink anchors sit inside headings on most generated documentation:
 	// pkg.go.dev's ¶, PostgreSQL's #, Sphinx's headerlink. Their text is a
 	// glyph or an instruction, never part of the heading.
@@ -986,7 +984,7 @@ func (p *pruner) hiddenRule(s *goquery.Selection) {
 }
 
 func hiddenByStyle(style string) bool {
-	return style != "" && (rxDisplayNoneStyle.MatchString(style) || rxHiddenStyle.MatchString(style))
+	return style != "" && inlineHidden(style)
 }
 
 // dropAsides removes the asides that are sidebars: made of links, or of
@@ -1754,8 +1752,7 @@ func mathToText(doc *goquery.Document) []string {
 		// so a display:none MathML container does not take the text with it.
 		target := m
 		if p := m.Parent(); p.Length() > 0 && p.Children().Length() == 1 && p.Is("span, div") {
-			style, _ := p.Attr("style")
-			if rxDisplayNoneStyle.MatchString(style) {
+			if style, _ := p.Attr("style"); inlineHidden(style) {
 				target = p
 			}
 		}

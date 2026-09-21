@@ -83,7 +83,7 @@ func hiddenCodeNode(node *html.Node) bool {
 		if attr.Key == "hidden" || (attr.Key == "aria-hidden" && strings.EqualFold(strings.TrimSpace(attr.Val), "true")) {
 			return true
 		}
-		if attr.Key == "style" && inlineCodeHidden(attr.Val) {
+		if attr.Key == "style" && inlineHidden(attr.Val) {
 			return true
 		}
 		if attr.Key == "class" && lineNumberClass(attr.Val) && !codeContainer(node) {
@@ -140,30 +140,76 @@ func unwrapLineNumberTables(doc *goquery.Document) {
 	})
 }
 
-// Recognize simple inline visibility declarations, not substrings inside custom
-// properties or quoted values. Complex CSS needs a browser; retain its text.
-func inlineCodeHidden(style string) bool {
-	if strings.ContainsAny(style, `"'()\`) || strings.Contains(style, "/*") {
-		return false
-	}
+// inlineHidden reports whether an inline style hides the element: an
+// effective display of none, or visibility hidden or collapse. Declarations
+// are parsed, not pattern-matched, so a custom property such as
+// --fallback-display:none, a quoted value, or a url() holding a semicolon
+// never counts, and a later or !important declaration overrides an earlier
+// one the way CSS does. Anything a browser needs a stylesheet for is left
+// visible.
+func inlineHidden(style string) bool {
 	values := make(map[string]string)
 	priorities := make(map[string]bool)
-	for _, declaration := range strings.Split(strings.ToLower(style), ";") {
+	for _, declaration := range splitDeclarations(stripCSSComments(style)) {
 		property, value, ok := strings.Cut(declaration, ":")
-		property = strings.TrimSpace(property)
+		property = strings.ToLower(strings.TrimSpace(property))
 		if !ok || (property != "display" && property != "visibility") {
 			continue
 		}
-		value = strings.TrimSpace(value)
-		keyword, priority, hasPriority := strings.Cut(value, "!")
-		important := strings.TrimSpace(priority) == "important"
+		keyword, priority, hasPriority := strings.Cut(strings.TrimSpace(value), "!")
+		important := strings.EqualFold(strings.TrimSpace(priority), "important")
 		if hasPriority && !important {
 			continue
 		}
 		if !priorities[property] || important {
-			values[property] = strings.TrimSpace(keyword)
+			values[property] = strings.ToLower(strings.TrimSpace(keyword))
 			priorities[property] = important
 		}
 	}
 	return values["display"] == "none" || values["visibility"] == "hidden" || values["visibility"] == "collapse"
+}
+
+// splitDeclarations splits an inline style on the semicolons that end a
+// declaration, leaving those inside quotes or parentheses alone.
+func splitDeclarations(style string) []string {
+	var out []string
+	var quote byte
+	depth, start := 0, 0
+	for i := 0; i < len(style); i++ {
+		c := style[i]
+		switch {
+		case quote != 0:
+			switch c {
+			case '\\':
+				i++
+			case quote:
+				quote = 0
+			}
+		case c == '"' || c == '\'':
+			quote = c
+		case c == '(':
+			depth++
+		case c == ')' && depth > 0:
+			depth--
+		case c == ';' && depth == 0:
+			out = append(out, style[start:i])
+			start = i + 1
+		}
+	}
+	return append(out, style[start:])
+}
+
+// stripCSSComments removes /* */ comments from an inline style.
+func stripCSSComments(style string) string {
+	for {
+		open := strings.Index(style, "/*")
+		if open < 0 {
+			return style
+		}
+		end := strings.Index(style[open+2:], "*/")
+		if end < 0 {
+			return style[:open]
+		}
+		style = style[:open] + " " + style[open+2+end+2:]
+	}
 }

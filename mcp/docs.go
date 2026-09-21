@@ -17,7 +17,7 @@ type DocsInput struct {
 	Library string `json:"library,omitempty" jsonschema:"library ID to fetch docs from directly, skipping the resolve step; requires a backend with library operations"`
 	Tokens  int    `json:"tokens,omitempty" jsonschema:"library token budget when library is set (default 4000)"`
 	Limit   int    `json:"limit,omitempty" jsonschema:"max number of results (default: the configured limit; with library set, unbounded unless given)"`
-	Tag     string `json:"tag,omitempty" jsonschema:"record each result under this tag, retrievable later with the tag tool"`
+	Tag     string `json:"tag,omitempty" jsonschema:"record each result under this tag, retrievable later with the tag tool; not with resolve"`
 	Resolve bool   `json:"resolve,omitempty" jsonschema:"resolve a library name to library IDs instead of searching docs"`
 }
 
@@ -61,6 +61,11 @@ func (s *Server) registerDocsTool() {
 		}
 
 		if in.Resolve {
+			// Library matches carry IDs, not URLs: there is nothing to
+			// bookmark, so refuse rather than record nothing under the tag.
+			if in.Tag != "" {
+				return nil, DocsOutput{}, errf(kindValidation, "tag cannot be combined with resolve: library matches have no URL to bookmark")
+			}
 			return s.docsResolve(ctx, docs.ResolveBackend(backend), in.Query, limit)
 		}
 

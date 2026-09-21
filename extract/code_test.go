@@ -92,7 +92,7 @@ const s = <span class="string">"&lt;div&gt;&amp;&lt;/div&gt;"</span>;</code></pr
 	}
 }
 
-func TestInlineCodeVisibility(t *testing.T) {
+func TestInlineHidden(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		style  string
@@ -109,11 +109,18 @@ func TestInlineCodeVisibility(t *testing.T) {
 		{"display:none!important; display:inline", true},
 		{"display:none!important; display:inline!important", false},
 		{"display:none!invalid", false},
+		{"--fallback-display:none; color: red", false},
+		{"display:none; display:block", false},
+		{"background: url(data:image/png;base64,AAAA); display: none", true},
+		{"content: 'a;display:none'; color: red", false},
+		{"/* display:none */ color: red", false},
+		{"color: red /* note */; display: none", true},
+		{"Visibility: HIDDEN", true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.style, func(t *testing.T) {
 			t.Parallel()
-			if got := inlineCodeHidden(tc.style); got != tc.hidden {
+			if got := inlineHidden(tc.style); got != tc.hidden {
 				t.Fatalf("hidden=%v, want %v", got, tc.hidden)
 			}
 		})

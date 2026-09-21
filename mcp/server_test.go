@@ -183,3 +183,44 @@ func TestNewServerPrunesTools(t *testing.T) {
 		}
 	}
 }
+
+// docs with resolve returns library IDs, not URLs, so a tag has nothing to
+// record: the combination is a validation error rather than a silent no-op.
+func TestDocsToolRejectsTagWithResolve(t *testing.T) {
+	cfg := config.Defaults()
+	srv, err := NewServer(&cfg, "test")
+	if err != nil {
+		t.Fatalf("NewServer: %v", err)
+	}
+	t.Cleanup(srv.Close)
+
+	ctx := context.Background()
+	client := mcpsdk.NewClient(&mcpsdk.Implementation{Name: "test-client", Version: "0"}, nil)
+	clientTransport, serverTransport := mcpsdk.NewInMemoryTransports()
+	go func() { _ = srv.Run(ctx, serverTransport) }()
+	session, err := client.Connect(ctx, clientTransport, nil)
+	if err != nil {
+		t.Fatalf("client connect: %v", err)
+	}
+	defer session.Close()
+
+	res, err := session.CallTool(ctx, &mcpsdk.CallToolParams{
+		Name:      "docs",
+		Arguments: map[string]any{"query": "react", "resolve": true, "tag": "libs"},
+	})
+	if err != nil {
+		t.Fatalf("CallTool: %v", err)
+	}
+	if !res.IsError {
+		t.Fatal("docs resolve with tag should be a tool error")
+	}
+	text := ""
+	for _, c := range res.Content {
+		if tc, ok := c.(*mcpsdk.TextContent); ok {
+			text += tc.Text
+		}
+	}
+	if !strings.HasPrefix(text, "[validation]") || !strings.Contains(text, "tag cannot be combined with resolve") {
+		t.Fatalf("error = %q, want a [validation] error naming the conflict", text)
+	}
+}

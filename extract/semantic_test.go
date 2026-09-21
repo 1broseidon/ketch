@@ -151,11 +151,13 @@ func TestHiddenRules(t *testing.T) {
 		`<span class="sr-only">SRLABEL</span>`+
 		`<p class="sr-only">SRDESC describes the chart: sales rose in every quarter of the year and fell only in the last week of December</p>`+
 		`<div style="display:none">STYLEHIDDEN</div>`+
+		`<div style="--fallback-display:none"><p>CUSTOMPROP is visible: a custom property is not a display declaration</p></div>`+
+		`<div style="display:none; display:block"><p>OVERRIDDEN is visible: the later declaration wins</p></div>`+
 		`<div aria-hidden="true">ARIAHIDDEN</div>`+
 		`<div class="d-none">SHORTHIDDEN</div>`+
 		`<div class="d-none"><p>CLASSHIDDENPROSE is a foldout of prose someone collapsed for later reading</p></div>`))
 	for _, md := range []string{complete, clean} {
-		assertContainsAll(t, md, "FOLDEDPROSE", "SRDESC", "CLASSHIDDENPROSE")
+		assertContainsAll(t, md, "FOLDEDPROSE", "SRDESC", "CLASSHIDDENPROSE", "CUSTOMPROP", "OVERRIDDEN")
 		assertContainsNone(t, md, "HIDDENBLOCK", "SRLABEL", "STYLEHIDDEN", "ARIAHIDDEN", "SHORTHIDDEN")
 	}
 }

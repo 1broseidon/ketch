@@ -42,6 +42,11 @@ func runDocs(cmd *cobra.Command, args []string) error {
 	minimal, _ := cmd.Flags().GetBool("minimal")
 
 	if resolve {
+		// Library matches carry IDs, not URLs: there is nothing to bookmark,
+		// so refuse rather than accept a tag and record nothing under it.
+		if tag, _ := cmd.Flags().GetString("tag"); tag != "" {
+			return exitErrf(ExitValidation, "--tag cannot be combined with --resolve: library matches have no URL to bookmark")
+		}
 		return runDocsResolve(cmd, query, limit, asJSON)
 	}
 
