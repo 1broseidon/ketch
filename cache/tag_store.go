@@ -11,6 +11,7 @@ import (
 	"time"
 
 	bolt "go.etcd.io/bbolt"
+	bolterrors "go.etcd.io/bbolt/errors"
 )
 
 var tagBucketName = []byte("tags")
@@ -44,7 +45,20 @@ func defaultTagDB() *tagDB {
 	return &tagDB{path: path, err: err}
 }
 
+// defaultOpenTimeout is the lock-wait budget for explicit tag operations
+// (add/show/list/remove): a human or agent is directly waiting on the
+// result, so it is worth a real wait for a concurrent writer to finish.
+const defaultOpenTimeout = time.Second
+
 func (s *tagDB) transaction(write bool, fn func(*bolt.Tx) error) error {
+	return s.transactionTimeout(write, defaultOpenTimeout, fn)
+}
+
+// transactionTimeout is transaction with an explicit lock-wait budget.
+// Backfill uses a much shorter one: it runs on every page Put whether or
+// not the URL is tagged, so it must not make an ordinary fetch wait behind
+// an unrelated `ketch tag` writer.
+func (s *tagDB) transactionTimeout(write bool, timeout time.Duration, fn func(*bolt.Tx) error) error {
 	if s.err != nil {
 		return s.err
 	}
@@ -62,7 +76,7 @@ func (s *tagDB) transaction(write bool, fn func(*bolt.Tx) error) error {
 	if err := tightenDBPermissions(s.path); err != nil {
 		return err
 	}
-	db, err := bolt.Open(s.path, 0o600, &bolt.Options{ReadOnly: !write, Timeout: time.Second})
+	db, err := bolt.Open(s.path, 0o600, &bolt.Options{ReadOnly: !write, Timeout: timeout})
 	if err != nil {
 		return fmt.Errorf("open tag index: %w", err)
 	}
@@ -206,13 +220,34 @@ func (s *tagDB) DeleteTagEntry(tag, sourceKey string) (bool, error) {
 	return found, err
 }
 
-// Backfill updates only existing memberships, inside the same transaction as
-// the existence check. Reads never write, so they cannot resurrect removals.
+// backfillOpenTimeout bounds Backfill's own opens (both the membership check
+// and, when needed, the write). It is deliberately far shorter than
+// defaultOpenTimeout: Backfill runs on every page Put regardless of whether
+// the URL is tagged, so a lock held by a concurrent `ketch tag` writer must
+// not stall an ordinary scrape — this is a best-effort refresh, not a
+// request anyone is waiting on.
+const backfillOpenTimeout = 100 * time.Millisecond
+
+// Backfill fills missing metadata for existing bookmarks of url. It never
+// creates a membership and, for the common case of an untagged URL, never
+// even opens the database for writing: a read-only lookup first confirms
+// there is something to update. Both opens use backfillOpenTimeout, and a
+// lock timeout on either is treated as a clean skip rather than an error —
+// contention with another tag operation is expected and self-clearing, and
+// Backfill runs unconditionally on every cache Put, tagged or not. Reads
+// never write, so they cannot resurrect a removal.
 func (s *tagDB) Backfill(url, cacheKeyValue, title, description string) error {
-	if _, err := os.Stat(s.path); errors.Is(err, os.ErrNotExist) {
-		return nil // ordinary untagged fetches do not create a tag database
+	tagged, err := s.hasMembership(url)
+	if err != nil {
+		if errors.Is(err, bolterrors.ErrTimeout) {
+			return nil
+		}
+		return err
 	}
-	return s.transaction(true, func(tx *bolt.Tx) error {
+	if !tagged {
+		return nil
+	}
+	err = s.transactionTimeout(true, backfillOpenTimeout, func(tx *bolt.Tx) error {
 		prefix := []byte(cacheKey(url) + tagSep)
 		cursor := tx.Bucket(sourceBucketName).Cursor()
 		b := tx.Bucket(tagBucketName)
@@ -233,4 +268,27 @@ func (s *tagDB) Backfill(url, cacheKeyValue, title, description string) error {
 		}
 		return nil
 	})
+	if errors.Is(err, bolterrors.ErrTimeout) {
+		return nil
+	}
+	return err
+}
+
+// hasMembership reports whether any tag currently references url. It opens
+// the database read-only (or not at all, when the file does not exist yet),
+// so it is safe to call for every fetch regardless of whether anything has
+// ever been tagged.
+func (s *tagDB) hasMembership(url string) (bool, error) {
+	found := false
+	err := s.transactionTimeout(false, backfillOpenTimeout, func(tx *bolt.Tx) error {
+		b := tx.Bucket(sourceBucketName)
+		if b == nil {
+			return nil
+		}
+		prefix := []byte(cacheKey(url) + tagSep)
+		k, _ := b.Cursor().Seek(prefix)
+		found = k != nil && bytes.HasPrefix(k, prefix)
+		return nil
+	})
+	return found, err
 }

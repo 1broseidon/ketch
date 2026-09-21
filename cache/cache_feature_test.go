@@ -1,13 +1,16 @@
 package cache
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/1broseidon/ketch/scrape"
+	bolt "go.etcd.io/bbolt"
 )
 
 func newTestCache(t *testing.T, ttl time.Duration) *Cache {
@@ -285,5 +288,114 @@ func TestFeatureDBFileCreated(t *testing.T) {
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Error("expected DB file to exist after creating store")
+	}
+}
+
+// tagsDBPath reaches the isolated tags.db path a newTestCache-built Cache
+// backfills against, so a test can assert on that exact file without
+// touching KETCH_TAGS_PATH or any other process-global state.
+func tagsDBPath(t *testing.T, c *Cache) string {
+	t.Helper()
+	store, ok := c.store.(*BBoltStore)
+	if !ok {
+		t.Fatalf("cache store is %T, want *BBoltStore", c.store)
+	}
+	return store.tags.path
+}
+
+// A plain fetch of a URL nobody bookmarked must not touch tags.db at all —
+// not create it, not open it for writing. This is the behaviour a strace of
+// `ketch scrape` without --tag depends on.
+func TestPutOnUntaggedURLLeavesTagsDBUntouched(t *testing.T) {
+	t.Parallel()
+	c := newTestCache(t, time.Hour)
+	// Tag something unrelated first so tags.db exists and has a baseline
+	// mtime/size to compare against.
+	put(t, c, "other", "https://example.com/other", "Other", "An unrelated page kept around so tags.db exists for this test to matter.")
+	tagsPath := tagsDBPath(t, c)
+	before, err := os.Stat(tagsPath)
+	if err != nil {
+		t.Fatalf("tags.db should exist after tagging something: %v", err)
+	}
+
+	c.Put("https://example.com/never-tagged",
+		page("https://example.com/never-tagged", "Untagged", "Plenty of markdown content here so this looks like a real fetched page."),
+		scrape.SourceHTTP)
+
+	after, err := os.Stat(tagsPath)
+	if err != nil {
+		t.Fatalf("tags.db disappeared: %v", err)
+	}
+	if !after.ModTime().Equal(before.ModTime()) || after.Size() != before.Size() {
+		t.Errorf("Put on an untagged URL touched tags.db: mtime %v -> %v, size %d -> %d",
+			before.ModTime(), after.ModTime(), before.Size(), after.Size())
+	}
+}
+
+// A fresh install (tags.db never created) must not have Put create it either.
+func TestPutNeverCreatesTagsDBWhenNothingIsTagged(t *testing.T) {
+	t.Parallel()
+	c := newTestCache(t, time.Hour)
+	tagsPath := tagsDBPath(t, c)
+
+	c.Put("https://example.com/never-tagged",
+		page("https://example.com/never-tagged", "Untagged", "Plenty of markdown content here so this looks like a real fetched page."),
+		scrape.SourceHTTP)
+
+	if _, err := os.Stat(tagsPath); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("Put with nothing ever tagged created tags.db: %v", err)
+	}
+}
+
+// A tagged URL must still have its title/description backfilled by Put —
+// the cheap read-only membership check must not skip real work.
+func TestPutOnTaggedURLStillBackfillsMetadata(t *testing.T) {
+	t.Parallel()
+	c := newTestCache(t, time.Hour)
+	url := "https://example.com/ldap"
+	if _, err := c.TagURL("guacamole", url, url); err != nil {
+		t.Fatalf("TagURL: %v", err)
+	}
+
+	c.Put(url, page(url, "LDAP auth", "Guacamole authenticates against an LDAP directory for single sign-on."), scrape.SourceHTTP)
+
+	pages, err := c.Tagged("guacamole")
+	if err != nil || len(pages) != 1 {
+		t.Fatalf("Tagged() = %+v, %v", pages, err)
+	}
+	if pages[0].Title != "LDAP auth" || pages[0].Description == "" || !pages[0].Cached {
+		t.Errorf("tagged URL was not backfilled by Put: %+v", pages[0])
+	}
+}
+
+// When another handle holds the tags.db lock, Put on an untagged URL must
+// return quickly and silently — no stall behind the writer's timeout, no
+// warning about a bookmark this command never touched.
+func TestPutOnUntaggedURLDoesNotStallOrWarnWhenTagsDBIsLocked(t *testing.T) {
+	t.Parallel()
+	c := newTestCache(t, time.Hour)
+	put(t, c, "other", "https://example.com/other", "Other", "An unrelated page kept around so tags.db exists for this test to matter.")
+	tagsPath := tagsDBPath(t, c)
+
+	locked, err := bolt.Open(tagsPath, 0o600, nil)
+	if err != nil {
+		t.Fatalf("lock tags.db: %v", err)
+	}
+	defer locked.Close()
+
+	var warnings int32
+	guarded := c.WithTagErrorHandler(func(error) { atomic.AddInt32(&warnings, 1) })
+
+	start := time.Now()
+	guarded.Put("https://example.com/never-tagged",
+		page("https://example.com/never-tagged", "Untagged", "Plenty of markdown content here so this looks like a real fetched page."),
+		scrape.SourceHTTP)
+	elapsed := time.Since(start)
+
+	if elapsed > 500*time.Millisecond {
+		t.Errorf("Put stalled behind the locked tags.db: %v (want well under the old 1s default)", elapsed)
+	}
+	if n := atomic.LoadInt32(&warnings); n != 0 {
+		t.Errorf("Put on an untagged URL warned %d time(s) about a lock it never needed to wait on", n)
 	}
 }
