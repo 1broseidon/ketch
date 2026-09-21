@@ -86,16 +86,25 @@ func hiddenCodeNode(node *html.Node) bool {
 		if attr.Key == "style" && inlineCodeHidden(attr.Val) {
 			return true
 		}
-		if attr.Key == "class" && lineNumberClass(attr.Val) {
+		if attr.Key == "class" && lineNumberClass(attr.Val) && !codeContainer(node) {
 			return true
 		}
 	}
 	return false
 }
 
+// codeContainer reports whether node holds the code rather than a gutter
+// beside it. Prism switches its plugin on with a line-numbers class on the
+// pre or code element itself and draws the numbers in a span it adds at
+// runtime, so the container's class never means its text is line numbers.
+func codeContainer(node *html.Node) bool {
+	return node.Data == "pre" || node.Data == "code"
+}
+
 // Highlighters that print line numbers put them in the markup: Pygments in
 // span.linenos, Sphinx and Rouge in a gutter cell beside the code,
-// highlight.js in td.hljs-ln-numbers. None of it is code.
+// highlight.js in td.hljs-ln-numbers. None of it is code. The same words on
+// the pre or code element itself are a plugin switch, not a gutter.
 var lineNumberClasses = tokenSet(`linenos lineno linenumber linenumbers line-number line-numbers line-numbers-rows linenodiv gutter rouge-gutter hljs-ln-numbers hljs-ln-n ln-num line-num`)
 
 func lineNumberClass(class string) bool {

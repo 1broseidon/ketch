@@ -432,6 +432,19 @@ func TestLineNumbersLeaveCode(t *testing.T) {
 	assertContainsNone(t, complete, " 1import", "\n1\n2")
 }
 
+// Prism turns its plugin on with a line-numbers class on the pre or code
+// element itself (WordPress puts it on the code element); the numbers are
+// drawn at runtime in a span it appends. The class must not hide the code.
+func TestLineNumbersClassOnTheContainerKeepsCode(t *testing.T) {
+	t.Parallel()
+	complete, clean := extractBoth(t, landmarkPage(`<pre class="wp-block-code"><code lang="php" class="language-php line-numbers">wp_insert_post( $my_post );
+return $post_id;</code></pre>`+
+		`<pre class="line-numbers"><code class="language-js">const total = items.length;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>`))
+	for _, md := range []string{complete, clean} {
+		assertContainsAll(t, md, "```php\nwp_insert_post( $my_post );\nreturn $post_id;\n```", "```js\nconst total = items.length;\n```")
+	}
+}
+
 func TestAriaHiddenPanelWithControlStays(t *testing.T) {
 	t.Parallel()
 	complete, clean := extractBoth(t, landmarkPage(`<button aria-controls="adv" aria-expanded="false">Advanced options</button><div id="adv" aria-hidden="true"><p>PANELCONTENT is what the author folded away for later</p></div><span aria-hidden="true">DECORATIVE</span>`))
