@@ -44,11 +44,17 @@ jobs:
       - run: go test ./...
 
 
+      # winget is skipped until the first ketch manifest PR on
+      # microsoft/winget-pkgs (#437139) is approved: the v0.18.0 run pushed
+      # the manifests to the fork and then got "403 Resource not accessible
+      # by personal access token" opening the PR, and because npm depends on
+      # this job, one winget failure would hold the npm release hostage.
+      # Drop the --skip once the token can open that PR (see RELEASING.md).
       - uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean
+          args: release --clean --skip=winget
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Pushes the winget manifest branch to our winget-pkgs fork and opens

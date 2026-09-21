@@ -41,6 +41,10 @@ archives:
 #
 # Requires a WINGET_TOKEN secret: the default GITHUB_TOKEN is scoped to this
 # repository and can neither push to the fork nor open a PR on microsoft's.
+#
+# Currently skipped: release.yml passes --skip=winget until the first
+# manifest PR (microsoft/winget-pkgs#437139) is approved and the token can
+# open PRs there. The block stays so re-enabling is one flag.
 winget:
   - name: ketch
     publisher: 1broseidon

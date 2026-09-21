@@ -125,6 +125,16 @@ to arrange.
 
 `skip_upload: auto` keeps prereleases out of winget entirely.
 
+**Currently skipped.** `release.yml` passes `--skip=winget` since v0.18.0: that
+run pushed the manifests to the fork and then failed with `403 Resource not
+accessible by personal access token` opening the PR on `microsoft/winget-pkgs`,
+which took the dependent `npm` job down with it. A fine-grained PAT cannot be
+granted on a repository you do not own, so opening the cross-repo PR needs a
+classic PAT with the `public_repo` scope. Re-enable by replacing `WINGET_TOKEN`
+with such a token and dropping the `--skip=winget` flag once the first package
+PR (#437139) is approved; until then, open version PRs by hand from the
+`ketch-<version>` branch GoReleaser leaves on the fork.
+
 Notes:
 
 - **The first submission of a new package waits on a human moderator.** Later
