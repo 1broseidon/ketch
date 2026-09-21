@@ -34,6 +34,7 @@ type configInfo struct {
 	Browser                            string             `json:"browser,omitempty" order:"18"`
 	CookieFile                         string             `json:"cookie_file,omitempty" order:"19"`
 	UserAgent                          string             `json:"user_agent,omitempty" order:"20"`
+	ExtractMode                        string             `json:"extract_mode" order:"26"` // effective extraction mode: clean (default) or complete
 	CodeBackend                        string             `json:"code_backend" order:"21"`
 	DocsBackend                        string             `json:"docs_backend" order:"22"`
 	URLRewrites                        []urlrewrite.Rule  `json:"url_rewrites,omitempty" order:"27"`
@@ -103,6 +104,7 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 		Browser:                            c.Browser,
 		CookieFile:                         c.CookieFile,
 		UserAgent:                          effectiveUserAgent(c),
+		ExtractMode:                        effectiveExtractMode(c),
 		CodeBackend:                        c.CodeBackend,
 		DocsBackend:                        c.DocsBackend,
 		URLRewrites:                        c.URLRewrites,
@@ -236,6 +238,8 @@ func applyConfigSet(c *config.Config, key, value string) error {
 		return setCookieFile(c, value)
 	case "user_agent":
 		return setUserAgent(c, value)
+	case "extract_mode":
+		return setExtractMode(c, value)
 	case "external_pdf_to_md_converter_command":
 		return setExternalPDFConverterCommand(c, value)
 	case "external_pdf_to_md_converter_timeout_sec":
@@ -316,6 +320,34 @@ func effectiveUserAgent(c config.Config) string {
 		return ua
 	}
 	return scrape.DefaultUserAgent()
+}
+
+// setExtractMode persists the extraction mode: clean drops chrome by
+// structure and by name and phrase, complete keeps everything the page's
+// structure does not condemn. Empty clears it so the default (clean) applies.
+func setExtractMode(c *config.Config, value string) error {
+	mode, err := config.NormalizeExtractMode(value)
+	if err != nil {
+		return exitErrf(ExitValidation, "invalid extract_mode: %w", err)
+	}
+	c.ExtractMode = mode
+	return nil
+}
+
+// effectiveExtractMode returns the mode scrape and extract will run in:
+// the operator's extract_mode when set, otherwise clean. A value the
+// normalizer rejects is possible only in a hand-edited config file; it is
+// reported as-is — scrape and extract fail loud on it with the valid names.
+func effectiveExtractMode(c config.Config) string {
+	mode, err := config.NormalizeExtractMode(c.ExtractMode)
+	switch {
+	case err != nil:
+		return c.ExtractMode
+	case mode == "":
+		return string(extract.ModeClean)
+	default:
+		return mode
+	}
 }
 
 // effectiveMCPTools returns the tools `ketch mcp serve` will publish: the
@@ -423,7 +455,7 @@ func runConfigPath(_ *cobra.Command, _ []string) error {
 }
 
 func validConfigKeys() []string {
-	fields := []configbase.Field{{Name: "backend", Order: 0}, {Name: "limit", Order: 15}, {Name: "cache_ttl", Order: 16}, {Name: "browser", Order: 17}, {Name: "code_backend", Order: 18}, {Name: "docs_backend", Order: 19}, {Name: "url_rewrites", Order: 23}, {Name: "spa_markers", Order: 24}, {Name: "mcp_tools", Order: 25}, {Name: "cookie_file", Order: 26}, {Name: "user_agent", Order: 27}, {Name: "external_pdf_to_md_converter_command", Order: 28}, {Name: "external_pdf_to_md_converter_timeout_sec", Order: 29}}
+	fields := []configbase.Field{{Name: "backend", Order: 0}, {Name: "limit", Order: 15}, {Name: "cache_ttl", Order: 16}, {Name: "browser", Order: 17}, {Name: "code_backend", Order: 18}, {Name: "docs_backend", Order: 19}, {Name: "url_rewrites", Order: 23}, {Name: "spa_markers", Order: 24}, {Name: "mcp_tools", Order: 25}, {Name: "cookie_file", Order: 26}, {Name: "user_agent", Order: 27}, {Name: "external_pdf_to_md_converter_command", Order: 28}, {Name: "external_pdf_to_md_converter_timeout_sec", Order: 29}, {Name: "extract_mode", Order: 30}}
 	for _, s := range config.ProviderSettings() {
 		fields = append(fields, configbase.Field{Name: s.Key, Order: s.ValidationOrder})
 		if s.Plural != "" {

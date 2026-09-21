@@ -43,6 +43,7 @@ jobs:
 
       - run: go test ./...
 
+
       - uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser

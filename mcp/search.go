@@ -23,6 +23,7 @@ type SearchInput struct {
 	Scrape     bool     `json:"scrape,omitempty" jsonschema:"also fetch each result URL and fill its content field with extracted markdown"`
 	Trim       bool     `json:"trim,omitempty" jsonschema:"strip markdown formatting from scraped content, keep text only (with scrape)"`
 	MaxChars   int      `json:"max_chars,omitempty" jsonschema:"truncate each result's scraped content to N characters (with scrape; 0 = disabled)"`
+	Tag        string   `json:"tag,omitempty" jsonschema:"record each result under this tag; with scrape the entry gets the fetched page's title and description"`
 }
 
 // SearchOutput is the output schema for the "search" tool. Results carries
@@ -32,9 +33,10 @@ type SearchInput struct {
 // backend name to its failure message under multi or random search, so callers
 // can see which providers were dropped or tried before the winner.
 type SearchOutput struct {
-	Results []search.Result   `json:"results"`
-	Backend string            `json:"backend,omitempty"`
-	Errors  map[string]string `json:"errors,omitempty"`
+	Warnings []string          `json:"warnings,omitempty"`
+	Results  []search.Result   `json:"results"`
+	Backend  string            `json:"backend,omitempty"`
+	Errors   map[string]string `json:"errors,omitempty"`
 }
 
 func (s *Server) registerSearchTool() {
@@ -48,7 +50,9 @@ func (s *Server) registerSearchTool() {
 			"Set multi to query several backends at once and rank-fuse the results, or random to shuffle providers and fall back sequentially on errors." + errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in SearchInput) (*mcpsdk.CallToolResult, SearchOutput, error) {
+		ctx, diagnostics := withTagDiagnostics(ctx)
 		out, err := s.runSearch(ctx, in)
+		out.Warnings = diagnostics.values()
 		return nil, out, err
 	})
 }
@@ -56,8 +60,8 @@ func (s *Server) registerSearchTool() {
 // runSearch is the search tool's handler body, factored out so its validation
 // and error classification can be unit-tested without a live transport.
 func (s *Server) runSearch(ctx context.Context, in SearchInput) (SearchOutput, error) {
-	if in.Query == "" {
-		return SearchOutput{}, errf(kindValidation, "query is required")
+	if err := validateSearchInput(in); err != nil {
+		return SearchOutput{}, err
 	}
 	limit := in.Limit
 	if limit <= 0 {
@@ -105,8 +109,9 @@ func (s *Server) runSearch(ctx context.Context, in SearchInput) (SearchOutput, e
 		return SearchOutput{}, upstreamErrf(err, "search failed")
 	}
 
+	s.recordResults(ctx, in.Tag, searchTagged(results))
 	if in.Scrape {
-		s.scrapeSearchResults(ctx, results, in.Trim, in.MaxChars)
+		s.scrapeSearchResults(ctx, results, in.Trim, in.MaxChars, in.Tag)
 	}
 	out.Results = results
 	return out, nil
@@ -142,8 +147,9 @@ func (s *Server) runMultiSearch(ctx context.Context, in SearchInput, limit int) 
 	if err != nil {
 		return SearchOutput{}, upstreamErrf(err, "search failed")
 	}
+	s.recordResults(ctx, in.Tag, searchTagged(results))
 	if in.Scrape {
-		s.scrapeSearchResults(ctx, results, in.Trim, in.MaxChars)
+		s.scrapeSearchResults(ctx, results, in.Trim, in.MaxChars, in.Tag)
 	}
 
 	out := SearchOutput{Results: results}
@@ -184,8 +190,9 @@ func (s *Server) runRandomSearch(ctx context.Context, in SearchInput, limit int)
 	if err != nil {
 		return SearchOutput{}, upstreamErrf(err, "search failed")
 	}
+	s.recordResults(ctx, in.Tag, searchTagged(results))
 	if in.Scrape {
-		s.scrapeSearchResults(ctx, results, in.Trim, in.MaxChars)
+		s.scrapeSearchResults(ctx, results, in.Trim, in.MaxChars, in.Tag)
 	}
 
 	out := SearchOutput{Results: results, Backend: selected}
@@ -217,16 +224,35 @@ func cleanMultiNames(names []string) []string {
 // scrapeSearchResults fills each result's Content with extracted markdown,
 // like `ketch search --scrape`. Individual fetch failures leave that
 // result's content empty rather than failing the whole call.
-func (s *Server) scrapeSearchResults(ctx context.Context, results []search.Result, trim bool, maxChars int) {
-	pc := s.pageCache(false)
+func (s *Server) scrapeSearchResults(ctx context.Context, results []search.Result, trim bool, maxChars int, tag string) {
+	pc := s.tagPageCache(ctx, false)
 	for i, r := range results {
 		page, err := s.scraper.CachedScrape(ctx, pc, r.URL)
 		if err != nil {
 			continue
 		}
+		s.recordTag(ctx, tag, r.URL, page)
 		if page.FetchedURL != "" {
 			results[i].FetchedURL = page.FetchedURL
 		}
 		results[i].Content = extract.PostProcess(page.Markdown, trim, maxChars)
 	}
+}
+
+// searchTagged maps search hits onto index entries. Without scrape the
+// engine's own title and description are all there is; with it,
+// scrapeSearchResults records the fetched pages instead.
+func searchTagged(results []search.Result) []taggedResult {
+	out := make([]taggedResult, 0, len(results))
+	for _, r := range results {
+		out = append(out, taggedResult{URL: r.URL, Title: r.Title, Description: r.Description})
+	}
+	return out
+}
+
+func validateSearchInput(in SearchInput) error {
+	if in.Query == "" {
+		return errf(kindValidation, "query is required")
+	}
+	return validResearchTag(in.Tag)
 }

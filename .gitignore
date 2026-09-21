@@ -13,8 +13,6 @@ coverage.out
 .vscode/
 *.swp
 
-# Site
-
 # OS
 .DS_Store
 Thumbs.db
@@ -33,3 +31,6 @@ npm/node_modules/
 
 # goreleaser build output (`goreleaser release --snapshot`)
 dist/
+
+# Local Browser-pane dev-server config, not part of the project
+.claude/launch.json

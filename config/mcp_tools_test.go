@@ -17,9 +17,9 @@ func TestNormalizeMCPTools(t *testing.T) {
 		{"single tool", []string{"search"}, []string{"search"}, ""},
 		{"canonical order regardless of input", []string{"crawl", "docs", "search"}, []string{"search", "docs", "crawl"}, ""},
 		{"trims and lowercases", []string{" SCRAPE ", "Code"}, []string{"code", "scrape"}, ""},
-		{"unknown rejected", []string{"search", "wiki"}, nil, `unknown tool "wiki" (valid: search, code, docs, scrape, crawl)`},
-		{"duplicate rejected", []string{"search", "search"}, nil, `duplicate tool "search" (valid: search, code, docs, scrape, crawl)`},
-		{"blank rejected", []string{"search", "  "}, nil, "tool name is blank (valid: search, code, docs, scrape, crawl)"},
+		{"unknown rejected", []string{"search", "wiki"}, nil, `unknown tool "wiki" (valid: search, code, docs, scrape, crawl, tag)`},
+		{"duplicate rejected", []string{"search", "search"}, nil, `duplicate tool "search" (valid: search, code, docs, scrape, crawl, tag)`},
+		{"blank rejected", []string{"search", "  "}, nil, "tool name is blank (valid: search, code, docs, scrape, crawl, tag)"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -42,7 +42,7 @@ func TestNormalizeMCPTools(t *testing.T) {
 
 func TestMCPToolNamesReturnsCopy(t *testing.T) {
 	got := MCPToolNames()
-	if strings.Join(got, ",") != "search,code,docs,scrape,crawl" {
+	if strings.Join(got, ",") != "search,code,docs,scrape,crawl,tag" {
 		t.Fatalf("MCPToolNames = %v", got)
 	}
 	got[0] = "tampered"

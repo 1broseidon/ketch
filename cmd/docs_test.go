@@ -65,6 +65,29 @@ func TestDocsUnknownBackendExitsValidationWithOptions(t *testing.T) {
 	}
 }
 
+// --resolve returns library IDs, not URLs, so a --tag has nothing to record:
+// the combination is refused up front instead of succeeding and saving nothing.
+func TestDocsResolveRejectsTag(t *testing.T) {
+	if err := docsCmd.Flags().Set("resolve", "true"); err != nil {
+		t.Fatal(err)
+	}
+	if err := docsCmd.Flags().Set("tag", "libs"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = docsCmd.Flags().Set("resolve", "false")
+		_ = docsCmd.Flags().Set("tag", "")
+	})
+
+	exitErr := asExitError(t, runDocs(docsCmd, []string{"react"}))
+	if exitErr.Code != ExitValidation {
+		t.Errorf("exit code = %d, want %d (validation)", exitErr.Code, ExitValidation)
+	}
+	if !strings.Contains(exitErr.Error(), "--tag cannot be combined with --resolve") {
+		t.Errorf("error should name the conflicting flags, got: %v", exitErr)
+	}
+}
+
 // upstreamErr must classify docs.ErrNotFound as exit 3 (permanently absent,
 // not retryable) and everything else as exit 4 (upstream, retry may help).
 func TestUpstreamErrClassification(t *testing.T) {

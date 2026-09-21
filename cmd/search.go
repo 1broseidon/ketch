@@ -44,6 +44,9 @@ func init() {
 	searchCmd.Flags().String("random", "",
 		"random provider with fallback: comma-separated list, or bare/=all for every usable backend (use the = form, e.g. --random=brave,exa)")
 	searchCmd.Flags().Lookup("random").NoOptDefVal = "all"
+	searchCmd.Flags().String("tag", "", "record each result under this tag; with --scrape the entry gets the fetched page's title and description (see `ketch tag`)")
+	searchCmd.PreRunE = validateTagFlag
+	searchCmd.PreRunE = validateTagFlag
 	searchCmd.Flags().String("cookie-file", "", "Netscape cookies.txt jar for --scrape fetches; matching cookies are sent with each fetch (overrides config cookie_file)")
 	searchCmd.Flags().String("user-agent", "", "User-Agent override for --scrape fetches (overrides config user_agent; applies to HTTP and browser fetches; empty restores each fetch path's default)")
 }
@@ -81,6 +84,11 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		backend = served
 	}
 
+	// Tag every hit first, then let the fetch upgrade the ones that succeed:
+	// adding --scrape must never record *less* than the same search without
+	// it, and a result whose page fails to load is still a result.
+	tagResults(cmd, searchTaggable(results))
+
 	if doScrape {
 		scraper, err := newScraper(cmd)
 		if err != nil {
@@ -88,7 +96,11 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		}
 		defer scraper.Close()
 		pc := newPageCache(false)
-		return searchScrape(cmd.Context(), results, scraper, pc, asJSON, trim, maxChars, minimal)
+		defer pc.Close()
+		tag, _ := cmd.Flags().GetString("tag")
+		tw := newTagWriter(tag, pc)
+		defer tw.Close()
+		return searchScrape(cmd.Context(), results, scraper, pc, tw, asJSON, trim, maxChars, minimal)
 	}
 
 	if asJSON {
@@ -117,7 +129,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func searchScrape(ctx context.Context, results []search.Result, scraper *scrape.Scraper, pc *cache.Cache, asJSON bool, trim bool, maxChars int, minimal bool) error {
+func searchScrape(ctx context.Context, results []search.Result, scraper *scrape.Scraper, pc *cache.Cache, tw *tagWriter, asJSON bool, trim bool, maxChars int, minimal bool) error {
 	if asJSON {
 		for i, r := range results {
 			page, err := scraper.CachedScrape(ctx, pc, r.URL)
@@ -125,6 +137,7 @@ func searchScrape(ctx context.Context, results []search.Result, scraper *scrape.
 				fmt.Fprintf(os.Stderr, "warn: failed to scrape %s: %v\n", r.URL, err)
 				continue
 			}
+			tw.record(scraper, r.URL, page)
 			if page.FetchedURL != "" {
 				results[i].FetchedURL = page.FetchedURL
 			}
@@ -140,6 +153,7 @@ func searchScrape(ctx context.Context, results []search.Result, scraper *scrape.
 				fmt.Fprintf(os.Stderr, "warn: failed to scrape %s: %v\n", r.URL, err)
 				continue
 			}
+			tw.record(scraper, r.URL, page)
 			content := extract.PostProcess(page.Markdown, trim, maxChars)
 			snippet := firstLine(content)
 			fmt.Printf("%s\t%s\t%s\n", r.URL, minimalField(page.Title), minimalField(snippet))
@@ -153,6 +167,7 @@ func searchScrape(ctx context.Context, results []search.Result, scraper *scrape.
 			fmt.Fprintf(os.Stderr, "warn: failed to scrape %s: %v\n", r.URL, err)
 			continue
 		}
+		tw.record(scraper, r.URL, page)
 		if page.FetchedURL != "" {
 			results[i].FetchedURL = page.FetchedURL
 		}
@@ -267,6 +282,11 @@ func runMultiSearch(cmd *cobra.Command, query string, limit int, doScrape, asJSO
 		fmt.Fprintf(os.Stderr, "warn: %s: %v\n", be.Backend, be.Err)
 	}
 
+	// Tag every hit first, then let the fetch upgrade the ones that succeed:
+	// adding --scrape must never record *less* than the same search without
+	// it, and a result whose page fails to load is still a result.
+	tagResults(cmd, searchTaggable(results))
+
 	if doScrape {
 		scraper, err := newScraper(cmd)
 		if err != nil {
@@ -274,7 +294,11 @@ func runMultiSearch(cmd *cobra.Command, query string, limit int, doScrape, asJSO
 		}
 		defer scraper.Close()
 		pc := newPageCache(false)
-		return searchScrape(cmd.Context(), results, scraper, pc, asJSON, trim, maxChars, minimal)
+		defer pc.Close()
+		tag, _ := cmd.Flags().GetString("tag")
+		tw := newTagWriter(tag, pc)
+		defer tw.Close()
+		return searchScrape(cmd.Context(), results, scraper, pc, tw, asJSON, trim, maxChars, minimal)
 	}
 
 	if asJSON {
@@ -314,6 +338,11 @@ func runRandomSearch(cmd *cobra.Command, query string, limit int, doScrape, asJS
 		fmt.Fprintf(os.Stderr, "warn: %s: %v\n", failure.Backend, failure.Err)
 	}
 
+	// Tag every hit first, then let the fetch upgrade the ones that succeed:
+	// adding --scrape must never record *less* than the same search without
+	// it, and a result whose page fails to load is still a result.
+	tagResults(cmd, searchTaggable(results))
+
 	if doScrape {
 		scraper, err := newScraper(cmd)
 		if err != nil {
@@ -321,8 +350,13 @@ func runRandomSearch(cmd *cobra.Command, query string, limit int, doScrape, asJS
 		}
 		defer scraper.Close()
 		pc := newPageCache(false)
-		return searchScrape(cmd.Context(), results, scraper, pc, asJSON, trim, maxChars, minimal)
+		defer pc.Close()
+		tag, _ := cmd.Flags().GetString("tag")
+		tw := newTagWriter(tag, pc)
+		defer tw.Close()
+		return searchScrape(cmd.Context(), results, scraper, pc, tw, asJSON, trim, maxChars, minimal)
 	}
+
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(results)
 	}
@@ -454,4 +488,15 @@ func printMultiPlain(query string, results []search.Result, berrs []search.Backe
 		}
 		fmt.Println()
 	}
+}
+
+// searchTaggable maps search hits onto index entries. Without --scrape the
+// engine's own title and description are all there is; with it, searchScrape
+// has already recorded the fetched pages and this never runs.
+func searchTaggable(results []search.Result) []taggableResult {
+	out := make([]taggableResult, 0, len(results))
+	for _, r := range results {
+		out = append(out, taggableResult{URL: r.URL, Title: r.Title, Description: r.Description})
+	}
+	return out
 }

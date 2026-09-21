@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/1broseidon/ketch/extract"
 	"github.com/1broseidon/ketch/scrape"
 )
 
@@ -161,6 +162,16 @@ func TestExtract_SelectNoMatchExitNotFound(t *testing.T) {
 	}
 }
 
+func TestExtract_SelectURLAttributeUsesOriginalHTML(t *testing.T) {
+	page, err := extractFromHTML(`<a href="../reference">reference</a>`, extractOptions{Selector: `a[href^="../"]`, URL: "https://example.test/docs/chapter/page"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(page.Markdown, "https://example.test/docs/reference") {
+		t.Fatalf("relative source link was not selected and resolved: %s", page.Markdown)
+	}
+}
+
 func TestExtract_BadSelectorExitValidation(t *testing.T) {
 	_, err := extractFromHTML(sampleArticleHTML(), extractOptions{Selector: "["})
 	var exitErr *ExitError
@@ -264,5 +275,26 @@ func TestExtract_CommandDoesNotExposeScrapeOnlyFlags(t *testing.T) {
 		if extractCmd.Flags().Lookup(name) != nil {
 			t.Errorf("extract command must not expose scrape-only flag %q", name)
 		}
+	}
+}
+
+// extract_mode from config reaches the extractor: the default (clean) drops a
+// block that only its name condemns, complete keeps it.
+func TestExtract_ModeFromConfig(t *testing.T) {
+	html := `<html><head><title>Guide</title></head><body><main><h1>Guide</h1><p>` + strings.Repeat("Words about the guide and its behavior. ", 30) +
+		`</p><div class="related-posts"><p>RELATEDTEASER one two three four five six seven eight nine</p></div></main></body></html>`
+	clean, err := extractFromHTML(html, extractOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(clean.Markdown, "RELATEDTEASER") {
+		t.Fatalf("default (clean) mode kept a named block:\n%s", clean.Markdown)
+	}
+	complete, err := extractFromHTML(html, extractOptions{Mode: extract.ModeComplete})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(complete.Markdown, "RELATEDTEASER") {
+		t.Fatalf("complete mode dropped a block by name:\n%s", complete.Markdown)
 	}
 }

@@ -120,12 +120,16 @@ ketch scrape https://example.com --json
 # {"url":"https://example.com","title":"Example Domain","markdown":"..."}
 ```
 
-Pipe any HTML through ketch's readability + markdown pipeline without a fetch:
+Pipe any HTML through ketch's extraction pipeline without a fetch:
 
 ```sh
 curl -L https://chain.sh/ketch | ketch extract
 cat page.html | ketch extract --select article --max-chars 4000
 ```
+
+### Extraction
+
+Extraction reads the page's own structure: the content landmark it declares (`main`, `article`), a document assembled from uniform sections, or the smallest element holding its prose. Site furniture is removed by what it is — navigation, hidden and collapsed controls, link rails, tables of contents — and readability is the fallback for a page that declares no structure. The `extract_mode` config key sets what pruning may drop: `clean` (the default) also drops blocks by name and phrase — related-post rails, comment threads, share bars, "was this helpful?" boxes — for the leanest markdown, and `complete` keeps everything the structure does not condemn, trading a little precision for the last fraction of recall. Pages served in a legacy encoding are decoded before extraction.
 
 ### PDF extraction
 
@@ -144,6 +148,71 @@ ketch config set external_pdf_to_md_converter_timeout_sec 300
 
 When configured, the external converter is authoritative: failures are returned rather than silently falling back to the built-in parser. PDF binary output is never emitted: `--raw` and `--select` reject PDFs as validation errors. With `--force-browser`, PDF markdown still uses text extraction and never opens Chromium's PDF viewer.
 
+### Tags — bookmarks for agent workflows
+
+Save useful sources while you research a project, then find them again in a
+later session. Tags group documentation, code references, search results and
+write-ups under the same project or topic. One source can belong to several tags.
+
+```sh
+ketch search "guacamole ldap authentication" --scrape --tag remote-access
+ketch code "guacamole ldap" --tag remote-access
+ketch docs "apache guacamole" --tag remote-access
+ketch tag add remote-access https://example.com/read-this-later  # no network
+
+ketch tag show remote-access
+ketch tag show remote-access --limit 10 --json
+ketch tag show remote-access --limit 0       # all entries
+ketch tag remove remote-access https://example.com/read-this-later
+```
+
+`--tag` works on `search`, `code`, `docs`, `scrape` and `crawl`, including
+`--no-cache`. A bookmark keeps the source URL, a bounded title and description,
+and the time it was tagged. Descriptions come from search results, snippets or
+fetched content; full bodies belong to the separate page cache.
+
+`tag show` returns the newest **50 entries by default**, ordered by tagging time
+and then URL for ties. Use `--limit N` to change that, or `--limit 0` for all.
+Text output says `showing N of M` when limited; `--minimal` keeps its TSV output
+and puts that notice on stderr. JSON and MCP return `entries` and `cached` totals
+for the whole tag, `shown` for the returned pages, and `cache_status`. The MCP
+`tag` tool accepts the same `limit` on `operation: show`.
+
+Read the index, choose a source, and `scrape` its URL. `cached: false` usually
+means there is no fresh local body, not that the link is broken. If the page
+cache is locked or unreadable, bookmarks still work: `cache_status: unavailable`
+means the `cached: false` flags are unverified. Fetches can proceed without the
+page cache. A bookmark does not guarantee an upstream page still exists.
+
+Bookmarks survive cache expiry and `cache clear`. Clear removes page bodies
+and frees their space for reuse; it **does not shrink the database file**.
+`tag add` accepts absolute `http(s)` URLs without fetching them (anything else
+is bad input, exit `2`), preserves existing metadata on a cold re-add, and fills
+missing titles and descriptions on a later fetch.
+Removing a bookmark uses the displayed URL, regardless of cookies, User-Agent
+or URL rewrite settings. Nothing expires bookmarks; use `tag remove` to tidy up — with URLs, it reports
+the ones that were not under the tag as `missing`.
+
+The independent `tags.db` is opened only for short index operations, so an idle
+MCP server or a background crawl does not monopolize it. Its default location
+uses the operating system's configuration directory:
+
+| Platform | Default tag index |
+| --- | --- |
+| Linux | `$XDG_CONFIG_HOME/ketch/tags.db`, or `~/.config/ketch/tags.db` |
+| macOS | `~/Library/Application Support/ketch/tags.db` |
+| Windows | `%AppData%\ketch\tags.db` |
+
+Set **`KETCH_TAGS_PATH`** to override the complete filename. Isolated labs must
+set it as well as their page-cache override; `XDG_CACHE_HOME` alone no longer
+isolates bookmarks. This replaces the unreleased in-cache tag layout; existing
+experimental tag buckets are left untouched and are not automatically imported.
+
+A failed explicit `tag` write returns exit 5 / MCP `[precondition]`. If saving
+a bookmark fails during research, the research result is retained: the CLI emits
+a stderr warning (`warning.code: tag_write_failed` with `--json`), and MCP adds
+`warnings` to the result. Research success alone does not confirm bookmark persistence.
+
 ## Commands
 
 | Command | What it does |
@@ -157,8 +226,9 @@ When configured, the external converter is authoritative: failures are returned 
 | `browser` | Manage headless Chrome for JS-rendered pages (`install`, `status`) |
 | `config` | Show effective config as JSON, or `init` / `set` / `path` |
 | `cache` | Show page-cache stats, or `clear` |
-| `doctor` | Live health check of every backend, the browser, and the cache — exit `0` healthy, `5` when a configured surface is broken |
-| `mcp` | Run ketch as an MCP server over stdio (`mcp serve`) — the five research surfaces as tools |
+| `tag` | Bookmark research sources and revisit them (`add`, `show`, `list`, `remove`) |
+| `doctor` | Live health check of every backend, the browser, the cache and the tag index (informational) — exit `0` healthy, `5` when a configured surface is broken |
+| `mcp` | Run ketch as an MCP server over stdio (`mcp serve`) — the research surfaces plus `tag`, as tools |
 | `version` | Print version, commit, build date |
 
 Every command supports `-h/--help` for its full flag list; `--json` is the only flag global to every command. Full flag reference lives at [ketch.run](https://ketch.run/).
@@ -212,7 +282,7 @@ Precedence is **CLI flag > `KETCH_*` env > config file > built-in default**. Not
 - Invalid env values (e.g. `KETCH_LIMIT=abc`) fail loudly on commands that use config, naming the offending variable; `ketch version` and `ketch config set/path` still work.
 - Secret `KETCH_*` vars are stripped from the environment of spawned subprocesses (headless browser, external PDF converter).
 
-Other configurable keys include per-backend API keys (`brave_api_key`, `brave_api_keys` for multi-key rotation, `exa_api_key`, `firecrawl_api_key`, `keenable_api_key`, `tavily_api_key`, `serpbase_api_key`, `serply_api_key`, `youcom_api_key`, `context7_api_key`, `github_token`), `firecrawl_url` / `sourcegraph_url` / `degoog_url` (self-hosted overrides), `cache_ttl`, `url_rewrites` (regex rewrite rules applied before fetch), `spa_markers` (extra JS-shell detection tokens), `cookie_file` (see below), `user_agent` (User-Agent override for HTTP and browser fetches; setting one scopes cached pages to it, so entries cached under the default stay valid), and the optional external PDF converter command/timeout. Multiple keys per provider are picked randomly per request to spread rate limits. See the [config reference](https://ketch.run/) for the full list.
+Other configurable keys include per-backend API keys (`brave_api_key`, `brave_api_keys` for multi-key rotation, `exa_api_key`, `firecrawl_api_key`, `keenable_api_key`, `tavily_api_key`, `serpbase_api_key`, `serply_api_key`, `youcom_api_key`, `context7_api_key`, `github_token`), `firecrawl_url` / `sourcegraph_url` / `degoog_url` (self-hosted overrides), `cache_ttl`, `url_rewrites` (regex rewrite rules applied before fetch), `spa_markers` (extra JS-shell detection tokens), `cookie_file` (see below), `user_agent` (User-Agent override for HTTP and browser fetches; setting one scopes cached pages to it, so entries cached under the default stay valid), `extract_mode` (`clean` by default, or `complete`; see [extraction](#extraction) — a non-default mode scopes cached pages the same way), and the optional external PDF converter command/timeout. Multiple keys per provider are picked randomly per request to spread rate limits. See the [config reference](https://ketch.run/) for the full list.
 
 ### Cookies (BYO cookies.txt)
 
@@ -254,7 +324,7 @@ For a fuller agent playbook — surface routing, token budgets, error-code contr
 
 ### MCP server
 
-For agents that speak MCP instead of shelling out, `ketch mcp serve` runs the same five surfaces — `search`, `code`, `docs`, `scrape`, `crawl` — as MCP tools over stdio, using the same config and backends as the CLI. To register it with Claude Code:
+For agents that speak MCP instead of shelling out, `ketch mcp serve` runs the same surfaces — `search`, `code`, `docs`, `scrape`, `crawl`, plus `tag` — as MCP tools over stdio, using the same config and backends as the CLI. To register it with Claude Code:
 
 ```sh
 claude mcp add ketch -- ketch mcp serve
@@ -286,6 +356,11 @@ Bug reports, documentation, and improvements are welcome. See the
 [contribution guide](./CONTRIBUTING.md) for pull request guidelines and provider
 admission criteria. Please discuss new providers in an issue before implementing
 them.
+
+The [extraction benchmark](https://github.com/1broseidon/ketch-bench) measures content
+preservation and CLI latency across 500 pinned pages from 70 websites; it lives in its
+own repository and builds a sibling ketch checkout. Known extraction misses remain
+visible; passing its regression check is not a release approval.
 
 ## License
 

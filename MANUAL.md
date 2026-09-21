@@ -25,7 +25,8 @@ Do not change any setting that is already configured and working.
 
 Most research tooling for agents means wiring up several provider SDKs, each
 with its own auth and response shape. ketch collapses that into one binary with
-three research surfaces and two fetch surfaces.
+three research surfaces and two fetch surfaces. Any of them can `--tag`
+what it returns, and `ketch tag` brings those sources back in a later session.
 
 ```
 ketch search  "query"   # web pages
@@ -33,6 +34,7 @@ ketch code    "query"   # real OSS source
 ketch docs    "query"   # library documentation
 ketch scrape  <url>     # HTML or PDF → markdown
 ketch crawl   <url>     # BFS or sitemap walk
+ketch tag     show docs # sources saved with --tag, session to session
 ```
 
 Output is YAML frontmatter followed by content, so it stays readable in a
@@ -145,15 +147,17 @@ First match wins. The Not column names the most common mistake for each row.
 | A library's own documentation, version-aware | `docs` | `scrape` of the docs site — `docs` is already extracted and budgeted |
 | The content of a URL you already hold | `scrape` | `search` — never re-find a known URL |
 | Many pages from one site | `crawl` | looped `scrape` — crawl dedupes, bounds, and streams |
+| Sources you want back in a later session | `tag` | searching again — `--tag` on any surface, then `tag show` |
 
 In reverse: `search` finds URLs, `scrape` reads them, `crawl` reads a site,
-`code` reads public source, `docs` reads library docs. `search --scrape` fuses
+`code` reads public source, `docs` reads library docs, `tag` keeps what any of
+them returned. `search --scrape` fuses
 the two when you already want full content from every hit. Budget it like a
 scrape.
 
 ## Commands
 
-Twelve commands. `--json` is the only flag global to all of them; everything
+Thirteen commands. `--json` is the only flag global to all of them; everything
 else is per-command. Expand a row for its full flag list.
 
 #### search — Web search across twelve providers
@@ -179,6 +183,7 @@ $ ketch search "query" --multi=brave,exa # a specific set
 | `--trim` | Strip markdown syntax, keep content text |
 | `--cookie-file` | Cookie jar for `--scrape` fetches |
 | `--user-agent` | User-Agent override for `--scrape` fetches |
+| `--tag <name>` | Bookmark every result URL under a tag |
 
 `--multi` fuses rankings with Reciprocal Rank Fusion — a page several engines
 rank highly floats to the top — deduplicating by URL and tagging each result
@@ -205,6 +210,7 @@ harness/harness  registry/app/remote/clients/registry/client.go  (line 207)
 | `--lang` | Language qualifier, appended to the query |
 | `--limit, -l` | Max results |
 | `--minimal` | One result per line |
+| `--tag <name>` | Bookmark every result URL under a tag |
 
 Regex support is per-backend: grepapp and sourcegraph accept it, github rejects
 it with a pointer to the other two.
@@ -222,6 +228,7 @@ $ ketch docs --resolve "next.js"     # name → Context7 IDs
 | `--library` | Context7 library ID; skips the resolve step |
 | `--tokens` | Token budget, default 4000 |
 | `--resolve` | Resolve a library name instead of searching |
+| `--tag <name>` | Bookmark every result URL under a tag |
 
 `docs` is a two-step: resolve the name, *vet the matches*, then fetch by ID.
 Resolve never returns empty. A bad name still returns confident fuzzy matches,
@@ -240,7 +247,7 @@ $ echo "url1\nurl2" | ketch scrape      # stdin
 | Flag | Meaning |
 | --- | --- |
 | `--raw` | Raw HTML instead of markdown |
-| `--select <css>` | Extract only matching elements, skipping readability |
+| `--select <css>` | Extract only matching elements, skipping content selection |
 | `--max-chars` | Truncate output, appending `[truncated]` |
 | `--trim` | Strip markdown formatting, keep content text |
 | `--no-llms-txt` | Disable `/llms.txt` detection for bare domains |
@@ -249,6 +256,18 @@ $ echo "url1\nurl2" | ketch scrape      # stdin
 | `--no-cache` | Bypass the page cache |
 | `--cookie-file` | Netscape `cookies.txt` jar |
 | `--user-agent` | User-Agent override; empty restores the default |
+| `--tag <name>` | Bookmark each fetched URL under a tag; composes with `--no-cache` |
+
+Content selection reads the page's own structure: the landmark it declares
+(`main`, `article`), a document assembled from uniform sections, or the
+smallest element holding its prose. Site furniture goes by what it is —
+navigation, hidden and collapsed controls, link rails, tables of contents —
+and readability is the fallback for a page that declares no structure. The
+`extract_mode` config key sets what pruning may drop: `clean` (the default)
+also drops blocks by name and phrase — related-post rails, comment threads,
+share bars, "was this helpful?" boxes — for the leanest markdown; `complete`
+keeps everything the structure does not condemn, trading a little precision
+for the last fraction of recall.
 
 #### extract — Piped HTML → markdown, no fetch
 
@@ -264,8 +283,9 @@ $ cat page.html | ketch extract --select article --max-chars 4000
 | `--trim` | Strip markdown formatting |
 | `--max-chars` | Truncate output |
 
-No fetch, no cache, no browser — just the readability and markdown pipeline.
-Useful when you already have the bytes.
+No fetch, no cache, no browser — just content selection and the markdown
+pipeline, in the configured `extract_mode`. Useful when you already have the
+bytes.
 
 #### crawl — BFS or sitemap walk, foreground or detached
 
@@ -287,9 +307,41 @@ $ ketch crawl stop <id>
 | `--deny` | Regex deny patterns |
 | `--cookie-file` | Netscape `cookies.txt` jar |
 | `--user-agent` | User-Agent override |
+| `--tag <name>` | Bookmark every crawled page under a tag |
 
 A foreground crawl interrupted by SIGINT exits **0** with partial results, by
 design.
+
+#### tag — Bookmark sources and revisit them
+
+```console
+$ ketch search "guacamole ldap authentication" --scrape --tag remote-access
+$ ketch tag add remote-access https://example.com/read-later   # no network
+$ ketch tag show remote-access               # newest 50, with totals
+$ ketch tag show remote-access --limit 0     # every entry
+$ ketch tag list                             # every tag, with entry counts
+$ ketch tag remove remote-access <url>...    # no URLs: drop the whole tag
+```
+
+| Flag | Meaning |
+| --- | --- |
+| `--limit` | `show`: newest entries to return, default 50; 0 returns all |
+| `--minimal` | `show`: one page per line, tab-separated |
+
+A bookmark keeps the source URL, a bounded title and description, and the
+time it was tagged; full bodies stay in the page cache. With `--json`, `show`
+reports `entries` and `cached` totals for the whole tag, `shown` for the
+returned pages, and `cache_status` — `unavailable` when the page cache cannot
+be read, in which case `cached: false` is unverified rather than wrong.
+`tag add` takes absolute `http(s)` URLs and fetches nothing; anything else is
+bad input, exit **2**. `tag remove` with URLs names the ones that were not
+under the tag as `missing`; without URLs it drops the tag and says how many
+entries went with it. Bookmarks survive cache expiry and `cache clear`, and
+nothing expires them.
+
+The index is its own `tags.db` beside the config file — `KETCH_TAGS_PATH`
+overrides the filename — opened only for short operations, so an idle MCP
+server or a background crawl never blocks it.
 
 #### browser — Headless Chrome for JS-shell pages
 
@@ -314,7 +366,7 @@ Plain `ketch config` is the discovery call: one invocation returns everything
 an agent needs to know about what's active, including `*_key_set` presence
 booleans that never reveal the key itself.
 
-#### cache — Page-cache stats, or clear it
+#### cache — Page-cache and tag-index stats, or clear the page cache
 
 ```console
 $ ketch cache
@@ -322,7 +374,9 @@ $ ketch cache clear
 ```
 
 bbolt-backed, 72-hour default TTL. Repeat scrapes and crawls read from cache,
-with no refetch.
+with no refetch. `ketch cache` also reports the tag index — path, tag and entry
+counts, and whether another process holds its lock. `cache clear` frees page
+bodies and leaves bookmarks alone.
 
 #### doctor — Live health check of every surface
 
@@ -330,7 +384,9 @@ with no refetch.
 $ ketch doctor
 ```
 
-Concurrent read-only probes against every backend, plus the browser and cache.
+Concurrent read-only probes against every backend, plus the browser, the
+cache, and an informational `tags` row for the bookmark index that never
+affects the exit code.
 Each comes back `ok`, `no_key`, `unreachable`, `misconfigured`, or `skipped`.
 Exits **0** when healthy and **5** when a configured surface is broken — so it
 works in CI.
@@ -341,9 +397,11 @@ works in CI.
 $ ketch mcp serve
 ```
 
-The five surfaces as MCP tools, on the same config and backends as the CLI.
-`config`, `cache`, and `doctor` are deliberately *not* tools — they're operator
-actions, not research surfaces.
+The five surfaces plus `tag` as MCP tools, on the same config and backends as
+the CLI. Every research tool accepts a `tag` option, and `tag` itself is the
+one tool that writes locally and never touches the network. The `mcp_tools`
+config key narrows the published set. `config`, `cache`, and `doctor` are
+deliberately *not* tools — they're operator actions, not research surfaces.
 
 #### version — Version, commit, build date
 
@@ -381,6 +439,17 @@ $ ketch crawl status c_a1b2c3d4
 
 # once complete, individual pages come from cache — no refetch
 $ ketch scrape https://docs.example.com/guide/auth
+```
+
+### Keep sources across sessions
+
+Tag what a session finds; a later session lists the URLs, titles and
+descriptions without searching again.
+
+```console
+$ ketch search "guacamole ldap authentication" --scrape --tag remote-access
+$ ketch code "guacamole ldap" --tag remote-access
+$ ketch tag show remote-access --minimal
 ```
 
 ### Federated search across providers
@@ -565,7 +634,9 @@ $ ketch scrape <url> --no-cache
 
 The cache is single-process. A long-running MCP server holds the lock, so
 concurrent CLI scrapes silently run cache-disabled — `ketch doctor` reports the
-cache as locked by another process.
+cache as locked by another process. Bookmarks are separate: `tags.db` is opened
+only for short index operations, so a server holding `cache.db` never blocks
+`ketch tag`.
 
 #### Browser rendering — Fast path first, Chrome on detection
 
@@ -576,12 +647,14 @@ $ ketch browser install                 # download Chromium
 $ ketch browser status
 ```
 
-#### Other keys — Rewrites, SPA markers, user agent, PDF converter
+#### Other keys — Rewrites, SPA markers, user agent, extraction mode, PDF converter
 
 - `url_rewrites` — regex rewrites applied before fetch
 - `spa_markers` — extra tokens for JS-shell detection
 - `cache_ttl` — cache lifetime
 - `user_agent` — User-Agent override for HTTP and browser fetches
+- `extract_mode` — `clean` (default) or `complete`; a non-default mode scopes cached pages, so a page cached under one mode is never reused under the other
+- `mcp_tools` — allowlist of MCP tools to publish; unset publishes all six
 - `external_pdf_to_md_converter_command` — external PDF-to-Markdown converter; must contain exactly one `{input}` placeholder. Once set it is authoritative, with no silent fallback
 
 ## Exit status
@@ -615,6 +688,7 @@ Use `ketch` for external research — web pages, OSS code, library docs.
 - `ketch extract` for already-fetched HTML piped in
 - `ketch code "query" --lang go` for real OSS code with line context
 - `ketch docs "query" --library /org/repo` for version-aware docs
+- `--tag <name>` on any of them keeps the sources; `ketch tag show <name>` brings them back
 All commands support `--json`. `ketch config` reports active backends.
 Bound every scrape with --max-chars and --trim. Cite every claim.
 ```
@@ -630,8 +704,8 @@ Most of this page's playbook and notes come from it.
 
 ### MCP server
 
-For agents that speak MCP rather than shelling out, the same five surfaces run
-as tools over stdio, on the same config and backends as the CLI.
+For agents that speak MCP rather than shelling out, the same five surfaces,
+plus `tag`, run as tools over stdio, on the same config and backends as the CLI.
 
 ```console
 $ claude mcp add ketch -- ketch mcp serve
@@ -673,3 +747,4 @@ is this manual as plain Markdown.
 - **Regex is per-backend.** grepapp and sourcegraph accept it; github rejects it with a pointer to the other two.
 - **Background crawls are CLI-only.** The MCP `crawl` tool is synchronous and capped at 30 pages by default, 100 hard, three minutes wall clock.
 - **The page cache is single-process.** Running the MCP server long-term degrades concurrent CLI scrapes to uncached.
+- **Bookmarks are not cache entries.** `cached: false` in `tag show` means no fresh local body, not a dead link; the bookmark stays until `tag remove`.

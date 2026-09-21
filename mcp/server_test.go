@@ -26,6 +26,13 @@ func TestBuildServerInstructionsAllFive(t *testing.T) {
 	}
 }
 
+func TestBuildServerInstructionsWithBookmarks(t *testing.T) {
+	got := buildServerInstructions([]string{"tag"})
+	if strings.Contains(got, "read-only") || !strings.Contains(got, "newest 50") || !strings.Contains(got, "cache_status") {
+		t.Fatalf("bookmark instructions misrepresent the tool: %s", got)
+	}
+}
+
 func TestBuildServerInstructionsPruned(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -159,18 +166,61 @@ func TestNewServerPrunesTools(t *testing.T) {
 			t.Errorf("instructions mention pruned tool text %q:\n%s", absent, instructions)
 		}
 	}
-	// Every tool published (the default) keeps the server whole.
+	// Every tool published (the default) keeps the server whole. Asserted
+	// against the registry rather than a literal so adding a tool does not
+	// silently need this number edited.
 	namesAll, _ := newPublishedTools(t, nil)
-	if len(namesAll) != 5 {
-		t.Errorf("published tools with no allowlist = [%s], want all five", strings.Join(namesAll, ","))
+	if len(namesAll) != len(config.MCPToolNames()) {
+		t.Errorf("published tools with no allowlist = [%s], want all %d", strings.Join(namesAll, ","), len(config.MCPToolNames()))
 	}
 	set := map[string]bool{}
 	for _, n := range namesAll {
 		set[n] = true
 	}
-	for _, want := range []string{"search", "code", "docs", "scrape", "crawl"} {
+	for _, want := range config.MCPToolNames() {
 		if !set[want] {
 			t.Errorf("unconfigured server missing tool %q", want)
 		}
+	}
+}
+
+// docs with resolve returns library IDs, not URLs, so a tag has nothing to
+// record: the combination is a validation error rather than a silent no-op.
+func TestDocsToolRejectsTagWithResolve(t *testing.T) {
+	cfg := config.Defaults()
+	srv, err := NewServer(&cfg, "test")
+	if err != nil {
+		t.Fatalf("NewServer: %v", err)
+	}
+	t.Cleanup(srv.Close)
+
+	ctx := context.Background()
+	client := mcpsdk.NewClient(&mcpsdk.Implementation{Name: "test-client", Version: "0"}, nil)
+	clientTransport, serverTransport := mcpsdk.NewInMemoryTransports()
+	go func() { _ = srv.Run(ctx, serverTransport) }()
+	session, err := client.Connect(ctx, clientTransport, nil)
+	if err != nil {
+		t.Fatalf("client connect: %v", err)
+	}
+	defer session.Close()
+
+	res, err := session.CallTool(ctx, &mcpsdk.CallToolParams{
+		Name:      "docs",
+		Arguments: map[string]any{"query": "react", "resolve": true, "tag": "libs"},
+	})
+	if err != nil {
+		t.Fatalf("CallTool: %v", err)
+	}
+	if !res.IsError {
+		t.Fatal("docs resolve with tag should be a tool error")
+	}
+	text := ""
+	for _, c := range res.Content {
+		if tc, ok := c.(*mcpsdk.TextContent); ok {
+			text += tc.Text
+		}
+	}
+	if !strings.HasPrefix(text, "[validation]") || !strings.Contains(text, "tag cannot be combined with resolve") {
+		t.Fatalf("error = %q, want a [validation] error naming the conflict", text)
 	}
 }

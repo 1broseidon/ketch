@@ -67,8 +67,8 @@ already in place.
 
 ### 4. Extraction fidelity on more of the long tail
 
-The JS-shell detector and the readability + markdown pipeline are where scrape
-quality lives. Directions include recognising more client-rendered frameworks,
+The JS-shell detector and the structural extraction + markdown pipeline (with
+readability as the fallback) are where scrape quality lives. Directions include recognising more client-rendered frameworks,
 sharpening the "is this a JS shell?" heuristic to reduce both false browser
 launches and missed escalations, and improving markdown fidelity for awkward
 document structures. The operator escape hatches (`spa_markers`,

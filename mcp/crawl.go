@@ -39,6 +39,7 @@ type CrawlInput struct {
 	Deny     []string `json:"deny,omitempty" jsonschema:"regex patterns; matching URLs are skipped"`
 	MaxChars int      `json:"max_chars,omitempty" jsonschema:"truncate each page's markdown to N characters (0 = disabled)"`
 	NoCache  bool     `json:"no_cache,omitempty" jsonschema:"bypass the page cache"`
+	Tag      string   `json:"tag,omitempty" jsonschema:"record each crawled page under this tag, retrievable later with the tag tool"`
 }
 
 // CrawlPage is one crawled page in the "crawl" tool output.
@@ -59,9 +60,10 @@ type CrawlError struct {
 // the crawl was cut short by the server-side page budget ("max_pages") or
 // wall-clock timeout ("timeout"); the collected pages are still returned.
 type CrawlOutput struct {
-	Pages   []CrawlPage  `json:"pages"`
-	Errors  []CrawlError `json:"errors,omitempty"`
-	Stopped string       `json:"stopped,omitempty"`
+	Warnings []string     `json:"warnings,omitempty"`
+	Pages    []CrawlPage  `json:"pages"`
+	Errors   []CrawlError `json:"errors,omitempty"`
+	Stopped  string       `json:"stopped,omitempty"`
 }
 
 func (s *Server) registerCrawlTool() {
@@ -73,6 +75,10 @@ func (s *Server) registerCrawlTool() {
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in CrawlInput) (*mcpsdk.CallToolResult, CrawlOutput, error) {
+		if err := validResearchTag(in.Tag); err != nil {
+			return nil, CrawlOutput{}, err
+		}
+		ctx, diagnostics := withTagDiagnostics(ctx)
 		if in.URL == "" {
 			return nil, CrawlOutput{}, errf(kindValidation, "url is required")
 		}
@@ -93,16 +99,16 @@ func (s *Server) registerCrawlTool() {
 		crawlCtx, cancel := context.WithTimeout(ctx, crawlTimeout)
 		defer cancel()
 
-		col := &crawlCollector{maxPages: maxPages, maxChars: in.MaxChars, cancel: cancel, ctx: crawlCtx}
+		col := &crawlCollector{maxPages: maxPages, maxChars: in.MaxChars, cancel: cancel, ctx: crawlCtx, srv: s, tag: in.Tag}
 		opts := crawl.Options{
 			Depth:       depth,
 			Concurrency: crawlConcurrency,
 			Allow:       in.Allow,
 			Deny:        in.Deny,
 		}
-		err := crawl.Crawl(crawlCtx, in.URL, s.scraper, opts, s.pageCache(in.NoCache), in.Sitemap, col.collect)
+		err := crawl.Crawl(crawlCtx, in.URL, s.scraper, opts, s.tagPageCache(ctx, in.NoCache), in.Sitemap, col.collect)
 
-		out := CrawlOutput{Pages: col.pages, Errors: col.errs, Stopped: col.stopped()}
+		out := CrawlOutput{Pages: col.pages, Errors: col.errs, Stopped: col.stopped(), Warnings: diagnostics.values()}
 		if err != nil && out.Stopped == "" {
 			// A real failure (bad seed, sitemap fetch error, client cancel) —
 			// not one of our own bounds firing.
@@ -124,6 +130,11 @@ type crawlCollector struct {
 	pages    []CrawlPage
 	errs     []CrawlError
 	capped   bool
+
+	// srv and tag are set when the call asked for tagging; the collector is
+	// where a crawled page is seen whole, before truncation.
+	srv *Server
+	tag string
 }
 
 func (c *crawlCollector) collect(r crawl.Result) {
@@ -139,6 +150,7 @@ func (c *crawlCollector) collect(r crawl.Result) {
 	if r.Page == nil {
 		return
 	}
+	c.srv.recordTag(c.ctx, c.tag, r.URL, r.Page)
 	c.pages = append(c.pages, CrawlPage{
 		URL:      r.Page.URL,
 		Title:    r.Page.Title,

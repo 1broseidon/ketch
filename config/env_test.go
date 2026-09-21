@@ -217,3 +217,37 @@ func TestLoadEnvMCPToolsInvalidIsLoudButBestEffort(t *testing.T) {
 		t.Fatalf("expected loud unknown-tool error, got: %v", err)
 	}
 }
+
+func TestLoadEnvExtractMode(t *testing.T) {
+	clearKetchEnv(t)
+	testutil.SetIsolatedConfigHome(t)
+	t.Setenv("KETCH_EXTRACT_MODE", " Clean ")
+
+	res, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Config.ExtractMode != "clean" {
+		t.Fatalf("ExtractMode = %q, want clean", res.Config.ExtractMode)
+	}
+	found := false
+	for _, o := range res.Overrides {
+		if o.Key == "extract_mode" && o.Var == "KETCH_EXTRACT_MODE" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("extract_mode override not recorded: %+v", res.Overrides)
+	}
+}
+
+func TestLoadEnvExtractModeInvalidIsLoud(t *testing.T) {
+	clearKetchEnv(t)
+	testutil.SetIsolatedConfigHome(t)
+	t.Setenv("KETCH_EXTRACT_MODE", "fast")
+
+	_, err := Load()
+	if err == nil || !strings.Contains(err.Error(), `KETCH_EXTRACT_MODE: unknown extract_mode "fast"`) {
+		t.Fatalf("expected loud unknown-mode error, got: %v", err)
+	}
+}

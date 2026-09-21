@@ -9,7 +9,7 @@ import (
 var mcpCmd = &cobra.Command{
 	Use:   "mcp",
 	Short: "Run ketch as an MCP (Model Context Protocol) server",
-	Long:  `Expose ketch's search, code, docs, scrape, and crawl capabilities as MCP tools, using the same config and backends as the CLI.`,
+	Long:  `Expose ketch's search, code, docs, scrape, crawl and tag capabilities as MCP tools, using the same config and backends as the CLI.`,
 }
 
 var mcpServeCmd = &cobra.Command{

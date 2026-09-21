@@ -1,8 +1,11 @@
 package cache
 
 import (
+	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -11,10 +14,13 @@ import (
 
 var bucketName = []byte("pages")
 
+var freshnessBucket = []byte("freshness")
+
 // BBoltStore implements Store using an embedded bbolt database.
 type BBoltStore struct {
 	db   *bolt.DB
 	path string
+	tags *tagDB
 }
 
 // NewBBoltStore opens or creates a bbolt database at the given path.
@@ -43,7 +49,10 @@ func openBBolt(path string, readOnly bool) (*BBoltStore, error) {
 	}
 	if !readOnly {
 		err = db.Update(func(tx *bolt.Tx) error {
-			_, err := tx.CreateBucketIfNotExists(bucketName)
+			if _, err := tx.CreateBucketIfNotExists(bucketName); err != nil {
+				return err
+			}
+			_, err := tx.CreateBucketIfNotExists(freshnessBucket)
 			return err
 		})
 		if err != nil {
@@ -51,7 +60,7 @@ func openBBolt(path string, readOnly bool) (*BBoltStore, error) {
 			return nil, fmt.Errorf("create cache bucket: %w", err)
 		}
 	}
-	return &BBoltStore{db: db, path: path}, nil
+	return &BBoltStore{db: db, path: path, tags: &tagDB{path: filepath.Join(filepath.Dir(path), "tags.db")}}, nil
 }
 
 // tightenDBPermissions protects both newly-created and pre-existing cache
@@ -84,7 +93,18 @@ func (s *BBoltStore) Get(key string) ([]byte, error) {
 
 func (s *BBoltStore) Put(key string, value []byte) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		return tx.Bucket(bucketName).Put([]byte(key), value)
+		if err := tx.Bucket(bucketName).Put([]byte(key), value); err != nil {
+			return err
+		}
+		var metadata struct {
+			CachedAt int64 `json:"t"`
+		}
+		if err := json.Unmarshal(value, &metadata); err != nil {
+			return tx.Bucket(freshnessBucket).Delete([]byte(key))
+		}
+		var stamp [8]byte
+		binary.BigEndian.PutUint64(stamp[:], uint64(metadata.CachedAt))
+		return tx.Bucket(freshnessBucket).Put([]byte(key), stamp[:])
 	})
 }
 
@@ -99,16 +119,73 @@ func (s *BBoltStore) Stats() (entries int, sizeBytes int64) {
 	return entries, sizeBytes
 }
 
+// Clear frees page storage for reuse. It does not shrink the file; bookmarks live separately.
 func (s *BBoltStore) Clear() error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		if err := tx.DeleteBucket(bucketName); err != nil {
 			return err
 		}
-		_, err := tx.CreateBucket(bucketName)
+		if _, err := tx.CreateBucket(bucketName); err != nil {
+			return err
+		}
+		if err := tx.DeleteBucket(freshnessBucket); err != nil {
+			return err
+		}
+		_, err := tx.CreateBucket(freshnessBucket)
 		return err
 	})
 }
 
 func (s *BBoltStore) Close() error {
 	return s.db.Close()
+}
+
+// PutTagEntry writes to the separate index, opening it only for this operation.
+func (s *BBoltStore) PutTagEntry(tag, pageKey string, value []byte) error {
+	return s.tags.PutTagEntry(tag, pageKey, value)
+}
+
+// TagEntries reads one tag from the separate index.
+func (s *BBoltStore) TagEntries(tag string) ([][]byte, error) { return s.tags.TagEntries(tag) }
+
+// TagNames lists tags from the separate index.
+func (s *BBoltStore) TagNames() ([]string, error) { return s.tags.TagNames() }
+
+// DeleteTag removes a tag from the separate index.
+func (s *BBoltStore) DeleteTag(tag string) (int, error) { return s.tags.DeleteTag(tag) }
+
+// DeleteTagEntry removes one stable source identity from the separate index.
+func (s *BBoltStore) DeleteTagEntry(tag, sourceKey string) (bool, error) {
+	return s.tags.DeleteTagEntry(tag, sourceKey)
+}
+
+// cachedKeys checks timestamps without decoding page bodies. Legacy page
+// entries without timestamp metadata are inspected without allocating Page.
+func (s *BBoltStore) cachedKeys(keys []string, ttl time.Duration) (map[string]bool, error) {
+	out := make(map[string]bool, len(keys))
+	err := s.db.View(func(tx *bolt.Tx) error {
+		pages, stamps := tx.Bucket(bucketName), tx.Bucket(freshnessBucket)
+		for _, key := range keys {
+			hashed := []byte(cacheKey(key))
+			var at int64
+			if stamps != nil && len(stamps.Get(hashed)) == 8 {
+				at = int64(binary.BigEndian.Uint64(stamps.Get(hashed)))
+			} else if pages != nil {
+				var meta struct {
+					CachedAt int64 `json:"t"`
+				}
+				if err := json.Unmarshal(pages.Get(hashed), &meta); err == nil {
+					at = meta.CachedAt
+				}
+			}
+			out[key] = at != 0 && time.Since(time.Unix(at, 0)) <= ttl
+		}
+		return nil
+	})
+	return out, err
+}
+
+// Backfill updates metadata for already-bookmarked source URLs.
+func (s *BBoltStore) Backfill(url, key, title, description string) error {
+	return s.tags.Backfill(url, key, title, description)
 }

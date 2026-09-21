@@ -1,4 +1,4 @@
-// Package mcp exposes ketch's search, code, docs, scrape, and crawl
+// Package mcp exposes ketch's search, code, docs, scrape, crawl, and tag
 // capabilities as Model Context Protocol (MCP) tools (prunable to a subset
 // via the mcp_tools config key). Each tool adapter calls
 // the same underlying packages (search, code, docs, scrape, crawl) the Cobra
@@ -17,7 +17,9 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/1broseidon/ketch/cache"
 	"github.com/1broseidon/ketch/config"
@@ -40,6 +42,7 @@ var toolProse = map[string]toolMeta{
 	"docs":   {"curated library/API documentation via " + strings.Join(docs.ProviderNames(), ", "), "docs for library references"},
 	"scrape": {"fetch URLs as clean markdown", "scrape when you already have the URL"},
 	"crawl":  {"bounded same-host multi-page crawl", "crawl only when one page is not enough"},
+	"tag":    {"bookmark sources and revisit them across sessions", "tag to keep and revisit a working set instead of re-searching"},
 }
 
 // buildServerInstructions returns the initialize-result instructions for the
@@ -48,7 +51,11 @@ var toolProse = map[string]toolMeta{
 // agents are never routed to tools the server won't answer.
 func buildServerInstructions(tools []string) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "ketch provides %s read-only research tool%s: ", countWord(len(tools)), plural(len(tools), "", "s"))
+	kind := "read-only research"
+	if has(tools, "tag") {
+		kind = "research and bookmark"
+	}
+	fmt.Fprintf(&b, "ketch provides %s %s tool%s: ", countWord(len(tools)), kind, plural(len(tools), "", "s"))
 	writeClauses(&b, tools, func(name string) string {
 		return fmt.Sprintf("%s (%s)", name, toolProse[name].desc)
 	})
@@ -75,6 +82,9 @@ func has(names []string, name string) bool {
 // variant. Tools that return bounded output (code, docs) get nothing — the
 // historic static text did likewise.
 func writeSizeAdvice(b *strings.Builder, tools []string) {
+	if has(tools, "tag") {
+		b.WriteString("Tag show returns the newest 50 bookmarks by default; use limit to bound the index or 0 for all. Check cache_status before interpreting cached flags, and research warnings before assuming a bookmark was saved.\n")
+	}
 	if has(tools, "scrape") || has(tools, "search") {
 		b.WriteString(`When scraping unknown or potentially large pages, set max_chars (and optionally trim) to bound the response size.
 `)
@@ -106,7 +116,13 @@ func writeClauses(b *strings.Builder, names []string, clause func(string) string
 // countWord and plural shape the first line's prose: "five research tools",
 // but "one research tool".
 func countWord(n int) string {
-	return []string{"zero", "one", "two", "three", "four", "five"}[n]
+	words := []string{"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"}
+	if n < 0 || n >= len(words) {
+		// Past the table, a numeral reads fine and beats panicking the
+		// server because someone published an eleventh tool.
+		return strconv.Itoa(n)
+	}
+	return words[n]
 }
 
 func plural(n int, one, many string) string {
@@ -125,15 +141,16 @@ type Server struct {
 	tools   []string // canonical published set; every tool when unconfigured
 	mcp     *mcpsdk.Server
 	scraper *scrape.Scraper // one scraper (and lazy browser conn) for all calls
+	tags    *cache.Cache    // independent index; opens its file only within operations
 	cache   *cache.Cache    // one bbolt handle for all calls; nil if unavailable
 }
 
 // NewServer builds an MCP server named "ketch" exposing the search, code,
-// docs, scrape, and crawl tools, backed by cfg for backend selection and API
+// docs, scrape, crawl, and tag tools, backed by cfg for backend selection and API
 // keys. Background crawls, cache admin, and config stay CLI-only.
 //
 // cfg.MCPTools — the mcp_tools config key — is an allowlist over the
-// published tools: an empty list publishes all five, a configured list
+// published tools: an empty list publishes all six, a configured list
 // publishes exactly those tools and omits the rest from both tools/list and
 // the initialize instructions.
 //
@@ -167,6 +184,11 @@ func NewServer(cfg *config.Config, version string) (*Server, error) {
 		}),
 	}
 
+	ttl, err := time.ParseDuration(cfg.CacheTTL)
+	if err != nil {
+		ttl = time.Hour
+	}
+	s.tags = cache.NewTagIndex(ttl, s.cache)
 	s.registerTools()
 
 	return s, nil
@@ -188,6 +210,8 @@ func (s *Server) registerTools() {
 			s.registerScrapeTool()
 		case "crawl":
 			s.registerCrawlTool()
+		case "tag":
+			s.registerTagTool()
 		}
 	}
 }
@@ -215,8 +239,19 @@ func (s *Server) pageCache(noCache bool) *cache.Cache {
 	return s.cache
 }
 
+// localMutating marks a tool that changes local state and never touches the
+// network. tag is the one such tool: it writes and deletes durable bookmarks,
+// whether their bodies are cached or not.
+func localMutating() *mcpsdk.ToolAnnotations {
+	openWorld := false
+	return &mcpsdk.ToolAnnotations{
+		ReadOnlyHint:  false,
+		OpenWorldHint: &openWorld,
+	}
+}
+
 // readOnlyOpenWorld marks a tool as a non-mutating fetcher that talks to the
-// open web. All ketch tools are read-only network fetchers.
+// open web. Every ketch tool but tag is a read-only network fetcher.
 func readOnlyOpenWorld() *mcpsdk.ToolAnnotations {
 	openWorld := true
 	return &mcpsdk.ToolAnnotations{

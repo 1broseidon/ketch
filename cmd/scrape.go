@@ -42,6 +42,8 @@ func init() {
 	scrapeCmd.Flags().Int("concurrency", 5, "max concurrent requests for multi-URL scraping")
 	scrapeCmd.Flags().Bool("force-browser", false, "always render via the configured browser, skipping JS-shell auto-detection")
 	scrapeCmd.Flags().String("cookie-file", "", "Netscape cookies.txt jar; matching cookies are sent with each fetch (overrides config cookie_file)")
+	scrapeCmd.Flags().String("tag", "", "record each fetched page under this tag (see `ketch tag`)")
+	scrapeCmd.PreRunE = validateTagFlag
 	scrapeCmd.Flags().String("user-agent", "", "User-Agent override (overrides config user_agent; applies to HTTP and browser fetches; empty restores each fetch path's default)")
 }
 
@@ -55,6 +57,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	concurrency, _ := cmd.Flags().GetInt("concurrency")
 	raw, _ := cmd.Flags().GetBool("raw")
 	forceBrowser, _ := cmd.Flags().GetBool("force-browser")
+	tag, _ := cmd.Flags().GetString("tag")
 
 	// --raw is an output mode over the canonical fetch result, so it is
 	// incompatible with the extraction-oriented flags.
@@ -79,13 +82,15 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	defer scraper.Close()
 
 	pc := newPageCache(noCache)
+	tw := newTagWriter(tag, pc)
+	defer tw.Close()
 	defer pc.Close()
 
 	ctx := cmd.Context()
 	if len(urls) == 1 {
-		return scrapeSingle(ctx, scraper, pc, urls[0], asJSON, raw, trim, maxChars, selector, noLLMSTxt, forceBrowser)
+		return scrapeSingle(ctx, scraper, pc, tw, urls[0], asJSON, raw, trim, maxChars, selector, noLLMSTxt, forceBrowser)
 	}
-	return scrapeMultiple(ctx, scraper, pc, urls, asJSON, raw, trim, maxChars, selector, noLLMSTxt, concurrency, forceBrowser)
+	return scrapeMultiple(ctx, scraper, pc, tw, urls, asJSON, raw, trim, maxChars, selector, noLLMSTxt, concurrency, forceBrowser)
 }
 
 // resolveURLs detects the input mode and returns a list of URLs.
@@ -191,13 +196,13 @@ func newPageCache(noCache bool) *cache.Cache {
 	if noCache {
 		return nil
 	}
-	return cache.NewFromConfig(&cfg)
+	return cache.NewFromConfig(&cfg).WithTagErrorHandler(func(err error) { warnTagWrite("", "", err) })
 }
 
-func scrapeSingle(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, rawURL string, asJSON, raw, trim bool, maxChars int, selector string, noLLMSTxt, forceBrowser bool) error {
+func scrapeSingle(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, tw *tagWriter, rawURL string, asJSON, raw, trim bool, maxChars int, selector string, noLLMSTxt, forceBrowser bool) error {
 	// --select: direct fetch + CSS extraction, bypasses cache and --raw.
 	if selector != "" {
-		return scrapeWithSelector(ctx, s, rawURL, asJSON, trim, maxChars, selector, forceBrowser)
+		return scrapeWithSelector(ctx, s, tw, rawURL, asJSON, trim, maxChars, selector, forceBrowser)
 	}
 
 	// --raw bypasses the llms.txt probe and all markdown post-processing:
@@ -210,6 +215,7 @@ func scrapeSingle(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, rawUR
 			}
 			return classifyScrapeFailure(err)
 		}
+		tw.record(s, rawURL, page)
 		return emitRaw(os.Stdout, page, rawHTML, source, asJSON, maxChars)
 	}
 
@@ -218,6 +224,7 @@ func scrapeSingle(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, rawUR
 	if !noLLMSTxt && !forceBrowser {
 		if content, ok := s.FetchLLMSTxt(ctx, rawURL); ok {
 			page := &scrape.Page{URL: rawURL, Title: "llms.txt", Markdown: content}
+			tw.record(s, rawURL, page)
 			page.Markdown = extract.PostProcess(page.Markdown, trim, maxChars)
 			if asJSON {
 				return json.NewEncoder(os.Stdout).Encode(page)
@@ -232,6 +239,7 @@ func scrapeSingle(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, rawUR
 		return classifyScrapeFailure(err)
 	}
 
+	tw.record(s, rawURL, page)
 	page.Markdown = extract.PostProcess(page.Markdown, trim, maxChars)
 
 	if asJSON {
@@ -250,7 +258,7 @@ type indexedResult struct {
 	err     error
 }
 
-func scrapeMultiple(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, urls []string, asJSON, raw, trim bool, maxChars int, selector string, noLLMSTxt bool, concurrency int, forceBrowser bool) error {
+func scrapeMultiple(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, tw *tagWriter, urls []string, asJSON, raw, trim bool, maxChars int, selector string, noLLMSTxt bool, concurrency int, forceBrowser bool) error {
 	results := make([]indexedResult, len(urls))
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, concurrency)
@@ -262,7 +270,7 @@ func scrapeMultiple(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, url
 			defer wg.Done()
 			defer func() { <-sem }()
 
-			page, rawHTML, source, err := scrapeOneURL(ctx, s, pc, rawURL, raw, selector, noLLMSTxt, forceBrowser)
+			page, rawHTML, source, err := scrapeOneURL(ctx, s, pc, tw, rawURL, raw, selector, noLLMSTxt, forceBrowser)
 			results[idx] = indexedResult{idx: idx, page: page, rawHTML: rawHTML, source: source, err: err}
 		}(i, u)
 	}
@@ -342,21 +350,26 @@ func classifyScrapeFailure(err error) error {
 
 // scrapeOneURL handles a single URL within scrapeMultiple, applying selector,
 // raw, and llms.txt detection the same way scrapeSingle does.
-func scrapeOneURL(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, rawURL string, raw bool, selector string, noLLMSTxt, forceBrowser bool) (*scrape.Page, string, string, error) {
+func scrapeOneURL(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, tw *tagWriter, rawURL string, raw bool, selector string, noLLMSTxt, forceBrowser bool) (*scrape.Page, string, string, error) {
 	if selector != "" {
 		page, err := scrapeURLWithSelector(ctx, s, rawURL, selector, forceBrowser)
+		tw.record(s, rawURL, page)
 		return page, "", "", err
 	}
 	if raw {
 		page, rawHTML, source, err := s.ScrapeRaw(ctx, pc, rawURL, forceBrowser)
+		tw.record(s, rawURL, page)
 		return page, rawHTML, source, err
 	}
 	if !noLLMSTxt && !forceBrowser {
 		if content, ok := s.FetchLLMSTxt(ctx, rawURL); ok {
-			return &scrape.Page{URL: rawURL, Title: "llms.txt", Markdown: content}, "", "", nil
+			page := &scrape.Page{URL: rawURL, Title: "llms.txt", Markdown: content}
+			tw.record(s, rawURL, page)
+			return page, "", "", nil
 		}
 	}
 	page, err := s.ScrapeMarkdown(ctx, pc, rawURL, forceBrowser)
+	tw.record(s, rawURL, page)
 	return page, "", "", err
 }
 
@@ -378,11 +391,12 @@ func scrapeURLWithSelector(ctx context.Context, s *scrape.Scraper, rawURL, selec
 	return page, nil
 }
 
-func scrapeWithSelector(ctx context.Context, s *scrape.Scraper, rawURL string, asJSON bool, trim bool, maxChars int, selector string, forceBrowser bool) error {
+func scrapeWithSelector(ctx context.Context, s *scrape.Scraper, tw *tagWriter, rawURL string, asJSON bool, trim bool, maxChars int, selector string, forceBrowser bool) error {
 	page, err := scrapeURLWithSelector(ctx, s, rawURL, selector, forceBrowser)
 	if err != nil {
 		return err
 	}
+	tw.record(s, rawURL, page)
 	page.Markdown = extract.PostProcess(page.Markdown, trim, maxChars)
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(page)

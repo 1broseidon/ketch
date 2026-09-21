@@ -17,8 +17,8 @@ npx -y ketch-cli scrape https://go.dev/doc/effective_go
 
 ## As an MCP server
 
-`ketch mcp serve` exposes five tools — `search`, `code`, `docs`, `scrape`, and
-`crawl` — over stdio. To register it with Claude Code:
+`ketch mcp serve` exposes six tools — `search`, `code`, `docs`, `scrape`,
+`crawl`, and `tag` — over stdio. To register it with Claude Code:
 
 ```sh
 claude mcp add ketch -- npx -y ketch-cli mcp serve

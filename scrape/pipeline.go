@@ -56,6 +56,11 @@ func NewFromConfig(cfg *config.Config) (*Scraper, error) {
 		return nil, fmt.Errorf("invalid url_rewrites: %w", err)
 	}
 	scraper := NewWithConfig(cfg.Browser, rw, cfg.SPAMarkers)
+	mode, err := extract.ParseMode(cfg.ExtractMode)
+	if err != nil {
+		return nil, fmt.Errorf("invalid extract_mode: %w", err)
+	}
+	scraper.extractor = extract.NewWithMode(mode)
 	ua, err := normalizeUserAgent(cfg.UserAgent)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user_agent: %w", err)
@@ -255,7 +260,7 @@ func (s *Scraper) ScrapeSelector(ctx context.Context, rawURL, selector string, f
 	if err != nil {
 		return nil, err
 	}
-	markdown, err := extract.ExtractSelector(html, selector)
+	markdown, err := extract.ExtractSelectorWithURL(fetchURL, html, selector)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrBadSelector, err)
 	}
@@ -293,7 +298,7 @@ func (s *Scraper) fetchHTMLForSelector(ctx context.Context, rawURL, fetchURL str
 	if effectiveContentType(content.ContentType, content.Body) == "application/pdf" {
 		return "", ErrPDFSelectorUnsupported
 	}
-	html, _ := s.MaybeBrowserFetch(ctx, fetchURL, string(content.Body))
+	html, _ := s.MaybeBrowserFetch(ctx, fetchURL, content.HTML())
 	return html, nil
 }
 

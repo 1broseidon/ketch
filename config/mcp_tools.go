@@ -10,7 +10,7 @@ import (
 // Private on purpose: an externally mutable slice would let importers alter
 // validation and registration (or inflate the tool count past countWord's
 // table). Exported read-only via MCPToolNames.
-var mcpToolNames = []string{"search", "code", "docs", "scrape", "crawl"}
+var mcpToolNames = []string{"search", "code", "docs", "scrape", "crawl", "tag"}
 
 // MCPToolNames returns a copy of the canonical list of tools `ketch mcp
 // serve` can publish, in registration order.

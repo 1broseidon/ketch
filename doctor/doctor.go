@@ -175,7 +175,12 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 	return append(specs,
 		spec{0, "browser", browserBackendName(cfg.Browser), cfg.Browser != "", func(context.Context) (Status, string) { return checkBrowser(cfg.Browser) }},
 		spec{0, "cookies", "jar", cfg.CookieFile != "", func(context.Context) (Status, string) { return checkCookieFile(cfg.CookieFile) }},
-		spec{0, "cache", "bbolt", true, func(context.Context) (Status, string) { return checkCache() }})
+		spec{0, "cache", "bbolt", true, func(context.Context) (Status, string) { return checkCache() }},
+		// Tags is informational, never required: the index is a best-effort,
+		// opt-in feature (see cache.tagDB.Backfill), and an ordinary research
+		// workflow that never runs `ketch tag` must not have its exit code
+		// gated by a bookmark file it never touches.
+		spec{0, "tags", "bbolt", false, func(context.Context) (Status, string) { return checkTags() }})
 }
 
 // browserBackendName labels the browser check's backend column.

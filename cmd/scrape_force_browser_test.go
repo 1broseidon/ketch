@@ -197,7 +197,7 @@ func TestForceBrowserSkipsLLMSTxtProbe(t *testing.T) {
 	s := scrape.NewWithBrowserConn(fb, nil)
 	pc := newTestCache(t, time.Hour)
 
-	page, _, _, err := scrapeOneURL(context.Background(), s, pc, srv.URL+"/", false, "", false, true)
+	page, _, _, err := scrapeOneURL(context.Background(), s, pc, nil, srv.URL+"/", false, "", false, true)
 	if err != nil {
 		t.Fatalf("scrapeOneURL force: %v", err)
 	}

@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/1broseidon/ketch/cache"
 	"github.com/1broseidon/ketch/config"
 	"github.com/1broseidon/ketch/search"
 )
@@ -764,6 +765,52 @@ func TestCheckCookieFile(t *testing.T) {
 	})
 }
 
+// --- tags ---
+
+func TestCheckTags(t *testing.T) {
+	t.Run("no tags.db yet is a clean skip", func(t *testing.T) {
+		t.Setenv("KETCH_TAGS_PATH", filepath.Join(t.TempDir(), "tags.db"))
+		status, detail := checkTags()
+		if status != StatusSkipped {
+			t.Fatalf("status = %q (detail %q), want skipped", status, detail)
+		}
+	})
+
+	t.Run("existing index reports counts", func(t *testing.T) {
+		t.Setenv("KETCH_TAGS_PATH", filepath.Join(t.TempDir(), "tags.db"))
+		index := cache.NewTagIndex(time.Hour, nil)
+		if _, err := index.TagURL("project", "https://example.test", "https://example.test"); err != nil {
+			t.Fatal(err)
+		}
+		status, detail := checkTags()
+		if status != StatusOK {
+			t.Fatalf("status = %q (detail %q), want ok", status, detail)
+		}
+		if !strings.Contains(detail, "1 tag") || !strings.Contains(detail, "1 entry") {
+			t.Fatalf("detail = %q, want it to mention 1 tag and 1 entry", detail)
+		}
+	})
+
+	t.Run("path that is a directory is misconfigured", func(t *testing.T) {
+		t.Setenv("KETCH_TAGS_PATH", t.TempDir())
+		status, detail := checkTags()
+		if status != StatusMisconfigured {
+			t.Fatalf("status = %q (detail %q), want misconfigured", status, detail)
+		}
+	})
+
+	t.Run("read-only, never writes the file into existence", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "tags.db")
+		t.Setenv("KETCH_TAGS_PATH", path)
+		if status, detail := checkTags(); status != StatusSkipped {
+			t.Fatalf("status = %q (detail %q), want skipped", status, detail)
+		}
+		if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("checkTags created tags.db: %v", err)
+		}
+	})
+}
+
 // --- exit gating: which checks are required ---
 
 func findSpec(t *testing.T, specs []spec, surface, backend string) spec {
@@ -811,6 +858,9 @@ func TestBuildSpecsRequiredGating(t *testing.T) {
 	}
 	if s := findSpec(t, specs, "cache", "bbolt"); !s.required {
 		t.Error("cache must always be required")
+	}
+	if s := findSpec(t, specs, "tags", "bbolt"); s.required {
+		t.Error("the tag index is optional and must never gate the exit code")
 	}
 	if s := findSpec(t, specs, "browser", "none"); s.required {
 		t.Error("unconfigured browser must not gate the exit code")
