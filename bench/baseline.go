@@ -7,6 +7,9 @@ func compareReports(current, baseline *report, opts options) []string {
 		return []string{"corpus or scoring schema changed: review annotations and create a new baseline"}
 	}
 	if !compatibleRuns(current, baseline) {
+		if diffs := incompatibleFields(current, baseline); len(diffs) > 0 {
+			return diffs
+		}
 		return []string{"incompatible mode, extract mode, samples, workers, platform or Go/CGO build: use a matching baseline"}
 	}
 	var failures []string
@@ -31,6 +34,35 @@ func compareReports(current, baseline *report, opts options) []string {
 func compatibleRuns(a, b *report) bool {
 	return a.Mode == b.Mode && extractModeOf(a) == extractModeOf(b) && a.Workers == b.Workers && a.Platform == b.Platform && a.CPUs == b.CPUs &&
 		a.Iterations == b.Iterations && a.Warmup == b.Warmup && a.GoVersion == b.GoVersion && a.CGOEnabled == b.CGOEnabled
+}
+
+// incompatibleFields reports, one line per field, every compatibleRuns
+// criterion on which the current run and the baseline run disagree - so a
+// failed check names the mismatch (e.g. a CGO_ENABLED=1 baseline compared
+// against this runner's CGO_ENABLED=0 self-build) instead of leaving the
+// operator to guess which of the nine criteria tripped it.
+func incompatibleFields(current, baseline *report) []string {
+	fields := []struct {
+		name            string
+		current, wanted string
+	}{
+		{"mode", current.Mode, baseline.Mode},
+		{"extract_mode", extractModeOf(current), extractModeOf(baseline)},
+		{"workers", fmt.Sprintf("%d", current.Workers), fmt.Sprintf("%d", baseline.Workers)},
+		{"platform", current.Platform, baseline.Platform},
+		{"cpus", fmt.Sprintf("%d", current.CPUs), fmt.Sprintf("%d", baseline.CPUs)},
+		{"iterations", fmt.Sprintf("%d", current.Iterations), fmt.Sprintf("%d", baseline.Iterations)},
+		{"warmup", fmt.Sprintf("%d", current.Warmup), fmt.Sprintf("%d", baseline.Warmup)},
+		{"go_version", current.GoVersion, baseline.GoVersion},
+		{"cgo_enabled", current.CGOEnabled, baseline.CGOEnabled},
+	}
+	var diffs []string
+	for _, f := range fields {
+		if f.current != f.wanted {
+			diffs = append(diffs, fmt.Sprintf("incompatible baseline: %s: baseline %q, current %q", f.name, f.wanted, f.current))
+		}
+	}
+	return diffs
 }
 
 func comparePage(p, b pageResult, opts options) []string {

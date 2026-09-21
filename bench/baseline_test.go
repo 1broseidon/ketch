@@ -58,6 +58,34 @@ func TestBaselineDetectsRegressionsIndividually(t *testing.T) {
 	}
 }
 
+func TestIncompatibleBaselineNamesEveryDifferingField(t *testing.T) {
+	t.Parallel()
+	current, base := sampleReport(), sampleReport()
+	current.CGOEnabled, base.CGOEnabled = "0", "1"
+	current.GoVersion, base.GoVersion = "go1.25.7", "go1.24.0"
+	current.Workers = 4 // base.Workers is 1, set in sampleReport
+
+	failures := compareReports(current, base, options{SpeedRatio: 2, AccuracyDrop: .005})
+	joined := strings.Join(failures, "\n")
+	for _, want := range []string{
+		`incompatible baseline: cgo_enabled: baseline "1", current "0"`,
+		`incompatible baseline: go_version: baseline "go1.24.0", current "go1.25.7"`,
+		`incompatible baseline: workers: baseline "1", current "4"`,
+	} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("missing field diff %q in: %v", want, failures)
+		}
+	}
+	for _, unwanted := range []string{"platform:", "cpus:", "mode:", "iterations:", "warmup:", "extract_mode:"} {
+		if strings.Contains(joined, unwanted) {
+			t.Errorf("reported a field that did not differ (%q) in: %v", unwanted, failures)
+		}
+	}
+	if len(failures) != 3 {
+		t.Fatalf("want exactly 3 field diffs, got %d: %v", len(failures), failures)
+	}
+}
+
 func TestStrictModeRejectsKnownMisses(t *testing.T) {
 	t.Parallel()
 	failures := strictFailures(sampleReport())
