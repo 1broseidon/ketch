@@ -7,6 +7,6 @@
     "prebuild": "inkcap stars"
   },
   "devDependencies": {
-    "inkcap": "^0.2.0"
+    "inkcap": "^0.3.0"
   }
 }

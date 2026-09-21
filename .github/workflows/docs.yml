@@ -7,7 +7,7 @@ name: Deploy Docs
 on:
   push:
     branches: [main]
-    paths: ['MANUAL.md', 'CHANGELOG.md', 'site/**', '.github/workflows/docs.yml', 'install.sh']
+    paths: ['MANUAL.md', 'CHANGELOG.md', 'LICENSE', 'guides/**', 'install.sh', 'site/**', '.github/workflows/docs.yml']
   release:
     types: [published]
   workflow_dispatch:
@@ -33,10 +33,6 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: site/package-lock.json
-      - name: Stage install script
-        run: |
-          cp install.sh site/public/install
-          cp install.sh site/public/install.sh
       - name: Install
         run: cd site && npm ci
       - name: Build
