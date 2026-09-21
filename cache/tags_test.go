@@ -252,6 +252,25 @@ func TestTagList(t *testing.T) {
 	}
 }
 
+func TestTagCounts(t *testing.T) {
+	t.Parallel()
+	c := newTestCache(t, time.Hour)
+
+	tags, entries, err := c.TagCounts()
+	if err != nil || tags != 0 || entries != 0 {
+		t.Fatalf("TagCounts(empty) = (%d, %d, %v), want (0, 0, nil)", tags, entries, err)
+	}
+
+	put(t, c, "guacamole", "https://example.com/a", "A", "A page about remote desktop gateways and their configuration.")
+	put(t, c, "guacamole", "https://example.com/b", "B", "Another page about remote desktop gateways and their configuration.")
+	put(t, c, "postgres", "https://example.com/c", "C", "A page about relational databases and their configuration.")
+
+	tags, entries, err = c.TagCounts()
+	if err != nil || tags != 2 || entries != 3 {
+		t.Fatalf("TagCounts() = (%d, %d, %v), want (2, 3, nil)", tags, entries, err)
+	}
+}
+
 func TestTagRemoveEntries(t *testing.T) {
 	t.Parallel()
 	c := newTestCache(t, time.Hour)

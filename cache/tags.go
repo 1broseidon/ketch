@@ -334,6 +334,29 @@ func (c *Cache) TagList() ([]TagSummary, error) {
 	return out, nil
 }
 
+// TagCounts reports how many tags and total entries the index holds, without
+// decoding entries or checking page-cache warmth — cheaper than TagList and
+// independent of the page cache's availability. Used by `ketch cache` and
+// `ketch doctor`, which want a size, not a browsable view.
+func (c *Cache) TagCounts() (tags int, entries int, err error) {
+	ts, err := c.tags()
+	if err != nil {
+		return 0, 0, err
+	}
+	names, err := ts.TagNames()
+	if err != nil {
+		return 0, 0, err
+	}
+	for _, name := range names {
+		values, err := ts.TagEntries(name)
+		if err != nil {
+			return 0, 0, err
+		}
+		entries += len(values)
+	}
+	return len(names), entries, nil
+}
+
 func (c *Cache) tagWarmth(entries []TagEntry) (map[string]bool, string) {
 	if len(entries) == 0 {
 		return nil, "available"

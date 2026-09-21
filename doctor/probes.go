@@ -86,6 +86,35 @@ func checkCache() (Status, string) {
 	return StatusOK, fmt.Sprintf("locked by another process (%s)", formatBytes(size))
 }
 
+// checkTags verifies the durable tag index — a file independent of the page
+// cache — is openable and reports how much it holds. It never opens the
+// file for writing. No bookmark ever having been saved is a clean skip:
+// tagging is optional, and a fresh install has no tags.db at all.
+func checkTags() (Status, string) {
+	path, err := cache.TagsPath()
+	if err != nil {
+		return StatusMisconfigured, fmt.Sprintf("cannot resolve tag index path: %v", err)
+	}
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+		return StatusSkipped, fmt.Sprintf("not configured (no bookmarks saved yet; %s)", path)
+	}
+	tags, entries, err := cache.NewTagIndex(0, nil).TagCounts()
+	if err != nil {
+		return StatusMisconfigured, fmt.Sprintf("cannot open tag index: %v", err)
+	}
+	return StatusOK, fmt.Sprintf("%s: %d %s, %d %s", path, tags, plural(tags, "tag", "tags"), entries, plural(entries, "entry", "entries"))
+}
+
+// plural picks the singular or plural form, matching the CLI's own helper of
+// the same name in cmd/ (small formatting helpers are duplicated per package
+// rather than shared, the same as formatBytes below).
+func plural(n int, one, many string) string {
+	if n == 1 {
+		return one
+	}
+	return many
+}
+
 // probeErrDetail compacts a transport error into a single-line detail.
 
 // formatBytes renders a byte count in the same style as `ketch cache`.
