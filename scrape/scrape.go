@@ -439,7 +439,7 @@ func (s *Scraper) CacheKey(fetchURL string) string {
 	if s.userAgentConfigured {
 		key += "\x00ua:" + ContentHash(s.userAgent)
 	}
-	if mode := s.extractor.Mode(); mode != extract.ModeComplete {
+	if mode := s.extractor.Mode(); mode != extract.ModeClean {
 		key += "\x00extract:" + string(mode)
 	}
 	return key

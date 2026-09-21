@@ -14,24 +14,24 @@ import (
 func TestNewFromConfigExtractMode(t *testing.T) {
 	u := "http://127.0.0.1:9999/page"
 
-	t.Run("unset is complete and keeps the bare key", func(t *testing.T) {
+	t.Run("unset is clean and keeps the bare key", func(t *testing.T) {
 		s := scraperFromConfig(t, &config.Config{})
-		if s.extractor.Mode() != extract.ModeComplete || s.CacheKey(u) != u {
+		if s.extractor.Mode() != extract.ModeClean || s.CacheKey(u) != u {
 			t.Fatalf("mode = %q, key = %q", s.extractor.Mode(), s.CacheKey(u))
 		}
 	})
 
-	t.Run("complete spelled out keeps the bare key", func(t *testing.T) {
-		s := scraperFromConfig(t, &config.Config{ExtractMode: "complete"})
+	t.Run("clean spelled out keeps the bare key", func(t *testing.T) {
+		s := scraperFromConfig(t, &config.Config{ExtractMode: "clean"})
 		if s.CacheKey(u) != u {
 			t.Fatalf("key = %q, want %q", s.CacheKey(u), u)
 		}
 	})
 
-	t.Run("clean diverges by name", func(t *testing.T) {
-		s := scraperFromConfig(t, &config.Config{ExtractMode: "Clean"})
+	t.Run("complete diverges by name", func(t *testing.T) {
+		s := scraperFromConfig(t, &config.Config{ExtractMode: "Complete"})
 		key := s.CacheKey(u)
-		if s.extractor.Mode() != extract.ModeClean || !strings.HasSuffix(key, "\x00extract:clean") {
+		if s.extractor.Mode() != extract.ModeComplete || !strings.HasSuffix(key, "\x00extract:complete") {
 			t.Fatalf("mode = %q, key = %q", s.extractor.Mode(), key)
 		}
 	})

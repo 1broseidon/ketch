@@ -278,23 +278,23 @@ func TestExtract_CommandDoesNotExposeScrapeOnlyFlags(t *testing.T) {
 	}
 }
 
-// extract_mode from config reaches the extractor: the default keeps a block
-// that only its name condemns, clean drops it.
+// extract_mode from config reaches the extractor: the default (clean) drops a
+// block that only its name condemns, complete keeps it.
 func TestExtract_ModeFromConfig(t *testing.T) {
 	html := `<html><head><title>Guide</title></head><body><main><h1>Guide</h1><p>` + strings.Repeat("Words about the guide and its behavior. ", 30) +
 		`</p><div class="related-posts"><p>RELATEDTEASER one two three four five six seven eight nine</p></div></main></body></html>`
-	complete, err := extractFromHTML(html, extractOptions{})
+	clean, err := extractFromHTML(html, extractOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(clean.Markdown, "RELATEDTEASER") {
+		t.Fatalf("default (clean) mode kept a named block:\n%s", clean.Markdown)
+	}
+	complete, err := extractFromHTML(html, extractOptions{Mode: extract.ModeComplete})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(complete.Markdown, "RELATEDTEASER") {
 		t.Fatalf("complete mode dropped a block by name:\n%s", complete.Markdown)
-	}
-	clean, err := extractFromHTML(html, extractOptions{Mode: extract.ModeClean})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if strings.Contains(clean.Markdown, "RELATEDTEASER") {
-		t.Fatalf("clean mode kept a named block:\n%s", clean.Markdown)
 	}
 }

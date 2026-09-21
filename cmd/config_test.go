@@ -592,7 +592,7 @@ func TestApplyConfigSetExtractMode(t *testing.T) {
 		c := config.Defaults()
 		err := applyConfigSet(&c, "extract_mode", "fast")
 		var exitErr *ExitError
-		if !errors.As(err, &exitErr) || exitErr.Code != ExitValidation || !strings.Contains(err.Error(), "valid: complete, clean") {
+		if !errors.As(err, &exitErr) || exitErr.Code != ExitValidation || !strings.Contains(err.Error(), "valid: clean, complete") {
 			t.Fatalf("error = %v, want exit %d naming the valid modes", err, ExitValidation)
 		}
 		if c.ExtractMode != "" {
@@ -622,12 +622,12 @@ func TestApplyConfigSetExtractMode(t *testing.T) {
 
 func TestBuildConfigInfoShowsEffectiveExtractMode(t *testing.T) {
 	info := buildConfigInfo(config.Defaults(), "/tmp/config.json")
-	if info.ExtractMode != "complete" {
-		t.Fatalf("ExtractMode = %q, want complete", info.ExtractMode)
+	if info.ExtractMode != "clean" {
+		t.Fatalf("ExtractMode = %q, want clean", info.ExtractMode)
 	}
 	c := config.Defaults()
-	c.ExtractMode = "clean"
-	if info := buildConfigInfo(c, "/tmp/config.json"); info.ExtractMode != "clean" {
-		t.Fatalf("ExtractMode = %q, want clean", info.ExtractMode)
+	c.ExtractMode = "complete"
+	if info := buildConfigInfo(c, "/tmp/config.json"); info.ExtractMode != "complete" {
+		t.Fatalf("ExtractMode = %q, want complete", info.ExtractMode)
 	}
 }

@@ -40,16 +40,16 @@ type Extractor struct {
 	mode Mode
 }
 
-// New creates an Extractor in ModeComplete.
+// New creates an Extractor in ModeClean.
 func New() *Extractor {
-	return NewWithMode(ModeComplete)
+	return NewWithMode(ModeClean)
 }
 
 // NewWithMode creates an Extractor that prunes chrome as mode says; an
-// empty mode is ModeComplete.
+// empty mode is ModeClean.
 func NewWithMode(mode Mode) *Extractor {
 	if mode == "" {
-		mode = ModeComplete
+		mode = ModeClean
 	}
 	return &Extractor{mode: mode}
 }

@@ -23,7 +23,7 @@ func landmarkPage(extra string) string {
 
 func extractBoth(t *testing.T, page string) (complete, clean string) {
 	t.Helper()
-	c, err := New().Extract("https://example.test/guide", page)
+	c, err := NewWithMode(ModeComplete).Extract("https://example.test/guide", page)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,13 +36,13 @@ func extractBoth(t *testing.T, page string) (complete, clean string) {
 
 func TestParseMode(t *testing.T) {
 	t.Parallel()
-	for in, want := range map[string]Mode{"": ModeComplete, "complete": ModeComplete, " Clean ": ModeClean, "clean": ModeClean} {
+	for in, want := range map[string]Mode{"": ModeClean, "clean": ModeClean, " Complete ": ModeComplete, "complete": ModeComplete} {
 		got, err := ParseMode(in)
 		if err != nil || got != want {
 			t.Fatalf("ParseMode(%q) = %q, %v; want %q", in, got, err, want)
 		}
 	}
-	if _, err := ParseMode("fast"); err == nil || !strings.Contains(err.Error(), `"complete" or "clean"`) {
+	if _, err := ParseMode("fast"); err == nil || !strings.Contains(err.Error(), `"clean" or "complete"`) {
 		t.Fatalf("ParseMode(fast) err = %v", err)
 	}
 }
@@ -63,7 +63,7 @@ func TestModesMatchConfig(t *testing.T) {
 
 func TestExtractorMode(t *testing.T) {
 	t.Parallel()
-	if New().Mode() != ModeComplete || NewWithMode("").Mode() != ModeComplete || NewWithMode(ModeClean).Mode() != ModeClean {
+	if New().Mode() != ModeClean || NewWithMode("").Mode() != ModeClean || NewWithMode(ModeComplete).Mode() != ModeComplete {
 		t.Fatal("constructors do not report their mode")
 	}
 }

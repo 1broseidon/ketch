@@ -21,30 +21,31 @@ import (
 type Mode string
 
 const (
+	// ModeClean removes chrome by structure and also drops blocks whose
+	// class, id or heading names them as furniture: newsletter cards,
+	// related-link rails, in-page tables of contents, author boxes, comment
+	// threads. Tidier on most sites and the default; a site that names its
+	// own content "sidebar" loses it.
+	ModeClean Mode = "clean"
 	// ModeComplete removes chrome by structure alone: hidden elements,
 	// landmarks, controls, link-dense blocks, repeated cards. Nothing is
 	// dropped for what it is called, so it holds on sites and in languages
-	// nobody tuned for. The default.
+	// nobody tuned for, at a small cost in precision.
 	ModeComplete Mode = "complete"
-	// ModeClean also drops blocks whose class, id or heading names them as
-	// furniture: newsletter cards, related-link rails, in-page tables of
-	// contents, author boxes, comment threads. Tidier on most sites; a site
-	// that names its own content "sidebar" loses it.
-	ModeClean Mode = "clean"
 )
 
 // Modes lists the accepted mode names, the default first.
-var Modes = []string{string(ModeComplete), string(ModeClean)}
+var Modes = []string{string(ModeClean), string(ModeComplete)}
 
-// ParseMode reads a configured mode name; empty selects ModeComplete.
+// ParseMode reads a configured mode name; empty selects ModeClean.
 func ParseMode(s string) (Mode, error) {
 	switch strings.ToLower(strings.TrimSpace(s)) {
-	case "", string(ModeComplete):
-		return ModeComplete, nil
-	case string(ModeClean):
+	case "", string(ModeClean):
 		return ModeClean, nil
+	case string(ModeComplete):
+		return ModeComplete, nil
 	}
-	return "", fmt.Errorf("extract mode must be %q or %q, got %q", ModeComplete, ModeClean, s)
+	return "", fmt.Errorf("extract mode must be %q or %q, got %q", ModeClean, ModeComplete, s)
 }
 
 // semanticExtract trusts the page's own landmarks before scoring anything.

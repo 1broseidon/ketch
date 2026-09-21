@@ -195,12 +195,13 @@ an unselected tab, a `hidden=until-found` section. Layout tables are unwrapped;
 data tables keep their shape. There are no hostname, language or per-site
 selector rules, and vocabulary that matched a single publisher was removed.
 
-The `extract_mode` config key decides what the pruning may drop. `complete`,
-the default, uses only the structural rules. `clean` also drops blocks by name
-and phrase — related-post rails, comment threads, share bars, cookie notices,
-"was this page helpful?" boxes. Readability's own candidate scoring already
-dropped by name (its unlikely-candidates regex), so `complete` is stricter
-about names than the extractor it replaces, not looser.
+The `extract_mode` config key decides what the pruning may drop. `clean`,
+the default, also drops blocks by name and phrase — related-post rails,
+comment threads, share bars, cookie notices, "was this page helpful?" boxes.
+`complete` uses only the structural rules. Readability's own candidate
+scoring already dropped by name (its unlikely-candidates regex), so even
+`complete` is stricter about names than the extractor it replaces, not
+looser.
 
 Measured on the 500-page benchmark with the same corpus and assertions:
 

@@ -34,7 +34,7 @@ type configInfo struct {
 	Browser                            string             `json:"browser,omitempty" order:"18"`
 	CookieFile                         string             `json:"cookie_file,omitempty" order:"19"`
 	UserAgent                          string             `json:"user_agent,omitempty" order:"20"`
-	ExtractMode                        string             `json:"extract_mode" order:"26"` // effective extraction mode: complete (default) or clean
+	ExtractMode                        string             `json:"extract_mode" order:"26"` // effective extraction mode: clean (default) or complete
 	CodeBackend                        string             `json:"code_backend" order:"21"`
 	DocsBackend                        string             `json:"docs_backend" order:"22"`
 	URLRewrites                        []urlrewrite.Rule  `json:"url_rewrites,omitempty" order:"27"`
@@ -322,9 +322,9 @@ func effectiveUserAgent(c config.Config) string {
 	return scrape.DefaultUserAgent()
 }
 
-// setExtractMode persists the extraction mode: complete keeps everything
-// the page's structure does not condemn, clean also drops blocks by name
-// and phrase. Empty clears it so the default (complete) applies.
+// setExtractMode persists the extraction mode: clean drops chrome by
+// structure and by name and phrase, complete keeps everything the page's
+// structure does not condemn. Empty clears it so the default (clean) applies.
 func setExtractMode(c *config.Config, value string) error {
 	mode, err := config.NormalizeExtractMode(value)
 	if err != nil {
@@ -335,7 +335,7 @@ func setExtractMode(c *config.Config, value string) error {
 }
 
 // effectiveExtractMode returns the mode scrape and extract will run in:
-// the operator's extract_mode when set, otherwise complete. A value the
+// the operator's extract_mode when set, otherwise clean. A value the
 // normalizer rejects is possible only in a hand-edited config file; it is
 // reported as-is — scrape and extract fail loud on it with the valid names.
 func effectiveExtractMode(c config.Config) string {
@@ -344,7 +344,7 @@ func effectiveExtractMode(c config.Config) string {
 	case err != nil:
 		return c.ExtractMode
 	case mode == "":
-		return string(extract.ModeComplete)
+		return string(extract.ModeClean)
 	default:
 		return mode
 	}

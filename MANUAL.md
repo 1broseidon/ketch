@@ -263,10 +263,11 @@ Content selection reads the page's own structure: the landmark it declares
 smallest element holding its prose. Site furniture goes by what it is —
 navigation, hidden and collapsed controls, link rails, tables of contents —
 and readability is the fallback for a page that declares no structure. The
-`extract_mode` config key sets what pruning may drop: `complete` (the default)
-keeps everything the structure does not condemn; `clean` also drops blocks by
-name and phrase — related-post rails, comment threads, share bars, "was this
-helpful?" boxes — for the leanest markdown at a small cost in recall.
+`extract_mode` config key sets what pruning may drop: `clean` (the default)
+also drops blocks by name and phrase — related-post rails, comment threads,
+share bars, "was this helpful?" boxes — for the leanest markdown; `complete`
+keeps everything the structure does not condemn, trading a little precision
+for the last fraction of recall.
 
 #### extract — Piped HTML → markdown, no fetch
 
@@ -652,7 +653,7 @@ $ ketch browser status
 - `spa_markers` — extra tokens for JS-shell detection
 - `cache_ttl` — cache lifetime
 - `user_agent` — User-Agent override for HTTP and browser fetches
-- `extract_mode` — `complete` (default) or `clean`; a non-default mode scopes cached pages, so a page cached under one mode is never reused under the other
+- `extract_mode` — `clean` (default) or `complete`; a non-default mode scopes cached pages, so a page cached under one mode is never reused under the other
 - `mcp_tools` — allowlist of MCP tools to publish; unset publishes all six
 - `external_pdf_to_md_converter_command` — external PDF-to-Markdown converter; must contain exactly one `{input}` placeholder. Once set it is authoritative, with no silent fallback
 

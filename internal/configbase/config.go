@@ -27,7 +27,7 @@ type Config struct {
 	UserAgent                          string            `json:"user_agent,omitempty" order:"27"`  // HTTP User-Agent override; empty = built-in honest default
 	ExternalPDFToMDConverterCommand    string            `json:"external_pdf_to_md_converter_command,omitempty" order:"28"`
 	ExternalPDFToMDConverterTimeoutSec int               `json:"external_pdf_to_md_converter_timeout_sec" order:"29"`
-	ExtractMode                        string            `json:"extract_mode,omitempty" order:"30"` // "complete" (default) or "clean": what extraction may drop; empty = complete
+	ExtractMode                        string            `json:"extract_mode,omitempty" order:"30"` // "clean" (default) or "complete": what extraction may drop; empty = clean
 	ProviderSettings                   map[string]any    `json:"-"`
 	providerSchema                     []Setting
 	providerOrder                      map[string]int

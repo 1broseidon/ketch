@@ -16,7 +16,7 @@ func TestNormalizeExtractMode(t *testing.T) {
 		}
 	}
 	for _, bad := range []string{"fast", "clean,complete", "readability"} {
-		if _, err := NormalizeExtractMode(bad); err == nil || !strings.Contains(err.Error(), "valid: complete, clean") {
+		if _, err := NormalizeExtractMode(bad); err == nil || !strings.Contains(err.Error(), "valid: clean, complete") {
 			t.Fatalf("NormalizeExtractMode(%q) err = %v; want the valid names", bad, err)
 		}
 	}
@@ -25,11 +25,11 @@ func TestNormalizeExtractMode(t *testing.T) {
 func TestExtractModesIsACopy(t *testing.T) {
 	t.Parallel()
 	modes := ExtractModes()
-	if strings.Join(modes, ",") != "complete,clean" {
+	if strings.Join(modes, ",") != "clean,complete" {
 		t.Fatalf("ExtractModes = %v", modes)
 	}
 	modes[0] = "mutated"
-	if ExtractModes()[0] != "complete" {
+	if ExtractModes()[0] != "clean" {
 		t.Fatal("ExtractModes exposed its backing slice")
 	}
 }

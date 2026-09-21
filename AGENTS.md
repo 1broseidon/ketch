@@ -28,7 +28,7 @@ code/                        code.Searcher interface + GrepApp/Sourcegraph/GitHu
 docs/                        docs.Searcher interface + Context7 backend (FTS5 local is an unimplemented stub); NewFromConfig resolves the ordered provider registry
 mcp/                         MCP server (search/code/docs/scrape/crawl/tag tools; the mcp_tools config key is an allowlist over the published set) over the go-sdk mcp package; Server struct holds the shared scraper + cache, tools call the same NewFromConfig constructors as the CLI
 scrape/                      HTTP fetch + Page type, JS detection fallback, Rod browser; pipeline.go has the cache-aware scrape pipeline (CachedScrape*, ScrapeSelector, FetchLLMSTxt) shared by cmd/ and mcp/
-extract/                     structural extraction (landmark → uniform sections → prose root, chrome pruned by what it is; config extract_mode complete|clean) with readability fallback and html-to-markdown, charset decoding, JS shell detection (Detector: built-in + config spa_markers, modern hydration/streaming frameworks)
+extract/                     structural extraction (landmark → uniform sections → prose root, chrome pruned by what it is; config extract_mode clean|complete) with readability fallback and html-to-markdown, charset decoding, JS shell detection (Detector: built-in + config spa_markers, modern hydration/streaming frameworks)
 crawl/                       BFS crawler, work queue + worker pool, background status
 cookies/                     Netscape cookies.txt jar loader + RFC 6265 domain/path matching (Jar.For); nil-safe, values never logged
 config/                      JSON config loading/saving (~/.config/ketch/)

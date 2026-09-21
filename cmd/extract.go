@@ -47,7 +47,7 @@ type extractOptions struct {
 	Trim     bool
 	MaxChars int
 	JSON     bool
-	Mode     extract.Mode // pruning mode from config extract_mode; empty = complete
+	Mode     extract.Mode // pruning mode from config extract_mode; empty = clean
 }
 
 type extractedPage struct {

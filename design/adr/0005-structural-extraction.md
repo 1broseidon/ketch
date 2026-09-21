@@ -43,12 +43,13 @@ and readability stays only as the fallback for a page that declares nothing.
    teaser grids, layout tables, orphan headings. A page that is made of links
    — a section front, a topic index — keeps them; that decision is made once,
    the same way in both modes.
-3. **Two modes** through the `extract_mode` config key. `complete` (default)
-   keeps everything the structure does not condemn. `clean` also drops blocks
-   by class and id name and by phrase — share bars, cookie notices, "was this
-   helpful?" boxes, and listing cards that sit beside a story — for the
-   leanest markdown. Names classify a block as furniture or as a listing;
-   listing blocks that together hold the page are the page and stay.
+3. **Two modes** through the `extract_mode` config key. `clean` (default)
+   also drops blocks by class and id name and by phrase — share bars, cookie
+   notices, "was this helpful?" boxes, and listing cards that sit beside a
+   story — for the leanest markdown. Names classify a block as furniture or
+   as a listing; listing blocks that together hold the page are the page and
+   stay. `complete` keeps everything the structure does not condemn, for a
+   site whose own content is named like furniture.
 4. **No site-specific code.** A rule must be stated in terms of HTML
    structure or a name's meaning and must hold across the corpus; a fix for
    one site that costs another is rejected.
