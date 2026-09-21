@@ -60,6 +60,7 @@ func semanticExtract(rawHTML, baseURL string, mode Mode) (*Result, bool) {
 		return nil, false
 	}
 	formulas := mathToText(doc)
+	fixLazyImages(doc)
 	rawTitle := strings.TrimSpace(doc.Find("title").First().Text())
 
 	root := semanticRoot(doc)
@@ -143,11 +144,26 @@ func semanticRoot(doc *goquery.Document) *goquery.Selection {
 		}
 	}
 	if best := wordiest(doc.Find("article")); best != nil {
-		if w := wordCount(best); w >= 40 && (bodyWords == 0 || float64(w)/float64(bodyWords) >= 0.3) {
+		if w := wordCount(best); w >= 40 && (bodyWords == 0 || float64(w)/float64(bodyWords) >= 0.3) && !oneOfMany(best, w) {
 			return best
 		}
 	}
 	return nil
+}
+
+// oneOfMany reports whether an article is one entry of a listing: sibling
+// articles with substance of their own hold more of the words between them
+// than the teasers beside a story would. A blog index, a section front or
+// a changelog wraps each entry in <article>; the wordiest is not the page,
+// and the section and prose rules find the container that is.
+func oneOfMany(article *goquery.Selection, words int) bool {
+	total := words
+	article.Siblings().Filter("article").Each(func(_ int, s *goquery.Selection) {
+		if w := wordCount(s); w >= 40 {
+			total += w
+		}
+	})
+	return total > words && float64(words)/float64(total) < 0.6
 }
 
 // uniformSectionRoot finds a document assembled from uniform sibling sections

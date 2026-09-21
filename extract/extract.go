@@ -252,6 +252,7 @@ func ExtractSelectorWithURL(pageURL, rawHTML, selector string) (string, error) {
 	if sel.Length() == 0 {
 		return "", nil
 	}
+	fixLazyImages(doc)
 	resolveSelectedLinks(sel, u)
 
 	var parts []string
@@ -323,10 +324,16 @@ func stripDataURIs(html string) string {
 		if !exists || !strings.HasPrefix(strings.ToLower(src), "data:") {
 			return
 		}
+		replaced++
+		// A data: placeholder in front of a lazily loaded image: the real
+		// source is the image.
+		if real := lazySource(s); real != "" {
+			s.SetAttr("src", real)
+			return
+		}
 		mime, size := dataURIInfo(src)
 		s.SetAttr("src", "omitted")
 		s.SetAttr("alt", fmt.Sprintf("data-uri omitted: %s, %d bytes", mime, size))
-		replaced++
 	})
 	if replaced == 0 {
 		return html

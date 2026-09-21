@@ -379,3 +379,31 @@ func TestQuoteFences(t *testing.T) {
 		t.Fatalf("quoteFences:\n%s\nwant:\n%s", got, want)
 	}
 }
+
+func TestListingOfArticlesKeepsEveryEntry(t *testing.T) {
+	t.Parallel()
+	entry := func(n string) string {
+		return `<article><h2><a href="/p/` + n + `">Post ` + n + `</a></h2><p>ENTRY` + n + ` ` + filler(8) + `</p></article>`
+	}
+	page := `<html><head><title>Blog</title></head><body><nav><a href="/">Home</a></nav><div class="posts">` + entry("one") + entry("two") + entry("three") + `</div></body></html>`
+	complete, clean := extractBoth(t, page)
+	for _, md := range []string{complete, clean} {
+		assertContainsAll(t, md, "ENTRYone", "ENTRYtwo", "ENTRYthree")
+	}
+	// A story with teaser articles beside it is still the story.
+	story := `<html><head><title>Story</title></head><body><div><article><h1>Story</h1><p>STORYBODY ` + filler(30) + `</p></article>` +
+		`<article><h3><a href="/t/1">Teaser</a></h3><p>TEASERONE ` + filler(3) + `</p></article><article><h3><a href="/t/2">Teaser</a></h3><p>TEASERTWO ` + filler(3) + `</p></article></div></body></html>`
+	complete, _ = extractBoth(t, story)
+	assertContainsAll(t, complete, "STORYBODY")
+	assertContainsNone(t, complete, "TEASERONE", "TEASERTWO")
+}
+
+func TestLazyImagesKeepTheirSource(t *testing.T) {
+	t.Parallel()
+	complete, _ := extractBoth(t, landmarkPage(`<img data-src="https://x.test/lazy.png" alt="LAZYALT" class="lazyload">`+
+		`<img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-src="https://x.test/swapped.png" alt="SWAPPEDALT">`+
+		`<img src="/img/spacer.gif" data-srcset="https://x.test/set-400.png 400w, https://x.test/set-800.png 800w" alt="SETALT">`+
+		`<img src="https://x.test/normal.png" alt="NORMALALT">`))
+	assertContainsAll(t, complete, "![LAZYALT](https://x.test/lazy.png)", "![SWAPPEDALT](https://x.test/swapped.png)", "![SETALT](https://x.test/set-400.png)", "![NORMALALT](https://x.test/normal.png)")
+	assertContainsNone(t, complete, "data-uri omitted")
+}
