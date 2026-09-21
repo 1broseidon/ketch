@@ -10,6 +10,11 @@ on:
         description: "Existing tag to release"
         required: true
         type: string
+      npm_only:
+        description: "Publish the npm packages for a GitHub release that already exists (skips GoReleaser)"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   ref:
@@ -27,6 +32,9 @@ jobs:
 
   release:
     needs: ref
+    # GoReleaser refuses to overwrite assets on an existing release (422), so
+    # a release that already went out is published to npm with npm_only.
+    if: ${{ !inputs.npm_only }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -63,6 +71,9 @@ jobs:
 
   npm:
     needs: [ref, release]
+    # Runs after a successful GoReleaser job, or on its own for an existing
+    # release when npm_only is set (the release job is then skipped, not failed).
+    if: ${{ always() && needs.ref.result == 'success' && (needs.release.result == 'success' || (inputs.npm_only && needs.release.result == 'skipped')) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

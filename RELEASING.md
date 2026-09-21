@@ -18,6 +18,15 @@ The workflow has three jobs: `ref` resolves the tag, `release` runs GoReleaser
 and publishes the npm packages. `npm` depends on `release`, so a GoReleaser
 failure stops it.
 
+If the GitHub release went out but `npm` did not run (a later step of the
+`release` job failed, as winget did for v0.18.0), do not re-run GoReleaser:
+it refuses to overwrite the assets on an existing release (`422 Validation
+Failed`). Publish npm on its own instead:
+
+```sh
+gh workflow run release.yml --ref main -f tag=vX.Y.Z -f npm_only=true
+```
+
 ## Distribution channels
 
 | Channel | How it updates |
