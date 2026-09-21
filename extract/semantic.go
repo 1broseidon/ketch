@@ -616,20 +616,38 @@ func drop(rule string, s *goquery.Selection) {
 // cost a microsecond per element where the equivalent alternation cost
 // tens, which matters on a page with a hundred thousand class lists.
 func nameIsChrome(name string) bool {
+	return nameKind(name) != ""
+}
+
+// What a name can declare a block to be.
+const (
+	kindChrome  = "chrome"  // site furniture: a share bar, a cookie notice
+	kindListing = "listing" // cards and rails: chrome beside a story, the page on a front
+)
+
+// nameKind classifies a class or id list: "" when it says nothing about
+// the block, kindChrome or kindListing otherwise. Furniture wins when a
+// name says both.
+func nameKind(name string) string {
 	name = strings.ToLower(name)
-	for _, w := range chromeAnywhere {
-		if strings.Contains(name, w) {
-			return true
-		}
-	}
 	toks := nameTokens(name)
 	joined := strings.Join(toks, "")
-	for _, w := range chromePhrases {
-		if strings.Contains(joined, w) {
+	if containsAny(name, chromeAnywhere) || containsAny(joined, chromePhrases) || hasChromeToken(toks, chromeTokens) {
+		return kindChrome
+	}
+	if containsAny(name, listingAnywhere) || containsAny(joined, listingPhrases) || hasChromeToken(toks, listingTokens) {
+		return kindListing
+	}
+	return ""
+}
+
+func containsAny(s string, subs []string) bool {
+	for _, w := range subs {
+		if strings.Contains(s, w) {
 			return true
 		}
 	}
-	return hasChromeToken(toks, chromeTokens)
+	return false
 }
 
 // hasChromeToken reports whether a token, or two or three neighbouring
@@ -653,10 +671,20 @@ func nameTokens(name string) []string {
 	return strings.FieldsFunc(name, func(r rune) bool { return r == '-' || r == '_' || r == ' ' || r == ':' || r == '.' })
 }
 
-var chromeAnywhere = []string{"footer", "navheader", "banner", "promo", "recirc", "tooltip", "breadcrumb", "newsletter", "sidebar", "editsection", "headerlink", "navbox", "copiable", "nocontent"}
+var chromeAnywhere = []string{"footer", "navheader", "banner", "promo", "tooltip", "breadcrumb", "newsletter", "sidebar", "editsection", "headerlink", "navbox", "copiable", "nocontent"}
 
 // Phrases that match anywhere in the name, with or without separators.
-var chromePhrases = []string{"skiplink", "navpanel", "relatedcontent", "socialshare", "latestposts", "contentlist", "citethis", "citationinfo", "howtocite", "mdprint", "printmodal", "printbutton", "printlink", "printdialog"}
+var chromePhrases = []string{"skiplink", "navpanel", "socialshare", "citethis", "citationinfo", "howtocite", "mdprint", "printmodal", "printbutton", "printlink", "printdialog"}
+
+// Names for the cards and rails a site sets beside a story: related
+// posts, most read, trending, a card grid. Beside a story they are the
+// site's; on a section front or a topic index they are the page, and
+// dropNamed keeps them when they hold it.
+var listingAnywhere = []string{"recirc"}
+
+var listingPhrases = []string{"relatedcontent", "latestposts", "contentlist"}
+
+var listingTokens = tokenSet(`postrelated relatedpages relatedposts relatedarticles relatedstories relatedtopics relatedentries relatedlinks relatedproducts relateditems relatedrecipes recommended recommendation recommendations alsolike mostpopular mostread mostsaved mostviewed trending articlecard postcard teaser cards cardgrid cardlist`)
 
 var tocTokens = tokenSet(`toc tableofcontents`)
 
@@ -673,7 +701,7 @@ func tagIsChrome(tag string) bool {
 	return false
 }
 
-var chromeTokens = tokenSet(`share sharing social pagination pager cookiebanner cookieconsent cookienotice cookiebar cookiepolicy cookiepopup cookiemodal cookiesettings cookiepreferences cookielaw gdpr feedback editthispage editongithub editpage editlink subscribe signup modal popup popover leftrail rightrail siderail lastmod pagemeta postbottom postrelated relatedpages relatedposts relatedarticles relatedstories relatedtopics relatedentries relatedlinks relatedproducts relateditems relatedrecipes recommended recommendation recommendations alsolike mostpopular mostread mostsaved mostviewed trending donate donation membership advert advertisement sponsor sponsored ad ads adslot adcontainer copyright authorinfo authorbio authorbox authorlist authorcontainer authorcard disqus rating ratings review reviews reviewbar quiz quizzes carousel articlecard postcard teaser cards cardgrid cardlist ambox`)
+var chromeTokens = tokenSet(`share sharing social pagination pager cookiebanner cookieconsent cookienotice cookiebar cookiepolicy cookiepopup cookiemodal cookiesettings cookiepreferences cookielaw gdpr feedback editthispage editongithub editpage editlink subscribe signup modal popup popover leftrail rightrail siderail lastmod pagemeta postbottom donate donation membership advert advertisement sponsor sponsored ad ads adslot adcontainer copyright authorinfo authorbio authorbox authorlist authorcontainer authorcard disqus rating ratings review reviews reviewbar quiz quizzes carousel ambox`)
 
 func tokenSet(words string) map[string]bool {
 	m := map[string]bool{}
@@ -690,13 +718,22 @@ func chromeNamed(s *goquery.Selection) bool {
 }
 
 func chromeNamedOn(s *goquery.Selection, pageURL string) bool {
+	return namedKind(s, pageURL) != ""
+}
+
+// namedKind is nameKind for an element: its class and id, its tag, and a
+// table of contents by name that links only within the page.
+func namedKind(s *goquery.Selection, pageURL string) string {
 	class, _ := s.Attr("class")
 	id, _ := s.Attr("id")
 	name := class + " " + id
-	if nameIsChrome(name) || tagIsChrome(goquery.NodeName(s)) {
-		return true
+	if k := nameKind(name); k != "" {
+		return k
 	}
-	return hasChromeToken(nameTokens(strings.ToLower(name)), tocTokens) && inPageLinksOnly(s, pageURL)
+	if tagIsChrome(goquery.NodeName(s)) || (hasChromeToken(nameTokens(strings.ToLower(name)), tocTokens) && inPageLinksOnly(s, pageURL)) {
+		return kindChrome
+	}
+	return ""
 }
 
 // inPageLinksOnly reports whether every link in a block points into the
@@ -1024,8 +1061,15 @@ func (p *pruner) dropComments() {
 // never chrome by name: a Sphinx heading is an <a class="toc-backref">, and
 // a section on cookies is headed "Cookie overview".
 func (p *pruner) dropNamed() {
+	var listing []candidate
 	p.root.Find("[class], [id]").Each(func(_ int, s *goquery.Selection) {
-		if neverNamed[s.Nodes[0].Data] || p.bulk(s) || !chromeNamedOn(s, p.pageURL) {
+		if neverNamed[s.Nodes[0].Data] || p.bulk(s) {
+			return
+		}
+		kind := namedKind(s, p.pageURL)
+		// Whatever wraps the page's headline — an intro banner, a hero —
+		// is the head of the content, whatever it is called.
+		if kind == "" || s.Find("h1").Length() > 0 {
 			return
 		}
 		ld := p.wc.density(s)
@@ -1034,10 +1078,28 @@ func (p *pruner) dropNamed() {
 		if ld <= 0.5 && (s.Is("[data-foldout]") || s.Find("[data-foldout]").Length() > 0) {
 			return
 		}
-		if p.wc.count(s) < 150 || ld > 0.5 {
-			drop("named", s)
+		if p.wc.count(s) >= 150 && ld <= 0.5 {
+			return
 		}
+		if kind == kindListing {
+			listing = append(listing, candidate{"named", s})
+			return
+		}
+		drop("named", s)
 	})
+	// Cards that hold the page are the page — a section front, a topic
+	// index — whatever they are called. Beside a story they are the site's.
+	if p.wc.hubShare(listing, p.rootWords) >= 0.4 {
+		for _, c := range listing {
+			if PruneLog != nil {
+				PruneLog("listing-keep", c.sel)
+			}
+		}
+		return
+	}
+	for _, c := range listing {
+		drop(c.rule, c.sel)
+	}
 }
 
 // dropPhrases removes furniture that announces itself: "Was this page

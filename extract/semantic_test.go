@@ -454,3 +454,28 @@ func TestHubDecisionIsTheSameInBothModes(t *testing.T) {
 		assertContainsAll(t, md, "Story A1", "Story B6")
 	}
 }
+
+func TestListingCardsAreThePageOnAFront(t *testing.T) {
+	t.Parallel()
+	card := func(n string) string {
+		return `<div class="content-cards--content-card"><h2><a href="/s/` + n + `">Story ` + n + `</a></h2><p>CARD` + n + ` blurb of a dozen words that says what the story is about today</p><span>By Someone</span></div>`
+	}
+	var cards strings.Builder
+	for i := 0; i < 12; i++ {
+		cards.WriteString(card(string(rune('a' + i))))
+	}
+	front := `<html><head><title>Front</title></head><body><main><h1>Front</h1><p>` + filler(3) + `</p><section class="most-popular"><h2>Most popular</h2>` + cards.String() + `</section></main></body></html>`
+	_, clean := extractBoth(t, front)
+	assertContainsAll(t, clean, "CARDa", "CARDl")
+	// Beside a story, the same cards are the site's.
+	_, clean = extractBoth(t, landmarkPage(`<div class="related-posts">`+card("x")+card("y")+card("z")+`</div>`))
+	assertContainsNone(t, clean, "CARDx", "CARDz")
+}
+
+func TestNamedBlockWithTheHeadlineStays(t *testing.T) {
+	t.Parallel()
+	page := `<html><head><title>Earth - Science</title></head><body><main><div class="page-intro-banner"><h1>Earth</h1><p>INTROTEXT our home planet is the third planet from the Sun and the fifth largest.</p></div><p>` + filler(15) + `</p><div class="cookie-banner"><p>COOKIETEXT we use cookies to make the site work and to measure it.</p></div></main></body></html>`
+	_, clean := extractBoth(t, page)
+	assertContainsAll(t, clean, "INTROTEXT")
+	assertContainsNone(t, clean, "COOKIETEXT")
+}
