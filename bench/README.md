@@ -35,9 +35,19 @@ go -C bench run . live
 `make bench`, `make bench-check` and `make bench-live` are shortcuts. Pass extra
 flags with `BENCH_ARGS='-iterations 25'`. `go -C bench run . run -h` lists all
 flags. Go's flag parser accepts both `-flag` and `--flag`; flags follow the
-subcommand. `bench` is its own Go module (`bench/go.mod`), so its corpus and
-dependencies never ship inside `go install github.com/1broseidon/ketch@latest`;
+subcommand. `bench` is its own Go module (`bench/go.mod`), so its dependencies
+never ship inside `go install github.com/1broseidon/ketch@latest`;
 `go -C bench ...` (Go 1.20+) runs it in place without a `cd`.
+
+The 500 snapshots and reference texts are not in the repository. `setup`
+downloads the 22 MB tarball named in [archive.json](archive.json), verifies its
+sha256, and unpacks it into the gitignored `testdata/`; every other command
+fails with a pointer to `setup` until that has happened. `setup -archive
+<url-or-path>` takes the tarball from elsewhere, for instance a local copy.
+`corpus.json` still pins every file by hash, so a changed archive cannot pass
+unnoticed. To publish a new archive after adding pages, run `make bench-archive`
+(a reproducible tarball with its sha256), upload it, and record both in
+`archive.json`.
 
 The runner builds the worktree binary with `CGO_ENABLED=0` once outside the measurement window.
 `-binary /path/to/ketch` benchmarks another build. A custom `-dir` outside this
@@ -229,6 +239,8 @@ can reflect a nonce or widget rather than a changed article; review the source.
    NPS `hidden="until-found"` panels are retained explicitly in this corpus.
 4. Add the case and hashes to `corpus.json`. Hash the *uncompressed* HTML and
    exact reference bytes. Run `setup` and `go -C bench test ./...`.
+5. Publish a new archive: `make bench-archive`, upload the tarball, and update
+   the URL and sha256 in `archive.json`.
 5. Run both the previous and candidate binaries against the same new corpus. Preserve a timestamped manifest hash before the first run.
    Review every failure and artifact, then explicitly update the baseline. A
    corpus change invalidates comparisons to the old baseline by design.

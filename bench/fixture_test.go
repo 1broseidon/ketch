@@ -55,6 +55,9 @@ func TestBoundedReferenceReads(t *testing.T) {
 
 func TestPinnedCorpus(t *testing.T) {
 	t.Parallel()
+	if _, err := os.Stat("testdata"); err != nil {
+		t.Skip("bench/testdata absent; run `go -C bench run . setup`")
+	}
 	fixtures, _, err := loadCorpus(".")
 	if err != nil {
 		t.Fatal(err)

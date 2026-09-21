@@ -6,8 +6,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -66,6 +68,9 @@ func loadCorpusWithin(dir string, budget int) ([]fixture, string, error) {
 			return nil, "", err
 		}
 		f, err := readFixture(dir, spec)
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, "", fmt.Errorf("%s: %w; run `go -C bench run . setup` to fetch the corpus archive", spec.ID, err)
+		}
 		if err != nil {
 			return nil, "", fmt.Errorf("%s: %w", spec.ID, err)
 		}

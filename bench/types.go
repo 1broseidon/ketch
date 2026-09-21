@@ -113,6 +113,7 @@ type report struct {
 
 type options struct {
 	Dir          string
+	Archive      string
 	Binary       string
 	Out          string
 	Baseline     string
