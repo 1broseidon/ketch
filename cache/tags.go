@@ -402,15 +402,15 @@ func (c *Cache) RemoveTag(tag string) (int, error) {
 }
 
 // RemoveTagged drops single entries from a tag by their original source URLs.
-// Returns the number actually removed; keys that were not under the tag are
-// counted in missing so the caller can report them.
-func (c *Cache) RemoveTagged(tag string, keys []string) (removed int, missing int, err error) {
+// Returns the number actually removed and the given URLs that were not under
+// the tag, in the order given, so the caller can report exactly which ones.
+func (c *Cache) RemoveTagged(tag string, keys []string) (removed int, missing []string, err error) {
 	if err := ValidateTagName(tag); err != nil {
-		return 0, 0, err
+		return 0, nil, err
 	}
 	ts, err := c.tags()
 	if err != nil {
-		return 0, 0, err
+		return 0, nil, err
 	}
 	for _, k := range keys {
 		ok, err := ts.DeleteTagEntry(tag, cacheKey(k))
@@ -420,7 +420,7 @@ func (c *Cache) RemoveTagged(tag string, keys []string) (removed int, missing in
 		if ok {
 			removed++
 		} else {
-			missing++
+			missing = append(missing, k)
 		}
 	}
 	return removed, missing, nil

@@ -27,18 +27,22 @@ type TagInput struct {
 }
 
 // TagOutput is the output schema for the "tag" tool. Fields are populated per
-// operation; the rest are omitted.
+// operation; the rest are omitted. Entries/Shown/Cached are pointers so they
+// appear only for show — including when show's answer is genuinely zero
+// (an empty tag) — rather than as a spurious "entries":0 on add/list/remove,
+// which never set them.
 type TagOutput struct {
 	Tag         string             `json:"tag,omitempty"`
-	Entries     int                `json:"entries"`
-	Shown       int                `json:"shown"`
+	Entries     *int               `json:"entries,omitempty"`
+	Shown       *int               `json:"shown,omitempty"`
 	CacheStatus string             `json:"cache_status,omitempty"`
-	Cached      int                `json:"cached"`
+	Cached      *int               `json:"cached,omitempty"`
 	Pages       []cache.TaggedPage `json:"pages,omitempty"`
 	Tags        []cache.TagSummary `json:"tags,omitempty"`
 	Tagged      []string           `json:"tagged,omitempty"`
 	NotCached   []string           `json:"not_cached,omitempty"`
 	Removed     int                `json:"removed,omitempty"`
+	Missing     []string           `json:"missing,omitempty"`
 }
 
 func (s *Server) registerTagTool() {
@@ -109,7 +113,8 @@ func (s *Server) tagShow(in TagInput) (*mcpsdk.CallToolResult, TagOutput, error)
 	if err != nil {
 		return nil, TagOutput{}, errf(kindPrecondition, "%v", err)
 	}
-	return nil, TagOutput{Tag: in.Tag, Entries: view.Entries, Shown: view.Shown, Cached: view.Cached, Pages: view.Pages, CacheStatus: view.CacheStatus}, nil
+	entries, shown, cached := view.Entries, view.Shown, view.Cached
+	return nil, TagOutput{Tag: in.Tag, Entries: &entries, Shown: &shown, Cached: &cached, Pages: view.Pages, CacheStatus: view.CacheStatus}, nil
 }
 
 func (s *Server) tagListOp() (*mcpsdk.CallToolResult, TagOutput, error) {
@@ -126,12 +131,13 @@ func (s *Server) tagListOp() (*mcpsdk.CallToolResult, TagOutput, error) {
 func (s *Server) tagRemove(in TagInput) (*mcpsdk.CallToolResult, TagOutput, error) {
 	var (
 		removed int
+		missing []string
 		err     error
 	)
 	if len(in.URLs) == 0 {
 		removed, err = s.tags.RemoveTag(in.Tag)
 	} else {
-		removed, _, err = s.tags.RemoveTagged(in.Tag, in.URLs)
+		removed, missing, err = s.tags.RemoveTagged(in.Tag, in.URLs)
 	}
 	if err != nil {
 		return nil, TagOutput{}, errf(kindPrecondition, "%v", err)
@@ -139,7 +145,7 @@ func (s *Server) tagRemove(in TagInput) (*mcpsdk.CallToolResult, TagOutput, erro
 	if removed == 0 {
 		return nil, TagOutput{}, errf(kindNotFound, "nothing removed: %q holds no such entries", in.Tag)
 	}
-	return nil, TagOutput{Tag: in.Tag, Removed: removed}, nil
+	return nil, TagOutput{Tag: in.Tag, Removed: removed, Missing: missing}, nil
 }
 
 func validTagName(name string) error {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/1broseidon/ketch/cache"
@@ -218,11 +219,13 @@ func runTagRemove(cmd *cobra.Command, args []string) error {
 	}
 	index := cache.NewTagIndex(tagTTL(), nil)
 	var removed int
+	var missing []string
 	var err error
-	if len(args) == 1 {
+	wholeTag := len(args) == 1
+	if wholeTag {
 		removed, err = index.RemoveTag(name)
 	} else {
-		removed, _, err = index.RemoveTagged(name, args[1:])
+		removed, missing, err = index.RemoveTagged(name, args[1:])
 	}
 	if err != nil {
 		return exitErrf(ExitPrecondition, "remove bookmarks: %v", err)
@@ -233,11 +236,22 @@ func runTagRemove(cmd *cobra.Command, args []string) error {
 	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(struct {
-			Tag     string `json:"tag"`
-			Removed int    `json:"removed"`
-		}{name, removed})
+			Tag     string   `json:"tag"`
+			Removed int      `json:"removed"`
+			Missing []string `json:"missing"`
+		}{name, removed, orEmpty(missing)})
 	}
-	fmt.Fprintf(os.Stderr, "removed %d %s from %s\n", removed, plural(removed, "entry", "entries"), name)
+	if wholeTag {
+		// No URL args means the entire tag is gone, not just some entries —
+		// say so plainly, since this is the one irreversible form of the
+		// command and there is no interactive confirmation prompt.
+		fmt.Fprintf(os.Stderr, "dropped tag %s (%d %s)\n", name, removed, plural(removed, "entry", "entries"))
+	} else {
+		fmt.Fprintf(os.Stderr, "removed %d %s from %s\n", removed, plural(removed, "entry", "entries"), name)
+		if len(missing) > 0 {
+			fmt.Fprintf(os.Stderr, "not tagged, skipped: %s\n", strings.Join(missing, ", "))
+		}
+	}
 	return nil
 }
 

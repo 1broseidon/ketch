@@ -259,17 +259,24 @@ func TestTagRemoveEntries(t *testing.T) {
 	put(t, c, "guacamole", "https://example.com/b", "B", "Another page about remote desktop gateways and their configuration.")
 
 	removed, missing, err := c.RemoveTagged("guacamole", []string{"https://example.com/a"})
-	if err != nil || removed != 1 || missing != 0 {
-		t.Fatalf("RemoveTagged = (%d, %d, %v), want (1, 0, nil)", removed, missing, err)
+	if err != nil || removed != 1 || len(missing) != 0 {
+		t.Fatalf("RemoveTagged = (%d, %v, %v), want (1, [], nil)", removed, missing, err)
 	}
 	if pages, _ := c.Tagged("guacamole"); len(pages) != 1 {
 		t.Errorf("after removing one: %d entries, want 1", len(pages))
 	}
 
-	// A page that was never under the tag is reported, not an error.
+	// A page that was never under the tag is reported by URL, not an error.
 	removed, missing, err = c.RemoveTagged("guacamole", []string{"https://example.com/zzz"})
-	if err != nil || removed != 0 || missing != 1 {
-		t.Fatalf("RemoveTagged(absent) = (%d, %d, %v), want (0, 1, nil)", removed, missing, err)
+	if err != nil || removed != 0 || len(missing) != 1 || missing[0] != "https://example.com/zzz" {
+		t.Fatalf("RemoveTagged(absent) = (%d, %v, %v), want (0, [https://example.com/zzz], nil)", removed, missing, err)
+	}
+
+	// A mixed batch reports removed and missing independently.
+	put(t, c, "guacamole", "https://example.com/c", "C", "A third page about remote desktop gateways worth keeping around.")
+	removed, missing, err = c.RemoveTagged("guacamole", []string{"https://example.com/b", "https://example.com/nope"})
+	if err != nil || removed != 1 || len(missing) != 1 || missing[0] != "https://example.com/nope" {
+		t.Fatalf("RemoveTagged(mixed) = (%d, %v, %v), want (1, [https://example.com/nope], nil)", removed, missing, err)
 	}
 }
 

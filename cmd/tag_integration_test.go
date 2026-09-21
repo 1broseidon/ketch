@@ -561,6 +561,142 @@ func TestWriteWarningsPreserveResearchOutput(t *testing.T) {
 	}
 }
 
+// assertNoCountKeys fails if any of entries/shown/cached appear in raw JSON
+// at all — add/list/remove never set them, so plain `omitempty` must drop
+// them rather than emitting a spurious "entries":0 beside the real payload.
+func assertNoCountKeys(t *testing.T, op, raw string) {
+	t.Helper()
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(raw), &m); err != nil {
+		t.Fatalf("%s: invalid JSON: %v (%s)", op, err, raw)
+	}
+	for _, key := range []string{"entries", "shown", "cached"} {
+		if _, ok := m[key]; ok {
+			t.Errorf("%s output carries %q, want it absent: %s", op, key, raw)
+		}
+	}
+}
+
+// assertCountKeys fails unless every key in want is present with exactly
+// that value — used for show, where the counts must appear even when the
+// true answer is zero (an empty tag).
+func assertCountKeys(t *testing.T, op, raw string, want map[string]float64) {
+	t.Helper()
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(raw), &m); err != nil {
+		t.Fatalf("%s: invalid JSON: %v (%s)", op, err, raw)
+	}
+	for key, wantVal := range want {
+		field, ok := m[key]
+		if !ok {
+			t.Errorf("%s output missing %q, want %v: %s", op, key, wantVal, raw)
+			continue
+		}
+		var got float64
+		if err := json.Unmarshal(field, &got); err != nil {
+			t.Errorf("%s: %q is not a number: %v", op, key, err)
+			continue
+		}
+		if got != wantVal {
+			t.Errorf("%s: %q = %v, want %v", op, key, got, wantVal)
+		}
+	}
+}
+
+// TestMCPTagOutputShapeOmitsCountsExceptOnShow guards against the "entries":
+// 0 next to a real add/list/remove payload bug: those operations never
+// populate entries/shown/cached, so the fields must be absent, not zero.
+// show must carry them even when the true answer is genuinely zero.
+func TestMCPTagOutputShapeOmitsCountsExceptOnShow(t *testing.T) {
+	isolated(t)
+	s := session(t)
+
+	r := call(t, s, "tag", map[string]any{"operation": "add", "tag": "shape", "urls": []string{"https://example.test/a"}})
+	if r.IsError {
+		t.Fatal(output(r))
+	}
+	assertNoCountKeys(t, "add", output(r))
+
+	r = call(t, s, "tag", map[string]any{"operation": "list"})
+	if r.IsError {
+		t.Fatal(output(r))
+	}
+	assertNoCountKeys(t, "list", output(r))
+
+	r = call(t, s, "tag", map[string]any{"operation": "show", "tag": "shape"})
+	if r.IsError {
+		t.Fatal(output(r))
+	}
+	assertCountKeys(t, "show", output(r), map[string]float64{"entries": 1, "shown": 1, "cached": 0})
+
+	r = call(t, s, "tag", map[string]any{"operation": "show", "tag": "never-used"})
+	if r.IsError {
+		t.Fatal(output(r))
+	}
+	assertCountKeys(t, "show(empty)", output(r), map[string]float64{"entries": 0, "shown": 0, "cached": 0})
+
+	r = call(t, s, "tag", map[string]any{"operation": "remove", "tag": "shape", "urls": []string{"https://example.test/a"}})
+	if r.IsError {
+		t.Fatal(output(r))
+	}
+	assertNoCountKeys(t, "remove", output(r))
+}
+
+// TestTagRemoveReportsMissingURLs covers item 3: a batch remove must report
+// which given URLs were not under the tag, on the CLI (--json and the text
+// summary) and over MCP, without disturbing the ones actually removed.
+func TestTagRemoveReportsMissingURLs(t *testing.T) {
+	isolated(t)
+	mustCLI(t, "tag", "add", "batch", "https://example.test/kept", "https://example.test/gone")
+	out := mustCLI(t, "tag", "remove", "batch", "https://example.test/gone", "https://example.test/never-tagged", "--json")
+	var result struct {
+		Tag     string   `json:"tag"`
+		Removed int      `json:"removed"`
+		Missing []string `json:"missing"`
+	}
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatal(err)
+	}
+	if result.Removed != 1 || len(result.Missing) != 1 || result.Missing[0] != "https://example.test/never-tagged" {
+		t.Fatalf("CLI --json remove missing report: %+v (%s)", result, out)
+	}
+
+	mustCLI(t, "tag", "add", "batch2", "https://example.test/kept2", "https://example.test/gone2")
+	code, _, stderr := cli(t, "tag", "remove", "batch2", "https://example.test/gone2", "https://example.test/also-never-tagged")
+	if code != 0 || !strings.Contains(stderr, "also-never-tagged") {
+		t.Fatalf("CLI text summary did not mention the missing URL: exit=%d stderr=%q", code, stderr)
+	}
+
+	mustCLI(t, "tag", "add", "batch3", "https://example.test/kept3", "https://example.test/gone3")
+	s := session(t)
+	r := call(t, s, "tag", map[string]any{"operation": "remove", "tag": "batch3", "urls": []string{"https://example.test/gone3", "https://example.test/mcp-never-tagged"}})
+	if r.IsError {
+		t.Fatal(output(r))
+	}
+	var mcpResult struct {
+		Removed int      `json:"removed"`
+		Missing []string `json:"missing"`
+	}
+	if err := json.Unmarshal([]byte(output(r)), &mcpResult); err != nil {
+		t.Fatal(err)
+	}
+	if mcpResult.Removed != 1 || len(mcpResult.Missing) != 1 || mcpResult.Missing[0] != "https://example.test/mcp-never-tagged" {
+		t.Fatalf("MCP remove missing report: %+v (%s)", mcpResult, output(r))
+	}
+}
+
+// TestTagRemoveBatchAllMissingIsNotFound: when none of the given URLs were
+// under the tag, that is a not-found outcome (exit 3), same as removing a
+// tag that does not exist at all — only a partial match succeeds.
+func TestTagRemoveBatchAllMissingIsNotFound(t *testing.T) {
+	isolated(t)
+	mustCLI(t, "tag", "add", "batch4", "https://example.test/kept4")
+	code, _, stderr := cli(t, "tag", "remove", "batch4", "https://example.test/not-in-the-tag")
+	if code != 3 {
+		t.Fatalf("batch remove with nothing matching: exit=%d stderr=%s", code, stderr)
+	}
+}
+
 func TestFetchBackfillsWithoutPageCaching(t *testing.T) {
 	isolated(t)
 	pages := pageServer(t)
