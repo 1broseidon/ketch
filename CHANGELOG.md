@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.18.0] - 2026-09-21
 
 ### Added
 - **`extract_mode` config key.** `clean` (the default) drops chrome by structure and also drops blocks by name and phrase — related-post rails, comment threads, share bars, cookie notices, "was this page helpful?" boxes — for the leanest markdown: 3,468 of 3,573 checks (critical 1,822 of 1,831), macro recall 99.0% and precision 99.4%. Cards and rails that together hold the page (a section front, a topic index) are kept in `clean` too. `complete` keeps everything the page's structure does not condemn: 3,475 checks (critical 1,825), recall 99.4% and precision 98.1%. Set it with `ketch config set extract_mode complete` or `KETCH_EXTRACT_MODE`; `ketch config` reports the effective mode and an unknown value fails loud with the valid names. It applies everywhere the extractor runs — `scrape`, `search --scrape`, `crawl`, `extract`, and the MCP tools — and a non-default mode is folded into the page-cache key, so pages cached under one mode are never reused under the other.
