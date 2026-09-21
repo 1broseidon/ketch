@@ -43,6 +43,9 @@ jobs:
 
       - run: go test ./...
 
+      - run: go -C bench vet ./...
+      - run: go -C bench test ./...
+
       - uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser

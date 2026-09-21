@@ -73,7 +73,7 @@ The reasoning behind each principle — and what ketch deliberately does *not* d
 ## Quality Standards
 
 - `golangci-lint run` must pass (gocyclo max 15)
-- `go test ./...` must pass
+- `go test ./...` must pass, plus `go -C bench test ./...` for the bench module (its own `go.mod`, so it is not covered by the root `./...`)
 - Pre-commit hook enforces both
 - CGO_ENABLED=0 — pure Go, cross-compile everywhere
 

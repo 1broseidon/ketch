@@ -13,18 +13,19 @@ install:
 
 test:
 	go test ./...
+	go -C bench test ./...
 
 lint:
 	golangci-lint run
 
 bench:
-	go run ./bench run $(BENCH_ARGS)
+	go -C bench run . run $(BENCH_ARGS)
 
 bench-check:
-	go run ./bench check $(BENCH_ARGS)
+	go -C bench run . check $(BENCH_ARGS)
 
 bench-live:
-	go run ./bench live $(BENCH_ARGS)
+	go -C bench run . live $(BENCH_ARGS)
 
 clean:
 	rm -f $(BINARY)

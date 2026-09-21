@@ -14,27 +14,30 @@ correct answer. See [RESULTS.md](RESULTS.md) for the accepted measurement and
 ## Run from the repository root
 
 ```sh
-go run ./bench setup
-go run ./bench run
-go run ./bench check
+go -C bench run . setup
+go -C bench run . run
+go -C bench run . check
 
 # Concurrent consistency: 1,500 measured invocations across 500 distinct pages.
-go run ./bench run -workers 4 -iterations 3 -warmup 0 -out bench/.runs/stress500
+go -C bench run . run -workers 4 -iterations 3 -warmup 0 -out .runs/stress500
 
 # Diagnose recoverable selection losses separately.
-go run ./bench run -mode selector -out bench/.runs/selector
+go -C bench run . run -mode selector -out .runs/selector
 
 # Measure the clean extraction mode (config extract_mode = clean) against its own baseline.
-go run ./bench run -extract-mode clean
-go run ./bench check -extract-mode clean
+go -C bench run . run -extract-mode clean
+go -C bench run . check -extract-mode clean
 
 # Network availability, HTTP latency and candidate source capture.
-go run ./bench live
+go -C bench run . live
 ```
 
 `make bench`, `make bench-check` and `make bench-live` are shortcuts. Pass extra
-flags with `BENCH_ARGS='-iterations 25'`. `go run ./bench run -h` lists all flags.
-Go's flag parser accepts both `-flag` and `--flag`; flags follow the subcommand.
+flags with `BENCH_ARGS='-iterations 25'`. `go -C bench run . run -h` lists all
+flags. Go's flag parser accepts both `-flag` and `--flag`; flags follow the
+subcommand. `bench` is its own Go module (`bench/go.mod`), so its corpus and
+dependencies never ship inside `go install github.com/1broseidon/ketch@latest`;
+`go -C bench ...` (Go 1.20+) runs it in place without a `cd`.
 
 The runner builds the worktree binary with `CGO_ENABLED=0` once outside the measurement window.
 `-binary /path/to/ketch` benchmarks another build. A custom `-dir` outside this
@@ -158,17 +161,27 @@ selector mode currently exits 1 with those failed cases retained in its scores.
 
 ```sh
 # Deliberate acceptance after reviewing every accuracy and timing change.
-go run ./bench update-baseline
-go run ./bench update-baseline -extract-mode clean
+go -C bench run . update-baseline
+go -C bench run . update-baseline -extract-mode clean
 
 # Keep the checked-in readable snapshots in sync when accepting them.
 cp bench/.runs/update-baseline-default/RESULTS.md bench/RESULTS.md
 cp bench/.runs/update-baseline-default-clean/RESULTS.md bench/RESULTS-clean.md
 
 # Calibrate elsewhere without replacing the shared baseline.
-go run ./bench update-baseline -baseline bench/.runs/my-machine.json
-go run ./bench check -baseline bench/.runs/my-machine.json
+go -C bench run . update-baseline -baseline .runs/my-machine.json
+go -C bench run . check -baseline .runs/my-machine.json
 ```
+
+Baselines are always recorded from the harness's own self-built `CGO_ENABLED=0`
+binary — run `update-baseline` without `-binary`. Pass `-binary /path/to/ketch`
+only for ad-hoc comparisons against a different build, such as a locally built
+binary with cgo enabled; never use `-binary` to record an accepted baseline.
+`check` refuses to compare runs whose `cgo_enabled` (or Go version, platform,
+CPU count, iterations, warmup, workers or mode) differ, so a `-binary` run is
+rarely comparable to the accepted baseline. Run the timing gate (`check`) on
+an otherwise idle machine — background load skews the median/p95 latency
+comparison.
 
 Comparisons require matching corpus/schema, mode, extraction mode, iterations, warmups, workers,
 OS/architecture, logical CPU count, Go version and CGO setting. Different CPU models, power settings,
@@ -215,7 +228,7 @@ can reflect a nonce or widget rather than a changed article; review the source.
    the reference; hidden menus and controls do not. MDN availability notices and
    NPS `hidden="until-found"` panels are retained explicitly in this corpus.
 4. Add the case and hashes to `corpus.json`. Hash the *uncompressed* HTML and
-   exact reference bytes. Run `setup` and `go test ./bench`.
+   exact reference bytes. Run `setup` and `go -C bench test ./...`.
 5. Run both the previous and candidate binaries against the same new corpus. Preserve a timestamped manifest hash before the first run.
    Review every failure and artifact, then explicitly update the baseline. A
    corpus change invalidates comparisons to the old baseline by design.
@@ -224,7 +237,7 @@ The harness imports no ketch extraction implementation for scoring. Goldmark
 parses emitted Markdown independently of ketch's HTML-to-Markdown converter.
 Tests damage negation, operators, indentation, links and table associations,
 and exercise timeout, oversized output, corrupt fixtures, hidden regressions,
-cancellation and nondeterminism. Run `go test ./bench ./extract` when changing it.
+cancellation and nondeterminism. Run `go -C bench test ./...` and `go test ./extract` when changing it.
 
 ## Contract ledger
 

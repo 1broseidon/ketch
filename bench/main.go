@@ -14,11 +14,11 @@ import (
 
 const usage = `Ketch extraction benchmark
 
-  go run ./bench setup             validate pinned snapshots and annotations
-  go run ./bench run               measure the current binary (built automatically)
-  go run ./bench check             compare with baseline.json, fail on regressions
-  go run ./bench update-baseline   explicitly replace the accepted baseline
-  go run ./bench live              fetch candidate snapshots; never replace gold data
+  go -C bench run . setup             validate pinned snapshots and annotations
+  go -C bench run . run               measure the current binary (built automatically)
+  go -C bench run . check             compare with baseline.json, fail on regressions
+  go -C bench run . update-baseline   explicitly replace the accepted baseline
+  go -C bench run . live              fetch candidate snapshots; never replace gold data
 
 Accuracy runs are offline with temporary config and tag paths; extract uses no page cache.
 run reports known misses; check --strict also fails every critical miss.
@@ -65,7 +65,7 @@ func entry(ctx context.Context, args []string) error {
 func parseOptions(command string, args []string) (options, error) {
 	opts := options{Mode: "default", ExtractMode: "complete", Iterations: 7, Warmup: 1, Workers: 1, Timeout: 20 * time.Second, SpeedRatio: 2, AccuracyDrop: .005}
 	set := flag.NewFlagSet(command, flag.ContinueOnError)
-	set.StringVar(&opts.Dir, "dir", "bench", "corpus directory (run from repository root)")
+	set.StringVar(&opts.Dir, "dir", ".", "corpus directory (default: this bench directory; invoke via go -C bench or cd bench first)")
 	if command != "setup" {
 		set.StringVar(&opts.Out, "out", "", "output directory; defaults to bench/.runs/<command>-<mode>")
 		set.DurationVar(&opts.Timeout, "timeout", opts.Timeout, "timeout per invocation or live fetch")
