@@ -18,6 +18,7 @@ func normalizeCodeBlocks(rawHTML string) string {
 	if err != nil {
 		return rawHTML
 	}
+	unwrapLineNumberTables(doc)
 	doc.Find("pre").Each(func(_ int, pre *goquery.Selection) {
 		var text strings.Builder
 		writeCodeText(&text, pre.Nodes[0])
@@ -85,8 +86,49 @@ func hiddenCodeNode(node *html.Node) bool {
 		if attr.Key == "style" && inlineCodeHidden(attr.Val) {
 			return true
 		}
+		if attr.Key == "class" && lineNumberClass(attr.Val) {
+			return true
+		}
 	}
 	return false
+}
+
+// Highlighters that print line numbers put them in the markup: Pygments in
+// span.linenos, Sphinx and Rouge in a gutter cell beside the code,
+// highlight.js in td.hljs-ln-numbers. None of it is code.
+var lineNumberClasses = tokenSet(`linenos lineno linenumber linenumbers line-number line-numbers line-numbers-rows linenodiv gutter rouge-gutter hljs-ln-numbers hljs-ln-n ln-num line-num`)
+
+func lineNumberClass(class string) bool {
+	for _, tok := range strings.Fields(class) {
+		if lineNumberClasses[strings.ToLower(tok)] {
+			return true
+		}
+	}
+	return false
+}
+
+// unwrapLineNumberTables replaces a highlighter's two-cell table — a
+// gutter of line numbers beside the code — with the code cell's content,
+// so the numbers do not come out as a listing of their own.
+func unwrapLineNumberTables(doc *goquery.Document) {
+	doc.Find("table").Each(func(_ int, t *goquery.Selection) {
+		cells := t.Find("td, th")
+		if cells.Length() != 2 {
+			return
+		}
+		var gutter, code *goquery.Selection
+		cells.Each(func(_ int, c *goquery.Selection) {
+			if class, _ := c.Attr("class"); lineNumberClass(class) {
+				gutter = c
+			} else if c.Find("pre").Length() > 0 {
+				code = c
+			}
+		})
+		if gutter == nil || code == nil {
+			return
+		}
+		t.ReplaceWithSelection(code.Children())
+	})
 }
 
 // Recognize simple inline visibility declarations, not substrings inside custom

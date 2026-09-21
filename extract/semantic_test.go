@@ -407,3 +407,50 @@ func TestLazyImagesKeepTheirSource(t *testing.T) {
 	assertContainsAll(t, complete, "![LAZYALT](https://x.test/lazy.png)", "![SWAPPEDALT](https://x.test/swapped.png)", "![SETALT](https://x.test/set-400.png)", "![NORMALALT](https://x.test/normal.png)")
 	assertContainsNone(t, complete, "data-uri omitted")
 }
+
+func TestLinkListsInDataCellsAndCaptionsStay(t *testing.T) {
+	t.Parallel()
+	complete, clean := extractBoth(t, landmarkPage(`<table class="infobox"><tr><th>Born</th><td>1815</td></tr><tr><th>Known for</th><td><div class="plainlist"><ul><li><a href="/w/Engine">CELLLINKONE</a></li><li><a href="/w/NoteG">CELLLINKTWO</a></li><li><a href="/w/Bernoulli">CELLLINKTHREE</a></li></ul></div></td></tr></table>`+
+		`<div class="thumb"><figure><a href="/wiki/File:x.jpg"><img src="https://x.test/x.jpg" alt=""></a><figcaption><a href="/w/Babbage">CAPLINKONE</a>, <a href="/w/Engine">CAPLINKTWO</a>, <a href="/w/Byron">CAPLINKTHREE</a></figcaption></figure></div>`+
+		`<div class="tags"><a href="/t/1">TAGONE</a> <a href="/t/2">TAGTWO</a> <a href="/t/3">TAGTHREE</a></div>`))
+	for _, md := range []string{complete, clean} {
+		assertContainsAll(t, md, "CELLLINKONE", "CELLLINKTHREE", "CAPLINKONE", "CAPLINKTHREE")
+		assertContainsNone(t, md, "TAGONE")
+	}
+}
+
+func TestLineNumbersLeaveCode(t *testing.T) {
+	t.Parallel()
+	complete, _ := extractBoth(t, landmarkPage(`<div class="highlight"><pre><span></span><code><span class="linenos"> 1</span><span class="kn">import</span> <span class="nn">requests</span>
+<span class="linenos"> 2</span><span class="n">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</code></pre></div>`+
+		`<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span>def f():
+    return 1
+</pre></div></td></tr></table>`))
+	assertContainsAll(t, complete, "import requests\nprint(x)", "def f():\n    return 1")
+	assertContainsNone(t, complete, " 1import", "\n1\n2")
+}
+
+func TestAriaHiddenPanelWithControlStays(t *testing.T) {
+	t.Parallel()
+	complete, clean := extractBoth(t, landmarkPage(`<button aria-controls="adv" aria-expanded="false">Advanced options</button><div id="adv" aria-hidden="true"><p>PANELCONTENT is what the author folded away for later</p></div><span aria-hidden="true">DECORATIVE</span>`))
+	for _, md := range []string{complete, clean} {
+		assertContainsAll(t, md, "PANELCONTENT")
+		assertContainsNone(t, md, "DECORATIVE")
+	}
+}
+
+func TestHubDecisionIsTheSameInBothModes(t *testing.T) {
+	t.Parallel()
+	card := func(n string) string {
+		return `<div class="story"><h3><a href="/s/` + n + `">Story ` + n + `</a></h3><p>` + n + ` blurb of a dozen words that says what the story is about today</p></div>`
+	}
+	rail := `<div class="rail">` + card("A1") + card("A2") + card("A3") + `</div>`
+	popular := `<section><h2>Most popular</h2><div class="grid">` + card("B1") + card("B2") + card("B3") + card("B4") + card("B5") + card("B6") + `</div></section>`
+	page := `<html><head><title>Front</title></head><body><main>` + rail + `<h1>Front</h1><p>` + filler(10) + `</p>` + popular + `</main></body></html>`
+	complete, clean := extractBoth(t, page)
+	for _, md := range []string{complete, clean} {
+		assertContainsAll(t, md, "Story A1", "Story B6")
+	}
+}

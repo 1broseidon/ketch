@@ -761,6 +761,7 @@ func pruneChrome(root *goquery.Selection, doc *goquery.Document, pageURL string,
 	// for every block rule below.
 	p.wc = newWordCache(root.Nodes[0])
 	p.dropAsides()
+	p.hub = p.hubPage()
 	if mode == ModeClean {
 		p.dropGridSidebars()
 		p.dropComments()
@@ -788,6 +789,8 @@ type pruner struct {
 	controlled map[string]bool
 	wc         *wordCache
 	rootWords  int
+	hub        bool                // the page is made of links: link blocks are its content
+	data       map[*html.Node]bool // links that are data, not menu: in captions, definitions, data-table cells
 	threads    map[*html.Node]bool // comment threads found by dropComments
 }
 
@@ -855,9 +858,12 @@ func (p *pruner) unwrapDisclosureButtons() {
 			return
 		}
 		// The block around a disclosure button is a foldout the author
-		// collapsed; later rules leave it alone. The button's own chevron
-		// is not part of the heading it carries.
-		b.Parent().SetAttr("data-foldout", "")
+		// collapsed; later rules leave it alone. A foldout is a block
+		// within the page, never the page. The button's own chevron is
+		// not part of the heading it carries.
+		if parent := b.Parent(); parent.Length() > 0 && parent.Nodes[0] != p.root.Nodes[0] {
+			parent.SetAttr("data-foldout", "")
+		}
 		b.Find("*").Each(func(_ int, c *goquery.Selection) {
 			if wordsIn(c.Text()) == 0 {
 				c.Remove()
@@ -893,7 +899,14 @@ func (p *pruner) dropSpacers() {
 // dropHidden removes what the page hides from a sighted reader, unless the
 // page's own signals say it is content someone collapsed.
 func (p *pruner) dropHidden() {
-	drop("aria-hidden", p.root.Find("[aria-hidden=true]"))
+	// aria-hidden hides from the reader we serve, except the panel a
+	// disclosure or tab control names: that is content someone collapsed.
+	p.root.Find("[aria-hidden=true]").Each(func(_ int, s *goquery.Selection) {
+		if isCollapsedContent(s, "", false, p.controlled) {
+			return
+		}
+		drop("aria-hidden", s)
+	})
 	p.root.Find("[hidden], [style], [class]").Each(func(_ int, s *goquery.Selection) {
 		p.hiddenRule(s)
 	})
@@ -1044,6 +1057,24 @@ func (p *pruner) dropPhrases() {
 	})
 }
 
+// hubPage decides once, before any rule that reads names or headings,
+// whether the page is made of links — a topic index, a chapter list, a
+// section front. The candidates are counted the way ModeClean counts
+// them, a recirculation heading introducing nothing, so both modes reach
+// the same answer: a "Most read" rail is link material on a front page
+// whichever mode reads it, and the mode meant to remove more must not be
+// the one that keeps the top stories.
+func (p *pruner) hubPage() bool {
+	if p.rootWords < 200 {
+		return false
+	}
+	mode := p.mode
+	p.mode = ModeClean
+	candidates := append(p.teaserGrids(), p.linkBlocks()...)
+	p.mode = mode
+	return p.wc.hubShare(candidates, p.rootWords) >= 0.4
+}
+
 // dropLinkBlocks takes the blocks made of links. A hub page — a topic index,
 // a chapter list, a condition's overview — is made of links, and a short
 // page has nothing to protect: both keep everything.
@@ -1053,7 +1084,7 @@ func (p *pruner) dropLinkBlocks() {
 	}
 	p.dropTOCs()
 	candidates := append(p.teaserGrids(), p.linkBlocks()...)
-	if p.wc.hubShare(candidates, p.rootWords) >= 0.4 {
+	if p.hub {
 		for _, c := range candidates {
 			if PruneLog != nil {
 				PruneLog("hub-keep:"+c.rule, c.sel)
@@ -1132,7 +1163,7 @@ func (p *pruner) teaserGrids() []candidate {
 func (p *pruner) linkBlocks() []candidate {
 	var out []candidate
 	p.root.Find("div, section, ul, ol").Each(func(_ int, b *goquery.Selection) {
-		if p.bulk(b) || b.Find("a[href]").Length() < 3 || p.wc.density(b) < 0.8 {
+		if p.bulk(b) || p.menuLinks(b) < 3 || p.wc.density(b) < 0.8 {
 			return
 		}
 		if b.Find("pre, table").Length() > 0 || introduced(b, p.mode) || (b.Is("ul, ol") && nestedList(b)) {
@@ -1149,6 +1180,33 @@ func (p *pruner) linkBlocks() []candidate {
 		out = append(out, candidate{"link-block", b})
 	})
 	return out
+}
+
+// menuLinks counts the links of a block that a menu could be made of.
+// In a figure caption, a definition or a cell of a data table a list of
+// links is the data — a figure's credits, a glossary entry, an infobox
+// row — and is not counted, whether the block is the cell's content or
+// the figure's wrapper.
+func (p *pruner) menuLinks(b *goquery.Selection) int {
+	if p.data == nil {
+		p.data = map[*html.Node]bool{}
+		mark := func(links *goquery.Selection) {
+			links.Each(func(_ int, a *goquery.Selection) { p.data[a.Nodes[0]] = true })
+		}
+		mark(p.root.Find("figcaption a[href], dt a[href], dd a[href]"))
+		p.root.Find("table").Each(func(_ int, t *goquery.Selection) {
+			if isDataTable(t) {
+				mark(t.Find("a[href]"))
+			}
+		})
+	}
+	n := 0
+	b.Find("a[href]").Each(func(_ int, a *goquery.Selection) {
+		if !p.data[a.Nodes[0]] {
+			n++
+		}
+	})
+	return n
 }
 
 // dropPermalinks removes the anchor glyphs generated documentation puts in
