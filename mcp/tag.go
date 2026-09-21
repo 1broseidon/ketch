@@ -87,6 +87,13 @@ func (s *Server) tagAdd(in TagInput) (*mcpsdk.CallToolResult, TagOutput, error) 
 	if len(in.URLs) == 0 {
 		return nil, TagOutput{}, errf(kindValidation, "urls is required for operation=add")
 	}
+	// Validate every URL before touching the index: a batch add should fail
+	// entirely on bad input rather than partially tagging the good ones.
+	for _, url := range in.URLs {
+		if err := cache.ValidateBookmarkURL(url); err != nil {
+			return nil, TagOutput{}, errf(kindValidation, "%v", err)
+		}
+	}
 	out := TagOutput{Tag: in.Tag, Tagged: []string{}, NotCached: []string{}}
 	for _, url := range in.URLs {
 		key := s.scraper.CacheKey(s.scraper.Rewrite(url))

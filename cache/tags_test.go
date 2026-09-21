@@ -319,6 +319,35 @@ func TestTagReTagReplacesEntry(t *testing.T) {
 	}
 }
 
+func TestValidateBookmarkURL(t *testing.T) {
+	t.Parallel()
+	valid := []string{
+		"https://example.com",
+		"http://example.com/path?query=1",
+		"https://example.com:8443/docs",
+	}
+	for _, u := range valid {
+		if err := ValidateBookmarkURL(u); err != nil {
+			t.Errorf("ValidateBookmarkURL(%q) = %v, want nil", u, err)
+		}
+	}
+	invalid := []string{
+		"",
+		"javascript:alert(1)",
+		"ftp://host/x",
+		"plain-word",
+		"example.com",
+		"//example.com/no-scheme",
+		"mailto:a@example.com",
+		"file:///etc/passwd",
+	}
+	for _, u := range invalid {
+		if err := ValidateBookmarkURL(u); err == nil {
+			t.Errorf("ValidateBookmarkURL(%q) = nil, want an error", u)
+		}
+	}
+}
+
 func TestTaggedUnknownTagIsEmptyNotAnError(t *testing.T) {
 	t.Parallel()
 	c := newTestCache(t, time.Hour)

@@ -697,6 +697,37 @@ func TestTagRemoveBatchAllMissingIsNotFound(t *testing.T) {
 	}
 }
 
+// TestTagAddRejectsNonHTTPURLs covers item 4: tag add must require an
+// absolute http(s) URL, both on the CLI (exit 2, not the old exit 5 for an
+// empty URL) and over MCP ([validation], not [precondition]). A batch with
+// one bad URL must not partially tag the good ones first.
+func TestTagAddRejectsNonHTTPURLs(t *testing.T) {
+	isolated(t)
+	const wantExit = 2 // ExitValidation (cmd/exit.go); this package builds and execs the binary rather than importing cmd
+	for _, bad := range []string{"javascript:alert(1)", "ftp://host/x", "plain-word", ""} {
+		code, _, stderr := cli(t, "tag", "add", "bad", bad)
+		if code != wantExit {
+			t.Errorf("tag add %q: exit=%d, want %d (%s)", bad, code, wantExit, stderr)
+		}
+	}
+
+	// A batch with a bad URL alongside a good one must tag neither.
+	code, _, stderr := cli(t, "tag", "add", "batch", "https://example.test/good", "javascript:alert(1)")
+	if code != wantExit {
+		t.Fatalf("mixed batch: exit=%d, want %d (%s)", code, wantExit, stderr)
+	}
+	out := mustCLI(t, "tag", "list", "--json")
+	if strings.Contains(out, `"batch"`) {
+		t.Fatalf("mixed batch partially tagged despite the bad URL: %s", out)
+	}
+
+	s := session(t)
+	r := call(t, s, "tag", map[string]any{"operation": "add", "tag": "mcp-bad", "urls": []string{"ftp://host/x"}})
+	if !r.IsError || !strings.Contains(output(r), "[validation]") {
+		t.Fatalf("MCP tag add ftp URL: isError=%v result=%s", r.IsError, output(r))
+	}
+}
+
 func TestFetchBackfillsWithoutPageCaching(t *testing.T) {
 	isolated(t)
 	pages := pageServer(t)

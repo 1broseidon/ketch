@@ -90,6 +90,13 @@ func validateTagName(name string) error {
 	return nil
 }
 
+func validateBookmarkURL(raw string) error {
+	if err := cache.ValidateBookmarkURL(raw); err != nil {
+		return exitErrf(ExitValidation, "%v", err)
+	}
+	return nil
+}
+
 func tagTTL() time.Duration {
 	ttl, err := time.ParseDuration(cfg.CacheTTL)
 	if err != nil {
@@ -102,6 +109,13 @@ func runTagAdd(cmd *cobra.Command, args []string) error {
 	name := args[0]
 	if err := validateTagName(name); err != nil {
 		return err
+	}
+	// Validate every URL before touching the index: a batch add should fail
+	// entirely on bad input rather than partially tagging the good ones.
+	for _, u := range args[1:] {
+		if err := validateBookmarkURL(u); err != nil {
+			return err
+		}
 	}
 	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
 	pc := cache.NewReadOnly()

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"slices"
 	"strings"
@@ -51,6 +52,25 @@ func ValidateTagName(name string) error {
 	}
 	if len(name) > MaxTagNameBytes {
 		return fmt.Errorf("tag name must not exceed %d bytes", MaxTagNameBytes)
+	}
+	return nil
+}
+
+// ValidateBookmarkURL applies the same rule at the `tag add` CLI and MCP
+// boundaries: unlike scrape (which expands a bare domain like "example.com"
+// before anything ever tags it) or a --tag on search/code/docs/crawl (whose
+// URLs come from a live result, already absolute), tag add stores exactly
+// what it is given as the re-fetch target with no fetch of its own to
+// validate it. It must already be an absolute http(s) URL with a host — the
+// same rule crawl and search apply when resolving links, which rejects
+// javascript:, mailto:, ftp:, and bare words along with the empty string.
+func ValidateBookmarkURL(raw string) error {
+	if raw == "" {
+		return fmt.Errorf("bookmark URL must not be empty")
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") {
+		return fmt.Errorf("bookmark URL must be an absolute http:// or https:// URL, got %q", raw)
 	}
 	return nil
 }
