@@ -77,24 +77,29 @@ Not a research surface: it answers "what did I already find?", not "what is out
 there?". No network on any `tag` operation.
 
 `--tag` / the `tag` option works on **every** surface, and one tag holds them
-all. Each entry records what that surface produced: the full extraction for a
-fetched page, the matching snippet for a `code` or `docs` hit, the engine's
-title and description for an unscraped `search` hit.
+all. Each entry keeps a source URL, bounded title and description, and tagging
+time. Descriptions derive from fetched content, code/docs snippets or search
+results; full bodies stay in the separate page cache.
 
 | Operation | CLI | MCP |
 | --- | --- | --- |
 | Tag what a call returned | `--tag <name>` on `search` / `code` / `docs` / `scrape` / `crawl` | `tag` option on those tools |
 | Tag URLs directly (cached or not) | `ketch tag add <name> <url>...` | `operation: add`, `urls` |
-| Read the index | `ketch tag show <name>` (`--minimal` for tab-separated) | `operation: show` |
+| Read the index | `ketch tag show <name> --limit N` (`--minimal` for tab-separated) | `operation: show`, `limit` |
 | List tags | `ketch tag list` | `operation: list` |
 | Drop a tag, or pages from it | `ketch tag remove <name> [url...]` | `operation: remove`, optional `urls` |
 
 `show` returns titles, URLs, one-line descriptions and a `cached` flag per page,
-newest first. A page can carry several tags and is stored once.
+newest first. Both surfaces default to 50 entries; 0 selects all and negatives
+are validation errors. `entries`/`cached` count the whole tag, `shown` counts
+returned pages. A source can carry several tags. Membership uses the displayed
+URL regardless of cookie, User-Agent or rewrite settings.
 
 **The index outlives the cached bodies.** `cache_ttl` defaults to 72h; index
-entries have no TTL. An entry with `cached: false` means the body expired, not
-that the page is gone — `scrape` the URL to restore it. `ketch cache clear`
+entries have no TTL. An entry with `cached: false` has no confirmed fresh body;
+it does not imply a dead link. If `cache_status: unavailable`, warmth could not
+be checked because the page cache was locked or unreadable. `scrape` the URL
+when you need its content. `ketch cache clear`
 drops bodies and keeps the index. Nothing expires the index, so `remove` is the
 only way a tag ends.
 
@@ -108,7 +113,15 @@ unscraped `search`: those surfaces return snippets, not fetched pages. The
 snippet is kept as the entry's description, so the index is still useful
 without a round trip.
 
-Errors: `remove` that matches nothing is `[not_found]` / exit 3.
+Errors: `remove` that matches nothing is `[not_found]` / exit 3, including JSON
+mode. Explicit tag storage failures are `[precondition]` / exit 5. Optional
+bookmark write failures retain research output with CLI stderr diagnostics
+(`warning.code: tag_write_failed` under `--json`) or MCP `warnings`.
+
+Storage is `tags.db` under the native configuration directory (Linux XDG config,
+macOS Application Support, Windows AppData), with `KETCH_TAGS_PATH` as a complete
+filename override. Handles are short-lived, independent of crawl/MCP page-cache
+locks. Cache clear frees page storage for reuse but does not shrink cache.db.
 
 ---
 
@@ -130,7 +143,7 @@ Search needs no key at all on the default `auto` backend. Naming a keyed backend
 - `ketch config` is the one discovery call: effective settings plus `available_backends`, `available_code_backends`, `available_doc_backends`, as JSON. Never probe env vars instead.
 - **Blind spots:** older builds do not report whether search/docs API keys are set (`github_token_source` is the exception; newer builds add key-presence booleans like `brave_api_key_set`), and no build reports reachability. To know a surface works, probe it — `ketch doctor` when available, else the setup verb's probe table.
 - Keys (from README and `ketch config` output): `backend`, `code_backend`, `docs_backend`, `limit`, `searxng_url`, `sourcegraph_url`, `brave_api_key`, `context7_api_key`, `github_token`, `exa_api_key`, `firecrawl_api_key`, `firecrawl_url`, `keenable_api_key`, `tavily_api_key`, `serpbase_api_key`, `serply_api_key`, `youcom_api_key`, `browser`, `cache_ttl`, `url_rewrites`, `spa_markers`.
-- `KETCH_CONFIG` is **not** supported. For test isolation, override `HOME` / `XDG_CONFIG_HOME`.
+- `KETCH_CONFIG` selects the config filename. Isolate bookmark labs with `KETCH_TAGS_PATH` too; on Linux, `XDG_CACHE_HOME` isolates page bodies. macOS and Windows use their native cache directories, so an XDG override alone is not portable isolation.
 
 ## Cache
 

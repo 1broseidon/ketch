@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -25,8 +26,11 @@ type Store interface {
 
 // Cache provides TTL-based page caching backed by a Store.
 type Cache struct {
-	store Store
-	ttl   time.Duration
+	store      Store
+	ttl        time.Duration
+	index      *tagDB
+	pages      *Cache
+	onTagError func(error)
 }
 
 type cacheEntry struct {
@@ -52,6 +56,7 @@ func New(ttl time.Duration) *Cache {
 	if err != nil {
 		return nil
 	}
+	store.tags = defaultTagDB()
 	return &Cache{store: store, ttl: ttl}
 }
 
@@ -83,6 +88,7 @@ func NewReadOnly() *Cache {
 	if err != nil {
 		return nil
 	}
+	store.tags = defaultTagDB()
 	return &Cache{store: store}
 }
 
@@ -113,7 +119,7 @@ func ensurePrivateDir(dir string) error {
 // The second return is the fetch source recorded at Put time (scrape.SourceHTTP
 // or scrape.SourceBrowser); empty for entries written before source tracking.
 func (c *Cache) Get(url string) (*scrape.Page, string) {
-	if c == nil {
+	if c == nil || c.store == nil {
 		return nil, ""
 	}
 	data, err := c.store.Get(cacheKey(url))
@@ -132,7 +138,7 @@ func (c *Cache) Get(url string) (*scrape.Page, string) {
 
 // Put writes a page to the cache with the fetch source that produced it.
 func (c *Cache) Put(url string, page *scrape.Page, source string) {
-	if c == nil {
+	if c == nil || c.store == nil {
 		return
 	}
 	e := cacheEntry{
@@ -145,6 +151,13 @@ func (c *Cache) Put(url string, page *scrape.Page, source string) {
 		return
 	}
 	_ = c.store.Put(cacheKey(url), data)
+	if err := c.Backfill(url, page.URL, page); err != nil {
+		if c.onTagError != nil {
+			c.onTagError(err)
+		} else {
+			fmt.Fprintf(os.Stderr, "warn: tag metadata backfill: %v\n", err)
+		}
+	}
 }
 
 // GetRaw looks up a cached entry's raw HTML by URL. Returns (rawHTML, source,
@@ -153,7 +166,7 @@ func (c *Cache) Put(url string, page *scrape.Page, source string) {
 // empty HTML). On miss or empty raw, returns ("", "", nil) so the caller
 // refetches and back-fills.
 func (c *Cache) GetRaw(url string) (string, string, *scrape.Page) {
-	if c == nil {
+	if c == nil || c.store == nil {
 		return "", "", nil
 	}
 	data, err := c.store.Get(cacheKey(url))
@@ -177,7 +190,7 @@ func (c *Cache) GetRaw(url string) (string, string, *scrape.Page) {
 // Used by --raw to persist both representations from a single fetch. The
 // markdown-only Put path is unchanged and keeps omitting RawHTML.
 func (c *Cache) PutRaw(url string, page *scrape.Page, source, rawHTML string) {
-	if c == nil {
+	if c == nil || c.store == nil {
 		return
 	}
 	e := cacheEntry{
@@ -191,11 +204,18 @@ func (c *Cache) PutRaw(url string, page *scrape.Page, source, rawHTML string) {
 		return
 	}
 	_ = c.store.Put(cacheKey(url), data)
+	if err := c.Backfill(url, page.URL, page); err != nil {
+		if c.onTagError != nil {
+			c.onTagError(err)
+		} else {
+			fmt.Fprintf(os.Stderr, "warn: tag metadata backfill: %v\n", err)
+		}
+	}
 }
 
 // Stats returns cache entry count and total size in bytes.
 func (c *Cache) Stats() (entries int, bytes int64) {
-	if c == nil {
+	if c == nil || c.store == nil {
 		return 0, 0
 	}
 	return c.store.Stats()
@@ -203,7 +223,7 @@ func (c *Cache) Stats() (entries int, bytes int64) {
 
 // Clear removes all cached pages.
 func (c *Cache) Clear() error {
-	if c == nil {
+	if c == nil || c.store == nil {
 		return nil
 	}
 	return c.store.Clear()
@@ -211,7 +231,7 @@ func (c *Cache) Clear() error {
 
 // Close releases cache resources.
 func (c *Cache) Close() {
-	if c == nil {
+	if c == nil || c.store == nil {
 		return
 	}
 	_ = c.store.Close()

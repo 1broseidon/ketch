@@ -146,11 +146,11 @@ ketch config set external_pdf_to_md_converter_timeout_sec 300
 
 When configured, the external converter is authoritative: failures are returned rather than silently falling back to the built-in parser. PDF binary output is never emitted: `--raw` and `--select` reject PDFs as validation errors. With `--force-browser`, PDF markdown still uses text extraction and never opens Chromium's PDF viewer.
 
-### Tags — a working set that survives the cache
+### Tags — bookmarks for agent workflows
 
-Mid-task, an agent keeps needing the same handful of pages: the vendor's docs,
-two how-tos, the issue thread explaining an undocumented flag. Tag them as you
-fetch, then ask later what you have:
+Save useful sources while you research a project, then find them again in a
+later session. Tags group documentation, code references, search results and
+write-ups under the same project or topic. One source can belong to several tags.
 
 ```sh
 ketch search "guacamole ldap authentication" --scrape --tag remote-access
@@ -159,34 +159,55 @@ ketch docs "apache guacamole" --tag remote-access
 ketch tag add remote-access https://example.com/read-this-later  # no network
 
 ketch tag show remote-access
+ketch tag show remote-access --limit 10 --json
+ketch tag show remote-access --limit 0       # all entries
+ketch tag remove remote-access https://example.com/read-this-later
 ```
 
-`--tag` works on every surface, and one tag holds them all — the vendor's
-documentation, the code that calls it, and the write-up that explained the
-undocumented flag, in one list. Each entry records whatever that surface
-produced: the full extraction for a fetched page, the matching snippet for a
-`code` or `docs` hit, the engine's title and description for an unscraped
-search result.
+`--tag` works on `search`, `code`, `docs`, `scrape` and `crawl`, including
+`--no-cache`. A bookmark keeps the source URL, a bounded title and description,
+and the time it was tagged. Descriptions come from search results, snippets or
+fetched content; full bodies belong to the separate page cache.
 
-`tag show` renders an llms.txt-shaped index — titles, URLs, one-line
-descriptions — so the agent picks the page it wants instead of searching the
-web again. A page can carry several tags and is still cached once.
+`tag show` returns the newest **50 entries by default**, ordered by tagging time
+and then URL for ties. Use `--limit N` to change that, or `--limit 0` for all.
+Text output says `showing N of M` when limited; `--minimal` keeps its TSV output
+and puts that notice on stderr. JSON and MCP return `entries` and `cached` totals
+for the whole tag, `shown` for the returned pages, and `cache_status`. The MCP
+`tag` tool accepts the same `limit` on `operation: show`.
 
-**The index outlives the pages it points at.** A page body is tens of kilobytes
-and genuinely goes stale, so it expires under `cache_ttl` (72h by default). An
-index entry is a couple hundred bytes and a URL does not rot the way a body
-does — so entries keep their own metadata, a page whose body has expired is
-listed as `(not cached)` rather than dropped, and re-fetching it restores it
-without re-tagging. `ketch cache clear` reclaims the disk and keeps the map.
+Read the index, choose a source, and `scrape` its URL. `cached: false` usually
+means there is no fresh local body, not that the link is broken. If the page
+cache is locked or unreadable, bookmarks still work: `cache_status: unavailable`
+means the `cached: false` flags are unverified. Fetches can proceed without the
+page cache. A bookmark does not guarantee an upstream page still exists.
 
-`tag add` takes any URL, cached or not — naming a URL is a deliberate act, and
-organising URLs should not depend on when they were last fetched. An
-un-fetched URL lists with no title or description until the page is seen, by
-any route; both then fill in on their own.
+Bookmarks survive cache expiry and `cache clear`. Clear removes page bodies
+and frees their space for reuse; it **does not shrink the database file**.
+`tag add` accepts URLs without fetching them, preserves existing metadata on a
+cold re-add, and fills missing titles and descriptions on a later fetch.
+Removing a bookmark uses the displayed URL, regardless of cookies, User-Agent
+or URL rewrite settings. Nothing expires bookmarks; use `tag remove` to tidy up.
 
-There is no `sync` and no staleness to reason about: a tag owns a URL and a
-title, never a copy of the content. Equally, nothing expires the index, so
-`ketch tag remove` is how a tag ends.
+The independent `tags.db` is opened only for short index operations, so an idle
+MCP server or a background crawl does not monopolize it. Its default location
+uses the operating system's configuration directory:
+
+| Platform | Default tag index |
+| --- | --- |
+| Linux | `$XDG_CONFIG_HOME/ketch/tags.db`, or `~/.config/ketch/tags.db` |
+| macOS | `~/Library/Application Support/ketch/tags.db` |
+| Windows | `%AppData%\ketch\tags.db` |
+
+Set **`KETCH_TAGS_PATH`** to override the complete filename. Isolated labs must
+set it as well as their page-cache override; `XDG_CACHE_HOME` alone no longer
+isolates bookmarks. This replaces the unreleased in-cache tag layout; existing
+experimental tag buckets are left untouched and are not automatically imported.
+
+A failed explicit `tag` write returns exit 5 / MCP `[precondition]`. If saving
+a bookmark fails during research, the research result is retained: the CLI emits
+a stderr warning (`warning.code: tag_write_failed` with `--json`), and MCP adds
+`warnings` to the result. Research success alone does not confirm bookmark persistence.
 
 ## Commands
 
@@ -201,7 +222,7 @@ title, never a copy of the content. Equally, nothing expires the index, so
 | `browser` | Manage headless Chrome for JS-rendered pages (`install`, `status`) |
 | `config` | Show effective config as JSON, or `init` / `set` / `path` |
 | `cache` | Show page-cache stats, or `clear` |
-| `tag` | Label cached pages and ask what you already have (`add`, `show`, `list`, `remove`) |
+| `tag` | Bookmark research sources and revisit them (`add`, `show`, `list`, `remove`) |
 | `doctor` | Live health check of every backend, the browser, and the cache — exit `0` healthy, `5` when a configured surface is broken |
 | `mcp` | Run ketch as an MCP server over stdio (`mcp serve`) — the research surfaces plus `tag`, as tools |
 | `version` | Print version, commit, build date |
@@ -331,6 +352,11 @@ Bug reports, documentation, and improvements are welcome. See the
 [contribution guide](./CONTRIBUTING.md) for pull request guidelines and provider
 admission criteria. Please discuss new providers in an issue before implementing
 them.
+
+The [extraction benchmark](./bench/README.md) measures content preservation and
+CLI latency across 20 pinned websites. Run `make bench` for a report or
+`make bench-check` to compare with the regression baseline. Known extraction
+misses remain visible; passing the regression check is not a release approval.
 
 ## License
 

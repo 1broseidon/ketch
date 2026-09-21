@@ -406,24 +406,25 @@ harness/harness  registry/app/remote/clients/registry/client.go  <span class="di
             <div class="disc-body">
               <pre><code><span class="p">$ </span>ketch cache
 <span class="p">$ </span>ketch cache clear</code></pre>
-              <p class="note">bbolt-backed, 72-hour default TTL. Repeat scrapes and crawls read from cache, with no refetch. <code class="inline">clear</code> drops page bodies and leaves the <a href="#commands">tag</a> index intact — it reclaims the disk and keeps the map.</p>
+              <p class="note">bbolt-backed, 72-hour default TTL. Repeat scrapes and crawls read from cache, with no refetch. <code class="inline">clear</code> drops page bodies and leaves the <a href="#commands">tag</a> index intact — freed pages are reused, but the database file does not shrink.</p>
             </div>
           </details>
 
           <details>
-            <summary>tag <span class="sm">Label cached pages and ask what you already have</span></summary>
+            <summary>tag <span class="sm">Bookmark research sources for later sessions</span></summary>
             <div class="disc-body">
               <pre><code><span class="p">$ </span>ketch search "guacamole ldap" --scrape --tag remote-access
 <span class="p">$ </span>ketch code "guacamole ldap" --tag remote-access
 <span class="p">$ </span>ketch docs "apache guacamole" --tag remote-access
 <span class="p">$ </span>ketch tag add remote-access https://example.com/read-this-later  <span class="dim"># no network</span>
-<span class="p">$ </span>ketch tag show remote-access
+<span class="p">$ </span>ketch tag show remote-access --limit 20
 <span class="p">$ </span>ketch tag list
 <span class="p">$ </span>ketch tag remove remote-access <span class="dim"># or: … &lt;url&gt;… for single pages</span></code></pre>
-              <p><code class="inline">--tag</code> works on every surface, and one tag holds them all — the vendor's documentation, the code that calls it, and the write-up that explained the undocumented flag, in one list. Each entry records what that surface produced: the full extraction for a fetched page, the matching snippet for a <code class="inline">code</code> or <code class="inline">docs</code> hit, the engine's title and description for an unscraped search result.</p>
-              <p><code class="inline">tag show</code> renders an llms.txt-shaped index — titles, URLs, one-line descriptions — so an agent mid-task picks what it needs instead of searching the web again. A page can carry several tags and is still cached once.</p>
-              <p class="note"><strong>The index outlives the pages it points at.</strong> A body is tens of kilobytes and goes stale, so it expires under <code class="inline">cache_ttl</code>; an entry is a couple hundred bytes, and a URL does not rot the way a body does. A page whose body has expired is listed as <code class="inline">(not cached)</code> rather than dropped, and re-fetching restores it without re-tagging. There is no <code class="inline">sync</code>: a tag owns a URL and a title, never a copy of the content. Equally, nothing expires the index, so <code class="inline">tag remove</code> is how a tag ends.</p>
-              <p class="note"><code class="inline">tag add</code> takes any URL, cached or not — organising URLs should not depend on when they were last fetched. An un-fetched URL lists with no title or description until the page is seen by any route; both then fill in on their own.</p>
+              <p>Bookmarks for agent workflows: save useful sources while researching a project, then return to them in a later session. <code class="inline">--tag</code> works on search, code, docs, scrape and crawl. Each bookmark keeps a source URL, a bounded title and description, and the tagging time. One source can belong to several tags.</p>
+              <p><code class="inline">tag show</code> returns the newest 50 entries by default. Use <code class="inline">--limit N</code> to change that, or <code class="inline">--limit 0</code> for all. MCP accepts the same <code class="inline">limit</code>. Output reports how many entries are shown and the whole-tag total. Read the index, pick a source and scrape its URL.</p>
+              <p class="note">Bookmarks survive page-cache expiry and clearing. <code class="inline">cached: false</code> means no fresh local body was confirmed; it does not mean a dead link. When <code class="inline">cache_status: unavailable</code>, the page cache could not be checked. Bookmark operations still work during a background crawl or an idle MCP session.</p>
+              <p class="note"><code class="inline">tag add</code> accepts URLs without fetching them. Cold re-adds preserve existing metadata; later fetches fill missing titles and descriptions. Removing a bookmark uses the displayed URL, regardless of cookie or User-Agent settings. Use <code class="inline">tag remove</code> to tidy up; bookmarks never expire automatically.</p>
+              <p class="note">The separate <code class="inline">tags.db</code> uses the native configuration directory: XDG config/home on Linux, Application Support on macOS, AppData on Windows. <code class="inline">KETCH_TAGS_PATH</code> overrides the filename and must be set for isolated bookmark labs. Full bodies stay in the page cache. Optional bookmark write failures retain research output with CLI stderr diagnostics or MCP <code class="inline">warnings</code>.</p>
             </div>
           </details>
 

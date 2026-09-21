@@ -196,7 +196,7 @@ func newPageCache(noCache bool) *cache.Cache {
 	if noCache {
 		return nil
 	}
-	return cache.NewFromConfig(&cfg)
+	return cache.NewFromConfig(&cfg).WithTagErrorHandler(func(err error) { warnTagWrite("", "", err) })
 }
 
 func scrapeSingle(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, tw *tagWriter, rawURL string, asJSON, raw, trim bool, maxChars int, selector string, noLLMSTxt, forceBrowser bool) error {
@@ -396,6 +396,7 @@ func scrapeWithSelector(ctx context.Context, s *scrape.Scraper, tw *tagWriter, r
 	if err != nil {
 		return err
 	}
+	tw.record(s, rawURL, page)
 	page.Markdown = extract.PostProcess(page.Markdown, trim, maxChars)
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(page)

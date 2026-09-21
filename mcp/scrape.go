@@ -46,7 +46,8 @@ type ScrapeResult struct {
 // ScrapeOutput is the output schema for the "scrape" tool: one entry per
 // requested URL, in input order.
 type ScrapeOutput struct {
-	Results []ScrapeResult `json:"results"`
+	Warnings []string       `json:"warnings,omitempty"`
+	Results  []ScrapeResult `json:"results"`
 }
 
 func (s *Server) registerScrapeTool() {
@@ -58,6 +59,7 @@ func (s *Server) registerScrapeTool() {
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in ScrapeInput) (*mcpsdk.CallToolResult, ScrapeOutput, error) {
+		ctx, diagnostics := withTagDiagnostics(ctx)
 		if err := s.validateScrapeInput(in); err != nil {
 			return nil, ScrapeOutput{}, err
 		}
@@ -67,9 +69,9 @@ func (s *Server) registerScrapeTool() {
 			if err != nil {
 				return nil, ScrapeOutput{}, err
 			}
-			return nil, ScrapeOutput{Results: []ScrapeResult{res}}, nil
+			return nil, ScrapeOutput{Results: []ScrapeResult{res}, Warnings: diagnostics.values()}, nil
 		}
-		return nil, ScrapeOutput{Results: s.scrapeBatch(ctx, in)}, nil
+		return nil, ScrapeOutput{Results: s.scrapeBatch(ctx, in), Warnings: diagnostics.values()}, nil
 	})
 }
 
@@ -77,6 +79,9 @@ func (s *Server) registerScrapeTool() {
 // compatibility rules. Browser availability is checked after response
 // classification so forced PDF scrapes do not require a browser.
 func (s *Server) validateScrapeInput(in ScrapeInput) error {
+	if err := validResearchTag(in.Tag); err != nil {
+		return err
+	}
 	if (in.URL == "") == (len(in.URLs) == 0) {
 		return errf(kindValidation, "provide exactly one of url or urls")
 	}
@@ -92,14 +97,14 @@ func (s *Server) validateScrapeInput(in ScrapeInput) error {
 // scrapeOne fetches a single URL, applying selector, raw, and llms.txt
 // detection the same way `ketch scrape` does for a single argument.
 func (s *Server) scrapeOne(ctx context.Context, rawURL string, in ScrapeInput) (ScrapeResult, error) {
-	pc := s.pageCache(in.NoCache)
+	pc := s.tagPageCache(ctx, in.NoCache)
 
 	if in.Selector != "" {
 		page, err := s.scraper.ScrapeSelector(ctx, rawURL, in.Selector, in.ForceBrowser)
 		if err != nil {
 			return ScrapeResult{}, classifySelectorErr(err)
 		}
-		s.recordTag(in.Tag, rawURL, page)
+		s.recordTag(ctx, in.Tag, rawURL, page)
 		page.Markdown = extract.PostProcess(page.Markdown, in.Trim, in.MaxChars)
 		return ScrapeResult{Page: *page}, nil
 	}
@@ -114,7 +119,7 @@ func (s *Server) scrapeOne(ctx context.Context, rawURL string, in ScrapeInput) (
 			}
 			return ScrapeResult{}, classifyScrapeFailure(err)
 		}
-		s.recordTag(in.Tag, rawURL, page)
+		s.recordTag(ctx, in.Tag, rawURL, page)
 		return ScrapeResult{Page: *page, Source: source, RawHTML: extract.Truncate(rawHTML, in.MaxChars)}, nil
 	}
 
@@ -123,7 +128,7 @@ func (s *Server) scrapeOne(ctx context.Context, rawURL string, in ScrapeInput) (
 	if !in.NoLLMSTxt && !in.ForceBrowser {
 		if content, ok := s.scraper.FetchLLMSTxt(ctx, rawURL); ok {
 			page := scrape.Page{URL: rawURL, Title: "llms.txt", Markdown: content}
-			s.recordTag(in.Tag, rawURL, &page)
+			s.recordTag(ctx, in.Tag, rawURL, &page)
 			page.Markdown = extract.PostProcess(page.Markdown, in.Trim, in.MaxChars)
 			return ScrapeResult{Page: page}, nil
 		}
@@ -133,7 +138,7 @@ func (s *Server) scrapeOne(ctx context.Context, rawURL string, in ScrapeInput) (
 	if err != nil {
 		return ScrapeResult{}, classifyScrapeFailure(err)
 	}
-	s.recordTag(in.Tag, rawURL, page)
+	s.recordTag(ctx, in.Tag, rawURL, page)
 	page.Markdown = extract.PostProcess(page.Markdown, in.Trim, in.MaxChars)
 	return ScrapeResult{Page: *page}, nil
 }

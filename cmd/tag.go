@@ -4,40 +4,38 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 	"time"
-	"unicode"
 
 	"github.com/1broseidon/ketch/cache"
 	"github.com/1broseidon/ketch/scrape"
 	"github.com/spf13/cobra"
 )
 
-// `tag` is the agent's own corpus: a durable index over pages the cache
-// already holds, answering "what do I have under this tag that I can go back
-// to?". Every operation is a verb (add/show/list/remove) rather than a bare
-// `tag <name>` whose meaning would shift with its arity — that follows the
-// grammar the CLI already uses for stored state (crawl status, crawl stop;
-// cache clear) and keeps every name usable as a tag.
+// Anvil · target: ketch tag · kind: cli · scope: tool
+// caller profile: agent,script,human-operator · surface pattern: Verb-Surface · risk class: R2
+// contracts: conventions.yaml · obligations: bounded-output,errors,json,portable-storage
 
 var tagCmd = &cobra.Command{
 	Use:   "tag",
-	Short: "Label cached pages so an agent can find them again",
-	Long: `Tag pages the cache already holds, then ask what is under a tag.
+	Short: "Bookmark research sources for later sessions",
+	Long: `Save sources under project or topic labels, then revisit them later.
 
-The index is durable: it outlives the page bodies it points at, so a tag
-revisited after cache_ttl still lists everything, marking which pages must be
-re-fetched. Pages are tagged as they are fetched with --tag on search, scrape
-and crawl, or afterwards with tag add.`,
+Bookmarks keep their URL, title and description after page-cache expiry or clear.
+Use --tag on search, code, docs, scrape or crawl, or tag add for known URLs.
+The independent tags.db uses the native configuration directory; KETCH_TAGS_PATH
+overrides its filename for labs and portable setups.
+
+Example: ketch tag show my-project --limit 20`,
 }
 
 var tagAddCmd = &cobra.Command{
 	Use:   "add <tag> <url>...",
-	Short: "Tag pages already in the cache",
-	Long: `Tag pages already in the cache. Makes no network requests: a URL that
-was never fetched cannot be tagged, because there is no title or description to
-index without it. Fetch it first, or use --tag on the fetching command.`,
-	Args: cobra.MinimumNArgs(2),
+	Short: "Bookmark URLs, whether cached or not",
+	Long: `Bookmark one or more URLs without fetching them. Existing metadata is
+preserved when a page is cold. Missing metadata fills in when the URL is fetched.
+
+Example: ketch tag add my-project https://example.com/docs`,
+	Args: exitArgs(cobra.MinimumNArgs(2)),
 	RunE: runTagAdd,
 }
 
@@ -47,16 +45,20 @@ var tagShowCmd = &cobra.Command{
 	Long: `List the pages under a tag as an llms.txt-shaped index of titles, URLs
 and descriptions. Reads only local state and makes no network requests. Pages
 whose bodies have expired are still listed, marked "not cached" — the index
-knows the URL, so re-fetching one restores it.`,
-	Args: cobra.ExactArgs(1),
+knows the URL, so re-fetching one restores it. The newest 50 entries are shown
+by default; --limit 0 shows all.
+
+Example: ketch tag show my-project --json | jq .pages`,
+	Args: exitArgs(cobra.ExactArgs(1)),
 	RunE: runTagShow,
 }
 
 var tagListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List every tag",
-	Args:  cobra.NoArgs,
-	RunE:  runTagList,
+	Use:     "list",
+	Short:   "List every tag",
+	Example: "  ketch tag list --json",
+	Args:    cobra.NoArgs,
+	RunE:    runTagList,
 }
 
 var tagRemoveCmd = &cobra.Command{
@@ -65,8 +67,11 @@ var tagRemoveCmd = &cobra.Command{
 	Long: `Drop a whole tag, or just the given pages from it.
 
 Nothing expires the index, so this is how a tag ends. Removing a tag does not
-touch the cached pages themselves, and re-tagging rebuilds the entry.`,
-	Args: cobra.MinimumNArgs(1),
+touch the cached pages themselves. URLs identify bookmarks regardless of
+cookies or User-Agent settings.
+
+Example: ketch tag remove my-project https://example.com/docs`,
+	Args: exitArgs(cobra.MinimumNArgs(1)),
 	RunE: runTagRemove,
 }
 
@@ -74,40 +79,22 @@ func init() {
 	rootCmd.AddCommand(tagCmd)
 	tagCmd.AddCommand(tagAddCmd, tagShowCmd, tagListCmd, tagRemoveCmd)
 	tagShowCmd.Flags().Bool("minimal", false, "one page per line, tab-separated")
+	tagShowCmd.Flags().Int("limit", cache.DefaultTagLimit, "maximum entries, newest first (0 = all)")
 }
 
-// validateTagName keeps a tag renderable and keeps the storage key
-// unambiguous — the index packs the tag and the page key into one bbolt key
-// separated by NUL.
 func validateTagName(name string) error {
-	if strings.TrimSpace(name) != name || name == "" {
-		return exitErrf(ExitValidation, "tag name must not be empty or padded with spaces")
-	}
-	if strings.ContainsFunc(name, func(r rune) bool { return unicode.IsControl(r) }) {
-		return exitErrf(ExitValidation, "tag name must not contain control characters")
+	if err := cache.ValidateTagName(name); err != nil {
+		return exitErrf(ExitValidation, "%v", err)
 	}
 	return nil
 }
 
-// openTagCache opens the cache read-write along with the scraper whose
-// rewrite rules and cookie/user-agent namespaces decide a page's cache key.
-// Tagging has to reproduce that key exactly or it would index a page the
-// fetch path never stored.
-func openTagCache(cmd *cobra.Command) (*cache.Cache, *scrape.Scraper, error) {
+func tagTTL() time.Duration {
 	ttl, err := time.ParseDuration(cfg.CacheTTL)
 	if err != nil {
-		ttl = time.Hour
+		return time.Hour
 	}
-	c := cache.New(ttl)
-	if c == nil {
-		return nil, nil, exitErrf(ExitPrecondition, "cannot open cache (may be in use by another process)")
-	}
-	scraper, err := newScraper(cmd)
-	if err != nil {
-		c.Close()
-		return nil, nil, err
-	}
-	return c, scraper, nil
+	return ttl
 }
 
 func runTagAdd(cmd *cobra.Command, args []string) error {
@@ -116,27 +103,27 @@ func runTagAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
-
-	c, scraper, err := openTagCache(cmd)
+	pc := cache.NewReadOnly()
+	defer pc.Close()
+	index := cache.NewTagIndex(tagTTL(), pc)
+	scraper, err := newScraper(cmd)
 	if err != nil {
-		return err
+		tagDiagnostic(asJSON, "cache_unavailable", name, "", "cache lookup unavailable; bookmarks will still be saved")
 	}
-	defer c.Close()
-	defer scraper.Close()
-
+	if scraper != nil {
+		defer scraper.Close()
+	}
 	var tagged, uncached []string
 	for _, url := range args[1:] {
-		key := scraper.CacheKey(scraper.Rewrite(url))
-		cached, err := c.TagURL(name, key, url)
+		cached, err := index.TagURL(name, tagCacheKey(scraper, url), url)
 		if err != nil {
-			return err
+			return exitErrf(ExitPrecondition, "save bookmark: %v", err)
 		}
 		tagged = append(tagged, url)
 		if !cached {
 			uncached = append(uncached, url)
 		}
 	}
-
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(struct {
 			Tag       string   `json:"tag"`
@@ -144,71 +131,46 @@ func runTagAdd(cmd *cobra.Command, args []string) error {
 			NotCached []string `json:"not_cached"`
 		}{name, orEmpty(tagged), orEmpty(uncached)})
 	}
-
 	for _, url := range tagged {
 		fmt.Fprintf(os.Stderr, "tagged %s\n", url)
-	}
-	// An uncached URL is indexed with no title or description; both fill in
-	// the first time the page is fetched. Say so rather than look silent.
-	if len(uncached) > 0 {
-		fmt.Fprintf(os.Stderr, "%d of those %s not cached yet; title and description fill in once fetched\n",
-			len(uncached), plural(len(uncached), "is", "are"))
 	}
 	return nil
 }
 
 func runTagShow(cmd *cobra.Command, args []string) error {
-	name := args[0]
-	if err := validateTagName(name); err != nil {
+	if err := validateTagName(args[0]); err != nil {
 		return err
+	}
+	limit, _ := cmd.Flags().GetInt("limit")
+	if limit < 0 {
+		return exitErrf(ExitValidation, "--limit must be zero or greater")
+	}
+	view, err := cache.NewTagIndex(tagTTL(), nil).ShowTag(args[0], limit)
+	if err != nil {
+		return exitErrf(ExitPrecondition, "read bookmarks: %v", err)
 	}
 	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
 	minimal, _ := cmd.Flags().GetBool("minimal")
-
-	c, scraper, err := openTagCache(cmd)
-	if err != nil {
-		return err
-	}
-	defer c.Close()
-	defer scraper.Close()
-
-	pages, err := c.Tagged(name)
-	if err != nil {
-		return exitErrf(ExitPrecondition, "%v", err)
-	}
-	cached := 0
-	for _, p := range pages {
-		if p.Cached {
-			cached++
-		}
-	}
-
 	if asJSON {
-		return json.NewEncoder(os.Stdout).Encode(struct {
-			Tag     string             `json:"tag"`
-			Entries int                `json:"entries"`
-			Cached  int                `json:"cached"`
-			Pages   []cache.TaggedPage `json:"pages"`
-		}{name, len(pages), cached, pages})
+		return json.NewEncoder(os.Stdout).Encode(view)
 	}
-
+	if view.CacheStatus == "unavailable" {
+		fmt.Fprintln(os.Stderr, "warn: page cache unavailable; cached flags could not be checked")
+	}
 	if minimal {
-		for _, p := range pages {
-			fmt.Printf("%s\t%s\t%s\n", p.URL, minimalField(p.Title), minimalField(p.Description))
+		if view.Shown < view.Entries {
+			fmt.Fprintf(os.Stderr, "showing %d of %d; use --limit 0 for all\n", view.Shown, view.Entries)
+		}
+		for _, p := range view.Pages {
+			fmt.Printf("%s\t%s\t%s\n", minimalField(p.URL), minimalField(p.Title), minimalField(p.Description))
 		}
 		return nil
 	}
-
-	fmt.Println("---")
-	fmt.Printf("tag: %s\n", name)
-	fmt.Printf("entries: %d\n", len(pages))
-	fmt.Printf("cached: %d\n", cached)
-	fmt.Println("---")
-	if len(pages) == 0 {
-		return nil
+	fmt.Printf("---\ntag: %s\nentries: %d\nshown: %d\ncached: %d\ncache_status: %s\n---\n", view.Tag, view.Entries, view.Shown, view.Cached, view.CacheStatus)
+	if view.Shown < view.Entries {
+		fmt.Printf("showing %d of %d; use --limit 0 for all\n", view.Shown, view.Entries)
 	}
-	fmt.Println()
-	for _, p := range pages {
+	for _, p := range view.Pages {
 		title := p.Title
 		if title == "" {
 			title = p.URL
@@ -226,31 +188,25 @@ func runTagShow(cmd *cobra.Command, args []string) error {
 }
 
 func runTagList(cmd *cobra.Command, _ []string) error {
+	tags, err := cache.NewTagIndex(tagTTL(), nil).TagList()
+	if err != nil {
+		return exitErrf(ExitPrecondition, "list bookmarks: %v", err)
+	}
 	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
-
-	c, scraper, err := openTagCache(cmd)
-	if err != nil {
-		return err
-	}
-	defer c.Close()
-	defer scraper.Close()
-
-	tags, err := c.TagList()
-	if err != nil {
-		return exitErrf(ExitPrecondition, "%v", err)
-	}
-
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(struct {
 			Tags []cache.TagSummary `json:"tags"`
 		}{orEmptyTags(tags)})
 	}
-
-	fmt.Println("---")
-	fmt.Printf("tags: %d\n", len(tags))
-	fmt.Println("---")
-	for _, t := range tags {
-		fmt.Printf("%s\n  %d %s, %d cached\n", t.Name, t.Entries, plural(t.Entries, "entry", "entries"), t.Cached)
+	fmt.Printf("---\ntags: %d\n---\n", len(tags))
+	for _, tag := range tags {
+		fmt.Printf("%s\n  %d %s, %d cached\n", tag.Name, tag.Entries, plural(tag.Entries, "entry", "entries"), tag.Cached)
+	}
+	for _, tag := range tags {
+		if tag.CacheStatus == "unavailable" {
+			fmt.Fprintln(os.Stderr, "warn: page cache unavailable; cached counts could not be checked")
+			break
+		}
 	}
 	return nil
 }
@@ -260,42 +216,26 @@ func runTagRemove(cmd *cobra.Command, args []string) error {
 	if err := validateTagName(name); err != nil {
 		return err
 	}
-	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
-
-	c, scraper, err := openTagCache(cmd)
-	if err != nil {
-		return err
-	}
-	defer c.Close()
-	defer scraper.Close()
-
+	index := cache.NewTagIndex(tagTTL(), nil)
 	var removed int
-	urls := args[1:]
-	if len(urls) == 0 {
-		removed, err = c.RemoveTag(name)
+	var err error
+	if len(args) == 1 {
+		removed, err = index.RemoveTag(name)
 	} else {
-		keys := make([]string, 0, len(urls))
-		for _, url := range urls {
-			keys = append(keys, scraper.CacheKey(scraper.Rewrite(url)))
-		}
-		removed, _, err = c.RemoveTagged(name, keys)
+		removed, _, err = index.RemoveTagged(name, args[1:])
 	}
 	if err != nil {
-		return exitErrf(ExitPrecondition, "%v", err)
+		return exitErrf(ExitPrecondition, "remove bookmarks: %v", err)
 	}
-
+	if removed == 0 {
+		return exitErrf(ExitNotFound, "nothing removed: %q holds no such entries", name)
+	}
+	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
 	if asJSON {
 		return json.NewEncoder(os.Stdout).Encode(struct {
 			Tag     string `json:"tag"`
 			Removed int    `json:"removed"`
 		}{name, removed})
-	}
-
-	if removed == 0 {
-		if len(urls) == 0 {
-			return exitErrf(ExitNotFound, "no tag named %q", name)
-		}
-		return exitErrf(ExitNotFound, "none of those pages are under %q", name)
 	}
 	fmt.Fprintf(os.Stderr, "removed %d %s from %s\n", removed, plural(removed, "entry", "entries"), name)
 	return nil
@@ -307,16 +247,12 @@ func plural(n int, one, many string) string {
 	}
 	return many
 }
-
-// orEmpty keeps JSON arrays as [] rather than null, so consumers can iterate
-// without a nil check.
 func orEmpty(s []string) []string {
 	if s == nil {
 		return []string{}
 	}
 	return s
 }
-
 func orEmptyTags(s []cache.TagSummary) []cache.TagSummary {
 	if s == nil {
 		return []cache.TagSummary{}
@@ -324,129 +260,90 @@ func orEmptyTags(s []cache.TagSummary) []cache.TagSummary {
 	return s
 }
 
-// tagWriter records fetched pages under a tag as a fetch command runs.
-// A nil *tagWriter is a no-op, so call sites need no branching.
+// tagWriter uses only brief index transactions, even when the page cache is locked.
 type tagWriter struct {
-	tag   string
-	c     *cache.Cache
-	owned bool // opened here, so closed here
+	tag string
+	c   *cache.Cache
 }
 
-// newTagWriter prepares --tag for a fetching command. It reuses the command's
-// page cache handle when there is one — bbolt takes an exclusive lock, so a
-// second handle on the same file would block rather than work. Under
-// --no-cache no handle exists to reuse, so it opens its own: --no-cache says
-// not to keep page bodies, which is a separate question from keeping a record
-// of what was fetched. Such an entry simply lists as uncached.
 func newTagWriter(tag string, pc *cache.Cache) *tagWriter {
 	if tag == "" {
 		return nil
 	}
-	if pc != nil {
-		return &tagWriter{tag: tag, c: pc}
-	}
-	c := cache.NewFromConfig(&cfg)
-	if c == nil {
-		warnTagCacheLocked(0)
-		return nil
-	}
-	return &tagWriter{tag: tag, c: c, owned: true}
+	return &tagWriter{tag: tag, c: cache.NewTagIndex(tagTTL(), pc)}
 }
+func (t *tagWriter) Close() {} // no process-lifetime index handle
 
-// Close releases a handle this writer opened. Nil-safe, and a no-op when the
-// handle belongs to the command's page cache.
-func (t *tagWriter) Close() {
-	if t == nil || !t.owned {
-		return
-	}
-	t.c.Close()
-}
-
-// validateTagFlag is the PreRunE for every command carrying --tag. A bad tag
-// name should stop the command before it fetches anything, and checking here
-// keeps the run functions free of the branch.
 func validateTagFlag(cmd *cobra.Command, _ []string) error {
 	tag, _ := cmd.Flags().GetString("tag")
-	if tag == "" {
+	if tag == "" && !cmd.Flags().Changed("tag") {
 		return nil
 	}
 	return validateTagName(tag)
 }
 
-// recordResult indexes something a non-page surface returned: a code hit, a
-// docs chunk, or an unscraped search result. Same silence policy as record.
+func tagCacheKey(s *scrape.Scraper, url string) string {
+	if s == nil {
+		return url
+	}
+	return s.CacheKey(s.Rewrite(url))
+}
+
 func (t *tagWriter) recordResult(s *scrape.Scraper, url, title, description string) {
 	if t == nil || url == "" {
 		return
 	}
-	_ = t.c.TagResult(t.tag, s.CacheKey(s.Rewrite(url)), url, title, description)
+	if err := t.c.TagResult(t.tag, tagCacheKey(s, url), url, title, description); err != nil {
+		warnTagWrite(t.tag, url, err)
+	}
 }
 
-// record indexes one fetched page. Failures are deliberately silent: tagging
-// is a side effect of a fetch the caller asked for, and losing an index entry
-// must not fail the scrape that produced it.
-func (t *tagWriter) record(s *scrape.Scraper, rawURL string, page *scrape.Page) {
-	if t == nil || page == nil {
+func (t *tagWriter) record(s *scrape.Scraper, url string, page *scrape.Page) {
+	if page == nil {
 		return
 	}
-	_ = t.c.TagPage(t.tag, s.CacheKey(s.Rewrite(rawURL)), rawURL, page)
+	key := tagCacheKey(s, url)
+	if t == nil {
+		if err := cache.NewTagIndex(tagTTL(), nil).Backfill(key, url, page); err != nil {
+			warnTagWrite("", url, err)
+		}
+		return
+	}
+	if err := t.c.TagPage(t.tag, key, url, page); err != nil {
+		warnTagWrite(t.tag, url, err)
+	}
 }
 
-// taggableResult is the minimum an index entry needs from a surface that
-// returns results rather than fetched pages.
 type taggableResult struct{ URL, Title, Description string }
 
-// tagResults files a surface's results under --tag when one was asked for.
-//
-// code and docs results are not unread links: each carries the matching
-// snippet or documentation chunk, which is the content the agent came for and
-// exactly the metadata an index entry needs. Bare search results carry the
-// engine's own title and description. None of them went through the page
-// cache, so each entry lists as uncached until its URL is scraped.
-//
-// It opens and closes its own handles because these commands hold no page
-// cache to reuse, and opens nothing at all when --tag is absent.
-// warnTagCacheLocked reports a --tag that recorded nothing. The cache is one
-// bbolt file under an exclusive lock, so a long-running ketch process — a
-// background crawl, most often — owns it for its whole run and every other
-// process's tag writes are dropped. Say so, and say what it cost: the command
-// itself still succeeds, and a silent "warn: could not open the cache" leaves
-// the operator to discover the gap later, when the tag is asked what it found.
-func warnTagCacheLocked(lost int) {
-	what := "nothing was recorded"
-	if lost > 0 {
-		what = fmt.Sprintf("%s were not recorded", countResults(lost))
+func tagDiagnostic(asJSON bool, code, tag, url, message string) {
+	if asJSON {
+		_ = json.NewEncoder(os.Stderr).Encode(map[string]any{"warning": map[string]string{"code": code, "tag": tag, "url": url, "message": message}})
+		return
 	}
-	fmt.Fprintf(os.Stderr,
-		"warn: --tag: the cache is locked by another ketch process (a background crawl?); %s\n", what)
+	fmt.Fprintf(os.Stderr, "warn: tag %q: %s\n", tag, message)
 }
 
-func countResults(n int) string {
-	if n == 1 {
-		return "1 result"
-	}
-	return fmt.Sprintf("%d results", n)
+func warnTagWrite(tag, url string, err error) {
+	asJSON, _ := rootCmd.PersistentFlags().GetBool("json")
+	tagDiagnostic(asJSON, "tag_write_failed", tag, url, fmt.Sprintf("bookmark update failed: %v", err))
 }
+
+func countResults(n int) string { return fmt.Sprintf("%d %s", n, plural(n, "result", "results")) }
 
 func tagResults(cmd *cobra.Command, results []taggableResult) {
 	tag, _ := cmd.Flags().GetString("tag")
 	if tag == "" || len(results) == 0 {
 		return
 	}
-	c := cache.NewFromConfig(&cfg)
-	if c == nil {
-		warnTagCacheLocked(len(results))
-		return
-	}
-	defer c.Close()
 	scraper, err := newScraper(cmd)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "warn: --tag could not resolve cache keys: %v\n", err)
-		return
+		scraper = nil
+	} // bookmark identity does not require valid fetch configuration
+	if scraper != nil {
+		defer scraper.Close()
 	}
-	defer scraper.Close()
-
-	tw := &tagWriter{tag: tag, c: c}
+	tw := newTagWriter(tag, nil)
 	for _, r := range results {
 		tw.recordResult(scraper, r.URL, r.Title, r.Description)
 	}

@@ -26,6 +26,13 @@ func TestBuildServerInstructionsAllFive(t *testing.T) {
 	}
 }
 
+func TestBuildServerInstructionsWithBookmarks(t *testing.T) {
+	got := buildServerInstructions([]string{"tag"})
+	if strings.Contains(got, "read-only") || !strings.Contains(got, "newest 50") || !strings.Contains(got, "cache_status") {
+		t.Fatalf("bookmark instructions misrepresent the tool: %s", got)
+	}
+}
+
 func TestBuildServerInstructionsPruned(t *testing.T) {
 	cases := []struct {
 		name   string

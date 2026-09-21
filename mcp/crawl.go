@@ -60,9 +60,10 @@ type CrawlError struct {
 // the crawl was cut short by the server-side page budget ("max_pages") or
 // wall-clock timeout ("timeout"); the collected pages are still returned.
 type CrawlOutput struct {
-	Pages   []CrawlPage  `json:"pages"`
-	Errors  []CrawlError `json:"errors,omitempty"`
-	Stopped string       `json:"stopped,omitempty"`
+	Warnings []string     `json:"warnings,omitempty"`
+	Pages    []CrawlPage  `json:"pages"`
+	Errors   []CrawlError `json:"errors,omitempty"`
+	Stopped  string       `json:"stopped,omitempty"`
 }
 
 func (s *Server) registerCrawlTool() {
@@ -74,6 +75,10 @@ func (s *Server) registerCrawlTool() {
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in CrawlInput) (*mcpsdk.CallToolResult, CrawlOutput, error) {
+		if err := validResearchTag(in.Tag); err != nil {
+			return nil, CrawlOutput{}, err
+		}
+		ctx, diagnostics := withTagDiagnostics(ctx)
 		if in.URL == "" {
 			return nil, CrawlOutput{}, errf(kindValidation, "url is required")
 		}
@@ -101,9 +106,9 @@ func (s *Server) registerCrawlTool() {
 			Allow:       in.Allow,
 			Deny:        in.Deny,
 		}
-		err := crawl.Crawl(crawlCtx, in.URL, s.scraper, opts, s.pageCache(in.NoCache), in.Sitemap, col.collect)
+		err := crawl.Crawl(crawlCtx, in.URL, s.scraper, opts, s.tagPageCache(ctx, in.NoCache), in.Sitemap, col.collect)
 
-		out := CrawlOutput{Pages: col.pages, Errors: col.errs, Stopped: col.stopped()}
+		out := CrawlOutput{Pages: col.pages, Errors: col.errs, Stopped: col.stopped(), Warnings: diagnostics.values()}
 		if err != nil && out.Stopped == "" {
 			// A real failure (bad seed, sitemap fetch error, client cancel) —
 			// not one of our own bounds firing.
@@ -145,7 +150,7 @@ func (c *crawlCollector) collect(r crawl.Result) {
 	if r.Page == nil {
 		return
 	}
-	c.srv.recordTag(c.tag, r.URL, r.Page)
+	c.srv.recordTag(c.ctx, c.tag, r.URL, r.Page)
 	c.pages = append(c.pages, CrawlPage{
 		URL:      r.Page.URL,
 		Title:    r.Page.Title,

@@ -2,8 +2,9 @@ package mcp
 
 import (
 	"context"
+	"fmt"
 	"strings"
-	"unicode"
+	"sync"
 
 	"github.com/1broseidon/ketch/cache"
 	"github.com/1broseidon/ketch/scrape"
@@ -21,29 +22,32 @@ import (
 type TagInput struct {
 	Operation string   `json:"operation" jsonschema:"one of: add, show, list, remove"`
 	Tag       string   `json:"tag,omitempty" jsonschema:"the tag to act on; required for every operation except list"`
+	Limit     *int     `json:"limit,omitempty" jsonschema:"show only: maximum entries (default 50; 0 = all)"`
 	URLs      []string `json:"urls,omitempty" jsonschema:"for add, the URLs to tag (a URL with no cached page is still indexed; its title and description fill in once fetched); for remove, the URLs to drop (omit to drop the whole tag)"`
 }
 
 // TagOutput is the output schema for the "tag" tool. Fields are populated per
 // operation; the rest are omitted.
 type TagOutput struct {
-	Tag       string             `json:"tag,omitempty"`
-	Entries   int                `json:"entries,omitempty"`
-	Cached    int                `json:"cached,omitempty"`
-	Pages     []cache.TaggedPage `json:"pages,omitempty"`
-	Tags      []cache.TagSummary `json:"tags,omitempty"`
-	Tagged    []string           `json:"tagged,omitempty"`
-	NotCached []string           `json:"not_cached,omitempty"`
-	Removed   int                `json:"removed,omitempty"`
+	Tag         string             `json:"tag,omitempty"`
+	Entries     int                `json:"entries"`
+	Shown       int                `json:"shown"`
+	CacheStatus string             `json:"cache_status,omitempty"`
+	Cached      int                `json:"cached"`
+	Pages       []cache.TaggedPage `json:"pages,omitempty"`
+	Tags        []cache.TagSummary `json:"tags,omitempty"`
+	Tagged      []string           `json:"tagged,omitempty"`
+	NotCached   []string           `json:"not_cached,omitempty"`
+	Removed     int                `json:"removed,omitempty"`
 }
 
 func (s *Server) registerTagTool() {
 	mcpsdk.AddTool(s.mcp, &mcpsdk.Tool{
 		Name: "tag",
-		Description: "Label pages already fetched into the local cache, then ask what is under a label. " +
+		Description: "Bookmark research sources under project or topic labels and revisit them across sessions. " +
 			"Use it to keep a working set for a project: tag the docs and write-ups that proved useful (or pass tag to search/scrape/crawl as you fetch), then later call operation=show to get an index of titles, URLs and descriptions instead of searching the web again. " +
-			"Operations: add (tag URLs, cached or not), show (list one tag's pages), list (all tags), remove (drop a tag, or the given URLs from it). " +
-			"Makes no network requests. The index is durable and outlives the cached page bodies: entries whose body has expired come back with cached=false and must be re-fetched with scrape, which restores them." +
+			"Operations: add (bookmark URLs, cached or not), show (newest 50 by default; limit=0 for all), list (all tags), remove (drop a tag, or the given URLs from it). " +
+			"The index lives in independent storage and remains available when the page cache is locked. cache_status reports unavailable when cached flags could not be checked. Makes no network requests. The index is durable and outlives the cached page bodies: entries whose body has expired come back with cached=false and must be re-fetched with scrape, which restores them." +
 			errTaxonomy,
 		Annotations: localMutating(),
 	}, func(_ context.Context, _ *mcpsdk.CallToolRequest, in TagInput) (*mcpsdk.CallToolResult, TagOutput, error) {
@@ -56,8 +60,8 @@ func (s *Server) registerTagTool() {
 				return nil, TagOutput{}, err
 			}
 		}
-		if s.cache == nil {
-			return nil, TagOutput{}, errf(kindPrecondition, "the page cache is unavailable, so tags cannot be read or written")
+		if in.Limit != nil && (op != "show" || *in.Limit < 0) {
+			return nil, TagOutput{}, errf(kindValidation, "limit must be zero or greater and is only valid for show")
 		}
 
 		switch op {
@@ -82,7 +86,7 @@ func (s *Server) tagAdd(in TagInput) (*mcpsdk.CallToolResult, TagOutput, error) 
 	out := TagOutput{Tag: in.Tag, Tagged: []string{}, NotCached: []string{}}
 	for _, url := range in.URLs {
 		key := s.scraper.CacheKey(s.scraper.Rewrite(url))
-		cached, err := s.cache.TagURL(in.Tag, key, url)
+		cached, err := s.tags.TagURL(in.Tag, key, url)
 		if err != nil {
 			return nil, TagOutput{}, errf(kindPrecondition, "%v", err)
 		}
@@ -97,21 +101,19 @@ func (s *Server) tagAdd(in TagInput) (*mcpsdk.CallToolResult, TagOutput, error) 
 }
 
 func (s *Server) tagShow(in TagInput) (*mcpsdk.CallToolResult, TagOutput, error) {
-	pages, err := s.cache.Tagged(in.Tag)
+	limit := cache.DefaultTagLimit
+	if in.Limit != nil {
+		limit = *in.Limit
+	}
+	view, err := s.tags.ShowTag(in.Tag, limit)
 	if err != nil {
 		return nil, TagOutput{}, errf(kindPrecondition, "%v", err)
 	}
-	out := TagOutput{Tag: in.Tag, Entries: len(pages), Pages: pages}
-	for _, p := range pages {
-		if p.Cached {
-			out.Cached++
-		}
-	}
-	return nil, out, nil
+	return nil, TagOutput{Tag: in.Tag, Entries: view.Entries, Shown: view.Shown, Cached: view.Cached, Pages: view.Pages, CacheStatus: view.CacheStatus}, nil
 }
 
 func (s *Server) tagListOp() (*mcpsdk.CallToolResult, TagOutput, error) {
-	tags, err := s.cache.TagList()
+	tags, err := s.tags.TagList()
 	if err != nil {
 		return nil, TagOutput{}, errf(kindPrecondition, "%v", err)
 	}
@@ -127,13 +129,9 @@ func (s *Server) tagRemove(in TagInput) (*mcpsdk.CallToolResult, TagOutput, erro
 		err     error
 	)
 	if len(in.URLs) == 0 {
-		removed, err = s.cache.RemoveTag(in.Tag)
+		removed, err = s.tags.RemoveTag(in.Tag)
 	} else {
-		keys := make([]string, 0, len(in.URLs))
-		for _, url := range in.URLs {
-			keys = append(keys, s.scraper.CacheKey(s.scraper.Rewrite(url)))
-		}
-		removed, _, err = s.cache.RemoveTagged(in.Tag, keys)
+		removed, _, err = s.tags.RemoveTagged(in.Tag, in.URLs)
 	}
 	if err != nil {
 		return nil, TagOutput{}, errf(kindPrecondition, "%v", err)
@@ -144,46 +142,81 @@ func (s *Server) tagRemove(in TagInput) (*mcpsdk.CallToolResult, TagOutput, erro
 	return nil, TagOutput{Tag: in.Tag, Removed: removed}, nil
 }
 
-// validTagName mirrors the CLI's rule: the index packs the tag and the page
-// key into one storage key separated by NUL, so control characters are out.
 func validTagName(name string) error {
-	if name == "" || strings.TrimSpace(name) != name {
-		return errf(kindValidation, "tag must not be empty or padded with spaces")
-	}
-	if strings.ContainsFunc(name, unicode.IsControl) {
-		return errf(kindValidation, "tag must not contain control characters")
+	if err := cache.ValidateTagName(name); err != nil {
+		return errf(kindValidation, "%v", err)
 	}
 	return nil
 }
 
-// recordResults indexes results from a surface that returns snippets rather
-// than fetched pages — code hits and docs chunks carry the content the caller
-// came for, which is exactly what an index entry needs. Entries list as
-// uncached until their URL is scraped.
-func (s *Server) recordResults(tag string, results []taggedResult) {
-	if s == nil || tag == "" || s.cache == nil || validTagName(tag) != nil {
+func validResearchTag(tag string) error {
+	if tag == "" {
+		return nil
+	}
+	return validTagName(tag)
+}
+
+type tagDiagnosticsKey struct{}
+type tagDiagnostics struct {
+	mu       sync.Mutex
+	warnings []string
+}
+
+func withTagDiagnostics(ctx context.Context) (context.Context, *tagDiagnostics) {
+	d := &tagDiagnostics{}
+	return context.WithValue(ctx, tagDiagnosticsKey{}, d), d
+}
+func (d *tagDiagnostics) report(err error) {
+	if err == nil {
+		return
+	}
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	message := fmt.Sprintf("[precondition] bookmark update failed: %v", err)
+	for _, previous := range d.warnings {
+		if previous == message {
+			return
+		}
+	}
+	d.warnings = append(d.warnings, message)
+}
+func (d *tagDiagnostics) values() []string {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return append([]string(nil), d.warnings...)
+}
+func reportTagError(ctx context.Context, err error) {
+	if d, ok := ctx.Value(tagDiagnosticsKey{}).(*tagDiagnostics); ok {
+		d.report(err)
+	}
+}
+
+func (s *Server) recordResults(ctx context.Context, tag string, results []taggedResult) {
+	if s == nil || tag == "" {
 		return
 	}
 	for _, r := range results {
 		if r.URL == "" {
 			continue
 		}
-		_ = s.cache.TagResult(tag, s.scraper.CacheKey(s.scraper.Rewrite(r.URL)), r.URL, r.Title, r.Description)
+		reportTagError(ctx, s.tags.TagResult(tag, s.scraper.CacheKey(s.scraper.Rewrite(r.URL)), r.URL, r.Title, r.Description))
 	}
 }
 
-// taggedResult is the minimum an index entry needs from a result-shaped tool.
 type taggedResult struct{ URL, Title, Description string }
 
-// recordTag indexes a page a fetching tool just retrieved, when that call
-// passed a tag. Failures are silent for the same reason as on the CLI:
-// losing an index entry must not fail the fetch that produced it.
-func (s *Server) recordTag(tag, url string, page *scrape.Page) {
-	if s == nil || tag == "" || page == nil || s.cache == nil {
+func (s *Server) recordTag(ctx context.Context, tag, url string, page *scrape.Page) {
+	if s == nil || page == nil || s.tags == nil {
 		return
 	}
-	if validTagName(tag) != nil {
+	key := s.scraper.CacheKey(s.scraper.Rewrite(url))
+	if tag == "" {
+		reportTagError(ctx, s.tags.Backfill(key, url, page))
 		return
 	}
-	_ = s.cache.TagPage(tag, s.scraper.CacheKey(s.scraper.Rewrite(url)), url, page)
+	reportTagError(ctx, s.tags.TagPage(tag, key, url, page))
+}
+
+func (s *Server) tagPageCache(ctx context.Context, noCache bool) *cache.Cache {
+	return s.pageCache(noCache).WithTagErrorHandler(func(err error) { reportTagError(ctx, err) })
 }

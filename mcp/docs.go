@@ -27,8 +27,9 @@ type DocsInput struct {
 // objects match the CLI's `ketch docs --json` (which emits a bare array; MCP
 // structured content needs the object wrapper).
 type DocsOutput struct {
-	Results []docs.Result       `json:"results,omitempty"`
-	Matches []docs.LibraryMatch `json:"matches,omitempty"`
+	Warnings []string            `json:"warnings,omitempty"`
+	Results  []docs.Result       `json:"results,omitempty"`
+	Matches  []docs.LibraryMatch `json:"matches,omitempty"`
 }
 
 func (s *Server) registerDocsTool() {
@@ -39,6 +40,10 @@ func (s *Server) registerDocsTool() {
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in DocsInput) (*mcpsdk.CallToolResult, DocsOutput, error) {
+		if err := validResearchTag(in.Tag); err != nil {
+			return nil, DocsOutput{}, err
+		}
+		ctx, diagnostics := withTagDiagnostics(ctx)
 		if in.Query == "" {
 			return nil, DocsOutput{}, errf(kindValidation, "query is required")
 		}
@@ -66,7 +71,7 @@ func (s *Server) registerDocsTool() {
 			}
 			// Like the CLI, an explicit limit caps library docs; otherwise the
 			// token budget is the only bound, so in.Limit is passed unresolved.
-			return s.docsForLibrary(ctx, backend, in.Query, in.Library, tokens, in.Limit)
+			return s.docsForLibrary(ctx, backend, in.Query, in.Library, tokens, in.Limit, in.Tag)
 		}
 
 		searcher, err := docs.NewFromConfig(s.cfg, backend)
@@ -79,8 +84,8 @@ func (s *Server) registerDocsTool() {
 			return nil, DocsOutput{}, upstreamErrf(err, "docs search failed")
 		}
 
-		s.recordResults(in.Tag, docsTagged(results))
-		return nil, DocsOutput{Results: results}, nil
+		s.recordResults(ctx, in.Tag, docsTagged(results))
+		return nil, DocsOutput{Results: results, Warnings: diagnostics.values()}, nil
 	})
 }
 
@@ -100,7 +105,7 @@ func (s *Server) docsResolve(ctx context.Context, backend, query string, limit i
 
 // docsForLibrary fetches docs for a known library ID, capped at limit
 // results when limit is positive.
-func (s *Server) docsForLibrary(ctx context.Context, backend, query, library string, tokens, limit int) (*mcpsdk.CallToolResult, DocsOutput, error) {
+func (s *Server) docsForLibrary(ctx context.Context, backend, query, library string, tokens, limit int, tag string) (*mcpsdk.CallToolResult, DocsOutput, error) {
 	resolver, err := s.libraryResolver(backend)
 	if err != nil {
 		return nil, DocsOutput{}, err
@@ -109,7 +114,13 @@ func (s *Server) docsForLibrary(ctx context.Context, backend, query, library str
 	if err != nil {
 		return nil, DocsOutput{}, upstreamErrf(err, "docs fetch failed")
 	}
-	return nil, DocsOutput{Results: docs.Truncate(results, limit)}, nil
+	results = docs.Truncate(results, limit)
+	s.recordResults(ctx, tag, docsTagged(results))
+	out := DocsOutput{Results: results}
+	if d, ok := ctx.Value(tagDiagnosticsKey{}).(*tagDiagnostics); ok {
+		out.Warnings = d.values()
+	}
+	return nil, out, nil
 }
 
 // libraryResolver constructs an optional docs capability through the registry.

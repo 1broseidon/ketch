@@ -111,17 +111,27 @@ It works on every surface, and one tag holds them all: `search`, `code`,
 `docs`, `scrape`, `crawl`. So a project tag ends up holding the vendor's
 documentation, the code that calls it, and the write-up that explained the
 undocumented flag, in one list. Later, `tag show` returns that as an
-llms.txt-shaped index — titles, URLs, descriptions — for a few hundred tokens,
+llms.txt-shaped index — titles, URLs, descriptions — limited to the newest 50,
 and you re-read one source instead of re-running the searches that found them.
 Tag the sources you actually used, not every hit.
 
+Use `--limit N` / MCP `limit` for a smaller view; `0` explicitly requests all.
+`entries` counts the whole tag and `shown` counts returned pages. Read the index
+before searching again, but do not request all of a large tag by default.
+
 The index is durable and outlives the cached page bodies, so it still answers
-days later. `cached: false` means only that the body is not local right now —
-it is not an error and not a dead link. Entries from `code`, `docs` and
+days later. `cached: false` means no fresh body was confirmed, not a dead link.
+When `cache_status` is `unavailable`, the page cache could not be checked;
+bookmarks still work and sources can still be fetched. Entries from `code`, `docs` and
 unscraped `search` hits start that way by nature, since those calls return
 snippets rather than fetched pages; `scrape` the URL when you want the whole
 thing. Read the index first, then fetch only what you need: assembling the
 whole tag defeats the point.
+
+Check bookmark diagnostics separately from research success: CLI warnings go to
+stderr (structured under `--json`), and MCP returns `warnings`. A failed write
+does not discard the useful research result. Durable bookmarks use a separate
+file; test labs must set `KETCH_TAGS_PATH` as well as isolating the page cache.
 
 ## Token budgets
 
@@ -132,6 +142,7 @@ whole tag defeats the point.
 | `docs`, default budget | `tokens` (default 4000) | ~3.3 KB |
 | `scrape`, unknown page | `max_chars` 4000–8000 + `trim` | unguarded: up to ~100 KB (~25k tokens) |
 | `crawl` (MCP) | `max_pages` + per-page `max_chars` | 30 pages default, 100 cap, 3-min wall clock |
+| `tag show` / MCP `tag` show | `limit` (default 50; 0 all) | bounded source metadata; no page bodies |
 | Any CLI list | `--minimal` | roughly halves output |
 
 ## Error control flow

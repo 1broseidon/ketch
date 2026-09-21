@@ -1,11 +1,12 @@
 package cache
 
 import (
-	"bytes"
+	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
-	"strings"
 	"time"
 
 	bolt "go.etcd.io/bbolt"
@@ -13,21 +14,13 @@ import (
 
 var bucketName = []byte("pages")
 
-// tagBucketName holds the durable tag index, separate from the page bodies in
-// bucketName. Two buckets rather than one keyspace is what lets Clear drop
-// every body while the index survives, and what keeps the Store interface —
-// which has no enumeration — unchanged.
-var tagBucketName = []byte("tags")
-
-// tagSep separates a tag name from a page key inside tagBucketName. NUL
-// cannot occur in a tag name (callers validate) so the split is unambiguous
-// and a cursor can seek a tag's entries by prefix.
-const tagSep = "\x00"
+var freshnessBucket = []byte("freshness")
 
 // BBoltStore implements Store using an embedded bbolt database.
 type BBoltStore struct {
 	db   *bolt.DB
 	path string
+	tags *tagDB
 }
 
 // NewBBoltStore opens or creates a bbolt database at the given path.
@@ -59,7 +52,7 @@ func openBBolt(path string, readOnly bool) (*BBoltStore, error) {
 			if _, err := tx.CreateBucketIfNotExists(bucketName); err != nil {
 				return err
 			}
-			_, err := tx.CreateBucketIfNotExists(tagBucketName)
+			_, err := tx.CreateBucketIfNotExists(freshnessBucket)
 			return err
 		})
 		if err != nil {
@@ -67,7 +60,7 @@ func openBBolt(path string, readOnly bool) (*BBoltStore, error) {
 			return nil, fmt.Errorf("create cache bucket: %w", err)
 		}
 	}
-	return &BBoltStore{db: db, path: path}, nil
+	return &BBoltStore{db: db, path: path, tags: &tagDB{path: filepath.Join(filepath.Dir(path), "tags.db")}}, nil
 }
 
 // tightenDBPermissions protects both newly-created and pre-existing cache
@@ -100,7 +93,18 @@ func (s *BBoltStore) Get(key string) ([]byte, error) {
 
 func (s *BBoltStore) Put(key string, value []byte) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		return tx.Bucket(bucketName).Put([]byte(key), value)
+		if err := tx.Bucket(bucketName).Put([]byte(key), value); err != nil {
+			return err
+		}
+		var metadata struct {
+			CachedAt int64 `json:"t"`
+		}
+		if err := json.Unmarshal(value, &metadata); err != nil {
+			return tx.Bucket(freshnessBucket).Delete([]byte(key))
+		}
+		var stamp [8]byte
+		binary.BigEndian.PutUint64(stamp[:], uint64(metadata.CachedAt))
+		return tx.Bucket(freshnessBucket).Put([]byte(key), stamp[:])
 	})
 }
 
@@ -115,16 +119,19 @@ func (s *BBoltStore) Stats() (entries int, sizeBytes int64) {
 	return entries, sizeBytes
 }
 
-// Clear removes every cached page body and deliberately leaves the tag index
-// alone: it reclaims the disk and keeps the map. A tag entry holds its own
-// URL, title and description, so the pages it lists survive as cold entries
-// the agent can re-fetch.
+// Clear frees page storage for reuse. It does not shrink the file; bookmarks live separately.
 func (s *BBoltStore) Clear() error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		if err := tx.DeleteBucket(bucketName); err != nil {
 			return err
 		}
-		_, err := tx.CreateBucket(bucketName)
+		if _, err := tx.CreateBucket(bucketName); err != nil {
+			return err
+		}
+		if err := tx.DeleteBucket(freshnessBucket); err != nil {
+			return err
+		}
+		_, err := tx.CreateBucket(freshnessBucket)
 		return err
 	})
 }
@@ -133,111 +140,52 @@ func (s *BBoltStore) Close() error {
 	return s.db.Close()
 }
 
-// PutTagEntry writes one page's index entry under a tag, replacing any entry
-// already there for that page (re-tagging refreshes title and description).
+// PutTagEntry writes to the separate index, opening it only for this operation.
 func (s *BBoltStore) PutTagEntry(tag, pageKey string, value []byte) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists(tagBucketName)
-		if err != nil {
-			return err
-		}
-		return b.Put([]byte(tag+tagSep+pageKey), value)
-	})
+	return s.tags.PutTagEntry(tag, pageKey, value)
 }
 
-// TagEntries returns the raw entries under a tag. An absent bucket or tag
-// yields no entries and no error: a read-only open never creates the bucket,
-// and asking about an unused tag is a fair question.
-func (s *BBoltStore) TagEntries(tag string) ([][]byte, error) {
-	var out [][]byte
+// TagEntries reads one tag from the separate index.
+func (s *BBoltStore) TagEntries(tag string) ([][]byte, error) { return s.tags.TagEntries(tag) }
+
+// TagNames lists tags from the separate index.
+func (s *BBoltStore) TagNames() ([]string, error) { return s.tags.TagNames() }
+
+// DeleteTag removes a tag from the separate index.
+func (s *BBoltStore) DeleteTag(tag string) (int, error) { return s.tags.DeleteTag(tag) }
+
+// DeleteTagEntry removes one stable source identity from the separate index.
+func (s *BBoltStore) DeleteTagEntry(tag, sourceKey string) (bool, error) {
+	return s.tags.DeleteTagEntry(tag, sourceKey)
+}
+
+// cachedKeys checks timestamps without decoding page bodies. Legacy page
+// entries without timestamp metadata are inspected without allocating Page.
+func (s *BBoltStore) cachedKeys(keys []string, ttl time.Duration) (map[string]bool, error) {
+	out := make(map[string]bool, len(keys))
 	err := s.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(tagBucketName)
-		if b == nil {
-			return nil
-		}
-		prefix := []byte(tag + tagSep)
-		c := b.Cursor()
-		for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
-			val := make([]byte, len(v))
-			copy(val, v)
-			out = append(out, val)
+		pages, stamps := tx.Bucket(bucketName), tx.Bucket(freshnessBucket)
+		for _, key := range keys {
+			hashed := []byte(cacheKey(key))
+			var at int64
+			if stamps != nil && len(stamps.Get(hashed)) == 8 {
+				at = int64(binary.BigEndian.Uint64(stamps.Get(hashed)))
+			} else if pages != nil {
+				var meta struct {
+					CachedAt int64 `json:"t"`
+				}
+				if err := json.Unmarshal(pages.Get(hashed), &meta); err == nil {
+					at = meta.CachedAt
+				}
+			}
+			out[key] = at != 0 && time.Since(time.Unix(at, 0)) <= ttl
 		}
 		return nil
 	})
 	return out, err
 }
 
-// TagNames returns every distinct tag, in bbolt's byte order.
-func (s *BBoltStore) TagNames() ([]string, error) {
-	var names []string
-	err := s.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(tagBucketName)
-		if b == nil {
-			return nil
-		}
-		seen := ""
-		first := true
-		return b.ForEach(func(k, _ []byte) error {
-			name, _, found := strings.Cut(string(k), tagSep)
-			if !found {
-				return nil
-			}
-			// Keys are sorted, so a tag's entries are contiguous and one
-			// comparison against the previous name is enough to dedupe.
-			if first || name != seen {
-				names = append(names, name)
-				seen = name
-				first = false
-			}
-			return nil
-		})
-	})
-	return names, err
-}
-
-// DeleteTag drops a whole tag and reports how many entries it held.
-func (s *BBoltStore) DeleteTag(tag string) (int, error) {
-	removed := 0
-	err := s.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(tagBucketName)
-		if b == nil {
-			return nil
-		}
-		prefix := []byte(tag + tagSep)
-		// Collect before deleting: mutating the bucket under its own cursor
-		// is not safe.
-		var keys [][]byte
-		c := b.Cursor()
-		for k, _ := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, _ = c.Next() {
-			key := make([]byte, len(k))
-			copy(key, k)
-			keys = append(keys, key)
-		}
-		for _, k := range keys {
-			if err := b.Delete(k); err != nil {
-				return err
-			}
-			removed++
-		}
-		return nil
-	})
-	return removed, err
-}
-
-// DeleteTagEntry drops one page from a tag, reporting whether it was there.
-func (s *BBoltStore) DeleteTagEntry(tag, pageKey string) (bool, error) {
-	found := false
-	err := s.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(tagBucketName)
-		if b == nil {
-			return nil
-		}
-		k := []byte(tag + tagSep + pageKey)
-		if b.Get(k) == nil {
-			return nil
-		}
-		found = true
-		return b.Delete(k)
-	})
-	return found, err
+// Backfill updates metadata for already-bookmarked source URLs.
+func (s *BBoltStore) Backfill(url, key, title, description string) error {
+	return s.tags.Backfill(url, key, title, description)
 }

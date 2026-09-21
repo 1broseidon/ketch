@@ -25,7 +25,8 @@ type CodeInput struct {
 // same result objects as the CLI's `ketch code --json` (which emits them as
 // a bare array; MCP structured content needs the object wrapper).
 type CodeOutput struct {
-	Results []code.Result `json:"results"`
+	Warnings []string      `json:"warnings,omitempty"`
+	Results  []code.Result `json:"results"`
 }
 
 func (s *Server) registerCodeTool() {
@@ -39,6 +40,10 @@ func (s *Server) registerCodeTool() {
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in CodeInput) (*mcpsdk.CallToolResult, CodeOutput, error) {
+		if err := validResearchTag(in.Tag); err != nil {
+			return nil, CodeOutput{}, err
+		}
+		ctx, diagnostics := withTagDiagnostics(ctx)
 		if in.Query == "" {
 			return nil, CodeOutput{}, errf(kindValidation, "query is required")
 		}
@@ -69,8 +74,8 @@ func (s *Server) registerCodeTool() {
 			return nil, CodeOutput{}, upstreamErrf(err, "code search failed")
 		}
 
-		s.recordResults(in.Tag, codeTagged(results))
-		return nil, CodeOutput{Results: results}, nil
+		s.recordResults(ctx, in.Tag, codeTagged(results))
+		return nil, CodeOutput{Results: results, Warnings: diagnostics.values()}, nil
 	})
 }
 

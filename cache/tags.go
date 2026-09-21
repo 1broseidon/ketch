@@ -3,6 +3,9 @@ package cache
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
+	"slices"
 	"strings"
 	"time"
 	"unicode"
@@ -11,18 +14,8 @@ import (
 	"github.com/1broseidon/ketch/scrape"
 )
 
-// Tags are a durable index over the pages the cache already holds: a label,
-// and enough metadata per page to answer "what do I have under this tag?"
-// without the page body being present.
-//
-// The index deliberately outlives the bodies it points at. A body is tens of
-// kilobytes and genuinely goes stale, so it expires under cache_ttl (72h by
-// default); an index entry is a couple hundred bytes of URL, title and
-// description, and a URL does not rot the way a body does. Tying the two
-// together would empty a tag by the Tuesday after a Friday of research —
-// exactly when the work resumes and the tag is asked what it found. So an
-// entry is self-sufficient, and an expired page is reported as a cold entry
-// rather than dropped. See design/adr/0004-tagged-cache-corpus.md.
+// Tags are durable bookmarks. Membership is keyed by source URL; page-cache
+// keys are private lookup information and never determine membership.
 
 // ErrTagsUnsupported is returned when the configured Store cannot hold tags.
 // Store has no enumeration by design (Get/Put/Stats/Clear/Close), so tags
@@ -41,6 +34,65 @@ var ErrNotCached = errors.New("page is not in the cache")
 // on the same site apart, short enough that a tag of fifty pages still reads
 // as an index rather than a document.
 const descriptionMax = 180
+
+// DefaultTagLimit bounds CLI and MCP tag views. Zero explicitly requests all.
+const DefaultTagLimit = 50
+
+// MaxTagNameBytes leaves room for the separator and source hash in a bbolt key.
+const MaxTagNameBytes = 32768 - 1 - 16
+
+// ValidateTagName applies the same rules at the package, CLI, and MCP boundaries.
+func ValidateTagName(name string) error {
+	if name == "" || strings.TrimSpace(name) != name {
+		return fmt.Errorf("tag name must not be empty or padded with spaces")
+	}
+	if strings.ContainsFunc(name, unicode.IsControl) {
+		return fmt.Errorf("tag name must not contain control characters")
+	}
+	if len(name) > MaxTagNameBytes {
+		return fmt.Errorf("tag name must not exceed %d bytes", MaxTagNameBytes)
+	}
+	return nil
+}
+
+// NewTagIndex creates an independent, lazy index. pages may be nil or unavailable;
+// no database handle is opened or retained here. Close is unnecessary.
+func NewTagIndex(ttl time.Duration, pages *Cache) *Cache {
+	index := defaultTagDB()
+	if pages != nil {
+		if s, ok := pages.store.(*BBoltStore); ok {
+			index = s.tags
+		}
+	}
+	if pages != nil {
+		reader := *pages
+		reader.ttl = ttl
+		pages = &reader
+	}
+	return &Cache{ttl: ttl, index: index, pages: pages}
+}
+
+// WithTagErrorHandler shares a page cache with a per-call backfill diagnostic
+// handler. The owner of the original Cache remains responsible for Close.
+func (c *Cache) WithTagErrorHandler(handler func(error)) *Cache {
+	if c == nil {
+		return nil
+	}
+	copy := *c
+	copy.onTagError = handler
+	return &copy
+}
+
+// TagView is a bounded index. Entries and Cached count the entire tag; Shown
+// counts Pages. CacheStatus is unavailable when warmth could not be checked.
+type TagView struct {
+	Tag         string       `json:"tag"`
+	Entries     int          `json:"entries"`
+	Shown       int          `json:"shown"`
+	Cached      int          `json:"cached"`
+	CacheStatus string       `json:"cache_status"`
+	Pages       []TaggedPage `json:"pages"`
+}
 
 // TagEntry is one page recorded under a tag. It carries everything needed to
 // render the index and re-fetch the page, so it survives the expiry of the
@@ -70,16 +122,14 @@ type TaggedPage struct {
 	Description string `json:"description,omitempty"`
 	TaggedAt    string `json:"tagged_at"`
 	Cached      bool   `json:"cached"`
-
-	// taggedAt is the raw timestamp, kept for ordering.
-	taggedAt int64
 }
 
 // TagSummary counts what is under a tag.
 type TagSummary struct {
-	Name    string `json:"name"`
-	Entries int    `json:"entries"`
-	Cached  int    `json:"cached"`
+	Name        string `json:"name"`
+	Entries     int    `json:"entries"`
+	Cached      int    `json:"cached"`
+	CacheStatus string `json:"cache_status"`
 }
 
 // tagStore is the enumeration capability tags need on top of Store.
@@ -96,6 +146,9 @@ func (c *Cache) tags() (tagStore, error) {
 	if c == nil {
 		return nil, ErrTagsUnsupported
 	}
+	if c.index != nil {
+		return c.index, nil
+	}
 	ts, ok := c.store.(tagStore)
 	if !ok {
 		return nil, ErrTagsUnsupported
@@ -110,7 +163,7 @@ func (c *Cache) TagPage(tag, key, url string, page *scrape.Page) error {
 	entry := TagEntry{
 		URL:         url,
 		Key:         key,
-		Title:       strings.TrimSpace(page.Title),
+		Title:       oneLine(page.Title, descriptionMax),
 		Description: Describe(page.Markdown),
 		TaggedAt:    time.Now().Unix(),
 	}
@@ -119,6 +172,9 @@ func (c *Cache) TagPage(tag, key, url string, page *scrape.Page) error {
 
 // tagEntry writes one index entry, replacing whatever was there for that page.
 func (c *Cache) tagEntry(tag string, entry TagEntry) error {
+	if err := ValidateTagName(tag); err != nil {
+		return err
+	}
 	ts, err := c.tags()
 	if err != nil {
 		return err
@@ -127,7 +183,7 @@ func (c *Cache) tagEntry(tag string, entry TagEntry) error {
 	if err != nil {
 		return err
 	}
-	return ts.PutTagEntry(tag, cacheKey(entry.Key), data)
+	return ts.PutTagEntry(tag, cacheKey(entry.URL), data)
 }
 
 // TagURL records a URL under a tag without any network access, using the
@@ -139,62 +195,90 @@ func (c *Cache) tagEntry(tag string, entry TagEntry) error {
 // a deliberate act, and refusing it because the body happens to be absent
 // would make organising URLs depend on when they were last fetched. Such an
 // entry lists as uncached and fills in its title and description the first
-// time the page is seen — see Tagged.
+// time the page is fetched — see Backfill.
 func (c *Cache) TagURL(tag, key, url string) (cached bool, err error) {
-	page, _ := c.Get(key)
+	var page *scrape.Page
+	if c != nil {
+		page, _ = c.Get(key)
+		if page == nil && c.pages != nil {
+			page, _ = c.pages.Get(key)
+		}
+	}
 	if page == nil {
 		return false, c.tagEntry(tag, TagEntry{URL: url, Key: key, TaggedAt: time.Now().Unix()})
 	}
 	return true, c.TagPage(tag, key, url, page)
 }
 
-// Tagged returns everything under a tag, newest first, each marked with
-// whether its body is still cached. An unknown tag yields an empty slice,
-// not an error: asking what is under a tag nobody has used is a fair
-// question with a short answer.
+// Tagged returns the complete index for package callers. CLI and MCP use
+// ShowTag to apply their default limit. Reading never writes metadata.
 func (c *Cache) Tagged(tag string) ([]TaggedPage, error) {
-	ts, err := c.tags()
-	if err != nil {
-		return nil, err
-	}
+	view, err := c.ShowTag(tag, 0)
+	return view.Pages, err
+}
+
+func readTagEntries(ts tagStore, tag string) ([]TagEntry, error) {
 	values, err := ts.TagEntries(tag)
 	if err != nil {
 		return nil, err
 	}
-	pages := make([]TaggedPage, 0, len(values))
-	for _, v := range values {
-		var e TagEntry
-		if err := json.Unmarshal(v, &e); err != nil {
-			// A single unreadable entry must not sink the whole index.
-			continue
+	entries := make([]TagEntry, 0, len(values))
+	for _, value := range values {
+		var entry TagEntry
+		if err := json.Unmarshal(value, &entry); err != nil {
+			return nil, fmt.Errorf("invalid bookmark in tag %q: %w", tag, err)
 		}
-		page, _ := c.Get(e.Key)
-		// An entry tagged before its page was ever fetched has no title or
-		// description. Fill them in the first time the body is available, so
-		// a URL tagged for organisation becomes a proper index entry without
-		// anyone re-tagging it.
-		if page != nil && e.Title == "" && e.Description == "" {
-			e.Title = strings.TrimSpace(page.Title)
-			e.Description = Describe(page.Markdown)
-			if e.Title != "" || e.Description != "" {
-				_ = c.tagEntry(tag, e)
-			}
-		}
-		pages = append(pages, TaggedPage{
-			URL:         e.URL,
-			Title:       e.Title,
-			Description: e.Description,
-			TaggedAt:    time.Unix(e.TaggedAt, 0).UTC().Format(time.RFC3339),
-			Cached:      page != nil,
-			taggedAt:    e.TaggedAt,
-		})
+		entries = append(entries, entry)
 	}
-	sortByTaggedAtDesc(pages)
-	return pages, nil
+	return entries, nil
 }
 
-// TagList summarises every tag: how many pages it holds and how many of
-// those are still cached.
+// ShowTag lists newest bookmarks, breaking timestamp ties by source URL.
+func (c *Cache) ShowTag(tag string, limit int) (TagView, error) {
+	out := TagView{Tag: tag, Pages: []TaggedPage{}, CacheStatus: "available"}
+	if err := ValidateTagName(tag); err != nil {
+		return out, err
+	}
+	if limit < 0 {
+		return out, fmt.Errorf("limit must be zero or greater")
+	}
+	ts, err := c.tags()
+	if err != nil {
+		return out, err
+	}
+	entries, err := readTagEntries(ts, tag)
+	if err != nil {
+		return out, err
+	}
+	slices.SortFunc(entries, func(a, b TagEntry) int {
+		if a.TaggedAt > b.TaggedAt {
+			return -1
+		}
+		if a.TaggedAt < b.TaggedAt {
+			return 1
+		}
+		return strings.Compare(a.URL, b.URL)
+	})
+	out.Entries = len(entries)
+	warm, status := c.tagWarmth(entries)
+	out.CacheStatus = status
+	for _, entry := range entries {
+		if warm[entry.Key] {
+			out.Cached++
+		}
+		if limit > 0 && len(out.Pages) >= limit {
+			continue
+		}
+		out.Pages = append(out.Pages, TaggedPage{
+			URL: entry.URL, Title: entry.Title, Description: entry.Description,
+			TaggedAt: time.Unix(entry.TaggedAt, 0).UTC().Format(time.RFC3339), Cached: warm[entry.Key],
+		})
+	}
+	out.Shown = len(out.Pages)
+	return out, nil
+}
+
+// TagList counts bookmarks without sorting or decoding cached document bodies.
 func (c *Cache) TagList() ([]TagSummary, error) {
 	ts, err := c.tags()
 	if err != nil {
@@ -204,26 +288,112 @@ func (c *Cache) TagList() ([]TagSummary, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := make([]TagSummary, 0, len(names))
+	all := []TagEntry{}
+	counts := make([]int, 0, len(names))
 	for _, name := range names {
-		pages, err := c.Tagged(name)
+		entries, err := readTagEntries(ts, name)
 		if err != nil {
 			return nil, err
 		}
-		s := TagSummary{Name: name, Entries: len(pages)}
-		for _, p := range pages {
-			if p.Cached {
-				s.Cached++
+		counts = append(counts, len(entries))
+		all = append(all, entries...)
+	}
+	warm, status := c.tagWarmth(all)
+	out := make([]TagSummary, 0, len(names))
+	offset := 0
+	for i, name := range names {
+		summary := TagSummary{Name: name, Entries: counts[i], CacheStatus: status}
+		for _, entry := range all[offset : offset+counts[i]] {
+			if warm[entry.Key] {
+				summary.Cached++
 			}
 		}
-		out = append(out, s)
+		offset += counts[i]
+		out = append(out, summary)
 	}
 	return out, nil
+}
+
+func (c *Cache) tagWarmth(entries []TagEntry) (map[string]bool, string) {
+	if len(entries) == 0 {
+		return nil, "available"
+	}
+	keys := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		keys = append(keys, entry.Key)
+	}
+	pc, closeReader, status := c.tagPageReader()
+	defer closeReader()
+	if pc == nil {
+		return nil, status
+	}
+	if s, ok := pc.store.(*BBoltStore); ok {
+		warm, err := s.cachedKeys(keys, c.ttl)
+		if err != nil {
+			return nil, "unavailable"
+		}
+		return warm, "available"
+	}
+	warm := map[string]bool{}
+	for _, key := range keys {
+		page, _ := pc.Get(key)
+		warm[key] = page != nil
+	}
+	return warm, "available"
+}
+
+// Open at most one page-cache reader per index operation, after the tag file
+// has been closed. A read-only bbolt open still contends with writers.
+func (c *Cache) tagPageReader() (*Cache, func(), string) {
+	noop := func() {}
+	if c.store != nil {
+		return c, noop, "available"
+	}
+	if c.pages != nil && c.pages.store != nil {
+		return c.pages, noop, "available"
+	}
+	path, err := DBPath()
+	if err != nil {
+		return nil, noop, "unavailable"
+	}
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil, noop, "available"
+	}
+	store, err := NewBBoltStoreReadOnly(path)
+	if err != nil {
+		return nil, noop, "unavailable"
+	}
+	pc := NewWithStore(store, c.ttl)
+	return pc, pc.Close, "available"
+}
+
+// Backfill fills missing metadata for existing bookmarks of url. It does not
+// create memberships, and it updates the cache lookup after fetch settings change.
+func (c *Cache) Backfill(key, url string, page *scrape.Page) error {
+	if c == nil || page == nil {
+		return nil
+	}
+	ts, err := c.tags()
+	if errors.Is(err, ErrTagsUnsupported) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if store, ok := ts.(interface {
+		Backfill(string, string, string, string) error
+	}); ok {
+		return store.Backfill(url, key, oneLine(page.Title, descriptionMax), Describe(page.Markdown))
+	}
+	return nil
 }
 
 // RemoveTag drops a whole tag and reports how many entries went with it.
 // Nothing expires the index, so this is how a tag ends.
 func (c *Cache) RemoveTag(tag string) (int, error) {
+	if err := ValidateTagName(tag); err != nil {
+		return 0, err
+	}
 	ts, err := c.tags()
 	if err != nil {
 		return 0, err
@@ -231,10 +401,13 @@ func (c *Cache) RemoveTag(tag string) (int, error) {
 	return ts.DeleteTag(tag)
 }
 
-// RemoveTagged drops single entries from a tag, keyed by composite cache key.
+// RemoveTagged drops single entries from a tag by their original source URLs.
 // Returns the number actually removed; keys that were not under the tag are
 // counted in missing so the caller can report them.
 func (c *Cache) RemoveTagged(tag string, keys []string) (removed int, missing int, err error) {
+	if err := ValidateTagName(tag); err != nil {
+		return 0, 0, err
+	}
 	ts, err := c.tags()
 	if err != nil {
 		return 0, 0, err
@@ -308,14 +481,4 @@ func truncate(s string, max int) string {
 		cut = cut[:i]
 	}
 	return strings.TrimRight(cut, " ,.;:-") + "…"
-}
-
-func sortByTaggedAtDesc(pages []TaggedPage) {
-	// Insertion sort: a tag holds tens of entries, and this keeps the package
-	// free of a sort import for one call site.
-	for i := 1; i < len(pages); i++ {
-		for j := i; j > 0 && pages[j].taggedAt > pages[j-1].taggedAt; j-- {
-			pages[j], pages[j-1] = pages[j-1], pages[j]
-		}
-	}
 }
