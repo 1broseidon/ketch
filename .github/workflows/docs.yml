@@ -1,46 +1,59 @@
 name: Deploy Docs
 
+# ketch.run is a GitHub Pages site printed by inkcap from MANUAL.md. The
+# version chip comes from git tags, so the workflow also runs when a release
+# is published; the star count is baked in as a fallback and kept live by
+# the page itself.
 on:
   push:
     branches: [main]
-    paths: ['site/**', 'install.sh']
+    paths: ['MANUAL.md', 'CHANGELOG.md', 'site/**', '.github/workflows/docs.yml', 'install.sh']
   release:
     types: [published]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0
-
+          fetch-depth: 0 # the version chip comes from `git describe --tags`
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: site/package-lock.json
-
       - name: Stage install script
         run: |
-          mkdir -p site/public
           cp install.sh site/public/install
           cp install.sh site/public/install.sh
-
-      - name: Install and build
-        run: cd site && npm ci && npm run build
+      - name: Install
+        run: cd site && npm ci
+      - name: Build
+        run: cd site && npm run build
         env:
-          # The version comes from git tags (fetch-depth: 0 above), but the
-          # star count is an API call — authenticate it so a shared runner
-          # can't exhaust the anonymous 60/hr limit and render a blank count.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: peaceiris/actions-gh-pages@v4
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # star count, never fails the build
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: site/.vitepress/dist
-          cname: ketch.run
+          path: site/dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

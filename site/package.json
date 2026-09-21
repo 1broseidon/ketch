@@ -1,11 +1,12 @@
 {
+  "name": "ketch-site",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "vitepress dev",
-    "build": "vitepress build",
-    "preview": "vitepress preview"
+    "build": "inkcap build",
+    "prebuild": "inkcap stars"
   },
   "devDependencies": {
-    "vitepress": "^1.6.4"
+    "inkcap": "^0.2.0"
   }
 }

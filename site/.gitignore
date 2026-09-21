@@ -1,0 +1,4 @@
+node_modules
+dist
+public/install
+public/install.sh

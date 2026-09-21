@@ -38,7 +38,7 @@ cache/                       TTL page cache (Store interface, BBoltStore backend
 httpx/                       Shared tuned *http.Transport for all HTTP backends
 updatecheck/                 "new release available" probe + throttled stderr hint
 bench/                       Developer extraction benchmark: pinned 500-page, 70-site corpus, source assertions, CLI latency/stress runs and regression gates; not an installed ketch command
-site/                        VitePress documentation site (deployed to gh-pages)
+site/                        Builds ketch.run from MANUAL.md with inkcap (GitHub Pages, docs.yml)
 ```
 
 Reusable packages live at the module root so external programs can `import "github.com/1broseidon/ketch/<pkg>"`. Shared implementation helpers, including the config model used by provider packages, live under `internal/`.
