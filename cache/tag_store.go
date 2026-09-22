@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -62,36 +61,7 @@ func (s *tagDB) transactionTimeout(write bool, timeout time.Duration, fn func(*b
 	if s.err != nil {
 		return s.err
 	}
-	info, statErr := os.Stat(s.path)
-	if statErr == nil && !info.Mode().IsRegular() {
-		return fmt.Errorf("tag index path is not a regular file: %s", s.path)
-	}
-	if !write {
-		if errors.Is(statErr, os.ErrNotExist) {
-			return nil
-		}
-	} else if err := os.MkdirAll(filepath.Dir(s.path), 0o700); err != nil {
-		return fmt.Errorf("prepare tag index: %w", err)
-	}
-	if err := tightenDBPermissions(s.path); err != nil {
-		return err
-	}
-	db, err := bolt.Open(s.path, 0o600, &bolt.Options{ReadOnly: !write, Timeout: timeout})
-	if err != nil {
-		return fmt.Errorf("open tag index: %w", err)
-	}
-	defer db.Close() //nolint:errcheck // transactions report their own commit errors
-	if !write {
-		return db.View(fn)
-	}
-	return db.Update(func(tx *bolt.Tx) error {
-		for _, name := range [][]byte{tagBucketName, sourceBucketName} {
-			if _, err := tx.CreateBucketIfNotExists(name); err != nil {
-				return err
-			}
-		}
-		return fn(tx)
-	})
+	return boltTx(s.path, "tag index", write, timeout, [][]byte{tagBucketName, sourceBucketName}, fn)
 }
 
 func (s *tagDB) PutTagEntry(tag, _ string, value []byte) error {

@@ -22,6 +22,7 @@ import (
 	ketchmcp "github.com/1broseidon/ketch/mcp"
 	"github.com/1broseidon/ketch/scrape"
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
+	bolt "go.etcd.io/bbolt"
 )
 
 var binary string
@@ -409,17 +410,99 @@ func TestMCPDoesNotKeepCLITagIndexLockedWhileIdle(t *testing.T) {
 	}
 }
 
+// holdPageCache opens the isolated page cache with a handle it keeps, the
+// way a pre-0.18.1 ketch process or any long-lived bbolt holder does, and
+// returns the release. ketch itself no longer holds the file between
+// operations, so this is the only way to reproduce a locked cache.
+func holdPageCache(t *testing.T) func() {
+	t.Helper()
+	path, err := cache.DBPath()
+	if err != nil {
+		t.Fatal(err)
+	}
+	db, err := bolt.Open(path, 0o600, nil)
+	if err != nil {
+		t.Fatalf("hold page cache: %v", err)
+	}
+	var once bool
+	release := func() {
+		if !once {
+			once = true
+			_ = db.Close()
+		}
+	}
+	t.Cleanup(release)
+	return release
+}
+
 func TestMCPRecoversAfterStartupCacheLockClears(t *testing.T) {
 	isolated(t)
-	holder := cache.New(time.Hour)
-	if holder == nil {
-		t.Fatal("could not open fixture cache")
-	}
+	pages := pageServer(t)
+	release := holdPageCache(t)
 	s := session(t)
-	holder.Close()
 	r := call(t, s, "tag", map[string]any{"operation": "add", "tag": "project", "urls": []string{"https://example.test/docs"}})
 	if r.IsError {
-		t.Fatalf("MCP remains unable to tag after startup lock was released: %s", output(r))
+		t.Fatalf("MCP cannot tag while another process holds the page cache: %s", output(r))
+	}
+	release()
+
+	// A server that started while the cache was locked must cache once the
+	// lock clears, not run uncached for the rest of its life.
+	r = call(t, s, "scrape", map[string]any{"url": pages.URL + "/after", "no_llms_txt": true})
+	if r.IsError {
+		t.Fatalf("scrape after the lock cleared: %s", output(r))
+	}
+	var stats struct {
+		Entries *int `json:"entries"`
+		Locked  bool `json:"locked"`
+	}
+	if err := json.Unmarshal([]byte(mustCLI(t, "cache", "--json")), &stats); err != nil {
+		t.Fatal(err)
+	}
+	if stats.Locked || stats.Entries == nil || *stats.Entries != 1 {
+		t.Fatalf("MCP server did not cache after the startup lock cleared: %+v", stats)
+	}
+}
+
+// The bug this guards: a running MCP server held the page cache for its whole
+// life, so the CLI beside it saw "cache in use by another process", tag show
+// reported cache_status unavailable, and a second server ran uncached. With
+// the server idle between calls, the CLI must read what it cached, and a CLI
+// write must land while the server is still running.
+func TestRunningMCPServerSharesThePageCache(t *testing.T) {
+	isolated(t)
+	pages := pageServer(t)
+	s := session(t)
+	r := call(t, s, "scrape", map[string]any{"url": pages.URL + "/doc", "no_llms_txt": true, "tag": "project"})
+	if r.IsError {
+		t.Fatalf("MCP scrape: %s", output(r))
+	}
+
+	var stats struct {
+		Entries *int `json:"entries"`
+		Locked  bool `json:"locked"`
+	}
+	if err := json.Unmarshal([]byte(mustCLI(t, "cache", "--json")), &stats); err != nil {
+		t.Fatal(err)
+	}
+	if stats.Locked || stats.Entries == nil || *stats.Entries != 1 {
+		t.Fatalf("CLI cannot read the cache beside a running MCP server: %+v", stats)
+	}
+
+	var view cache.TagView
+	if err := json.Unmarshal([]byte(mustCLI(t, "tag", "show", "project", "--json")), &view); err != nil {
+		t.Fatal(err)
+	}
+	if view.CacheStatus != "available" || view.Cached != 1 {
+		t.Fatalf("tag show beside a running MCP server: status=%s cached=%d", view.CacheStatus, view.Cached)
+	}
+
+	mustCLI(t, "scrape", pages.URL+"/cli", "--no-llms-txt", "--json")
+	if err := json.Unmarshal([]byte(mustCLI(t, "cache", "--json")), &stats); err != nil {
+		t.Fatal(err)
+	}
+	if stats.Entries == nil || *stats.Entries != 2 {
+		t.Fatalf("CLI write beside a running MCP server did not land: %+v", stats)
 	}
 }
 
@@ -495,11 +578,7 @@ func TestTagLimitsMCP(t *testing.T) {
 
 func TestConcurrentTaggersWithLockedPageCache(t *testing.T) {
 	isolated(t)
-	holder := cache.New(time.Hour)
-	if holder == nil {
-		t.Fatal("open fixture cache")
-	}
-	defer holder.Close()
+	holdPageCache(t)
 	results := make(chan error, 4)
 	for worker := range 4 {
 		go func() {

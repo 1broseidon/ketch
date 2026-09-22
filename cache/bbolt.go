@@ -1,66 +1,95 @@
 package cache
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"time"
 
 	bolt "go.etcd.io/bbolt"
+	bolterrors "go.etcd.io/bbolt/errors"
 )
 
 var bucketName = []byte("pages")
 
 var freshnessBucket = []byte("freshness")
 
-// BBoltStore implements Store using an embedded bbolt database.
+// metaBucket holds store bookkeeping: the time of the last expiry sweep.
+var metaBucket = []byte("meta")
+
+var sweptKey = []byte("swept")
+
+var pageBuckets = [][]byte{bucketName, freshnessBucket, metaBucket}
+
+// pageOpenTimeout bounds how long a page-cache operation waits for another
+// process's transaction. Transactions last milliseconds, so a second is a
+// generous wait; past it the operation behaves as a miss, never an outage.
+const pageOpenTimeout = time.Second
+
+// sweepInterval and sweepBudget bound the expiry sweep: at most one sweep an
+// hour across every process sharing the file, removing at most sweepBudget
+// entries per write so no single fetch pays for a large backlog.
+const (
+	sweepInterval = time.Hour
+	sweepBudget   = 1000
+)
+
+var (
+	errNotFound = errors.New("not found")
+	errReadOnly = errors.New("cache store is read-only")
+)
+
+// BBoltStore implements Store over an embedded bbolt file. It owns a path,
+// never an open handle: each operation opens the file for one transaction
+// and closes it, so a long-lived process never holds the cache locked.
 type BBoltStore struct {
-	db   *bolt.DB
-	path string
-	tags *tagDB
+	path     string
+	readOnly bool
+	tags     *tagDB
 }
 
-// NewBBoltStore opens or creates a bbolt database at the given path.
+// NewBBoltStore returns a store for the bbolt file at path, creating the file
+// if it does not exist. The file is not held open afterwards. Lock contention
+// while creating it is not an error; the next write creates it instead.
 func NewBBoltStore(path string) (*BBoltStore, error) {
-	return openBBolt(path, false)
-}
-
-// NewBBoltStoreReadOnly opens a bbolt database for reading.
-// Use when another process may hold the write lock.
-func NewBBoltStoreReadOnly(path string) (*BBoltStore, error) {
-	return openBBolt(path, true)
-}
-
-func openBBolt(path string, readOnly bool) (*BBoltStore, error) {
-	if err := tightenDBPermissions(path); err != nil {
-		return nil, err
-	}
-	opts := &bolt.Options{Timeout: 1 * time.Second, ReadOnly: readOnly}
-	db, err := bolt.Open(path, 0o600, opts)
-	if err != nil {
+	s := newBBoltStore(path, false)
+	info, err := os.Stat(path)
+	switch {
+	case errors.Is(err, os.ErrNotExist):
+		err = s.tx(true, func(*bolt.Tx) error { return nil })
+		if err != nil && !errors.Is(err, bolterrors.ErrTimeout) {
+			return nil, err
+		}
+	case err != nil:
 		return nil, fmt.Errorf("open cache db: %w", err)
-	}
-	if err := tightenDBPermissions(path); err != nil {
-		_ = db.Close()
-		return nil, err
-	}
-	if !readOnly {
-		err = db.Update(func(tx *bolt.Tx) error {
-			if _, err := tx.CreateBucketIfNotExists(bucketName); err != nil {
-				return err
-			}
-			_, err := tx.CreateBucketIfNotExists(freshnessBucket)
-			return err
-		})
-		if err != nil {
-			_ = db.Close()
-			return nil, fmt.Errorf("create cache bucket: %w", err)
+	case !info.Mode().IsRegular():
+		return nil, fmt.Errorf("cache db path is not a regular file: %s", path)
+	default:
+		if err := tightenDBPermissions(path); err != nil {
+			return nil, err
 		}
 	}
-	return &BBoltStore{db: db, path: path, tags: &tagDB{path: filepath.Join(filepath.Dir(path), "tags.db")}}, nil
+	return s, nil
+}
+
+// NewBBoltStoreReadOnly returns a store that reads the file at path and
+// refuses writes. It never creates the file.
+func NewBBoltStoreReadOnly(path string) (*BBoltStore, error) {
+	return newBBoltStore(path, true), nil
+}
+
+func newBBoltStore(path string, readOnly bool) *BBoltStore {
+	return &BBoltStore{path: path, readOnly: readOnly, tags: &tagDB{path: filepath.Join(filepath.Dir(path), "tags.db")}}
+}
+
+func (s *BBoltStore) tx(write bool, fn func(*bolt.Tx) error) error {
+	return boltTx(s.path, "cache db", write, pageOpenTimeout, pageBuckets, fn)
 }
 
 // tightenDBPermissions protects both newly-created and pre-existing cache
@@ -79,20 +108,34 @@ func tightenDBPermissions(path string) error {
 
 func (s *BBoltStore) Get(key string) ([]byte, error) {
 	var val []byte
-	err := s.db.View(func(tx *bolt.Tx) error {
-		v := tx.Bucket(bucketName).Get([]byte(key))
-		if v == nil {
-			return fmt.Errorf("not found")
+	err := s.tx(false, func(tx *bolt.Tx) error {
+		if b := tx.Bucket(bucketName); b != nil {
+			if v := b.Get([]byte(key)); v != nil {
+				val = bytes.Clone(v)
+			}
 		}
-		val = make([]byte, len(v))
-		copy(val, v)
 		return nil
 	})
+	if err == nil && val == nil {
+		err = errNotFound
+	}
 	return val, err
 }
 
 func (s *BBoltStore) Put(key string, value []byte) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
+	return s.put(key, value, 0)
+}
+
+// put writes one entry. A positive ttl also runs the expiry sweep inside the
+// same transaction, so pruning never costs an extra open.
+func (s *BBoltStore) put(key string, value []byte, ttl time.Duration) error {
+	if s.readOnly {
+		return errReadOnly
+	}
+	return s.tx(true, func(tx *bolt.Tx) error {
+		if ttl > 0 {
+			sweepExpired(tx, ttl, time.Now())
+		}
 		if err := tx.Bucket(bucketName).Put([]byte(key), value); err != nil {
 			return err
 		}
@@ -108,36 +151,115 @@ func (s *BBoltStore) Put(key string, value []byte) error {
 	})
 }
 
-func (s *BBoltStore) Stats() (entries int, sizeBytes int64) {
-	_ = s.db.View(func(tx *bolt.Tx) error {
-		entries = tx.Bucket(bucketName).Stats().KeyN
-		return nil
-	})
-	if info, err := os.Stat(s.path); err == nil {
-		sizeBytes = info.Size()
+// sweepExpired removes entries older than ttl, and entries with no freshness
+// stamp (written before stamps existed, so older than any current entry). It
+// runs at most once per sweepInterval across all processes and removes at
+// most sweepBudget entries; a sweep that hits the budget leaves the stamp
+// unset so the next write continues it. Removal is best effort: a failure
+// here must not fail the write it rides on, so errors are dropped.
+func sweepExpired(tx *bolt.Tx, ttl time.Duration, now time.Time) {
+	meta := tx.Bucket(metaBucket)
+	if last := meta.Get(sweptKey); len(last) == 8 && now.Sub(time.Unix(int64(binary.BigEndian.Uint64(last)), 0)) < sweepInterval {
+		return
 	}
+	pages, stamps := tx.Bucket(bucketName), tx.Bucket(freshnessBucket)
+	cutoff := now.Add(-ttl).Unix()
+	var stale [][]byte
+	cursor := pages.Cursor()
+	for k, _ := cursor.First(); k != nil && len(stale) < sweepBudget; k, _ = cursor.Next() {
+		if stamp := stamps.Get(k); len(stamp) != 8 || int64(binary.BigEndian.Uint64(stamp)) < cutoff {
+			stale = append(stale, bytes.Clone(k))
+		}
+	}
+	for _, k := range stale {
+		_ = pages.Delete(k)
+		_ = stamps.Delete(k)
+	}
+	if len(stale) < sweepBudget {
+		var stamp [8]byte
+		binary.BigEndian.PutUint64(stamp[:], uint64(now.Unix()))
+		_ = meta.Put(sweptKey, stamp[:])
+	}
+}
+
+// Stats reports the entry count and file size; see Usage for the error.
+func (s *BBoltStore) Stats() (entries int, sizeBytes int64) {
+	entries, sizeBytes, _ = s.Usage()
 	return entries, sizeBytes
 }
 
-// Clear frees page storage for reuse. It does not shrink the file; bookmarks live separately.
-func (s *BBoltStore) Clear() error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		if err := tx.DeleteBucket(bucketName); err != nil {
-			return err
+// Usage is Stats with the read error reported, so a caller can tell an empty
+// cache from one another process kept locked past the timeout.
+func (s *BBoltStore) Usage() (entries int, sizeBytes int64, err error) {
+	err = s.tx(false, func(tx *bolt.Tx) error {
+		if b := tx.Bucket(bucketName); b != nil {
+			entries = b.Stats().KeyN
 		}
-		if _, err := tx.CreateBucket(bucketName); err != nil {
-			return err
-		}
-		if err := tx.DeleteBucket(freshnessBucket); err != nil {
-			return err
-		}
-		_, err := tx.CreateBucket(freshnessBucket)
-		return err
+		return nil
 	})
+	if info, statErr := os.Stat(s.path); statErr == nil {
+		sizeBytes = info.Size()
+	}
+	return entries, sizeBytes, err
 }
 
+// Clear removes every page and returns the space to the filesystem.
+// Bookmarks live separately and are untouched.
+//
+// The buckets are emptied first, which is what makes Clear correct on every
+// platform; deleting the file afterwards is what returns the space, since
+// bbolt never shrinks a file. That delete is best effort: on Windows it fails
+// while another process has the file open, and the emptied file stays. A
+// write that lands between the two steps is lost with the file, which is
+// what a clear running at the same moment means.
+func (s *BBoltStore) Clear() error {
+	if s.readOnly {
+		return errReadOnly
+	}
+	err := s.tx(true, func(tx *bolt.Tx) error {
+		for _, name := range pageBuckets {
+			if err := tx.DeleteBucket(name); err != nil && !errors.Is(err, bolterrors.ErrBucketNotFound) {
+				return err
+			}
+			if _, err := tx.CreateBucket(name); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	lock := pathLock(s.path)
+	lock.Lock()
+	_ = os.Remove(s.path)
+	lock.Unlock()
+	removeLegacyPageFiles(filepath.Join(filepath.Dir(s.path), "pages"))
+	return nil
+}
+
+// legacyPageFile matches the one-file-per-page cache ketch used before v0.2.
+var legacyPageFile = regexp.MustCompile(`^[0-9a-f]{16}\.json$`)
+
+// removeLegacyPageFiles deletes the page files a pre-v0.2 ketch left beside
+// the database, then the directory if that left it empty. Only files named
+// the way that cache named them are touched.
+func removeLegacyPageFiles(dir string) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	for _, entry := range entries {
+		if entry.Type().IsRegular() && legacyPageFile.MatchString(entry.Name()) {
+			_ = os.Remove(filepath.Join(dir, entry.Name()))
+		}
+	}
+	_ = os.Remove(dir)
+}
+
+// Close is a no-op: the store holds nothing open between operations.
 func (s *BBoltStore) Close() error {
-	return s.db.Close()
+	return nil
 }
 
 // PutTagEntry writes to the separate index, opening it only for this operation.
@@ -163,7 +285,7 @@ func (s *BBoltStore) DeleteTagEntry(tag, sourceKey string) (bool, error) {
 // entries without timestamp metadata are inspected without allocating Page.
 func (s *BBoltStore) cachedKeys(keys []string, ttl time.Duration) (map[string]bool, error) {
 	out := make(map[string]bool, len(keys))
-	err := s.db.View(func(tx *bolt.Tx) error {
+	err := s.tx(false, func(tx *bolt.Tx) error {
 		pages, stamps := tx.Bucket(bucketName), tx.Bucket(freshnessBucket)
 		for _, key := range keys {
 			hashed := []byte(cacheKey(key))

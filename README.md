@@ -185,7 +185,8 @@ means the `cached: false` flags are unverified. Fetches can proceed without the
 page cache. A bookmark does not guarantee an upstream page still exists.
 
 Bookmarks survive cache expiry and `cache clear`. Clear removes page bodies
-and frees their space for reuse; it **does not shrink the database file**.
+and deletes the cache file, returning the space; expired pages are also swept
+automatically, so the file stays near the size of what is fresh.
 `tag add` accepts absolute `http(s)` URLs without fetching them (anything else
 is bad input, exit `2`), preserves existing metadata on a cold re-add, and fills
 missing titles and descriptions on a later fetch.
