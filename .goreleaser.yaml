@@ -101,11 +101,11 @@ checksum:
 snapshot:
   version_template: "{{ .Version }}-next"
 
+# Release notes are the tag's section of CHANGELOG.md, written as prose and
+# passed in by release.yml with --release-notes. No commit list.
 changelog:
-  sort: asc
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
-      - "^chore:"
-      - "^ci:"
+  disable: true
+
+release:
+  footer: |
+    **Install:** `brew install ketch`, `npx ketch-cli`, or `curl -fsSL https://ketch.run/install | sh`. Full details in the [CHANGELOG](https://github.com/1broseidon/ketch/blob/main/CHANGELOG.md).

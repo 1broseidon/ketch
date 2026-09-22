@@ -7,7 +7,8 @@ Pushing a `v*` tag runs [`.github/workflows/release.yml`](.github/workflows/rele
 which does everything below. Cutting a release is:
 
 ```sh
-# update CHANGELOG.md, then
+# write the vX.Y.Z section of CHANGELOG.md — it becomes the GitHub release
+# notes verbatim (prose about what changed for the user, no commit list), then
 git commit -m "chore(release): vX.Y.Z"
 git push origin main
 git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z

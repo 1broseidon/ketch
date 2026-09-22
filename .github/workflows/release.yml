@@ -51,6 +51,23 @@ jobs:
 
       - run: go test ./...
 
+      # The release notes are the tag's section of CHANGELOG.md, verbatim.
+      # A tag without a section is a mistake, so the release stops here.
+      - name: Extract release notes from CHANGELOG.md
+        run: |
+          set -eu
+          version="${REF#refs/tags/}"; version="${version#v}"
+          awk -v v="$version" '
+            /^## \[/ { in_section = ($0 ~ "^## \\[" v "\\]") ; next }
+            in_section { print }
+          ' CHANGELOG.md | sed '/./,$!d' | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' > "$RUNNER_TEMP/release-notes.md"
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/release-notes.md"; then
+            echo "::error::CHANGELOG.md has no '## [$version]' section for this tag"
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/release-notes.md"
+        env:
+          REF: ${{ needs.ref.outputs.ref }}
 
       # winget is skipped until the first ketch manifest PR on
       # microsoft/winget-pkgs (#437139) is approved: the v0.18.0 run pushed
@@ -62,7 +79,7 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean --skip=winget
+          args: release --clean --skip=winget --release-notes ${{ runner.temp }}/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Pushes the winget manifest branch to our winget-pkgs fork and opens
