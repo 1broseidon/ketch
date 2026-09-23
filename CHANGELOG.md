@@ -7,6 +7,14 @@ using ketch, written as prose, not a list of commits. The section is published
 verbatim on the GitHub release. Versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.1] - 2026-09-22
+
+**MCP servers no longer lock the page cache.** A running `ketch mcp serve` held the cache file for its whole life, so the CLI beside it reported the cache as in use, `tag show` marked every bookmark unverified, and a second server ran uncached until restarted. Every process now opens the cache only for each read or write, so the CLI, background crawls and any number of MCP servers share it. A server that starts while the cache is busy recovers on its next call.
+
+**The cache stays near the size of what is fresh.** Expired pages are now swept automatically, and `ketch cache clear` deletes the cache file instead of leaving it at its largest size. Clear also removes the page files ketch 0.1 left behind. Bookmarks are untouched.
+
+**Fixed** `ketch cache` crashing on a cache file created without its tables.
+
 ## [0.18.0] - 2026-09-21
 
 **Structural extraction is the new default.** Content selection now reads the page's own structure instead of scoring candidates: the landmark it declares, a document assembled from uniform sections, or the smallest element holding its prose. Site furniture is removed by what it is, never by hostname, so it holds on sites nobody tuned for. Readability stays as the fallback for pages that declare no structure. On a 500-page, 70-site benchmark, passing checks rose from 3,176 to 3,468 of 3,573, recall from 94.1% to 99.0%, and precision from 98.1% to 99.4%.
