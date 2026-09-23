@@ -11,6 +11,7 @@ import (
 	"github.com/1broseidon/ketch/cache"
 	"github.com/1broseidon/ketch/cookies"
 	"github.com/1broseidon/ketch/scrape"
+	bolterrors "go.etcd.io/bbolt/errors"
 )
 
 // checkBrowser verifies the configured browser binary actually resolves to a
@@ -72,18 +73,22 @@ func checkCache() (Status, string) {
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		return StatusOK, fmt.Sprintf("writable, empty (no cache database yet at %s)", path)
 	}
-	if c := cache.NewReadOnly(); c != nil {
-		defer c.Close()
-		entries, size := c.Stats()
+	c := cache.NewReadOnly()
+	if c == nil {
+		return StatusMisconfigured, fmt.Sprintf("cannot prepare cache dir for %s", path)
+	}
+	entries, size, err := c.Usage()
+	switch {
+	case err == nil:
 		return StatusOK, fmt.Sprintf("%d entries, %s", entries, formatBytes(size))
+	case errors.Is(err, bolterrors.ErrTimeout):
+		// Another process held the file for the whole wait: a long write, or a
+		// ketch older than 0.18.1 that keeps it open. Healthy, just busy.
+		return StatusOK, fmt.Sprintf("busy in another process (%s)", formatBytes(size))
+	default:
+		// The file exists but cannot be read: every scrape runs uncached.
+		return StatusMisconfigured, fmt.Sprintf("unreadable: %v (remove %s to reset it)", err, path)
 	}
-	// The database exists but a read-only open failed: another process (e.g. a
-	// background crawl) holds the lock. That is healthy, just report it.
-	var size int64
-	if st, err := os.Stat(path); err == nil {
-		size = st.Size()
-	}
-	return StatusOK, fmt.Sprintf("locked by another process (%s)", formatBytes(size))
 }
 
 // checkTags verifies the durable tag index — a file independent of the page

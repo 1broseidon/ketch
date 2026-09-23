@@ -25,6 +25,9 @@ var metaBucket = []byte("meta")
 
 var sweptKey = []byte("swept")
 
+// sweepNextKey holds the page key an unfinished sweep pass resumes from.
+var sweepNextKey = []byte("sweep_next")
+
 var pageBuckets = [][]byte{bucketName, freshnessBucket, metaBucket}
 
 // pageOpenTimeout bounds how long a page-cache operation waits for another
@@ -32,11 +35,14 @@ var pageBuckets = [][]byte{bucketName, freshnessBucket, metaBucket}
 // generous wait; past it the operation behaves as a miss, never an outage.
 const pageOpenTimeout = time.Second
 
-// sweepInterval and sweepBudget bound the expiry sweep: at most one sweep an
-// hour across every process sharing the file, removing at most sweepBudget
-// entries per write so no single fetch pays for a large backlog.
+// The expiry sweep runs at most once per sweepInterval across every process
+// sharing the file. One write visits at most sweepScan keys and removes at
+// most sweepBudget of them, so no fetch pays for a large cache or a large
+// backlog; a pass that stops early records where it stopped and the next
+// write continues from there.
 const (
 	sweepInterval = time.Hour
+	sweepScan     = 5000
 	sweepBudget   = 1000
 )
 
@@ -152,34 +158,50 @@ func (s *BBoltStore) put(key string, value []byte, ttl time.Duration) error {
 }
 
 // sweepExpired removes entries older than ttl, and entries with no freshness
-// stamp (written before stamps existed, so older than any current entry). It
-// runs at most once per sweepInterval across all processes and removes at
-// most sweepBudget entries; a sweep that hits the budget leaves the stamp
-// unset so the next write continues it. Removal is best effort: a failure
-// here must not fail the write it rides on, so errors are dropped.
+// stamp (written before stamps existed, so older than any current entry).
+//
+// A pass starts at most once per sweepInterval across all processes. Each
+// call visits at most sweepScan keys and removes at most sweepBudget; when it
+// stops early it stores the next key, and every later write resumes there
+// until the pass reaches the end and stamps its completion time. Removal is
+// best effort: a failure here must not fail the write it rides on, so errors
+// are dropped.
 func sweepExpired(tx *bolt.Tx, ttl time.Duration, now time.Time) {
 	meta := tx.Bucket(metaBucket)
-	if last := meta.Get(sweptKey); len(last) == 8 && now.Sub(time.Unix(int64(binary.BigEndian.Uint64(last)), 0)) < sweepInterval {
+	next := meta.Get(sweepNextKey)
+	if last := meta.Get(sweptKey); next == nil && len(last) == 8 && now.Sub(time.Unix(int64(binary.BigEndian.Uint64(last)), 0)) < sweepInterval {
 		return
 	}
 	pages, stamps := tx.Bucket(bucketName), tx.Bucket(freshnessBucket)
 	cutoff := now.Add(-ttl).Unix()
 	var stale [][]byte
 	cursor := pages.Cursor()
-	for k, _ := cursor.First(); k != nil && len(stale) < sweepBudget; k, _ = cursor.Next() {
+	k, _ := cursor.First()
+	if next != nil {
+		k, _ = cursor.Seek(next)
+	}
+	for visited := 0; k != nil && visited < sweepScan && len(stale) < sweepBudget; visited++ {
 		if stamp := stamps.Get(k); len(stamp) != 8 || int64(binary.BigEndian.Uint64(stamp)) < cutoff {
 			stale = append(stale, bytes.Clone(k))
 		}
+		k, _ = cursor.Next()
 	}
-	for _, k := range stale {
-		_ = pages.Delete(k)
-		_ = stamps.Delete(k)
+	var resume []byte
+	if k != nil {
+		resume = bytes.Clone(k)
 	}
-	if len(stale) < sweepBudget {
-		var stamp [8]byte
-		binary.BigEndian.PutUint64(stamp[:], uint64(now.Unix()))
-		_ = meta.Put(sweptKey, stamp[:])
+	for _, key := range stale {
+		_ = pages.Delete(key)
+		_ = stamps.Delete(key)
 	}
+	if resume != nil {
+		_ = meta.Put(sweepNextKey, resume)
+		return
+	}
+	_ = meta.Delete(sweepNextKey)
+	var stamp [8]byte
+	binary.BigEndian.PutUint64(stamp[:], uint64(now.Unix()))
+	_ = meta.Put(sweptKey, stamp[:])
 }
 
 // Stats reports the entry count and file size; see Usage for the error.

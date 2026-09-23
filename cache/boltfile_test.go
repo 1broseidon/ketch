@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -225,5 +226,63 @@ func TestStoreReadsAFileWithoutBuckets(t *testing.T) {
 	}
 	if _, err := store.cachedKeys([]string{"https://example.test/"}, time.Hour); err != nil {
 		t.Fatalf("cachedKeys on a bucketless file: %v", err)
+	}
+}
+
+// One sweep call visits at most sweepScan keys even when almost nothing is
+// stale, records where it stopped, and the next call resumes there; only a
+// pass that reaches the end stamps its completion.
+func TestSweepScanIsBoundedAndResumes(t *testing.T) {
+	t.Parallel()
+	c := newTestCache(t, time.Hour)
+	store := c.store.(*BBoltStore)
+	now := time.Now()
+	fresh := make([]byte, 8)
+	binary.BigEndian.PutUint64(fresh, uint64(now.Unix()))
+	err := store.tx(true, func(tx *bolt.Tx) error {
+		pages, stamps := tx.Bucket(bucketName), tx.Bucket(freshnessBucket)
+		for i := range sweepScan + 10 {
+			key := []byte(fmt.Sprintf("a-%06d", i))
+			if err := pages.Put(key, []byte(`{}`)); err != nil {
+				return err
+			}
+			if err := stamps.Put(key, fresh); err != nil {
+				return err
+			}
+		}
+		return pages.Put([]byte("z-stale"), []byte(`{}`)) // sorts last, no stamp
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sweep := func() (next, swept []byte) {
+		if err := store.tx(true, func(tx *bolt.Tx) error {
+			sweepExpired(tx, time.Hour, now)
+			meta := tx.Bucket(metaBucket)
+			next, swept = bytes.Clone(meta.Get(sweepNextKey)), bytes.Clone(meta.Get(sweptKey))
+			return nil
+		}); err != nil {
+			t.Fatal(err)
+		}
+		return next, swept
+	}
+
+	next, swept := sweep()
+	if next == nil || swept != nil {
+		t.Fatalf("first pass should stop at the scan cap: next=%q swept=%v", next, swept)
+	}
+	if _, err := store.Get("z-stale"); err != nil {
+		t.Fatal("the capped pass reached a key past its scan limit")
+	}
+	next, swept = sweep()
+	if next != nil || swept == nil {
+		t.Fatalf("second pass should finish: next=%q swept=%v", next, swept)
+	}
+	if _, err := store.Get("z-stale"); !errors.Is(err, errNotFound) {
+		t.Fatalf("resumed pass missed the stale entry: %v", err)
+	}
+	if entries, _, _ := store.Usage(); entries != sweepScan+10 {
+		t.Fatalf("fresh entries lost: %d", entries)
 	}
 }
