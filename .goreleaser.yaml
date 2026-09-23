@@ -102,9 +102,9 @@ snapshot:
   version_template: "{{ .Version }}-next"
 
 # Release notes are the tag's section of CHANGELOG.md, written as prose and
-# passed in by release.yml with --release-notes. No commit list.
-changelog:
-  disable: true
+# passed in by release.yml with --release-notes, which replaces the generated
+# commit list. Do not set changelog.disable: it also discards --release-notes
+# and publishes an empty body (v0.18.1 shipped that way and was fixed by hand).
 
 release:
   footer: |
