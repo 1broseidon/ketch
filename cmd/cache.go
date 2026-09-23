@@ -9,6 +9,7 @@ import (
 
 	"github.com/1broseidon/ketch/cache"
 	"github.com/spf13/cobra"
+	bolterrors "go.etcd.io/bbolt/errors"
 )
 
 var cacheCmd = &cobra.Command{
@@ -59,18 +60,19 @@ func runCacheStats(cmd *cobra.Command, _ []string) error {
 	dbPath, _ := cache.DBPath()
 
 	info := cacheStatsInfo{Path: dbPath, TTL: cfg.CacheTTL}
-	// Try read-only open; falls back to file stats if DB is locked by
-	// another process (e.g. a background crawl).
+	// The store is opened for this one read. Locked is reported only when
+	// another process held it for the whole wait, which now means a
+	// transaction still running, not a long-lived process holding it idle.
 	if c := cache.NewReadOnly(); c != nil {
-		defer c.Close()
-		entries, bytes := c.Stats()
-		info.Entries = &entries
+		entries, bytes, err := c.Usage()
 		info.SizeBytes = bytes
-	} else {
-		info.Locked = true
-		if st, err := os.Stat(dbPath); err == nil {
-			info.SizeBytes = st.Size()
+		if err != nil {
+			info.Locked = true
+		} else {
+			info.Entries = &entries
 		}
+	} else if st, err := os.Stat(dbPath); err == nil {
+		info.SizeBytes = st.Size()
 	}
 	info.Size = formatBytes(info.SizeBytes)
 	info.Tags = tagIndexInfo()
@@ -133,10 +135,12 @@ func runCacheClear(cmd *cobra.Command, _ []string) error {
 	}
 	c := cache.New(ttl)
 	if c == nil {
-		return exitErrf(ExitPrecondition, "cannot open cache (may be in use by another process)")
+		return exitErrf(ExitPrecondition, "cannot prepare the cache directory")
 	}
-	defer c.Close()
 	if err := c.Clear(); err != nil {
+		if errors.Is(err, bolterrors.ErrTimeout) {
+			return exitErrf(ExitPrecondition, "cache is busy in another process; try again: %w", err)
+		}
 		return err
 	}
 

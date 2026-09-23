@@ -374,9 +374,11 @@ $ ketch cache clear
 ```
 
 bbolt-backed, 72-hour default TTL. Repeat scrapes and crawls read from cache,
-with no refetch. `ketch cache` also reports the tag index — path, tag and entry
-counts, and whether another process holds its lock. `cache clear` frees page
-bodies and leaves bookmarks alone.
+with no refetch. The file is opened only for each read or write, so the CLI,
+background crawls and any number of MCP servers share it. Expired pages are
+swept automatically. `ketch cache` also reports the tag index — path, tag and
+entry counts. `cache clear` deletes the page cache, returning its space, and
+leaves bookmarks alone.
 
 #### doctor — Live health check of every surface
 

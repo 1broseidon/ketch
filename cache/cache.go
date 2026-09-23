@@ -45,8 +45,9 @@ type cacheEntry struct {
 	RawHTML string `json:"r,omitempty"`
 }
 
-// New creates a cache with the default bbolt backend.
-// Returns nil if the cache cannot be initialized.
+// New creates a cache with the default bbolt backend. The file is opened only
+// for each operation, so the returned Cache holds no lock while idle.
+// Returns nil if the cache location cannot be prepared.
 func New(ttl time.Duration) *Cache {
 	path, err := DBPath()
 	if err != nil {
@@ -77,8 +78,8 @@ func NewFromConfig(cfg *config.Config) *Cache {
 	return New(ttl)
 }
 
-// NewReadOnly opens the cache for reading only.
-// Use for stats/inspection when another process may hold the write lock.
+// NewReadOnly returns a cache that reads the default store and refuses
+// writes, for inspection commands that must never create or modify it.
 func NewReadOnly() *Cache {
 	path, err := DBPath()
 	if err != nil {
@@ -150,7 +151,7 @@ func (c *Cache) Put(url string, page *scrape.Page, source string) {
 	if err != nil {
 		return
 	}
-	_ = c.store.Put(cacheKey(url), data)
+	c.storePut(cacheKey(url), data)
 	if err := c.Backfill(url, page.URL, page); err != nil {
 		if c.onTagError != nil {
 			c.onTagError(err)
@@ -203,7 +204,7 @@ func (c *Cache) PutRaw(url string, page *scrape.Page, source, rawHTML string) {
 	if err != nil {
 		return
 	}
-	_ = c.store.Put(cacheKey(url), data)
+	c.storePut(cacheKey(url), data)
 	if err := c.Backfill(url, page.URL, page); err != nil {
 		if c.onTagError != nil {
 			c.onTagError(err)
@@ -211,6 +212,30 @@ func (c *Cache) PutRaw(url string, page *scrape.Page, source, rawHTML string) {
 			fmt.Fprintf(os.Stderr, "warn: tag metadata backfill: %v\n", err)
 		}
 	}
+}
+
+// storePut writes one encoded entry. The bbolt store also sweeps expired
+// entries inside the same write, bounded and at most hourly.
+func (c *Cache) storePut(key string, data []byte) {
+	if s, ok := c.store.(*BBoltStore); ok {
+		_ = s.put(key, data, c.ttl)
+		return
+	}
+	_ = c.store.Put(key, data)
+}
+
+// Usage returns the entry count and file size, with the error when the store
+// could not be read (another process held it past the wait). Stats is the
+// same without the error.
+func (c *Cache) Usage() (entries int, bytes int64, err error) {
+	if c == nil || c.store == nil {
+		return 0, 0, nil
+	}
+	if s, ok := c.store.(*BBoltStore); ok {
+		return s.Usage()
+	}
+	entries, bytes = c.store.Stats()
+	return entries, bytes, nil
 }
 
 // Stats returns cache entry count and total size in bytes.
@@ -229,7 +254,8 @@ func (c *Cache) Clear() error {
 	return c.store.Clear()
 }
 
-// Close releases cache resources.
+// Close releases cache resources. The bbolt store holds none between
+// operations, so this is a no-op for it; it stays for other Store backends.
 func (c *Cache) Close() {
 	if c == nil || c.store == nil {
 		return

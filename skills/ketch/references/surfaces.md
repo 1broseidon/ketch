@@ -123,8 +123,9 @@ bookmark write failures retain research output with CLI stderr diagnostics
 
 Storage is `tags.db` under the native configuration directory (Linux XDG config,
 macOS Application Support, Windows AppData), with `KETCH_TAGS_PATH` as a complete
-filename override. Handles are short-lived, independent of crawl/MCP page-cache
-locks. Cache clear frees page storage for reuse but does not shrink cache.db.
+filename override. Both tags.db and the page cache open per operation, so a
+running MCP server or crawl never locks the CLI out. Cache clear deletes the
+page-cache file and leaves bookmarks alone.
 
 ---
 

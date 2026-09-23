@@ -142,7 +142,7 @@ type Server struct {
 	mcp     *mcpsdk.Server
 	scraper *scrape.Scraper // one scraper (and lazy browser conn) for all calls
 	tags    *cache.Cache    // independent index; opens its file only within operations
-	cache   *cache.Cache    // one bbolt handle for all calls; nil if unavailable
+	cache   *cache.Cache    // page cache; opens its file only within operations
 }
 
 // NewServer builds an MCP server named "ketch" exposing the search, code,
@@ -156,8 +156,10 @@ type Server struct {
 //
 // The returned error is a precondition failure (invalid url_rewrites or
 // mcp_tools config).
-// A nil cache (e.g. another long-lived process holds the bbolt lock) is not
-// an error: the server runs with caching disabled, exactly like the CLI.
+// The page cache opens its file only for each operation, so this server never
+// holds it locked between calls and a lock held elsewhere costs one call a
+// miss, not the server's whole lifetime. It is nil only when the cache
+// directory cannot be prepared; the server then runs uncached.
 func NewServer(cfg *config.Config, version string) (*Server, error) {
 	scraper, err := scrape.NewFromConfig(cfg)
 	if err != nil {
@@ -222,15 +224,15 @@ func (s *Server) Run(ctx context.Context, t mcpsdk.Transport) error {
 	return s.mcp.Run(ctx, t)
 }
 
-// Close releases the server-lifetime resources: kills the headless browser
-// (if one was launched) and closes the page cache. Safe to call once Run has
-// returned; both underlying Closes are nil-safe.
+// Close releases the server-lifetime resources: it kills the headless browser
+// if one was launched. The page cache holds nothing open, so its Close is a
+// no-op kept for symmetry. Safe to call once Run has returned.
 func (s *Server) Close() {
 	s.scraper.Close()
 	s.cache.Close()
 }
 
-// pageCache returns the shared cache handle, or nil when the caller asked to
+// pageCache returns the shared page cache, or nil when the caller asked to
 // bypass caching for this call.
 func (s *Server) pageCache(noCache bool) *cache.Cache {
 	if noCache {
