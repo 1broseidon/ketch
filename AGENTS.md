@@ -149,7 +149,7 @@ ketch mcp serve                             # run as an MCP server over stdio (s
 | --backend, -b | code | grepapp | Code backend (grepapp/sourcegraph/github) |
 | --backend, -b | docs | context7 | Docs backend (context7; local is planned, not implemented) |
 | --lang | code | — | Language qualifier (appended to query) |
-| --repo | code | — | One repository, owner/name or a GitHub URL; exact on every backend. A backend that lacks it exits 3 (sourcegraph) or warns on an empty result (grepapp, partial index) |
+| --repo | code | — | One repository, owner/name or a GitHub URL; exact on every backend. A backend that lacks it exits 3 (sourcegraph, github) or warns on an empty result (grepapp, partial index) |
 | --library | docs | — | Context7 library ID, skips resolve |
 | --tokens | docs | 4000 | Context7 token budget |
 | --resolve | docs | false | Resolve library name instead of searching |

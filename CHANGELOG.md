@@ -11,7 +11,7 @@ verbatim on the GitHub release. Versions follow
 
 **Added `--repo` to `ketch code`.** `ketch code "NewFromConfig" --repo 1broseidon/ketch` searches one repository, and it means the same repository on every backend. grep.app and Sourcegraph filter more loosely than GitHub, so ketch keeps only exact matches: `--repo golang/go` no longer returns `golang/gofrontend`, and a named repository is searched even when it is archived or a fork. It takes `owner/name` or a GitHub URL, and the MCP `code` tool gains the matching `repo` option.
 
-**A repository search no longer comes back empty without explanation.** grepapp searches the query as literal code, so a `repo:` or `lang:` typed into it matched nothing and exited 0; ketch now warns and points at `--repo` and `--lang`. A repository sourcegraph does not have exits 3 (`[not_found]` over MCP) and names the other backends. grepapp indexes a subset of public repositories, so an empty repository search there comes with a warning that the repository may be missing.
+**A repository search no longer comes back empty without explanation.** grepapp searches the query as literal code, so a `repo:` or `lang:` typed into it matched nothing and exited 0; ketch now warns and points at `--repo` and `--lang`. A repository sourcegraph or GitHub cannot search exits 3 (`[not_found]` over MCP) and names the other backends. grepapp indexes a subset of public repositories, so an empty repository search there comes with a warning that the repository may be missing.
 
 ## [0.18.1] - 2026-09-22
 

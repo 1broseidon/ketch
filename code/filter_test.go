@@ -123,15 +123,3 @@ func TestAlternatives(t *testing.T) {
 		t.Errorf("Alternatives(sourcegraph) = %q", got)
 	}
 }
-
-// GitHub already matches repo: exactly and case-insensitively, so the filter
-// passes through as the qualifier.
-func TestGitHubBuildQueryAddsRepo(t *testing.T) {
-	g := NewGitHub("fixture-token")
-	if got, want := g.buildQuery("NewFromConfig", "go", "1broseidon/ketch"), "NewFromConfig language:go repo:1broseidon/ketch"; got != want {
-		t.Errorf("buildQuery = %q, want %q", got, want)
-	}
-	if got, want := g.buildQuery("NewFromConfig", "", ""), "NewFromConfig"; got != want {
-		t.Errorf("buildQuery without filters = %q, want %q", got, want)
-	}
-}

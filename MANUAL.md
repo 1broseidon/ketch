@@ -221,9 +221,9 @@ filter more loosely (name substrings, an unanchored pattern), so ketch keeps
 only exact matches: `--repo golang/go` never returns `golang/gofrontend`.
 grepapp searches the query as literal code, so a `repo:` or `lang:` typed into
 the query is matched as text; ketch warns and points at the flags. A missing
-repository is never a silent empty result: sourcegraph exits 3 and names the
-other backends, and grepapp, which indexes a subset of public repositories,
-warns when a repository search comes back empty.
+repository is never a silent empty result: sourcegraph and github exit 3 and
+name the other backends, and grepapp, which indexes a subset of public
+repositories, warns when a repository search comes back empty.
 
 #### docs — Curated, version-aware library documentation
 

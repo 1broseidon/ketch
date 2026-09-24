@@ -17,17 +17,27 @@ import (
 	config "github.com/1broseidon/ketch/internal/configbase"
 )
 
+// githubAPI is the GitHub REST and GraphQL API root.
+const githubAPI = "https://api.github.com"
+
+// githubUnsearchable is how GitHub's search API rejects (422) a query whose
+// repo:, user: or org: qualifier names something that does not exist or that
+// the token cannot read.
+const githubUnsearchable = "cannot be searched"
+
 // GitHub searches code via the GitHub Code Search REST API.
 type GitHub struct {
-	token  string
-	client *http.Client
+	token   string
+	client  *http.Client
+	apiBase string
 }
 
 // NewGitHub creates a new GitHub code search backend.
 func NewGitHub(token string) *GitHub {
 	return &GitHub{
-		token:  token,
-		client: httpx.Default(),
+		token:   token,
+		client:  httpx.Default(),
+		apiBase: githubAPI,
 	}
 }
 
@@ -74,7 +84,7 @@ func (g *GitHub) Search(ctx context.Context, q Query) ([]Result, error) {
 		return nil, err
 	}
 
-	sr, err := g.searchCode(ctx, g.buildQuery(q.Term, q.Lang, repo), q.Limit)
+	sr, err := g.searchCode(ctx, g.buildQuery(q.Term, q.Lang, repo), q.Limit, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -115,14 +125,16 @@ func (g *GitHub) Search(ctx context.Context, q Query) ([]Result, error) {
 }
 
 // searchCode performs the raw /search/code REST call and decodes the response.
-func (g *GitHub) searchCode(ctx context.Context, full string, limit int) (*ghSearchResponse, error) {
+// When repo names the repository the query is scoped to, GitHub's refusal to
+// search it is ErrRepoNotFound rather than a failure worth retrying.
+func (g *GitHub) searchCode(ctx context.Context, full string, limit int, repo string) (*ghSearchResponse, error) {
 	perPage := limit
 	if perPage <= 0 || perPage > 100 {
 		perPage = 30
 	}
 
-	u := fmt.Sprintf("https://api.github.com/search/code?q=%s&per_page=%d",
-		url.QueryEscape(full), perPage)
+	u := fmt.Sprintf("%s/search/code?q=%s&per_page=%d",
+		g.apiBase, url.QueryEscape(full), perPage)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
 	if err != nil {
@@ -146,6 +158,9 @@ func (g *GitHub) searchCode(ctx context.Context, full string, limit int) (*ghSea
 	}
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		if resp.StatusCode == http.StatusUnprocessableEntity && repo != "" && strings.Contains(string(body), githubUnsearchable) {
+			return nil, fmt.Errorf("%w: %s does not exist on GitHub, or the token cannot read it", ErrRepoNotFound, repo)
+		}
 		return nil, fmt.Errorf("github returned status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 
@@ -175,7 +190,7 @@ func (g *GitHub) fetchStars(ctx context.Context, nodeIDs []string) (map[string]i
 		"variables": map[string]any{"ids": nodeIDs},
 	})
 
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.github.com/graphql", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, "POST", g.apiBase+"/graphql", bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +322,7 @@ func githubProvider() Provider {
 			return NewGitHub(token), nil
 		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
-			return ProbeGitHub(ctx, client, "https://api.github.com", c.ResolveGithubToken)
+			return ProbeGitHub(ctx, client, githubAPI, c.ResolveGithubToken)
 		},
 	}
 }
