@@ -69,8 +69,12 @@ func (g *GitHub) Search(ctx context.Context, q Query) ([]Result, error) {
 	if q.Regexp {
 		return nil, ErrRegexpUnsupported
 	}
+	repo, err := q.repo()
+	if err != nil {
+		return nil, err
+	}
 
-	sr, err := g.searchCode(ctx, g.buildQuery(q.Term, q.Lang), q.Limit)
+	sr, err := g.searchCode(ctx, g.buildQuery(q.Term, q.Lang, repo), q.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -234,13 +238,17 @@ func extractMatchedLine(fragment string, matches []ghMatchRange) string {
 	return strings.TrimSpace(fragment)
 }
 
-// buildQuery applies GitHub's code search query dialect: a language: filter.
+// buildQuery applies GitHub's code search query dialect: a language: filter
+// and a repo: filter, which GitHub already matches exactly.
 // Note: GitHub's code-search endpoint does not accept archived: or fork:
 // qualifiers (those are repo-search only), so we cannot filter them at query
 // time. Users who care can scope with org:/user:/repo: instead.
-func (g *GitHub) buildQuery(query, lang string) string {
+func (g *GitHub) buildQuery(query, lang, repo string) string {
 	if lang != "" && !strings.Contains(query, "language:") {
 		query += " language:" + lang
+	}
+	if repo != "" {
+		query += " repo:" + repo
 	}
 	return query
 }
@@ -286,7 +294,7 @@ func ProbeGitHub(ctx context.Context, client *http.Client, apiBase string, resol
 }
 
 func githubProvider() Provider {
-	return Provider{Setup: `github code search: no token found.
+	return Provider{Qualifiers: true, Setup: `github code search: no token found.
   - explicit:   ketch config set github_token <token>
   - env var:    export GITHUB_TOKEN=<token>
   - or run:     gh auth login`,

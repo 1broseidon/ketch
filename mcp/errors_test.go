@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/1broseidon/ketch/code"
 	"github.com/1broseidon/ketch/docs"
 )
 
@@ -23,6 +24,7 @@ func TestUpstreamErrfClassification(t *testing.T) {
 		{"cancelled", context.Canceled, "[cancelled]"},
 		{"deadline", context.DeadlineExceeded, "[cancelled]"},
 		{"docs not found", fmt.Errorf("context7: library %q %w", "/no/such-lib", docs.ErrNotFound), "[not_found]"},
+		{"repo not found", fmt.Errorf("%w: facebook/react is not on https://sourcegraph.com", code.ErrRepoNotFound), "[not_found]"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

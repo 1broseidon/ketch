@@ -93,6 +93,7 @@ func TestToolArgumentDescriptionsFollowRegistries(t *testing.T) {
 	// Reflected properties untouched by the overrides must survive intact.
 	want("search", "query", "the search query")
 	want("code", "lang", "language filter")
+	want("code", "repo", "owner/name", "exactly")
 	want("docs", "limit", "max number of results")
 }
 

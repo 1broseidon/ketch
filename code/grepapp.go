@@ -56,6 +56,7 @@ type grepSearchArg struct {
 	Query     string   `json:"query"`
 	Language  []string `json:"language,omitempty"`
 	UseRegexp bool     `json:"useRegexp,omitempty"`
+	Repo      string   `json:"repo,omitempty"`
 }
 
 type grepMCPResponse struct {
@@ -73,7 +74,14 @@ type grepMCPResponse struct {
 }
 
 // Search queries the Grep MCP server and returns up to q.Limit code results.
+// grep.app's repo filter matches any repository whose name contains the value
+// (golang/go also returns golang/gofrontend), so hits from other repositories
+// are dropped here.
 func (g *GrepApp) Search(ctx context.Context, q Query) ([]Result, error) {
+	repo, err := q.repo()
+	if err != nil {
+		return nil, err
+	}
 	reqBody := grepMCPRequest{
 		JSONRPC: "2.0",
 		ID:      1,
@@ -84,6 +92,7 @@ func (g *GrepApp) Search(ctx context.Context, q Query) ([]Result, error) {
 				Query:     q.Term,
 				Language:  normalizeGrepLang(q.Lang),
 				UseRegexp: q.Regexp,
+				Repo:      repo,
 			},
 		},
 	}
@@ -119,10 +128,12 @@ func (g *GrepApp) Search(ctx context.Context, q Query) ([]Result, error) {
 		if len(results) >= q.Limit {
 			break
 		}
-		if r, ok := parseGrepBlock(text, q.Term); ok {
-			r.Language = q.Lang
-			results = append(results, r)
+		r, ok := parseGrepBlock(text, q.Term)
+		if !ok || (repo != "" && !strings.EqualFold(r.Repo, repo)) {
+			continue
 		}
+		r.Language = q.Lang
+		results = append(results, r)
 	}
 	return results, nil
 }
@@ -302,7 +313,7 @@ var grepLangNames = map[string]string{
 }
 
 func grepappProvider() Provider {
-	return Provider{CLIName: "Grep (mcp.grep.app; no token, literal/regex over 1M+ public repos)", Regexp: true,
+	return Provider{CLIName: "Grep (mcp.grep.app; no token, literal/regex over 1M+ public repos)", Regexp: true, PartialIndex: true,
 		Settings: []config.Setting{},
 		ID:       "grepapp",
 		Name:     "Grep (mcp.grep.app)",
