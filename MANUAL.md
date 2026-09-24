@@ -208,12 +208,22 @@ harness/harness  registry/app/remote/clients/registry/client.go  (line 207)
 | --- | --- |
 | `--backend, -b` | `grepapp` (default), `sourcegraph`, `github` |
 | `--lang` | Language qualifier, appended to the query |
+| `--repo` | One repository, `owner/name` or a GitHub URL; exact on every backend |
 | `--limit, -l` | Max results |
 | `--minimal` | One result per line |
 | `--tag <name>` | Bookmark every result URL under a tag |
 
 Regex support is per-backend: grepapp and sourcegraph accept it, github rejects
 it with a pointer to the other two.
+
+`--repo` means the same repository on every backend. grep.app and Sourcegraph
+filter more loosely (name substrings, an unanchored pattern), so ketch keeps
+only exact matches: `--repo golang/go` never returns `golang/gofrontend`.
+grepapp searches the query as literal code, so a `repo:` or `lang:` typed into
+the query is matched as text; ketch warns and points at the flags. A missing
+repository is never a silent empty result: sourcegraph and github exit 3 and
+name the other backends, and grepapp, which indexes a subset of public
+repositories, warns when a repository search comes back empty.
 
 #### docs — Curated, version-aware library documentation
 
@@ -688,7 +698,7 @@ Use `ketch` for external research — web pages, OSS code, library docs.
 - `ketch search "query"` / `--scrape` for results with full content
 - `ketch scrape <url> [url...]` for clean markdown from one or more URLs
 - `ketch extract` for already-fetched HTML piped in
-- `ketch code "query" --lang go` for real OSS code with line context
+- `ketch code "query" --lang go` for real OSS code with line context; `--repo owner/name` searches one repository
 - `ketch docs "query" --library /org/repo` for version-aware docs
 - `--tag <name>` on any of them keeps the sources; `ketch tag show <name>` brings them back
 All commands support `--json`. `ketch config` reports active backends.

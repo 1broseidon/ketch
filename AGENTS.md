@@ -13,7 +13,7 @@ cmd/
   extract.go                 Extract command: piped HTML → markdown (no fetch/cache/browser)
   crawl.go                   Crawl command: BFS/sitemap crawl with streaming output
   crawl_bg.go                Background crawl: status, stop subcommands, worker mode
-  code.go                    Code search command: query → snippet results, --lang qualifier
+  code.go                    Code search command: query → snippet results, --lang/--repo filters, literal-qualifier warnings
   docs.go                    Docs search command: query → docs/snippet results, --library, --resolve
   config.go                  Config command: discovery, init, set, path
   cache.go                   Cache command: stats (page cache and tag index), clear
@@ -24,7 +24,7 @@ cmd/
   proc_unix.go               Unix process management (detach, signals)
   proc_windows.go            Windows process management stub
 search/                      Searcher interface + Brave/DDG/SearXNG/EXA/Firecrawl/Keenable/Tavily/Parallel/SerpBase/Degoog/Serply/Youcom backends; NewFromConfig resolves the ordered provider registry for cmd/ and mcp/. auto.go is the default `auto` backend (keyless fallback chain, AutoRank-ordered), multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), random.go shuffled fallback, canonical.go the URL dedup keys
-code/                        code.Searcher interface + GrepApp/Sourcegraph/GitHub backends; NewFromConfig resolves the ordered provider registry
+code/                        code.Searcher interface + GrepApp/Sourcegraph/GitHub backends; NewFromConfig resolves the ordered provider registry. Query.Repo (owner/name, filter.go) is exact on every backend: each translates it and narrows a looser native filter itself
 docs/                        docs.Searcher interface + Context7 backend (FTS5 local is an unimplemented stub); NewFromConfig resolves the ordered provider registry
 mcp/                         MCP server (search/code/docs/scrape/crawl/tag tools; the mcp_tools config key is an allowlist over the published set) over the go-sdk mcp package; Server struct holds the shared scraper + cache, tools call the same NewFromConfig constructors as the CLI
 scrape/                      HTTP fetch + Page type, JS detection fallback, Rod browser; pipeline.go has the cache-aware scrape pipeline (CachedScrape*, ScrapeSelector, FetchLLMSTxt) shared by cmd/ and mcp/
@@ -61,7 +61,7 @@ The reasoning behind each principle — and what ketch deliberately does *not* d
 `ketch mcp serve` runs an MCP (Model Context Protocol) server over stdio, exposing six tools: `search`, `code`, `docs`, `scrape`, `crawl`, and `tag`. The `mcp_tools` config key is an allowlist over that set (JSON array or comma-separated; unset or `[]` publishes all six) — unlisted tools are never registered, and `serverInstructions` is generated from the enabled set so a pruned server never advertises what it won't answer. Values are validated fail-loud at `config set`, on the `KETCH_MCP_TOOLS` env override, and at server startup. Tool handlers call the same packages as the Cobra commands, through the same config-driven constructors (`search.NewFromConfig` etc.), and resolve backends/API keys from the same `~/.config/ketch/` config — an agent talking MCP sees exactly what a human using the CLI sees.
 
 - **Lifecycle**: the go-sdk dispatches tool calls concurrently, so process-lifetime resources — the headless-browser scraper and the compiled URL rewriter — are constructed once in `mcp.NewServer`, shared by all calls, and released by `Server.Close` when `serve` exits. Never construct these per call. The page cache and the tag index are the opposite: the server keeps their paths and opens each bbolt file only for one transaction, so an idle server holds no lock and the CLI, crawls and other servers share the cache (ADR-0006). Never hold a bbolt handle across calls, and release the tag index before checking page warmth.
-- **Option parity**: each tool exposes the per-invocation options of its CLI command (`scrape` gets `selector`/`raw`/`force_browser`/`no_llms_txt`/`trim`/`max_chars`/`no_cache` plus a `urls` batch input; `search` gets `searxng_url`, `scrape`, and `multi` (federated RRF search, with an additive `errors` map for per-backend failures); `crawl` gets `depth`/`sitemap`/`allow`/`deny`/`max_pages`). Config-level settings (API keys, cache TTL, browser binary) stay operator-configured and are never tool params.
+- **Option parity**: each tool exposes the per-invocation options of its CLI command (`scrape` gets `selector`/`raw`/`force_browser`/`no_llms_txt`/`trim`/`max_chars`/`no_cache` plus a `urls` batch input; `search` gets `searxng_url`, `scrape`, and `multi` (federated RRF search, with an additive `errors` map for per-backend failures); `crawl` gets `depth`/`sitemap`/`allow`/`deny`/`max_pages`; `code` gets `lang`/`repo`/`regexp`). Config-level settings (API keys, cache TTL, browser binary) stay operator-configured and are never tool params.
 - **Error taxonomy**: every tool error starts with a stable machine-readable prefix mirroring the CLI exit codes — `[validation]` (exit 2), `[not_found]` (3), `[upstream]` (4), `[precondition]` (5), `[cancelled]` (6) — so agents can tell "fix your input" from "retry later". MCP has no structured tool-error field; the prefix is the contract.
 - **Bounded crawl**: the `crawl` tool is synchronous and capped (`max_pages` default 30, hard cap 100, 3-minute wall clock); partial results return with `stopped: "max_pages" | "timeout"`. Detached background crawls (`ketch crawl --background`, status/stop) remain CLI-only.
 - **CLI-only operator commands**: `config`, `cache`, and `doctor` are deliberately not MCP tools. They are operator actions (change credentials, clear state, diagnose the installation), not research surfaces — an agent that needs to know whether a backend is ready reads `ketch config`'s `*_set` booleans or the operator runs `ketch doctor`. Don't add them to the server.
@@ -111,6 +111,7 @@ ketch browser status                        # check browser config
 ketch browser install                       # download Chromium
 ketch code "query"                          # code search (grepapp)
 ketch code "query" --lang go               # with language filter
+ketch code "query" --repo owner/name       # one repository, exact on every backend
 ketch docs "query"                          # docs search (context7)
 ketch docs "query" --library /org/repo     # skip resolve, fetch directly
 ketch docs --resolve "library name"        # resolve library name → Context7 IDs
@@ -148,6 +149,7 @@ ketch mcp serve                             # run as an MCP server over stdio (s
 | --backend, -b | code | grepapp | Code backend (grepapp/sourcegraph/github) |
 | --backend, -b | docs | context7 | Docs backend (context7; local is planned, not implemented) |
 | --lang | code | — | Language qualifier (appended to query) |
+| --repo | code | — | One repository, owner/name or a GitHub URL; exact on every backend. A backend that lacks it exits 3 (sourcegraph, github) or warns on an empty result (grepapp, partial index) |
 | --library | docs | — | Context7 library ID, skips resolve |
 | --tokens | docs | 4000 | Context7 token budget |
 | --resolve | docs | false | Resolve library name instead of searching |
@@ -205,7 +207,13 @@ fields out of shared consumers.
 - Doctor checks are required when the provider is selected or a setting marked
   `GateDoctor` is configured. Missing credentials or an instance URL must fail
   a selected provider's check. Set `MinProbeTimeout` for slower search probes.
-- Code providers declare regex support in the descriptor. Docs providers can
+- Code providers declare regex support in the descriptor, set `Qualifiers`
+  when they apply `repo:`/`lang:` written into the query (without it, callers
+  warn that such tokens were searched as text), and set `PartialIndex` when
+  they index only some repositories. `Query.Repo` names exactly one
+  repository: translate it into the provider's filter, narrow a looser match
+  (substring, unanchored pattern) yourself, and return `code.ErrRepoNotFound`
+  when the service says the repository is missing. Docs providers can
   implement `docs.LibraryResolver` for library operations. Keep the unfinished
   local docs provider hidden.
 

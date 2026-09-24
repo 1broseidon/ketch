@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/1broseidon/ketch/code"
 	"github.com/1broseidon/ketch/docs"
 	"github.com/spf13/cobra"
 )
@@ -50,16 +51,17 @@ func backendErr(err, unknown error) error {
 }
 
 // upstreamErr classifies a failure from a live backend call: errors wrapping
-// docs.ErrNotFound are permanently absent resources (exit 3, not retryable);
-// everything else is an upstream failure (exit 4). The sentinel is detected
-// in the docs package itself, so the CLI and the MCP server (which applies
-// the same rule in its upstreamErrf) cannot diverge.
+// docs.ErrNotFound or code.ErrRepoNotFound are permanently absent resources
+// (exit 3, not retryable); everything else is an upstream failure (exit 4).
+// The sentinels are detected in the docs and code packages themselves, so the
+// CLI and the MCP server (which applies the same rule in its upstreamErrf)
+// cannot diverge.
 func upstreamErr(err error, format string, args ...any) error {
-	code := ExitUpstream
-	if errors.Is(err, docs.ErrNotFound) {
-		code = ExitNotFound
+	exit := ExitUpstream
+	if errors.Is(err, docs.ErrNotFound) || errors.Is(err, code.ErrRepoNotFound) {
+		exit = ExitNotFound
 	}
-	return &ExitError{Code: code, Err: fmt.Errorf(format+": %w", append(args, err)...)}
+	return &ExitError{Code: exit, Err: fmt.Errorf(format+": %w", append(args, err)...)}
 }
 
 // exitArgs wraps a cobra arg validator so its rejection becomes exit 2 instead
