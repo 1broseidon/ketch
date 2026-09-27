@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/1broseidon/ketch/code"
 	"github.com/1broseidon/ketch/docs"
 )
 
@@ -37,19 +38,25 @@ func errf(kind, format string, args ...any) error {
 	return fmt.Errorf("["+kind+"] "+format, args...)
 }
 
+// warnf formats a warning with the same "[kind] " prefix as errf, for a
+// call that succeeded but whose output carries advice.
+func warnf(kind, format string, args ...any) string {
+	return "[" + kind + "] " + fmt.Sprintf(format, args...)
+}
+
 // upstreamErrf wraps a failure from a backend/network call under [upstream],
 // or [cancelled] when the underlying cause is context cancellation or a
 // deadline (client cancelled the tool call, or a server-side timeout fired),
 // or [not_found] when the shared layer flagged the resource as permanently
-// absent (docs.ErrNotFound, e.g. a Context7 404 for a bad library ID) — the
-// same rule the CLI applies in cmd's upstreamErr, so the surfaces cannot
-// diverge.
+// absent (docs.ErrNotFound, e.g. a Context7 404 for a bad library ID;
+// code.ErrRepoNotFound, a repository the backend does not have) — the same
+// rule the CLI applies in cmd's upstreamErr, so the surfaces cannot diverge.
 func upstreamErrf(err error, format string, args ...any) error {
 	kind := kindUpstream
 	switch {
 	case errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded):
 		kind = kindCancelled
-	case errors.Is(err, docs.ErrNotFound):
+	case errors.Is(err, docs.ErrNotFound) || errors.Is(err, code.ErrRepoNotFound):
 		kind = kindNotFound
 	}
 	return errf(kind, format+": %w", append(args, err)...)

@@ -7,6 +7,12 @@ using ketch, written as prose, not a list of commits. The section is published
 verbatim on the GitHub release. Versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**Added `--repo` to `ketch code`.** `ketch code "NewFromConfig" --repo 1broseidon/ketch` searches one repository, and it means the same repository on every backend. grep.app and Sourcegraph filter more loosely than GitHub, so ketch keeps only exact matches: `--repo golang/go` no longer returns `golang/gofrontend`, and a named repository is searched even when it is archived or a fork. It takes `owner/name` or a GitHub URL, and the MCP `code` tool gains the matching `repo` option.
+
+**A repository search no longer comes back empty without explanation.** grepapp searches the query as literal code, so a `repo:` or `lang:` typed into it matched nothing and exited 0; ketch now warns and points at `--repo` and `--lang`. A repository sourcegraph or GitHub cannot search exits 3 (`[not_found]` over MCP) and names the other backends. grepapp indexes a subset of public repositories, so an empty repository search there comes with a warning that the repository may be missing.
+
 ## [0.18.1] - 2026-09-22
 
 **MCP servers no longer lock the page cache.** A running `ketch mcp serve` held the cache file for its whole life, so the CLI beside it reported the cache as in use, `tag show` marked every bookmark unverified, and a second server ran uncached until restarted. Every process now opens the cache only for each read or write, so the CLI, background crawls and any number of MCP servers share it. A server that starts while the cache is busy recovers on its next call.

@@ -155,7 +155,7 @@ file; test labs must set `KETCH_TAGS_PATH` as well as isolating the page cache.
 | 5 | `[precondition]` | Operator config missing | Stop researching; enter `ketch setup` |
 | 6 | `[cancelled]` | Cancelled or timed out | Rerun with smaller scope |
 
-Situations → class: unknown backend, `regexp` on github → `[validation]`. Selector matched nothing → `[not_found]`. ddg rate limit (it rate-limits readily under fan-out), DNS failure, grepapp's intermittent 504 → `[upstream]`, rotate or retry once. Missing API key, docs backend `local` (planned, unimplemented), `force_browser` with no browser configured → `[precondition]`. One asymmetry: a CLI `crawl` interrupted by SIGINT exits **0** with partial results, by design.
+Situations → class: unknown backend, `regexp` on github → `[validation]`. Selector matched nothing, a `repo` the code backend does not have → `[not_found]` (for `repo`, change the backend). ddg rate limit (it rate-limits readily under fan-out), DNS failure, grepapp's intermittent 504 → `[upstream]`, rotate or retry once. Missing API key, docs backend `local` (planned, unimplemented), `force_browser` with no browser configured → `[precondition]`. One asymmetry: a CLI `crawl` interrupted by SIGINT exits **0** with partial results, by design.
 
 ## Gotchas
 

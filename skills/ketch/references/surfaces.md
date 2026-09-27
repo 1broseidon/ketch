@@ -40,6 +40,8 @@ The two transports expose the same options under different spellings. Both direc
 
 - Backends: `grepapp` (default; keyless, public OSS repos via grep.app), `sourcegraph` (keyless), `github` (auth via `gh auth login`, `$GITHUB_TOKEN`, or `ketch config set github_token <tok>`).
 - `lang` is appended to the query as a language filter.
+- `repo` / `--repo owner/name` (a GitHub URL also works) searches one repository, exact on every backend. Prefer it to writing `repo:` into the query: grepapp matches the query as literal code, so a typed `repo:`/`lang:` is searched as text and returns a `[validation]` warning (CLI: `warn:` on stderr, `warning.code: literal_qualifier` under `--json`).
+- A repository the backend lacks: sourcegraph and github → `[not_found]` / exit 3 naming the other backends. grepapp indexes a subset of public repos, so an empty `repo` search there comes back with a `[not_found]` warning (`repo_may_be_unindexed`), not an error. Try another backend before concluding the code does not exist.
 - `regexp` / `--regex`: grepapp and sourcegraph only. github rejects it — `[validation]` / exit 2 with a pointer to the backends that support it.
 - grepapp intermittently returns 504 (`[upstream]`); an immediate single retry usually succeeds.
 

@@ -22,6 +22,15 @@ type Provider struct {
 	Settings []config.Setting
 	New      func(*config.Config) (Searcher, error)
 	Probe    func(context.Context, *http.Client, *config.Config) (health.Status, string)
+
+	// Qualifiers is set when the backend applies qualifiers written into the
+	// query (repo:, lang:, path:). Without it the query is matched as literal
+	// text, and LiteralQualifiers reports what a caller should warn about.
+	Qualifiers bool
+	// PartialIndex is set when the backend indexes only a subset of public
+	// repositories, so a repo-scoped search can come back empty because the
+	// repository is missing (see MayLackRepo).
+	PartialIndex bool
 }
 
 // Required reports whether a failing health check must fail doctor. Selection
@@ -115,6 +124,30 @@ func RegexpBackends() []string {
 	for _, p := range providers {
 		if p.Regexp {
 			names = append(names, p.ID)
+		}
+	}
+	return names
+}
+
+// QualifierBackends reports the implemented providers that apply qualifiers
+// written into the query.
+func QualifierBackends() []string {
+	var names []string
+	for _, p := range providers {
+		if p.Qualifiers && !p.Hidden {
+			names = append(names, p.ID)
+		}
+	}
+	return names
+}
+
+// Alternatives returns the implemented providers other than id, in registry
+// order: where to look when id lacks a repository.
+func Alternatives(id string) []string {
+	var names []string
+	for _, name := range AvailableBackends() {
+		if name != id {
+			names = append(names, name)
 		}
 	}
 	return names
