@@ -258,6 +258,11 @@ $ echo "url1\nurl2" | ketch scrape      # stdin
 | `--user-agent` | User-Agent override; empty restores the default |
 | `--tag <name>` | Bookmark each fetched URL under a tag; composes with `--no-cache` |
 
+After configured URL rewrites, `scrape` and `crawl` fetch only absolute
+`http://` and `https://` URLs. Other final schemes, including `file://`, are
+rejected. Private or internal HTTP(S) addresses are still fetched when
+reachable from the machine running ketch.
+
 Content selection reads the page's own structure: the landmark it declares
 (`main`, `article`), a document assembled from uniform sections, or the
 smallest element holding its prose. Site furniture goes by what it is —
@@ -720,10 +725,11 @@ The npm package carries the binary in a per-platform dependency, so `npx` runs
 it without a postinstall download. That keeps the server's cold start quick
 when a client relaunches it.
 
-> **Network posture matters.** The server performs no URL filtering — it
-> fetches whatever URL the client gives it, including private or internal
-> addresses reachable from wherever it runs. Give it the network posture you'd
-> give the agent itself.
+> **Network posture matters.** After configured URL rewrites, MCP `scrape` and
+> `crawl` fetch only absolute HTTP(S) URLs; schemes such as `file://` are
+> rejected. Private or internal HTTP(S) addresses remain fetchable when
+> reachable from the server. Give it
+> the network posture you'd give the agent itself.
 
 ### Claude Code plugin
 

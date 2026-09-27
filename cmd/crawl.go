@@ -12,6 +12,7 @@ import (
 
 	"github.com/1broseidon/ketch/cache"
 	"github.com/1broseidon/ketch/crawl"
+	"github.com/1broseidon/ketch/scrape"
 	"github.com/spf13/cobra"
 )
 
@@ -50,7 +51,7 @@ func runCrawl(cmd *cobra.Command, args []string) error {
 		// Validate cookie_file (and emit its permission warning) in the parent
 		// before status creation and process detachment. The worker loads it
 		// again, but an invalid jar now fails synchronously and visibly.
-		if err := validateBackgroundCrawl(cmd); err != nil {
+		if err := validateBackgroundCrawl(cmd, args[0]); err != nil {
 			return err
 		}
 		return runCrawlBackground(args)
@@ -136,14 +137,17 @@ func runCrawl(cmd *cobra.Command, args []string) error {
 
 	duration := time.Since(start)
 	printCrawlSummary(seed, count, newCount, changed, unchanged, errCount, duration)
+	return classifyCrawlFailure(err)
+}
 
+func classifyCrawlFailure(err error) error {
 	// Surface SIGINT/SIGTERM as exit 6 (cancelled) instead of swallowing it as
-	// exit 0; scripts need to distinguish "crawl finished" from "user stopped
-	// it mid-way". The summary printed above still reports what was collected
-	// before shutdown. main.go's errors.Is(context.Canceled) check maps this
-	// to ExitCancelled without us needing to wrap it.
+	// exit 0; main.go maps an unwrapped context.Canceled to ExitCancelled.
 	if err != nil && errors.Is(err, context.Canceled) {
 		return err
+	}
+	if errors.Is(err, scrape.ErrInvalidURL) {
+		return exitErrf(ExitValidation, "crawl failed: %w", err)
 	}
 	if err != nil {
 		return exitErrf(ExitUpstream, "crawl failed: %w", err)

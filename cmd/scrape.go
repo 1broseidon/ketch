@@ -326,7 +326,14 @@ func scrapeMultiple(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, tw 
 }
 
 func scrapeBatchTerminalError(results []indexedResult) error {
+	var invalidURL error
+	hasSuccess := false
 	for _, result := range results {
+		if result.err == nil {
+			hasSuccess = true
+		} else if invalidURL == nil && errors.Is(result.err, scrape.ErrInvalidURL) {
+			invalidURL = result.err
+		}
 		if errors.Is(result.err, scrape.ErrPDFRawUnsupported) || errors.Is(result.err, scrape.ErrPDFSelectorUnsupported) {
 			return &ExitError{Code: ExitValidation, Err: result.err}
 		}
@@ -334,11 +341,16 @@ func scrapeBatchTerminalError(results []indexedResult) error {
 			return classifyScrapeFailure(result.err)
 		}
 	}
+	if !hasSuccess && invalidURL != nil {
+		return classifyScrapeFailure(invalidURL)
+	}
 	return nil
 }
 
 func classifyScrapeFailure(err error) error {
 	switch {
+	case errors.Is(err, scrape.ErrInvalidURL):
+		return exitErrf(ExitValidation, "%w", err)
 	case errors.Is(err, extract.ErrPDFNoText):
 		return exitErrf(ExitPrecondition, "scrape failed: %w; hint: configure external_pdf_to_md_converter_command with an OCR-capable converter", err)
 	case errors.Is(err, scrape.ErrNoBrowser):

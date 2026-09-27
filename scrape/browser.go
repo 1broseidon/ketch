@@ -160,6 +160,9 @@ func closeBrowser(b *rod.Browser, l *launcher.Launcher) {
 // per-fetch filtering still bounds what each navigation loads. Acceptable for
 // a single-operator CLI.
 func (r *rodConn) Fetch(ctx context.Context, rawURL string) (string, error) {
+	if err := ValidateWebURL(rawURL); err != nil {
+		return "", err
+	}
 	page, err := r.browser.Context(ctx).Page(proto.TargetCreateTarget{}) // about:blank
 	if err != nil {
 		return "", fmt.Errorf("create page: %w", err)

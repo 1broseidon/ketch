@@ -1,12 +1,99 @@
 package scrape
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	"github.com/1broseidon/ketch/config"
 	"github.com/1broseidon/ketch/cookies"
+	"github.com/1broseidon/ketch/urlrewrite"
 	"github.com/go-rod/rod/lib/launcher"
 )
+
+type browserFetchSpy struct {
+	calls int
+}
+
+func (b *browserFetchSpy) Fetch(context.Context, string) (string, error) {
+	b.calls++
+	return `<html><body>unexpected browser fetch</body></html>`, nil
+}
+
+func (*browserFetchSpy) Close() {}
+
+func TestNonHTTPURLsAreRejectedBeforeBrowserFetch(t *testing.T) {
+	for _, rawURL := range []string{"file:///etc/passwd", "javascript:alert(1)", "data:text/html,hello"} {
+		t.Run(rawURL, func(t *testing.T) {
+			browser := &browserFetchSpy{}
+			s := NewWithBrowserConn(browser, nil)
+			_, _, err := s.BrowserScrape(t.Context(), rawURL)
+			if !errors.Is(err, ErrInvalidURL) {
+				t.Fatalf("BrowserScrape error = %v, want ErrInvalidURL", err)
+			}
+			if browser.calls != 0 {
+				t.Fatalf("browser Fetch called %d times, want 0", browser.calls)
+			}
+		})
+	}
+}
+
+func TestForcedScrapeRejectsFileURLBeforeBrowserFetch(t *testing.T) {
+	for _, raw := range []struct {
+		name string
+		run  func(*Scraper) error
+	}{
+		{
+			name: "markdown",
+			run: func(s *Scraper) error {
+				_, err := s.CachedScrapeForce(t.Context(), nil, "file:///etc/passwd")
+				return err
+			},
+		},
+		{
+			name: "raw",
+			run: func(s *Scraper) error {
+				_, _, _, err := s.CachedScrapeRawForce(t.Context(), nil, "file:///etc/passwd")
+				return err
+			},
+		},
+	} {
+		t.Run(raw.name, func(t *testing.T) {
+			browser := &browserFetchSpy{}
+			s := NewWithBrowserConn(browser, nil)
+			err := raw.run(s)
+			if !errors.Is(err, ErrInvalidURL) {
+				t.Fatalf("forced scrape error = %v, want ErrInvalidURL", err)
+			}
+			if browser.calls != 0 {
+				t.Fatalf("browser Fetch called %d times, want 0", browser.calls)
+			}
+		})
+	}
+}
+
+func TestRodFetchRejectsNonHTTPURLBeforeUsingBrowser(t *testing.T) {
+	_, err := (&rodConn{}).Fetch(t.Context(), "file:///etc/passwd")
+	if !errors.Is(err, ErrInvalidURL) {
+		t.Fatalf("Fetch error = %v, want ErrInvalidURL", err)
+	}
+}
+
+func TestRewrittenFileURLIsRejectedBeforeBrowserFetch(t *testing.T) {
+	rw, err := urlrewrite.NewRewriter([]urlrewrite.Rule{{
+		Match:   `^https://example\.com/private$`,
+		Replace: "file:///etc/passwd",
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	browser := &browserFetchSpy{}
+	s := NewWithBrowserConn(browser, rw)
+	_, _, err = s.BrowserScrape(t.Context(), "https://example.com/private")
+	if !errors.Is(err, ErrInvalidURL) || browser.calls != 0 {
+		t.Fatalf("BrowserScrape error = %v, browser calls = %d; want ErrInvalidURL and no fetch", err, browser.calls)
+	}
+}
 
 // Source compatibility: NewBrowserConnWithCookies's signature was deliberately
 // kept exact (not variadic) so external assignments to the function type keep

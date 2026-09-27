@@ -232,6 +232,11 @@ a stderr warning (`warning.code: tag_write_failed` with `--json`), and MCP adds
 | `mcp` | Run ketch as an MCP server over stdio (`mcp serve`) — the research surfaces plus `tag`, as tools |
 | `version` | Print version, commit, build date |
 
+After configured URL rewrites, `scrape` and `crawl` fetch only absolute
+`http://` and `https://` URLs; other final schemes such as `file://` are
+rejected. Private or internal HTTP(S) addresses remain fetchable when reachable
+from the machine running ketch.
+
 Every command supports `-h/--help` for its full flag list; `--json` is the only flag global to every command. Full flag reference lives at [ketch.run](https://ketch.run/).
 
 ### Backends

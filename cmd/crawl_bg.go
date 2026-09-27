@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/1broseidon/ketch/crawl"
+	"github.com/1broseidon/ketch/scrape"
 	"github.com/spf13/cobra"
 )
 
@@ -32,12 +33,15 @@ func init() {
 	crawlCmd.AddCommand(crawlStopCmd)
 }
 
-func validateBackgroundCrawl(cmd *cobra.Command) error {
+func validateBackgroundCrawl(cmd *cobra.Command, seed string) error {
 	scraper, err := newScraper(cmd)
 	if err != nil {
 		return err
 	}
-	scraper.Close()
+	defer scraper.Close()
+	if err := scrape.ValidateWebURL(scraper.Rewrite(seed)); err != nil {
+		return exitErrf(ExitValidation, "invalid seed URL: %w", err)
+	}
 	return nil
 }
 
