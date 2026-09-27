@@ -160,7 +160,7 @@ scrape.
 Thirteen commands. `--json` is the only flag global to all of them; everything
 else is per-command. Expand a row for its full flag list.
 
-#### search — Web search across twelve providers
+#### search — Web search across thirteen providers
 
 ```console
 $ ketch search "query" --limit 10
@@ -577,7 +577,7 @@ rather than averaged away.
 
 | Surface | Default | Also available |
 | --- | --- | --- |
-| `search` | `auto` | brave, ddg, searxng, exa, firecrawl, keenable, tavily, parallel, serpbase, degoog, serply, youcom |
+| `search` | `auto` | brave, ddg, searxng, exa, firecrawl, keenable, tavily, tinyfish, parallel, serpbase, degoog, serply, youcom |
 | `code` | `grepapp` | sourcegraph, github |
 | `docs` | `context7` | — |
 
@@ -600,6 +600,7 @@ hosted caps. ddg rate-limits readily under fan-out.
 ```console
 $ ketch config set brave_api_key <key>
 $ ketch config set tavily_api_key <key>
+$ ketch config set tinyfish_api_key <key>
 $ ketch config set serpbase_api_key <key>
 $ ketch config set serply_api_key <key>
 ```
