@@ -57,7 +57,11 @@ type hostJSStats struct {
 // www.reddit.com → old.reddit.com, path appends like /uk → /uk/rss) are
 // idempotent and safe.
 func Crawl(ctx context.Context, seed string, s *scrape.Scraper, opts Options, pc *cache.Cache, sitemap bool, fn func(Result)) error {
-	seedURL, err := url.Parse(seed)
+	fetchSeed := s.Rewrite(seed)
+	if err := scrape.ValidateWebURL(fetchSeed); err != nil {
+		return fmt.Errorf("invalid seed URL: %w", err)
+	}
+	seedURL, err := url.Parse(fetchSeed)
 	if err != nil {
 		return fmt.Errorf("invalid seed URL: %w", err)
 	}
@@ -151,6 +155,9 @@ func (c *crawler) run(seed string, sitemap bool) error {
 
 func (c *crawler) enqueue(rawURL string, depth int, source string) {
 	rewritten := c.scraper.Rewrite(rawURL)
+	if scrape.ValidateWebURL(rewritten) != nil {
+		return
+	}
 	norm := normalizeURL(rewritten)
 	if norm == "" {
 		return
@@ -472,7 +479,7 @@ func fetchSitemapIndex(ctx context.Context, scraper *scrape.Scraper, idx sitemap
 }
 
 func fetchBody(ctx context.Context, scraper *scrape.Scraper, rawURL string) ([]byte, error) {
-	content, err := scraper.FetchContent(ctx, rawURL)
+	content, err := scraper.FetchContent(ctx, scraper.Rewrite(rawURL))
 	if err != nil {
 		return nil, err
 	}

@@ -108,7 +108,11 @@ func warnLooseCookiePerms(path string) {
 // The cache is keyed by the rewritten URL so original and rewritten URLs
 // share one cache entry.
 func (s *Scraper) CachedScrape(ctx context.Context, pc PageCache, url string) (*Page, error) {
-	key := s.CacheKey(s.Rewrite(url))
+	fetchURL := s.Rewrite(url)
+	if err := ValidateWebURL(fetchURL); err != nil {
+		return nil, err
+	}
+	key := s.CacheKey(fetchURL)
 	if pc != nil {
 		if page, source := pc.Get(key); page != nil && !CacheStaleForBrowser(source, s.HasBrowser()) {
 			return page, nil
@@ -134,7 +138,11 @@ func (s *Scraper) CachedScrape(ctx context.Context, pc PageCache, url string) (*
 // cached Page (one fetch, both representations cached). A nil pc skips cache
 // read/write and returns the fresh fetch result directly.
 func (s *Scraper) CachedScrapeRaw(ctx context.Context, pc PageCache, url string) (*Page, string, string, error) {
-	key := s.CacheKey(s.Rewrite(url))
+	fetchURL := s.Rewrite(url)
+	if err := ValidateWebURL(fetchURL); err != nil {
+		return nil, "", "", err
+	}
+	key := s.CacheKey(fetchURL)
 	if pc != nil {
 		if rawHTML, source, page := pc.GetRaw(key); page != nil {
 			return page, rawHTML, source, nil
@@ -161,6 +169,9 @@ func (s *Scraper) CachedScrapeRaw(ctx context.Context, pc PageCache, url string)
 // reused only when that entry is itself a browser render.
 func (s *Scraper) CachedScrapeForce(ctx context.Context, pc PageCache, url string) (*Page, error) {
 	fetchURL := s.Rewrite(url)
+	if err := ValidateWebURL(fetchURL); err != nil {
+		return nil, err
+	}
 	key := s.CacheKey(fetchURL)
 	content, isPDF, err := s.classifyForForcedRender(ctx, fetchURL)
 	if err != nil {
@@ -203,6 +214,9 @@ func (s *Scraper) CachedScrapeForce(ctx context.Context, pc PageCache, url strin
 // rather than returning Chromium's PDF-viewer HTML.
 func (s *Scraper) CachedScrapeRawForce(ctx context.Context, pc PageCache, url string) (*Page, string, string, error) {
 	fetchURL := s.Rewrite(url)
+	if err := ValidateWebURL(fetchURL); err != nil {
+		return nil, "", "", err
+	}
 	key := s.CacheKey(fetchURL)
 	_, isPDF, err := s.classifyForForcedRender(ctx, fetchURL)
 	if err != nil {
@@ -256,6 +270,9 @@ func (s *Scraper) ScrapeRaw(ctx context.Context, pc PageCache, url string, force
 // the canonical URL-rewrite path with Scrape/ScrapeConditional.
 func (s *Scraper) ScrapeSelector(ctx context.Context, rawURL, selector string, forceBrowser bool) (*Page, error) {
 	fetchURL := s.Rewrite(rawURL)
+	if err := ValidateWebURL(fetchURL); err != nil {
+		return nil, err
+	}
 	html, err := s.fetchHTMLForSelector(ctx, rawURL, fetchURL, forceBrowser)
 	if err != nil {
 		return nil, err
@@ -335,11 +352,20 @@ func (s *Scraper) FetchLLMSTxt(ctx context.Context, baseURL string) (string, boo
 	if err != nil || (u.Path != "" && u.Path != "/") {
 		return "", false
 	}
+	fetchURL := s.Rewrite(baseURL)
+	if ValidateWebURL(fetchURL) != nil {
+		return "", false
+	}
+	u, err = url.Parse(fetchURL)
+	if err != nil || (u.Path != "" && u.Path != "/") {
+		return "", false
+	}
 
 	// Cap probes at 5s so an unresponsive endpoint cannot delay the real scrape.
 	probeCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	content, err := s.FetchContent(probeCtx, u.Scheme+"://"+u.Host+"/llms.txt")
+	probeURL := s.Rewrite(u.Scheme + "://" + u.Host + "/llms.txt")
+	content, err := s.FetchContent(probeCtx, probeURL)
 	if err != nil || !strings.Contains(content.ContentType, "text/plain") {
 		return "", false
 	}

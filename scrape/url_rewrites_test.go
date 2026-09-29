@@ -128,3 +128,82 @@ func TestScrapeConditionalAppliesRewrite(t *testing.T) {
 		t.Errorf("Page.FetchedURL = %q, want rewritten", result.Page.FetchedURL)
 	}
 }
+
+func TestScrapeAcceptsInputRewrittenToHTTP(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`<html><body><main>rewritten input works</main></body></html>`))
+	}))
+	t.Cleanup(srv.Close)
+
+	rw, err := urlrewrite.NewRewriter([]urlrewrite.Rule{{Match: `^docs$`, Replace: srv.URL}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	page, err := NewWithRewriter("", rw).ScrapeMarkdown(t.Context(), nil, "docs", false)
+	if err != nil {
+		t.Fatalf("ScrapeMarkdown after rewrite: %v", err)
+	}
+	if page.FetchedURL != srv.URL {
+		t.Fatalf("FetchedURL = %q, want %q", page.FetchedURL, srv.URL)
+	}
+}
+
+func TestFetchLLMSTxtUsesRewrittenTarget(t *testing.T) {
+	source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		t.Error("source host was fetched")
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte("source"))
+	}))
+	t.Cleanup(source.Close)
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/llms.txt" {
+			t.Errorf("target path = %q", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte("target"))
+	}))
+	t.Cleanup(target.Close)
+
+	rw, err := urlrewrite.NewRewriter([]urlrewrite.Rule{{Match: `^` + regexp.QuoteMeta(source.URL) + `$`, Replace: target.URL}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := NewWithRewriter("", rw)
+	content, ok := s.FetchLLMSTxt(t.Context(), source.URL)
+	if !ok || content != "target" {
+		t.Fatalf("FetchLLMSTxt = %q, %v, want target", content, ok)
+	}
+}
+
+func TestFetchLLMSTxtRejectsInvalidRewrittenTarget(t *testing.T) {
+	source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		t.Error("source host was fetched")
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte("source"))
+	}))
+	t.Cleanup(source.Close)
+	rw, err := urlrewrite.NewRewriter([]urlrewrite.Rule{{Match: `^` + regexp.QuoteMeta(source.URL) + `$`, Replace: "file:///etc/passwd"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	content, ok := NewWithRewriter("", rw).FetchLLMSTxt(t.Context(), source.URL)
+	if ok || content != "" {
+		t.Fatalf("FetchLLMSTxt = %q, %v, want no shortcut", content, ok)
+	}
+}
+
+func TestFetchLLMSTxtRewritesProbeURL(t *testing.T) {
+	source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		t.Error("source probe URL was fetched")
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte("source"))
+	}))
+	t.Cleanup(source.Close)
+	rw, err := urlrewrite.NewRewriter([]urlrewrite.Rule{{Match: `^` + regexp.QuoteMeta(source.URL) + `/llms\.txt$`, Replace: "file:///etc/passwd"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if content, ok := NewWithRewriter("", rw).FetchLLMSTxt(t.Context(), source.URL); ok || content != "" {
+		t.Fatalf("FetchLLMSTxt = %q, %v, want no shortcut", content, ok)
+	}
+}

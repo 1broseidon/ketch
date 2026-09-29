@@ -55,7 +55,7 @@ func (s *Server) registerScrapeTool() {
 		Name: "scrape",
 		Description: "Fetch one or more URLs, extract the main content, and convert it to clean markdown (or raw HTML with raw=true). " +
 			"Bare domains are auto-probed for /llms.txt first unless no_llms_txt is set. " +
-			"Note: the server fetches whatever URL it is given, including private or internal addresses reachable from where it runs." +
+			"After configured URL rewrites, only absolute HTTP(S) fetch URLs are accepted; other schemes such as file:// are rejected. Private or internal HTTP(S) addresses remain fetchable when reachable from where the server runs." +
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in ScrapeInput) (*mcpsdk.CallToolResult, ScrapeOutput, error) {
@@ -179,6 +179,8 @@ func (s *Server) scrapeBatch(ctx context.Context, in ScrapeInput) []ScrapeResult
 
 func classifyScrapeFailure(err error) error {
 	switch {
+	case errors.Is(err, scrape.ErrInvalidURL):
+		return errf(kindValidation, "%w", err)
 	case errors.Is(err, extract.ErrPDFNoText):
 		return errf(kindPrecondition, "scrape failed: %w; hint: configure external_pdf_to_md_converter_command with an OCR-capable converter", err)
 	case errors.Is(err, scrape.ErrNoBrowser):

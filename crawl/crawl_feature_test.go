@@ -19,6 +19,7 @@ import (
 
 	"github.com/1broseidon/ketch/config"
 	"github.com/1broseidon/ketch/scrape"
+	"github.com/1broseidon/ketch/urlrewrite"
 )
 
 func TestFeatureNormalizeURL(t *testing.T) {
@@ -47,6 +48,78 @@ func TestFeatureNormalizeURL(t *testing.T) {
 				t.Errorf("normalizeURL(%q) = %q, want %q", tt.input, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestCrawlRejectsFileSeed(t *testing.T) {
+	err := Crawl(t.Context(), "file:///etc/passwd", scrape.New(), Options{Concurrency: 1}, nil, false, func(Result) {})
+	if !errors.Is(err, scrape.ErrInvalidURL) {
+		t.Fatalf("Crawl error = %v, want ErrInvalidURL", err)
+	}
+}
+
+func TestCrawlUsesRewrittenSeedHost(t *testing.T) {
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		if r.URL.Path == "/" {
+			_, _ = w.Write([]byte(`<html><body><a href="/child">child</a></body></html>`))
+			return
+		}
+		_, _ = w.Write([]byte(`<html><body><main>child page</main></body></html>`))
+	}))
+	t.Cleanup(target.Close)
+	rw, err := urlrewrite.NewRewriter([]urlrewrite.Rule{{Match: `^https://source\.invalid/`, Replace: target.URL + "/"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := scrape.NewWithRewriter("", rw)
+	seen := make(map[string]bool)
+	err = Crawl(t.Context(), "https://source.invalid/", s, Options{Depth: 1, Concurrency: 1}, nil, false, func(r Result) {
+		if r.Error != "" {
+			t.Errorf("crawl %s: %s", r.URL, r.Error)
+		}
+		seen[r.URL] = true
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !seen[target.URL] || !seen[target.URL+"/child"] {
+		t.Fatalf("crawled URLs = %v, want target seed and child", seen)
+	}
+}
+
+func TestCrawlRewritesSitemapAndNestedIndex(t *testing.T) {
+	const source = "https://source.invalid"
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/sitemap.xml":
+			w.Header().Set("Content-Type", "application/xml")
+			_, _ = w.Write([]byte(`<sitemapindex><sitemap><loc>` + source + `/nested.xml</loc></sitemap></sitemapindex>`))
+		case "/nested.xml":
+			w.Header().Set("Content-Type", "application/xml")
+			_, _ = w.Write([]byte(`<urlset><url><loc>` + source + `/page</loc></url></urlset>`))
+		case "/page":
+			w.Header().Set("Content-Type", "text/html")
+			_, _ = w.Write([]byte(`<html><body><main>page</main></body></html>`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(target.Close)
+	rw, err := urlrewrite.NewRewriter([]urlrewrite.Rule{{Match: `^https://source\.invalid/`, Replace: target.URL + "/"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := scrape.NewWithRewriter("", rw)
+	var got []Result
+	err = Crawl(t.Context(), source+"/sitemap.xml", s, Options{Concurrency: 1}, nil, true, func(r Result) {
+		got = append(got, r)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].URL != target.URL+"/page" || got[0].Error != "" {
+		t.Fatalf("crawl results = %+v, want rewritten sitemap page", got)
 	}
 }
 

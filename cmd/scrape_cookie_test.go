@@ -83,7 +83,7 @@ func TestCookieFileFlagOverridesConfig(t *testing.T) {
 }
 
 func TestBackgroundCrawlValidatesCookieFileBeforeDetach(t *testing.T) {
-	err := validateBackgroundCrawl(cmdWithCookieFlag(t, filepath.Join(t.TempDir(), "missing.txt"), true))
+	err := validateBackgroundCrawl(cmdWithCookieFlag(t, filepath.Join(t.TempDir(), "missing.txt"), true), "https://example.com")
 	if err == nil {
 		t.Fatal("expected invalid cookie file to fail parent validation")
 	}

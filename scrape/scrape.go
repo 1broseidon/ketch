@@ -340,11 +340,14 @@ func (s *Scraper) scrapeConditional(ctx context.Context, rawURL, etag, lastModif
 // BrowserScrape fetches a URL using the browser directly.
 // Used when a host is known to require browser rendering.
 func (s *Scraper) BrowserScrape(ctx context.Context, rawURL string) (*Page, string, error) {
+	fetchURL := s.Rewrite(rawURL)
+	if err := ValidateWebURL(fetchURL); err != nil {
+		return nil, "", err
+	}
 	browser := s.getBrowser()
 	if browser == nil {
 		return nil, "", ErrNoBrowser
 	}
-	fetchURL := s.Rewrite(rawURL)
 	html, err := browser.Fetch(ctx, fetchURL)
 	if err != nil {
 		return nil, "", fmt.Errorf("browser fetch failed for %s: %w", fetchURL, err)
@@ -520,6 +523,9 @@ func setCookieHeader(req *http.Request, jar *cookies.Jar) {
 }
 
 func (s *Scraper) fetchContent(ctx context.Context, rawURL, etag, lastModified string) (*FetchedContent, http.Header, bool, error) {
+	if err := ValidateWebURL(rawURL); err != nil {
+		return nil, nil, false, err
+	}
 	req, err := http.NewRequestWithContext(ctx, "GET", rawURL, nil)
 	if err != nil {
 		return nil, nil, false, err

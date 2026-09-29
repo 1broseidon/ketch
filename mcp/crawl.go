@@ -8,6 +8,7 @@ import (
 
 	"github.com/1broseidon/ketch/crawl"
 	"github.com/1broseidon/ketch/extract"
+	"github.com/1broseidon/ketch/scrape"
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -71,7 +72,7 @@ func (s *Server) registerCrawlTool() {
 		Name: "crawl",
 		Description: "BFS-crawl a site from a seed URL (same host only) and return extracted markdown for each page. " +
 			"Synchronous and bounded: at most max_pages pages (default 30, cap 100) within a 3-minute budget — large crawls belong to the CLI's background mode (ketch crawl --background), which is not exposed over MCP. " +
-			"Note: the server fetches whatever URL it is given, including private or internal addresses reachable from where it runs." +
+			"After configured URL rewrites, only absolute HTTP(S) fetch URLs are accepted; other schemes such as file:// are rejected. Private or internal HTTP(S) addresses remain fetchable when reachable from where the server runs." +
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in CrawlInput) (*mcpsdk.CallToolResult, CrawlOutput, error) {
@@ -112,6 +113,9 @@ func (s *Server) registerCrawlTool() {
 		if err != nil && out.Stopped == "" {
 			// A real failure (bad seed, sitemap fetch error, client cancel) —
 			// not one of our own bounds firing.
+			if errors.Is(err, scrape.ErrInvalidURL) {
+				return nil, CrawlOutput{}, errf(kindValidation, "%w", err)
+			}
 			return nil, CrawlOutput{}, upstreamErrf(err, "crawl failed")
 		}
 		return nil, out, nil
