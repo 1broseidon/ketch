@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -34,6 +35,9 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	binary = filepath.Join(dir, "ketch")
+	if runtime.GOOS == "windows" {
+		binary += ".exe"
+	}
 	build := exec.Command("go", "build", "-o", binary, "..")
 	build.Env = append(os.Environ(), "CGO_ENABLED=0")
 	if out, err := build.CombinedOutput(); err != nil {
@@ -509,7 +513,8 @@ func TestRunningMCPServerSharesThePageCache(t *testing.T) {
 func TestTagWriteFailureIsReported(t *testing.T) {
 	isolated(t)
 	pages := pageServer(t)
-	tooLong := strings.Repeat("a", 33000)
+	// Exceed bbolt's byte limit without exceeding Windows' UTF-16 command-line limit.
+	tooLong := strings.Repeat("界", 11000)
 	code, _, stderr := cli(t, "scrape", pages.URL+"/doc", "--no-llms-txt", "--tag", tooLong, "--json")
 	if code == 0 && !strings.Contains(stderr, "warn") {
 		t.Fatalf("bbolt oversized-key write failed with exit 0 and no warning: stderr=%q", stderr)

@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"slices"
 	"testing"
 
@@ -86,7 +87,13 @@ func TestSaveEnforcesPrivateMode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := info.Mode().Perm(); got != 0o600 {
-		t.Fatalf("config mode = %o, want 600", got)
+	// Windows exposes synthetic mode bits, not POSIX permissions or ACLs.
+	if runtime.GOOS != "windows" {
+		if got := info.Mode().Perm(); got != 0o600 {
+			t.Fatalf("config mode = %o, want 600", got)
+		}
+	}
+	if got := LoadFile().BraveKeys(); !reflect.DeepEqual(got, []string{"secret"}) {
+		t.Fatalf("saved brave keys = %v, want [secret]", got)
 	}
 }
