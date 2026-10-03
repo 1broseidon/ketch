@@ -68,7 +68,8 @@ func TestEffectiveKeysReturnCopies(t *testing.T) {
 }
 
 func TestSaveEnforcesPrivateMode(t *testing.T) {
-	testutil.SetIsolatedConfigHome(t)
+	dir := testutil.SetIsolatedConfigHome(t)
+	t.Setenv("KETCH_CONFIG", filepath.Join(dir, "config.json"))
 	path, err := Path()
 	if err != nil {
 		t.Fatal(err)

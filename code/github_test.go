@@ -31,13 +31,13 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 3 || os.Args[1] != "auth" || os.Args[2] != "token" {
-		os.Exit(1)
-	}
 	f, err := os.OpenFile(%q, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil { panic(err) }
 	if _, err := f.WriteString("call\n"); err != nil { panic(err) }
 	if err := f.Close(); err != nil { panic(err) }
+	if len(os.Args) != 3 || os.Args[1] != "auth" || os.Args[2] != "token" {
+		os.Exit(1)
+	}
 	fmt.Println("fixture-token")
 }
 `, count)
