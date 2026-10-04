@@ -146,10 +146,11 @@ func runCrawlWorker(cmd *cobra.Command, args []string, crawlID string) error {
 	fn := func(r crawl.Result) {
 		mu.Lock()
 		defer mu.Unlock()
-		status.Pages++
 		if r.Error != "" {
 			status.Errors++
-		} else {
+		}
+		if r.Page != nil {
+			status.Pages++
 			switch r.Status {
 			case "new":
 				status.New++
@@ -159,7 +160,7 @@ func runCrawlWorker(cmd *cobra.Command, args []string, crawlID string) error {
 				status.Unchanged++
 			}
 		}
-		if r.Error == "" && r.Page != nil {
+		if r.Page != nil {
 			tw.record(scraper, r.URL, r.Page)
 		}
 		// Update status file every 10 pages

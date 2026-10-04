@@ -37,6 +37,12 @@ type cacheEntry struct {
 	CachedAt int64       `json:"t"`
 	Source   string      `json:"s,omitempty"`
 	Page     scrape.Page `json:"p"`
+	// Links is the set of resolved HTTP(S) links discovered by a crawl. A nil
+	// pointer means the entry predates crawl-link caching (or was written by a
+	// non-crawl scrape); a pointer to an empty slice means the page is known to
+	// have no outgoing links. Keeping links separate from Page preserves the
+	// shared page/output format and avoids retaining full response bodies.
+	Links *[]string `json:"l,omitempty"`
 	// RawHTML is the post-fetch (possibly browser-rendered) HTML that produced
 	// Page. Stored as a sibling to Page — never on Page itself, which is the
 	// extracted representation shared with every JSON/crawl consumer. Persisted
@@ -120,21 +126,43 @@ func ensurePrivateDir(dir string) error {
 // The second return is the fetch source recorded at Put time (scrape.SourceHTTP
 // or scrape.SourceBrowser); empty for entries written before source tracking.
 func (c *Cache) Get(url string) (*scrape.Page, string) {
-	if c == nil || c.store == nil {
-		return nil, ""
-	}
-	data, err := c.store.Get(cacheKey(url))
-	if err != nil {
-		return nil, ""
-	}
-	var e cacheEntry
-	if err := json.Unmarshal(data, &e); err != nil {
-		return nil, ""
-	}
-	if time.Since(time.Unix(e.CachedAt, 0)) > c.ttl {
+	e := c.getEntry(url)
+	if e == nil {
 		return nil, ""
 	}
 	return &e.Page, e.Source
+}
+
+// GetCrawl returns a cached page and any outgoing links previously discovered
+// by a crawl. linksKnown distinguishes an old/page-only cache entry from a
+// page that was crawled and is known to have no outgoing links.
+func (c *Cache) GetCrawl(url string) (page *scrape.Page, source string, links []string, linksKnown bool) {
+	e := c.getEntry(url)
+	if e == nil {
+		return nil, "", nil, false
+	}
+	if e.Links == nil {
+		return &e.Page, e.Source, nil, false
+	}
+	return &e.Page, e.Source, append([]string{}, (*e.Links)...), true
+}
+
+func (c *Cache) getEntry(url string) *cacheEntry {
+	if c == nil || c.store == nil {
+		return nil
+	}
+	data, err := c.store.Get(cacheKey(url))
+	if err != nil {
+		return nil
+	}
+	var e cacheEntry
+	if err := json.Unmarshal(data, &e); err != nil {
+		return nil
+	}
+	if time.Since(time.Unix(e.CachedAt, 0)) > c.ttl {
+		return nil
+	}
+	return &e
 }
 
 // Put writes a page to the cache with the fetch source that produced it.
@@ -147,18 +175,23 @@ func (c *Cache) Put(url string, page *scrape.Page, source string) {
 		Source:   source,
 		Page:     *page,
 	}
-	data, err := json.Marshal(e)
-	if err != nil {
+	c.putEntry(url, page, e)
+}
+
+// PutCrawl stores a page and its resolved outgoing links. Even when links is
+// empty, the cache records that the page was inspected and is a known leaf.
+func (c *Cache) PutCrawl(url string, page *scrape.Page, source string, links []string) {
+	if c == nil || c.store == nil {
 		return
 	}
-	c.storePut(cacheKey(url), data)
-	if err := c.Backfill(url, page.URL, page); err != nil {
-		if c.onTagError != nil {
-			c.onTagError(err)
-		} else {
-			fmt.Fprintf(os.Stderr, "warn: tag metadata backfill: %v\n", err)
-		}
+	knownLinks := append([]string{}, links...)
+	e := cacheEntry{
+		CachedAt: time.Now().Unix(),
+		Source:   source,
+		Page:     *page,
+		Links:    &knownLinks,
 	}
+	c.putEntry(url, page, e)
 }
 
 // GetRaw looks up a cached entry's raw HTML by URL. Returns (rawHTML, source,
@@ -200,6 +233,10 @@ func (c *Cache) PutRaw(url string, page *scrape.Page, source, rawHTML string) {
 		Page:     *page,
 		RawHTML:  rawHTML,
 	}
+	c.putEntry(url, page, e)
+}
+
+func (c *Cache) putEntry(url string, page *scrape.Page, e cacheEntry) {
 	data, err := json.Marshal(e)
 	if err != nil {
 		return

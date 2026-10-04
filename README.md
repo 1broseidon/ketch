@@ -253,7 +253,7 @@ Every command supports `-h/--help` for its full flag list; `--json` is the only 
 - **Documented exit codes**, not just stderr text, for scripted control flow: `2` bad input, `3` not found, `4` upstream/network failure, `5` missing precondition (e.g. no API key), `6` cancelled (SIGINT/SIGTERM).
 - **Automatic JS-rendering fallback.** `ketch scrape` and `ketch crawl` detect JS-shell pages (React/Vue/Svelte SPAs, streaming hydration frameworks) and transparently re-fetch via headless Chrome when needed — same output shape either way.
 - **Smart input detection on `scrape`.** Single URL, multiple positional args, a JSON array, a file of URLs, or stdin — no `--batch` flag required.
-- **Page cache.** Fetches are cached (bbolt, default TTL 72h); repeat scrapes and crawls return instantly. `--no-cache` bypasses it.
+- **Page cache.** Fetches are cached (bbolt, default TTL 72h); repeat scrapes return cached pages, and repeat crawls can reuse entries with known link metadata. Crawl entries keep resolved outgoing HTTP(S) links—including external links and query strings—locally for the same TTL; this metadata does not require or store full HTML, and is not sent elsewhere. A deeper crawl may fetch a still-cached page when its links are unknown; that can recur after a normal scrape refreshes the entry. If backfill fails, the cached page is still returned with an incomplete-link diagnostic (CLI stderr; MCP `pages` plus `errors`). Background crawl status counts the returned page and error but does not retain individual error details. `--no-cache` bypasses the cache.
 - **One discovery call.** `ketch config` returns the full effective configuration and active backends as JSON, so an agent can inspect capabilities without parsing `--help` text.
 
 ## Configuration

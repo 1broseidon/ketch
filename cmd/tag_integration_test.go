@@ -87,6 +87,49 @@ func mustCLI(t *testing.T, args ...string) string {
 	return out
 }
 
+func TestCrawlJSONKeepsCachedPageWhenLinkBackfillFails(t *testing.T) {
+	isolated(t)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "offline", http.StatusServiceUnavailable)
+	}))
+	t.Cleanup(server.Close)
+	pc := cache.New(time.Hour)
+	if pc == nil {
+		t.Fatal("open isolated page cache")
+	}
+	pc.Put(server.URL, &scrape.Page{URL: server.URL, Title: "cached page", Markdown: "saved content"}, scrape.SourceHTTP)
+	pc.Close()
+
+	code, out, stderr := cli(t, "--json", "crawl", "--depth", "1", server.URL)
+	if code != 0 {
+		t.Fatalf("crawl exit = %d, stderr: %s", code, stderr)
+	}
+	var page map[string]any
+	if err := json.Unmarshal([]byte(strings.TrimSpace(out)), &page); err != nil {
+		t.Fatalf("crawl JSON stdout = %q: %v", out, err)
+	}
+	if page["title"] != "cached page" || page["body"] != "saved content" {
+		t.Fatalf("crawl page = %v, want cached page content", page)
+	}
+	if !strings.Contains(stderr, "link discovery incomplete") || !strings.Contains(stderr, "503") {
+		t.Fatalf("stderr = %q, want partial-crawl diagnostic", stderr)
+	}
+	if !strings.Contains(stderr, "pages: 1\n") || !strings.Contains(stderr, "errors: 1\n") {
+		t.Fatalf("fallback summary = %q, want pages: 1 and errors: 1", stderr)
+	}
+
+	code, out, stderr = cli(t, "--json", "crawl", "--depth", "1", "--no-cache", server.URL)
+	if code != 0 {
+		t.Fatalf("error-only crawl exit = %d, stderr: %s", code, stderr)
+	}
+	if strings.TrimSpace(out) != "" {
+		t.Fatalf("error-only crawl JSON stdout = %q, want no page", out)
+	}
+	if !strings.Contains(stderr, "pages: 0\n") || !strings.Contains(stderr, "errors: 1\n") {
+		t.Fatalf("error-only summary = %q, want pages: 0 and errors: 1", stderr)
+	}
+}
+
 func pageServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

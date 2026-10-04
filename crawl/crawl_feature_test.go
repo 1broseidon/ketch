@@ -17,10 +17,275 @@ import (
 	"testing"
 	"time"
 
+	"github.com/1broseidon/ketch/cache"
 	"github.com/1broseidon/ketch/config"
 	"github.com/1broseidon/ketch/scrape"
 	"github.com/1broseidon/ketch/urlrewrite"
 )
+
+func newCrawlTestCache(t *testing.T) *cache.Cache {
+	t.Helper()
+	store, err := cache.NewBBoltStore(filepath.Join(t.TempDir(), "cache.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = store.Close() })
+	return cache.NewWithStore(store, time.Hour)
+}
+
+func TestCrawlWarmCacheTraversesSavedNavigationLinks(t *testing.T) {
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		w.Header().Set("Content-Type", "text/html")
+		if r.URL.Path == "/child" {
+			_, _ = w.Write([]byte(`<html><body><main>child</main></body></html>`))
+			return
+		}
+		_, _ = w.Write([]byte(`<html><body><main>root</main></body><nav><a href="/child">Child</a></nav></html>`))
+	}))
+	t.Cleanup(server.Close)
+	pc := newCrawlTestCache(t)
+	seed := server.URL + "/"
+	for run := 0; run < 2; run++ {
+		var results []Result
+		if err := Crawl(t.Context(), seed, scrape.New(), Options{Depth: 1, Concurrency: 1}, pc, false, func(r Result) {
+			results = append(results, r)
+		}); err != nil {
+			t.Fatal(err)
+		}
+		seen := make(map[string]Result, len(results))
+		for _, result := range results {
+			seen[result.URL] = result
+		}
+		childURL := server.URL + "/child"
+		if len(seen) != 2 {
+			t.Fatalf("run %d crawled URLs = %v, want seed and child", run+1, seen)
+		}
+		for _, rawURL := range []string{server.URL, childURL} {
+			result, ok := seen[rawURL]
+			if !ok {
+				t.Errorf("run %d did not crawl %s", run+1, rawURL)
+			} else if run == 1 && result.Status != "unchanged" {
+				t.Errorf("warm result for %s has status %q, want unchanged", rawURL, result.Status)
+			}
+		}
+	}
+	if got := requests.Load(); got != 2 {
+		t.Fatalf("HTTP requests after cold and warm crawls = %d, want 2", got)
+	}
+}
+
+func TestCrawlLegacyCacheBackfillsNavigationLinks(t *testing.T) {
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		w.Header().Set("Content-Type", "text/html")
+		if r.URL.Path == "/child" {
+			_, _ = w.Write([]byte(`<html><body><main>child</main></body></html>`))
+			return
+		}
+		_, _ = w.Write([]byte(`<html><body><main>root</main></body><nav><a href="/child">Child</a></nav></html>`))
+	}))
+	t.Cleanup(server.Close)
+	pc := newCrawlTestCache(t)
+	seed := server.URL + "/"
+	pc.Put(server.URL, &scrape.Page{URL: server.URL}, scrape.SourceHTTP)
+
+	for run := 0; run < 2; run++ {
+		seen := make(map[string]bool)
+		if err := Crawl(t.Context(), seed, scrape.New(), Options{Depth: 1, Concurrency: 1}, pc, false, func(r Result) {
+			seen[r.URL] = true
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if !seen[server.URL] || !seen[server.URL+"/child"] {
+			t.Fatalf("run %d crawled URLs = %v, want seed and child", run+1, seen)
+		}
+	}
+	if got := requests.Load(); got != 2 {
+		t.Fatalf("HTTP requests after legacy backfill and warm crawl = %d, want 2", got)
+	}
+}
+
+func TestCrawlBackfillFailureReturnsCachedPageAndDiagnostic(t *testing.T) {
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requests.Add(1)
+		http.Error(w, "offline", http.StatusServiceUnavailable)
+	}))
+	t.Cleanup(server.Close)
+	pc := newCrawlTestCache(t)
+	pc.Put(server.URL, &scrape.Page{URL: server.URL, Title: "cached", Markdown: "saved page"}, scrape.SourceHTTP)
+
+	var results []Result
+	err := Crawl(t.Context(), server.URL, scrape.New(), Options{Depth: 1, Concurrency: 1}, pc, false, func(r Result) {
+		results = append(results, r)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("results = %+v, want one fallback result", results)
+	}
+	got := results[0]
+	if got.Page == nil || got.Page.Title != "cached" || got.Status != "unchanged" {
+		t.Fatalf("fallback result = %+v, want cached unchanged page", got)
+	}
+	if !strings.Contains(got.Error, "link discovery incomplete") || !strings.Contains(got.Error, "503") {
+		t.Fatalf("fallback diagnostic = %q, want incomplete links and fetch error", got.Error)
+	}
+	if requests.Load() != 1 {
+		t.Fatalf("backfill requests = %d, want one", requests.Load())
+	}
+}
+
+func TestCrawlBackfillDoesNotReuseDifferentCacheNamespace(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "offline", http.StatusServiceUnavailable)
+	}))
+	t.Cleanup(server.Close)
+	pc := newCrawlTestCache(t)
+	pc.Put(server.URL, &scrape.Page{URL: server.URL, Title: "anonymous"}, scrape.SourceHTTP)
+	s, err := scrape.NewFromConfig(&config.Config{UserAgent: "configured-agent"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+
+	var got Result
+	err = Crawl(t.Context(), server.URL, s, Options{Depth: 1, Concurrency: 1}, pc, false, func(r Result) { got = r })
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Page != nil || got.Error == "" {
+		t.Fatalf("result = %+v, want fetch error with no page from another namespace", got)
+	}
+}
+
+func TestCrawlBackfillDoesNotReuseBrowserStaleCacheEntry(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "offline", http.StatusServiceUnavailable)
+	}))
+	t.Cleanup(server.Close)
+	pc := newCrawlTestCache(t)
+	pc.Put(server.URL, &scrape.Page{URL: server.URL, Title: "stale shell"}, scrape.SourceHTTPShell)
+
+	var got Result
+	if err := Crawl(t.Context(), server.URL, scrape.New(), Options{Depth: 1, Concurrency: 1}, pc, false, func(r Result) { got = r }); err != nil {
+		t.Fatal(err)
+	}
+	if got.Page != nil || got.Error == "" {
+		t.Fatalf("result = %+v, want fetch error without browser-stale cached page", got)
+	}
+}
+
+func TestCrawlDoesNotEmitBackfillFallbackAfterCancellation(t *testing.T) {
+	requested := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		close(requested)
+		<-r.Context().Done()
+	}))
+	t.Cleanup(server.Close)
+	pc := newCrawlTestCache(t)
+	pc.Put(server.URL, &scrape.Page{URL: server.URL, Title: "cached"}, scrape.SourceHTTP)
+	ctx, cancel := context.WithCancel(t.Context())
+	var results []Result
+	done := make(chan error, 1)
+	go func() {
+		done <- Crawl(ctx, server.URL, scrape.New(), Options{Depth: 1, Concurrency: 1}, pc, false, func(r Result) {
+			results = append(results, r)
+		})
+	}()
+	<-requested
+	cancel()
+	if err := <-done; !errors.Is(err, context.Canceled) {
+		t.Fatalf("Crawl error = %v, want context.Canceled", err)
+	}
+	if len(results) != 0 {
+		t.Fatalf("results after cancellation = %+v, want none", results)
+	}
+}
+
+func TestCrawlDepthLimitAllowsUnknownCacheHit(t *testing.T) {
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+	}))
+	t.Cleanup(server.Close)
+	pc := newCrawlTestCache(t)
+	pc.Put(server.URL, &scrape.Page{URL: server.URL}, scrape.SourceHTTP)
+	var results []Result
+	if err := Crawl(t.Context(), server.URL, scrape.New(), Options{Depth: 0, Concurrency: 1}, pc, false, func(r Result) {
+		results = append(results, r)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 1 || results[0].Status != "unchanged" {
+		t.Fatalf("results = %+v, want one unchanged seed", results)
+	}
+	if got := requests.Load(); got != 0 {
+		t.Fatalf("HTTP requests at depth limit = %d, want 0", got)
+	}
+}
+
+func TestCrawlCachesNonHTMLAsKnownLeaf(t *testing.T) {
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte("plain text"))
+	}))
+	t.Cleanup(server.Close)
+	pc := newCrawlTestCache(t)
+	for range 2 {
+		if err := Crawl(t.Context(), server.URL, scrape.New(), Options{Depth: 1, Concurrency: 1}, pc, false, func(Result) {}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := requests.Load(); got != 1 {
+		t.Fatalf("HTTP requests after cached non-HTML crawl = %d, want 1", got)
+	}
+}
+
+func TestCrawlCachesEmptyHTMLAsKnownLeaf(t *testing.T) {
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requests.Add(1)
+		w.Header().Set("Content-Type", "text/html")
+	}))
+	t.Cleanup(server.Close)
+	pc := newCrawlTestCache(t)
+	s := scrape.New()
+	defer s.Close()
+	for run := 0; run < 2; run++ {
+		var results []Result
+		if err := Crawl(t.Context(), server.URL, s, Options{Depth: 1, Concurrency: 1}, pc, false, func(r Result) {
+			results = append(results, r)
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if len(results) != 1 || results[0].Page == nil {
+			t.Fatalf("run %d results = %+v, want one page", run+1, results)
+		}
+		wantStatus := "new"
+		if run == 1 {
+			wantStatus = "unchanged"
+		}
+		if results[0].Status != wantStatus {
+			t.Errorf("run %d status = %q, want %q", run+1, results[0].Status, wantStatus)
+		}
+		if run == 0 {
+			cached, _, links, known := pc.GetCrawl(server.URL)
+			if cached == nil || !known || len(links) != 0 {
+				t.Fatalf("empty HTML cache = (page %v, links %v, known %v), want known empty links", cached != nil, links, known)
+			}
+		}
+	}
+	if got := requests.Load(); got != 1 {
+		t.Fatalf("HTTP requests after two crawls = %d, want 1", got)
+	}
+}
 
 func TestFeatureNormalizeURL(t *testing.T) {
 	t.Parallel()
@@ -252,6 +517,19 @@ func TestFeatureExtractLinksFromHTML(t *testing.T) {
 		if strings.HasPrefix(l, "javascript:") || strings.HasPrefix(l, "mailto:") ||
 			strings.HasPrefix(l, "tel:") {
 			t.Errorf("should skip non-HTTP link: %s", l)
+		}
+	}
+}
+
+func TestExtractLinksDeduplicatesExactResolvedURLsInOrder(t *testing.T) {
+	got := extractLinks("https://example.com/docs/", nil, `<a href="/a">first</a><a href="/b">second</a><a href="/a">duplicate</a><a href="/a?x=1">distinct</a>`)
+	want := []string{"https://example.com/a", "https://example.com/b", "https://example.com/a?x=1"}
+	if len(got) != len(want) {
+		t.Fatalf("links = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("links = %v, want %v", got, want)
 		}
 	}
 }
