@@ -248,9 +248,19 @@ func firecrawlProvider() Provider {
 		Name:     "Firecrawl",
 		Usable:   func(*config.Config) bool { return true },
 		New: func(c *config.Config) (Searcher, error) {
-			return newFirecrawlWithKeys(c.FirecrawlKeys(), c.EffectiveFirecrawlURL()), nil
+			client, err := instanceClient(httpx.Default(), c)
+			if err != nil {
+				return nil, err
+			}
+			f := newFirecrawlWithKeys(c.FirecrawlKeys(), c.EffectiveFirecrawlURL())
+			f.client = client
+			return f, nil
 		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
+			client, err := instanceClient(client, c)
+			if err != nil {
+				return health.StatusMisconfigured, err.Error()
+			}
 			return health.ProbeKeyPool(c.FirecrawlKeys(), func(key string) (health.Status, string) {
 				return ProbeFirecrawl(ctx, client, config.FirecrawlSearchURL(c.EffectiveFirecrawlURL()), key)
 			})

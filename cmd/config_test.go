@@ -78,6 +78,41 @@ func TestBuildConfigInfoReportsEffectiveKeyCountsWithoutValues(t *testing.T) {
 	}
 }
 
+func TestConfigHTTPHeadersShowsNamesNotValues(t *testing.T) {
+	cfg := config.Defaults()
+	if err := applyConfigSet(&cfg, "http_headers", `{"https://searx.example":{"CF-Access-Client-Secret":"header-secret","CF-Access-Client-Id":"id-secret"}}`); err != nil {
+		t.Fatal(err)
+	}
+	data, err := json.Marshal(buildConfigInfo(cfg, "/tmp/config.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(data), "header-secret") || strings.Contains(string(data), "id-secret") {
+		t.Fatal("config discovery printed a header value")
+	}
+	if !strings.Contains(string(data), `"http_header_names":{"https://searx.example":["CF-Access-Client-Id","CF-Access-Client-Secret"]}`) {
+		t.Fatalf("config discovery = %s, want header names per origin", data)
+	}
+}
+
+func TestConfigSetHTTPHeadersRejectsInvalidValues(t *testing.T) {
+	for _, value := range []string{
+		`{"https://searx.example":{"X-A":["header-secret"]}}`,
+		`{"https://searx.example/search":{"X-A":"header-secret"}}`,
+		`{"https://searx.example":{"X-A":"header-secret\r\nInjected: yes"}}`,
+	} {
+		cfg := config.Defaults()
+		err := applyConfigSet(&cfg, "http_headers", value)
+		var exitErr *ExitError
+		if !errors.As(err, &exitErr) || exitErr.Code != ExitValidation {
+			t.Fatalf("%s: error = %v, want exit %d", value, err, ExitValidation)
+		}
+		if strings.Contains(err.Error(), "header-secret") {
+			t.Fatalf("error echoed a header value: %v", err)
+		}
+	}
+}
+
 func TestRunConfigSetNeverEchoesSecrets(t *testing.T) {
 	tests := []struct {
 		key     string
@@ -97,6 +132,7 @@ func TestRunConfigSetNeverEchoesSecrets(t *testing.T) {
 		{key: "tavily_api_keys", value: `["tavily-one","tavily-two"]`, secrets: []string{"tavily-one", "tavily-two"}, want: "set tavily_api_keys (2 keys)\n"},
 		{key: "context7_api_key", value: "context7-secret", secrets: []string{"context7-secret"}, want: "set context7_api_key (1 key)\n"},
 		{key: "github_token", value: "github-secret", secrets: []string{"github-secret"}, want: "set github_token (1 token)\n"},
+		{key: "http_headers", value: `{"https://searx.example":{"CF-Access-Client-Secret":"header-secret"}}`, secrets: []string{"header-secret"}, want: "set http_headers (1 origin)\n"},
 	}
 
 	for _, test := range tests {

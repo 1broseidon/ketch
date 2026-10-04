@@ -48,6 +48,10 @@ type configInfo struct {
 	AvailableDocBackends               []string           `json:"available_doc_backends" order:"35"`
 	ProviderFields                     []configbase.Field `json:"-"`
 	Providers                          map[string]any     `json:"-"`
+
+	// HTTPHeaderNames lists the configured header names per origin; values
+	// are never shown. Sorts after external_pdf_to_md_converter_timeout_sec.
+	HTTPHeaderNames map[string][]string `json:"http_header_names,omitempty" order:"31"`
 }
 
 var configCmd = &cobra.Command{
@@ -112,6 +116,7 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 		MCPTools:                           effectiveMCPTools(c),
 		ExternalPDFToMDConverterCommand:    c.ExternalPDFToMDConverterCommand,
 		ExternalPDFToMDConverterTimeoutSec: c.ExternalPDFToMDConverterTimeoutSec,
+		HTTPHeaderNames:                    httpHeaderNames(c.HTTPHeaders),
 		AvailableBackends:                  config.SelectableBackends(),
 		AvailableCodeBackends:              config.AvailableCodeBackends(),
 		AvailableDocBackends:               config.AvailableDocBackends(),
@@ -179,6 +184,9 @@ func configSetAcknowledgement(c config.Config, key, value string) string {
 // configSecretCount recognizes every secret accepted by config set. API-key
 // counts use the effective de-duplicated pools, not the raw field lengths.
 func configSecretCount(c config.Config, key string) (int, string, bool) {
+	if key == "http_headers" {
+		return len(c.HTTPHeaders), "origin", true
+	}
 	for _, setting := range config.ProviderSettings() {
 		if !setting.Secret || (key != setting.Key && key != setting.Plural) {
 			continue
@@ -240,6 +248,13 @@ func applyConfigSet(c *config.Config, key, value string) error {
 		return setUserAgent(c, value)
 	case "extract_mode":
 		return setExtractMode(c, value)
+	case "http_headers":
+		headers, err := config.ParseHTTPHeaders(value)
+		if err != nil {
+			return exitErrf(ExitValidation, "invalid http_headers: %w", err)
+		}
+		c.HTTPHeaders = headers
+		return nil
 	case "external_pdf_to_md_converter_command":
 		return setExternalPDFConverterCommand(c, value)
 	case "external_pdf_to_md_converter_timeout_sec":
@@ -299,6 +314,22 @@ func setCookieFile(c *config.Config, value string) error {
 	}
 	c.CookieFile = value
 	return nil
+}
+
+// httpHeaderNames lists the configured header names per origin, so `ketch
+// config` shows what is set without printing a value.
+func httpHeaderNames(headers map[string]map[string]string) map[string][]string {
+	if len(headers) == 0 {
+		return nil
+	}
+	names := make(map[string][]string, len(headers))
+	for origin, set := range headers {
+		for name := range set {
+			names[origin] = append(names[origin], name)
+		}
+		sort.Strings(names[origin])
+	}
+	return names
 }
 
 // setUserAgent persists an HTTP User-Agent override. Empty clears it so the
@@ -455,7 +486,7 @@ func runConfigPath(_ *cobra.Command, _ []string) error {
 }
 
 func validConfigKeys() []string {
-	fields := []configbase.Field{{Name: "backend", Order: 0}, {Name: "limit", Order: 15}, {Name: "cache_ttl", Order: 16}, {Name: "browser", Order: 17}, {Name: "code_backend", Order: 18}, {Name: "docs_backend", Order: 19}, {Name: "url_rewrites", Order: 23}, {Name: "spa_markers", Order: 24}, {Name: "mcp_tools", Order: 25}, {Name: "cookie_file", Order: 26}, {Name: "user_agent", Order: 27}, {Name: "external_pdf_to_md_converter_command", Order: 28}, {Name: "external_pdf_to_md_converter_timeout_sec", Order: 29}, {Name: "extract_mode", Order: 30}}
+	fields := []configbase.Field{{Name: "backend", Order: 0}, {Name: "limit", Order: 15}, {Name: "cache_ttl", Order: 16}, {Name: "browser", Order: 17}, {Name: "code_backend", Order: 18}, {Name: "docs_backend", Order: 19}, {Name: "url_rewrites", Order: 23}, {Name: "spa_markers", Order: 24}, {Name: "mcp_tools", Order: 25}, {Name: "cookie_file", Order: 26}, {Name: "user_agent", Order: 27}, {Name: "external_pdf_to_md_converter_command", Order: 28}, {Name: "external_pdf_to_md_converter_timeout_sec", Order: 29}, {Name: "extract_mode", Order: 30}, {Name: "http_headers", Order: 31}}
 	for _, s := range config.ProviderSettings() {
 		fields = append(fields, configbase.Field{Name: s.Key, Order: s.ValidationOrder})
 		if s.Plural != "" {

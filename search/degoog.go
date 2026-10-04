@@ -129,8 +129,20 @@ func degoogProvider() Provider {
 		Name:     "Degoog",
 		Setup:    "degoog: instance URL not set (ketch config set degoog_url http://localhost:4444)",
 		Usable:   func(c *config.Config) bool { return strings.TrimSpace(c.String("degoog_url")) != "" },
-		New:      func(c *config.Config) (Searcher, error) { return NewDegoog(c.String("degoog_url")), nil },
+		New: func(c *config.Config) (Searcher, error) {
+			client, err := instanceClient(httpx.Default(), c)
+			if err != nil {
+				return nil, err
+			}
+			d := NewDegoog(c.String("degoog_url"))
+			d.client = client
+			return d, nil
+		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
+			client, err := instanceClient(client, c)
+			if err != nil {
+				return health.StatusMisconfigured, err.Error()
+			}
 			return ProbeDegoog(ctx, client, c.String("degoog_url"))
 		},
 	}

@@ -128,8 +128,20 @@ func searxngProvider() Provider {
 			url := strings.TrimSpace(c.String("searxng_url"))
 			return url != "" && url != DefaultSearxngURL
 		},
-		New: func(c *config.Config) (Searcher, error) { return NewSearXNG(c.String("searxng_url")), nil },
+		New: func(c *config.Config) (Searcher, error) {
+			client, err := instanceClient(httpx.Default(), c)
+			if err != nil {
+				return nil, err
+			}
+			s := NewSearXNG(c.String("searxng_url"))
+			s.client = client
+			return s, nil
+		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
+			client, err := instanceClient(client, c)
+			if err != nil {
+				return health.StatusMisconfigured, err.Error()
+			}
 			return ProbeSearxng(ctx, client, c.String("searxng_url"))
 		},
 	}

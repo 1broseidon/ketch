@@ -168,6 +168,7 @@ func TestResolveGithubTokenKetchEnvWinsOverConfig(t *testing.T) {
 func TestScrubbedEnviron(t *testing.T) {
 	t.Setenv("KETCH_BRAVE_API_KEY", "secret")
 	t.Setenv("KETCH_GITHUB_TOKEN", "secret")
+	t.Setenv("KETCH_HTTP_HEADERS", `{"https://searx.example":{"X-A":"secret"}}`)
 	t.Setenv("KETCH_LIMIT", "9")
 	t.Setenv("UNRELATED_VAR", "keep")
 
@@ -176,7 +177,7 @@ func TestScrubbedEnviron(t *testing.T) {
 		name, _, _ := strings.Cut(kv, "=")
 		kept[name] = true
 	}
-	if kept["KETCH_BRAVE_API_KEY"] || kept["KETCH_GITHUB_TOKEN"] {
+	if kept["KETCH_BRAVE_API_KEY"] || kept["KETCH_GITHUB_TOKEN"] || kept["KETCH_HTTP_HEADERS"] {
 		t.Fatal("secret KETCH_ vars leaked into subprocess environ")
 	}
 	if !kept["KETCH_LIMIT"] || !kept["UNRELATED_VAR"] {

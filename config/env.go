@@ -122,6 +122,19 @@ func coreEnvSpecs() []envSpec {
 				return nil
 			},
 		},
+		{
+			key:    "http_headers",
+			secret: true,
+			prev:   func(*Config) string { return "" },
+			apply: func(c *Config, v string) error {
+				headers, err := ParseHTTPHeaders(v)
+				if err != nil {
+					return err
+				}
+				c.HTTPHeaders = headers
+				return nil
+			},
+		},
 		stringSpec("external_pdf_to_md_converter_command",
 			func(c *Config) *string { return &c.ExternalPDFToMDConverterCommand }),
 		{
@@ -200,7 +213,7 @@ func ScrubbedEnviron() []string {
 
 func envSpecs() []envSpec {
 	specs := coreEnvSpecs()
-	order := map[string]int{"backend": 0, "limit": 9, "cache_ttl": 10, "browser": 11, "code_backend": 12, "docs_backend": 13, "cookie_file": 16, "user_agent": 17, "mcp_tools": 18, "external_pdf_to_md_converter_command": 19, "external_pdf_to_md_converter_timeout_sec": 20, "extract_mode": 21}
+	order := map[string]int{"backend": 0, "limit": 9, "cache_ttl": 10, "browser": 11, "code_backend": 12, "docs_backend": 13, "cookie_file": 16, "user_agent": 17, "mcp_tools": 18, "external_pdf_to_md_converter_command": 19, "external_pdf_to_md_converter_timeout_sec": 20, "extract_mode": 21, "http_headers": 22}
 	for _, setting := range ProviderSettings() {
 		if setting.ManualEnv {
 			continue
