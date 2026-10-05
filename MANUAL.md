@@ -605,8 +605,9 @@ $ ketch config set degoog_url http://my-degoog:8090
 ```
 
 An instance behind an auth proxy, such as Cloudflare Access, takes headers
-keyed by its origin. SearXNG, Firecrawl (with `firecrawl_url`), and Degoog
-send them, on searches and on `ketch doctor` probes:
+keyed by its origin. Every backend with a configurable instance URL — SearXNG,
+Firecrawl (`firecrawl_url`), Degoog, and Sourcegraph (`sourcegraph_url`) —
+sends them, on searches and on `ketch doctor` probes:
 
 ```console
 $ ketch config set http_headers '{"https://searx.example.com":{"CF-Access-Client-Id":"<id>","CF-Access-Client-Secret":"<secret>"}}'
@@ -688,7 +689,7 @@ $ ketch browser status
 - `extract_mode` — `clean` (default) or `complete`; a non-default mode scopes cached pages, so a page cached under one mode is never reused under the other
 - `mcp_tools` — allowlist of MCP tools to publish; unset publishes all six
 - `external_pdf_to_md_converter_command` — external PDF-to-Markdown converter; must contain exactly one `{input}` placeholder. Once set it is authoritative, with no silent fallback
-- `http_headers` — headers for self-hosted SearXNG, Firecrawl, and Degoog instances, keyed by origin (see Self-hosted under Backends); values are secrets
+- `http_headers` — headers for self-hosted SearXNG, Firecrawl, Degoog, and Sourcegraph instances, keyed by origin (see Self-hosted under Backends); values are secrets
 
 ## Exit status
 

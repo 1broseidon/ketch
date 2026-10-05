@@ -32,9 +32,9 @@ type Config struct {
 	providerSchema                     []Setting
 	providerOrder                      map[string]int
 
-	// HTTPHeaders maps an origin (scheme://host[:port]) to headers the
-	// self-hosted search providers send it, e.g. Cloudflare Access service
-	// tokens. Values are secrets: never printed or echoed.
+	// HTTPHeaders maps an origin (scheme://host[:port]) to headers that
+	// providers with a configurable instance URL send it, e.g. Cloudflare
+	// Access service tokens. Values are secrets: never printed or echoed.
 	HTTPHeaders map[string]map[string]string `json:"http_headers,omitempty" order:"31"`
 }
 
