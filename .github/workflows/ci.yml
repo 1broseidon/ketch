@@ -49,6 +49,7 @@ jobs:
         os:
           - ubuntu-latest
           - macos-26
+          - windows-latest
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -60,4 +61,4 @@ jobs:
           cache: true
 
       - name: Test
-        run: make test
+        run: go test ./...
