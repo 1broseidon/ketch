@@ -88,7 +88,7 @@ func runCrawl(cmd *cobra.Command, args []string) error {
 
 	var (
 		mu        sync.Mutex
-		count     int
+		pageCount int
 		newCount  int
 		changed   int
 		unchanged int
@@ -100,12 +100,9 @@ func runCrawl(cmd *cobra.Command, args []string) error {
 	fn := func(r crawl.Result) {
 		mu.Lock()
 		defer mu.Unlock()
-		count++
-
 		if r.Error != "" {
 			errCount++
 			fmt.Fprintf(os.Stderr, "warn: %s: %s\n", r.URL, r.Error)
-			return
 		}
 
 		switch r.Status {
@@ -120,6 +117,7 @@ func runCrawl(cmd *cobra.Command, args []string) error {
 		if r.Page == nil {
 			return
 		}
+		pageCount++
 		tw.record(scraper, r.URL, r.Page)
 
 		if asJSON {
@@ -136,7 +134,7 @@ func runCrawl(cmd *cobra.Command, args []string) error {
 	err = crawl.Crawl(cmd.Context(), seed, scraper, opts, pc, sitemap, fn)
 
 	duration := time.Since(start)
-	printCrawlSummary(seed, count, newCount, changed, unchanged, errCount, duration)
+	printCrawlSummary(seed, pageCount, newCount, changed, unchanged, errCount, duration)
 	return classifyCrawlFailure(err)
 }
 
@@ -192,11 +190,11 @@ func printCrawlJSON(r crawl.Result) {
 	fmt.Println(string(data))
 }
 
-func printCrawlSummary(seed string, total, newC, changed, unchanged, errors int, d time.Duration) {
+func printCrawlSummary(seed string, pages, newC, changed, unchanged, errors int, d time.Duration) {
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "---")
 	fmt.Fprintf(os.Stderr, "seed: %s\n", seed)
-	fmt.Fprintf(os.Stderr, "pages: %d\n", total-errors)
+	fmt.Fprintf(os.Stderr, "pages: %d\n", pages)
 	fmt.Fprintf(os.Stderr, "new: %d\n", newC)
 	fmt.Fprintf(os.Stderr, "changed: %d\n", changed)
 	fmt.Fprintf(os.Stderr, "unchanged: %d\n", unchanged)

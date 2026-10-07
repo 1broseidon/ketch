@@ -388,12 +388,22 @@ $ ketch cache
 $ ketch cache clear
 ```
 
-bbolt-backed, 72-hour default TTL. Repeat scrapes and crawls read from cache,
-with no refetch. The file is opened only for each read or write, so the CLI,
-background crawls and any number of MCP servers share it. Expired pages are
-swept automatically. `ketch cache` also reports the tag index — path, tag and
-entry counts. `cache clear` deletes the page cache, returning its space, and
-leaves bookmarks alone.
+bbolt-backed, 72-hour default TTL. Repeat scrapes and crawls read from cache
+when their required data is present. Crawl entries also store every resolved
+outgoing HTTP(S) link, including external URLs and query strings, beside the
+page for the same TTL. This link metadata does not require or store full HTML,
+and is not sent elsewhere. A deeper crawl fetches a still-fresh
+page when its link metadata is unknown, and a later ordinary scrape refresh can
+make the metadata unknown again. If that backfill fetch fails, crawl returns the
+cached page and reports that link discovery is incomplete: on the CLI the
+diagnostic goes to stderr while JSON page output stays on stdout; MCP returns
+the page in `pages` and the diagnostic in `errors`; background status counts
+the returned page and error, without retaining the individual diagnostic text.
+The file is opened only for each read or write, so the CLI, background crawls
+and any number of MCP servers share it. Expired pages are swept automatically.
+`ketch cache` also reports the tag index — path, tag and entry counts.
+`cache clear` deletes the page cache, returning its space, and leaves bookmarks
+alone.
 
 #### doctor — Live health check of every surface
 
@@ -641,7 +651,7 @@ $ KETCH_CONFIG=/etc/ketch/config.json ketch config
 - `ketch config` reports an `env_overrides` section, so you can always see which values came from the environment.
 - Invalid values fail loudly, naming the offending variable. Secret `KETCH_*` vars are stripped from spawned subprocesses.
 
-#### Page cache — bbolt, 72h TTL, single-process
+#### Page cache — bbolt, 72h TTL, shared across processes
 
 ```console
 $ ketch cache          # stats
@@ -649,11 +659,10 @@ $ ketch cache clear
 $ ketch scrape <url> --no-cache
 ```
 
-The cache is single-process. A long-running MCP server holds the lock, so
-concurrent CLI scrapes silently run cache-disabled — `ketch doctor` reports the
-cache as locked by another process. Bookmarks are separate: `tags.db` is opened
-only for short index operations, so a server holding `cache.db` never blocks
-`ketch tag`.
+The page cache opens bbolt only for individual operations, so an idle MCP
+server holds no cache lock and can share the cache with CLI and background
+crawls. Bookmarks are separate: `tags.db` is also opened only for short index
+operations.
 
 #### Browser rendering — Fast path first, Chrome on detection
 
@@ -764,5 +773,5 @@ is this manual as plain Markdown.
 - **`docs` resolve never returns empty.** Garbage in gets confident fuzzy matches out, so vet the name rather than trusting the score.
 - **Regex is per-backend.** grepapp and sourcegraph accept it; github rejects it with a pointer to the other two.
 - **Background crawls are CLI-only.** The MCP `crawl` tool is synchronous and capped at 30 pages by default, 100 hard, three minutes wall clock.
-- **The page cache is single-process.** Running the MCP server long-term degrades concurrent CLI scrapes to uncached.
+- **The page cache is shared across processes.** An idle MCP server holds no page-cache lock; individual operations open and close the bbolt file.
 - **Bookmarks are not cache entries.** `cached: false` in `tag show` means no fresh local body, not a dead link; the bookmark stays until `tag remove`.

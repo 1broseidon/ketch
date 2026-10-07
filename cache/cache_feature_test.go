@@ -70,6 +70,34 @@ func TestFeatureSourceRoundTrip(t *testing.T) {
 	}
 }
 
+func TestFeatureCrawlLinksDistinguishUnknownFromKnownLeaf(t *testing.T) {
+	t.Parallel()
+	c := newTestCache(t, time.Hour)
+	page := &scrape.Page{URL: "https://example.com/"}
+
+	c.Put("https://example.com/", page, scrape.SourceHTTP)
+	if got, _, links, known := c.GetCrawl("https://example.com/"); got == nil || known || links != nil {
+		t.Fatalf("page-only entry = (%v, %v, %v), want page with unknown links", got, links, known)
+	}
+
+	c.PutCrawl("https://example.com/", page, scrape.SourceHTTP, []string{})
+	got, source, links, known := c.GetCrawl("https://example.com/")
+	if got == nil || source != scrape.SourceHTTP || !known || links == nil || len(links) != 0 {
+		t.Fatalf("known-leaf entry = (%v, %q, %#v, %v), want page/source/known empty links", got, source, links, known)
+	}
+
+	c.PutCrawl("https://example.com/", page, scrape.SourceHTTP, []string{"https://example.com/child"})
+	_, _, links, known = c.GetCrawl("https://example.com/")
+	if !known || len(links) != 1 || links[0] != "https://example.com/child" {
+		t.Fatalf("links = (%#v, %v), want known child link", links, known)
+	}
+
+	c.Put("https://example.com/", page, scrape.SourceHTTP)
+	if _, _, links, known = c.GetCrawl("https://example.com/"); known || links != nil {
+		t.Fatalf("ordinary Put retained crawl links = (%#v, %v), want unknown", links, known)
+	}
+}
+
 func TestFeatureGetExpiredTTL(t *testing.T) {
 	t.Parallel()
 	// Use a TTL of 1 nanosecond — entries expire immediately

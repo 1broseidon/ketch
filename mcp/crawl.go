@@ -149,7 +149,6 @@ func (c *crawlCollector) collect(r crawl.Result) {
 	}
 	if r.Error != "" {
 		c.errs = append(c.errs, CrawlError{URL: r.URL, Error: r.Error})
-		return
 	}
 	if r.Page == nil {
 		return

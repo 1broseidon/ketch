@@ -22,7 +22,9 @@ type Options struct {
 	Deny        []string // regex patterns to reject URLs
 }
 
-// Result represents a single crawled page.
+// Result represents one crawl outcome. A partial result may include both
+// Page and Error when a cached page is returned but link discovery could not
+// be completed.
 type Result struct {
 	Page   *scrape.Page `json:"page,omitempty"`
 	Depth  int          `json:"depth"`
@@ -200,19 +202,7 @@ func (c *crawler) processItem(item queueItem) {
 	// is the canonical fetch URL. The cache key folds in any matching cookies
 	// so cookie-bearing fetches don't collide with anonymous cached copies.
 	cacheKey := c.scraper.CacheKey(item.url)
-	cached, cachedSource := c.pc.Get(cacheKey)
-
-	// Cache hit: use cached page, skip fetch entirely, unless the entry
-	// is an unrendered JS-shell extraction and a browser is now available.
-	// Use --no-cache to force re-fetch for change detection.
-	if cached != nil && !scrape.CacheStaleForBrowser(cachedSource, c.scraper.HasBrowser()) {
-		c.fn(Result{
-			Page:   cached,
-			Depth:  item.depth,
-			Status: "unchanged",
-			Source: item.source,
-			URL:    item.url,
-		})
+	if c.processCachedItem(item, cacheKey) {
 		return
 	}
 
@@ -247,6 +237,24 @@ func (c *crawler) processItem(item queueItem) {
 	}
 
 	if err != nil {
+		// A non-stale cache hit is still useful when legacy/ordinary-scrape
+		// metadata cannot be backfilled. Keep the page and report that link
+		// discovery is incomplete. Cancellation is handled separately and must
+		// never turn a stopped fetch into a successful-looking fallback.
+		if fallback, ok := c.cachedFallback(item, cacheKey); ok && c.ctx.Err() == nil {
+			c.fn(Result{
+				Page:   fallback,
+				Depth:  item.depth,
+				Status: "unchanged",
+				Source: item.source,
+				Error:  "link discovery incomplete; cached page returned after backfill failed: " + err.Error(),
+				URL:    item.url,
+			})
+			return
+		}
+		if c.ctx.Err() != nil {
+			return
+		}
 		c.fn(Result{
 			URL:    item.url,
 			Depth:  item.depth,
@@ -256,7 +264,21 @@ func (c *crawler) processItem(item queueItem) {
 		return
 	}
 
-	c.pc.Put(cacheKey, page, fetchSource)
+	c.handleFetchedPage(item, cacheKey, page, fetchSource, contentIsHTML, rawHTML, doc)
+}
+
+func (c *crawler) handleFetchedPage(item queueItem, cacheKey string, page *scrape.Page, fetchSource string, contentIsHTML bool, rawHTML string, doc *goquery.Document) {
+	var links []string
+	linksKnown := !contentIsHTML
+	if contentIsHTML {
+		links = extractLinks(item.url, doc, rawHTML)
+		linksKnown = true
+	}
+	if linksKnown {
+		c.pc.PutCrawl(cacheKey, page, fetchSource, links)
+	} else {
+		c.pc.Put(cacheKey, page, fetchSource)
+	}
 	c.fn(Result{
 		Page:   page,
 		Depth:  item.depth,
@@ -265,9 +287,45 @@ func (c *crawler) processItem(item queueItem) {
 		URL:    item.url,
 	})
 
-	if item.depth < c.opts.Depth && contentIsHTML && rawHTML != "" {
-		c.enqueueLinks(item, doc, rawHTML)
+	if item.depth < c.opts.Depth && linksKnown && contentIsHTML {
+		c.enqueueLinks(item, links)
 	}
+}
+
+func (c *crawler) processCachedItem(item queueItem, cacheKey string) bool {
+	cached, source, links, linksKnown := c.pc.GetCrawl(cacheKey)
+	if cached == nil || scrape.CacheStaleForBrowser(source, c.scraper.HasBrowser()) {
+		return false
+	}
+	// A page-only entry from before link caching (or from a regular scrape)
+	// must be fetched once when the crawl needs its links. At the depth limit,
+	// an unknown link set is irrelevant and the cached page remains reusable.
+	if !linksKnown && item.depth < c.opts.Depth {
+		return false
+	}
+	c.fn(Result{
+		Page:   cached,
+		Depth:  item.depth,
+		Status: "unchanged",
+		Source: item.source,
+		URL:    item.url,
+	})
+	if linksKnown && item.depth < c.opts.Depth {
+		c.enqueueLinks(item, links)
+	}
+	return true
+}
+
+// cachedFallback returns a reusable page only when its cache entry is not
+// stale for the currently configured browser and link metadata is missing.
+// It is used only after a backfill fetch fails.
+func (c *crawler) cachedFallback(item queueItem, cacheKey string) (*scrape.Page, bool) {
+	cached, source, _, linksKnown := c.pc.GetCrawl(cacheKey)
+	if cached == nil || linksKnown || item.depth >= c.opts.Depth ||
+		scrape.CacheStaleForBrowser(source, c.scraper.HasBrowser()) {
+		return nil, false
+	}
+	return cached, true
 }
 
 func (c *crawler) recordJSDetection(rawURL, detection string) {
@@ -302,10 +360,8 @@ func (c *crawler) shouldForceBrowser(rawURL string) bool {
 	return float64(s.shells)/float64(s.total) > 0.8
 }
 
-// enqueueLinks reuses doc if non-nil (shared from ScrapeConditional) and
-// otherwise parses html. Crawls of static pages skip the re-parse entirely.
-func (c *crawler) enqueueLinks(parent queueItem, doc *goquery.Document, html string) {
-	links := extractLinks(parent.url, doc, html)
+// enqueueLinks schedules the resolved links found in the page's HTML.
+func (c *crawler) enqueueLinks(parent queueItem, links []string) {
 	for _, link := range links {
 		c.enqueue(link, parent.depth+1, "link")
 	}
@@ -390,6 +446,7 @@ func extractLinks(pageURL string, doc *goquery.Document, html string) []string {
 	}
 
 	var links []string
+	seen := make(map[string]struct{})
 	doc.Find("a[href]").Each(func(_ int, s *goquery.Selection) {
 		href, exists := s.Attr("href")
 		if !exists || href == "" {
@@ -397,6 +454,10 @@ func extractLinks(pageURL string, doc *goquery.Document, html string) []string {
 		}
 		resolved := resolveURL(base, href)
 		if resolved != "" {
+			if _, exists := seen[resolved]; exists {
+				return
+			}
+			seen[resolved] = struct{}{}
 			links = append(links, resolved)
 		}
 	})
