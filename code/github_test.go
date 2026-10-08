@@ -1,8 +1,11 @@
 package code_test
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -19,9 +22,37 @@ func TestGitHubBuildRunsGHOnce(t *testing.T) {
 	}
 	dir := t.TempDir()
 	count := filepath.Join(dir, "calls")
-	script := "#!/bin/sh\necho call >> " + count + "\necho fixture-token\n"
-	if err := os.WriteFile(filepath.Join(dir, "gh"), []byte(script), 0o755); err != nil {
+	// Use a native executable so the fixture also works without a Unix shell.
+	source := fmt.Sprintf(`package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	f, err := os.OpenFile(%q, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil { panic(err) }
+	if _, err := f.WriteString("call\n"); err != nil { panic(err) }
+	if err := f.Close(); err != nil { panic(err) }
+	if len(os.Args) != 3 || os.Args[1] != "auth" || os.Args[2] != "token" {
+		os.Exit(1)
+	}
+	fmt.Println("fixture-token")
+}
+`, count)
+	sourcePath := filepath.Join(dir, "gh.go")
+	if err := os.WriteFile(sourcePath, []byte(source), 0o600); err != nil {
 		t.Fatal(err)
+	}
+	gh := filepath.Join(dir, "gh")
+	if runtime.GOOS == "windows" {
+		gh += ".exe"
+	}
+	build := exec.Command("go", "build", "-o", gh, sourcePath)
+	build.Env = append(os.Environ(), "CGO_ENABLED=0")
+	if out, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("build gh fixture: %v\n%s", err, out)
 	}
 	t.Setenv("PATH", dir)
 	configbase.ResetGHCLICache()

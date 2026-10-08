@@ -1,0 +1,7 @@
+# PDF byte offsets must survive checkout unchanged, including text-only PDFs.
+*.pdf binary
+
+# Golden tests compare exact output bytes; keep fixtures LF on every platform.
+cmd/testdata/*.json text eol=lf
+cmd/testdata/*.txt text eol=lf
+doctor/testdata/*.json text eol=lf
