@@ -206,8 +206,21 @@ func sourcegraphProvider() Provider {
 		ID:       "sourcegraph",
 		Name:     "Sourcegraph",
 		Usable:   func(*config.Config) bool { return true },
-		New:      func(c *config.Config) (Searcher, error) { return NewSourcegraph(c.String("sourcegraph_url")), nil },
+		New: func(c *config.Config) (Searcher, error) {
+			// http_headers reach a self-hosted instance's origin only.
+			client, err := httpx.WithOriginHeaders(sourcegraphClient, c.HTTPHeaders)
+			if err != nil {
+				return nil, fmt.Errorf("http_headers: %w", err)
+			}
+			s := NewSourcegraph(c.String("sourcegraph_url"))
+			s.client = client
+			return s, nil
+		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
+			client, err := httpx.WithOriginHeaders(client, c.HTTPHeaders)
+			if err != nil {
+				return health.StatusMisconfigured, "http_headers: " + err.Error()
+			}
 			return health.ProbeReachable(ctx, client, c.String("sourcegraph_url"), "sourcegraph")
 		},
 	}

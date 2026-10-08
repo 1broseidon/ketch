@@ -614,6 +614,22 @@ $ ketch config set searxng_url http://my-searxng:8080
 $ ketch config set degoog_url http://my-degoog:8090
 ```
 
+An instance behind an auth proxy, such as Cloudflare Access, takes headers
+keyed by its origin. Every backend with a configurable instance URL — SearXNG,
+Firecrawl (`firecrawl_url`), Degoog, and Sourcegraph (`sourcegraph_url`) —
+sends them, on searches and on `ketch doctor` probes:
+
+```console
+$ ketch config set http_headers '{"https://searx.example.com":{"CF-Access-Client-Id":"<id>","CF-Access-Client-Secret":"<secret>"}}'
+```
+
+Headers go only to requests whose scheme, host, and port match the key, so a
+redirect to another origin, or a `--searxng-url` pointing elsewhere, never
+carries them. A header the provider sets itself, such as Firecrawl's
+`Authorization`, wins. `ketch config` lists the header names, never the
+values, and neither `ketch doctor` nor an error message ever prints one — an
+error that quotes an instance's response redacts them. Setting `http_headers` replaces the whole map; `'{}'` clears it.
+
 #### Code and docs — grepapp, sourcegraph, github, context7
 
 Grep and Sourcegraph need nothing. GitHub uses `gh auth login`,
@@ -646,6 +662,7 @@ $ KETCH_CONFIG=/etc/ketch/config.json ketch config
 #### Environment details — Lists, tokens, and what's file-only
 
 - Per-provider key vars accept a comma-separated list and replace the provider's whole key pool — there are no plural `*_API_KEYS` vars.
+- `KETCH_HTTP_HEADERS` takes the same JSON object as `http_headers` and replaces it whole.
 - `KETCH_GITHUB_TOKEN` beats the config file, which beats an ambient `$GITHUB_TOKEN`.
 - `url_rewrites` and `spa_markers` are file-only — their JSON and regex values don't survive env quoting.
 - `ketch config` reports an `env_overrides` section, so you can always see which values came from the environment.
@@ -673,7 +690,7 @@ $ ketch browser install                 # download Chromium
 $ ketch browser status
 ```
 
-#### Other keys — Rewrites, SPA markers, user agent, extraction mode, PDF converter
+#### Other keys — Rewrites, SPA markers, user agent, extraction mode, PDF converter, instance headers
 
 - `url_rewrites` — regex rewrites applied before fetch
 - `spa_markers` — extra tokens for JS-shell detection
@@ -682,6 +699,7 @@ $ ketch browser status
 - `extract_mode` — `clean` (default) or `complete`; a non-default mode scopes cached pages, so a page cached under one mode is never reused under the other
 - `mcp_tools` — allowlist of MCP tools to publish; unset publishes all six
 - `external_pdf_to_md_converter_command` — external PDF-to-Markdown converter; must contain exactly one `{input}` placeholder. Once set it is authoritative, with no silent fallback
+- `http_headers` — headers for self-hosted SearXNG, Firecrawl, Degoog, and Sourcegraph instances, keyed by origin (see Self-hosted under Backends); values are secrets
 
 ## Exit status
 

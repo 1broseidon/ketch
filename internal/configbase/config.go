@@ -31,6 +31,11 @@ type Config struct {
 	ProviderSettings                   map[string]any    `json:"-"`
 	providerSchema                     []Setting
 	providerOrder                      map[string]int
+
+	// HTTPHeaders maps an origin (scheme://host[:port]) to headers that
+	// providers with a configurable instance URL send it, e.g. Cloudflare
+	// Access service tokens. Values are secrets: never printed or echoed.
+	HTTPHeaders map[string]map[string]string `json:"http_headers,omitempty" order:"31"`
 }
 
 // mergeKeys builds an effective key pool with the legacy singular key first.

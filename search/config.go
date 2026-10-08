@@ -3,13 +3,38 @@ package search
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
+	"github.com/1broseidon/ketch/httpx"
 	config "github.com/1broseidon/ketch/internal/configbase"
 )
 
 // ErrUnknownBackend identifies an unknown provider; missing prerequisites do not wrap it.
 var ErrUnknownBackend = errors.New("unknown search backend")
+
+// instanceClient returns base with the operator's http_headers applied. The
+// providers that talk to an operator-run instance (SearXNG, Firecrawl, Degoog)
+// use it for searches and doctor probes; headers reach only their origins.
+func instanceClient(base *http.Client, c *config.Config) (*http.Client, error) {
+	client, err := httpx.WithOriginHeaders(base, c.HTTPHeaders)
+	if err != nil {
+		return nil, fmt.Errorf("http_headers: %w", err)
+	}
+	return client, nil
+}
+
+// headerValues lists every configured http_headers value, so an error that
+// quotes a response body can redact them.
+func headerValues(c *config.Config) []string {
+	var values []string
+	for _, headers := range c.HTTPHeaders {
+		for _, value := range headers {
+			values = append(values, value)
+		}
+	}
+	return values
+}
 
 // NewFromConfig constructs a registered search provider, or the auto fallback
 // chain. The existing SearXNG per-call override is applied to a copy,

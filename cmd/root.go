@@ -28,7 +28,7 @@ var rootCmd = &cobra.Command{
 	PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 		prepareUpdateNotice(cmd)
 		if cfgErr != nil && commandUsesConfig(cmd) {
-			return exitErrf(ExitValidation, "invalid environment configuration:\n%v", cfgErr)
+			return exitErrf(ExitValidation, "invalid configuration:\n%v", cfgErr)
 		}
 		return nil
 	},

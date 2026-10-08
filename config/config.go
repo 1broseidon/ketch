@@ -2,11 +2,14 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/1broseidon/ketch/code"
 	"github.com/1broseidon/ketch/docs"
+	"github.com/1broseidon/ketch/httpx"
 	"github.com/1broseidon/ketch/internal/configbase"
 	"github.com/1broseidon/ketch/search"
 )
@@ -75,10 +78,15 @@ func LoadFile() Config {
 // environment variables (precedence: env > file > default), plus the
 // provenance of every env override. On invalid env values it returns a
 // best-effort config (valid vars applied, invalid ones skipped) alongside a
-// descriptive error; callers decide when to surface it.
+// descriptive error; callers decide when to surface it. An invalid
+// http_headers is reported the same way and dropped, so no request sends it.
 func Load() (LoadResult, error) {
 	cfg := LoadFile()
 	overrides, err := applyEnv(&cfg)
+	if headerErr := httpx.ValidateOriginHeaders(cfg.HTTPHeaders); headerErr != nil {
+		cfg.HTTPHeaders = nil
+		err = errors.Join(err, fmt.Errorf("http_headers: %w", headerErr))
+	}
 	return LoadResult{Config: cfg, Overrides: overrides}, err
 }
 
