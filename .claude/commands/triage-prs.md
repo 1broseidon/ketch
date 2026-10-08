@@ -12,9 +12,11 @@ low-risk, and flag everything else for human approval. Work the loop below
 ## State memory (idempotency)
 
 The `triaged` label is your memory. An item carrying `triaged` was already
-handled on a prior run — skip it unless it has new activity since that label was
-applied. Apply `triaged` to every item only AFTER you finish handling it. This
-makes the loop safe to run daily without redoing work.
+handled on a prior run — **never re-triage it**, regardless of new comments,
+commits, or other activity since the label was applied. The only exception is an
+explicit request from the user (in the run's prompt or a live message) to
+re-triage a named item. Apply `triaged` to every item only AFTER you finish
+handling it. This makes the loop safe to run daily without redoing work.
 
 ## DISCOVER
 
@@ -23,9 +25,8 @@ gh pr list   --state open --json number,title,updatedAt,labels --search '-label:
 gh issue list --state open --json number,title,updatedAt,labels --search '-label:triaged'
 ```
 
-Also re-include any `triaged` item whose latest comment/commit is newer than the
-`triaged` label (new human activity = re-triage). If nothing is left to process,
-STOP and emit the digest (see below).
+Do NOT re-include `triaged` items, even ones with newer activity. If nothing is
+left to process, STOP and emit the digest (see below).
 
 ## PLAN (per item)
 
@@ -83,7 +84,7 @@ When no untriaged items remain, emit ONE rolled-up digest and send a push
 notification with the headline counts:
 - ✅ Auto-fixed (PR opened): list `#n → PR #m`
 - 🔎 Needs your review: list `#n → reason`
-- ⏭️ Skipped (already triaged, no new activity): count only
+- ⏭️ Skipped (already triaged): count only
 
 Use the PushNotification tool for the headline (e.g.
 "Ketch triage: 1 PR opened, 1 needs review"). Keep the full digest in your final
