@@ -617,7 +617,8 @@ Headers go only to requests whose scheme, host, and port match the key, so a
 redirect to another origin, or a `--searxng-url` pointing elsewhere, never
 carries them. A header the provider sets itself, such as Firecrawl's
 `Authorization`, wins. `ketch config` lists the header names, never the
-values. Setting `http_headers` replaces the whole map; `'{}'` clears it.
+values, and neither `ketch doctor` nor an error message ever prints one — an
+error that quotes an instance's response redacts them. Setting `http_headers` replaces the whole map; `'{}'` clears it.
 
 #### Code and docs — grepapp, sourcegraph, github, context7
 

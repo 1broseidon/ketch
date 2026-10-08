@@ -18,7 +18,8 @@ import (
 type Firecrawl struct {
 	keys     keyPool
 	client   *http.Client
-	endpoint string // full POST URL (base + /v2/search)
+	endpoint string   // full POST URL (base + /v2/search)
+	redact   []string // http_headers values, kept out of quoted error bodies
 }
 
 // NewFirecrawl creates a new Firecrawl search backend against the hosted API.
@@ -85,7 +86,7 @@ func (f *Firecrawl) Search(ctx context.Context, query string, limit int) ([]Resu
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, firecrawlSearchStatusError(resp, key, f.keys.keyLabel(key))
+		return nil, firecrawlSearchStatusError(resp, key, f.keys.keyLabel(key), f.redact)
 	}
 
 	var fr firecrawlResponse
@@ -131,7 +132,7 @@ func firecrawlRetryableStatus(status int) bool {
 	return status == http.StatusUnauthorized || status == http.StatusPaymentRequired || status == http.StatusTooManyRequests
 }
 
-func firecrawlSearchStatusError(resp *http.Response, key, keyLabel string) error {
+func firecrawlSearchStatusError(resp *http.Response, key, keyLabel string, redact []string) error {
 	switch resp.StatusCode {
 	case http.StatusUnauthorized:
 		if key == "" {
@@ -149,13 +150,21 @@ func firecrawlSearchStatusError(resp *http.Response, key, keyLabel string) error
 		}
 		return fmt.Errorf("firecrawl: rate limited (%s)", keyLabel)
 	default:
-		return firecrawlStatusError(resp)
+		return firecrawlStatusError(resp, redact)
 	}
 }
 
-func firecrawlStatusError(resp *http.Response) error {
+// firecrawlStatusError quotes the response body, which an auth proxy may echo
+// request headers into, so configured header values are redacted first.
+func firecrawlStatusError(resp *http.Response, redact []string) error {
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-	if detail := strings.TrimSpace(string(body)); detail != "" {
+	detail := string(body)
+	for _, value := range redact {
+		if value != "" {
+			detail = strings.ReplaceAll(detail, value, "[redacted]")
+		}
+	}
+	if detail = strings.TrimSpace(detail); detail != "" {
 		return fmt.Errorf("firecrawl returned status %d: %s", resp.StatusCode, detail)
 	}
 	return fmt.Errorf("firecrawl returned status %d", resp.StatusCode)
@@ -254,6 +263,7 @@ func firecrawlProvider() Provider {
 			}
 			f := newFirecrawlWithKeys(c.FirecrawlKeys(), c.EffectiveFirecrawlURL())
 			f.client = client
+			f.redact = headerValues(c)
 			return f, nil
 		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {

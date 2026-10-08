@@ -24,6 +24,18 @@ func instanceClient(base *http.Client, c *config.Config) (*http.Client, error) {
 	return client, nil
 }
 
+// headerValues lists every configured http_headers value, so an error that
+// quotes a response body can redact them.
+func headerValues(c *config.Config) []string {
+	var values []string
+	for _, headers := range c.HTTPHeaders {
+		for _, value := range headers {
+			values = append(values, value)
+		}
+	}
+	return values
+}
+
 // NewFromConfig constructs a registered search provider, or the auto fallback
 // chain. The existing SearXNG per-call override is applied to a copy,
 // preserving the shared configuration.

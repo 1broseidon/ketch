@@ -151,3 +151,54 @@ func TestValidateOriginHeadersNeverEchoesValues(t *testing.T) {
 		}
 	}
 }
+
+// hops fakes every server: it records the secret each URL received and
+// answers redirects[url] with a 302, anything else with a 204.
+type hops struct {
+	seen      map[string]string
+	redirects map[string]string
+}
+
+func (h hops) RoundTrip(req *http.Request) (*http.Response, error) {
+	u := req.URL.String()
+	h.seen[u] = req.Header.Get(secretHeader)
+	resp := &http.Response{StatusCode: http.StatusNoContent, Header: http.Header{}, Body: http.NoBody, Request: req}
+	if loc, ok := h.redirects[u]; ok {
+		resp.StatusCode = http.StatusFound
+		resp.Header.Set("Location", loc)
+	}
+	return resp, nil
+}
+
+// Headers for one origin must never follow a redirect to another host, another
+// port, or the same host over plain http.
+func TestWithOriginHeadersRedirects(t *testing.T) {
+	const start = "https://searx.example/search"
+	for _, tc := range []struct {
+		name, target, want string
+	}{
+		{"same origin", "https://searx.example/landed", "s3cret"},
+		{"same origin, explicit default port", "https://searx.example:443/landed", "s3cret"},
+		{"other host", "https://evil.example/landed", ""},
+		{"other port", "https://searx.example:8443/landed", ""},
+		{"https to http downgrade", "http://searx.example/landed", ""},
+		{"https to http downgrade on port 443", "http://searx.example:443/landed", ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := hops{seen: map[string]string{}, redirects: map[string]string{start: tc.target}}
+			c, err := WithOriginHeaders(&http.Client{Transport: fake}, map[string]map[string]string{
+				"https://searx.example": {secretHeader: "s3cret"},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			get(t, c, start)
+			if fake.seen[start] != "s3cret" {
+				t.Fatalf("configured origin got %q", fake.seen[start])
+			}
+			if got, ok := fake.seen[tc.target]; !ok || got != tc.want {
+				t.Fatalf("redirect target got %q (followed: %v), want %q", got, ok, tc.want)
+			}
+		})
+	}
+}
