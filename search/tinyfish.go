@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -68,7 +69,7 @@ func (t *TinyFish) Search(ctx context.Context, query string, limit int) ([]Resul
 			Snippet string `json:"snippet"`
 		} `json:"results"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&payload); err != nil {
 		return nil, fmt.Errorf("failed to decode tinyfish response: %w", err)
 	}
 	results := make([]Result, 0, min(limit, len(payload.Results)))
@@ -76,11 +77,26 @@ func (t *TinyFish) Search(ctx context.Context, query string, limit int) ([]Resul
 		if len(results) >= limit {
 			break
 		}
-		if strings.TrimSpace(r.URL) != "" {
-			results = append(results, Result{Title: r.Title, URL: r.URL, Description: r.Snippet})
+		if resultURL := tinyfishResultURL(r.URL); resultURL != "" {
+			results = append(results, Result{Title: r.Title, URL: resultURL, Description: r.Snippet})
 		}
 	}
 	return results, nil
+}
+
+func tinyfishResultURL(raw string) string {
+	u, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil {
+		return ""
+	}
+	// TinyFish sometimes returns Google's relative redirect instead of its target.
+	if u.Scheme == "" && u.Host == "" && u.Path == "/url" {
+		u, err = url.Parse(u.Query().Get("q"))
+	}
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" {
+		return ""
+	}
+	return u.String()
 }
 
 func (t *TinyFish) request(ctx context.Context, endpoint, key string) (*http.Response, error) {

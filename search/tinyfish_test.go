@@ -44,6 +44,38 @@ func TestTinyFishSearch(t *testing.T) {
 	}
 }
 
+func TestTinyFishSearchURLs(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, `{"results":[
+			{"url":"/url?opi=89978449&q=javascript%3Aalert(1)&sa=U&ved=stub"},
+			{"title":"PostgreSQL JSON_TABLE","url":"/url?opi=89978449&q=https://www.postgresql.org/docs/current/functions-json.html&sa=U&ved=stub","snippet":"JSON_TABLE docs"},
+			{"url":"/url?sa=U"},
+			{"url":"/url?q=%2Frelative"},
+			{"url":"/relative"},
+			{"url":"//example.com/page"},
+			{"url":"https:///missing-host"},
+			{"url":"https://example.com/%zz"},
+			{"url":"ftp://example.com/file"},
+			{"title":"Encoded query","url":"/url?q=https%3A%2F%2Fexample.com%2F%3Fq%3Da%2Bb%26next%3D%252Fdocs&sa=U","snippet":"Keep destination encoding"},
+			{"title":"Go","url":"http://go.dev/doc/","snippet":"Go docs"}
+		]}`)
+	}))
+	t.Cleanup(server.Close)
+	got, err := tinyfishBackend(server.URL, "test-key").Search(context.Background(), "postgres JSON_TABLE function", 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []Result{
+		{Title: "PostgreSQL JSON_TABLE", URL: "https://www.postgresql.org/docs/current/functions-json.html", Description: "JSON_TABLE docs"},
+		{Title: "Encoded query", URL: "https://example.com/?q=a+b&next=%2Fdocs", Description: "Keep destination encoding"},
+		{Title: "Go", URL: "http://go.dev/doc/", Description: "Go docs"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("results = %+v, want %+v", got, want)
+	}
+}
+
 func TestTinyFishErrors(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
@@ -56,6 +88,7 @@ func TestTinyFishErrors(t *testing.T) {
 		{http.StatusTooManyRequests, "secret-key", "rate limited"},
 		{http.StatusInternalServerError, "secret-key", "status 500"},
 		{http.StatusOK, "not json", "failed to decode tinyfish response"},
+		{http.StatusOK, `{"results":[{"snippet":"` + strings.Repeat("x", 1<<20) + `"}]}`, "failed to decode tinyfish response"},
 	} {
 		t.Run(tc.want+http.StatusText(tc.status), func(t *testing.T) {
 			t.Parallel()
