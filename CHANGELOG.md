@@ -9,6 +9,8 @@ verbatim on the GitHub release. Versions follow
 
 ## [Unreleased]
 
+**Added TinyFish as a web search backend.** Set `tinyfish_api_key` or `KETCH_TINYFISH_API_KEY` to search with `-b tinyfish`; a configured key also makes TinyFish available to `auto` and federated search. Results include titles, URLs, and snippets from the free Search API. TinyFish Fetch is not used.
+
 **Self-hosted instances behind Cloudflare Access (or any auth proxy) now work.** `http_headers` maps an instance's origin to the headers it needs, such as a Cloudflare Access service token: `ketch config set http_headers '{"https://searx.example.com":{"CF-Access-Client-Id":"…","CF-Access-Client-Secret":"…"}}'`. SearXNG, Firecrawl (with `firecrawl_url`), Degoog, and Sourcegraph (with `sourcegraph_url`) send them on searches and `ketch doctor` probes, only to that exact origin: a redirect elsewhere or a `--searxng-url` override never carries them. Values are treated as secrets: `ketch config` shows only header names, doctor output and errors never include them (an error quoting an instance's response redacts them), and `KETCH_HTTP_HEADERS` is kept from browser and PDF-converter subprocesses. An invalid `http_headers` in the config file now fails commands with exit 2, like an invalid `KETCH_*` variable.
 
 **Added `--repo` to `ketch code`.** `ketch code "NewFromConfig" --repo 1broseidon/ketch` searches one repository, and it means the same repository on every backend. grep.app and Sourcegraph filter more loosely than GitHub, so ketch keeps only exact matches: `--repo golang/go` no longer returns `golang/gofrontend`, and a named repository is searched even when it is archived or a fork. It takes `owner/name` or a GitHub URL, and the MCP `code` tool gains the matching `repo` option.

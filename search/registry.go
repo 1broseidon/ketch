@@ -70,6 +70,7 @@ var providers = []Provider{
 	firecrawlProvider(),
 	keenableProvider(),
 	tavilyProvider(),
+	tinyfishProvider(),
 	parallelProvider(),
 	serpbaseProvider(),
 	degoogProvider(),

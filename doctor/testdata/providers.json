@@ -45,6 +45,13 @@
   },
   {
     "surface": "search",
+    "backend": "tinyfish",
+    "status": "no_key",
+    "detail": "API key not set (get a free key at https://agent.tinyfish.ai/api-keys then: ketch config set tinyfish_api_key \u003ckey\u003e)",
+    "latency_ms": 0
+  },
+  {
+    "surface": "search",
     "backend": "parallel",
     "status": "ok",
     "latency_ms": 0
