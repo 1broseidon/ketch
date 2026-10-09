@@ -7,15 +7,19 @@ using ketch, written as prose, not a list of commits. The section is published
 verbatim on the GitHub release. Versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.19.0] - 2026-10-09
 
 **Added TinyFish as a web search backend.** Set `tinyfish_api_key` or `KETCH_TINYFISH_API_KEY` to search with `-b tinyfish`; a configured key also makes TinyFish available to `auto` and federated search. Results include titles, URLs, and snippets from the free Search API. TinyFish Fetch is not used.
 
-**Self-hosted instances behind Cloudflare Access (or any auth proxy) now work.** `http_headers` maps an instance's origin to the headers it needs, such as a Cloudflare Access service token: `ketch config set http_headers '{"https://searx.example.com":{"CF-Access-Client-Id":"…","CF-Access-Client-Secret":"…"}}'`. SearXNG, Firecrawl (with `firecrawl_url`), Degoog, and Sourcegraph (with `sourcegraph_url`) send them on searches and `ketch doctor` probes, only to that exact origin: a redirect elsewhere or a `--searxng-url` override never carries them. Values are treated as secrets: `ketch config` shows only header names, doctor output and errors never include them (an error quoting an instance's response redacts them), and `KETCH_HTTP_HEADERS` is kept from browser and PDF-converter subprocesses. An invalid `http_headers` in the config file now fails commands with exit 2, like an invalid `KETCH_*` variable.
+**Self-hosted instances behind Cloudflare Access (or any auth proxy) now work.** `http_headers` maps an instance's origin to the headers it needs, such as a Cloudflare Access service token: `ketch config set http_headers '{"https://searx.example.com":{"CF-Access-Client-Id":"…","CF-Access-Client-Secret":"…"}}'`. SearXNG, Firecrawl (with `firecrawl_url`), Degoog, and Sourcegraph (with `sourcegraph_url`) send them on searches and `ketch doctor` probes, only to that exact origin: a redirect elsewhere or a `--searxng-url` override never carries them. Values are treated as secrets: `ketch config` shows only header names, doctor output and errors never include them (an error quoting an instance's response redacts them), and `KETCH_HTTP_HEADERS` is kept from browser and PDF-converter subprocesses. An invalid `http_headers` in the config file now fails commands with exit 2, like an invalid `KETCH_*` variable. That error now begins `invalid configuration:` rather than `invalid environment configuration:`.
 
 **Added `--repo` to `ketch code`.** `ketch code "NewFromConfig" --repo 1broseidon/ketch` searches one repository, and it means the same repository on every backend. grep.app and Sourcegraph filter more loosely than GitHub, so ketch keeps only exact matches: `--repo golang/go` no longer returns `golang/gofrontend`, and a named repository is searched even when it is archived or a fork. It takes `owner/name` or a GitHub URL, and the MCP `code` tool gains the matching `repo` option.
 
 **A repository search no longer comes back empty without explanation.** grepapp searches the query as literal code, so a `repo:` or `lang:` typed into it matched nothing and exited 0; ketch now warns and points at `--repo` and `--lang`. A repository sourcegraph or GitHub cannot search exits 3 (`[not_found]` over MCP) and names the other backends. grepapp indexes a subset of public repositories, so an empty repository search there comes with a warning that the repository may be missing.
+
+**`scrape` and `crawl` fetch only web URLs.** After URL rewrites, a target that isn't an absolute `http(s)` URL, `file://` included, is now a validation error (exit 2, `[validation]` over MCP) instead of reaching the browser. The rest of a scrape batch still returns. Private and internal HTTP(S) addresses are still fetched when the host can reach them.
+
+**Fixed** warm crawls returning only the seed page. A crawl repeated against a fresh cache now reuses each page's cached links, so it finds the same pages as a cold crawl without refetching them.
 
 ## [0.18.1] - 2026-09-22
 
