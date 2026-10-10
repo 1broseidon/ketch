@@ -42,6 +42,27 @@ func ValidateOriginHeaders(headers map[string]map[string]string) error {
 	return err
 }
 
+// OriginHeaderNames lists the names of the headers configured for rawURL's
+// origin, canonical and sorted, or nil when there are none. It matches origins
+// exactly as WithOriginHeaders does, so a caller can report which headers a
+// request carried without handling a value.
+func OriginHeaderNames(headers map[string]map[string]string, rawURL string) []string {
+	u, err := url.Parse(strings.TrimSpace(rawURL))
+	if err != nil {
+		return nil
+	}
+	byOrigin, err := parseOriginHeaders(headers)
+	if err != nil || len(byOrigin[origin(u)]) == 0 {
+		return nil
+	}
+	names := make([]string, 0, len(byOrigin[origin(u)]))
+	for name := range byOrigin[origin(u)] {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
 func parseOriginHeaders(headers map[string]map[string]string) (map[string]http.Header, error) {
 	raws := make([]string, 0, len(headers))
 	for raw := range headers {

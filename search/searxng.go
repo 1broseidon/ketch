@@ -85,6 +85,12 @@ func (s *SearXNG) Search(ctx context.Context, query string, limit int) ([]Result
 
 // ProbeSearxng checks the provider using a caller-supplied client and endpoint.
 func ProbeSearxng(ctx context.Context, client *http.Client, baseURL string) (health.Status, string) {
+	return probeSearxng(ctx, client, baseURL, nil)
+}
+
+// probeSearxng is ProbeSearxng given the http_headers names configured for
+// baseURL's origin, so an auth proxy's rejection is not blamed on SearXNG.
+func probeSearxng(ctx context.Context, client *http.Client, baseURL string, headerNames []string) (health.Status, string) {
 	if baseURL == "" {
 		return health.StatusMisconfigured, "searxng_url not set (ketch config set searxng_url <url>)"
 	}
@@ -94,6 +100,14 @@ func ProbeSearxng(ctx context.Context, client *http.Client, baseURL string) (hea
 	}
 	defer resp.Body.Close()
 
+	status, detail := searxngProbeStatus(resp, baseURL)
+	if status == health.StatusOK {
+		return status, detail
+	}
+	return health.HeaderHint(resp, baseURL, headerNames, status, detail)
+}
+
+func searxngProbeStatus(resp *http.Response, baseURL string) (health.Status, string) {
 	switch resp.StatusCode {
 	case http.StatusOK:
 		var body struct {
@@ -142,7 +156,8 @@ func searxngProvider() Provider {
 			if err != nil {
 				return health.StatusMisconfigured, err.Error()
 			}
-			return ProbeSearxng(ctx, client, c.String("searxng_url"))
+			baseURL := c.String("searxng_url")
+			return probeSearxng(ctx, client, baseURL, httpx.OriginHeaderNames(c.HTTPHeaders, baseURL))
 		},
 	}
 }

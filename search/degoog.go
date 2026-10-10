@@ -90,6 +90,12 @@ func (d *Degoog) Search(ctx context.Context, query string, limit int) ([]Result,
 // ketch uses. An unset URL is misconfigured, as for SearXNG: when the backend
 // is selected that blocks doctor, otherwise it is an advisory problem.
 func ProbeDegoog(ctx context.Context, client *http.Client, baseURL string) (health.Status, string) {
+	return probeDegoog(ctx, client, baseURL, nil)
+}
+
+// probeDegoog is ProbeDegoog given the http_headers names configured for
+// baseURL's origin, so an auth proxy's rejection is not blamed on degoog.
+func probeDegoog(ctx context.Context, client *http.Client, baseURL string, headerNames []string) (health.Status, string) {
 	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
 	if baseURL == "" {
 		return health.StatusMisconfigured, "degoog_url not set (ketch config set degoog_url <url>)"
@@ -100,6 +106,14 @@ func ProbeDegoog(ctx context.Context, client *http.Client, baseURL string) (heal
 	}
 	defer health.Drain(resp)
 
+	status, detail := degoogProbeStatus(resp, baseURL)
+	if status == health.StatusOK {
+		return status, detail
+	}
+	return health.HeaderHint(resp, baseURL, headerNames, status, detail)
+}
+
+func degoogProbeStatus(resp *http.Response, baseURL string) (health.Status, string) {
 	switch resp.StatusCode {
 	case http.StatusOK:
 		var body struct {
@@ -143,7 +157,8 @@ func degoogProvider() Provider {
 			if err != nil {
 				return health.StatusMisconfigured, err.Error()
 			}
-			return ProbeDegoog(ctx, client, c.String("degoog_url"))
+			baseURL := c.String("degoog_url")
+			return probeDegoog(ctx, client, baseURL, httpx.OriginHeaderNames(c.HTTPHeaders, baseURL))
 		},
 	}
 }

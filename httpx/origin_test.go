@@ -202,3 +202,44 @@ func TestWithOriginHeadersRedirects(t *testing.T) {
 		})
 	}
 }
+
+func TestOriginHeaderNames(t *testing.T) {
+	headers := map[string]map[string]string{
+		"https://Searx.Example":       {"cf-access-client-secret": "s3cret", "CF-Access-Client-Id": "id-value"},
+		"http://plain.example":        {"X-Plain": "plain-value"},
+		"https://ported.example:8443": {"X-Ported": "ported-value"},
+	}
+	for rawURL, want := range map[string]string{
+		"https://searx.example":                    "Cf-Access-Client-Id,Cf-Access-Client-Secret",
+		"https://SEARX.example:443/search?q=ketch": "Cf-Access-Client-Id,Cf-Access-Client-Secret",
+		" https://searx.example/ ":                 "Cf-Access-Client-Id,Cf-Access-Client-Secret",
+		"http://plain.example:80/api":              "X-Plain",
+		"https://ported.example:8443/v2/search":    "X-Ported",
+		"http://searx.example":                     "", // scheme differs
+		"https://searx.example:8443":               "", // port differs
+		"https://ported.example":                   "",
+		"https://sub.searx.example":                "",
+		"searx.example":                            "",
+		"file:///etc/passwd":                       "",
+		"":                                         "",
+	} {
+		got := OriginHeaderNames(headers, rawURL)
+		if strings.Join(got, ",") != want {
+			t.Errorf("OriginHeaderNames(%q) = %v, want %q", rawURL, got, want)
+		}
+		if want == "" && got != nil {
+			t.Errorf("OriginHeaderNames(%q) = %#v, want nil", rawURL, got)
+		}
+		for _, value := range []string{"s3cret", "id-value", "plain-value", "ported-value"} {
+			if strings.Contains(strings.Join(got, ","), value) {
+				t.Errorf("OriginHeaderNames(%q) returned a header value", rawURL)
+			}
+		}
+	}
+	if got := OriginHeaderNames(nil, "https://searx.example"); got != nil {
+		t.Errorf("no headers: got %v, want nil", got)
+	}
+	if got := OriginHeaderNames(map[string]map[string]string{"not an origin": {"X-A": "v"}}, "https://searx.example"); got != nil {
+		t.Errorf("invalid headers: got %v, want nil", got)
+	}
+}
