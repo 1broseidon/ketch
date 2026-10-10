@@ -221,7 +221,8 @@ func sourcegraphProvider() Provider {
 			if err != nil {
 				return health.StatusMisconfigured, "http_headers: " + err.Error()
 			}
-			return health.ProbeReachable(ctx, client, c.String("sourcegraph_url"), "sourcegraph")
+			baseURL := c.String("sourcegraph_url")
+			return health.ProbeReachableWithHeaders(ctx, client, baseURL, "sourcegraph", httpx.OriginHeaderNames(c.HTTPHeaders, baseURL))
 		},
 	}
 }

@@ -631,6 +631,12 @@ carries them. A header the provider sets itself, such as Firecrawl's
 values, and neither `ketch doctor` nor an error message ever prints one — an
 error that quotes an instance's response redacts them. Setting `http_headers` replaces the whole map; `'{}'` clears it.
 
+When an instance with headers configured answers 401 or 403, or redirects to
+another origin such as a login page, `ketch doctor` reports it as
+misconfigured and names the origin and its header names, so an expired or
+mistyped token is not mistaken for a backend problem. A 401 or 403 can also
+come from the instance itself, so the backend's own advice follows the hint.
+
 #### Code and docs — grepapp, sourcegraph, github, context7
 
 Grep and Sourcegraph need nothing. GitHub uses `gh auth login`,
