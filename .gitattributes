@@ -1,0 +1,4 @@
+logs/ledger.jsonl merge=union
+board/*.md merge=brainfile
+logs/*.md merge=brainfile
+brainfile.md merge=brainfile
