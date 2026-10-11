@@ -1,6 +1,6 @@
 ---
 schema: https://brainfile.md/v2/board.json
-title: My Project
+title: Ketch
 agent:
   instructions:
     - Task files are individual .md files in board/
@@ -14,8 +14,8 @@ columns:
     title: In Progress
 ---
 
-# My Project
+# Ketch
 
-Add your project description here.
+ketch: search, scrape, crawl, docs and code research for agents. The benchmark corpus lives in 1broseidon/ketch-bench.
 
 > Note: Completing a task moves it to `logs/` via `brainfile complete`.
