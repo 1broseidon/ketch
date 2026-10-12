@@ -9,9 +9,11 @@ agent:
     - Make minimal changes
 columns:
   - id: todo
-    title: To Do
+    title: Will do
   - id: in-progress
-    title: In Progress
+    title: In progress
+  - id: wont-do
+    title: Won't do
 ---
 
 # Ketch
