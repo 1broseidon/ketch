@@ -7,7 +7,8 @@ priority: medium
 tags:
   - bro-72
 createdAt: "2026-10-11T21:01:29.644Z"
-updatedAt: "2026-10-11T21:19:48.755Z"
+updatedAt: "2026-10-12T20:32:21.784Z"
+assignee: claude
 ---
 
 ## Description
