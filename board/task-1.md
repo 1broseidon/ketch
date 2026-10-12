@@ -55,3 +55,6 @@ Migrated from Linear BRO-72: https://linear.app/1broseidon/issue/BRO-72/track-th
 ## Status (2026-10-11 review)
 
 winget PR microsoft/winget-pkgs#437139 still open (validation passed, back in manual review; moderator pinged 10-09 — the "do not ping" line above is out of date). npm gate done: all 6 @ketch-cli/* at 0.19.0. Close condition: after the winget merge, drop `--skip=winget` (.github/workflows/release.yml ~82).
+
+## Log
+- 2026-10-12T20:32:39.920Z: [claude] 2026-10-12 check: winget-pkgs#437139 still OPEN, not merged, REVIEW_REQUIRED (labels Azure-Pipeline-Passed, Validation-Completed, New-Package). Last activity: our 10-09 ping to stephengillie, no moderator reply or change request since. Close condition not met, so left open. Note: release.yml says --skip=winget also covers the v0.18.0 403 when WINGET_TOKEN opened the PR, so after the merge, check the token's permissions before dropping the skip.
