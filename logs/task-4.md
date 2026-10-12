@@ -1,15 +1,14 @@
 ---
 id: task-4
 title: "Bench corpus follow-ups: re-scope annotation-only failures, fill missing page kinds, prune reports"
-column: todo
-position: 2
 priority: low
 tags:
   - improvement
   - ketch-bench
   - bro-91
 createdAt: "2026-10-11T21:01:30.509Z"
-updatedAt: "2026-10-11T21:19:51.020Z"
+updatedAt: "2026-10-12T20:31:39.990Z"
+completedAt: "2026-10-12T20:31:39.990Z"
 ---
 
 ## Description
