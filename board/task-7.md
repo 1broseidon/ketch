@@ -43,3 +43,6 @@ description: |-
 source: https://github.com/1broseidon/ketch/issues/81
 createdAt: "2026-10-13T00:28:57.388Z"
 ---
+
+## Log
+- 2026-10-13T06:18:37.554Z: [claude] Audit 2026-10-13: still current — scrape/scrape.go:555 fails on any non-200. Precedent: classifyForForcedRender (scrape/pipeline.go:321) already lets a 403 probe fall through to the browser under --force-browser. Coordinate 429 handling with task-6 item 7 (bounded retry + Retry-After).
