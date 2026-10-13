@@ -57,3 +57,6 @@ description: |-
 source: https://github.com/1broseidon/ketch/issues/80
 createdAt: "2026-10-13T00:29:00.726Z"
 ---
+
+## Log
+- 2026-10-13T06:18:39.173Z: [claude] Audit 2026-10-13: still current; ranks quoted are right (Brave 30, TinyFish 45, Exa 80, DDG 120). Note that auto promotes configured providers first and uses rank as a tiebreak (search/auto.go:48-61). --random already takes an ordered list (cmd/search.go:44), so the fallback could be --random's list without the shuffle.
