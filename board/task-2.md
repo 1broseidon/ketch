@@ -24,3 +24,6 @@ Migrated from Linear BRO-75: https://linear.app/1broseidon/issue/BRO-75/ask-bone
 ## Status (2026-10-11 review)
 
 boneskull's `ketch` npm package unchanged since 2022-06-19 — a transfer ask looks realistic.
+
+## Log
+- 2026-10-13T06:18:31.602Z: [claude] Audit 2026-10-13: still current — npm `ketch` 1.0.0, last modified 2022-06-19.
