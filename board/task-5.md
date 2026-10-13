@@ -28,3 +28,6 @@ Migrated from Linear BRO-92: https://linear.app/1broseidon/issue/BRO-92/housekee
 ## Status (2026-10-11 review)
 
 Done: .agents/.anvil artifacts gone; MCP tool-set test covers the full set. Left: PruneLog/DebugSemanticRoot/DebugProseTrace still exported (extract/semantic.go ~594, 1868, 1893); cmd/readtest ships with the module; charset comment order (extract/charset.go ~10-15); rowspan behaviour and clean-mode heuristic undocumented; the error-text check at mcp/server_test.go ~100 omits `tag`.
+
+## Log
+- 2026-10-13T06:18:34.619Z: [claude] Audit 2026-10-13: all remaining items still open — PruneLog/DebugSemanticRoot/DebugProseTrace exported (extract/semantic.go:594,1868,1893); cmd/readtest/main.go present; DecodeHTML comment (extract/charset.go:10-15) still puts BOM after Content-Type; rowspan (extract/extract.go:27) and clean-mode heuristic undocumented; TestNewServerRejectsInvalidTools (mcp/server_test.go ~100) checks "valid: search, code, docs, scrape, crawl" without tag.
