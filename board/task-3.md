@@ -38,3 +38,6 @@ Migrated from Linear BRO-77: https://linear.app/1broseidon/issue/BRO-77/guidance
 ## Status (2026-10-11 review)
 
 Stale as written: site/.vitepress/theme/Home.vue is gone; ketch.run builds from MANUAL.md. The drift risk is now between skills/ketch/SKILL.md (+ references/surfaces.md) and MANUAL.md; MANUAL links to the skill but not back. Retitled from "Guidance in skills/ketch/SKILL.md and the site manual will drift apart".
+
+## Log
+- 2026-10-13T06:18:32.553Z: [claude] Audit 2026-10-13: still current — MANUAL.md:745-747 links to skills/ketch/, SKILL.md and references/ still don't link back.
