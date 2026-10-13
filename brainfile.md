@@ -9,7 +9,7 @@ agent:
     - Make minimal changes
 columns:
   - id: todo
-    title: Will do
+    title: To do
   - id: in-progress
     title: In progress
   - id: wont-do
