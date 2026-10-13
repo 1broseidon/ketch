@@ -62,3 +62,6 @@ Migrated from Linear BRO-93: https://linear.app/1broseidon/issue/BRO-93/crawl-an
 ## Status (2026-10-11 review)
 
 None of the 12 items in code yet; still accurate.
+
+## Log
+- 2026-10-13T06:18:36.308Z: [claude] Audit 2026-10-13: none of the 12 items landed — no cookiejar, CheckRedirect, robots, retry, Referer or gzip-sitemap handling in scrape/ or crawl/; passesFilters still exact-host (crawl/crawl.go:397); normalizeURL doesn't lowercase host or drop ports (crawl/crawl.go:371); max_pages still MCP-only (mcp/crawl.go). Item 7 (retry on 429) overlaps task-7.
