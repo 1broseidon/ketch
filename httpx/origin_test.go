@@ -243,3 +243,46 @@ func TestOriginHeaderNames(t *testing.T) {
 		t.Errorf("invalid headers: got %v, want nil", got)
 	}
 }
+
+// A header the request already sets wins however it is capitalised, so the
+// configured one is not sent beside it. Header.Get finds only the canonical
+// key, so a request that fills the map directly is the case that matters. A
+// header the request leaves empty does not count as set.
+func TestWithOriginHeadersDefersToARequestHeaderInAnyCase(t *testing.T) {
+	var got []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Header.Values("Authorization")
+	}))
+	defer srv.Close()
+	c, err := WithOriginHeaders(srv.Client(), map[string]map[string]string{srv.URL: {"authorization": "Bearer configured"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name string
+		set  func(http.Header)
+		want string
+	}{
+		{"canonical", func(h http.Header) { h.Set("Authorization", "Bearer own") }, "Bearer own"},
+		{"lower case", func(h http.Header) { h["authorization"] = []string{"Bearer own"} }, "Bearer own"},
+		{"upper case", func(h http.Header) { h["AUTHORIZATION"] = []string{"Bearer own"} }, "Bearer own"},
+		{"not set", func(http.Header) {}, "Bearer configured"},
+		{"set but empty", func(h http.Header) { h.Set("Authorization", "") }, "Bearer configured"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			req, err := http.NewRequest(http.MethodGet, srv.URL, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			tc.set(req.Header)
+			resp, err := c.Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_ = resp.Body.Close()
+			if len(got) != 1 || got[0] != tc.want {
+				t.Fatalf("server saw Authorization %q, want just %q", got, tc.want)
+			}
+		})
+	}
+}

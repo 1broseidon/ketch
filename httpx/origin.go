@@ -14,8 +14,9 @@ import (
 // WithOriginHeaders returns a copy of client that adds headers[origin] to
 // every request sent to that origin, such as Cloudflare Access service-token
 // headers for a self-hosted instance. Keys are origins (scheme://host[:port]);
-// a header the request already sets is left as is. The copy shares client's
-// transport, so connections stay pooled. With no headers it returns client.
+// a header the request already sets, in any capitalisation, is left as is. The
+// copy shares client's transport, so connections stay pooled. With no headers
+// it returns client.
 //
 // Headers are added per round trip, and only when that hop's scheme, host and
 // effective port match. http.Client builds each redirect from the caller's
@@ -147,9 +148,21 @@ func (t *originHeaderTransport) RoundTrip(req *http.Request) (*http.Response, er
 		req.Header = make(http.Header)
 	}
 	for name, values := range headers {
-		if _, set := req.Header[name]; !set {
+		if !headerSet(req.Header, name) {
 			req.Header[name] = append([]string(nil), values...)
 		}
 	}
 	return t.base.RoundTrip(req)
+}
+
+// headerSet reports whether h carries a value for name under any
+// capitalisation. Header.Get alone finds only the canonical key, and a request
+// that sets "authorization" directly in the map would be sent both.
+func headerSet(h http.Header, name string) bool {
+	for key, values := range h {
+		if strings.EqualFold(key, name) && len(values) > 0 && values[0] != "" {
+			return true
+		}
+	}
+	return false
 }

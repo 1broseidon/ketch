@@ -24,6 +24,7 @@ const DefaultSearxngURL = "http://localhost:8081"
 type SearXNG struct {
 	baseURL string
 	client  *http.Client
+	redact  *httpx.Redactor // http_headers values, kept out of errors
 }
 
 // NewSearXNG creates a new SearXNG search backend.
@@ -46,6 +47,11 @@ type searxngResult struct {
 
 // Search queries SearXNG and returns up to limit results.
 func (s *SearXNG) Search(ctx context.Context, query string, limit int) ([]Result, error) {
+	results, err := s.search(ctx, query, limit)
+	return results, s.redact.Error(err)
+}
+
+func (s *SearXNG) search(ctx context.Context, query string, limit int) ([]Result, error) {
 	u := fmt.Sprintf("%s/search?q=%s&format=json&pageno=1", s.baseURL, url.QueryEscape(query))
 
 	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
@@ -149,6 +155,7 @@ func searxngProvider() Provider {
 			}
 			s := NewSearXNG(c.String("searxng_url"))
 			s.client = client
+			s.redact = instanceRedactor(c)
 			return s, nil
 		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
@@ -157,7 +164,8 @@ func searxngProvider() Provider {
 				return health.StatusMisconfigured, err.Error()
 			}
 			baseURL := c.String("searxng_url")
-			return probeSearxng(ctx, client, baseURL, httpx.OriginHeaderNames(c.HTTPHeaders, baseURL))
+			status, detail := probeSearxng(ctx, client, baseURL, httpx.OriginHeaderNames(c.HTTPHeaders, baseURL))
+			return status, instanceRedactor(c).String(detail)
 		},
 	}
 }

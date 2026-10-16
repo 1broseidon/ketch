@@ -24,16 +24,13 @@ func instanceClient(base *http.Client, c *config.Config) (*http.Client, error) {
 	return client, nil
 }
 
-// headerValues lists every configured http_headers value, so an error that
-// quotes a response body can redact them.
-func headerValues(c *config.Config) []string {
-	var values []string
-	for _, headers := range c.HTTPHeaders {
-		for _, value := range headers {
-			values = append(values, value)
-		}
-	}
-	return values
+// instanceRedactor returns the sanitiser for errors from a self-hosted
+// instance: it removes every configured http_headers value, which the instance
+// (or an origin it redirects to) may echo back in a body, a header or a
+// redirect. Every error a search returns and every doctor detail from these
+// providers passes through it.
+func instanceRedactor(c *config.Config) *httpx.Redactor {
+	return httpx.NewRedactor(c.HTTPHeaders)
 }
 
 // NewFromConfig constructs a registered search provider, or the auto fallback

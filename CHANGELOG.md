@@ -9,6 +9,8 @@ verbatim on the GitHub release. Versions follow
 
 ## [Unreleased]
 
+**`http_headers` values no longer reach instance errors or `ketch doctor`.** A SearXNG, Firecrawl, Degoog, or Sourcegraph instance that echoed a header value back could get it into the error ketch printed, or a doctor detail, through a response body, or through the URL or `Location` that Go's HTTP client quotes when it cannot follow a redirect. Every instance error and doctor detail now has every configured `http_headers` value replaced with `[redacted]`, including values for another origin the instance redirects to. Firecrawl redacts an error body before cutting it to 4096 bytes, so a value at the cut is no longer left half-visible. A header the request already sets is now recognised in any capitalisation and is no longer sent twice.
+
 **`ketch doctor` now says when an auth proxy rejects an instance.** With `http_headers` configured for a self-hosted SearXNG, Firecrawl, Degoog, or Sourcegraph instance, a 401 or 403 now leads with `rejected (HTTP 403); http_headers are set for https://searx.example.com (Cf-Access-Client-Id, Cf-Access-Client-Secret), check they are current`, followed by the backend's own advice about its JSON format or API key, which used to be all it said. A redirect to another origin, such as an Access login page, is named as one. Sourcegraph, whose check used to pass on a 401 or 403, now fails it in that case. Header names are shown, never values, and doctor output is unchanged for instances with no `http_headers`.
 
 ## [0.19.0] - 2026-10-09
