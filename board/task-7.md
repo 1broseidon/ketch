@@ -46,3 +46,4 @@ createdAt: "2026-10-13T00:28:57.388Z"
 
 ## Log
 - 2026-10-13T06:18:37.554Z: [claude] Audit 2026-10-13: still current — scrape/scrape.go:555 fails on any non-200. Precedent: classifyForForcedRender (scrape/pipeline.go:321) already lets a 403 probe fall through to the browser under --force-browser. Coordinate 429 handling with task-6 item 7 (bounded retry + Retry-After).
+- 2026-10-16T15:19:31.282Z: [claude] Owner scoped the design on #81: escalate to the configured browser only on HTTP 403 (not 429 — that's a backoff signal, re-hitting with a browser is wrong); only when a browser is configured; print a short stderr notice that the page came from the browser; if the browser also fails, return the original 403. PR welcome.
