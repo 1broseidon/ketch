@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 
@@ -18,8 +17,8 @@ import (
 type Firecrawl struct {
 	keys     keyPool
 	client   *http.Client
-	endpoint string   // full POST URL (base + /v2/search)
-	redact   []string // http_headers values, kept out of quoted error bodies
+	endpoint string          // full POST URL (base + /v2/search)
+	redact   *httpx.Redactor // http_headers values, kept out of errors
 }
 
 // NewFirecrawl creates a new Firecrawl search backend against the hosted API.
@@ -57,6 +56,11 @@ type firecrawlResult struct {
 
 // Search queries Firecrawl and returns up to limit web results.
 func (f *Firecrawl) Search(ctx context.Context, query string, limit int) ([]Result, error) {
+	results, err := f.search(ctx, query, limit)
+	return results, f.redact.Error(err)
+}
+
+func (f *Firecrawl) search(ctx context.Context, query string, limit int) ([]Result, error) {
 	if limit <= 0 {
 		return []Result{}, nil
 	}
@@ -132,7 +136,7 @@ func firecrawlRetryableStatus(status int) bool {
 	return status == http.StatusUnauthorized || status == http.StatusPaymentRequired || status == http.StatusTooManyRequests
 }
 
-func firecrawlSearchStatusError(resp *http.Response, key, keyLabel string, redact []string) error {
+func firecrawlSearchStatusError(resp *http.Response, key, keyLabel string, redact *httpx.Redactor) error {
 	switch resp.StatusCode {
 	case http.StatusUnauthorized:
 		if key == "" {
@@ -154,17 +158,14 @@ func firecrawlSearchStatusError(resp *http.Response, key, keyLabel string, redac
 	}
 }
 
+// firecrawlErrorBodyMax bounds how much of an error body an error quotes.
+const firecrawlErrorBodyMax = 4096
+
 // firecrawlStatusError quotes the response body, which an auth proxy may echo
-// request headers into, so configured header values are redacted first.
-func firecrawlStatusError(resp *http.Response, redact []string) error {
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-	detail := string(body)
-	for _, value := range redact {
-		if value != "" {
-			detail = strings.ReplaceAll(detail, value, "[redacted]")
-		}
-	}
-	if detail = strings.TrimSpace(detail); detail != "" {
+// request headers into. Configured header values are redacted before the body
+// is cut to firecrawlErrorBodyMax, so a value at the cut is not left behind.
+func firecrawlStatusError(resp *http.Response, redact *httpx.Redactor) error {
+	if detail := strings.TrimSpace(redact.Excerpt(resp.Body, firecrawlErrorBodyMax)); detail != "" {
 		return fmt.Errorf("firecrawl returned status %d: %s", resp.StatusCode, detail)
 	}
 	return fmt.Errorf("firecrawl returned status %d", resp.StatusCode)
@@ -271,7 +272,7 @@ func firecrawlProvider() Provider {
 			}
 			f := newFirecrawlWithKeys(c.FirecrawlKeys(), c.EffectiveFirecrawlURL())
 			f.client = client
-			f.redact = headerValues(c)
+			f.redact = instanceRedactor(c, f.endpoint)
 			return f, nil
 		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
@@ -281,9 +282,10 @@ func firecrawlProvider() Provider {
 			}
 			endpoint := config.FirecrawlSearchURL(c.EffectiveFirecrawlURL())
 			headerNames := httpx.OriginHeaderNames(c.HTTPHeaders, endpoint)
-			return health.ProbeKeyPool(c.FirecrawlKeys(), func(key string) (health.Status, string) {
+			status, detail := health.ProbeKeyPool(c.FirecrawlKeys(), func(key string) (health.Status, string) {
 				return probeFirecrawl(ctx, client, endpoint, key, headerNames)
 			})
+			return status, instanceRedactor(c, endpoint).String(detail)
 		},
 	}
 }

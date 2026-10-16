@@ -21,6 +21,7 @@ import (
 type Degoog struct {
 	baseURL string
 	client  *http.Client
+	redact  *httpx.Redactor // http_headers values, kept out of errors
 }
 
 // NewDegoog creates a new degoog search backend for the instance at baseURL.
@@ -43,6 +44,11 @@ type degoogResult struct {
 
 // Search queries degoog and returns up to limit results.
 func (d *Degoog) Search(ctx context.Context, query string, limit int) ([]Result, error) {
+	results, err := d.search(ctx, query, limit)
+	return results, d.redact.Error(err)
+}
+
+func (d *Degoog) search(ctx context.Context, query string, limit int) ([]Result, error) {
 	if limit <= 0 {
 		return []Result{}, nil
 	}
@@ -150,6 +156,7 @@ func degoogProvider() Provider {
 			}
 			d := NewDegoog(c.String("degoog_url"))
 			d.client = client
+			d.redact = instanceRedactor(c, d.baseURL)
 			return d, nil
 		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
@@ -158,7 +165,8 @@ func degoogProvider() Provider {
 				return health.StatusMisconfigured, err.Error()
 			}
 			baseURL := c.String("degoog_url")
-			return probeDegoog(ctx, client, baseURL, httpx.OriginHeaderNames(c.HTTPHeaders, baseURL))
+			status, detail := probeDegoog(ctx, client, baseURL, httpx.OriginHeaderNames(c.HTTPHeaders, baseURL))
+			return status, instanceRedactor(c, baseURL).String(detail)
 		},
 	}
 }

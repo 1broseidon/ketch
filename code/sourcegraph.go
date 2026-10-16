@@ -23,6 +23,7 @@ const sourcegraphMaxEventBytes = 16 << 20
 type Sourcegraph struct {
 	baseURL string
 	client  *http.Client
+	redact  *httpx.Redactor // http_headers values, kept out of errors
 }
 
 // NewSourcegraph creates a new Sourcegraph code search backend.
@@ -94,6 +95,11 @@ const sourcegraphNoRepos = "No repositories found"
 // Sourcegraph defaults to literal matching; regex is requested via the
 // patterntype:regexp qualifier.
 func (s *Sourcegraph) Search(ctx context.Context, q Query) ([]Result, error) {
+	results, err := s.search(ctx, q)
+	return results, s.redact.Error(err)
+}
+
+func (s *Sourcegraph) search(ctx context.Context, q Query) ([]Result, error) {
 	repo, err := q.repo()
 	if err != nil {
 		return nil, err
@@ -214,6 +220,7 @@ func sourcegraphProvider() Provider {
 			}
 			s := NewSourcegraph(c.String("sourcegraph_url"))
 			s.client = client
+			s.redact = httpx.NewRedactor(c.HTTPHeaders, s.baseURL)
 			return s, nil
 		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
@@ -222,7 +229,8 @@ func sourcegraphProvider() Provider {
 				return health.StatusMisconfigured, "http_headers: " + err.Error()
 			}
 			baseURL := c.String("sourcegraph_url")
-			return health.ProbeReachableWithHeaders(ctx, client, baseURL, "sourcegraph", httpx.OriginHeaderNames(c.HTTPHeaders, baseURL))
+			status, detail := health.ProbeReachableWithHeaders(ctx, client, baseURL, "sourcegraph", httpx.OriginHeaderNames(c.HTTPHeaders, baseURL))
+			return status, httpx.NewRedactor(c.HTTPHeaders, baseURL).String(detail)
 		},
 	}
 }
