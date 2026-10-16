@@ -38,17 +38,25 @@ func NewRedactor(headers map[string]map[string]string) *Redactor {
 	if err != nil {
 		return nil // nothing is sent for an invalid configuration
 	}
-	seen := make(map[string]bool)
-	var forms []string
+	var all []string
 	for _, h := range byOrigin {
 		for _, values := range h {
-			for _, value := range values {
-				for _, form := range valueForms(value) {
-					if form != "" && !seen[form] {
-						seen[form] = true
-						forms = append(forms, form)
-					}
-				}
+			all = append(all, values...)
+		}
+	}
+	return NewValueRedactor(all...)
+}
+
+// NewValueRedactor returns a Redactor for the given secret values, such as a
+// provider's API keys, or nil when all of them are blank.
+func NewValueRedactor(values ...string) *Redactor {
+	seen := make(map[string]bool)
+	var forms []string
+	for _, value := range values {
+		for _, form := range valueForms(value) {
+			if form != "" && !seen[form] {
+				seen[form] = true
+				forms = append(forms, form)
 			}
 		}
 	}

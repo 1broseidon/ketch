@@ -7,10 +7,15 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/1broseidon/ketch/health"
+	config "github.com/1broseidon/ketch/internal/configbase"
 )
 
 func TestParallelSearchRequestAndResponse(t *testing.T) {
@@ -236,6 +241,273 @@ func TestParallelSearchPropagatesCancellation(t *testing.T) {
 	_, err := backend.Search(ctx, "q", 1)
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("error = %v, want deadline exceeded", err)
+	}
+}
+
+func TestParallelAuthorizationHeader(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		keys []string
+		want string
+	}{
+		{name: "keyless", want: ""},
+		{name: "blank key stays keyless", keys: []string{"  "}, want: ""},
+		{name: "keyed", keys: []string{"par-test"}, want: "Bearer par-test"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if got := r.Header.Get("Authorization"); got != tc.want {
+					t.Errorf("Authorization = %q, want %q", got, tc.want)
+				}
+				writeParallelResponse(t, w, `{"results":[]}`)
+			}))
+			defer server.Close()
+
+			backend := &Parallel{keys: newKeyPool(tc.keys), client: server.Client(), endpoint: server.URL}
+			if _, err := backend.Search(context.Background(), "q", 1); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+func TestParallelProviderReadsKeyPool(t *testing.T) {
+	t.Parallel()
+	var cfg config.Config
+	cfg.SetProvider("parallel_api_key", "first")
+	cfg.SetProvider("parallel_api_keys", []string{"second", "first"})
+	searcher, err := parallelProvider().New(&cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := searcher.(*Parallel).keys.size(); got != 2 {
+		t.Fatalf("key pool size = %d, want 2", got)
+	}
+	searcher, err = parallelProvider().New(&config.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := searcher.(*Parallel).keys.size(); got != 0 {
+		t.Fatalf("keyless pool size = %d, want 0", got)
+	}
+}
+
+func TestParallelKeyedStatusErrors(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		code int
+		keys []string
+		want string
+	}{
+		{name: "401 keyed", code: http.StatusUnauthorized, keys: []string{"par-secret"}, want: "parallel: invalid API key (key 1 of 1; set via: ketch config set parallel_api_key <key>)"},
+		{name: "403 keyed keeps generic error", code: http.StatusForbidden, keys: []string{"par-secret"}, want: "parallel returned status 403: denied"},
+		{name: "402 keyed", code: http.StatusPaymentRequired, keys: []string{"par-secret"}, want: "parallel: payment required (key 1 of 1"},
+		{name: "429 keyed", code: http.StatusTooManyRequests, keys: []string{"par-secret"}, want: "parallel: rate limited (key 1 of 1)"},
+		{name: "401 keyless keeps generic error", code: http.StatusUnauthorized, want: "parallel returned status 401: denied"},
+		{name: "429 keyless keeps generic error", code: http.StatusTooManyRequests, want: "parallel returned status 429: denied"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				http.Error(w, "denied", tc.code)
+			}))
+			defer server.Close()
+
+			backend := &Parallel{keys: newKeyPool(tc.keys), client: server.Client(), endpoint: server.URL}
+			_, err := backend.Search(context.Background(), "q", 1)
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("error = %v, want containing %q", err, tc.want)
+			}
+			if strings.Contains(err.Error(), "par-secret") {
+				t.Fatalf("error leaked key value: %q", err)
+			}
+		})
+	}
+}
+
+func TestProbeParallel(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		key        string
+		code       int
+		wantStatus health.Status
+		wantDetail string
+	}{
+		{name: "keyless ok", code: http.StatusOK, wantStatus: health.StatusOK},
+		{name: "keyless 401 is unreachable", code: http.StatusUnauthorized, wantStatus: health.StatusUnreachable, wantDetail: "parallel returned status 401"},
+		{name: "keyed ok", key: "par-secret", code: http.StatusOK, wantStatus: health.StatusOK},
+		{name: "keyed 401 is misconfigured", key: "par-secret", code: http.StatusUnauthorized, wantStatus: health.StatusMisconfigured, wantDetail: "parallel_api_key"},
+		{name: "keyed 402 is misconfigured", key: "par-secret", code: http.StatusPaymentRequired, wantStatus: health.StatusMisconfigured, wantDetail: "payment required"},
+		{name: "keyed 429 is reachable", key: "par-secret", code: http.StatusTooManyRequests, wantStatus: health.StatusOK, wantDetail: "rate limited"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				want := ""
+				if tc.key != "" {
+					want = "Bearer " + tc.key
+				}
+				if got := r.Header.Get("Authorization"); got != want {
+					t.Errorf("Authorization = %q, want %q", got, want)
+				}
+				w.WriteHeader(tc.code)
+			}))
+			defer server.Close()
+
+			status, detail := ProbeParallel(context.Background(), server.Client(), server.URL, tc.key)
+			if status != tc.wantStatus || !strings.Contains(detail, tc.wantDetail) {
+				t.Fatalf("probe = (%v, %q), want (%v, containing %q)", status, detail, tc.wantStatus, tc.wantDetail)
+			}
+			if strings.Contains(detail, "par-secret") {
+				t.Fatalf("detail leaked key value: %q", detail)
+			}
+		})
+	}
+}
+
+// parallelSecret is the key the adversarial servers below echo back.
+const parallelSecret = "par-secret/+ key"
+
+func newKeyedParallel(t *testing.T, endpoint string, client *http.Client) *Parallel {
+	t.Helper()
+	backend := newParallelWithKeys([]string{parallelSecret})
+	backend.client = client
+	backend.endpoint = endpoint
+	return backend
+}
+
+// assertNoParallelSecret fails when text carries the key in any echoed form.
+func assertNoParallelSecret(t *testing.T, text string) {
+	t.Helper()
+	for _, form := range []string{parallelSecret, url.QueryEscape(parallelSecret), url.PathEscape(parallelSecret), "par-secret"} {
+		if strings.Contains(text, form) {
+			t.Fatalf("text leaked key form %q: %q", form, text)
+		}
+	}
+}
+
+func TestParallelKeyedErrorsRedactEchoedKey(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		handler http.HandlerFunc
+		want    string
+	}{
+		{
+			name: "status body",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				http.Error(w, "bad upstream for "+r.Header.Get("Authorization")+" ("+parallelSecret+")", http.StatusInternalServerError)
+			},
+			want: "parallel returned status 500: bad upstream for Bearer [redacted] ([redacted])",
+		},
+		{
+			name: "json-rpc error",
+			handler: func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"jsonrpc": "2.0", "id": 1,
+					"error": map[string]any{"code": -32000, "message": "key " + parallelSecret + " is not allowed"},
+				})
+			},
+			want: "parallel JSON-RPC error -32000: key [redacted] is not allowed",
+		},
+		{
+			name: "redirect location",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				http.Redirect(w, r, "/loop?key="+url.QueryEscape(parallelSecret), http.StatusFound)
+			},
+			want: "stopped after 10 redirects",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
+
+			_, err := newKeyedParallel(t, server.URL, server.Client()).Search(context.Background(), "q", 1)
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("error = %v, want containing %q", err, tc.want)
+			}
+			assertNoParallelSecret(t, err.Error())
+		})
+	}
+}
+
+func TestParallelKeylessErrorsAreNotRedacted(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "boom par-secret", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	backend := newParallelWithKeys(nil)
+	backend.client = server.Client()
+	backend.endpoint = server.URL
+	_, err := backend.Search(context.Background(), "q", 1)
+	if err == nil || err.Error() != "parallel returned status 500: boom par-secret" {
+		t.Fatalf("error = %v, want the keyless error unchanged", err)
+	}
+}
+
+func TestParallelKeyedRedactionKeepsCancellation(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+	client := &http.Client{Transport: parallelRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+		<-req.Context().Done()
+		return nil, req.Context().Err()
+	})}
+	// The key in the endpoint puts it in net/http's error text, so the error
+	// is rewritten; cancellation must still classify.
+	endpoint := "https://example.com/mcp?k=" + url.QueryEscape(parallelSecret)
+	_, err := newKeyedParallel(t, endpoint, client).Search(ctx, "q", 1)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("error = %v, want deadline exceeded", err)
+	}
+	if !strings.Contains(err.Error(), "[redacted]") {
+		t.Fatalf("error = %q, want the key redacted", err)
+	}
+	assertNoParallelSecret(t, err.Error())
+}
+
+func TestProbeParallelRedactsEchoedKey(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/loop?key="+url.QueryEscape(parallelSecret), http.StatusFound)
+	}))
+	defer server.Close()
+
+	status, detail := ProbeParallel(context.Background(), server.Client(), server.URL, parallelSecret)
+	if status != health.StatusUnreachable {
+		t.Fatalf("status = %v, want unreachable (detail %q)", status, detail)
+	}
+	assertNoParallelSecret(t, detail)
+}
+
+func TestParallelKeyedForbiddenDoesNotRotate(t *testing.T) {
+	t.Parallel()
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	defer server.Close()
+
+	backend := &Parallel{keys: deterministicPool("first", "second"), client: server.Client(), endpoint: server.URL}
+	_, err := backend.Search(context.Background(), "q", 1)
+	if err == nil || err.Error() != "parallel returned status 403" {
+		t.Fatalf("error = %v, want the generic status error", err)
+	}
+	if got := calls.Load(); got != 1 {
+		t.Fatalf("calls = %d, want 1 (403 is not a credential retry, as for exa and keenable)", got)
 	}
 }
 

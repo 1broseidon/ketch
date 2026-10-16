@@ -138,3 +138,14 @@ func TestRedactorExcerpt(t *testing.T) {
 		}
 	})
 }
+
+func TestNewValueRedactor(t *testing.T) {
+	if r := NewValueRedactor("", ""); r != nil {
+		t.Fatalf("blank values: got %v, want nil", r)
+	}
+	r := NewValueRedactor("sk/1+2")
+	got := r.String("Bearer sk/1+2 ?key=sk%2F1%2B2")
+	if want := "Bearer [redacted] ?key=[redacted]"; got != want {
+		t.Fatalf("String = %q, want %q", got, want)
+	}
+}

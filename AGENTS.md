@@ -90,7 +90,7 @@ ketch search "query" -b firecrawl           # use Firecrawl v2 search API (keyle
 ketch search "query" -b keenable            # use Keenable backend (keyless by default)
 ketch search "query" -b tavily              # use Tavily search API (keyed; basic depth)
 ketch search "query" -b tinyfish            # use TinyFish Search API (keyed; free tier)
-ketch search "query" -b parallel            # use Parallel Search MCP (keyless)
+ketch search "query" -b parallel            # use Parallel Search MCP (keyless by default)
 ketch search "query" -b serpbase            # use SerpBase Google Search API (keyed)
 ketch search "query" -b degoog              # use a self-hosted Degoog instance (degoog_url)
 ketch search "query" -b serply              # use Serply's Google Search API (keyed)

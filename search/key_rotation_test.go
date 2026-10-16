@@ -357,6 +357,24 @@ func TestBackendsRetryEveryCredentialStatus(t *testing.T) {
 			requestKey: func(r *http.Request) string { return r.Header.Get("X-API-Key") },
 		},
 		{
+			name:        "parallel 401",
+			status:      http.StatusUnauthorized,
+			successBody: `{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"{\"results\":[]}"}]}}`,
+			newBackend: func(client *http.Client) Searcher {
+				return &Parallel{keys: deterministicPool("first", "second"), client: client, endpoint: parallelEndpoint}
+			},
+			requestKey: func(r *http.Request) string { return strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ") },
+		},
+		{
+			name:        "parallel 429",
+			status:      http.StatusTooManyRequests,
+			successBody: `{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"{\"results\":[]}"}]}}`,
+			newBackend: func(client *http.Client) Searcher {
+				return &Parallel{keys: deterministicPool("first", "second"), client: client, endpoint: parallelEndpoint}
+			},
+			requestKey: func(r *http.Request) string { return strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ") },
+		},
+		{
 			name:        "youcom 401",
 			status:      http.StatusUnauthorized,
 			successBody: "data: {\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"{\\\"results\\\":{\\\"web\\\":[]}}\"}]}}\n",
