@@ -1,8 +1,8 @@
 ---
 id: task-8
 title: "feat: search_order config to set auto's fallback order"
-column: todo
-position: 5
+column: monitor
+position: 1
 description: |-
   ### Summary
 
@@ -56,7 +56,7 @@ description: |-
   4. Return an error only if all specified backends fail.
 source: https://github.com/1broseidon/ketch/issues/80
 createdAt: "2026-10-13T00:29:00.726Z"
-updatedAt: "2026-10-16T15:19:32.136Z"
+updatedAt: "2026-10-16T15:20:48.382Z"
 ---
 
 ## Log
