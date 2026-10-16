@@ -9,32 +9,24 @@ import (
 	"testing"
 )
 
-func TestNewRedactorMatchesOriginsLikeWithOriginHeaders(t *testing.T) {
+// A redirect can carry a request to any configured origin, which is then sent
+// that origin's headers, so every configured value is redacted.
+func TestNewRedactorCoversEveryConfiguredOrigin(t *testing.T) {
 	headers := map[string]map[string]string{
 		"https://a.example":      {"X-One": "alpha-secret"},
 		"https://b.example:8443": {"X-Two": "beta-secret"},
 	}
-	const text = "alpha-secret beta-secret"
-	for _, tc := range []struct {
-		name, instance, want string
-	}{
-		{"origin", "https://a.example", "[redacted] beta-secret"},
-		{"with a path and the default port", " https://A.example:443/search?q=1 ", "[redacted] beta-secret"},
-		{"another origin", "https://b.example:8443", "alpha-secret [redacted]"},
-		{"another scheme", "http://a.example", text},
-		{"another port", "https://a.example:8443", text},
-		{"no instance", "", text},
-		{"not a URL", "://", text},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			if got := NewRedactor(headers, tc.instance).String(text); got != tc.want {
-				t.Fatalf("redacted %q, want %q", got, tc.want)
-			}
-		})
+	if got := NewRedactor(headers).String("alpha-secret beta-secret other"); got != "[redacted] [redacted] other" {
+		t.Fatalf("redacted %q", got)
 	}
+	t.Run("no headers", func(t *testing.T) {
+		if r := NewRedactor(nil); r != nil {
+			t.Fatal("no configured values needs no redactor")
+		}
+	})
 	t.Run("invalid configuration", func(t *testing.T) {
 		bad := map[string]map[string]string{"https://a.example": {"X-One": "alpha-secret"}, "not an origin": {"X": "y"}}
-		if r := NewRedactor(bad, "https://a.example"); r != nil {
+		if r := NewRedactor(bad); r != nil {
 			t.Fatal("a configuration that sends nothing needs no redactor")
 		}
 	})
@@ -42,7 +34,7 @@ func TestNewRedactorMatchesOriginsLikeWithOriginHeaders(t *testing.T) {
 
 func TestRedactorStringRemovesEveryFormOfAValue(t *testing.T) {
 	const value = " Bearer abc/def+ghi== "
-	r := NewRedactor(map[string]map[string]string{"https://a.example": {"Authorization": value}}, "https://a.example")
+	r := NewRedactor(map[string]map[string]string{"https://a.example": {"Authorization": value}})
 	trimmed := strings.TrimSpace(value)
 	for name, echoed := range map[string]string{
 		"as sent":       value,
@@ -61,7 +53,7 @@ func TestRedactorStringRemovesEveryFormOfAValue(t *testing.T) {
 }
 
 func TestRedactorStringPrefersTheLongerOfOverlappingValues(t *testing.T) {
-	r := NewRedactor(map[string]map[string]string{"https://a.example": {"X-One": "abcd", "X-Two": "bc"}}, "https://a.example")
+	r := NewRedactor(map[string]map[string]string{"https://a.example": {"X-One": "abcd", "X-Two": "bc"}})
 	if got := r.String("x abcd x bc x"); got != "x [redacted] x [redacted] x" {
 		t.Fatalf("redacted %q", got)
 	}
@@ -76,7 +68,7 @@ func TestNilRedactorRedactsNothing(t *testing.T) {
 }
 
 func TestRedactorError(t *testing.T) {
-	r := NewRedactor(map[string]map[string]string{"https://a.example": {"X-One": "s3cret-value"}}, "https://a.example")
+	r := NewRedactor(map[string]map[string]string{"https://a.example": {"X-One": "s3cret-value"}})
 
 	clean := errors.New("connection refused")
 	if got := r.Error(clean); got != clean {
@@ -103,7 +95,7 @@ func TestRedactorError(t *testing.T) {
 
 func TestRedactorExcerpt(t *testing.T) {
 	const value = "s3cret-value"
-	r := NewRedactor(map[string]map[string]string{"https://a.example": {"X-One": value}}, "https://a.example")
+	r := NewRedactor(map[string]map[string]string{"https://a.example": {"X-One": value}})
 
 	t.Run("a value across the cut is removed, not cut", func(t *testing.T) {
 		for _, offset := range []int{4096 - len(value), 4096 - len(value)/2, 4095} {
@@ -121,7 +113,7 @@ func TestRedactorExcerpt(t *testing.T) {
 	t.Run("a value the read cut short is dropped", func(t *testing.T) {
 		long := strings.Repeat("Q7z", 70)[:200]
 		long = long[:len(long)-1] + "!"
-		r := NewRedactor(map[string]map[string]string{"https://a.example": {"X-One": long}}, "https://a.example")
+		r := NewRedactor(map[string]map[string]string{"https://a.example": {"X-One": long}})
 		// Thirty values is more than the read takes, and what is read redacts to
 		// well under the cut, so only the fragment at the end of the read is left.
 		got := r.Excerpt(strings.NewReader(strings.Repeat(long, 30)), 4096)

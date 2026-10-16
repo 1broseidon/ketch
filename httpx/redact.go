@@ -12,11 +12,11 @@ import (
 // redacted stands in for a header value wherever Redactor removes one.
 const redacted = "[redacted]"
 
-// Redactor removes the http_headers values configured for one origin from
-// text that an instance backend would otherwise surface: a client error, a
-// quoted response body, a doctor detail. An instance can echo a value it was
-// sent into any of them, whether in a body, in a redirect's Location (which
-// net/http quotes when it cannot follow it), or in the URL of a failed hop.
+// Redactor removes configured http_headers values from text that an instance
+// backend would otherwise surface: a client error, a quoted response body, a
+// doctor detail. An instance can echo a value it was sent into any of them,
+// whether in a body, in a redirect's Location (which net/http quotes when it
+// cannot follow it), or in the URL of a failed hop.
 //
 // Beside each value it removes the forms that value takes when echoed through
 // a URL or a quoted string: trimmed, query- and path-escaped, and
@@ -27,27 +27,27 @@ type Redactor struct {
 	longest  int // length of the longest form
 }
 
-// NewRedactor returns a Redactor for the values headers configures for
-// rawURL's origin, matched exactly as WithOriginHeaders matches them, or nil
-// when there are none. Values for other origins are not sent to rawURL, so an
-// instance cannot echo them and they are left alone.
-func NewRedactor(headers map[string]map[string]string, rawURL string) *Redactor {
-	u, err := url.Parse(strings.TrimSpace(rawURL))
-	if err != nil {
-		return nil
-	}
+// NewRedactor returns a Redactor for every value headers configures, for any
+// origin, or nil when there are none. It is not narrowed to the instance's own
+// origin: a client from WithOriginHeaders follows redirects and sends each
+// hop the headers configured for that hop's origin, so a request to one
+// configured origin can carry another's values, and the error that comes back
+// can echo them.
+func NewRedactor(headers map[string]map[string]string) *Redactor {
 	byOrigin, err := parseOriginHeaders(headers)
 	if err != nil {
 		return nil // nothing is sent for an invalid configuration
 	}
 	seen := make(map[string]bool)
 	var forms []string
-	for _, values := range byOrigin[origin(u)] {
-		for _, value := range values {
-			for _, form := range valueForms(value) {
-				if form != "" && !seen[form] {
-					seen[form] = true
-					forms = append(forms, form)
+	for _, h := range byOrigin {
+		for _, values := range h {
+			for _, value := range values {
+				for _, form := range valueForms(value) {
+					if form != "" && !seen[form] {
+						seen[form] = true
+						forms = append(forms, form)
+					}
 				}
 			}
 		}

@@ -63,6 +63,41 @@ func TestInstanceErrorsRedactEverythingTheInstanceEchoes(t *testing.T) {
 	}
 }
 
+// An instance can redirect to another configured origin, which is then sent
+// its own headers. A value that origin echoes back is redacted too, though it
+// was never configured for the instance itself.
+func TestInstanceErrorsRedactValuesOfOriginsARedirectReaches(t *testing.T) {
+	for _, backend := range []string{"searxng", "firecrawl", "degoog"} {
+		for i, secret := range hostileSecrets {
+			t.Run(fmt.Sprintf("%s/%d", backend, i), func(t *testing.T) {
+				other := testutil.HostileInstance(t, secretHeader, testutil.EchoMalformedRedirect)
+				instance := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					http.Redirect(w, r, other.URL+"/", http.StatusFound)
+				}))
+				defer instance.Close()
+				cfg := config.Defaults()
+				cfg.SetProvider(backend+"_url", instance.URL)
+				cfg.HTTPHeaders = map[string]map[string]string{
+					instance.URL: {"X-Instance": "instance-value"},
+					other.URL:    {secretHeader: secret},
+				}
+
+				s, err := search.NewFromConfig(&cfg, backend, "")
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = s.Search(context.Background(), "q", 1)
+				if err == nil {
+					t.Fatal("search succeeded against a failing instance")
+				}
+				if leaks(err.Error(), secret) || !strings.Contains(err.Error(), "[redacted]") {
+					t.Fatalf("error = %v, want the other origin's value redacted", err)
+				}
+			})
+		}
+	}
+}
+
 // Firecrawl quotes the first 4096 bytes of an error body. A value that
 // straddles that cut is redacted whole before it, not left as a fragment.
 func TestFirecrawlRedactsBeforeTruncatingErrorBody(t *testing.T) {

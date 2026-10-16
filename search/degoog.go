@@ -156,7 +156,7 @@ func degoogProvider() Provider {
 			}
 			d := NewDegoog(c.String("degoog_url"))
 			d.client = client
-			d.redact = instanceRedactor(c, d.baseURL)
+			d.redact = instanceRedactor(c)
 			return d, nil
 		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
@@ -166,7 +166,7 @@ func degoogProvider() Provider {
 			}
 			baseURL := c.String("degoog_url")
 			status, detail := probeDegoog(ctx, client, baseURL, httpx.OriginHeaderNames(c.HTTPHeaders, baseURL))
-			return status, instanceRedactor(c, baseURL).String(detail)
+			return status, instanceRedactor(c).String(detail)
 		},
 	}
 }

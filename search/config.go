@@ -24,13 +24,13 @@ func instanceClient(base *http.Client, c *config.Config) (*http.Client, error) {
 	return client, nil
 }
 
-// instanceRedactor returns the sanitiser for errors from the instance at
-// instanceURL: it removes the http_headers values configured for that origin,
-// which the instance may echo back in a body, a header or a redirect. Every
-// error a search returns and every doctor detail from these providers passes
-// through it.
-func instanceRedactor(c *config.Config, instanceURL string) *httpx.Redactor {
-	return httpx.NewRedactor(c.HTTPHeaders, instanceURL)
+// instanceRedactor returns the sanitiser for errors from a self-hosted
+// instance: it removes every configured http_headers value, which the instance
+// (or an origin it redirects to) may echo back in a body, a header or a
+// redirect. Every error a search returns and every doctor detail from these
+// providers passes through it.
+func instanceRedactor(c *config.Config) *httpx.Redactor {
+	return httpx.NewRedactor(c.HTTPHeaders)
 }
 
 // NewFromConfig constructs a registered search provider, or the auto fallback

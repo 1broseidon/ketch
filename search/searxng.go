@@ -155,7 +155,7 @@ func searxngProvider() Provider {
 			}
 			s := NewSearXNG(c.String("searxng_url"))
 			s.client = client
-			s.redact = instanceRedactor(c, s.baseURL)
+			s.redact = instanceRedactor(c)
 			return s, nil
 		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
@@ -165,7 +165,7 @@ func searxngProvider() Provider {
 			}
 			baseURL := c.String("searxng_url")
 			status, detail := probeSearxng(ctx, client, baseURL, httpx.OriginHeaderNames(c.HTTPHeaders, baseURL))
-			return status, instanceRedactor(c, baseURL).String(detail)
+			return status, instanceRedactor(c).String(detail)
 		},
 	}
 }

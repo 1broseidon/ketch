@@ -220,7 +220,7 @@ func sourcegraphProvider() Provider {
 			}
 			s := NewSourcegraph(c.String("sourcegraph_url"))
 			s.client = client
-			s.redact = httpx.NewRedactor(c.HTTPHeaders, s.baseURL)
+			s.redact = httpx.NewRedactor(c.HTTPHeaders)
 			return s, nil
 		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
@@ -230,7 +230,7 @@ func sourcegraphProvider() Provider {
 			}
 			baseURL := c.String("sourcegraph_url")
 			status, detail := health.ProbeReachableWithHeaders(ctx, client, baseURL, "sourcegraph", httpx.OriginHeaderNames(c.HTTPHeaders, baseURL))
-			return status, httpx.NewRedactor(c.HTTPHeaders, baseURL).String(detail)
+			return status, httpx.NewRedactor(c.HTTPHeaders).String(detail)
 		},
 	}
 }

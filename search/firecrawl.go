@@ -272,7 +272,7 @@ func firecrawlProvider() Provider {
 			}
 			f := newFirecrawlWithKeys(c.FirecrawlKeys(), c.EffectiveFirecrawlURL())
 			f.client = client
-			f.redact = instanceRedactor(c, f.endpoint)
+			f.redact = instanceRedactor(c)
 			return f, nil
 		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
@@ -285,7 +285,7 @@ func firecrawlProvider() Provider {
 			status, detail := health.ProbeKeyPool(c.FirecrawlKeys(), func(key string) (health.Status, string) {
 				return probeFirecrawl(ctx, client, endpoint, key, headerNames)
 			})
-			return status, instanceRedactor(c, endpoint).String(detail)
+			return status, instanceRedactor(c).String(detail)
 		},
 	}
 }
