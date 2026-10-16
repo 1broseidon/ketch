@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 )
@@ -128,6 +129,13 @@ func ProbeMCP(ctx context.Context, client *http.Client, endpoint, name string) (
 }
 
 func ProbeReachable(ctx context.Context, client *http.Client, baseURL, name string) (Status, string) {
+	return ProbeReachableWithHeaders(ctx, client, baseURL, name, nil)
+}
+
+// ProbeReachableWithHeaders is ProbeReachable for an instance that may sit
+// behind an auth proxy: headerNames are the http_headers names configured for
+// baseURL's origin, and a rejection of them fails the probe (see HeaderHint).
+func ProbeReachableWithHeaders(ctx context.Context, client *http.Client, baseURL, name string, headerNames []string) (Status, string) {
 	resp, err := Get(ctx, client, baseURL, nil)
 	if err != nil {
 		return StatusUnreachable, ErrorDetail(err)
@@ -137,7 +145,49 @@ func ProbeReachable(ctx context.Context, client *http.Client, baseURL, name stri
 	if resp.StatusCode >= http.StatusInternalServerError {
 		return StatusUnreachable, fmt.Sprintf("%s returned status %d", name, resp.StatusCode)
 	}
-	return StatusOK, ""
+	return HeaderHint(resp, baseURL, headerNames, StatusOK, "")
+}
+
+// HeaderHint revises a probe's own status and detail when an auth proxy may
+// have turned the probe away. headerNames are the http_headers names
+// configured for probeURL's origin; with none, status and detail are returned
+// as they are. Otherwise a redirect that ended on another origin (where the
+// headers are never sent) or a 401/403 is misconfigured and the detail points
+// at http_headers. A 401/403 could equally be the instance's own answer, so
+// the probe's advice for it, if it had any, is kept after the hint. Only
+// header names and origins are printed: a value never reaches this package.
+func HeaderHint(resp *http.Response, probeURL string, headerNames []string, status Status, detail string) (Status, string) {
+	u, err := url.Parse(strings.TrimSpace(probeURL))
+	if err != nil || len(headerNames) == 0 {
+		return status, detail
+	}
+	origin := u.Scheme + "://" + u.Host
+	if final := resp.Request; final != nil && final.URL != nil && !sameOrigin(u, final.URL) {
+		return StatusMisconfigured, fmt.Sprintf("redirected to %s (an auth login page?) — check http_headers for %s", final.URL.Host, origin)
+	}
+	if resp.StatusCode != http.StatusUnauthorized && resp.StatusCode != http.StatusForbidden {
+		return status, detail
+	}
+	hint := fmt.Sprintf("rejected (HTTP %d); http_headers are set for %s (%s), check they are current", resp.StatusCode, origin, strings.Join(headerNames, ", "))
+	if status == StatusMisconfigured && detail != "" {
+		hint += "; otherwise: " + detail
+	}
+	return StatusMisconfigured, hint
+}
+
+func sameOrigin(a, b *url.URL) bool {
+	return strings.EqualFold(a.Scheme, b.Scheme) && strings.EqualFold(a.Hostname(), b.Hostname()) && effectivePort(a) == effectivePort(b)
+}
+
+func effectivePort(u *url.URL) string {
+	switch {
+	case u.Port() != "":
+		return u.Port()
+	case strings.EqualFold(u.Scheme, "https"):
+		return "443"
+	default:
+		return "80"
+	}
 }
 
 func ErrorDetail(err error) string {

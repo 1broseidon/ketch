@@ -175,6 +175,13 @@ const firecrawlLivenessBody = `{}`
 
 // ProbeFirecrawl checks the provider using a caller-supplied client and endpoint.
 func ProbeFirecrawl(ctx context.Context, client *http.Client, endpoint, apiKey string) (health.Status, string) {
+	return probeFirecrawl(ctx, client, endpoint, apiKey, nil)
+}
+
+// probeFirecrawl is ProbeFirecrawl given the http_headers names configured for
+// a self-hosted endpoint's origin, so an auth proxy's rejection is not blamed
+// on the API key.
+func probeFirecrawl(ctx context.Context, client *http.Client, endpoint, apiKey string, headerNames []string) (health.Status, string) {
 	key := strings.TrimSpace(apiKey)
 	hosted := strings.EqualFold(endpoint, config.FirecrawlSearchURL(config.DefaultFirecrawlURL))
 	body := firecrawlSearchBody
@@ -197,7 +204,8 @@ func ProbeFirecrawl(ctx context.Context, client *http.Client, endpoint, apiKey s
 	defer health.Drain(resp)
 
 	if !hosted {
-		return firecrawlLivenessStatus(resp.StatusCode, key)
+		status, detail := firecrawlLivenessStatus(resp.StatusCode, key)
+		return health.HeaderHint(resp, endpoint, headerNames, status, detail)
 	}
 	return firecrawlHostedStatus(resp.StatusCode, key)
 }
@@ -271,8 +279,10 @@ func firecrawlProvider() Provider {
 			if err != nil {
 				return health.StatusMisconfigured, err.Error()
 			}
+			endpoint := config.FirecrawlSearchURL(c.EffectiveFirecrawlURL())
+			headerNames := httpx.OriginHeaderNames(c.HTTPHeaders, endpoint)
 			return health.ProbeKeyPool(c.FirecrawlKeys(), func(key string) (health.Status, string) {
-				return ProbeFirecrawl(ctx, client, config.FirecrawlSearchURL(c.EffectiveFirecrawlURL()), key)
+				return probeFirecrawl(ctx, client, endpoint, key, headerNames)
 			})
 		},
 	}

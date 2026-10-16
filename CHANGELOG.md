@@ -7,6 +7,10 @@ using ketch, written as prose, not a list of commits. The section is published
 verbatim on the GitHub release. Versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**`ketch doctor` now says when an auth proxy rejects an instance.** With `http_headers` configured for a self-hosted SearXNG, Firecrawl, Degoog, or Sourcegraph instance, a 401 or 403 now leads with `rejected (HTTP 403); http_headers are set for https://searx.example.com (Cf-Access-Client-Id, Cf-Access-Client-Secret), check they are current`, followed by the backend's own advice about its JSON format or API key, which used to be all it said. A redirect to another origin, such as an Access login page, is named as one. Sourcegraph, whose check used to pass on a 401 or 403, now fails it in that case. Header names are shown, never values, and doctor output is unchanged for instances with no `http_headers`.
+
 ## [0.19.0] - 2026-10-09
 
 **Added TinyFish as a web search backend.** Set `tinyfish_api_key` or `KETCH_TINYFISH_API_KEY` to search with `-b tinyfish`; a configured key also makes TinyFish available to `auto` and federated search. Results include titles, URLs, and snippets from the free Search API. TinyFish Fetch is not used.
