@@ -107,9 +107,6 @@ func probeSearxng(ctx context.Context, client *http.Client, baseURL string, head
 	defer resp.Body.Close()
 
 	status, detail := searxngProbeStatus(resp, baseURL)
-	if status == health.StatusOK {
-		return status, detail
-	}
 	return health.HeaderHint(resp, baseURL, headerNames, status, detail)
 }
 

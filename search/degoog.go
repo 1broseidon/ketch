@@ -113,9 +113,6 @@ func probeDegoog(ctx context.Context, client *http.Client, baseURL string, heade
 	defer health.Drain(resp)
 
 	status, detail := degoogProbeStatus(resp, baseURL)
-	if status == health.StatusOK {
-		return status, detail
-	}
 	return health.HeaderHint(resp, baseURL, headerNames, status, detail)
 }
 

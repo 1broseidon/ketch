@@ -58,20 +58,46 @@ func ProbeKeyPool(keys []string, probe func(string) (Status, string)) (Status, s
 		}
 	}
 
-	var details []string
+	// Keys that fail the same way share one detail, so advice that has nothing
+	// to do with the key (an http_headers hint, a dead endpoint) prints once.
+	var order []string
+	byDetail := make(map[string][]int)
 	for i, result := range outcomes {
 		if result.status != worst || result.detail == "" {
 			continue
 		}
-		details = append(details, fmt.Sprintf("key %d of %d: %s", i+1, len(keys), result.detail))
+		if byDetail[result.detail] == nil {
+			order = append(order, result.detail)
+		}
+		byDetail[result.detail] = append(byDetail[result.detail], i+1)
 	}
-	if len(details) > 0 {
+	if len(order) > 0 {
+		details := make([]string, 0, len(order))
+		for _, detail := range order {
+			details = append(details, keysLabel(byDetail[detail], len(keys))+": "+detail)
+		}
 		return worst, strings.Join(details, "; ")
 	}
 	if worst == StatusOK && len(keys) > 1 {
 		return StatusOK, fmt.Sprintf("%d keys accepted", len(keys))
 	}
 	return worst, ""
+}
+
+// keysLabel names the 1-based key positions in a pool of total keys:
+// "key 2 of 3", "keys 1, 3 of 3", or "all 3 keys".
+func keysLabel(positions []int, total int) string {
+	switch {
+	case len(positions) == 1:
+		return fmt.Sprintf("key %d of %d", positions[0], total)
+	case len(positions) == total:
+		return fmt.Sprintf("all %d keys", total)
+	}
+	nums := make([]string, len(positions))
+	for i, p := range positions {
+		nums[i] = fmt.Sprint(p)
+	}
+	return fmt.Sprintf("keys %s of %d", strings.Join(nums, ", "), total)
 }
 
 func statusPriority(status Status) int {
