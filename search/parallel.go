@@ -19,14 +19,24 @@ const (
 	parallelDescriptionMaxRunes = 300
 )
 
+// Parallel searches through Parallel's hosted Search MCP. It is keyless by
+// default (rate-limited); an optional API key, sent as a Bearer token, lifts
+// the hosted limits.
 type Parallel struct {
+	keys     keyPool
+	redact   *httpx.Redactor // API key values, kept out of errors
 	client   *http.Client
 	endpoint string
 }
 
 // NewParallel creates a keyless Parallel Search backend.
 func NewParallel() *Parallel {
-	return &Parallel{client: httpx.Default(), endpoint: parallelEndpoint}
+	return newParallelWithKeys(nil)
+}
+
+func newParallelWithKeys(keys []string) *Parallel {
+	pool := newKeyPool(keys)
+	return &Parallel{keys: pool, redact: httpx.NewValueRedactor(pool.keys...), client: httpx.Default(), endpoint: parallelEndpoint}
 }
 
 type parallelRPCResponse struct {
@@ -54,7 +64,20 @@ type parallelSearchPayload struct {
 // Search calls Parallel's hosted Search MCP and maps its ranked results into
 // Ketch's provider-neutral result shape. Parallel does not expose a result
 // limit argument, so the requested limit is applied locally.
+//
+// Every error is passed through the key redactor: the service, or a hop it
+// redirects to, can echo a credential into a status body, a JSON-RPC message,
+// or a Location that net/http quotes. Keyless backends have no redactor and
+// return errors unchanged.
 func (p *Parallel) Search(ctx context.Context, query string, limit int) ([]Result, error) {
+	results, err := p.search(ctx, query, limit)
+	if err != nil {
+		return nil, p.redact.Error(err)
+	}
+	return results, nil
+}
+
+func (p *Parallel) search(ctx context.Context, query string, limit int) ([]Result, error) {
 	if limit <= 0 {
 		return []Result{}, nil
 	}
@@ -75,21 +98,14 @@ func (p *Parallel) Search(ctx context.Context, query string, limit int) ([]Resul
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.endpoint, bytes.NewReader(body))
+	resp, key, err := p.post(ctx, body)
 	if err != nil {
 		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json, text/event-stream")
-
-	resp, err := p.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("parallel request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, parallelStatusError(resp)
+		return nil, p.statusError(resp, key)
 	}
 
 	var rpc parallelRPCResponse
@@ -182,24 +198,122 @@ func nonEmptyStrings(values []string) []string {
 	return result
 }
 
-func parallelStatusError(resp *http.Response) error {
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-	if detail := strings.TrimSpace(string(body)); detail != "" {
+// post sends one request with a key from the pool, retrying once with a
+// different key when the first is rejected or rate limited. Keyless backends
+// send a single unauthenticated request.
+func (p *Parallel) post(ctx context.Context, body []byte) (*http.Response, string, error) {
+	key := p.keys.pick()
+	resp, err := p.request(ctx, body, key)
+	if err != nil {
+		return nil, key, err
+	}
+	if (resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusTooManyRequests) && p.keys.size() > 1 {
+		closeSearchResponse(resp)
+		key = p.keys.pickDifferent(key)
+		resp, err = p.request(ctx, body, key)
+	}
+	return resp, key, err
+}
+
+func (p *Parallel) request(ctx context.Context, body []byte, key string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.endpoint, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+	if key != "" {
+		req.Header.Set("Authorization", "Bearer "+key)
+	}
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("parallel request failed: %w", err)
+	}
+	return resp, nil
+}
+
+// statusError maps credential failures on a keyed request to actionable
+// errors that name the key by position, never by value. Keyless requests keep
+// the generic status error.
+func (p *Parallel) statusError(resp *http.Response, key string) error {
+	if key != "" {
+		switch resp.StatusCode {
+		case http.StatusUnauthorized:
+			return fmt.Errorf("parallel: invalid API key (%s; set via: ketch config set parallel_api_key <key>)", p.keys.keyLabel(key))
+		case http.StatusPaymentRequired:
+			return fmt.Errorf("parallel: payment required (%s; check your Parallel plan)", p.keys.keyLabel(key))
+		case http.StatusTooManyRequests:
+			return fmt.Errorf("parallel: rate limited (%s)", p.keys.keyLabel(key))
+		}
+	}
+	return parallelStatusError(resp, p.redact)
+}
+
+// parallelStatusError quotes up to 4096 bytes of the response body. Key
+// values are redacted before the body is cut, so a key at the cut is not left
+// half-visible; a nil redactor quotes the body as it is.
+func parallelStatusError(resp *http.Response, redact *httpx.Redactor) error {
+	if detail := strings.TrimSpace(redact.Excerpt(resp.Body, 4096)); detail != "" {
 		return fmt.Errorf("parallel returned status %d: %s", resp.StatusCode, detail)
 	}
 	return fmt.Errorf("parallel returned status %d", resp.StatusCode)
 }
 
+// ProbeParallel checks the provider using a caller-supplied client and
+// endpoint. Without a key it is the generic MCP reachability check; with one
+// it sends the key, reports a rejected key as misconfigured, and redacts the
+// key from the detail.
+func ProbeParallel(ctx context.Context, client *http.Client, endpoint, apiKey string) (health.Status, string) {
+	key := strings.TrimSpace(apiKey)
+	if key == "" {
+		return health.ProbeMCP(ctx, client, endpoint, "parallel")
+	}
+	status, detail := probeParallelKeyed(ctx, client, endpoint, key)
+	return status, httpx.NewValueRedactor(key).String(detail)
+}
+
+func probeParallelKeyed(ctx context.Context, client *http.Client, endpoint, key string) (health.Status, string) {
+	body := strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, body)
+	if err != nil {
+		return health.StatusUnreachable, health.ErrorDetail(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+	req.Header.Set("Authorization", "Bearer "+key)
+	resp, err := client.Do(req)
+	if err != nil {
+		return health.StatusUnreachable, health.ErrorDetail(err)
+	}
+	defer health.Drain(resp)
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return health.StatusOK, ""
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return health.StatusMisconfigured, "API key rejected (ketch config set parallel_api_key <key>)"
+	case http.StatusPaymentRequired:
+		return health.StatusMisconfigured, "payment required for this API key (check your Parallel plan)"
+	case http.StatusTooManyRequests:
+		return health.StatusOK, "reachable, key accepted (rate limited)"
+	default:
+		return health.StatusUnreachable, fmt.Sprintf("parallel returned status %d", resp.StatusCode)
+	}
+}
+
 func parallelProvider() Provider {
+	keys := config.KeyPool("parallel_api_key", "parallel_api_keys")
 	return Provider{
-		Settings: []config.Setting{},
+		Settings: []config.Setting{keys},
 		AutoRank: 70,
 		ID:       "parallel",
 		Name:     "Parallel",
 		Usable:   func(*config.Config) bool { return true },
-		New:      func(c *config.Config) (Searcher, error) { return NewParallel(), nil },
+		New:      func(c *config.Config) (Searcher, error) { return newParallelWithKeys(keys.Keys(c)), nil },
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
-			return health.ProbeMCP(ctx, client, "https://search.parallel.ai/mcp", "parallel")
+			return health.ProbeKeyPool(keys.Keys(c), func(key string) (health.Status, string) {
+				return ProbeParallel(ctx, client, parallelEndpoint, key)
+			})
 		},
 	}
 }
