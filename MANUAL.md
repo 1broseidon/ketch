@@ -437,7 +437,7 @@ $ ketch version
 ketch v0.17.0
   commit: 8f41359
   built:  2026-09-16T22:51:07Z
-  go:     go1.25.7 linux/amd64
+  go:     go1.26.9 linux/amd64
 ```
 
 ## Workflows
