@@ -60,3 +60,4 @@ createdAt: "2026-10-13T00:29:00.726Z"
 
 ## Log
 - 2026-10-13T06:18:39.173Z: [claude] Audit 2026-10-13: still current; ranks quoted are right (Brave 30, TinyFish 45, Exa 80, DDG 120). Note that auto promotes configured providers first and uses rank as a tiebreak (search/auto.go:48-61). --random already takes an ordered list (cmd/search.go:44), so the fallback could be --random's list without the shuffle.
+- 2026-10-16T15:19:31.604Z: [claude] Owner settled the design on #80: no --fallback flag and no comma-list --backend (would look like --multi but behave differently). Instead a `search_order` config key (list of backend IDs, e.g. ["exa","tinyfish","brave"]) plus KETCH_SEARCH_ORDER env override; when set, `auto` tries only those backends, in that order. MCP agents get it for free; a per-call flag can come later on top. Happy to review a PR.
