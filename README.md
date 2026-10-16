@@ -368,6 +368,12 @@ preservation and CLI latency across 500 pinned pages from 70 websites; it lives 
 own repository and builds a sibling ketch checkout. Known extraction misses remain
 visible; passing its regression check is not a release approval.
 
+## Sponsors
+
+ketch is free and MIT-licensed. If it saves you or your team time, you can
+[sponsor its development](https://github.com/sponsors/1broseidon). Sponsors never
+get product changes, default settings, or vendor-specific code.
+
 ## License
 
 [MIT](./LICENSE)
