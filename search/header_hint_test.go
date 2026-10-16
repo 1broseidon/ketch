@@ -162,3 +162,33 @@ func TestProbeHintsAtHeadersWhenRedirectedToAnotherOrigin(t *testing.T) {
 		})
 	}
 }
+
+// A redirect to another origin that ends at a working instance still means
+// the headers configured for the first origin are never sent. Every backend
+// says so, whether or not its probe can tell a working instance from a login
+// page; without headers the probe reads as it did.
+func TestProbeHintsAtHeadersWhenRedirectedToAWorkingInstance(t *testing.T) {
+	working := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"results":[]}`))
+	}))
+	defer working.Close()
+	workingURL, _ := url.Parse(working.URL)
+	instance := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, working.URL+r.URL.RequestURI(), http.StatusTemporaryRedirect)
+	}))
+	defer instance.Close()
+
+	for _, backend := range []string{"searxng", "firecrawl", "degoog"} {
+		t.Run(backend, func(t *testing.T) {
+			status, detail := probeInstance(t, backend, instance.URL, accessHeaders(instance.URL))
+			want := fmt.Sprintf("redirected to %s (an auth login page?) — check http_headers for %s", workingURL.Host, instance.URL)
+			if status != health.StatusMisconfigured || detail != want {
+				t.Fatalf("probe = %s (%s), want misconfigured (%s)", status, detail, want)
+			}
+			if status, detail := probeInstance(t, backend, instance.URL, nil); status != health.StatusOK {
+				t.Fatalf("probe without http_headers = %s (%s), want ok", status, detail)
+			}
+		})
+	}
+}
