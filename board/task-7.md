@@ -1,6 +1,6 @@
 ---
 id: task-7
-title: "feat: auto-escalate to headless browser on HTTP 403/429 scrape errors"
+title: "feat: auto-escalate to headless browser on HTTP 403 scrape errors"
 column: todo
 position: 4
 description: |-
@@ -42,6 +42,7 @@ description: |-
   - **Resilient MCP Tooling:** Eliminates redundant agent turns caused by recoverable WAF/challenge 403 errors.
 source: https://github.com/1broseidon/ketch/issues/81
 createdAt: "2026-10-13T00:28:57.388Z"
+updatedAt: "2026-10-16T15:19:31.869Z"
 ---
 
 ## Log
