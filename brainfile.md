@@ -12,6 +12,8 @@ columns:
     title: To do
   - id: in-progress
     title: In progress
+  - id: monitor
+    title: Monitor
   - id: wont-do
     title: Won't do
 ---
