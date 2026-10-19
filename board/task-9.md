@@ -1,7 +1,7 @@
 ---
 id: task-9
 title: "Official pi package: ketch skill + extension tools installable via `pi install git:github.com/1broseidon/ketch`"
-column: in-progress
+column: review
 position: 4
 description: |-
   ## Why
@@ -51,7 +51,7 @@ relatedFiles:
   - CHANGELOG.md
   - .gitignore
 contract:
-  status: in_progress
+  status: delivered
   deliverables:
     - type: file
       path: package.json
@@ -96,8 +96,8 @@ contract:
     readyAt: "2026-10-19T21:50:55.443Z"
     pickedUpAt: "2026-10-19T23:49:48.267Z"
     reworkCount: 1
-    deliveredAt: "2026-10-19T22:01:03.129Z"
-    duration: 593
+    deliveredAt: "2026-10-19T23:54:28.973Z"
+    duration: 281
 createdAt: "2026-10-19T21:50:55.444Z"
 dispatch:
   agent: claude
@@ -112,7 +112,7 @@ dispatch:
     pid: 38560
     at: "2026-10-19T23:49:32.101Z"
 assignee: claude
-updatedAt: "2026-10-19T23:49:48.267Z"
+updatedAt: "2026-10-19T23:54:28.973Z"
 ---
 
 ## Description
