@@ -105,9 +105,14 @@ dispatch:
   effort: high
   by: person
   at: "2026-10-19T23:49:22.728Z"
-  tries: 1
+  tries: 2
+  claim:
+    host: Georges-Mac-Studio
+    runner: cli
+    pid: 38560
+    at: "2026-10-19T23:49:32.101Z"
 assignee: claude
-updatedAt: "2026-10-19T23:49:23.479Z"
+updatedAt: "2026-10-19T23:49:32.101Z"
 ---
 
 ## Description
