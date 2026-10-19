@@ -95,6 +95,15 @@ contract:
   metrics:
     readyAt: "2026-10-19T21:50:55.443Z"
 createdAt: "2026-10-19T21:50:55.444Z"
+dispatch:
+  agent: claude
+  model: fable
+  effort: high
+  by: chat
+  at: "2026-10-19T21:50:58.187Z"
+  tries: 0
+assignee: claude
+updatedAt: "2026-10-19T21:50:58.291Z"
 ---
 
 ## Description
