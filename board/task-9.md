@@ -101,20 +101,13 @@ contract:
 createdAt: "2026-10-19T21:50:55.444Z"
 dispatch:
   agent: claude
-  model: fable
+  model: opus
   effort: high
-  by: chat
-  at: "2026-10-19T21:50:58.187Z"
+  by: person
+  at: "2026-10-19T23:49:22.728Z"
   tries: 1
-  claim:
-    host: Georges-Mac-Studio
-    runner: cli
-    pid: 94931
-    at: "2026-10-19T21:51:00.463Z"
-    ended: "2026-10-19T22:01:17.364Z"
-    outcome: review
 assignee: claude
-updatedAt: "2026-10-19T23:49:19.645Z"
+updatedAt: "2026-10-19T23:49:23.479Z"
 ---
 
 ## Description
