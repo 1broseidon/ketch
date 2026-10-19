@@ -90,7 +90,7 @@ keeps the first `max_pages` pages, reporting `stopped: "max_pages"` or
 
 ## Development
 
-Tests stub `pi.exec` and run without pi or ketch installed:
+The unit tests stub `pi.exec` and run without pi or ketch installed:
 
 ```sh
 npm install   # dev-only typebox; host packages are peerDependencies and never installed here
@@ -98,6 +98,16 @@ npm test      # node --test, Node >= 22.18 (native type stripping)
 ```
 
 They cover argument construction per tool (`--json` always, flags only when
-set, batch `urls` as positional args), exit-code → prefix mapping, the missing
-binary, the abort signal, and the crawl reshaping. Keep the option sets in step
-with `mcp/*.go` when either side changes.
+set), exit-code → prefix mapping, the missing binary, the abort signal, and the
+crawl reshaping. Keep the option sets in step with `mcp/*.go` when either side
+changes.
+
+Tool inputs never reach the CLI as options. Every flag value is bound with `=`,
+and the query, URL or tag name follows a `--`, so a query of `--help` is
+searched rather than run. Scrape URLs always go as one JSON-array argument,
+because the CLI treats a lone argument that names an existing path as a file
+of URLs. Crawl `allow`/`deny` patterns are CSV-quoted, because Cobra parses
+those flags as CSV and would split a regex such as `[0-9]{1,4}` at its comma.
+`ketch.cli.test.ts` checks these rules against the real parser. It runs a
+binary built from this checkout (or `KETCH_BIN`) against a local HTTP server,
+and skips itself when Go isn't installed.

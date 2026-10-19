@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 
-import ketch, { assembleCrawl, crawlArgs, scrapeArgs, searchArgs, tagArgs } from "./ketch.ts";
+import ketch, { assembleCrawl, crawlArgs, csvField, scrapeArgs, searchArgs, tagArgs } from "./ketch.ts";
 
 interface ExecCall {
 	command: string;
@@ -105,7 +105,7 @@ describe("argument construction", () => {
 		const { tools, calls } = fakePi();
 		await run(tools, "ketch_search", { query: "go iter.Seq" });
 		assert.equal(calls[0].command, "ketch");
-		assert.deepEqual(calls[0].args, ["search", "go iter.Seq", "--json"]);
+		assert.deepEqual(calls[0].args, ["search", "--json", "--", "go iter.Seq"]);
 
 		await run(tools, "ketch_search", {
 			query: "q",
@@ -118,24 +118,33 @@ describe("argument construction", () => {
 			tag: "proj",
 		});
 		assert.deepEqual(calls[1].args, [
-			"search", "q", "--json",
-			"--backend", "brave",
-			"--limit", "3",
-			"--searxng-url", "http://sx:8081",
+			"search", "--json",
+			"--backend=brave",
+			"--limit=3",
+			"--searxng-url=http://sx:8081",
 			"--scrape", "--trim",
-			"--max-chars", "4000",
-			"--tag", "proj",
+			"--max-chars=4000",
+			"--tag=proj",
+			"--", "q",
 		]);
 	});
 
 	test("search: multi uses the = form the CLI requires", () => {
-		assert.deepEqual(searchArgs({ query: "q", multi: ["brave", "ddg"] }), ["search", "q", "--json", "--multi=brave,ddg"]);
-		assert.deepEqual(searchArgs({ query: "q", multi: ["all"] }), ["search", "q", "--json", "--multi=all"]);
-		assert.deepEqual(searchArgs({ query: "q", random: ["all"] }), ["search", "q", "--json", "--random=all"]);
+		assert.deepEqual(searchArgs({ query: "q", multi: ["brave", "ddg"] }), ["search", "--json", "--multi=brave,ddg", "--", "q"]);
+		assert.deepEqual(searchArgs({ query: "q", multi: ["all"] }), ["search", "--json", "--multi=all", "--", "q"]);
+		assert.deepEqual(searchArgs({ query: "q", random: ["all"] }), ["search", "--json", "--random=all", "--", "q"]);
 	});
 
 	test("search: false booleans and empty strings add nothing", () => {
-		assert.deepEqual(searchArgs({ query: "q", scrape: false, trim: false, backend: "", tag: "" }), ["search", "q", "--json"]);
+		assert.deepEqual(searchArgs({ query: "q", scrape: false, trim: false, backend: "", tag: "" }), ["search", "--json", "--", "q"]);
+	});
+
+	test("inputs that look like flags stay positional, after --", () => {
+		assert.deepEqual(searchArgs({ query: "--help" }), ["search", "--json", "--", "--help"]);
+		assert.deepEqual(crawlArgs({ url: "status" }), ["crawl", "--json", "--", "status"]);
+		assert.deepEqual(tagArgs({ operation: "add", tag: "-p", urls: ["--cookie-file=x"] }), ["tag", "add", "--json", "--", "-p", "--cookie-file=x"]);
+		// A value bound with = can't be read as a flag of its own.
+		assert.deepEqual(searchArgs({ query: "q", tag: "--json" }), ["search", "--json", "--tag=--json", "--", "q"]);
 	});
 
 	test("search: mutually exclusive selectors are rejected locally", async () => {
@@ -150,24 +159,25 @@ describe("argument construction", () => {
 		const { tools, calls } = fakePi();
 		await run(tools, "ketch_code", { query: "NewFromConfig", lang: "go", repo: "1broseidon/ketch", regexp: true, backend: "sourcegraph", limit: 2, tag: "t" });
 		assert.deepEqual(calls[0].args, [
-			"code", "NewFromConfig", "--json",
-			"--backend", "sourcegraph",
-			"--lang", "go",
-			"--repo", "1broseidon/ketch",
+			"code", "--json",
+			"--backend=sourcegraph",
+			"--lang=go",
+			"--repo=1broseidon/ketch",
 			"--regex",
-			"--limit", "2",
-			"--tag", "t",
+			"--limit=2",
+			"--tag=t",
+			"--", "NewFromConfig",
 		]);
 		await run(tools, "ketch_code", { query: "x" });
-		assert.deepEqual(calls[1].args, ["code", "x", "--json"]);
+		assert.deepEqual(calls[1].args, ["code", "--json", "--", "x"]);
 	});
 
 	test("docs: library/tokens and resolve", async () => {
 		const { tools, calls } = fakePi();
 		await run(tools, "ketch_docs", { query: "routing", library: "/vercel/next.js", tokens: 2000 });
-		assert.deepEqual(calls[0].args, ["docs", "routing", "--json", "--library", "/vercel/next.js", "--tokens", "2000"]);
+		assert.deepEqual(calls[0].args, ["docs", "--json", "--library=/vercel/next.js", "--tokens=2000", "--", "routing"]);
 		await run(tools, "ketch_docs", { query: "next.js", resolve: true });
-		assert.deepEqual(calls[1].args, ["docs", "next.js", "--json", "--resolve"]);
+		assert.deepEqual(calls[1].args, ["docs", "--json", "--resolve", "--", "next.js"]);
 
 		const r = await run(tools, "ketch_docs", { query: "next.js", resolve: true, tag: "t" });
 		assert.equal(r.isError, true);
@@ -178,7 +188,7 @@ describe("argument construction", () => {
 	test("scrape: single url, then every option", async () => {
 		const { tools, calls } = fakePi();
 		await run(tools, "ketch_scrape", { url: "https://example.com" });
-		assert.deepEqual(calls[0].args, ["scrape", "https://example.com", "--json"]);
+		assert.deepEqual(calls[0].args, ["scrape", "--json", "--", '["https://example.com"]']);
 
 		await run(tools, "ketch_scrape", {
 			url: "https://example.com/a",
@@ -192,21 +202,28 @@ describe("argument construction", () => {
 			tag: "docs",
 		});
 		assert.deepEqual(calls[1].args, [
-			"scrape", "https://example.com/a", "--json",
-			"--select", "main",
+			"scrape", "--json",
+			"--select=main",
 			"--force-browser", "--no-llms-txt", "--trim",
-			"--max-chars", "6000",
+			"--max-chars=6000",
 			"--no-cache",
-			"--concurrency", "2",
-			"--tag", "docs",
+			"--concurrency=2",
+			"--tag=docs",
+			"--", '["https://example.com/a"]',
 		]);
 	});
 
-	test("scrape: batch urls become positional args before --json", async () => {
+	test("scrape: urls travel as one JSON-array argument, never as file paths", async () => {
 		const { tools, calls } = fakePi();
 		await run(tools, "ketch_scrape", { urls: ["https://a.test/1", "https://a.test/2", " https://a.test/3 "] });
-		assert.deepEqual(calls[0].args, ["scrape", "https://a.test/1", "https://a.test/2", "https://a.test/3", "--json"]);
-		assert.deepEqual(scrapeArgs({ raw: true }, ["u"]), ["scrape", "u", "--json", "--raw"]);
+		assert.deepEqual(calls[0].args, ["scrape", "--json", "--", '["https://a.test/1","https://a.test/2","https://a.test/3"]']);
+		// A lone path would be read by the CLI as a file of URLs; inside the
+		// array it is one URL and fails URL validation.
+		await run(tools, "ketch_scrape", { url: "./urls.txt" });
+		assert.deepEqual(calls[1].args, ["scrape", "--json", "--", '["./urls.txt"]']);
+		await run(tools, "ketch_scrape", { urls: ["./urls.txt"] });
+		assert.deepEqual(calls[2].args, calls[1].args);
+		assert.deepEqual(scrapeArgs({ raw: true }, ["u"]), ["scrape", "--json", "--raw", "--", '["u"]']);
 	});
 
 	test("scrape: exactly one of url or urls", async () => {
@@ -220,7 +237,7 @@ describe("argument construction", () => {
 	});
 
 	test("crawl: repeated --allow/--deny, never --background", () => {
-		assert.deepEqual(crawlArgs({ url: "https://d.test" }), ["crawl", "https://d.test", "--json"]);
+		assert.deepEqual(crawlArgs({ url: "https://d.test" }), ["crawl", "--json", "--", "https://d.test"]);
 		const args = crawlArgs({
 			url: "https://d.test",
 			depth: 2,
@@ -233,25 +250,37 @@ describe("argument construction", () => {
 			max_chars: 100,
 		});
 		assert.deepEqual(args, [
-			"crawl", "https://d.test", "--json",
-			"--depth", "2",
+			"crawl", "--json",
+			"--depth=2",
 			"--sitemap",
-			"--allow", "/docs", "--allow", "/guide",
-			"--deny", "\\.pdf$",
+			'--allow="/docs"', '--allow="/guide"',
+			'--deny="\\.pdf$"',
 			"--no-cache",
-			"--tag", "d",
+			"--tag=d",
+			"--", "https://d.test",
 		]);
 		assert.ok(!args.includes("--background"));
 		assert.ok(!args.some((a) => a.includes("max")), "max_pages/max_chars are applied client-side");
 	});
 
+	test("crawl: filters are CSV-quoted so commas and quotes survive the StringSlice parse", () => {
+		const args = crawlArgs({ url: "https://d.test", allow: ["/a,b", ""], deny: ["/archive/[0-9]{1,4}/", 'say "hi"', "-x"] });
+		assert.deepEqual(args.slice(2, -2), [
+			'--allow="/a,b"',
+			'--deny="/archive/[0-9]{1,4}/"',
+			'--deny="say ""hi"""',
+			'--deny="-x"',
+		]);
+		assert.equal(csvField('a"b,c'), '"a""b,c"');
+	});
+
 	test("tag: one CLI verb per operation", () => {
 		assert.deepEqual(tagArgs({ operation: "list" }), ["tag", "list", "--json"]);
-		assert.deepEqual(tagArgs({ operation: "show", tag: "p" }), ["tag", "show", "p", "--json"]);
-		assert.deepEqual(tagArgs({ operation: "show", tag: "p", limit: 0 }), ["tag", "show", "p", "--json", "--limit", "0"]);
-		assert.deepEqual(tagArgs({ operation: "add", tag: "p", urls: ["https://a", "https://b"] }), ["tag", "add", "p", "https://a", "https://b", "--json"]);
-		assert.deepEqual(tagArgs({ operation: "remove", tag: "p" }), ["tag", "remove", "p", "--json"]);
-		assert.deepEqual(tagArgs({ operation: "remove", tag: "p", urls: ["https://a"] }), ["tag", "remove", "p", "https://a", "--json"]);
+		assert.deepEqual(tagArgs({ operation: "show", tag: "p" }), ["tag", "show", "--json", "--", "p"]);
+		assert.deepEqual(tagArgs({ operation: "show", tag: "p", limit: 0 }), ["tag", "show", "--json", "--limit=0", "--", "p"]);
+		assert.deepEqual(tagArgs({ operation: "add", tag: "p", urls: ["https://a", "https://b"] }), ["tag", "add", "--json", "--", "p", "https://a", "https://b"]);
+		assert.deepEqual(tagArgs({ operation: "remove", tag: "p" }), ["tag", "remove", "--json", "--", "p"]);
+		assert.deepEqual(tagArgs({ operation: "remove", tag: "p", urls: ["https://a"] }), ["tag", "remove", "--json", "--", "p", "https://a"]);
 	});
 
 	test("tag: local validation mirrors the MCP tool", async () => {
@@ -313,8 +342,7 @@ describe("error taxonomy", () => {
 			const { tools } = fakePi(exit(code, `Error: something about exit ${code}\n`));
 			const r = await run(tools, "ketch_docs", { query: "q" });
 			assert.equal(r.isError, true);
-			assert.ok(r.content[0].text.startsWith(prefix + " "), r.content[0].text);
-			assert.match(r.content[0].text, new RegExp(`exit ${code}`));
+			assert.equal(r.content[0].text, `${prefix} something about exit ${code}`, "cobra's Error: prefix is replaced");
 		});
 	}
 
@@ -409,7 +437,7 @@ describe("crawl assembly", () => {
 		const { tools } = fakePi(exit(2, "Error: invalid URL scheme\n"));
 		const r = await run(tools, "ketch_crawl", { url: "file:///etc/passwd" });
 		assert.equal(r.isError, true);
-		assert.match(r.content[0].text, /^\[validation\] Error: invalid URL scheme/);
+		assert.match(r.content[0].text, /^\[validation\] invalid URL scheme/);
 	});
 });
 

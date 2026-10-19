@@ -266,10 +266,13 @@ interface ToolResult {
 	isError?: boolean;
 }
 
-/** Appends `--flag value` when value is set. */
+/**
+ * Appends `--flag=value` when value is set. The `=` form binds the value to the
+ * flag even when it starts with `-`, so a selector or tag can't become a flag.
+ */
 function flag(args: string[], name: string, value: string | number | undefined): void {
 	if (value === undefined || value === "") return;
-	args.push(name, String(value));
+	args.push(`${name}=${value}`);
 }
 
 /** Appends a boolean `--flag` when true. */
@@ -277,9 +280,34 @@ function toggle(args: string[], name: string, value: boolean | undefined): void 
 	if (value) args.push(name);
 }
 
-/** Appends one `--flag value` per entry. */
+/**
+ * Appends one `--flag=value` per entry for a Cobra StringSlice flag. pflag reads
+ * each value as a CSV record, so a bare comma would split one pattern in two
+ * (`[0-9]{1,4}`) and a bare quote is a parse error; quoting every value as a
+ * single CSV field passes it through verbatim. The `=` form keeps a value that
+ * starts with `-` from being read as a flag.
+ */
 function each(args: string[], name: string, values: string[] | undefined): void {
-	for (const v of values ?? []) args.push(name, v);
+	for (const v of values ?? []) {
+		if (v === "") continue;
+		args.push(`${name}=${csvField(v)}`);
+	}
+}
+
+/** Quotes s as one RFC 4180 field, the inverse of encoding/csv's reader. */
+export function csvField(s: string): string {
+	return `"${s.replaceAll('"', '""')}"`;
+}
+
+/**
+ * Ends the option list: everything after `--` is positional to Cobra, so a
+ * query or URL that starts with `-` (`--help`, `--cookie-file=…`) is searched or
+ * fetched as text and never parsed as a flag, and a crawl seed or tag name that
+ * spells a subcommand (`status`, `list`) is never dispatched as one.
+ */
+function positional(args: string[], ...values: string[]): string[] {
+	args.push("--", ...values);
+	return args;
 }
 
 function tail(s: string, limit: number): string {
@@ -353,7 +381,9 @@ async function runKetch(
 		return { ok: false, error: KETCH_MISSING, killed: false, stdout, stderr };
 	}
 	const kind = EXIT_PREFIX[r.code] ?? "upstream";
-	const detail = tail(stderr, STDERR_LIMIT) || `ketch exited ${r.code}`;
+	// Cobra prefixes the returned error with "Error: "; the taxonomy prefix
+	// replaces it, as on the MCP server.
+	const detail = tail(stderr.replace(/^\s*Error: /, ""), STDERR_LIMIT) || `ketch exited ${r.code}`;
 	return { ok: false, error: `[${kind}] ${detail}`, killed: false, stdout, stderr };
 }
 
@@ -386,8 +416,11 @@ async function passthrough(
 // ---------------------------------------------------------------------------
 // Argument construction, one function per tool so tests can pin each down.
 
+// Each builder puts the options first and the user's positional inputs last,
+// after `--` (see positional).
+
 export function searchArgs(p: SearchInput): string[] {
-	const args = ["search", p.query, "--json"];
+	const args = ["search", "--json"];
 	flag(args, "--backend", p.backend);
 	if (p.multi && p.multi.length > 0) args.push(`--multi=${p.multi.join(",")}`);
 	if (p.random && p.random.length > 0) args.push(`--random=${p.random.join(",")}`);
@@ -397,33 +430,39 @@ export function searchArgs(p: SearchInput): string[] {
 	toggle(args, "--trim", p.trim);
 	flag(args, "--max-chars", p.max_chars);
 	flag(args, "--tag", p.tag);
-	return args;
+	return positional(args, p.query);
 }
 
 export function codeArgs(p: CodeInput): string[] {
-	const args = ["code", p.query, "--json"];
+	const args = ["code", "--json"];
 	flag(args, "--backend", p.backend);
 	flag(args, "--lang", p.lang);
 	flag(args, "--repo", p.repo);
 	toggle(args, "--regex", p.regexp);
 	flag(args, "--limit", p.limit);
 	flag(args, "--tag", p.tag);
-	return args;
+	return positional(args, p.query);
 }
 
 export function docsArgs(p: DocsInput): string[] {
-	const args = ["docs", p.query, "--json"];
+	const args = ["docs", "--json"];
 	flag(args, "--backend", p.backend);
 	flag(args, "--library", p.library);
 	flag(args, "--tokens", p.tokens);
 	flag(args, "--limit", p.limit);
 	toggle(args, "--resolve", p.resolve);
 	flag(args, "--tag", p.tag);
-	return args;
+	return positional(args, p.query);
 }
 
+/**
+ * The URLs always travel as one JSON-array argument, never as bare positionals:
+ * the CLI reads a lone positional that names an existing path as a file of URLs
+ * (`./urls.txt`), whereas each entry of a JSON array is taken as a URL and
+ * validated as one.
+ */
 export function scrapeArgs(p: ScrapeInput, urls: string[]): string[] {
-	const args = ["scrape", ...urls, "--json"];
+	const args = ["scrape", "--json"];
 	flag(args, "--select", p.selector);
 	toggle(args, "--raw", p.raw);
 	toggle(args, "--force-browser", p.force_browser);
@@ -433,18 +472,18 @@ export function scrapeArgs(p: ScrapeInput, urls: string[]): string[] {
 	toggle(args, "--no-cache", p.no_cache);
 	flag(args, "--concurrency", p.concurrency);
 	flag(args, "--tag", p.tag);
-	return args;
+	return positional(args, JSON.stringify(urls));
 }
 
 export function crawlArgs(p: CrawlInput): string[] {
-	const args = ["crawl", p.url, "--json"];
+	const args = ["crawl", "--json"];
 	flag(args, "--depth", p.depth);
 	toggle(args, "--sitemap", p.sitemap);
 	each(args, "--allow", p.allow);
 	each(args, "--deny", p.deny);
 	toggle(args, "--no-cache", p.no_cache);
 	flag(args, "--tag", p.tag);
-	return args;
+	return positional(args, p.url);
 }
 
 export function tagArgs(p: TagInput): string[] {
@@ -452,14 +491,14 @@ export function tagArgs(p: TagInput): string[] {
 		case "list":
 			return ["tag", "list", "--json"];
 		case "show": {
-			const args = ["tag", "show", p.tag ?? "", "--json"];
-			if (p.limit !== undefined) args.push("--limit", String(p.limit));
-			return args;
+			const args = ["tag", "show", "--json"];
+			if (p.limit !== undefined) args.push(`--limit=${p.limit}`);
+			return positional(args, p.tag ?? "");
 		}
 		case "add":
-			return ["tag", "add", p.tag ?? "", ...(p.urls ?? []), "--json"];
+			return positional(["tag", "add", "--json"], p.tag ?? "", ...(p.urls ?? []));
 		case "remove":
-			return ["tag", "remove", p.tag ?? "", ...(p.urls ?? []), "--json"];
+			return positional(["tag", "remove", "--json"], p.tag ?? "", ...(p.urls ?? []));
 	}
 }
 
