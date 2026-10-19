@@ -8,6 +8,8 @@ Verified against ketch v0.18.0 (main). Discipline 6 applies: `--help` and `ketch
 
 The two transports expose the same options under different spellings. Both directions:
 
+In pi, the package's tools are the MCP tools under a `ketch_` prefix — `ketch_search`, `ketch_code`, `ketch_docs`, `ketch_scrape`, `ketch_crawl`, `ketch_tag` — with the MCP option names below; they shell out to the CLI, so `max_pages` is applied client-side there.
+
 | CLI | MCP | Notes |
 | --- | --- | --- |
 | `--regex` | `regexp` | code; grepapp/sourcegraph only |

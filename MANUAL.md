@@ -786,6 +786,22 @@ $ claude plugin marketplace add 1broseidon/ketch
 $ claude plugin install ketch@ketch
 ```
 
+### pi package
+
+[pi](https://github.com/badlogic/pi-mono) does not speak MCP, so the repo is
+also a pi package: the bundled skill plus `ketch_search`, `ketch_code`,
+`ketch_docs`, `ketch_scrape`, `ketch_crawl` and `ketch_tag` tools that shell
+out to `ketch … --json`, with the same per-call options and `[validation]`
+… `[cancelled]` error prefixes as the MCP tools, and a `/ketch-doctor` command.
+
+```console
+$ pi install git:github.com/1broseidon/ketch
+```
+
+It never bundles the binary; `ketch` must be on PATH. The crawl tool is
+bounded like the MCP one (`max_pages` default 30, cap 100, 3 minutes). Details
+in [plugins/pi/](https://github.com/1broseidon/ketch/tree/main/plugins/pi).
+
 ### Bootstrap files
 
 Two files on this domain are written for agents rather than people:

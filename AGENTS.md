@@ -38,6 +38,9 @@ cache/                       TTL page cache (Store interface, BBoltStore backend
 httpx/                       Shared tuned *http.Transport for all HTTP backends
 updatecheck/                 "new release available" probe + throttled stderr hint
 site/                        Builds ketch.run from MANUAL.md with inkcap (GitHub Pages, docs.yml)
+skills/ketch/                Bundled research skill (SKILL.md + references), loaded by Claude Code and pi
+plugins/ketch/               Claude Code plugin (.mcp.json → `ketch mcp serve`, symlinked skill); listed by .claude-plugin/marketplace.json
+plugins/pi/                  pi package extension (ketch_* tools over `ketch … --json`) + node:test suite; manifest is the root package.json, `npm test` runs it
 ```
 
 Reusable packages live at the module root so external programs can `import "github.com/1broseidon/ketch/<pkg>"`. Shared implementation helpers, including the config model used by provider packages, live under `internal/`.

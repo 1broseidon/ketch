@@ -29,6 +29,9 @@ specs/
 npm/platforms/
 npm/node_modules/
 
+# Root package.json is the pi package manifest; `npm install` there only pulls dev deps for `npm test`
+/node_modules/
+
 # goreleaser build output (`goreleaser release --snapshot`)
 dist/
 

@@ -1,7 +1,8 @@
 ---
 name: ketch
 description: "Research skill for ketch — a fast stateless CLI for web search, OSS code search, curated library docs, page scraping, and site crawling; an optional MCP server exists for operators who want it, but the CLI is the primary interface. Use when a question needs live sources: 'research X', 'what are people saying about Y', 'find docs or real-world examples for Z', 'scrape/crawl this site' — or when installing or configuring ketch backends. Routes search vs code vs docs vs scrape vs crawl, keeps every fetch inside a token budget, turns error prefixes into control flow, and produces cited syntheses. Not for local codebase search, private repos, or pages behind auth."
-version: 0.1.0
+metadata:
+  version: "0.1.0"
 ---
 
 # Ketch
@@ -15,7 +16,7 @@ The CLI is ketch's identity: call → result → exit, `--json` on every call, e
 Decide once per session, before the first call:
 
 1. `which ketch` succeeds → the CLI is your transport: `--json` on every call, exit codes as control flow.
-2. Also check for ketch's MCP tools in your tool list — `search`, `code`, `docs`, `scrape`, `crawl` and `tag` from a server named `ketch` (in Claude Code: `mcp__ketch__search`, …). Present → the operator wired them up on purpose, and using them for research calls is correct and good: structured output, per-URL errors, no shell round-trip. Do not shell out around tools the operator set up.
+2. Also check for ketch's tools in your tool list — the MCP tools `search`, `code`, `docs`, `scrape`, `crawl` and `tag` from a server named `ketch` (in Claude Code: `mcp__ketch__search`, …), or in pi the package's `ketch_search`, `ketch_code`, `ketch_docs`, `ketch_scrape`, `ketch_crawl` and `ketch_tag`. Present → the operator wired them up on purpose, and using them for research calls is correct and good: structured output, per-URL errors, the same options and error prefixes as MCP. Do not shell out around tools the operator set up. (pi's tools run the CLI for you, so the page-cache tradeoff in step 3 does not apply to them.)
 3. Both live → either transport serves research calls, but know the tradeoff: a running MCP server holds the single-process page-cache lock, so concurrent CLI scrapes silently run cache-disabled.
 4. Neither CLI nor MCP tools → ketch is not installed. Offer `brew install ketch` or `go install github.com/1broseidon/ketch@latest` — an operator action: propose, wait for confirmation.
 
@@ -33,7 +34,7 @@ Use only these terms in ketch output.
 | --- | --- |
 | **surface** | One of the five research operations: `search`, `code`, `docs`, `scrape`, `crawl` |
 | **tag** | A label filed across surfaces: search hits, code hits, docs chunks, scraped pages, crawled pages. Not a research surface — it answers "what did I already find?", not "what is out there?" |
-| **transport** | How a surface is called: the CLI binary (default) or the optional MCP tools |
+| **transport** | How a surface is called: the CLI binary (default), the optional MCP tools, or the pi package's `ketch_*` tools (which run the CLI) |
 | **backend** | The provider behind a surface: auto (default; a fallback chain, not a provider)/brave/ddg/searxng/exa/firecrawl/keenable/tavily/tinyfish/parallel/serpbase/degoog/serply/youcom (search), grepapp/sourcegraph/github (code), context7 (docs) |
 | **operator action** | A system-managing or diagnostic command — `config set`, `cache`, `browser install`, background crawls, `doctor` — CLI-only by design |
 | **error prefix** | The stable class on every ketch error: CLI exit codes 2–6, mirrored as the bracketed prefix opening every MCP tool error — `[validation]`, `[not_found]`, `[upstream]`, `[precondition]`, `[cancelled]` |

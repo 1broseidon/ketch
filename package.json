@@ -1,0 +1,41 @@
+{
+  "name": "ketch-pi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "pi package for the ketch CLI: the bundled ketch research skill plus ketch_search/ketch_code/ketch_docs/ketch_scrape/ketch_crawl/ketch_tag tools over `ketch … --json`. Requires the ketch binary on PATH.",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "ketch",
+    "research",
+    "web-search",
+    "code-search",
+    "docs",
+    "scrape",
+    "crawl"
+  ],
+  "homepage": "https://ketch.run/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1broseidon/ketch"
+  },
+  "license": "MIT",
+  "pi": {
+    "skills": [
+      "./skills/ketch"
+    ],
+    "extensions": [
+      "./plugins/pi/extensions/ketch.ts"
+    ]
+  },
+  "scripts": {
+    "test": "node --test plugins/pi/extensions/ketch.test.ts"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "typebox": "^1.4.2"
+  }
+}

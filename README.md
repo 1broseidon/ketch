@@ -356,6 +356,16 @@ claude plugin install ketch@ketch
 
 The plugin registers `ketch mcp serve` as an MCP server and installs the ketch research skill. It does not bundle the binary: `ketch` >= v0.10.0 must be on PATH (`brew install ketch` or `go install github.com/1broseidon/ketch@latest`).
 
+### pi package
+
+For [pi](https://github.com/badlogic/pi-mono), which does not speak MCP, the repo is also a pi package: the same [bundled skill](./skills/ketch/) plus `ketch_search`, `ketch_code`, `ketch_docs`, `ketch_scrape`, `ketch_crawl` and `ketch_tag` tools that shell out to `ketch … --json`, with the same per-call options and error prefixes as the MCP tools, and a `/ketch-doctor` command:
+
+```sh
+pi install git:github.com/1broseidon/ketch
+```
+
+Like the Claude Code plugin it never bundles the binary — `ketch` must be on PATH. Details in [`plugins/pi/`](./plugins/pi/).
+
 ## Contributing
 
 Bug reports, documentation, and improvements are welcome. See the
