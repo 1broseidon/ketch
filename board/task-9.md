@@ -114,7 +114,7 @@ dispatch:
     ended: "2026-10-19T22:01:17.364Z"
     outcome: review
 assignee: claude
-updatedAt: "2026-10-19T23:31:49.997Z"
+updatedAt: "2026-10-19T23:49:19.645Z"
 ---
 
 ## Description
@@ -151,3 +151,4 @@ pi git installs take a repository root, not a subdirectory, so the manifest live
 
 ## Log
 - 2026-10-19T22:01:02.647Z: [claude] Done on branch dispatch/task-9 (commit bd3cc21). Root package.json is the pi manifest (private, pi-package keyword, skills → ./skills/ketch, extensions → ./plugins/pi/extensions/ketch.ts; @earendil-works/pi-coding-agent + typebox as peerDependencies only, .npmrc legacy-peer-deps so npm install pulls just dev typebox). Extension registers ketch_search/code/docs/scrape/crawl/tag over `ketch … --json` via pi.exec, exit codes → [validation]/[not_found]/[upstream]/[precondition]/[cancelled], missing binary → [precondition] install hint (pi.exec swallows ENOENT as a silent exit 1, handled), plus /ketch-doctor. Tag tool uses the MCP param names (operation/tag/urls/limit) rather than action/name, per the mirror-MCP constraint. CLI crawl has no --max-pages: capped client-side (30/100, 3 min) with stopped=max_pages|timeout. 34 node:test cases pass with stubbed pi.exec; go test and golangci-lint (via go run v2.15.0) pass; no Go changes. SKILL.md version moved under metadata; README/MANUAL/CHANGELOG/AGENTS.md/skill transport notes updated. Not verified against a live pi install (pi not available here).
+- 2026-10-19T23:49:19.415Z: Sent back from review: I’d fix three issues before merging. All are in `plugins/pi/extensions/ketch.ts`: - **P1 — CLI flag injection (lines 389–462).** User inputs are passed as positional arguments without `--`. A search for `--help` runs help instead of searching; a batch URL entry can introduce flags such as `--cookie-file=…` that aren’t exposed by the tool schema. Build options first, then append `--` and positional inputs. This isn’t shell injection, but it still lets input alter command behavior. - **P2 — URL-only scrape accepts local file input (lines 425–426, 582–588).** Passing `url: "./urls.txt"` triggers the CLI’s file autodetection: it reads that file as a URL list. A single-element `urls` array does the same. Explicitly serialize the URL list as the CLI’s JSON-array input so individual strings undergo URL validation rather than file autodetection. Adding `--` alone won’t fix this. - **P2 — Crawl filters change meaning when they contain commas (lines 280–282, 443–444).** Cobra parses `--allow` and `--deny` values as CSV. A regex like `/archive/[0-9]{1,4}/` gets split into two patterns. CSV-encode these values and test commas and quotes against actual CLI parsing.
