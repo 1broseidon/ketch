@@ -63,6 +63,27 @@ jobs:
       - name: Test
         run: go test ./...
 
+  pi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # The integration tests build ketch from this checkout.
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - run: npm ci
+
+      - name: pi package tests
+        run: npm test
+
   security:
     runs-on: ubuntu-latest
     steps:
