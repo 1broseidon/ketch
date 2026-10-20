@@ -49,6 +49,21 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      # The pi package's npx fallback is pinned to an exact ketch-cli version.
+      # Tagged without the bump, the tag would ship a plugin that runs the
+      # previous release, so the release stops before anything is published.
+      - name: Check the pi package's npx pin matches the tag
+        run: |
+          set -eu
+          version="${REF#refs/tags/}"; version="${version#v}"
+          if ! grep -q "NPX_PACKAGE = \"ketch-cli@${version}\"" plugins/pi/extensions/ketch.ts; then
+            echo "::error::plugins/pi/extensions/ketch.ts NPX_PACKAGE is not ketch-cli@${version}; bump it in the release commit"
+            grep -n "NPX_PACKAGE =" plugins/pi/extensions/ketch.ts || true
+            exit 1
+          fi
+        env:
+          REF: ${{ needs.ref.outputs.ref }}
+
       - run: go test ./...
 
       # The release notes are the tag's section of CHANGELOG.md, verbatim.

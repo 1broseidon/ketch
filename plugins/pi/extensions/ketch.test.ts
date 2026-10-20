@@ -2,9 +2,10 @@
 // ketch binary needed. Run with `npm test` from the repo root (Node >= 22.18
 // strips the types natively).
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, test } from "node:test";
 
-import ketch, { assembleCrawl, crawlArgs, csvField, scrapeArgs, searchArgs, tagArgs } from "./ketch.ts";
+import ketch, { NPX_PACKAGE, assembleCrawl, crawlArgs, csvField, scrapeArgs, searchArgs, tagArgs } from "./ketch.ts";
 
 interface ExecCall {
 	command: string;
@@ -501,5 +502,17 @@ describe("/ketch-doctor", () => {
 		const missing = fakePi(exit(1, ""));
 		await missing.commands.get("ketch-doctor")!.handler("", ctx);
 		assert.deepEqual(notes[2], ["[precondition] ketch not on PATH: brew install ketch, npm i -g ketch-cli, or go install github.com/1broseidon/ketch@latest", "error"]);
+	});
+});
+
+describe("release pin", () => {
+	// The npx fallback must run the release this checkout belongs to. The
+	// chore(release) commit adds the version's CHANGELOG.md heading, so it fails
+	// here until NPX_PACKAGE is bumped in the same commit.
+	test("NPX_PACKAGE matches the newest released version in CHANGELOG.md", () => {
+		const changelog = readFileSync(new URL("../../../CHANGELOG.md", import.meta.url), "utf8");
+		const newest = changelog.match(/^## \[(\d+\.\d+\.\d+)\]/m)?.[1];
+		assert.ok(newest, "no released version heading found in CHANGELOG.md");
+		assert.equal(NPX_PACKAGE, `ketch-cli@${newest}`, `bump NPX_PACKAGE in plugins/pi/extensions/ketch.ts to ketch-cli@${newest}`);
 	});
 });
