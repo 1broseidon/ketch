@@ -3,6 +3,7 @@ package configbase
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"slices"
@@ -314,17 +315,31 @@ func (c *Config) decodeSetting(raw map[string]json.RawMessage, key string, list 
 	if list {
 		var values []string
 		if err := json.Unmarshal(value, &values); err != nil {
-			return err
+			return settingTypeError(key, err)
 		}
 		c.SetProvider(key, values)
 		return nil
 	}
 	scalar := c.String(key)
 	if err := json.Unmarshal(value, &scalar); err != nil {
-		return err
+		return settingTypeError(key, err)
 	}
 	c.SetProvider(key, scalar)
 	return nil
+}
+
+// settingTypeError puts the provider key on a type error from decoding its
+// value on its own, so it names the key the way a struct field's error does.
+func settingTypeError(key string, err error) error {
+	var typeErr *json.UnmarshalTypeError
+	if !errors.As(err, &typeErr) {
+		return err
+	}
+	field := key
+	if typeErr.Field != "" {
+		field += "." + typeErr.Field
+	}
+	return &json.UnmarshalTypeError{Value: typeErr.Value, Type: typeErr.Type, Offset: typeErr.Offset, Field: field}
 }
 
 func (c *Config) decodeWithoutSchema(data []byte, raw map[string]json.RawMessage) error {

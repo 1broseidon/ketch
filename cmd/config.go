@@ -155,8 +155,13 @@ func runConfigInit(_ *cobra.Command, _ []string) error {
 
 func runConfigSet(_ *cobra.Command, args []string) error {
 	// LoadFile, not Load: `config set` must round-trip the file as-is and
-	// never persist env-derived (KETCH_*) values into it.
-	c := config.LoadFile()
+	// never persist env-derived (KETCH_*) values into it. A file it cannot
+	// decode is never overwritten: saving would replace every other setting
+	// in it with a default.
+	c, err := config.LoadFile()
+	if err != nil {
+		return exitErrf(ExitValidation, "invalid configuration:\n%v", err)
+	}
 	key, value := args[0], args[1]
 
 	if err := applyConfigSet(&c, key, value); err != nil {

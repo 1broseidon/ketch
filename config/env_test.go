@@ -89,8 +89,8 @@ func TestLoadEnvOverridesFile(t *testing.T) {
 		t.Fatalf("BraveKeys = %v", got)
 	}
 	// LoadFile ignores env entirely.
-	if file := LoadFile(); file.Limit != 3 || len(file.BraveKeys()) != 2 {
-		t.Fatalf("LoadFile = %+v", file)
+	if file, err := LoadFile(); err != nil || file.Limit != 3 || len(file.BraveKeys()) != 2 {
+		t.Fatalf("LoadFile = %+v, %v", file, err)
 	}
 }
 

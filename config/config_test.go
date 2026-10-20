@@ -94,7 +94,11 @@ func TestSaveEnforcesPrivateMode(t *testing.T) {
 			t.Fatalf("config mode = %o, want 600", got)
 		}
 	}
-	if got := LoadFile().BraveKeys(); !reflect.DeepEqual(got, []string{"secret"}) {
+	loaded, err := LoadFile()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := loaded.BraveKeys(); !reflect.DeepEqual(got, []string{"secret"}) {
 		t.Fatalf("saved brave keys = %v, want [secret]", got)
 	}
 }

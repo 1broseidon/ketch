@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
@@ -153,6 +154,31 @@ func TestRunConfigSetNeverEchoesSecrets(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestRunConfigSetRefusesUndecodableFile(t *testing.T) {
+	path := filepath.Join(testutil.SetIsolatedConfigHome(t), "config.json")
+	t.Setenv("KETCH_CONFIG", path)
+	original := []byte(`{"searxng_url":"https://private.example","limit":"7"}`)
+	if err := os.WriteFile(path, original, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	err := runConfigSet(nil, []string{"backend", "searxng"})
+	var exitErr *ExitError
+	if !errors.As(err, &exitErr) || exitErr.Code != ExitValidation {
+		t.Fatalf("error = %v, want exit %d", err, ExitValidation)
+	}
+	if !strings.HasPrefix(err.Error(), "invalid configuration:") || !strings.Contains(err.Error(), "limit must be a whole number") {
+		t.Fatalf("error = %q, want an invalid configuration naming limit", err)
+	}
+	got, readErr := os.ReadFile(path)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if !bytes.Equal(got, original) {
+		t.Fatalf("config set rewrote an undecodable file: %s", got)
 	}
 }
 

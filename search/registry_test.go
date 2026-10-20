@@ -118,7 +118,10 @@ func assertRegistrySecrets(t *testing.T, cfg *config.Config) {
 	if err := config.Save(*cfg); err != nil {
 		t.Fatal(err)
 	}
-	loaded := config.LoadFile()
+	loaded, err := config.LoadFile()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if loaded.String("registryproof_api_key") != "fixture-one" || !slices.Equal(loaded.Strings("registryproof_api_keys"), []string{"fixture-two"}) {
 		t.Fatal("registered settings did not survive the config-file round trip")
 	}

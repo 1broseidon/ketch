@@ -62,6 +62,8 @@ func init() {
 // whether a KETCH_* env parse error should block it. version/help/completion
 // never touch config; `config init/set/path` operate on the file only (via
 // config.LoadFile), so they too keep working under a broken environment.
+// `config set` still refuses a config file it cannot decode, rather than
+// overwriting it.
 func commandUsesConfig(cmd *cobra.Command) bool {
 	switch cmd.Name() {
 	case "version", "help", "completion":

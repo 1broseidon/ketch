@@ -675,6 +675,7 @@ $ KETCH_CONFIG=/etc/ketch/config.json ketch config
 - `url_rewrites` and `spa_markers` are file-only — their JSON and regex values don't survive env quoting.
 - `ketch config` reports an `env_overrides` section, so you can always see which values came from the environment.
 - Invalid values fail loudly, naming the offending variable. Secret `KETCH_*` vars are stripped from spawned subprocesses.
+- A config file that isn't valid JSON, or gives a key the wrong type, fails the same way (exit 2), naming the key and the type it needs. `ketch config set` won't overwrite it; fix it by hand.
 
 #### Page cache — bbolt, 72h TTL, shared across processes
 
