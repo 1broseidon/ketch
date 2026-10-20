@@ -9,8 +9,13 @@
 // so a missing `ketch` only surfaces as a [precondition] error on the first call.
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { Type, type Static } from "typebox";
+import { renderers } from "./render.ts";
 
-const INSTALL_HINT = "brew install ketch or go install github.com/1broseidon/ketch@latest";
+const INSTALL_HINT = "brew install ketch, npm i -g ketch-cli, or go install github.com/1broseidon/ketch@latest";
+// Fallback when no `ketch` is on PATH: run the published npm wrapper through npx.
+// Pinned so the plugin never executes an unreviewed release; KETCH_PI_NO_NPX=1 opts out.
+const NPX_PACKAGE = "ketch-cli@0.19.0";
+const NPX_FIRST_RUN_EXTRA_MS = 120_000;
 const KETCH_MISSING = `[precondition] ketch not on PATH: ${INSTALL_HINT}`;
 
 // Exit codes → the same stable prefixes the MCP server puts on tool errors
@@ -339,16 +344,36 @@ function warningsOf(stderr: string): string[] {
 		.filter(Boolean);
 }
 
-/** Runs `ketch <args>` and classifies the outcome under the error taxonomy. */
+/**
+ * Runs `ketch <args>`; if the binary is not on PATH, falls back to the pinned
+ * npm wrapper via `npx -y` (unless KETCH_PI_NO_NPX is set).
+ */
 async function runKetch(
 	pi: ExtensionAPI,
 	args: string[],
 	signal: AbortSignal | undefined,
 	timeout: number,
 ): Promise<RunResult> {
+	const direct = await runCommand(pi, "ketch", args, args, signal, timeout);
+	if (direct.error !== KETCH_MISSING || process.env.KETCH_PI_NO_NPX) return direct;
+	const viaNpx = await runCommand(pi, "npx", ["-y", NPX_PACKAGE, ...args], args, signal, timeout + NPX_FIRST_RUN_EXTRA_MS);
+	// npm's own chatter (update notices) is not a ketch warning.
+	const stderr = viaNpx.stderr.split("\n").filter((l) => !/^npm (notice|warn)\b/.test(l.trim())).join("\n");
+	return { ...viaNpx, stderr };
+}
+
+/** Runs one command and classifies the outcome under the error taxonomy. */
+async function runCommand(
+	pi: ExtensionAPI,
+	command: string,
+	execArgs: string[],
+	args: string[],
+	signal: AbortSignal | undefined,
+	timeout: number,
+): Promise<RunResult> {
 	let r: ExecResult;
 	try {
-		r = await pi.exec("ketch", args, { signal, timeout });
+		r = await pi.exec(command, execArgs, { signal, timeout });
 	} catch (err) {
 		const e = err as NodeJS.ErrnoException;
 		if (e?.code === "ENOENT") {
@@ -557,6 +582,7 @@ export function assembleCrawl(stdout: string, stderr: string, maxPages: number, 
 export default function ketch(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "ketch_search",
+		...renderers("search"),
 		label: "ketch search",
 		description:
 			"Search the web with the operator-configured ketch backend (brave, ddg, searxng, exa, firecrawl, keenable, tavily, tinyfish, parallel, serpbase, degoog, serply, youcom, or the keyless auto chain) and return results (title, url, description). " +
@@ -577,6 +603,7 @@ export default function ketch(pi: ExtensionAPI): void {
 
 	pi.registerTool({
 		name: "ketch_code",
+		...renderers("code"),
 		label: "ketch code",
 		description:
 			"Search code across open-source repositories using grep.app, Sourcegraph, or GitHub (default: the configured backend). Returns file/line-level snippets with repo context. " +
@@ -592,6 +619,7 @@ export default function ketch(pi: ExtensionAPI): void {
 
 	pi.registerTool({
 		name: "ketch_docs",
+		...renderers("docs"),
 		label: "ketch docs",
 		description:
 			"Search library documentation using Context7. Supports resolving a library name to a Context7 library ID (resolve=true), and fetching docs directly from a known library ID (library=/org/repo, bounded by tokens)." +
@@ -608,6 +636,7 @@ export default function ketch(pi: ExtensionAPI): void {
 
 	pi.registerTool({
 		name: "ketch_scrape",
+		...renderers("scrape"),
 		label: "ketch scrape",
 		description:
 			"Fetch one or more URLs, extract the main content, and convert it to clean markdown (or raw HTML with raw=true). " +
@@ -630,6 +659,7 @@ export default function ketch(pi: ExtensionAPI): void {
 
 	pi.registerTool({
 		name: "ketch_crawl",
+		...renderers("crawl"),
 		label: "ketch crawl",
 		description:
 			"BFS-crawl a site from a seed URL (same host only) and return extracted markdown for each page. " +
@@ -657,6 +687,7 @@ export default function ketch(pi: ExtensionAPI): void {
 
 	pi.registerTool({
 		name: "ketch_tag",
+		...renderers("tag"),
 		label: "ketch tag",
 		description:
 			"Bookmark research sources under project or topic labels and revisit them across sessions. " +

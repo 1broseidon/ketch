@@ -2,7 +2,7 @@
   "name": "ketch-pi",
   "version": "0.1.0",
   "private": true,
-  "description": "pi package for the ketch CLI: the bundled ketch research skill plus ketch_search/ketch_code/ketch_docs/ketch_scrape/ketch_crawl/ketch_tag tools over `ketch … --json`. Requires the ketch binary on PATH.",
+  "description": "pi package for the ketch CLI: the bundled ketch research skill plus ketch_search/ketch_code/ketch_docs/ketch_scrape/ketch_crawl/ketch_tag tools over `ketch \u2026 --json`. Requires the ketch binary on PATH.",
   "type": "module",
   "keywords": [
     "pi-package",
@@ -33,9 +33,11 @@
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",
-    "typebox": "*"
+    "typebox": "*",
+    "@earendil-works/pi-tui": "*"
   },
   "devDependencies": {
+    "@earendil-works/pi-tui": "1.3.0",
     "typebox": "^1.4.2"
   }
 }

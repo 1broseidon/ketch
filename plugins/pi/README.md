@@ -5,9 +5,11 @@ CLI. It gives a pi user what the Claude Code plugin gives a Claude Code user:
 the bundled [ketch research skill](../../skills/ketch/) plus first-class tools
 over the five research surfaces and `tag`.
 
-pi does not speak MCP, so instead of `ketch mcp serve` the package ships an
-extension that shells out to `ketch <command> … --json` for every call. Same
-binary, same config, same backends as the CLI and the MCP server.
+pi can also connect to MCP servers (`ketch mcp serve` works there too), but
+this package gives pi a tighter fit: the extension shells out to
+`ketch <command> … --json` for every call, adds compact result rendering and
+the crawl bounds, and ships the research skill. Same binary, same config, same
+backends as the CLI and the MCP server.
 
 ## Install
 
@@ -21,11 +23,18 @@ The package never bundles the binary. `ketch` must be on PATH:
 ```sh
 brew install ketch
 # or
+npm i -g ketch-cli
+# or
 go install github.com/1broseidon/ketch@latest
 ```
 
-A missing binary does not break pi startup; the first tool call returns
-`[precondition] ketch not on PATH: …` so the agent can tell you.
+A missing binary does not break pi startup. When `ketch` is not on PATH the
+tools fall back to the published npm wrapper, `npx -y ketch-cli@<pinned>`, so
+they work with Node alone (the first call downloads the platform binary and
+gets extra time for it). Set `KETCH_PI_NO_NPX=1` to disable the fallback; the
+call then returns `[precondition] ketch not on PATH: …` with install options
+(`brew install ketch`, `npm i -g ketch-cli`, `go install …`). The same
+`[precondition]` error appears if neither `ketch` nor `npx` exists.
 
 ## What it registers
 
@@ -56,6 +65,23 @@ Config-level settings — API keys, cache TTL, browser binary, cookies, User-Age
 **Command** — `/ketch-doctor` runs `ketch doctor` and shows the report as a
 notification. Operator actions (`config`, `cache`, `browser install`,
 background crawls) stay CLI-only, same as the MCP server.
+
+### Tool output
+
+On pi 1.3.0, all six tools use compact call and result cards rather than a raw
+JSON dump. Search shows titles, domains and snippets; scrape shows page titles,
+URLs and a short content preview; code/docs retain repository or library context.
+Crawl reports page counts, errors and stop reasons; tags show counts and write
+confirmations. Warnings and per-page failures remain visible. Previews show at
+most four entries, with bounded one-line snippets.
+
+Use **Ctrl+O** (pi’s default expand-tool-output binding) for the full response
+and structured details. These display-only previews do not truncate or change
+the content or details supplied to the model. Terminal control sequences are
+stripped from displayed external text, including expanded output.
+
+After editing a locally linked package, run **`/reload`** in the pi session
+(or restart pi). There is no binary rebuild needed for renderer changes.
 
 ### Errors
 
@@ -93,7 +119,7 @@ keeps the first `max_pages` pages, reporting `stopped: "max_pages"` or
 The unit tests stub `pi.exec` and run without pi or ketch installed:
 
 ```sh
-npm install   # dev-only typebox; host packages are peerDependencies and never installed here
+npm install --legacy-peer-deps  # typebox and pi-tui for local tests; pi supplies host modules
 npm test      # node --test, Node >= 22.18 (native type stripping)
 ```
 
@@ -110,4 +136,11 @@ of URLs. Crawl `allow`/`deny` patterns are CSV-quoted, because Cobra parses
 those flags as CSV and would split a regex such as `[0-9]{1,4}` at its comma.
 `ketch.cli.test.ts` checks these rules against the real parser. It runs a
 binary built from this checkout (or `KETCH_BIN`) against a local HTTP server,
-and skips itself when Go isn't installed.
+skips itself when Go isn't installed, and fails if Go is present but the build breaks. Inherited `KETCH_*` variables are dropped so an operator's settings never leak into the tests.
+
+For a checked CLI run, build explicitly and remove inherited `KETCH_*` settings
+before running `npm test` with `KETCH_BIN` pointing to that build. The CLI test
+fixture isolates HOME, config and tags, but otherwise inherits the environment.
+An explicit successful build avoids mistaking an automatically skipped CLI suite
+for a passing integration test. Renderer tests also exercise the real pi-tui Text
+component at narrow widths; they need neither a model nor network services.

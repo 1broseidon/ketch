@@ -350,7 +350,7 @@ describe("error taxonomy", () => {
 		const { tools } = fakePi(exit(1, ""));
 		const r = await run(tools, "ketch_search", { query: "q" });
 		assert.equal(r.isError, true);
-		assert.equal(r.content[0].text, "[precondition] ketch not on PATH: brew install ketch or go install github.com/1broseidon/ketch@latest");
+		assert.equal(r.content[0].text, "[precondition] ketch not on PATH: brew install ketch, npm i -g ketch-cli, or go install github.com/1broseidon/ketch@latest");
 	});
 
 	test("binary missing (pi.exec rejects with ENOENT) → [precondition]", async () => {
@@ -362,6 +362,48 @@ describe("error taxonomy", () => {
 		const r = await run(tools, "ketch_scrape", { url: "https://a.test" });
 		assert.equal(r.isError, true);
 		assert.match(r.content[0].text, /^\[precondition\] ketch not on PATH/);
+	});
+
+	test("ketch missing → falls back to the pinned npx wrapper with the same args", async () => {
+		const { tools, calls } = fakePi((c) => (c.command === "ketch" ? exit(1, "") : ok('{"results":[]}')));
+		const r = await run(tools, "ketch_search", { query: "q" });
+		assert.equal(r.isError, undefined);
+		assert.equal(calls[0].command, "ketch");
+		assert.equal(calls[1].command, "npx");
+		assert.deepEqual(calls[1].args.slice(0, 2), ["-y", "ketch-cli@0.19.0"]);
+		assert.deepEqual(calls[1].args.slice(2), calls[0].args);
+		assert.ok((calls[1].options?.timeout ?? 0) > (calls[0].options?.timeout ?? 0), "first-run download allowance");
+	});
+
+	test("npx fallback drops npm's update notices from warnings", async () => {
+		const { tools } = fakePi((c) => (c.command === "ketch" ? exit(1, "") : ok('{"tags":[]}', "npm notice New major version\nnpm notice To update run\n")));
+		const r = await run(tools, "ketch_tag", { operation: "list" });
+		assert.equal(r.isError, undefined);
+		assert.equal((r.details as any).warnings, undefined);
+	});
+
+	test("ketch present → npx is never used", async () => {
+		const { tools, calls } = fakePi(ok("[]"));
+		await run(tools, "ketch_search", { query: "q" });
+		assert.deepEqual(calls.map((c) => c.command), ["ketch"]);
+	});
+
+	test("KETCH_PI_NO_NPX opts out of the fallback", async () => {
+		process.env.KETCH_PI_NO_NPX = "1";
+		try {
+			const { tools, calls } = fakePi(exit(1, ""));
+			const r = await run(tools, "ketch_search", { query: "q" });
+			assert.match(r.content[0].text, /^\[precondition\] ketch not on PATH/);
+			assert.deepEqual(calls.map((c) => c.command), ["ketch"]);
+		} finally {
+			delete process.env.KETCH_PI_NO_NPX;
+		}
+	});
+
+	test("npx run errors keep the taxonomy (exit 2 → validation)", async () => {
+		const { tools } = fakePi((c) => (c.command === "ketch" ? exit(1, "") : exit(2, "Error: bad input")));
+		const r = await run(tools, "ketch_search", { query: "q" });
+		assert.equal(r.content[0].text, "[validation] bad input");
 	});
 
 	test("killed by abort → [cancelled]", async () => {
@@ -458,6 +500,6 @@ describe("/ketch-doctor", () => {
 
 		const missing = fakePi(exit(1, ""));
 		await missing.commands.get("ketch-doctor")!.handler("", ctx);
-		assert.deepEqual(notes[2], ["[precondition] ketch not on PATH: brew install ketch or go install github.com/1broseidon/ketch@latest", "error"]);
+		assert.deepEqual(notes[2], ["[precondition] ketch not on PATH: brew install ketch, npm i -g ketch-cli, or go install github.com/1broseidon/ketch@latest", "error"]);
 	});
 });
