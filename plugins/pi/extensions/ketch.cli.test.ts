@@ -22,18 +22,22 @@ function findBinary(): string | undefined {
 	if (process.env.KETCH_BIN) return process.env.KETCH_BIN;
 	const out = join(work, "ketch");
 	try {
-		execFileSync("go", ["build", "-o", out, "."], { cwd: repoRoot, stdio: "ignore", env: { ...process.env, CGO_ENABLED: "0" } });
-		return out;
+		execFileSync("go", ["version"], { stdio: "ignore" });
 	} catch {
-		return undefined;
+		return undefined; // no Go toolchain: the suite skips itself
 	}
+	// Go is present, so a build failure is a real regression and must fail loudly.
+	execFileSync("go", ["build", "-o", out, "."], { cwd: repoRoot, stdio: "inherit", env: { ...process.env, CGO_ENABLED: "0" } });
+	return out;
 }
 
 const bin = findBinary();
 
 // An isolated home: no operator config, cache or tag index is read or written.
+// Inherited KETCH_* settings (cookie file, keys, backends) are dropped first.
+const inherited = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith("KETCH_")));
 const env = {
-	...process.env,
+	...inherited,
 	HOME: work,
 	KETCH_CONFIG: join(work, "config.json"),
 	KETCH_TAGS_PATH: join(work, "tags.db"),
