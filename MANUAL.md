@@ -592,8 +592,8 @@ rather than averaged away.
 #### Keyless — Nothing to configure
 
 `parallel`, `exa`, `keenable`, `youcom`, `firecrawl`, and `ddg` answer with no
-setup. Keys for exa, keenable, youcom, and firecrawl are optional and lift the
-hosted caps. ddg rate-limits readily under fan-out.
+setup. Keys for parallel, exa, keenable, youcom, and firecrawl are optional and
+lift the hosted caps. ddg rate-limits readily under fan-out.
 
 #### Keyed — Free key, then promoted by auto
 

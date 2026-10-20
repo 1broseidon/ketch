@@ -62,6 +62,8 @@
   ],
   "tinyfish_api_key_set": false,
   "tinyfish_api_keys_count": 0,
+  "parallel_api_key_set": false,
+  "parallel_api_keys_count": 0,
   "degoog_url": "",
   "serply_api_key_set": false,
   "serply_api_keys_count": 0
