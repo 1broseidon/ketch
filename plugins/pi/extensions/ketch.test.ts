@@ -370,7 +370,7 @@ describe("error taxonomy", () => {
 		assert.equal(r.isError, undefined);
 		assert.equal(calls[0].command, "ketch");
 		assert.equal(calls[1].command, "npx");
-		assert.deepEqual(calls[1].args.slice(0, 2), ["-y", "ketch-cli@0.19.0"]);
+		assert.deepEqual(calls[1].args.slice(0, 2), ["-y", "ketch-cli@0.20.0"]);
 		assert.deepEqual(calls[1].args.slice(2), calls[0].args);
 		assert.ok((calls[1].options?.timeout ?? 0) > (calls[0].options?.timeout ?? 0), "first-run download allowance");
 	});
