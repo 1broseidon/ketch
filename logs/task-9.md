@@ -1,8 +1,6 @@
 ---
 id: task-9
 title: "Official pi package: ketch skill + extension tools installable via `pi install git:github.com/1broseidon/ketch`"
-column: review
-position: 4
 description: |-
   ## Why
 
@@ -114,7 +112,8 @@ dispatch:
     ended: "2026-10-19T23:54:32.298Z"
     outcome: review
 assignee: claude
-updatedAt: "2026-10-19T23:54:32.298Z"
+updatedAt: "2026-10-20T05:23:12.760Z"
+completedAt: "2026-10-20T05:23:12.760Z"
 ---
 
 ## Description
