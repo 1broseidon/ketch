@@ -88,6 +88,16 @@ $ npx -y ketch-cli <command>
 $ go install github.com/1broseidon/ketch@latest
 ```
 
+#### pi — as a pi package
+
+```console
+$ pi install git:github.com/1broseidon/ketch
+```
+
+Adds the skill and `ketch_*` tools to [pi](https://github.com/badlogic/pi-mono);
+uses `ketch` from PATH, or `npx -y ketch-cli` when it isn't installed. See
+[pi package](#pi-package).
+
 #### chain — the rest of the toolkit
 
 ketch is one of the [chain.sh](https://chain.sh) tools. One command installs
@@ -789,8 +799,8 @@ $ claude plugin install ketch@ketch
 
 ### pi package
 
-[pi](https://github.com/badlogic/pi-mono) does not speak MCP, so the repo is
-also a pi package: the bundled skill plus `ketch_search`, `ketch_code`,
+pi can connect to `ketch mcp serve` like any MCP client, but the repo is also a
+pi package with a tighter fit: the bundled skill plus `ketch_search`, `ketch_code`,
 `ketch_docs`, `ketch_scrape`, `ketch_crawl` and `ketch_tag` tools that shell
 out to `ketch … --json`, with the same per-call options and `[validation]`
 … `[cancelled]` error prefixes as the MCP tools, and a `/ketch-doctor` command.
@@ -799,7 +809,12 @@ out to `ketch … --json`, with the same per-call options and `[validation]`
 $ pi install git:github.com/1broseidon/ketch
 ```
 
-It never bundles the binary; `ketch` must be on PATH. The crawl tool is
+Pin a release with `pi install git:github.com/1broseidon/ketch@v0.20.0`. Results
+render as compact summaries, with the full response behind Ctrl+O.
+
+It never bundles the binary. It uses `ketch` from PATH and otherwise falls back
+to the pinned `npx -y ketch-cli`, so Node alone is enough; set
+`KETCH_PI_NO_NPX=1` to turn that off. The crawl tool is
 bounded like the MCP one (`max_pages` default 30, cap 100, 3 minutes). Details
 in [plugins/pi/](https://github.com/1broseidon/ketch/tree/main/plugins/pi).
 
