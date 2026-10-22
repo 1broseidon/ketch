@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	config "github.com/1broseidon/ketch/internal/configbase"
@@ -45,11 +46,22 @@ type Auto struct {
 }
 
 // AutoChain returns the providers that may serve the auto backend, in the
-// order they will be tried: providers the operator has deliberately configured
-// first (their own SearXNG or Degoog instance, then any keyed API), then the
-// keyless providers by descriptor rank. Providers whose preconditions are not
-// met drop out, so the chain is always usable as returned.
+// order they will be tried. With the operator's search_order set, that is
+// exactly the listed providers in the listed order. Otherwise it is providers
+// the operator has deliberately configured first (their own SearXNG or Degoog
+// instance, then any keyed API), then the keyless providers by descriptor
+// rank. Providers whose preconditions are not met drop out, so the chain is
+// always usable as returned. An invalid search_order, possible only in a
+// hand-edited config file, yields an empty chain; NewAutoFromConfig reports why.
 func AutoChain(cfg *config.Config) []Provider {
+	chain, _ := autoChain(cfg)
+	return chain
+}
+
+func autoChain(cfg *config.Config) ([]Provider, error) {
+	if len(cfg.SearchOrder) > 0 {
+		return orderedChain(cfg)
+	}
 	var chain []Provider
 	for _, p := range providers {
 		if p.InAuto(cfg) {
@@ -62,7 +74,54 @@ func AutoChain(cfg *config.Config) []Provider {
 		}
 		return a.AutoRank - b.AutoRank
 	})
-	return chain
+	return chain, nil
+}
+
+// orderedChain resolves the operator's search_order. The operator's order is
+// the whole order: nothing is promoted or re-ranked, and a provider outside
+// the default chain (a keyed one with AutoRank 0, or SearXNG on its localhost
+// default) may be listed. Only a provider that cannot run at all — its key or
+// instance is missing — drops out, as it would from the default chain.
+func orderedChain(cfg *config.Config) ([]Provider, error) {
+	ids, err := NormalizeSearchOrder(cfg.SearchOrder)
+	if err != nil {
+		return nil, fmt.Errorf("invalid search_order: %w", err)
+	}
+	chain := make([]Provider, 0, len(ids))
+	for _, id := range ids {
+		if p, ok := Lookup(id); ok && p.Usable(cfg) {
+			chain = append(chain, p)
+		}
+	}
+	return chain, nil
+}
+
+// NormalizeSearchOrder validates an operator-configured search_order: entries
+// are trimmed and lowercased; blank, unknown, duplicate and "auto" entries are
+// rejected (with the valid names in the error). Unlike an allowlist the
+// operator's order is the point, so it is preserved. A nil or empty list means
+// "no override" and returns nil.
+func NormalizeSearchOrder(list []string) ([]string, error) {
+	if len(list) == 0 {
+		return nil, nil
+	}
+	valid := strings.Join(AvailableBackends(), ", ")
+	out := make([]string, 0, len(list))
+	for _, raw := range list {
+		id := strings.ToLower(strings.TrimSpace(raw))
+		switch _, known := Lookup(id); {
+		case id == "":
+			return nil, fmt.Errorf("backend name is blank (valid: %s)", valid)
+		case id == AutoBackend:
+			return nil, fmt.Errorf("%q is the chain itself, not a backend to list in it (valid: %s)", AutoBackend, valid)
+		case slices.Contains(out, id):
+			return nil, fmt.Errorf("duplicate backend %q (valid: %s)", id, valid)
+		case !known:
+			return nil, fmt.Errorf("unknown backend %q (valid: %s)", id, valid)
+		}
+		out = append(out, id)
+	}
+	return out, nil
 }
 
 // autoPromoted reports a provider the operator deliberately set up — explicit
@@ -102,7 +161,10 @@ func NewAutoFromConfig(cfg *config.Config, searxngURL string) (*Auto, error) {
 		c.SetProvider("searxng_url", searxngURL)
 	}
 
-	chain := AutoChain(&c)
+	chain, err := autoChain(&c)
+	if err != nil {
+		return nil, fmt.Errorf("no usable search backends for %q: %w", AutoBackend, err)
+	}
 	backends := make([]namedSearcher, 0, len(chain))
 	for _, p := range chain {
 		searcher, err := p.New(&c)
@@ -110,6 +172,10 @@ func NewAutoFromConfig(cfg *config.Config, searxngURL string) (*Auto, error) {
 			continue
 		}
 		backends = append(backends, namedSearcher{name: p.ID, searcher: searcher})
+	}
+	if len(backends) == 0 && len(c.SearchOrder) > 0 {
+		return nil, fmt.Errorf("no usable search backends for %q: none of search_order (%s) is usable",
+			AutoBackend, strings.Join(c.SearchOrder, ", "))
 	}
 	if len(backends) == 0 {
 		return nil, fmt.Errorf("no usable search backends for %q", AutoBackend)
