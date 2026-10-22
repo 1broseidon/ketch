@@ -1,6 +1,6 @@
 module github.com/1broseidon/ketch
 
-go 1.26.9
+go 1.26.10
 
 // v0.16.0 was published and withdrawn the same day; its docs backends were
 // not ready. v0.16.1 is v0.15.0 plus fixes.

@@ -104,6 +104,13 @@ ketch config set brave_api_key <key>   # auto now prefers Brave
 ketch search "golang error handling" -b ddg   # or pick a provider explicitly
 ```
 
+To decide the order yourself, set `search_order`: `auto` then tries only the
+backends you list, in that order (`KETCH_SEARCH_ORDER` overrides it per run):
+
+```sh
+ketch config set search_order exa,tinyfish,brave
+```
+
 `--multi` queries several backends at once and fuses their rankings with
 Reciprocal Rank Fusion (a page several engines rank highly floats to the top),
 deduplicating by URL and tagging each result with the engines that returned it.

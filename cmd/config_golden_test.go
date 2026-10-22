@@ -39,7 +39,7 @@ func TestRegistryConfigCompatibilityGolden(t *testing.T) {
 	for _, name := range []string{"defaults", "configured"} {
 		t.Run(name, func(t *testing.T) {
 			if name == "configured" {
-				for key, value := range map[string]string{"brave_api_key": "fixture-one", "brave_api_keys": "[\"fixture-one\",\"fixture-two\"]", "context7_api_key": "fixture-docs", "github_token": "fixture-github", "firecrawl_url": "http://localhost:3002/"} {
+				for key, value := range map[string]string{"brave_api_key": "fixture-one", "brave_api_keys": "[\"fixture-one\",\"fixture-two\"]", "context7_api_key": "fixture-docs", "github_token": "fixture-github", "firecrawl_url": "http://localhost:3002/", "search_order": "brave,ddg"} {
 					if err := applyConfigSet(&c, key, value); err != nil {
 						t.Fatal(err)
 					}
