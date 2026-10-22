@@ -31,7 +31,7 @@ description: |-
   Source: https://github.com/1broseidon/ketch/issues/80. Put `Closes #80` in the PR body, crediting the reporter.
 source: https://github.com/1broseidon/ketch/issues/80
 createdAt: "2026-10-13T00:29:00.726Z"
-updatedAt: "2026-10-22T05:45:11.226Z"
+updatedAt: "2026-10-22T05:45:22.938Z"
 relatedFiles:
   - search/auto.go
   - search/auto_test.go
@@ -42,6 +42,49 @@ relatedFiles:
   - MANUAL.md
   - CHANGELOG.md
   - skills/ketch/references/verbs/setup.md
+contract:
+  status: ready
+  deliverables:
+    - type: file
+      path: search/auto.go
+      description: "AutoChain honours cfg.SearchOrder: only listed, usable providers, in the operator's order; unset = today's ordering"
+    - type: file
+      path: internal/configbase/config.go
+      description: SearchOrder []string field (json search_order) with a new order value
+    - type: file
+      path: config/env.go
+      description: KETCH_SEARCH_ORDER override, validated fail-loud
+    - type: file
+      path: cmd/config.go
+      description: config set search_order (JSON array or comma list), shown in ketch config
+    - type: test
+      path: search/auto_test.go
+      description: order respected exactly (incl. AutoRank-0 keyed provider), unusable entries drop out, all-unusable errors naming search_order, unset unchanged
+    - type: test
+      path: cmd/config_test.go
+      description: set/validate search_order rejects auto, unknown IDs, duplicates; env override validated
+    - type: docs
+      path: MANUAL.md
+      description: search_order in the config table and auto backend section
+    - type: docs
+      path: CHANGELOG.md
+      description: "Unreleased entry crediting #80"
+  validation:
+    commands:
+      - go build ./...
+      - go test ./search/... ./config/... ./cmd/... ./doctor/... ./mcp/...
+      - go test ./...
+      - go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run
+      - git diff --stat -- cmd/testdata doctor/testdata
+  constraints:
+    - No --fallback flag and no comma-list --backend
+    - "--multi, --random and explicit -b are unaffected"
+    - Unset/empty search_order leaves auto's chain byte-identical to today
+    - No new MCP tool params; MCP follows via search.NewFromConfig
+    - Golden fixture changes limited to the new key's entries
+    - gocyclo max 15; CGO_ENABLED=0
+  metrics:
+    readyAt: "2026-10-22T05:45:22.938Z"
 ---
 
 ## Log
