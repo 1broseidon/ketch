@@ -28,7 +28,7 @@ description: |-
   Source: https://github.com/1broseidon/ketch/issues/81. Close the issue in the PR body (`Closes #81`), crediting the reporter.
 source: https://github.com/1broseidon/ketch/issues/81
 createdAt: "2026-10-13T00:28:57.388Z"
-updatedAt: "2026-10-22T15:33:13.767Z"
+updatedAt: "2026-10-22T15:39:24.382Z"
 relatedFiles:
   - scrape/scrape.go
   - scrape/pipeline.go
@@ -92,6 +92,7 @@ pullRequest:
   base: main
   head: dispatch/task-7
   at: "2026-10-22T05:51:21.551Z"
+parentId: epic-1
 ---
 
 ## Log
