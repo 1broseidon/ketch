@@ -1,62 +1,47 @@
 ---
 id: task-8
-title: "feat: search_order config to set auto's fallback order"
+title: "search_order config key: operator-set order for the auto chain (#80)"
 column: monitor
 position: 1
 description: |-
-  ### Summary
+  Design settled by the owner on #80 (2026-10-16). Build it.
 
-  Support an explicit, ordered fallback sequence for search providers (e.g. `--fallback=exa,tinyfish,brave` or comma-separated `--backend`) so users can define the exact order backends are tried sequentially on failure.
+  ## What
+  A `search_order` config key: an ordered list of search backend IDs, e.g. `["exa","tinyfish","brave"]`, plus a `KETCH_SEARCH_ORDER` env override (comma-separated). **When it is set, `auto` tries only those backends, in that order.** When it is unset or empty, `auto` behaves exactly as it does today (configured providers promoted first, then by AutoRank).
 
-  ### Problem
+  Explicitly **not** in scope, as agreed: no `--fallback` flag and no comma-list `--backend`, because either would look like `--multi` but behave differently. A per-call option can come later on top. `--multi`, `--random` and an explicit `-b <id>` are unaffected. MCP gets the behaviour for free through `search.NewFromConfig`, so it needs no new tool param.
 
-  Currently, search backend selection has four modes:
-  - Explicit single backend: `--backend <id>`
-  - Federated search: `--multi` (parallel fan-out with rank fusion)
-  - Shuffled fallback: `--random` (sequential fallback, but candidates are shuffled via `rand.Perm`)
-  - Automatic fallback: `--backend auto`
+  ## Rules
+  - Validate fail-loud at `config set`, on the env override, and when the chain is built: every entry is a registered search provider ID. Reject `auto`, unknown IDs and duplicates. Normalize case/whitespace the way `NormalizeMCPTools` does. Accept a JSON array or a comma-separated list, as `mcp_tools` does.
+  - A listed provider that is not `Usable` (e.g. its key is missing) drops out of the chain, the same as today's chain drops unusable providers. If none are left, return the existing `no usable search backends for "auto"` error, naming search_order so the operator knows why.
+  - Order is exactly the operator's. No promotion and no AutoRank re-sort. Providers with AutoRank 0 (keyed-only ones) may be listed.
+  - The per-attempt timeout and 30s chain budget (search/auto.go) are unchanged.
 
-  In `auto` mode, fallback order is resolved by `AutoChain` (`search/auto.go`). Configured providers are ordered strictly by their static `AutoRank` (`search/registry.go`):
-  - Brave: 30
-  - TinyFish: 45
-  - Exa: 80
-  - DuckDuckGo: 120
+  ## Where
+  - `internal/configbase/config.go`: add the field next to `MCPTools`, with a new `order` value; keep existing orders.
+  - `config/env.go`: KETCH_SEARCH_ORDER in the env-override table, modelled on mcp_tools (env.go:112).
+  - `config/`: a `NormalizeSearchOrder` validator. It needs the search registry's IDs; take care over the import cycle (search imports internal/configbase). Validating in `search/` and calling it from cmd/config is fine.
+  - `cmd/config.go`: `config set search_order`, shown in `ketch config` output; the effective auto chain display reflects it.
+  - `search/auto.go`: `AutoChain` honours `cfg.SearchOrder`. `AutoChainNames` and doctor then follow automatically. Check that `doctor` reports the chain in the new order.
+  - Regenerate fixtures with `UPDATE_REGISTRY_GOLDENS=1 go test ./cmd/ ./doctor/`. Only the new key's entries may change.
 
-  Because `AutoRank` is static, configuring an API key for Brave forces it ahead of TinyFish or Exa on every call. There is currently no way to enforce a deterministic sequence such as:
-  1. Try Exa first (semantic search).
-  2. Fall back to TinyFish if Exa errors or rate-limits.
-  3. Fall back to Brave or DuckDuckGo only as a last resort.
+  ## Docs
+  MANUAL.md (config keys table plus the auto backend section), README quickstart if it lists config keys, CLAUDE.md/AGENTS.md config notes if they enumerate keys, skills/ketch setup reference (search backend decision tree), and CHANGELOG.md under Unreleased.
 
-  `--random` supports sequential error fallback, but it shuffles providers on every call.
-
-  ### Proposed Change
-
-  Add support for a deterministic fallback chain:
-
-  ```bash
-  # Option A: Dedicated flag
-  ketch search --fallback=exa,tinyfish,brave "query"
-
-  # Option B: Comma-separated list in --backend
-  ketch search --backend=exa,tinyfish,brave "query"
-  ```
-
-  Correspondingly in the MCP tool:
-  ```json
-  {
-    "fallback": ["exa", "tinyfish", "brave"]
-  }
-  ```
-
-  ### Expected Behavior
-
-  1. Execute the search against the first provider in the user-supplied list.
-  2. If the request fails with a recoverable error or times out within the per-attempt budget, fall back to the next provider in sequence.
-  3. Return the first successful result set, reporting which backend served it and any prior upstream errors (matching the current `SelectingSearcher` / `SearchOutput.Errors` behavior).
-  4. Return an error only if all specified backends fail.
+  Source: https://github.com/1broseidon/ketch/issues/80. Put `Closes #80` in the PR body, crediting the reporter.
 source: https://github.com/1broseidon/ketch/issues/80
 createdAt: "2026-10-13T00:29:00.726Z"
-updatedAt: "2026-10-16T15:20:48.382Z"
+updatedAt: "2026-10-22T05:45:11.226Z"
+relatedFiles:
+  - search/auto.go
+  - search/auto_test.go
+  - internal/configbase/config.go
+  - config/env.go
+  - cmd/config.go
+  - doctor/
+  - MANUAL.md
+  - CHANGELOG.md
+  - skills/ketch/references/verbs/setup.md
 ---
 
 ## Log
