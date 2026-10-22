@@ -31,7 +31,7 @@ description: |-
   Source: https://github.com/1broseidon/ketch/issues/80. Put `Closes #80` in the PR body, crediting the reporter.
 source: https://github.com/1broseidon/ketch/issues/80
 createdAt: "2026-10-13T00:29:00.726Z"
-updatedAt: "2026-10-22T05:45:22.938Z"
+updatedAt: "2026-10-22T05:45:25.835Z"
 relatedFiles:
   - search/auto.go
   - search/auto_test.go
@@ -85,6 +85,14 @@ contract:
     - gocyclo max 15; CGO_ENABLED=0
   metrics:
     readyAt: "2026-10-22T05:45:22.938Z"
+dispatch:
+  agent: claude
+  model: opus
+  effort: high
+  by: chat
+  at: "2026-10-22T05:45:25.708Z"
+  tries: 0
+assignee: claude
 ---
 
 ## Log
