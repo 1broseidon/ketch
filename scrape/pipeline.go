@@ -310,6 +310,9 @@ func (s *Scraper) fetchHTMLForSelector(ctx context.Context, rawURL, fetchURL str
 	}
 	content, err := s.FetchContent(ctx, fetchURL)
 	if err != nil {
+		if rendered, ok := s.browserOnForbidden(ctx, fetchURL, err); ok {
+			return rendered, nil
+		}
 		return "", fmt.Errorf("fetch failed: %w", err)
 	}
 	if effectiveContentType(content.ContentType, content.Body) == "application/pdf" {

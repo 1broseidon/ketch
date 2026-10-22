@@ -378,6 +378,18 @@ $ ketch browser install    # download Chromium to ketch's cache dir
 Scraping is fast path first: plain HTTP by default, with the browser used only
 when a JS shell is detected. `--force-browser` overrides the detection.
 
+A page that answers the plain fetch with HTTP 403 is retried through the
+browser once, since bot walls often refuse ketch's HTTP client but let a real
+browser through. This applies to `scrape` (including `--raw` and `--select`),
+`search --scrape` and `crawl`, only when a browser is configured, and only for
+403: a 429 is a request to back off and fails as before, as does every other
+error status. When the browser gets the page, ketch prints
+`notice: HTTP 403 for <url>; fetched with the browser` to stderr, never to
+stdout or `--json` output, and the page is cached as a browser render. If the
+browser fails too, the scrape fails with the original `HTTP 403 for <url>`
+error and the browser's failure goes to stderr as a `warn:` line. Without a
+browser configured, a 403 fails exactly as it always has.
+
 #### config — Show, init, set, path
 
 ```console
