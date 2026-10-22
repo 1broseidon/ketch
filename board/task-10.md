@@ -1,10 +1,11 @@
 ---
 id: task-10
 title: Deepseek search API backend support?
-column: todo
-position: 4
+column: wont-do
+position: 0
 source: https://github.com/1broseidon/ketch/issues/89
 createdAt: "2026-10-20T05:23:14.042Z"
+updatedAt: "2026-10-22T05:45:23.246Z"
 ---
 
 ## Description
