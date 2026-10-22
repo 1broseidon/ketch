@@ -31,7 +31,7 @@ description: |-
   Source: https://github.com/1broseidon/ketch/issues/80. Put `Closes #80` in the PR body, crediting the reporter.
 source: https://github.com/1broseidon/ketch/issues/80
 createdAt: "2026-10-13T00:29:00.726Z"
-updatedAt: "2026-10-22T05:51:02.784Z"
+updatedAt: "2026-10-22T05:53:15.198Z"
 relatedFiles:
   - search/auto.go
   - search/auto_test.go
@@ -118,3 +118,4 @@ pullRequest:
 - 2026-10-16T15:19:31.604Z: [claude] Owner settled the design on #80: no --fallback flag and no comma-list --backend (would look like --multi but behave differently). Instead a `search_order` config key (list of backend IDs, e.g. ["exa","tinyfish","brave"]) plus KETCH_SEARCH_ORDER env override; when set, `auto` tries only those backends, in that order. MCP agents get it for free; a per-call flag can come later on top. Happy to review a PR.
 - 2026-10-22T05:49:48.996Z: [claude] Implemented search_order + KETCH_SEARCH_ORDER on branch dispatch/task-8 (56e1f5d code+tests, f1928ff docs). auto uses exactly the listed usable providers in order; validation (auto/unknown/duplicate/blank) at config set, env, and chain build; doctor names search_order when the pinned chain is empty or invalid. ketch config shows search_order right after backend (omitempty, so default output is unchanged); goldens changed only by the new key in the configured fixtures. go test ./..., golangci-lint clean. PR body still needs "Closes #80".
 - 2026-10-22T05:51:02.784Z: Opened pull request #91 from dispatch/task-8 into main: https://github.com/1broseidon/ketch/pull/91
+- 2026-10-22T05:53:14.832Z: Sent back from review: This failed CI. Fix and send back
