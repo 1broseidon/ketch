@@ -1,48 +1,41 @@
 ---
 id: task-7
-title: "feat: auto-escalate to headless browser on HTTP 403 scrape errors"
+title: "Scrape: escalate to the configured browser on HTTP 403 (#81)"
 column: monitor
 position: 0
 description: |-
-  ### Summary
+  Design settled by the owner on #81 (2026-10-16). Build it.
 
-  Automatically retry scrapes via the configured headless browser when the initial HTTP fetch receives an HTTP 403 (Forbidden) or HTTP 429 (Too Many Requests), instead of immediately aborting and requiring a manual `--force-browser` re-run.
+  ## What
+  When the plain HTTP fetch answers **403** and a browser is configured (`s.HasBrowser()`), retry the page through the browser instead of failing. Bot walls (Cloudflare, Akamai, JA3 checks) commonly 403 Go's client but let Chromium through; today the user has to rerun with `--force-browser`, and an MCP agent spends an extra call doing so.
 
-  ### Problem
+  Rules, exactly as agreed:
+  - **403 only.** 429 is a backoff signal; hitting the site again with a browser is wrong. 429 and every other non-200 keep today's error.
+  - **Only with a browser configured.** Without one, nothing changes: same `HTTP 403 for <url>` error, same exit code / MCP `[upstream]` prefix.
+  - **Say so.** On a successful escalation print one short stderr notice, e.g. `notice: HTTP 403 for <url>; fetched with the browser`. Use the same stderr idiom as `browserFetchOrWarn` (scrape/scrape.go:386). Never write it to stdout or into page content, so `--json` output stays clean.
+  - **If the browser fails too, return the original 403 error**, not the browser's error. The browser failure can go in a stderr `warn:` line.
+  - The escalated page is `Source: SourceBrowser`, so it caches like any browser-rendered page.
 
-  Currently, automatic browser fallback is gated strictly behind JS-shell detection on successful HTTP 200 responses (`scrape/scrape.go`):
+  ## Where
+  - `scrape/scrape.go:525` `fetchContent` returns `fmt.Errorf("HTTP %d for %s", ...)` for any non-200. Make that a typed error (e.g. `*HTTPStatusError{StatusCode, URL}`) whose `Error()` text is byte-for-byte the same, so callers can match it with `errors.As`. Check `cmd/` and `mcp/` exit-code and prefix classification still map it the same way.
+  - Escalate in the non-forced paths that call the fetch: `scrapeConditional` (scrape.go:258; serves the cached pipeline and crawl), `Scrape` (scrape.go:215), and the non-forced branch of `fetchHTMLForSelector` (pipeline.go ~311). Build one shared helper rather than three copies, and reuse `BrowserScrape`/`getBrowser`. `--raw` (pipeline.go:152, `scrapeConditional` with `ErrPDFRawUnsupported`) should return the rendered HTML.
+  - The `--force-browser` path (`classifyForForcedRender`, pipeline.go:329) already lets a 403 probe through and stays as it is.
+  - Keep gocyclo ≤ 15.
 
-  ```go
-  if resp.StatusCode != http.StatusOK {
-      return nil, nil, false, fmt.Errorf("HTTP %d for %s", resp.StatusCode, rawURL)
-  }
-  ```
+  ## Docs
+  MANUAL.md: the scrape/browser section says 403 escalates when a browser is configured. CHANGELOG.md: one entry under Unreleased. Update ADR-0003 (design/adr/0003-fast-path-first-scrape.md) only if its escalation list needs this added. A one-line mention in the skill's scrape reference if it tells agents to retry 403s with force_browser.
 
-  If a target website blocks Go's standard `net/http` transport (common with Cloudflare, Akamai, or WAF bot heuristics triggered by TLS/JA3 fingerprints or missing browser headers), the server responds with HTTP 403 or 429. Ketch immediately fails with `HTTP 403 for <url>`.
-
-  In practice:
-  - Many of these sites render successfully when fetched via Chromium (which provides a full browser TLS handshake and passes passive JS challenges).
-  - Today, users in the CLI must manually re-run the command with `--force-browser`.
-  - In automated MCP workflows, agents must inspect the error message and spend an extra tool call re-requesting the scrape with `force_browser: true`.
-
-  ### Proposed Change
-
-  When a browser binary is configured and available (`s.HasBrowser()`):
-
-  1. If the fast HTTP fetch returns `HTTP 403` or `HTTP 429`, do not fail immediately.
-  2. Escalate the request to the headless browser (`browserFetchOrWarn`).
-  3. If the browser successfully loads and renders the document:
-     - Return the extracted page with `Source: SourceBrowser`.
-     - Optionally print a diagnostic notice on stderr (e.g., `notice: HTTP 403 on initial fetch; fell back to headless browser`).
-  4. If no browser is configured, or if the browser fetch also fails/times out, return the upstream HTTP error as usual.
-
-  ### Benefits
-
-  - **Better CLI UX:** Fast HTTP path remains the default; difficult sites succeed transparently on the first attempt without manual flag tweaking.
-  - **Resilient MCP Tooling:** Eliminates redundant agent turns caused by recoverable WAF/challenge 403 errors.
+  Source: https://github.com/1broseidon/ketch/issues/81. Close the issue in the PR body (`Closes #81`), crediting the reporter.
 source: https://github.com/1broseidon/ketch/issues/81
 createdAt: "2026-10-13T00:28:57.388Z"
-updatedAt: "2026-10-16T15:20:48.381Z"
+updatedAt: "2026-10-22T05:45:00.235Z"
+relatedFiles:
+  - scrape/scrape.go
+  - scrape/pipeline.go
+  - scrape/scrape_test.go
+  - MANUAL.md
+  - CHANGELOG.md
+  - design/adr/0003-fast-path-first-scrape.md
 ---
 
 ## Log
