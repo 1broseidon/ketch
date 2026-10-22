@@ -9,6 +9,8 @@ verbatim on the GitHub release. Versions follow
 
 ## [Unreleased]
 
+**Go toolchain patched to 1.26.10.** Release binaries are now built with Go 1.26.10, which distrusts a set of compromised intermediate certificates in `crypto/x509` ([GO-2026-6809](https://pkg.go.dev/vuln/GO-2026-6809)), reachable from every HTTPS fetch. Building from source now needs Go 1.26.10 or newer.
+
 **Choose the order `auto` searches in.** The new `search_order` key takes a list of backends, e.g. `ketch config set search_order exa,tinyfish,brave` (or a JSON array), and `KETCH_SEARCH_ORDER` overrides it with a comma-separated list. When it is set, `auto` tries only those backends, in exactly that order: a configured provider is not promoted past it and the default ranking no longer applies, so a keyed provider or a SearXNG instance on its localhost default can be listed too. A listed provider that is missing its key or instance drops out of the chain; if none is left, search fails with an error naming `search_order`. `auto`, unknown names and duplicates are rejected by `config set`, by the environment variable, and when the chain is built from a hand-edited file. Unset, `auto` behaves exactly as before. `ketch config` shows the key, `ketch doctor` reports the chain in the operator's order, and the MCP `search` tool follows it with no new parameter; `--multi`, `--random` and `-b <provider>` are unaffected. Thanks to the reporter of [#80](https://github.com/1broseidon/ketch/issues/80).
 
 ## [0.20.0] - 2026-10-20
