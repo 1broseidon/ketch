@@ -1,7 +1,7 @@
 ---
 id: task-8
 title: "search_order config key: operator-set order for the auto chain (#80)"
-column: in-progress
+column: review
 position: 1
 description: |-
   Design settled by the owner on #80 (2026-10-16). Build it.
@@ -31,7 +31,7 @@ description: |-
   Source: https://github.com/1broseidon/ketch/issues/80. Put `Closes #80` in the PR body, crediting the reporter.
 source: https://github.com/1broseidon/ketch/issues/80
 createdAt: "2026-10-13T00:29:00.726Z"
-updatedAt: "2026-10-22T05:53:29.370Z"
+updatedAt: "2026-10-22T05:54:16.761Z"
 relatedFiles:
   - search/auto.go
   - search/auto_test.go
@@ -43,7 +43,7 @@ relatedFiles:
   - CHANGELOG.md
   - skills/ketch/references/verbs/setup.md
 contract:
-  status: in_progress
+  status: delivered
   deliverables:
     - type: file
       path: search/auto.go
@@ -87,8 +87,8 @@ contract:
     readyAt: "2026-10-22T05:45:22.938Z"
     pickedUpAt: "2026-10-22T05:53:29.370Z"
     reworkCount: 1
-    deliveredAt: "2026-10-22T05:49:46.793Z"
-    duration: 250
+    deliveredAt: "2026-10-22T05:54:16.761Z"
+    duration: 47
 dispatch:
   agent: claude
   model: opus
