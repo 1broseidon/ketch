@@ -31,7 +31,7 @@ description: |-
   Source: https://github.com/1broseidon/ketch/issues/80. Put `Closes #80` in the PR body, crediting the reporter.
 source: https://github.com/1broseidon/ketch/issues/80
 createdAt: "2026-10-13T00:29:00.726Z"
-updatedAt: "2026-10-22T05:54:21.197Z"
+updatedAt: "2026-10-22T15:33:16.198Z"
 relatedFiles:
   - search/auto.go
   - search/auto_test.go
@@ -120,3 +120,4 @@ pullRequest:
 - 2026-10-22T05:51:02.784Z: Opened pull request #91 from dispatch/task-8 into main: https://github.com/1broseidon/ketch/pull/91
 - 2026-10-22T05:53:14.832Z: Sent back from review: This failed CI. Fix and send back
 - 2026-10-22T05:54:16.435Z: [claude] CI failure was the security job: govulncheck flagged stdlib GO-2026-6809 (crypto/x509, fixed in Go 1.26.10), unrelated to search_order but new since main. Bumped go directive 1.26.9 -> 1.26.10 (+ MANUAL version example, CHANGELOG Unreleased entry) in 99d8165 on dispatch/task-8. Under go1.26.10: make vulncheck clean, go build/test ./... pass, golangci-lint 0 issues, no golden changes. Needs a push to rerun PR #91 CI.
+- 2026-10-22T15:33:16.198Z: Pushed 1 commit to pull request #91: https://github.com/1broseidon/ketch/pull/91
