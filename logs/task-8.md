@@ -1,8 +1,6 @@
 ---
 id: task-8
 title: "search_order config key: operator-set order for the auto chain (#80)"
-column: review
-position: 1
 description: |-
   Design settled by the owner on #80 (2026-10-16). Build it.
 
@@ -31,7 +29,7 @@ description: |-
   Source: https://github.com/1broseidon/ketch/issues/80. Put `Closes #80` in the PR body, crediting the reporter.
 source: https://github.com/1broseidon/ketch/issues/80
 createdAt: "2026-10-13T00:29:00.726Z"
-updatedAt: "2026-10-22T15:49:58.803Z"
+updatedAt: "2026-10-22T15:50:00.341Z"
 relatedFiles:
   - search/auto.go
   - search/auto_test.go
@@ -112,6 +110,7 @@ pullRequest:
   base: main
   head: dispatch/task-8
   at: "2026-10-22T05:51:02.656Z"
+completedAt: "2026-10-22T15:50:00.341Z"
 ---
 
 ## Log
