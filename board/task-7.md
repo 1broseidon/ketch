@@ -28,7 +28,7 @@ description: |-
   Source: https://github.com/1broseidon/ketch/issues/81. Close the issue in the PR body (`Closes #81`), crediting the reporter.
 source: https://github.com/1broseidon/ketch/issues/81
 createdAt: "2026-10-13T00:28:57.388Z"
-updatedAt: "2026-10-22T05:45:00.235Z"
+updatedAt: "2026-10-22T05:45:17.459Z"
 relatedFiles:
   - scrape/scrape.go
   - scrape/pipeline.go
@@ -36,6 +36,36 @@ relatedFiles:
   - MANUAL.md
   - CHANGELOG.md
   - design/adr/0003-fast-path-first-scrape.md
+contract:
+  status: ready
+  deliverables:
+    - type: file
+      path: scrape/scrape.go
+      description: typed HTTP status error (unchanged message) and a shared 403→browser escalation helper used by Scrape, scrapeConditional and the non-forced selector path
+    - type: test
+      path: scrape/scrape_test.go
+      description: "httptest cases with a fake BrowserConn: 403+browser → SourceBrowser page and stderr notice; 403+browser failure → original 'HTTP 403 for <url>' error; 403 without browser → unchanged error; 429 → no browser attempt; --raw and selector paths escalate"
+    - type: docs
+      path: MANUAL.md
+      description: scrape/browser section documents 403 escalation (403 only, browser required, stderr notice)
+    - type: docs
+      path: CHANGELOG.md
+      description: "Unreleased entry crediting #81"
+  validation:
+    commands:
+      - go build ./...
+      - go test ./scrape/... ./crawl/... ./cmd/... ./mcp/...
+      - go test ./...
+      - go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run
+  constraints:
+    - Escalate on 403 only; 429 and other non-200s keep today's error and never touch the browser
+    - No browser configured → behaviour and error text byte-identical to today
+    - Browser also fails → return the original 403 error, not the browser error
+    - Notice goes to stderr only; stdout/--json output unchanged
+    - The --force-browser path (classifyForForcedRender) is unchanged
+    - gocyclo max 15; CGO_ENABLED=0
+  metrics:
+    readyAt: "2026-10-22T05:45:17.459Z"
 ---
 
 ## Log
