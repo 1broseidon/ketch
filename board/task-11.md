@@ -61,3 +61,6 @@ This is the git and GitHub setup for epic-1 (Release v0.20.1). It changes no cod
 3. Confirm each PR's diff still holds only its own task's commits plus the Go 1.26.10 bump.
 
 Leave the PR branches alone: no force-push, no rebase, no merge.
+
+## Log
+- 2026-10-22T15:41:14.819Z: [claude] Pushed release/v0.20.1 to origin at origin/main 2ffbadf (it did not exist yet) and retargeted PRs #91 and #92 to it; validation commands pass. #91 holds 56e1f5d, f1928ff (search_order) and 99d8165 (Go 1.26.10); #92 holds 1cadcdd (403 browser escalation) and c8c492d (Go 1.26.10); each go.mod change is only 1.26.9→1.26.10. PR branches untouched. No code changes or commits, so dispatch/task-11 has nothing new.
