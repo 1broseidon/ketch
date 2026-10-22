@@ -9,6 +9,8 @@ verbatim on the GitHub release. Versions follow
 
 ## [Unreleased]
 
+**Built with Go 1.26.10.** Go 1.26.10 distrusts a set of compromised intermediate certificates in `crypto/x509` (GO-2026-6809), which every HTTPS fetch ketch makes relies on. Release binaries are built with it, and building from source now needs Go 1.26.10 or newer.
+
 **A 403 is retried through the browser when one is configured** (#81, thanks @ArdaYILDIZ-DEV). Bot walls such as Cloudflare and Akamai often answer ketch's HTTP client with 403 but let Chromium through, and the only way past them was to run the scrape again with `--force-browser`, which over MCP cost an agent a second call. Now, when the plain fetch gets HTTP 403 and a browser is configured, `scrape` (including `--raw` and `--select`), `search --scrape` and `crawl` fetch the page through the browser and print `notice: HTTP 403 for <url>; fetched with the browser` to stderr; stdout and `--json` output are unchanged, and the page is cached as a browser render. Only 403 escalates: a 429 means back off, so it and every other error status fail as before without touching the browser. If the browser fails as well, the error is still the original `HTTP 403 for <url>`, with the browser's failure as a stderr warning. Without a browser configured nothing changes. For Go importers, a non-200 fetch now returns a `*scrape.HTTPStatusError` carrying the status code and URL, with the same message as before.
 
 ## [0.20.0] - 2026-10-20
