@@ -28,7 +28,7 @@ description: |-
   Source: https://github.com/1broseidon/ketch/issues/81. Close the issue in the PR body (`Closes #81`), crediting the reporter.
 source: https://github.com/1broseidon/ketch/issues/81
 createdAt: "2026-10-13T00:28:57.388Z"
-updatedAt: "2026-10-22T05:51:21.662Z"
+updatedAt: "2026-10-22T05:52:39.883Z"
 relatedFiles:
   - scrape/scrape.go
   - scrape/pipeline.go
@@ -99,3 +99,4 @@ pullRequest:
 - 2026-10-16T15:19:31.282Z: [claude] Owner scoped the design on #81: escalate to the configured browser only on HTTP 403 (not 429 — that's a backoff signal, re-hitting with a browser is wrong); only when a browser is configured; print a short stderr notice that the page came from the browser; if the browser also fails, return the original 403. PR welcome.
 - 2026-10-22T05:48:31.821Z: [claude] Done on branch dispatch/task-7 (1cadcdd): typed *HTTPStatusError (same message); shared browserOnForbidden helper used by Scrape, scrapeConditional (raw/crawl) and the non-forced selector path — 403 only, browser required, stderr notice, original 403 on browser failure; force-browser path untouched. New scrape/scrape_test.go covers all five paths (escalate, browser failure, no browser, 429/401/404/503 never touch browser). MANUAL, CHANGELOG (credits @ArdaYILDIZ-DEV), ADR-0003 step 4 updated; skill reference left alone (it never advised retrying 403 with force_browser). go test ./... and golangci-lint pass. PR body should say Closes #81.
 - 2026-10-22T05:51:21.662Z: Opened pull request #92 from dispatch/task-7 into main: https://github.com/1broseidon/ketch/pull/92
+- 2026-10-22T05:52:39.494Z: Sent back from review: This failed CI. Fix and send back
