@@ -1,8 +1,8 @@
 ---
 id: task-12
 title: "Merge PRs #91 and #92 into release/v0.20.1"
-column: in-progress
-position: 3
+column: review
+position: 2
 description: |-
   Merge both open PRs into `release/v0.20.1` on origin. Both already target that branch, are MERGEABLE/CLEAN, and have every CI check green (build, lint, test ubuntu/macos/windows, pi, security).
 
@@ -42,7 +42,7 @@ dispatch:
     pid: 80319
     at: "2026-10-22T15:50:13.696Z"
 assignee: claude
-updatedAt: "2026-10-22T15:50:25.120Z"
+updatedAt: "2026-10-22T15:51:17.570Z"
 ---
 
 ## Description
