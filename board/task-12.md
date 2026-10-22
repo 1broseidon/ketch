@@ -1,7 +1,7 @@
 ---
 id: task-12
 title: "Merge PRs #91 and #92 into release/v0.20.1"
-column: review
+column: in-progress
 position: 3
 description: |-
   Merge both open PRs into `release/v0.20.1` on origin. Both already target that branch, are MERGEABLE/CLEAN, and have every CI check green (build, lint, test ubuntu/macos/windows, pi, security).
@@ -26,8 +26,8 @@ contract:
       - git fetch origin && git log --oneline origin/main..origin/release/v0.20.1 | grep -E '#9[12]'
   metrics:
     readyAt: "2026-10-22T15:48:39.200Z"
-    pickedUpAt: "2026-10-22T15:48:50.758Z"
-    reworkCount: 0
+    pickedUpAt: "2026-10-22T15:50:25.120Z"
+    reworkCount: 1
 createdAt: "2026-10-22T15:48:39.202Z"
 dispatch:
   agent: claude
@@ -42,7 +42,7 @@ dispatch:
     pid: 80319
     at: "2026-10-22T15:50:13.696Z"
 assignee: claude
-updatedAt: "2026-10-22T15:50:13.696Z"
+updatedAt: "2026-10-22T15:50:25.120Z"
 ---
 
 ## Description
