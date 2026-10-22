@@ -31,7 +31,7 @@ description: |-
   Source: https://github.com/1broseidon/ketch/issues/80. Put `Closes #80` in the PR body, crediting the reporter.
 source: https://github.com/1broseidon/ketch/issues/80
 createdAt: "2026-10-13T00:29:00.726Z"
-updatedAt: "2026-10-22T05:49:46.793Z"
+updatedAt: "2026-10-22T05:49:52.153Z"
 relatedFiles:
   - search/auto.go
   - search/auto_test.go
@@ -101,6 +101,8 @@ dispatch:
     runner: cli
     pid: 9615
     at: "2026-10-22T05:45:29.788Z"
+    ended: "2026-10-22T05:49:52.153Z"
+    outcome: review
 assignee: claude
 ---
 
