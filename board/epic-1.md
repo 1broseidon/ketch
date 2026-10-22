@@ -14,6 +14,8 @@ description: |-
 
   Close-out: CHANGELOG.md gets its Unreleased section moved to 0.20.1, then the release PR goes into main.
 createdAt: "2026-10-22T15:39:21.923Z"
+landsOn: release/v0.20.1
+updatedAt: "2026-10-22T15:39:23.652Z"
 ---
 
 ## Description
