@@ -41,8 +41,10 @@ dispatch:
     runner: cli
     pid: 80319
     at: "2026-10-22T15:50:13.696Z"
+    ended: "2026-10-22T15:51:20.361Z"
+    outcome: review
 assignee: claude
-updatedAt: "2026-10-22T15:51:17.570Z"
+updatedAt: "2026-10-22T15:51:20.361Z"
 ---
 
 ## Description
