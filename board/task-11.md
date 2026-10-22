@@ -1,7 +1,7 @@
 ---
 id: task-11
 title: "Cut release/v0.20.1 on origin and retarget PRs #91 and #92 to it"
-column: in-progress
+column: review
 position: 5
 description: |-
   This is the git and GitHub setup for epic-1 (Release v0.20.1). It changes no code and makes no commits.
@@ -16,7 +16,7 @@ description: |-
 
   Leave the PR branches alone: no force-push, no rebase, no merge.
 contract:
-  status: in_progress
+  status: delivered
   validation:
     commands:
       - git ls-remote --exit-code --heads origin release/v0.20.1
@@ -30,6 +30,8 @@ contract:
     readyAt: "2026-10-22T15:40:39.486Z"
     pickedUpAt: "2026-10-22T15:40:48.836Z"
     reworkCount: 0
+    deliveredAt: "2026-10-22T15:41:12.647Z"
+    duration: 24
 createdAt: "2026-10-22T15:40:39.488Z"
 dispatch:
   agent: claude
@@ -44,7 +46,7 @@ dispatch:
     pid: 80319
     at: "2026-10-22T15:40:44.132Z"
 assignee: claude
-updatedAt: "2026-10-22T15:40:48.836Z"
+updatedAt: "2026-10-22T15:41:12.647Z"
 ---
 
 ## Description
