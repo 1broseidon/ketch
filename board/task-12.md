@@ -34,17 +34,10 @@ dispatch:
   model: opus
   effort: high
   by: chat
-  at: "2026-10-22T15:48:43.421Z"
+  at: "2026-10-22T15:50:12.670Z"
   tries: 1
-  claim:
-    host: Georges-Mac-Studio
-    runner: cli
-    pid: 80319
-    at: "2026-10-22T15:48:45.074Z"
-    ended: "2026-10-22T15:49:38.119Z"
-    outcome: review
 assignee: claude
-updatedAt: "2026-10-22T15:49:38.119Z"
+updatedAt: "2026-10-22T15:50:12.816Z"
 ---
 
 ## Description
