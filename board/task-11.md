@@ -35,9 +35,14 @@ dispatch:
   effort: high
   by: chat
   at: "2026-10-22T15:40:41.649Z"
-  tries: 0
+  tries: 1
+  claim:
+    host: Georges-Mac-Studio
+    runner: cli
+    pid: 80319
+    at: "2026-10-22T15:40:44.132Z"
 assignee: claude
-updatedAt: "2026-10-22T15:40:41.762Z"
+updatedAt: "2026-10-22T15:40:44.132Z"
 ---
 
 ## Description
