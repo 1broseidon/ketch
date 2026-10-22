@@ -28,7 +28,7 @@ description: |-
   Source: https://github.com/1broseidon/ketch/issues/81. Close the issue in the PR body (`Closes #81`), crediting the reporter.
 source: https://github.com/1broseidon/ketch/issues/81
 createdAt: "2026-10-13T00:28:57.388Z"
-updatedAt: "2026-10-22T05:53:57.302Z"
+updatedAt: "2026-10-22T15:33:13.767Z"
 relatedFiles:
   - scrape/scrape.go
   - scrape/pipeline.go
@@ -101,3 +101,4 @@ pullRequest:
 - 2026-10-22T05:51:21.662Z: Opened pull request #92 from dispatch/task-7 into main: https://github.com/1broseidon/ketch/pull/92
 - 2026-10-22T05:52:39.494Z: Sent back from review: This failed CI. Fix and send back
 - 2026-10-22T05:53:53.898Z: [claude] CI fix on branch dispatch/task-7 (c8c492d): the failing check was the security job (govulncheck), not the scrape change — GO-2026-6809 in crypto/x509, fixed in Go 1.26.10. Bumped go.mod's go directive 1.26.9 → 1.26.10 (CI/release take the toolchain from go.mod), the MANUAL version example, and added a CHANGELOG Unreleased entry. On Go 1.26.10: go build, go test ./..., make vulncheck (no vulnerabilities) and golangci-lint (0 issues) all pass. Not pushed; PR #92 needs the branch pushed to rerun CI.
+- 2026-10-22T15:33:13.767Z: Pushed 1 commit to pull request #92: https://github.com/1broseidon/ketch/pull/92
