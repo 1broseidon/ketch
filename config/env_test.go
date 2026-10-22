@@ -219,6 +219,48 @@ func TestLoadEnvMCPToolsInvalidIsLoudButBestEffort(t *testing.T) {
 	}
 }
 
+func TestLoadEnvSearchOrder(t *testing.T) {
+	clearKetchEnv(t)
+	testutil.SetIsolatedConfigHome(t)
+	t.Setenv("KETCH_SEARCH_ORDER", "Exa, tinyfish,brave")
+
+	res, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if order := res.Config.SearchOrder; strings.Join(order, ",") != "exa,tinyfish,brave" {
+		t.Fatalf("SearchOrder = %v, want [exa tinyfish brave]", order)
+	}
+	found := false
+	for _, o := range res.Overrides {
+		if o.Key == "search_order" && o.Var == "KETCH_SEARCH_ORDER" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("search_order override not recorded: %+v", res.Overrides)
+	}
+}
+
+func TestLoadEnvSearchOrderInvalidIsLoud(t *testing.T) {
+	for value, want := range map[string]string{
+		"exa,auto":  `KETCH_SEARCH_ORDER: "auto"`,
+		"google":    `KETCH_SEARCH_ORDER: unknown backend "google"`,
+		"ddg, DDG ": `KETCH_SEARCH_ORDER: duplicate backend "ddg"`,
+	} {
+		t.Run(value, func(t *testing.T) {
+			clearKetchEnv(t)
+			testutil.SetIsolatedConfigHome(t)
+			t.Setenv("KETCH_SEARCH_ORDER", value)
+
+			_, err := Load()
+			if err == nil || !strings.Contains(err.Error(), want) {
+				t.Fatalf("expected %q, got: %v", want, err)
+			}
+		})
+	}
+}
+
 func TestLoadEnvExtractMode(t *testing.T) {
 	clearKetchEnv(t)
 	testutil.SetIsolatedConfigHome(t)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -89,6 +90,132 @@ func TestAutoChainExcludesUnconfiguredSearxng(t *testing.T) {
 			if name == "searxng" {
 				t.Fatalf("searxng_url=%q put searxng in the chain", url)
 			}
+		}
+	}
+}
+
+// search_order is the whole order: listed providers are tried exactly as
+// given, a configured provider is not promoted past it, and nothing unlisted
+// joins the chain.
+func TestAutoChainHonoursSearchOrderExactly(t *testing.T) {
+	t.Parallel()
+	cfg := config.Defaults()
+	cfg.SetProvider("brave_api_key", "configured") // would be promoted first without search_order
+	cfg.SetProvider("tinyfish_api_key", "configured")
+	cfg.SearchOrder = []string{"exa", "tinyfish", "brave"}
+
+	if got, want := AutoChainNames(&cfg), []string{"exa", "tinyfish", "brave"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("AutoChainNames() = %v, want %v", got, want)
+	}
+}
+
+// A provider the default chain leaves out may still be listed: SearXNG on its
+// localhost default is excluded from the default chain only because nobody
+// configured it, and listing it is configuring it.
+func TestAutoChainSearchOrderAdmitsProvidersOutsideTheDefaultChain(t *testing.T) {
+	t.Parallel()
+	cfg := config.Defaults()
+	cfg.SearchOrder = []string{"ddg", "searxng"}
+
+	if got, want := AutoChainNames(&cfg), []string{"ddg", "searxng"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("AutoChainNames() = %v, want %v", got, want)
+	}
+}
+
+// A provider with AutoRank 0 never joins the default chain, but the operator's
+// list is not filtered by rank. Not parallel: it registers a provider.
+func TestAutoChainSearchOrderAdmitsUnrankedKeyedProvider(t *testing.T) {
+	t.Cleanup(RegisterTestProvider(Provider{
+		ID: "unranked", Name: "Unranked",
+		Usable: func(c *config.Config) bool { return c.String("unranked_api_key") != "" },
+		New:    func(*config.Config) (Searcher, error) { return &fakeSearcher{}, nil },
+	}))
+	cfg := config.Defaults()
+	cfg.SetProvider("unranked_api_key", "configured")
+	if slices.Contains(AutoChainNames(&cfg), "unranked") {
+		t.Fatal("an AutoRank-0 provider joined the default chain")
+	}
+
+	cfg.SearchOrder = []string{"unranked", "ddg"}
+	if got, want := AutoChainNames(&cfg), []string{"unranked", "ddg"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("AutoChainNames() = %v, want %v", got, want)
+	}
+}
+
+// A listed provider that cannot run (no key) drops out, keeping the rest of
+// the operator's order intact.
+func TestAutoChainSearchOrderDropsUnusableProviders(t *testing.T) {
+	t.Parallel()
+	cfg := config.Defaults()
+	cfg.SearchOrder = []string{"tavily", "exa", "brave", "ddg"}
+
+	if got, want := AutoChainNames(&cfg), []string{"exa", "ddg"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("AutoChainNames() = %v, want %v", got, want)
+	}
+}
+
+// When nothing listed is usable, the error has to say search_order is why:
+// the default chain would have had keyless providers to fall back on.
+func TestNewAutoFromConfigErrorsWhenNoListedProviderIsUsable(t *testing.T) {
+	t.Parallel()
+	cfg := config.Defaults()
+	cfg.SearchOrder = []string{"tavily", "brave"}
+
+	_, err := NewFromConfig(&cfg, AutoBackend, "")
+	if err == nil {
+		t.Fatal("expected an error for a search_order with no usable provider")
+	}
+	for _, want := range []string{`no usable search backends for "auto"`, "search_order", "tavily, brave"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q does not contain %q", err, want)
+		}
+	}
+}
+
+// A hand-edited config file bypasses `config set`, so the chain itself must
+// refuse an invalid list rather than silently fall back to the default order.
+func TestNewAutoFromConfigRejectsInvalidSearchOrder(t *testing.T) {
+	t.Parallel()
+	for _, order := range [][]string{{"auto"}, {"wiki"}, {"ddg", "DDG"}, {" "}} {
+		cfg := config.Defaults()
+		cfg.SearchOrder = order
+		if got := AutoChainNames(&cfg); len(got) != 0 {
+			t.Errorf("search_order %q: AutoChainNames() = %v, want empty", order, got)
+		}
+		_, err := NewFromConfig(&cfg, AutoBackend, "")
+		if err == nil || !strings.Contains(err.Error(), "invalid search_order") {
+			t.Errorf("search_order %q: err = %v, want invalid search_order", order, err)
+		}
+	}
+}
+
+// An empty list is the default chain, byte for byte.
+func TestAutoChainEmptySearchOrderIsTheDefault(t *testing.T) {
+	t.Parallel()
+	defaults := config.Defaults()
+	want := AutoChainNames(&defaults)
+	cfg := config.Defaults()
+	cfg.SearchOrder = []string{}
+	if got := AutoChainNames(&cfg); !reflect.DeepEqual(got, want) {
+		t.Fatalf("AutoChainNames() = %v, want the default %v", got, want)
+	}
+}
+
+func TestNormalizeSearchOrder(t *testing.T) {
+	t.Parallel()
+	got, err := NormalizeSearchOrder([]string{" Exa", "TINYFISH ", "brave"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"exa", "tinyfish", "brave"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("NormalizeSearchOrder() = %v, want %v (order preserved)", got, want)
+	}
+	if got, err := NormalizeSearchOrder(nil); got != nil || err != nil {
+		t.Fatalf("NormalizeSearchOrder(nil) = %v, %v; want nil, nil", got, err)
+	}
+	for list, want := range map[string]string{"auto": "not a backend", "wiki": "unknown backend", "ddg,Ddg": "duplicate backend", "": "blank"} {
+		if _, err := NormalizeSearchOrder(strings.Split(list, ",")); err == nil || !strings.Contains(err.Error(), want) {
+			t.Errorf("NormalizeSearchOrder(%q) err = %v, want %q", list, err, want)
 		}
 	}
 }

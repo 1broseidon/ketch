@@ -611,6 +611,23 @@ rather than averaged away.
 > also have to set `backend`. Self-hosted SearXNG and Degoog instances are
 > preferred over hosted APIs once configured.
 
+#### Your own order — `search_order` pins the chain
+
+```console
+$ ketch config set search_order exa,tinyfish,brave
+$ KETCH_SEARCH_ORDER=exa,brave ketch search "query"
+```
+
+With `search_order` set, `auto` tries only those backends, in exactly that
+order: no promotion, no default ranking, nothing unlisted. Any provider may be
+listed, including a keyed one or SearXNG on its localhost default. A listed
+provider that can't run — its key or instance isn't set — drops out, and if
+none is left `auto` fails naming `search_order`. The value is a comma list or a
+JSON array; `auto`, unknown names and duplicates are rejected. An empty value
+or `[]` restores the default order. `--multi`, `--random` and `-b <provider>`
+ignore it, MCP `search` follows it, and `ketch doctor` reports the chain in
+this order.
+
 #### Keyless — Nothing to configure
 
 `parallel`, `exa`, `keenable`, `youcom`, `firecrawl`, and `ddg` answer with no
@@ -692,6 +709,7 @@ $ KETCH_CONFIG=/etc/ketch/config.json ketch config
 #### Environment details — Lists, tokens, and what's file-only
 
 - Per-provider key vars accept a comma-separated list and replace the provider's whole key pool — there are no plural `*_API_KEYS` vars.
+- `KETCH_SEARCH_ORDER` and `KETCH_MCP_TOOLS` take a comma-separated list.
 - `KETCH_HTTP_HEADERS` takes the same JSON object as `http_headers` and replaces it whole.
 - `KETCH_GITHUB_TOKEN` beats the config file, which beats an ambient `$GITHUB_TOKEN`.
 - `url_rewrites` and `spa_markers` are file-only — their JSON and regex values don't survive env quoting.
@@ -729,6 +747,7 @@ $ ketch browser status
 - `user_agent` — User-Agent override for HTTP and browser fetches
 - `extract_mode` — `clean` (default) or `complete`; a non-default mode scopes cached pages, so a page cached under one mode is never reused under the other
 - `mcp_tools` — allowlist of MCP tools to publish; unset publishes all six
+- `search_order` — the `auto` chain, exactly: backend IDs tried in this order; unset keeps the default (see Backends)
 - `external_pdf_to_md_converter_command` — external PDF-to-Markdown converter; must contain exactly one `{input}` placeholder. Once set it is authoritative, with no silent fallback
 - `http_headers` — headers for self-hosted SearXNG, Firecrawl, Degoog, and Sourcegraph instances, keyed by origin (see Self-hosted under Backends); values are secrets
 
