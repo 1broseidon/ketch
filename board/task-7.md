@@ -1,7 +1,7 @@
 ---
 id: task-7
 title: "Scrape: escalate to the configured browser on HTTP 403 (#81)"
-column: in-progress
+column: review
 position: 0
 description: |-
   Design settled by the owner on #81 (2026-10-16). Build it.
@@ -28,7 +28,7 @@ description: |-
   Source: https://github.com/1broseidon/ketch/issues/81. Close the issue in the PR body (`Closes #81`), crediting the reporter.
 source: https://github.com/1broseidon/ketch/issues/81
 createdAt: "2026-10-13T00:28:57.388Z"
-updatedAt: "2026-10-22T05:52:48.372Z"
+updatedAt: "2026-10-22T05:53:51.540Z"
 relatedFiles:
   - scrape/scrape.go
   - scrape/pipeline.go
@@ -37,7 +37,7 @@ relatedFiles:
   - CHANGELOG.md
   - design/adr/0003-fast-path-first-scrape.md
 contract:
-  status: in_progress
+  status: delivered
   deliverables:
     - type: file
       path: scrape/scrape.go
@@ -68,8 +68,8 @@ contract:
     readyAt: "2026-10-22T05:45:17.459Z"
     pickedUpAt: "2026-10-22T05:52:48.372Z"
     reworkCount: 1
-    deliveredAt: "2026-10-22T05:48:29.402Z"
-    duration: 171
+    deliveredAt: "2026-10-22T05:53:51.540Z"
+    duration: 63
 dispatch:
   agent: claude
   model: opus
