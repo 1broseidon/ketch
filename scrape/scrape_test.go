@@ -182,6 +182,63 @@ func TestForbiddenBrowserFailureReturnsOriginalError(t *testing.T) {
 	}
 }
 
+// statusBrowser is a renderBrowser that also reports the main document's
+// HTTP status, as the real browser connection does.
+type statusBrowser struct {
+	renderBrowser
+	status int
+}
+
+func (b *statusBrowser) FetchStatus(ctx context.Context, url string) (string, int, error) {
+	html, err := b.Fetch(ctx, url)
+	return html, b.status, err
+}
+
+func TestForbiddenBrowserAlsoRefusedReturnsOriginalError(t *testing.T) {
+	for _, path := range escalationPaths {
+		t.Run(path.name, func(t *testing.T) {
+			server := statusServer(t, http.StatusForbidden)
+			browser := &statusBrowser{status: http.StatusForbidden}
+			s := NewWithBrowserConn(browser, nil)
+			var err error
+			stderr := captureStderr(t, func() {
+				_, _, err = path.run(t.Context(), s, server.URL)
+			})
+			assertStatusError(t, err, http.StatusForbidden, server.URL)
+			if browser.calls != 1 {
+				t.Fatalf("browser calls = %d, want 1", browser.calls)
+			}
+			if !strings.Contains(stderr, "warn: browser retry after HTTP 403 failed for "+server.URL) ||
+				!strings.Contains(stderr, "browser also got HTTP 403") {
+				t.Fatalf("stderr = %q, want the browser refusal warning", stderr)
+			}
+			if strings.Contains(stderr, "notice:") {
+				t.Fatalf("stderr = %q, want no success notice", stderr)
+			}
+		})
+	}
+}
+
+func TestForbiddenBrowserStatusOKEscalates(t *testing.T) {
+	for _, status := range []int{http.StatusOK, 0} {
+		server := statusServer(t, http.StatusForbidden)
+		browser := &statusBrowser{status: status}
+		s := NewWithBrowserConn(browser, nil)
+		var page *Page
+		var source string
+		var err error
+		captureStderr(t, func() {
+			page, source, err = s.Scrape(t.Context(), server.URL)
+		})
+		if err != nil {
+			t.Fatalf("browser status %d: error = %v, want the browser render", status, err)
+		}
+		if source != SourceBrowser || !strings.Contains(page.Markdown, "Past the wall") {
+			t.Fatalf("browser status %d: source = %q, markdown = %q, want the rendered page", status, source, page.Markdown)
+		}
+	}
+}
+
 func TestForbiddenWithoutBrowserIsUnchanged(t *testing.T) {
 	for _, path := range escalationPaths {
 		t.Run(path.name, func(t *testing.T) {

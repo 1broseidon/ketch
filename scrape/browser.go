@@ -160,29 +160,50 @@ func closeBrowser(b *rod.Browser, l *launcher.Launcher) {
 // per-fetch filtering still bounds what each navigation loads. Acceptable for
 // a single-operator CLI.
 func (r *rodConn) Fetch(ctx context.Context, rawURL string) (string, error) {
+	html, _, err := r.FetchStatus(ctx, rawURL)
+	return html, err
+}
+
+// navigationStatusJS reads the HTTP status of the main document from the
+// Navigation Timing entry (Chrome 109+). It reports the final response after
+// redirects, and 0 where the browser does not expose it.
+const navigationStatusJS = `() => {
+	const nav = performance.getEntriesByType("navigation")[0];
+	return nav && nav.responseStatus ? nav.responseStatus : 0;
+}`
+
+// FetchStatus is Fetch that also reports the main document's HTTP status, or
+// 0 when the browser cannot say. Reading it from the page after load, rather
+// than from Network events, avoids racing the event stream against WaitLoad.
+func (r *rodConn) FetchStatus(ctx context.Context, rawURL string) (string, int, error) {
 	if err := ValidateWebURL(rawURL); err != nil {
-		return "", err
+		return "", 0, err
 	}
 	page, err := r.browser.Context(ctx).Page(proto.TargetCreateTarget{}) // about:blank
 	if err != nil {
-		return "", fmt.Errorf("create page: %w", err)
+		return "", 0, fmt.Errorf("create page: %w", err)
 	}
 	defer func() { _ = page.Close() }()
 
 	if params := rodCookieParams(r.jar, rawURL); len(params) > 0 {
 		if err := page.SetCookies(params); err != nil {
-			return "", fmt.Errorf("set cookies: %w", err)
+			return "", 0, fmt.Errorf("set cookies: %w", err)
 		}
 	}
 	if err := page.Navigate(rawURL); err != nil {
-		return "", fmt.Errorf("navigate: %w", err)
+		return "", 0, fmt.Errorf("navigate: %w", err)
 	}
 
 	timedPage := page.Timeout(30 * time.Second)
 	_ = timedPage.WaitLoad()
 	_ = timedPage.WaitStable(time.Second)
 
-	return page.HTML()
+	status := 0
+	if res, err := page.Eval(navigationStatusJS); err == nil {
+		status = res.Value.Int()
+	}
+	html, err := page.HTML()
+	return html, status, err
 }
 
 // rodCookieParams converts jar entries matching pageURL into CDP cookie params.

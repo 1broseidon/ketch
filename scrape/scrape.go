@@ -453,13 +453,32 @@ func (s *Scraper) browserOnForbidden(ctx context.Context, fetchURL string, fetch
 	if browser == nil {
 		return "", false
 	}
-	rendered, err := browser.Fetch(ctx, fetchURL)
+	rendered, err := fetchVerified(ctx, browser, fetchURL)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "warn: browser retry after HTTP 403 failed for %s: %v\n", fetchURL, err)
 		return "", false
 	}
 	fmt.Fprintf(os.Stderr, "notice: HTTP 403 for %s; fetched with the browser\n", fetchURL)
 	return rendered, true
+}
+
+// fetchVerified renders fetchURL through browser and, when the browser can
+// report the main document's status, fails on an HTTP error status: a wall
+// that refuses the browser too renders an access-denied page, which must not
+// pass for content. A browser that cannot report a status is trusted.
+func fetchVerified(ctx context.Context, browser BrowserConn, fetchURL string) (string, error) {
+	sf, ok := browser.(StatusFetcher)
+	if !ok {
+		return browser.Fetch(ctx, fetchURL)
+	}
+	rendered, status, err := sf.FetchStatus(ctx, fetchURL)
+	if err != nil {
+		return "", err
+	}
+	if status >= http.StatusBadRequest {
+		return "", fmt.Errorf("browser also got HTTP %d", status)
+	}
+	return rendered, nil
 }
 
 // CacheStaleForBrowser reports whether a cache entry with the given source

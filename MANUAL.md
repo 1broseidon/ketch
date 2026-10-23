@@ -386,7 +386,8 @@ browser through. This applies to `scrape` (including `--raw` and `--select`),
 error status. When the browser gets the page, ketch prints
 `notice: HTTP 403 for <url>; fetched with the browser` to stderr, never to
 stdout or `--json` output, and the page is cached as a browser render. If the
-browser fails too, the scrape fails with the original `HTTP 403 for <url>`
+browser fails too, or is itself answered with an HTTP error status (a wall
+that refuses Chromium as well), the scrape fails with the original `HTTP 403 for <url>`
 error and the browser's failure goes to stderr as a `warn:` line. Without a
 browser configured, a 403 fails exactly as it always has.
 
