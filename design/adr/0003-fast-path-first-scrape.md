@@ -24,6 +24,11 @@ Scrape takes the **fast path by default and escalates only on evidence.**
    the content isn't in the HTML yet, and operator-supplied `spa_markers`.
 3. Only if the page is judged a JS shell, re-fetch it through the configured
    headless browser and extract from the rendered HTML.
+4. If the plain fetch is refused with HTTP 403, the usual answer of a bot wall
+   to a non-browser client, fetch the page through the configured browser
+   instead and say so on stderr. A 429 never escalates: it asks the client to
+   back off. If the browser fails too, or is itself answered with an HTTP
+   error status, the original 403 is the error.
 
 The output shape is identical regardless of which path ran — the caller never
 has to know a browser was involved. A `--force-browser` flag overrides the
