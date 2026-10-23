@@ -1,8 +1,6 @@
 ---
 id: task-7
 title: "Scrape: escalate to the configured browser on HTTP 403 (#81)"
-column: review
-position: 0
 description: |-
   Design settled by the owner on #81 (2026-10-16). Build it.
 
@@ -28,7 +26,7 @@ description: |-
   Source: https://github.com/1broseidon/ketch/issues/81. Close the issue in the PR body (`Closes #81`), crediting the reporter.
 source: https://github.com/1broseidon/ketch/issues/81
 createdAt: "2026-10-13T00:28:57.388Z"
-updatedAt: "2026-10-22T20:21:14.676Z"
+updatedAt: "2026-10-23T15:18:51.194Z"
 relatedFiles:
   - scrape/scrape.go
   - scrape/pipeline.go
@@ -85,14 +83,15 @@ dispatch:
     ended: "2026-10-22T20:21:12.361Z"
     outcome: review
 assignee: claude
+parentId: epic-1
 pullRequest:
   number: 92
   url: https://github.com/1broseidon/ketch/pull/92
-  state: open
+  state: merged
   base: main
   head: dispatch/task-7
   at: "2026-10-22T05:51:21.551Z"
-parentId: epic-1
+completedAt: "2026-10-23T15:18:51.194Z"
 ---
 
 ## Log
@@ -106,3 +105,4 @@ parentId: epic-1
 - 2026-10-22T20:20:14.651Z: [claude] PR #92 (base release/v0.20.1) is DIRTY after #91 (search_order, task-8) merged. On dispatch/task-7: git fetch origin && git merge origin/release/v0.20.1 (no rebase, no force-push). Resolve conflicts keeping both changes — CHANGELOG.md Unreleased gets both entries (#80 and #81), MANUAL.md/README keep both the search_order docs and the 403-escalation docs; take go.mod/toolchain from the release branch (Go 1.26.10). Then go build ./... && go test ./... && golangci-lint run, and commit the merge.
 - 2026-10-22T20:21:08.226Z: [claude] Merged origin/release/v0.20.1 into dispatch/task-7 (efd6d64, no rebase/force-push). Only conflict was CHANGELOG Unreleased: kept the release branch's Go 1.26.10 entry (dropped our duplicate), the search_order entry (#80) and the 403-escalation entry (#81); MANUAL/README auto-merged with both docs; go.mod is the release branch's go 1.26.10. Diff vs base is now only the #81 files. go build, go test ./..., golangci-lint (0 issues) pass. On its branch, not pushed — push to clear PR #92's DIRTY state.
 - 2026-10-22T20:21:14.676Z: Pushed 5 commits to pull request #92: https://github.com/1broseidon/ketch/pull/92
+- 2026-10-23T15:18:50.449Z: Pull request #92 was merged into main
