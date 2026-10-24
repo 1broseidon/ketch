@@ -2,6 +2,7 @@ package scrape
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net/url"
 	"os"
@@ -160,29 +161,222 @@ func closeBrowser(b *rod.Browser, l *launcher.Launcher) {
 // per-fetch filtering still bounds what each navigation loads. Acceptable for
 // a single-operator CLI.
 func (r *rodConn) Fetch(ctx context.Context, rawURL string) (string, error) {
-	if err := ValidateWebURL(rawURL); err != nil {
-		return "", err
-	}
-	page, err := r.browser.Context(ctx).Page(proto.TargetCreateTarget{}) // about:blank
-	if err != nil {
-		return "", fmt.Errorf("create page: %w", err)
-	}
-	defer func() { _ = page.Close() }()
+	html, _, err := r.FetchStatus(ctx, rawURL)
+	return html, err
+}
 
-	if params := rodCookieParams(r.jar, rawURL); len(params) > 0 {
-		if err := page.SetCookies(params); err != nil {
-			return "", fmt.Errorf("set cookies: %w", err)
+// navigationStatusJS reads the HTTP status of the main document from the
+// Navigation Timing entry (Chrome 109+). It reports the final response after
+// redirects, and 0 where the browser does not expose it.
+const navigationStatusJS = `() => {
+	const nav = performance.getEntriesByType("navigation")[0];
+	return nav && nav.responseStatus ? nav.responseStatus : 0;
+}`
+
+// FetchStatus is Fetch that also reports the main document's HTTP status, or
+// 0 when the browser cannot say. Reading it from the page after load, rather
+// than from Network events, avoids racing the event stream against WaitLoad.
+func (r *rodConn) FetchStatus(ctx context.Context, rawURL string) (string, int, error) {
+	page, err := r.navigate(ctx, rawURL)
+	if err != nil {
+		return "", 0, err
+	}
+	defer closePage(page)
+	status := navigationStatus(page)
+	html, err := page.HTML()
+	return html, status, err
+}
+
+// FetchContent returns the original main resource rather than page.HTML:
+// Chromium's XML viewer (or an XSL stylesheet) replaces a sitemap's DOM.
+func (r *rodConn) FetchContent(ctx context.Context, rawURL string) (*FetchedContent, int, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	page, err := r.openPage(ctx, rawURL)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer closePage(page)
+	// Capture bytes while the response is paused, before Chromium's XML/XSL
+	// renderer can replace them. Status and body belong to the same request.
+	if err := (proto.FetchEnable{Patterns: []*proto.FetchRequestPattern{{
+		ResourceType: proto.NetworkResourceTypeDocument,
+		RequestStage: proto.FetchRequestStageResponse,
+	}}}).Call(page); err != nil {
+		return nil, 0, err
+	}
+	responses := interceptDocument(page)
+	navigation := make(chan error, 1)
+	go func() { navigation <- page.Navigate(rawURL) }()
+	for {
+		select {
+		case result := <-responses:
+			return result.content, result.status, result.err
+		case err := <-navigation:
+			if err != nil {
+				return nil, 0, fmt.Errorf("navigate: %w", err)
+			}
+			navigation = nil
+		case <-ctx.Done():
+			return nil, 0, ctx.Err()
 		}
 	}
-	if err := page.Navigate(rawURL); err != nil {
-		return "", fmt.Errorf("navigate: %w", err)
-	}
+}
 
+type documentResponse struct {
+	content *FetchedContent
+	status  int
+	err     error
+}
+
+func interceptDocument(page *rod.Page) <-chan documentResponse {
+	results := make(chan documentResponse, 1)
+	wait := page.EachEvent(func(e *proto.FetchRequestPaused) bool {
+		if e.FrameID != page.FrameID || isDocumentRedirect(e) {
+			if err := (proto.FetchContinueRequest{RequestID: e.RequestID}).Call(page); err != nil {
+				results <- documentResponse{err: err}
+				return true
+			}
+			return false
+		}
+		content, status, err := browserResponseContent(page, e)
+		// The caller closes this private tab immediately; do not render the body
+		// or allow scripts to replace the checked response before it is returned.
+		results <- documentResponse{content: content, status: status, err: err}
+		return true
+	})
+	go wait()
+	return results
+}
+
+func isDocumentRedirect(e *proto.FetchRequestPaused) bool {
+	if e.ResponseStatusCode == nil {
+		return false
+	}
+	switch *e.ResponseStatusCode {
+	case 301, 302, 303, 307, 308:
+		for _, h := range e.ResponseHeaders {
+			if strings.EqualFold(h.Name, "Location") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func browserResponseContent(page *rod.Page, event *proto.FetchRequestPaused) (*FetchedContent, int, error) {
+	if event.ResponseErrorReason != "" {
+		return nil, 0, fmt.Errorf("browser document load failed: %s", event.ResponseErrorReason)
+	}
+	if event.ResponseStatusCode == nil {
+		return nil, 0, fmt.Errorf("browser response has no HTTP status")
+	}
+	status := *event.ResponseStatusCode
+	if status < 200 || status >= 300 {
+		return nil, status, nil
+	}
+	response, err := (proto.FetchGetResponseBody{RequestID: event.RequestID}).Call(page)
+	if err != nil {
+		return nil, status, err
+	}
+	body, err := decodeBrowserBody(response)
+	if err != nil {
+		return nil, status, err
+	}
+	contentType := ""
+	for _, h := range event.ResponseHeaders {
+		if strings.EqualFold(h.Name, "Content-Type") {
+			contentType = h.Value
+			break
+		}
+	}
+	return &FetchedContent{Body: body, ContentType: contentType}, status, nil
+}
+
+func decodeBrowserBody(response *proto.FetchGetResponseBodyResult) ([]byte, error) {
+	limit := MaxBodyBytes
+	if response.Base64Encoded {
+		limit = base64.StdEncoding.EncodedLen(MaxBodyBytes)
+	}
+	if len(response.Body) > limit {
+		return nil, fmt.Errorf("browser response exceeds %d bytes", MaxBodyBytes)
+	}
+	body := []byte(response.Body)
+	if response.Base64Encoded {
+		var err error
+		body, err = base64.StdEncoding.DecodeString(response.Body)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(body) > MaxBodyBytes {
+		return nil, fmt.Errorf("browser response exceeds %d bytes", MaxBodyBytes)
+	}
+	return body, nil
+}
+
+// Cleanup must outlive a cancelled request so tabs and Rod's cached pages are
+// released even when navigation times out.
+func closePage(page *rod.Page) {
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(page.GetContext()), 3*time.Second)
+	defer cancel()
+	_ = page.Context(ctx).Close()
+}
+
+func navigationStatus(page *rod.Page) int {
+	if res, err := page.Eval(navigationStatusJS); err == nil {
+		return res.Value.Int()
+	}
+	return 0
+}
+
+// openPage creates a tab with the configured cookies. The caller closes it.
+func (r *rodConn) openPage(ctx context.Context, rawURL string) (*rod.Page, error) {
+	if err := ValidateWebURL(rawURL); err != nil {
+		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	// Target creation must finish even if the caller cancels, otherwise CDP
+	// may create a tab whose ID never reaches us and cannot be cleaned up.
+	setupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
+	target, err := (proto.TargetCreateTarget{URL: "about:blank"}).Call(r.browser.Context(setupCtx))
+	cancel()
+	if err != nil {
+		return nil, fmt.Errorf("create page: %w", err)
+	}
+	page, err := r.browser.Context(ctx).PageFromTarget(target.TargetID)
+	if err != nil {
+		cleanupCtx, done := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
+		defer done()
+		_, _ = (proto.TargetCloseTarget{TargetID: target.TargetID}).Call(r.browser.Context(cleanupCtx))
+		r.browser.RemoveState(target.TargetID)
+		return nil, fmt.Errorf("attach page: %w", err)
+	}
+	if params := rodCookieParams(r.jar, rawURL); len(params) > 0 {
+		if err := page.SetCookies(params); err != nil {
+			closePage(page)
+			return nil, fmt.Errorf("set cookies: %w", err)
+		}
+	}
+	return page, nil
+}
+
+// navigate owns cleanup on failure; on success the caller closes the tab.
+func (r *rodConn) navigate(ctx context.Context, rawURL string) (*rod.Page, error) {
+	page, err := r.openPage(ctx, rawURL)
+	if err != nil {
+		return nil, err
+	}
+	if err := page.Navigate(rawURL); err != nil {
+		closePage(page)
+		return nil, fmt.Errorf("navigate: %w", err)
+	}
 	timedPage := page.Timeout(30 * time.Second)
 	_ = timedPage.WaitLoad()
 	_ = timedPage.WaitStable(time.Second)
-
-	return page.HTML()
+	return page, nil
 }
 
 // rodCookieParams converts jar entries matching pageURL into CDP cookie params.

@@ -28,6 +28,7 @@ type Config struct {
 	ExternalPDFToMDConverterCommand    string            `json:"external_pdf_to_md_converter_command,omitempty" order:"28"`
 	ExternalPDFToMDConverterTimeoutSec int               `json:"external_pdf_to_md_converter_timeout_sec" order:"29"`
 	ExtractMode                        string            `json:"extract_mode,omitempty" order:"30"` // "clean" (default) or "complete": what extraction may drop; empty = clean
+	SearchOrder                        []string          `json:"search_order,omitempty" order:"32"` // the auto chain, exactly: backend IDs tried in this order; empty = configured first, then AutoRank
 	ProviderSettings                   map[string]any    `json:"-"`
 	providerSchema                     []Setting
 	providerOrder                      map[string]int

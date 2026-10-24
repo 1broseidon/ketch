@@ -33,6 +33,10 @@ func AvailableBackends() []string { return search.AvailableBackends() }
 // accept: the auto chain first, then the providers in registry order.
 func SelectableBackends() []string { return search.SelectableBackends() }
 
+// NormalizeSearchOrder validates an operator-configured search_order against
+// the search provider registry, preserving the operator's order.
+func NormalizeSearchOrder(list []string) ([]string, error) { return search.NormalizeSearchOrder(list) }
+
 // AvailableCodeBackends returns the list of known code search backends.
 func AvailableCodeBackends() []string { return code.AvailableBackends() }
 

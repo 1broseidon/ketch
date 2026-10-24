@@ -1,6 +1,10 @@
 {
   "config_path": "/fixture/config.json",
   "backend": "auto",
+  "search_order": [
+    "brave",
+    "ddg"
+  ],
   "searxng_url": "http://localhost:8081",
   "brave_api_key_set": true,
   "brave_api_keys_count": 2,

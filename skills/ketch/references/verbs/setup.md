@@ -40,6 +40,11 @@ On older ketch versions without `doctor`, configured-state detection is imperfec
    ketch config set brave_api_key <key>
    ```
    The missing-key error itself contains the signup URL and the exact fix command — surface it to the operator rather than paraphrasing.
+
+   If the operator wants to choose the fallback order themselves, `search_order` pins the `auto` chain to exactly the listed backends, in that order (no promotion, nothing unlisted; a listed provider without its key drops out):
+   ```sh
+   ketch config set search_order exa,tinyfish,brave
+   ```
 3. **searxng — the self-hosted option.** No key, no third-party rate limits. **Stock searxng in docker rejects `format=json`**, which ketch requires — mount a `settings.yml` with the json format enabled:
 
    ```yaml

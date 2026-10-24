@@ -219,6 +219,102 @@ func TestLoadEnvMCPToolsInvalidIsLoudButBestEffort(t *testing.T) {
 	}
 }
 
+func TestLoadEnvSearchOrder(t *testing.T) {
+	clearKetchEnv(t)
+	testutil.SetIsolatedConfigHome(t)
+	t.Setenv("KETCH_SEARCH_ORDER", "Exa, tinyfish,brave")
+
+	res, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if order := res.Config.SearchOrder; strings.Join(order, ",") != "exa,tinyfish,brave" {
+		t.Fatalf("SearchOrder = %v, want [exa tinyfish brave]", order)
+	}
+	found := false
+	for _, o := range res.Overrides {
+		if o.Key == "search_order" && o.Var == "KETCH_SEARCH_ORDER" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("search_order override not recorded: %+v", res.Overrides)
+	}
+}
+
+func TestLoadEnvSearchOrderInvalidIsLoud(t *testing.T) {
+	for value, want := range map[string]string{
+		"exa,auto":  `KETCH_SEARCH_ORDER: "auto"`,
+		"google":    `KETCH_SEARCH_ORDER: unknown backend "google"`,
+		"ddg, DDG ": `KETCH_SEARCH_ORDER: duplicate backend "ddg"`,
+	} {
+		t.Run(value, func(t *testing.T) {
+			clearKetchEnv(t)
+			testutil.SetIsolatedConfigHome(t)
+			t.Setenv("KETCH_SEARCH_ORDER", value)
+
+			_, err := Load()
+			if err == nil || !strings.Contains(err.Error(), want) {
+				t.Fatalf("expected %q, got: %v", want, err)
+			}
+		})
+	}
+}
+
+func TestLoadEnvSearchOrderBlankInputPreservesFile(t *testing.T) {
+	for _, tt := range []struct {
+		name    string
+		value   string
+		wantErr bool
+	}{
+		{name: "empty_is_unset", value: ""},
+		{name: "leading_blank", value: ",exa", wantErr: true},
+		{name: "trailing_blank", value: "exa,", wantErr: true},
+		{name: "interior_blank", value: "exa,,ddg", wantErr: true},
+		{name: "leading_whitespace", value: " \t,exa", wantErr: true},
+		{name: "trailing_whitespace", value: "exa, \t", wantErr: true},
+		{name: "interior_whitespace", value: "exa, \t,ddg", wantErr: true},
+		{name: "comma_only", value: ",", wantErr: true},
+		{name: "commas_only", value: ",,,", wantErr: true},
+		{name: "whitespace_only", value: " \t\n ", wantErr: true},
+		{name: "blank_fields_only", value: " , \t, ", wantErr: true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			clearKetchEnv(t)
+			path := filepath.Join(t.TempDir(), "config.json")
+			const fileConfig = `{"search_order": ["searxng"], "searxng_url": "http://127.0.0.1:8081"}`
+			if err := os.WriteFile(path, []byte(fileConfig), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			t.Setenv("KETCH_CONFIG", path)
+			t.Setenv("KETCH_SEARCH_ORDER", tt.value)
+
+			res, err := Load()
+			if tt.wantErr {
+				const want = "KETCH_SEARCH_ORDER: backend name is blank"
+				if err == nil || !strings.Contains(err.Error(), want) {
+					t.Fatalf("expected %q, got: %v", want, err)
+				}
+			} else if err != nil {
+				t.Fatalf("empty env value should be unset, got: %v", err)
+			}
+			if want := []string{"searxng"}; !reflect.DeepEqual(res.Config.SearchOrder, want) {
+				t.Fatalf("SearchOrder = %v, want file-pinned order %v", res.Config.SearchOrder, want)
+			}
+			if len(res.Overrides) != 0 {
+				t.Fatalf("blank env input was recorded as an override: %+v", res.Overrides)
+			}
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(data) != fileConfig {
+				t.Fatalf("config file changed: %s", data)
+			}
+		})
+	}
+}
+
 func TestLoadEnvExtractMode(t *testing.T) {
 	clearKetchEnv(t)
 	testutil.SetIsolatedConfigHome(t)
