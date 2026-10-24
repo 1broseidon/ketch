@@ -30,6 +30,13 @@ type StatusFetcher interface {
 	FetchStatus(ctx context.Context, url string) (html string, status int, err error)
 }
 
+// ContentFetcher optionally exposes the original main-document response through
+// the browser, with its HTTP status. Unlike Fetch/FetchStatus it must not return
+// a rendered HTML/XML viewer DOM. Used for 403 retries of sitemap XML.
+type ContentFetcher interface {
+	FetchContent(ctx context.Context, url string) (*FetchedContent, int, error)
+}
+
 // ResolveBrowserBin resolves a browser configuration value to an absolute path.
 // Accepts "chrome", "chromium" (searched in PATH), or an absolute path.
 func ResolveBrowserBin(configured string) (string, error) {

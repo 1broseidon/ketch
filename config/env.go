@@ -126,9 +126,9 @@ func coreEnvSpecs() []envSpec {
 			key:  "search_order",
 			prev: func(c *Config) string { return strings.Join(c.SearchOrder, ",") },
 			apply: func(c *Config, v string) error {
-				// Backend IDs are plain identifiers, so like mcp_tools a
-				// comma-separated env value is unambiguous.
-				order, err := NormalizeSearchOrder(splitCommaList(v))
+				// Preserve blank entries so validation rejects malformed lists
+				// rather than silently changing or clearing the pinned order.
+				order, err := NormalizeSearchOrder(strings.Split(v, ","))
 				if err != nil {
 					return err
 				}

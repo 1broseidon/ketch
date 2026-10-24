@@ -391,6 +391,11 @@ that refuses Chromium as well), the scrape fails with the original `HTTP 403 for
 error and the browser's failure goes to stderr as a `warn:` line. Without a
 browser configured, a 403 fails exactly as it always has.
 
+This also covers `crawl --sitemap` seeds and child sitemaps. The browser
+returns the original XML response, not its rendered XML viewer or stylesheet
+output. A failed retry retains the original 403; sitemap fetches are not
+added to the page cache.
+
 #### config — Show, init, set, path
 
 ```console
