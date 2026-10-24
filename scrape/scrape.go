@@ -556,6 +556,35 @@ func (s *Scraper) FetchContent(ctx context.Context, rawURL string) (*FetchedCont
 	return content, nil
 }
 
+// FetchContentWithBrowser preserves the plain response and retries only HTTP
+// 403 through a content-capable configured browser. Failed/unknown browser
+// statuses retain the original 403; no rendered XML viewer HTML is accepted.
+// Like FetchContent, rawURL must already have configured rewrites applied.
+func (s *Scraper) FetchContentWithBrowser(ctx context.Context, rawURL string) (*FetchedContent, error) {
+	content, err := s.FetchContent(ctx, rawURL)
+	if err == nil {
+		return content, nil
+	}
+	var statusErr *HTTPStatusError
+	if !errors.As(err, &statusErr) || statusErr.StatusCode != http.StatusForbidden {
+		return nil, err
+	}
+	browser, ok := s.getBrowser().(ContentFetcher)
+	if !ok {
+		return nil, err
+	}
+	content, status, browserErr := browser.FetchContent(ctx, rawURL)
+	if browserErr == nil && (status < http.StatusOK || status >= http.StatusMultipleChoices || content == nil) {
+		browserErr = fmt.Errorf("browser returned unusable HTTP status %d", status)
+	}
+	if browserErr != nil {
+		fmt.Fprintf(os.Stderr, "warn: browser retry after HTTP 403 failed for %s: %v\n", rawURL, browserErr)
+		return nil, err
+	}
+	fmt.Fprintf(os.Stderr, "notice: HTTP 403 for %s; fetched with the browser\n", rawURL)
+	return content, nil
+}
+
 // Fetch is the compatibility wrapper for callers that expect a string body.
 func (s *Scraper) Fetch(ctx context.Context, rawURL string) (string, error) {
 	content, err := s.FetchContent(ctx, rawURL)

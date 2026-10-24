@@ -16,7 +16,7 @@ const INSTALL_HINT = "brew install ketch, npm i -g ketch-cli, or go install gith
 // Pinned so the plugin never executes an unreviewed release; KETCH_PI_NO_NPX=1 opts out.
 // Bumped in every release commit; the unit tests and the release workflow
 // fail when it differs from the newest CHANGELOG.md version.
-export const NPX_PACKAGE = "ketch-cli@0.20.0";
+export const NPX_PACKAGE = "ketch-cli@0.20.1";
 const NPX_FIRST_RUN_EXTRA_MS = 120_000;
 const KETCH_MISSING = `[precondition] ketch not on PATH: ${INSTALL_HINT}`;
 
