@@ -378,6 +378,24 @@ $ ketch browser install    # download Chromium to ketch's cache dir
 Scraping is fast path first: plain HTTP by default, with the browser used only
 when a JS shell is detected. `--force-browser` overrides the detection.
 
+A page that answers the plain fetch with HTTP 403 is retried through the
+browser once, since bot walls often refuse ketch's HTTP client but let a real
+browser through. This applies to `scrape` (including `--raw` and `--select`),
+`search --scrape` and `crawl`, only when a browser is configured, and only for
+403: a 429 is a request to back off and fails as before, as does every other
+error status. When the browser gets the page, ketch prints
+`notice: HTTP 403 for <url>; fetched with the browser` to stderr, never to
+stdout or `--json` output, and the page is cached as a browser render. If the
+browser fails too, or is itself answered with an HTTP error status (a wall
+that refuses Chromium as well), the scrape fails with the original `HTTP 403 for <url>`
+error and the browser's failure goes to stderr as a `warn:` line. Without a
+browser configured, a 403 fails exactly as it always has.
+
+This also covers `crawl --sitemap` seeds and child sitemaps. The browser
+returns the original XML response, not its rendered XML viewer or stylesheet
+output. A failed retry retains the original 403; sitemap fetches are not
+added to the page cache.
+
 #### config — Show, init, set, path
 
 ```console
@@ -447,7 +465,7 @@ $ ketch version
 ketch v0.17.0
   commit: 8f41359
   built:  2026-09-16T22:51:07Z
-  go:     go1.26.9 linux/amd64
+  go:     go1.26.10 linux/amd64
 ```
 
 ## Workflows
@@ -599,6 +617,23 @@ rather than averaged away.
 > also have to set `backend`. Self-hosted SearXNG and Degoog instances are
 > preferred over hosted APIs once configured.
 
+#### Your own order — `search_order` pins the chain
+
+```console
+$ ketch config set search_order exa,tinyfish,brave
+$ KETCH_SEARCH_ORDER=exa,brave ketch search "query"
+```
+
+With `search_order` set, `auto` tries only those backends, in exactly that
+order: no promotion, no default ranking, nothing unlisted. Any provider may be
+listed, including a keyed one or SearXNG on its localhost default. A listed
+provider that can't run — its key or instance isn't set — drops out, and if
+none is left `auto` fails naming `search_order`. The value is a comma list or a
+JSON array; `auto`, unknown names and duplicates are rejected. An empty value
+or `[]` restores the default order. `--multi`, `--random` and `-b <provider>`
+ignore it, MCP `search` follows it, and `ketch doctor` reports the chain in
+this order.
+
 #### Keyless — Nothing to configure
 
 `parallel`, `exa`, `keenable`, `youcom`, `firecrawl`, and `ddg` answer with no
@@ -680,6 +715,7 @@ $ KETCH_CONFIG=/etc/ketch/config.json ketch config
 #### Environment details — Lists, tokens, and what's file-only
 
 - Per-provider key vars accept a comma-separated list and replace the provider's whole key pool — there are no plural `*_API_KEYS` vars.
+- `KETCH_SEARCH_ORDER` and `KETCH_MCP_TOOLS` take a comma-separated list.
 - `KETCH_HTTP_HEADERS` takes the same JSON object as `http_headers` and replaces it whole.
 - `KETCH_GITHUB_TOKEN` beats the config file, which beats an ambient `$GITHUB_TOKEN`.
 - `url_rewrites` and `spa_markers` are file-only — their JSON and regex values don't survive env quoting.
@@ -717,6 +753,7 @@ $ ketch browser status
 - `user_agent` — User-Agent override for HTTP and browser fetches
 - `extract_mode` — `clean` (default) or `complete`; a non-default mode scopes cached pages, so a page cached under one mode is never reused under the other
 - `mcp_tools` — allowlist of MCP tools to publish; unset publishes all six
+- `search_order` — the `auto` chain, exactly: backend IDs tried in this order; unset keeps the default (see Backends)
 - `external_pdf_to_md_converter_command` — external PDF-to-Markdown converter; must contain exactly one `{input}` placeholder. Once set it is authoritative, with no silent fallback
 - `http_headers` — headers for self-hosted SearXNG, Firecrawl, Degoog, and Sourcegraph instances, keyed by origin (see Self-hosted under Backends); values are secrets
 
@@ -809,7 +846,7 @@ out to `ketch … --json`, with the same per-call options and `[validation]`
 $ pi install git:github.com/1broseidon/ketch
 ```
 
-Pin a release with `pi install git:github.com/1broseidon/ketch@v0.20.0`. Results
+Pin a release with `pi install git:github.com/1broseidon/ketch@v0.20.1`. Results
 render as compact summaries, with the full response behind Ctrl+O.
 
 It never bundles the binary. It uses `ketch` from PATH and otherwise falls back

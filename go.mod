@@ -1,6 +1,6 @@
 module github.com/1broseidon/ketch
 
-go 1.26.9
+go 1.26.10
 
 // v0.16.0 was published and withdrawn the same day; its docs backends were
 // not ready. v0.16.1 is v0.15.0 plus fixes.
@@ -18,7 +18,7 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.5.0
 	github.com/spf13/cobra v1.10.2
 	go.etcd.io/bbolt v1.4.3
-	golang.org/x/net v0.61.0
+	golang.org/x/net v0.62.0
 )
 
 require (
