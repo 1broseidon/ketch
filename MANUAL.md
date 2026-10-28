@@ -846,7 +846,7 @@ out to `ketch … --json`, with the same per-call options and `[validation]`
 $ pi install git:github.com/1broseidon/ketch
 ```
 
-Pin a release with `pi install git:github.com/1broseidon/ketch@v0.20.0`. Results
+Pin a release with `pi install git:github.com/1broseidon/ketch@v0.20.1`. Results
 render as compact summaries, with the full response behind Ctrl+O.
 
 It never bundles the binary. It uses `ketch` from PATH and otherwise falls back
