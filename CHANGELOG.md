@@ -9,7 +9,7 @@ verbatim on the GitHub release. Versions follow
 
 ## [Unreleased]
 
-## [0.20.1] - 2026-10-24
+## [0.20.1] - 2026-10-28
 
 **Go toolchain patched to 1.26.10.** Release binaries are now built with Go 1.26.10, which distrusts a set of compromised intermediate certificates in `crypto/x509` ([GO-2026-6809](https://pkg.go.dev/vuln/GO-2026-6809)), reachable from every HTTPS fetch. Building from source now needs Go 1.26.10 or newer.
 
