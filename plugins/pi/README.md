@@ -36,6 +36,12 @@ call then returns `[precondition] ketch not on PATH: …` with install options
 (`brew install ketch`, `npm i -g ketch-cli`, `go install …`). The same
 `[precondition]` error appears if neither `ketch` nor `npx` exists.
 
+On Windows, an npm install puts a `ketch.cmd` shim on PATH, and Bun refuses to
+hand an argument containing a cmd.exe metacharacter (a quote, `&`, `^`) to a
+batch file — which is what a multi-URL scrape sends. The tools therefore
+resolve the native `ketch.exe` behind the shim and run it directly. Set
+`KETCH_PI_BIN` to name a binary explicitly and skip that resolution.
+
 ## What it registers
 
 The manifest is the repo's root `package.json` (`"pi"` key). pi git installs

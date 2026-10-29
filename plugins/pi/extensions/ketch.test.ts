@@ -3,9 +3,24 @@
 // strips the types natively).
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, test } from "node:test";
 
-import ketch, { NPX_PACKAGE, assembleCrawl, crawlArgs, csvField, scrapeArgs, searchArgs, tagArgs } from "./ketch.ts";
+import ketch, {
+	NPX_PACKAGE,
+	assembleCrawl,
+	crawlArgs,
+	csvField,
+	resolveKetchCommand,
+	scrapeArgs,
+	searchArgs,
+	tagArgs,
+} from "./ketch.ts";
+
+// Every tool resolves its binary at call time. Pin it, so assertions do not
+// depend on the host platform (Windows with npm's global ketch resolves the
+// native executable) or on a KETCH_PI_BIN the developer exported.
+process.env.KETCH_PI_BIN = "ketch";
 
 interface ExecCall {
 	command: string;
@@ -74,6 +89,52 @@ async function run(tools: Map<string, Tool>, name: string, params: Record<string
 	assert.ok(tool, `tool ${name} registered`);
 	return tool.execute("call-1", params, signal, undefined, {});
 }
+
+describe("binary resolution", () => {
+	test("non-Windows keeps the PATH lookup", () => {
+		assert.equal(resolveKetchCommand("linux", "x64", "/usr/bin", () => true, null), "ketch");
+		assert.equal(resolveKetchCommand("darwin", "arm64", "/opt/homebrew/bin", () => true, null), "ketch");
+	});
+
+	test("Windows resolves the native exe behind npm's .cmd shim", () => {
+		const dir = join("C:", "npm");
+		const shim = join(dir, "ketch.cmd");
+		const nested = join(dir, "node_modules", "ketch-cli", "node_modules", "@ketch-cli", "win32-x64", "bin", "ketch.exe");
+		const hoisted = join(dir, "node_modules", "@ketch-cli", "win32-x64", "bin", "ketch.exe");
+		// npm's nested optional dependency first, then the hoisted layout.
+		assert.equal(resolveKetchCommand("win32", "x64", dir, (p) => p === shim || p === nested, null), nested);
+		assert.equal(resolveKetchCommand("win32", "x64", dir, (p) => p === shim || p === hoisted, null), hoisted);
+	});
+
+	test("Windows without a native exe, or without the shim, falls back to ketch", () => {
+		const dir = join("C:", "npm");
+		const shim = join(dir, "ketch.cmd");
+		assert.equal(resolveKetchCommand("win32", "x64", dir, (p) => p === shim, null), "ketch");
+		assert.equal(resolveKetchCommand("win32", "x64", dir, () => false, null), "ketch");
+	});
+
+	test("arm64 looks in the win32-arm64 package", () => {
+		const dir = join("C:", "npm");
+		const exe = join(dir, "node_modules", "@ketch-cli", "win32-arm64", "bin", "ketch.exe");
+		assert.equal(resolveKetchCommand("win32", "arm64", dir, (p) => p === exe || p.endsWith("ketch.cmd"), null), exe);
+	});
+
+	test("KETCH_PI_BIN wins over resolution", () => {
+		assert.equal(resolveKetchCommand("win32", "x64", join("C:", "npm"), () => true, "C:\\dev\\ketch.exe"), "C:\\dev\\ketch.exe");
+		assert.equal(resolveKetchCommand("linux", "x64", "", () => false, "ketch-dev"), "ketch-dev");
+	});
+
+	test("the tools run the resolved binary", async () => {
+		process.env.KETCH_PI_BIN = "C:\\dev\\ketch.exe";
+		try {
+			const { tools, calls } = fakePi();
+			await run(tools, "ketch_search", { query: "q" });
+			assert.equal(calls[0].command, "C:\\dev\\ketch.exe");
+		} finally {
+			process.env.KETCH_PI_BIN = "ketch";
+		}
+	});
+});
 
 describe("registration", () => {
 	test("registers the six research tools and the doctor command without running anything", () => {
