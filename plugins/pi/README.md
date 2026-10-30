@@ -15,7 +15,7 @@ backends as the CLI and the MCP server.
 
 ```sh
 pi install git:github.com/1broseidon/ketch          # tracks main
-pi install git:github.com/1broseidon/ketch@v0.20.1  # pin a release tag
+pi install git:github.com/1broseidon/ketch@v0.20.2  # pin a release tag
 ```
 
 The package never bundles the binary. `ketch` must be on PATH:
