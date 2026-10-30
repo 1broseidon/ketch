@@ -7,6 +7,8 @@
 //
 // The binary is the prerequisite, not a bundle: nothing here runs at load time,
 // so a missing `ketch` only surfaces as a [precondition] error on the first call.
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { Type, type Static } from "typebox";
 import { renderers } from "./render.ts";
@@ -347,6 +349,40 @@ function warningsOf(stderr: string): string[] {
 }
 
 /**
+ * The executable every tool runs, resolved once per call.
+ *
+ * Windows: an npm-installed `ketch` on PATH is a `.cmd` shim, and Bun refuses to
+ * hand an argument containing a cmd.exe metacharacter (a quote, `&`, `^`) to a
+ * .bat/.cmd — which is exactly what a multi-URL scrape (`["u1","u2"]`) or a
+ * `--tag` value holding a quote produces. So resolve the native executable the
+ * shim would have exec'd and call it directly; the path carries no version, so
+ * an npm upgrade needs no reconfiguration. Unknown layouts keep the plain name.
+ *
+ * KETCH_PI_BIN names a specific binary and skips the resolution entirely.
+ */
+export function resolveKetchCommand(
+	platform: string = process.platform,
+	arch: string = process.arch,
+	pathEnv: string = process.env.PATH ?? "",
+	exists: (p: string) => boolean = existsSync,
+	override: string | null = process.env.KETCH_PI_BIN ?? null,
+): string {
+	if (override) return override;
+	if (platform !== "win32") return "ketch";
+	const pkg = `@ketch-cli/win32-${arch === "arm64" ? "arm64" : "x64"}`;
+	for (const dir of pathEnv.split(";")) {
+		if (!dir || !exists(join(dir, "ketch.cmd"))) continue;
+		for (const candidate of [
+			join(dir, "node_modules", "ketch-cli", "node_modules", pkg, "bin", "ketch.exe"),
+			join(dir, "node_modules", pkg, "bin", "ketch.exe"),
+		]) {
+			if (exists(candidate)) return candidate;
+		}
+	}
+	return "ketch";
+}
+
+/**
  * Runs `ketch <args>`; if the binary is not on PATH, falls back to the pinned
  * npm wrapper via `npx -y` (unless KETCH_PI_NO_NPX is set).
  */
@@ -356,7 +392,7 @@ async function runKetch(
 	signal: AbortSignal | undefined,
 	timeout: number,
 ): Promise<RunResult> {
-	const direct = await runCommand(pi, "ketch", args, args, signal, timeout);
+	const direct = await runCommand(pi, resolveKetchCommand(), args, args, signal, timeout);
 	if (direct.error !== KETCH_MISSING || process.env.KETCH_PI_NO_NPX) return direct;
 	const viaNpx = await runCommand(pi, "npx", ["-y", NPX_PACKAGE, ...args], args, signal, timeout + NPX_FIRST_RUN_EXTRA_MS);
 	// npm's own chatter (update notices) is not a ketch warning.

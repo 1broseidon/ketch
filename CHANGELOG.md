@@ -9,6 +9,8 @@ verbatim on the GitHub release. Versions follow
 
 ## [Unreleased]
 
+**The pi package works on Windows when npm installed ketch.** npm puts a `ketch.cmd` shim on PATH, and Bun refuses to pass an argument containing a cmd.exe metacharacter (a quote, `&`, `^`) to a batch file. `ketch_scrape` sends its URLs as one JSON-array argument and `ketch_tag` can carry a quoted value, so both failed with `[upstream] ketch could not be started: … contains a cmd.exe special character`. The tools now resolve the native `ketch.exe` behind the shim and run it directly, so no shell sits between the tool and ketch; the resolved path carries no version, so an npm upgrade needs no reconfiguration. An unknown layout keeps the plain `ketch` lookup, and the new `KETCH_PI_BIN` names a binary explicitly. The package's own tests build a `ketch.exe` on Windows and point the extension at it, so `npm test` passes there now.
+
 ## [0.20.1] - 2026-10-28
 
 **Go toolchain patched to 1.26.10.** Release binaries are now built with Go 1.26.10, which distrusts a set of compromised intermediate certificates in `crypto/x509` ([GO-2026-6809](https://pkg.go.dev/vuln/GO-2026-6809)), reachable from every HTTPS fetch. Building from source now needs Go 1.26.10 or newer.
