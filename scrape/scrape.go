@@ -57,7 +57,17 @@ type Page struct {
 	// left out of the page's JSON, so scrape output is unchanged; the page
 	// cache stores it beside the page.
 	FinalURL string `json:"-"`
+	// Anchors are the fragment targets the page's HTML carries (element
+	// ids, <a name>), headings' with their text: what a link to the page
+	// plus a fragment can really reach. Empty but non-nil for a page with
+	// none (a PDF); nil when unknown, as for a cache entry written before
+	// anchors were recorded. Left out of the page's JSON like FinalURL; the
+	// page cache stores it beside the page.
+	Anchors []Anchor `json:"-"`
 }
+
+// Anchor is a fragment target on a page (extract.Anchor).
+type Anchor = extract.Anchor
 
 // FetchedContent preserves the response body bytes and declared content type.
 type FetchedContent struct {
@@ -241,7 +251,7 @@ func (s *Scraper) Scrape(ctx context.Context, rawURL string) (*Page, string, err
 		if err != nil {
 			return nil, "", fmt.Errorf("PDF extraction failed for %s: %w", fetchURL, err)
 		}
-		page := &Page{URL: rawURL, Markdown: markdown, FinalURL: content.URL}
+		page := &Page{URL: rawURL, Markdown: markdown, FinalURL: content.URL, Anchors: []Anchor{}}
 		if fetchURL != rawURL {
 			page.FetchedURL = fetchURL
 		}
@@ -266,6 +276,7 @@ func (s *Scraper) extractPage(rawURL, fetchURL, html, source, served string) (*P
 		Title:    result.Title,
 		Markdown: result.Markdown,
 		FinalURL: served,
+		Anchors:  extract.Anchors(html),
 	}
 	if fetchURL != rawURL {
 		page.FetchedURL = fetchURL
@@ -308,6 +319,7 @@ func (s *Scraper) scrapeConditional(ctx context.Context, rawURL, etag, lastModif
 			LastModified: headers.Get("Last-Modified"),
 			ContentHash:  ContentHash(markdown),
 			FinalURL:     content.URL,
+			Anchors:      []Anchor{},
 		}
 		if fetchURL != rawURL {
 			page.FetchedURL = fetchURL
@@ -351,6 +363,7 @@ func (s *Scraper) scrapeConditional(ctx context.Context, rawURL, etag, lastModif
 		LastModified: headers.Get("Last-Modified"),
 		ContentHash:  ContentHash(result.Markdown),
 		FinalURL:     finalURL(source, rendered, content.URL),
+		Anchors:      pageAnchors(doc, html),
 	}
 	if fetchURL != rawURL {
 		page.FetchedURL = fetchURL
@@ -383,6 +396,7 @@ func (s *Scraper) renderedResult(rawURL, fetchURL string, rendered rendering) (*
 		Markdown:    result.Markdown,
 		ContentHash: ContentHash(result.Markdown),
 		FinalURL:    rendered.finalURL,
+		Anchors:     extract.Anchors(html),
 	}
 	if fetchURL != rawURL {
 		page.FetchedURL = fetchURL
@@ -421,6 +435,7 @@ func (s *Scraper) BrowserScrape(ctx context.Context, rawURL string) (*Page, stri
 		Markdown:    result.Markdown,
 		ContentHash: ContentHash(result.Markdown),
 		FinalURL:    rendered.finalURL,
+		Anchors:     extract.Anchors(html),
 	}
 	if fetchURL != rawURL {
 		page.FetchedURL = fetchURL
@@ -754,4 +769,12 @@ func effectiveContentType(declared string, body []byte) string {
 
 func isHTMLContentType(contentType string) bool {
 	return contentType == "text/html" || contentType == "application/xhtml+xml"
+}
+
+// pageAnchors reads html's anchors, from doc when it is already parsed.
+func pageAnchors(doc *goquery.Document, html string) []Anchor {
+	if doc != nil {
+		return extract.AnchorsOf(doc)
+	}
+	return extract.Anchors(html)
 }

@@ -15,6 +15,7 @@ import (
 
 	"github.com/1broseidon/ketch/health"
 	config "github.com/1broseidon/ketch/internal/configbase"
+	"github.com/1broseidon/ketch/search"
 )
 
 // fakeRaw is a FetchRaw response.
@@ -25,6 +26,7 @@ type fakeRaw struct {
 // fakePage is a FetchPage response: what the scrape pipeline would return.
 type fakePage struct {
 	title, markdown string
+	anchors         []PageAnchor
 }
 
 // fakeFetcher serves fixed responses and records every call. Unknown URLs
@@ -102,7 +104,7 @@ func (f *fakeFetcher) FetchPage(ctx context.Context, url string) (PageContent, e
 	if !ok {
 		return PageContent{}, fmt.Errorf("fake: %s: status 404: %w", served, ErrNotFound)
 	}
-	return PageContent{Title: p.title, Markdown: p.markdown, URL: served}, nil
+	return PageContent{Title: p.title, Markdown: p.markdown, URL: served, Anchors: p.anchors}, nil
 }
 
 func (f *fakeFetcher) called() []string {
@@ -169,6 +171,10 @@ const blog = defineCollection({ schema: z.object({ title: z.string() }) });
 Use getCollection() to load every entry of a collection.
 `),
 		"https://mint.test/guides/deploy.md": md("# Deploy\n\nDeploy the built site to any static host.\n"),
+	}, pages: map[string]fakePage{
+		// The rendered page a result cites, read only for its targets.
+		"https://mint.test/guides/content-collections": {title: "Content collections", markdown: "rendered",
+			anchors: []PageAnchor{{ID: "defining-a-collection", Text: "Defining a collection"}, {ID: "querying-collections", Text: "Querying collections"}}},
 	}}
 }
 
@@ -195,10 +201,15 @@ func TestWebMintlifyLLMSTxtMarkdownPages(t *testing.T) {
 	if !strings.Contains(top.Snippet, fence+"ts\nconst blog = defineCollection(") || !strings.HasSuffix(top.Snippet, fence) {
 		t.Errorf("snippet lost its code block:\n%s", top.Snippet)
 	}
+	// Text comes from the .md files through FetchRaw; the rendered pages
+	// results cite are read only to check their anchors.
 	for _, c := range f.called() {
-		if strings.HasPrefix(c, "page ") {
+		if strings.HasPrefix(c, "page ") && strings.HasSuffix(c, ".md") {
 			t.Errorf(".md links must go through FetchRaw, got %s", c)
 		}
+	}
+	if !slices.Contains(f.called(), "page https://mint.test/guides/content-collections") {
+		t.Errorf("the cited page's anchors were never checked: %v", f.called())
 	}
 	assertNeverFetched(t, f, "blog.mint.test", "logo.png")
 }
@@ -251,7 +262,7 @@ Schemas validate frontmatter with zod before the build runs.
 
 func TestWebDocusaurusSitemapPages(t *testing.T) {
 	f := docusaurusSite()
-	results, err := NewWeb(f).GetDocs(context.Background(), "https://docu.test/docs", "collection schema options", 4000)
+	results, err := NewWeb(f).GetDocs(context.Background(), "https://docu.test/docs", "collection schema", 4000)
 	if err != nil {
 		t.Fatalf("GetDocs: %v", err)
 	}
@@ -358,6 +369,8 @@ Widgets offsite must never appear in results.
 		"https://full.test/alpha.md": md("# Alpha\n\nAlpha widgets fetched per page.\n"),
 		"https://full.test/beta.md":  md("# Beta\n\nBeta gadgets fetched per page.\n"),
 		"https://full.test/gamma.md": md("# Gamma\n\nGamma widgets fetched per page.\n"),
+	}, pages: map[string]fakePage{
+		"https://full.test/alpha": {title: "Alpha", markdown: "rendered", anchors: []PageAnchor{{ID: "alpha-widgets", Text: "Alpha widgets"}}},
 	}}
 }
 
@@ -371,6 +384,8 @@ func TestWebLLMSFullTextNeedsNoPageFetches(t *testing.T) {
 	for _, r := range results {
 		urls = append(urls, r.URL)
 	}
+	// Alpha's rendered page has the section's id; Gamma's could not be
+	// read, and its intro cites the page anyway.
 	want := []string{"https://full.test/alpha#alpha-widgets", "https://full.test/gamma"}
 	if !slices.Equal(urls, want) {
 		t.Errorf("result URLs = %v, want %v", urls, want)
@@ -851,4 +866,76 @@ func TestWebEmptyRootIsErrNotFound(t *testing.T) {
 	if _, err := NewWeb(f).GetDocs(context.Background(), "https://blank.test/", "anything", 100); !errors.Is(err, ErrNotFound) {
 		t.Errorf("an empty root with no in-scope links is not-found, got %v", err)
 	}
+}
+
+// A result from a Markdown source whose rendered page cannot be read
+// keeps an anchor the Markdown fixed ({#id}) and cites the page for a
+// slug no one checked.
+func TestWebUncheckedMarkdownCitesExplicitIDsOnly(t *testing.T) {
+	f := &fakeFetcher{raw: map[string]fakeRaw{
+		"https://md.test/llms.txt": plain("# MD\n\n- [Widgets](/widgets.md)\n"),
+		"https://md.test/widgets.md": md("# Widgets\n\nAll about widgets here.\n\n## Install widgets {#setup}\n\nInstall widgets with the widget tool.\n\n" +
+			"## Use widgets\n\nUse widgets by calling the widget function.\n"),
+	}}
+	results, err := NewWeb(f).GetDocs(context.Background(), "https://md.test", "widgets", 4000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]string{}
+	for _, r := range results {
+		got[r.Title] = r.URL
+	}
+	if got["Install widgets"] != "https://md.test/widgets#setup" || got["Use widgets"] != "https://md.test/widgets" {
+		t.Errorf("citations = %v", got)
+	}
+}
+
+// One long section (a reference listing) takes at most half the budget,
+// leaving room for the sections ranked after it.
+func TestWebBudgetCapsOneSection(t *testing.T) {
+	ranked := []scoredSection{
+		{webSection: webSection{pageURL: "https://x.test/api", heading: "Validators", text: strings.Repeat("validator entry text\n", 2000)}, score: 3},
+		{webSection: webSection{pageURL: "https://x.test/guide", heading: "Validators", text: "Validators check values when an instance is created."}, score: 2},
+	}
+	res := budgetResults("https://x.test/", ranked, 1000)
+	if len(res) != 2 || len(res[0].Snippet) > 2000 || !strings.HasSuffix(res[0].Snippet, "[truncated]") {
+		t.Fatalf("results = %d, first %d bytes; want the listing cut to half the budget and the guide after it", len(res), len(res[0].Snippet))
+	}
+}
+
+// A site whose page list names none of the query (opaque paths, no
+// titles) has its candidates found by a web search instead: the hits under
+// the root are fetched first, at the root's spelling of its host; those
+// elsewhere, or in another release's docs, never.
+func TestWebWeakCandidatesAskTheSearch(t *testing.T) {
+	f := &fakeFetcher{raw: map[string]fakeRaw{
+		"https://opaque.test/docs/sitemap.xml": xmlDoc(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>https://opaque.test/docs/intro</loc></url>
+<url><loc>https://opaque.test/docs/api/class-page</loc></url>
+<url><loc>https://opaque.test/docs/api/class-frame</loc></url>
+</urlset>`),
+	}, pages: map[string]fakePage{
+		"https://opaque.test/docs/intro":          {title: "Intro", markdown: "# Intro\n\nWelcome to the opaque docs site for testing.\n"},
+		"https://opaque.test/docs/api/class-page": {title: "Page", markdown: "# Page\n\n## page.waitForLoadState(state)\n\nReturns when the required load state has been reached.\n"},
+	}}
+	w := NewWeb(f)
+	var asked []string
+	w.sites = siteSearchFunc(func(_ context.Context, q string, _ int) ([]search.Result, error) {
+		asked = append(asked, q)
+		return []search.Result{{URL: "https://elsewhere.test/blog/load-state"}, {URL: "https://opaque.test/docs/1.3.0/loading"},
+			{URL: "https://www.opaque.test/docs/api/class-page#page-wait-for-load-state", Title: "Page"}}, nil
+	})
+	results, err := w.GetDocs(context.Background(), "https://opaque.test/docs/", "wait for load state", 4000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(asked) != 1 || asked[0] != "opaque.test/docs/ wait for load state" {
+		t.Errorf("searched %q", asked)
+	}
+	if len(results) == 0 || results[0].Title != "page.waitForLoadState(state)" {
+		t.Fatalf("results = %+v", results)
+	}
+	// Another release's page is the wrong version; the root's own host
+	// spelling is the one fetched.
+	assertNeverFetched(t, f, "elsewhere.test", "1.3.0", "www.opaque.test")
 }

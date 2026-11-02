@@ -40,6 +40,18 @@ type PageContent struct {
 	// URL is where the page was finally served from, as for RawContent.URL;
 	// for a browser render, the address the browser ended on.
 	URL string
+	// Anchors are the fragment targets the served page carries (element
+	// ids and <a name>s), a heading's with its text: what the page's URL
+	// plus a fragment can reach. nil when the fetcher cannot tell, as for
+	// a Markdown source; empty when the page has none.
+	Anchors []PageAnchor
+}
+
+// PageAnchor is one fragment target on a page. Text is a heading's
+// visible words when the target is a heading's, else "".
+type PageAnchor struct {
+	ID   string
+	Text string
 }
 
 // Deps carries what a provider may need from the surface that constructs it.

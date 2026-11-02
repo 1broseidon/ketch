@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -18,6 +19,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 // withBench points the hook at env for one test. benchOnce is process-wide,
@@ -215,5 +217,42 @@ func TestBenchReplayHonoursCancelledContext(t *testing.T) {
 	req, _ := http.NewRequestWithContext(ctx, "GET", "http://example.invalid/", nil)
 	if _, err := New(0, 1).Do(req); !errors.Is(err, context.Canceled) {
 		t.Fatalf("cancelled replay: %v", err)
+	}
+}
+
+// A recorded failure takes its recorded time in replay, so a caller's
+// budget runs out as it did live: a recorded context deadline ends at the
+// caller's deadline, however long it took live, and anything else after
+// its recorded elapsed time.
+func TestBenchReplaysFailuresAfterTheirRecordedTime(t *testing.T) {
+	dir := t.TempDir()
+	put := func(ex Exchange) {
+		data, _ := json.Marshal(ex)
+		if err := os.WriteFile(filepath.Join(dir, ExchangeKey("GET", ex.URL, nil)+"-000.json"), data, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	deadline := Exchange{Method: "GET", URL: "http://example.invalid/slow", Error: "Get \"http://example.invalid/slow\": context deadline exceeded",
+		ErrTimeout: true, ElapsedMS: 5}
+	refused := Exchange{Method: "GET", URL: "http://example.invalid/refused", Error: "dial tcp: connection refused", ElapsedMS: 150}
+	put(deadline)
+	put(refused)
+	withBench(t, map[string]string{envReplay: dir})
+	do := func(u string, timeout time.Duration) (time.Duration, error) {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+		req, _ := http.NewRequestWithContext(ctx, "GET", u, nil)
+		start := time.Now()
+		_, err := New(0, 1).Do(req)
+		return time.Since(start), err
+	}
+	if took, err := do(deadline.URL, 200*time.Millisecond); !errors.Is(err, context.DeadlineExceeded) || took < 200*time.Millisecond {
+		t.Fatalf("recorded deadline = %v after %s, want the caller's deadline after 200ms", err, took)
+	}
+	if took, err := do(refused.URL, 5*time.Second); err == nil || !strings.Contains(err.Error(), "refused") || took < 150*time.Millisecond || took > 3*time.Second {
+		t.Fatalf("recorded refusal = %v after %s, want it after its recorded 150ms", err, took)
+	}
+	if took, err := do(refused.URL, 20*time.Millisecond); !errors.Is(err, context.DeadlineExceeded) || took > 140*time.Millisecond {
+		t.Fatalf("refusal under a shorter deadline = %v after %s, want the caller's deadline", err, took)
 	}
 }

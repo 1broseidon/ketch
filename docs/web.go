@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -371,7 +372,7 @@ func (w *Web) docsForURL(ctx context.Context, raw, query string, tokens int) ([]
 		return nil, w.callErr(ctx, opCtx, root, err)
 	}
 	label, _ := rootVersion(root)
-	return w.rankPages(root, pages, query, tokens, label), nil
+	return w.rankPages(opCtx, root, pages, query, tokens, label), nil
 }
 
 // versionRedirect reports the version root root redirects to, when it
@@ -399,19 +400,121 @@ func (w *Web) docsAt(ctx context.Context, root webRoot, query string, tokens int
 	if err != nil {
 		return nil, w.callErr(ctx, opCtx, root, err)
 	}
-	return w.rankPages(root, pages, query, tokens, version), nil
+	return w.rankPages(opCtx, root, pages, query, tokens, version), nil
 }
 
 // rankPages sections the pages, ranks the sections for query within the
-// token budget and labels each result's version.
-func (w *Web) rankPages(root webRoot, pages []webPage, query string, tokens int, version string) []Result {
+// token budget, checks the anchors it cites (citeChecked) and labels each
+// result's version.
+func (w *Web) rankPages(ctx context.Context, root webRoot, pages []webPage, query string, tokens int, version string) []Result {
 	var sections []webSection
 	for i, p := range pages {
 		sections = append(sections, splitSections(p, i)...)
 	}
-	results := budgetResults(root.String(), rankSections(sections, query), tokens)
+	ranked := diversify(dedupe(relevant(rankSections(sections, query))))
+	results, used := budgetSections(root.String(), ranked, tokens)
+	w.citeChecked(ctx, root, pages, results, used)
 	labelResults(results, root, version)
 	return results
+}
+
+// webMaxCiteChecks caps the pages citeChecked fetches for their anchors.
+const webMaxCiteChecks = 4
+
+// webCiteTimeout bounds citeChecked's fetches together.
+const webCiteTimeout = 5 * time.Second
+
+// citeChecked makes the anchors of results from pages read as Markdown (a
+// page.md, an llms-full.txt chunk), whose targets were never seen, ones
+// the rendered page carries. It fetches each such page that a result
+// cites, at most webMaxCiteChecks, through FetchPage (the page cache's
+// copy when warm) for its targets, and cites its sections as
+// verifyAnchors would have had the targets been known. A page that could
+// not be checked keeps only the anchors the Markdown itself fixed (an
+// explicit {#id}, one link evidence proved): its slugged anchors are
+// dropped, citing the page instead of a section that may not exist.
+// used[i] is the section results[i] came from.
+func (w *Web) citeChecked(ctx context.Context, root webRoot, pages []webPage, results []Result, used []webSection) {
+	var check []int // pages to fetch, in order of first citation
+	seen := map[int]bool{}
+	for _, s := range used {
+		if unchecked(pages[s.page]) && !seen[s.page] {
+			seen[s.page] = true
+			check = append(check, s.page)
+		}
+	}
+	if len(check) == 0 {
+		return
+	}
+	found := w.citedAnchors(ctx, root, pages, check[:min(len(check), webMaxCiteChecks)])
+	resplit := map[int][]webSection{}
+	for p, anchors := range found {
+		page := pages[p]
+		page.Anchors = anchors
+		resplit[p] = splitSections(page, p)
+	}
+	for i, s := range used {
+		if !unchecked(pages[s.page]) {
+			continue
+		}
+		if again, ok := resplit[s.page]; ok && s.order < len(again) {
+			s.anchor = again[s.order].anchor
+		} else if s.source != anchorFixed {
+			s.anchor = ""
+		}
+		results[i].URL = s.URL()
+	}
+}
+
+// unchecked reports a page read from Markdown whose targets are unknown.
+func unchecked(p webPage) bool { return p.markdown && p.Anchors == nil }
+
+// citedAnchors reads the targets of the pages at the given indices,
+// concurrently (w.concurrency at a time) within webCiteTimeout; a page
+// that could not be read is left out.
+func (w *Web) citedAnchors(ctx context.Context, root webRoot, pages []webPage, idx []int) map[int][]PageAnchor {
+	cctx, cancel := context.WithTimeout(ctx, webCiteTimeout)
+	defer cancel()
+	found := make([][]PageAnchor, len(idx))
+	sem := make(chan struct{}, max(1, w.concurrency))
+	var wg sync.WaitGroup
+	for i, p := range idx {
+		wg.Go(func() {
+			select {
+			case sem <- struct{}{}:
+			case <-cctx.Done():
+				return
+			}
+			defer func() { <-sem }()
+			found[i] = w.pageAnchors(cctx, root, pages[p].URL)
+		})
+	}
+	wg.Wait()
+	out := map[int][]PageAnchor{}
+	for i, p := range idx {
+		if found[i] != nil {
+			out[p] = found[i]
+		}
+	}
+	return out
+}
+
+// pageAnchors fetches the page at raw for the targets it carries; nil when
+// it cannot say (a failed fetch, a redirect out of the docs root, a
+// fetcher that does not read targets).
+func (w *Web) pageAnchors(ctx context.Context, root webRoot, raw string) []PageAnchor {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return nil
+	}
+	page, err := w.fetcher.FetchPage(ctx, raw)
+	if err != nil {
+		return nil
+	}
+	if _, err := servedFrom(u, page.URL, root.contains); err != nil {
+		return nil
+	}
+	return page.Anchors
 }
 
 // callErr classifies a failed call. A cancelled caller is reported as such;
@@ -433,7 +536,9 @@ func (w *Web) callErr(parent, op context.Context, root webRoot, err error) error
 }
 
 // collect discovers the site and returns the pages to section: the whole of
-// llms-full.txt when it is usable, otherwise the best-matching candidates.
+// llms-full.txt when it is usable, otherwise the best-matching candidates,
+// led by a web search's pages on the site when its own page list names
+// little of the query (searchPages).
 func (w *Web) collect(ctx context.Context, root webRoot, query string) ([]webPage, error) {
 	site, err := w.discover(ctx, root)
 	if err != nil {
@@ -445,7 +550,91 @@ func (w *Web) collect(ctx context.Context, root webRoot, query string) ([]webPag
 	if len(site.links) == 0 {
 		return nil, fmt.Errorf("web: no docs pages under %s: %w (tried %s)", root, ErrNotFound, strings.Join(site.tried, ", "))
 	}
-	return w.fetchPages(ctx, root, pickCandidates(site.links, query, root, w.maxFetch))
+	cands := pickCandidates(site.links, query, root, w.maxFetch)
+	if linkCoverage(site.links, query, root) < webWeakCoverage && !registryDocsHosts[scopeHost(root.u)] {
+		cands = withSearchPages(w.searchPages(ctx, root, query), cands, w.maxFetch)
+	}
+	return w.fetchPages(ctx, root, cands)
+}
+
+// webWeakCoverage is the link coverage (linkCoverage) below which the
+// site's own titles and paths are no guide to the query's pages, and a web
+// search is asked for them.
+const webWeakCoverage = 0.25
+
+// webMaxSearchPages caps the pages a web search adds to the candidates.
+const webMaxSearchPages = 3
+
+// searchPages asks the web search for the query's pages on the docs site,
+// for when the site's own page list names little of the query (its URLs
+// are opaque, or its titles word the topic otherwise: Playwright's
+// waitForLoadState lives on "class-page"). It returns the hits under the
+// root, at most webMaxSearchPages, in the search's order: candidates, like
+// every search hit, which the root's scope admits and ranking judges. A
+// hit on a page's llms.txt stands for the page. Nil without a searcher,
+// or when the search fails.
+func (w *Web) searchPages(ctx context.Context, root webRoot, query string) []webLink {
+	terms := queryTerms(query)
+	if w.sites == nil || len(terms) == 0 {
+		return nil
+	}
+	site := strings.TrimPrefix(strings.TrimPrefix(root.String(), "https://"), "http://")
+	hits, err := w.searchHits(ctx, site+" "+strings.Join(strings.Fields(query), " "))
+	if err != nil {
+		return nil
+	}
+	var out []webLink
+	seen := map[string]bool{}
+	rootLabel := rootVersionLabel(root)
+	for _, h := range hits {
+		u, ok := resolveRef(root.u, strings.TrimSpace(h.URL))
+		if !ok {
+			continue
+		}
+		if isLLMSFile(path.Base(u.Path)) {
+			u.Path, u.RawPath = path.Dir(u.Path), ""
+		}
+		if !root.contains(u) || !isPageURL(u) || !isResultLink(u) || seen[linkKey(u)] {
+			continue
+		}
+		// The root's spelling of its host: a search engine may index
+		// python-httpx.org for www.python-httpx.org, which need not resolve.
+		u.Scheme, u.Host = root.u.Scheme, root.u.Host
+		// Another release's copy of the page (/docs/14/… under an
+		// unversioned root, /en/5.2/… under /en/4.2/) is the wrong version.
+		if _, pref := variantKey(u, root, rootLabel); pref.class > 2 {
+			continue
+		}
+		seen[linkKey(u)] = true
+		out = append(out, webLink{url: u, title: h.Title})
+		if len(out) == webMaxSearchPages {
+			break
+		}
+	}
+	return out
+}
+
+// withSearchPages puts the search's pages ahead of the picked candidates,
+// keeping n in all and each page once.
+func withSearchPages(hits, picked []webLink, n int) []webLink {
+	if len(hits) == 0 {
+		return picked
+	}
+	out := slices.Clone(hits)
+	seen := map[string]bool{}
+	for _, l := range hits {
+		seen[linkKey(l.url)] = true
+	}
+	for _, l := range picked {
+		if len(out) >= n {
+			break
+		}
+		if !seen[linkKey(l.url)] {
+			seen[linkKey(l.url)] = true
+			out = append(out, l)
+		}
+	}
+	return out
 }
 
 // webRoot is a normalized docs root and the scope every page must fall in:
@@ -657,6 +846,14 @@ type webPage struct {
 	URL      string // shown in results; the rendered page, not a .md variant
 	Title    string
 	Markdown string
+	// Anchors are the fragment targets the page at URL carries, as the
+	// fetcher read them from its HTML; nil when unknown (a Markdown source,
+	// an llms-full.txt chunk). splitSections cites only these when known.
+	Anchors []PageAnchor
+	// markdown marks a page whose text came from a Markdown source (a
+	// page.md, llms-full.txt) rather than the page at URL, whose targets
+	// citeChecked may still read.
+	markdown bool
 }
 
 // webLink is a candidate page found during discovery.

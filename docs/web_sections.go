@@ -24,7 +24,10 @@ type webSection struct {
 	// github-slugger's as a guess. The last two may be corrected by the
 	// fragment links the fetched pages carry (adoptLinkedAnchors).
 	source anchorSource
-	text   string // body under the heading, code blocks intact
+	text   string // body under the heading, code blocks intact, links reduced to their labels
+	// links is the body as the page had it, links and all: the fragment
+	// links in it are evidence for anchors (adoptLinkedAnchors).
+	links string
 }
 
 // anchorSource is where a section's anchor came from.
@@ -36,12 +39,15 @@ const (
 	anchorFixed                     // an id the page carries, or one the generator fixes (rustdoc, pkg.go.dev)
 )
 
-// URL is the section's address: the page plus its heading anchor.
+// URL is the section's address: the page plus its heading anchor,
+// percent-encoded as a fragment, so that decoding it gives the id back
+// (rustdoc's impl-From%3CFile%3E-for-Body is #impl-From%253CFile%253E-for-Body;
+// a browser finds the element either way).
 func (s webSection) URL() string {
 	if s.anchor == "" {
 		return s.pageURL
 	}
-	return s.pageURL + "#" + s.anchor
+	return s.pageURL + "#" + (&url.URL{Fragment: s.anchor}).EscapedFragment()
 }
 
 // fenceState tracks fenced code blocks (``` or ~~~, CommonMark rules) so a
@@ -550,7 +556,7 @@ func linkedFragments(sections []webSection) map[string][]string {
 		if err != nil {
 			continue
 		}
-		for _, m := range fragmentLinkRe.FindAllStringSubmatch(s.text, -1) {
+		for _, m := range fragmentLinkRe.FindAllStringSubmatch(s.links, -1) {
 			target, err := base.Parse(m[2])
 			if err != nil || isPermalinkLabel(m[1]) {
 				continue
@@ -872,6 +878,7 @@ type headingBlock struct {
 func splitSections(p webPage, pageIndex int) []webSection {
 	title, blocks := parseBlocks(p)
 	markSplits(blocks)
+	verifyAnchors(blocks, p.Anchors)
 	texts := make([][]string, len(blocks))
 	owner := make([]int, len(blocks))
 	for i := range blocks {
@@ -888,11 +895,12 @@ func splitSections(p webPage, pageIndex int) []webSection {
 		if !b.split {
 			continue
 		}
-		text := strings.TrimSpace(strings.Join(cleanSectionLines(texts[i]), "\n"))
+		raw := strings.TrimSpace(strings.Join(cleanSectionLines(texts[i]), "\n"))
+		text := linkLabels(raw)
 		if len(strings.Join(strings.Fields(text), "")) < webMinSectionText {
 			continue
 		}
-		sec := webSection{page: pageIndex, order: len(out), pageURL: p.URL, heading: title, crumbs: []string{title}, text: text}
+		sec := webSection{page: pageIndex, order: len(out), pageURL: p.URL, heading: title, crumbs: []string{title}, text: text, links: raw}
 		if i > 0 {
 			sec.heading, sec.anchor, sec.source = b.h.text, b.anchor, b.source
 			sec.crumbs = append(sec.crumbs, blockCrumbs(blocks, i)...)
@@ -900,6 +908,77 @@ func splitSections(p webPage, pageIndex int) []webSection {
 		out = append(out, sec)
 	}
 	return out
+}
+
+// verifyAnchors makes every heading's anchor one the page carries, when
+// the fetcher read the page's targets (anchors non-nil); a page read from
+// Markdown alone keeps the anchors its rules gave. A heading takes, in
+// order: its own anchor when the page has that id for a heading with the
+// same words (or for no heading at all); else the id of the page heading
+// whose words it shares, matched in page order so a repeated heading
+// ("Note", "Parameters") takes its own occurrence; else its own anchor
+// when the page has the id at all; else its enclosing heading's anchor,
+// so a heading the page gives no target (a callout's "Pitfall", a
+// badge-prefixed option whose id the generator slugs differently and
+// whose text differs) still cites the nearest section that exists, and
+// at worst the page itself. Every anchor is then fixed: link evidence
+// (adoptLinkedAnchors) cannot improve on the page's own ids.
+func verifyAnchors(blocks []headingBlock, anchors []PageAnchor) {
+	if anchors == nil {
+		return
+	}
+	ids := make(map[string]int, len(anchors)) // id → its first position
+	byWords := map[string][]int{}             // heading words → positions in anchors
+	for i, a := range anchors {
+		if _, ok := ids[a.ID]; !ok {
+			ids[a.ID] = i
+		}
+		if words := idWords(a.Text); words != "" {
+			byWords[words] = append(byWords[words], i)
+		}
+	}
+	used := map[int]bool{}
+	cursor := -1
+	for i := 1; i < len(blocks); i++ {
+		b := &blocks[i]
+		words := idWords(b.h.text)
+		at, have := ids[b.anchor]
+		own := ""
+		if have {
+			own = idWords(anchors[at].Text)
+		}
+		switch pos := matchHeading(byWords[words], used, cursor); {
+		case have && own == words && words != "":
+			used[at], cursor = true, at
+		case have && own == "":
+		case pos >= 0:
+			used[pos], cursor = true, pos
+			b.anchor = anchors[pos].ID
+		case have:
+		default:
+			b.anchor = blocks[b.parent].anchor // the intro's is "": the page
+		}
+		b.source = anchorFixed
+	}
+}
+
+// matchHeading picks the page heading a Markdown heading stands for among
+// candidates (positions in page order): the first unused one after cursor,
+// the last match, else the first unused one; -1 when none is left.
+func matchHeading(candidates []int, used map[int]bool, cursor int) int {
+	first := -1
+	for _, pos := range candidates {
+		if used[pos] {
+			continue
+		}
+		if pos > cursor {
+			return pos
+		}
+		if first < 0 {
+			first = pos
+		}
+	}
+	return first
 }
 
 // parseBlocks reads a page's title and its heading blocks, anchors
@@ -1150,6 +1229,132 @@ func isSourceListing(href string) bool {
 	}
 	segs := pathSegments(u.Path)
 	return slices.Contains(segs, "_modules") || slices.Contains(segs, "src") || slices.Contains(segs, "blob") || slices.Contains(segs, "source")
+}
+
+// linkLabels reduces the Markdown links and images in md's prose to what
+// a reader sees of them: a link [label](target "title") to its label, an
+// image ![alt](src) to its alt text. Code (fenced blocks, code spans) is
+// left as written. The targets are mostly absolute URLs to other pages:
+// a result already cites its own page, and the URLs would cost an
+// assistant tokens and pull their words into ranking. A label may hold
+// brackets of its own ("[`#[command(subcommand)]` attribute](…)"), as
+// CommonMark allows when they balance.
+func linkLabels(md string) string {
+	if !strings.Contains(md, "](") {
+		return md
+	}
+	lines := strings.Split(md, "\n")
+	var fence fenceState
+	for i, line := range lines {
+		if fence.step(line) || !strings.Contains(line, "](") {
+			continue
+		}
+		lines[i] = lineLinkLabels(line)
+	}
+	return strings.Join(lines, "\n")
+}
+
+// lineLinkLabels is linkLabels for one line of prose, skipping code spans.
+func lineLinkLabels(line string) string {
+	var b strings.Builder
+	for i := 0; i < len(line); {
+		switch c := line[i]; {
+		case c == '\\' && i+1 < len(line):
+			b.WriteString(line[i : i+2])
+			i += 2
+			continue
+		case c == '`':
+			n := backtickRun(line, i)
+			end := closingBackticks(line, i+n, n)
+			if end < 0 {
+				b.WriteString(line[i : i+n])
+				i += n
+				continue
+			}
+			b.WriteString(line[i : end+n])
+			i = end + n
+			continue
+		case c == '[' || c == '!' && i+1 < len(line) && line[i+1] == '[':
+			open := i
+			if c == '!' {
+				open++
+			}
+			if label, next, ok := inlineLink(line, open); ok {
+				b.WriteString(label)
+				i = next
+				continue
+			}
+		}
+		b.WriteByte(line[i])
+		i++
+	}
+	return b.String()
+}
+
+// inlineLink parses an inline link whose "[" is at line[open]: the label
+// (brackets balanced, code spans opaque) and the index just past the
+// destination's ")". The destination may hold balanced parentheses and a
+// quoted title.
+func inlineLink(line string, open int) (label string, next int, ok bool) {
+	end := closingBracket(line, open)
+	if end < 0 || end+1 >= len(line) || line[end+1] != '(' {
+		return "", 0, false
+	}
+	if next = closingParen(line, end+1); next < 0 {
+		return "", 0, false
+	}
+	return line[open+1 : end], next, true
+}
+
+// closingBracket returns the index of the "]" that balances the "[" at
+// line[open], skipping escapes and code spans; -1 when none does.
+func closingBracket(line string, open int) int {
+	depth := 0
+	for i := open; i < len(line); i++ {
+		switch line[i] {
+		case '\\':
+			i++
+		case '`':
+			n := backtickRun(line, i)
+			if end := closingBackticks(line, i+n, n); end >= 0 {
+				i = end + n - 1
+			} else {
+				i += n - 1
+			}
+		case '[':
+			depth++
+		case ']':
+			if depth--; depth == 0 {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
+// closingParen returns the index just past the ")" that balances the "("
+// at line[open], with a quoted title (after a space) opaque; -1 when none
+// does.
+func closingParen(line string, open int) int {
+	parens, quote := 0, byte(0)
+	for j := open; j < len(line); j++ {
+		c := line[j]
+		switch {
+		case quote != 0:
+			if c == quote {
+				quote = 0
+			}
+		case c == '"' && line[j-1] == ' ':
+			quote = c
+		case c == '(':
+			parens++
+		case c == ')':
+			if parens--; parens == 0 {
+				return j + 1
+			}
+		}
+	}
+	return -1
 }
 
 // stripFrontmatter removes a leading YAML frontmatter block and returns its
