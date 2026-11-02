@@ -25,7 +25,13 @@ cmd/
   proc_windows.go            Windows process management stub
 search/                      Searcher interface + Brave/DDG/SearXNG/EXA/Firecrawl/Keenable/Tavily/TinyFish/Parallel/SerpBase/Degoog/Serply/Youcom backends; NewFromConfig resolves the ordered provider registry for cmd/ and mcp/. auto.go is the default `auto` backend (keyless fallback chain, AutoRank-ordered), multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), random.go shuffled fallback, canonical.go the URL dedup keys
 code/                        code.Searcher interface + GrepApp/Sourcegraph/GitHub backends; NewFromConfig resolves the ordered provider registry. Query.Repo (owner/name, filter.go) is exact on every backend: each translates it and narrows a looser native filter itself
-docs/                        docs.Searcher interface + Context7 backend (FTS5 local is an unimplemented stub); NewFromConfig resolves the ordered provider registry
+docs/                        docs.Searcher interface + Context7 and keyless web backends (FTS5 local is an unimplemented stub); NewFromConfig resolves the ordered provider registry and hands providers a docs.Deps (fetch.go: the injected Fetcher, which reports each response's final URL)
+  web.go                     Web backend: one docs root passed as the library; scope (same host, www. twin, path prefix, dot segments cleaned), GetDocs/ResolveLibrary, timeouts as upstream errors
+  web_discover.go            Discovery, cheapest first: llms.txt, llms-full.txt (chunk attribution), on-host sitemaps, root-page links; only in-scope pages are kept
+  web_fetch.go               Fallback fetcher (no injected Fetcher), probes, bounded page fetches; a response served from outside the scope is dropped
+  web_sections.go            Heading sections, breadcrumbs and github-slugger anchors
+  web_rank.go                Candidate picking, locale/version collapse, BM25 section ranking, token budget
+internal/docsfetch/          docs.Fetcher over the shared scraper and page cache, built by cmd/ and mcp/: URL rewrites, cookies, browser fallback and caching apply to docs pages; reports final URLs in the caller's terms and wraps docs.ErrNotFound for 404/410
 mcp/                         MCP server (search/code/docs/scrape/crawl/tag tools; the mcp_tools config key is an allowlist over the published set) over the go-sdk mcp package; Server struct holds the shared scraper + cache, tools call the same NewFromConfig constructors as the CLI
 scrape/                      HTTP fetch + Page type, JS detection fallback, Rod browser; pipeline.go has the cache-aware scrape pipeline (CachedScrape*, ScrapeSelector, FetchLLMSTxt) shared by cmd/ and mcp/
 extract/                     structural extraction (landmark → uniform sections → prose root, chrome pruned by what it is; config extract_mode clean|complete) with readability fallback and html-to-markdown, charset decoding, JS shell detection (Detector: built-in + config spa_markers, modern hydration/streaming frameworks)
@@ -118,6 +124,7 @@ ketch code "query" --lang go               # with language filter
 ketch code "query" --repo owner/name       # one repository, exact on every backend
 ketch docs "query"                          # docs search (context7)
 ketch docs "query" --library /org/repo     # skip resolve, fetch directly
+ketch docs "query" -b web --library https://docs.astro.build  # search one docs site, no key
 ketch docs --resolve "library name"        # resolve library name → Context7 IDs
 ketch config                                # show effective config + backends (incl. *_key_set presence booleans)
 ketch code "query" --tag remote-access      # record results under a tag (any surface)
@@ -151,11 +158,11 @@ ketch mcp serve                             # run as an MCP server over stdio (s
 | --allow | crawl | — | Path substring filters |
 | --deny | crawl | — | Regex deny patterns |
 | --backend, -b | code | grepapp | Code backend (grepapp/sourcegraph/github) |
-| --backend, -b | docs | context7 | Docs backend (context7; local is planned, not implemented) |
+| --backend, -b | docs | context7 | Docs backend (context7, or web: a keyless search of the one docs site passed as --library; local is planned, not implemented) |
 | --lang | code | — | Language qualifier (appended to query) |
 | --repo | code | — | One repository, owner/name or a GitHub URL; exact on every backend. A backend that lacks it exits 3 (sourcegraph, github) or warns on an empty result (grepapp, partial index) |
-| --library | docs | — | Context7 library ID, skips resolve |
-| --tokens | docs | 4000 | Context7 token budget |
+| --library | docs | — | Context7 library ID, or the docs root URL for web; skips resolve (web exits 2 without it) |
+| --tokens | docs | 4000 | Token budget (Context7, web) |
 | --resolve | docs | false | Resolve library name instead of searching |
 | --max-chars N | scrape, search --scrape | 0 (off) | Truncate markdown output to N chars, appends `[truncated]` |
 | --trim | scrape, search --scrape | false | Strip markdown formatting syntax, keep content text only |

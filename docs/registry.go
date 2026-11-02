@@ -19,7 +19,7 @@ type Provider struct {
 	Hidden       bool
 	Usable       func(*config.Config) bool
 	Settings     []config.Setting
-	New          func(*config.Config) (Searcher, error)
+	New          func(*config.Config, Deps) (Searcher, error)
 	Probe        func(context.Context, *http.Client, *config.Config) (health.Status, string)
 }
 
@@ -40,6 +40,7 @@ func (p Provider) Required(cfg *config.Config) bool {
 var providers = []Provider{
 	context7Provider(),
 	localProvider(),
+	webProvider(),
 }
 
 // Providers returns the descriptors in their stable presentation order.
@@ -84,11 +85,11 @@ func Lookup(id string) (Provider, bool) {
 }
 
 // Build checks the descriptor's usability before constructing a client.
-func (p Provider) Build(c *config.Config) (Searcher, error) {
+func (p Provider) Build(c *config.Config, deps Deps) (Searcher, error) {
 	if !p.Usable(c) {
 		return nil, errors.New(p.Setup)
 	}
-	return p.New(c)
+	return p.New(c, deps)
 }
 
 // LibraryResolver is the optional library capability of a docs provider.
@@ -106,7 +107,7 @@ func LibraryBackends() []string {
 		if p.Hidden {
 			continue
 		}
-		client, err := p.New(&config.Config{})
+		client, err := p.New(&config.Config{}, Deps{})
 		if err != nil {
 			continue
 		}

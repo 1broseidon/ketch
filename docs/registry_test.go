@@ -26,7 +26,7 @@ func TestRegistryDiscoversOptionalLibraryInterface(t *testing.T) {
 	providers = append(Providers(), Provider{
 		ID: "libraryfixture", Name: "Library Fixture",
 		Usable: func(*config.Config) bool { return true },
-		New:    func(*config.Config) (Searcher, error) { return libraryFixture{}, nil },
+		New:    func(*config.Config, Deps) (Searcher, error) { return libraryFixture{}, nil },
 	})
 	t.Cleanup(func() { providers = previous })
 	if !slices.Equal(LibraryBackends(), append(before, "libraryfixture")) {
@@ -35,7 +35,7 @@ func TestRegistryDiscoversOptionalLibraryInterface(t *testing.T) {
 	if ResolveBackend("libraryfixture") != "libraryfixture" || ResolveBackend("local") != "context7" {
 		t.Fatal("library selection or legacy resolve fallback changed")
 	}
-	client, err := NewFromConfig(&config.Config{}, "libraryfixture")
+	client, err := NewFromConfig(&config.Config{}, "libraryfixture", Deps{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func TestRegistryDiscoversOptionalLibraryInterface(t *testing.T) {
 
 func TestRegistryKeepsUnknownAndUnavailableDistinct(t *testing.T) {
 	for _, backend := range []string{"local", "context7", "unknown"} {
-		_, err := NewFromConfig(&config.Config{}, backend)
+		_, err := NewFromConfig(&config.Config{}, backend, Deps{})
 		if err == nil || errors.Is(err, ErrUnknownBackend) != (backend == "unknown") {
 			t.Fatalf("%s error taxonomy = %v", backend, err)
 		}

@@ -19,5 +19,5 @@ func (f *FTS5Local) Search(_ context.Context, _ string, _ int) ([]Result, error)
 }
 
 func localProvider() Provider {
-	return Provider{ID: "local", Name: "Local", Hidden: true, Setup: `docs backend "local" not yet implemented (use context7)`, Usable: func(*config.Config) bool { return false }, New: func(*config.Config) (Searcher, error) { return NewFTS5Local(), nil }}
+	return Provider{ID: "local", Name: "Local", Hidden: true, Setup: `docs backend "local" not yet implemented (use context7)`, Usable: func(*config.Config) bool { return false }, New: func(*config.Config, Deps) (Searcher, error) { return NewFTS5Local(), nil }}
 }

@@ -58,7 +58,8 @@
     "github"
   ],
   "available_doc_backends": [
-    "context7"
+    "context7",
+    "web"
   ],
   "tinyfish_api_key_set": false,
   "tinyfish_api_keys_count": 0,

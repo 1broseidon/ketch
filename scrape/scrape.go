@@ -48,12 +48,22 @@ type Page struct {
 	ETag         string `json:"etag,omitempty"`
 	LastModified string `json:"last_modified,omitempty"`
 	ContentHash  string `json:"content_hash,omitempty"`
+	// FinalURL is where the content was finally served from: the response
+	// URL after HTTP redirects or, for a browser render, the address the
+	// browser ended on. It is in fetch terms (after URL rewrites), and empty
+	// when the path that built the page does not track it or the page came
+	// from a cache entry written before it was recorded. It is deliberately
+	// left out of the page's JSON, so scrape output is unchanged; the page
+	// cache stores it beside the page.
+	FinalURL string `json:"-"`
 }
 
 // FetchedContent preserves the response body bytes and declared content type.
 type FetchedContent struct {
 	Body        []byte
 	ContentType string
+	// URL is the URL the body was served from, after any redirects.
+	URL string
 }
 
 // HTML returns the body as UTF-8 text, decoded from the charset the
@@ -64,6 +74,18 @@ type FetchedContent struct {
 func (c *FetchedContent) HTML() string {
 	return extract.DecodeHTMLBytes(c.Body, c.ContentType)
 }
+
+// HTTPStatusError reports a response whose status was not 200 OK (nor the 304
+// that answers a conditional fetch). Callers that need the status, such as
+// the docs fetcher telling a missing page from a failing server, read it
+// with errors.As instead of matching the text; the text itself is unchanged
+// from when this was a plain error, so diagnostics read the same.
+type HTTPStatusError struct {
+	Code int    // the response status code
+	URL  string // the URL requested, after URL rewrites
+}
+
+func (e *HTTPStatusError) Error() string { return fmt.Sprintf("HTTP %d for %s", e.Code, e.URL) }
 
 // FetchResult holds the output of a conditional scrape.
 type FetchResult struct {
@@ -226,14 +248,14 @@ func (s *Scraper) Scrape(ctx context.Context, rawURL string) (*Page, string, err
 		if err != nil {
 			return nil, "", fmt.Errorf("PDF extraction failed for %s: %w", fetchURL, err)
 		}
-		page := &Page{URL: rawURL, Markdown: markdown}
+		page := &Page{URL: rawURL, Markdown: markdown, FinalURL: content.URL}
 		if fetchURL != rawURL {
 			page.FetchedURL = fetchURL
 		}
 		return page, SourceHTTP, nil
 	}
 
-	html, source := s.MaybeBrowserFetch(ctx, fetchURL, content.HTML())
+	html, source, rendered := s.maybeBrowserFetch(ctx, fetchURL, content.HTML())
 	result, err := s.extractor.Extract(fetchURL, html)
 	if err != nil {
 		return nil, "", fmt.Errorf("extraction failed for %s: %w", fetchURL, err)
@@ -243,6 +265,7 @@ func (s *Scraper) Scrape(ctx context.Context, rawURL string) (*Page, string, err
 		URL:      rawURL,
 		Title:    result.Title,
 		Markdown: result.Markdown,
+		FinalURL: finalURL(source, rendered, content.URL),
 	}
 	if fetchURL != rawURL {
 		page.FetchedURL = fetchURL
@@ -280,6 +303,7 @@ func (s *Scraper) scrapeConditional(ctx context.Context, rawURL, etag, lastModif
 			ETag:         headers.Get("ETag"),
 			LastModified: headers.Get("Last-Modified"),
 			ContentHash:  ContentHash(markdown),
+			FinalURL:     content.URL,
 		}
 		if fetchURL != rawURL {
 			page.FetchedURL = fetchURL
@@ -290,7 +314,7 @@ func (s *Scraper) scrapeConditional(ctx context.Context, rawURL, etag, lastModif
 	html := content.HTML()
 	var doc *goquery.Document
 	var detection string
-	source := SourceHTTP
+	source, rendered := SourceHTTP, ""
 	if isHTMLContentType(contentType) {
 		// Parse once for JS-shell detection; downstream callers can reuse this
 		// doc via FetchResult.Doc instead of re-parsing the same HTML.
@@ -302,7 +326,7 @@ func (s *Scraper) scrapeConditional(ctx context.Context, rawURL, etag, lastModif
 			detection = s.detector.DetectJSShellFromDoc(doc, html)
 		}
 		if detection == "likely_shell" {
-			html, source = s.browserFetchOrWarn(ctx, fetchURL, html)
+			html, source, rendered = s.browserFetchOrWarn(ctx, fetchURL, html)
 			doc = nil // rendered HTML needs a fresh parse downstream
 			if source == SourceBrowser {
 				contentType = "text/html"
@@ -322,6 +346,7 @@ func (s *Scraper) scrapeConditional(ctx context.Context, rawURL, etag, lastModif
 		ETag:         headers.Get("ETag"),
 		LastModified: headers.Get("Last-Modified"),
 		ContentHash:  ContentHash(result.Markdown),
+		FinalURL:     finalURL(source, rendered, content.URL),
 	}
 	if fetchURL != rawURL {
 		page.FetchedURL = fetchURL
@@ -348,7 +373,7 @@ func (s *Scraper) BrowserScrape(ctx context.Context, rawURL string) (*Page, stri
 	if browser == nil {
 		return nil, "", ErrNoBrowser
 	}
-	html, err := browser.Fetch(ctx, fetchURL)
+	html, landed, err := browserRender(ctx, browser, fetchURL)
 	if err != nil {
 		return nil, "", fmt.Errorf("browser fetch failed for %s: %w", fetchURL, err)
 	}
@@ -361,6 +386,7 @@ func (s *Scraper) BrowserScrape(ctx context.Context, rawURL string) (*Page, stri
 		Title:       result.Title,
 		Markdown:    result.Markdown,
 		ContentHash: ContentHash(result.Markdown),
+		FinalURL:    landed,
 	}
 	if fetchURL != rawURL {
 		page.FetchedURL = fetchURL
@@ -371,9 +397,16 @@ func (s *Scraper) BrowserScrape(ctx context.Context, rawURL string) (*Page, stri
 // MaybeBrowserFetch re-fetches rawURL via the browser if html looks JS-rendered.
 // Returns the (possibly rendered) html and the fetch source actually used.
 func (s *Scraper) MaybeBrowserFetch(ctx context.Context, rawURL, html string) (string, string) {
+	html, source, _ := s.maybeBrowserFetch(ctx, rawURL, html)
+	return html, source
+}
+
+// maybeBrowserFetch is MaybeBrowserFetch that also returns the URL a browser
+// render ended on ("" when nothing was rendered).
+func (s *Scraper) maybeBrowserFetch(ctx context.Context, rawURL, html string) (string, string, string) {
 	detection := s.detector.DetectJSShell(html)
 	if detection != "likely_shell" {
-		return html, SourceHTTP
+		return html, SourceHTTP, ""
 	}
 	return s.browserFetchOrWarn(ctx, rawURL, html)
 }
@@ -382,19 +415,29 @@ func (s *Scraper) MaybeBrowserFetch(ctx context.Context, rawURL, html string) (s
 // or the original (shell) html with SourceHTTPShell if the browser is
 // unavailable or fails. Called only when detection said "likely_shell", so
 // returning SourceHTTP here would be a lie — the entry would round-trip as
-// "plain page" and never get retried once a browser is configured.
-func (s *Scraper) browserFetchOrWarn(ctx context.Context, rawURL, html string) (string, string) {
+// "plain page" and never get retried once a browser is configured. The third
+// value is the URL the render ended on, "" when nothing was rendered.
+func (s *Scraper) browserFetchOrWarn(ctx context.Context, rawURL, html string) (string, string, string) {
 	browser := s.getBrowser()
 	if browser != nil {
-		rendered, err := browser.Fetch(ctx, rawURL)
+		rendered, landed, err := browserRender(ctx, browser, rawURL)
 		if err == nil {
-			return rendered, SourceBrowser
+			return rendered, SourceBrowser, landed
 		}
 		fmt.Fprintf(os.Stderr, "warn: browser fallback failed for %s: %v\n", rawURL, err)
 	} else if !s.HasBrowser() {
 		fmt.Fprintf(os.Stderr, "warn: %s appears JS-rendered; configure browser for full content\n", rawURL)
 	}
-	return html, SourceHTTPShell
+	return html, SourceHTTPShell, ""
+}
+
+// finalURL is where a page's content came from: the browser's landing URL
+// when the page was rendered, else the HTTP response URL.
+func finalURL(source, rendered, fetched string) string {
+	if source == SourceBrowser && rendered != "" {
+		return rendered
+	}
+	return fetched
 }
 
 // CacheStaleForBrowser reports whether a cache entry with the given source
@@ -553,14 +596,14 @@ func (s *Scraper) fetchContent(ctx context.Context, rawURL, etag, lastModified s
 		return nil, resp.Header, true, nil
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, nil, false, fmt.Errorf("HTTP %d for %s", resp.StatusCode, rawURL)
+		return nil, nil, false, &HTTPStatusError{Code: resp.StatusCode, URL: rawURL}
 	}
 
 	body, err := readBoundedBody(resp.Body)
 	if err != nil {
 		return nil, nil, false, err
 	}
-	return &FetchedContent{Body: body, ContentType: resp.Header.Get("Content-Type")}, resp.Header, false, nil
+	return &FetchedContent{Body: body, ContentType: resp.Header.Get("Content-Type"), URL: resp.Request.URL.String()}, resp.Header, false, nil
 }
 
 // readBoundedBody preserves the historical scrape behavior: responses larger

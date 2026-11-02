@@ -240,7 +240,9 @@ func context7Provider() Provider {
 		ID:       "context7",
 		Name:     "Context7",
 		Usable:   func(c *config.Config) bool { return c.String("context7_api_key") != "" },
-		New:      func(c *config.Config) (Searcher, error) { return NewContext7(c.String("context7_api_key")), nil },
+		New: func(c *config.Config, _ Deps) (Searcher, error) {
+			return NewContext7(c.String("context7_api_key")), nil
+		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
 			return ProbeContext7(ctx, client, "https://context7.com", c.String("context7_api_key"))
 		},

@@ -6,6 +6,7 @@ import (
 
 	"github.com/1broseidon/ketch/docs"
 	"github.com/1broseidon/ketch/internal/configbase"
+	"github.com/1broseidon/ketch/internal/docsfetch"
 	"github.com/google/jsonschema-go/jsonschema"
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -79,7 +80,7 @@ func (s *Server) registerDocsTool() {
 			return s.docsForLibrary(ctx, backend, in.Query, in.Library, tokens, in.Limit, in.Tag)
 		}
 
-		searcher, err := docs.NewFromConfig(s.cfg, backend)
+		searcher, err := docs.NewFromConfig(s.cfg, backend, s.docsDeps(ctx))
 		if err != nil {
 			return nil, DocsOutput{}, backendErrf(err, docs.ErrUnknownBackend)
 		}
@@ -97,7 +98,7 @@ func (s *Server) registerDocsTool() {
 // docsResolve maps a free-form library name to Context7 library IDs,
 // returning at most limit matches.
 func (s *Server) docsResolve(ctx context.Context, backend, query string, limit int) (*mcpsdk.CallToolResult, DocsOutput, error) {
-	resolver, err := s.libraryResolver(backend)
+	resolver, err := s.libraryResolver(ctx, backend)
 	if err != nil {
 		return nil, DocsOutput{}, err
 	}
@@ -111,7 +112,7 @@ func (s *Server) docsResolve(ctx context.Context, backend, query string, limit i
 // docsForLibrary fetches docs for a known library ID, capped at limit
 // results when limit is positive.
 func (s *Server) docsForLibrary(ctx context.Context, backend, query, library string, tokens, limit int, tag string) (*mcpsdk.CallToolResult, DocsOutput, error) {
-	resolver, err := s.libraryResolver(backend)
+	resolver, err := s.libraryResolver(ctx, backend)
 	if err != nil {
 		return nil, DocsOutput{}, err
 	}
@@ -129,11 +130,11 @@ func (s *Server) docsForLibrary(ctx context.Context, backend, query, library str
 }
 
 // libraryResolver constructs an optional docs capability through the registry.
-func (s *Server) libraryResolver(backend string) (docs.LibraryResolver, error) {
+func (s *Server) libraryResolver(ctx context.Context, backend string) (docs.LibraryResolver, error) {
 	if p, ok := docs.Lookup(backend); ok && !p.Usable(s.cfg) && p.LibrarySetup != "" {
 		return nil, errf(kindPrecondition, "%s", p.LibrarySetup)
 	}
-	searcher, err := docs.NewFromConfig(s.cfg, backend)
+	searcher, err := docs.NewFromConfig(s.cfg, backend, s.docsDeps(ctx))
 	if err != nil {
 		return nil, backendErrf(err, docs.ErrUnknownBackend)
 	}
@@ -142,6 +143,16 @@ func (s *Server) libraryResolver(backend string) (docs.LibraryResolver, error) {
 		return nil, errf(kindValidation, "docs backend %q does not support library operations", backend)
 	}
 	return resolver, nil
+}
+
+// docsDeps hands a docs backend a page fetcher over the server's shared
+// scraper and page cache, so docs pages get scrape's rewrites, cookies,
+// browser fallback and caching. Building it per call is free: it holds the
+// two shared handles and fetches nothing until the backend asks. Bookmark
+// backfill failures from its cache writes go to the call's tag diagnostics,
+// as on the other research tools.
+func (s *Server) docsDeps(ctx context.Context) docs.Deps {
+	return docs.Deps{Fetcher: docsfetch.New(s.scraper, s.tagPageCache(ctx, false))}
 }
 
 // docsInputSchema names the registered docs providers in the argument

@@ -1,13 +1,19 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
+	"github.com/1broseidon/ketch/cache"
 	"github.com/1broseidon/ketch/config"
 	"github.com/1broseidon/ketch/docs"
+	"github.com/1broseidon/ketch/internal/docsfetch"
+	"github.com/1broseidon/ketch/scrape"
 	"github.com/spf13/cobra"
 )
 
@@ -61,14 +67,15 @@ func runDocs(cmd *cobra.Command, args []string) error {
 		return runDocsWithLibrary(cmd, query, library, tokens, limit, asJSON, minimal)
 	}
 
-	searcher, err := newDocSearcher(backend)
+	searcher, fetcher, err := newDocSearcher(cmd, backend)
 	if err != nil {
 		return err
 	}
+	defer fetcher.Close()
 
 	results, err := searcher.Search(cmd.Context(), query, limit)
-	if err != nil {
-		return upstreamErr(err, "docs search failed")
+	if err := fetcher.classify(err, "docs search failed"); err != nil {
+		return err
 	}
 
 	tagResults(cmd, docsTaggable(results))
@@ -84,17 +91,18 @@ func runDocs(cmd *cobra.Command, args []string) error {
 func runDocsResolve(cmd *cobra.Command, query string, limit int, asJSON bool) error {
 	backend, _ := cmd.Flags().GetString("backend")
 	backend = docs.ResolveBackend(backend)
-	searcher, err := newDocSearcher(backend)
+	searcher, fetcher, err := newDocSearcher(cmd, backend)
 	if err != nil {
 		return err
 	}
+	defer fetcher.Close()
 	resolver, ok := searcher.(docs.LibraryResolver)
 	if !ok {
 		return exitErrf(ExitValidation, "docs backend %q does not support library operations", backend)
 	}
 	matches, err := resolver.ResolveLibrary(cmd.Context(), query, limit)
-	if err != nil {
-		return upstreamErr(err, "resolve failed")
+	if err := fetcher.classify(err, "resolve failed"); err != nil {
+		return err
 	}
 
 	if asJSON {
@@ -111,17 +119,18 @@ func runDocsResolve(cmd *cobra.Command, query string, limit int, asJSON bool) er
 // the provider returns; a positive limit additionally caps the result count.
 func runDocsWithLibrary(cmd *cobra.Command, query, library string, tokens, limit int, asJSON bool, minimal bool) error {
 	backend, _ := cmd.Flags().GetString("backend")
-	searcher, err := newDocSearcher(backend)
+	searcher, fetcher, err := newDocSearcher(cmd, backend)
 	if err != nil {
 		return err
 	}
+	defer fetcher.Close()
 	resolver, ok := searcher.(docs.LibraryResolver)
 	if !ok {
 		return exitErrf(ExitValidation, "docs backend %q does not support library operations", backend)
 	}
 	results, err := resolver.GetDocs(cmd.Context(), library, query, tokens)
-	if err != nil {
-		return upstreamErr(err, "docs fetch failed")
+	if err := fetcher.classify(err, "docs fetch failed"); err != nil {
+		return err
 	}
 	results = docs.Truncate(results, limit)
 
@@ -167,13 +176,108 @@ func printDocsResults(query, backend, library string, results []docs.Result, min
 }
 
 // newDocSearcher resolves the backend via the shared docs.NewFromConfig and
-// maps constructor errors to CLI exit codes.
-func newDocSearcher(backend string) (docs.Searcher, error) {
-	s, err := docs.NewFromConfig(&cfg, backend)
+// maps constructor errors to CLI exit codes. The backend gets a lazy page
+// fetcher; the caller closes it when the command ends and classifies the
+// backend's calls through it.
+func newDocSearcher(cmd *cobra.Command, backend string) (docs.Searcher, *docsFetcher, error) {
+	fetcher := &docsFetcher{newScraper: func() (*scrape.Scraper, error) { return newDocsScraper(cmd) }}
+	s, err := docs.NewFromConfig(&cfg, backend, docs.Deps{Fetcher: fetcher})
 	if err != nil {
-		return nil, backendErr(err, docs.ErrUnknownBackend)
+		return nil, nil, backendErr(err, docs.ErrUnknownBackend)
 	}
-	return s, nil
+	return s, fetcher, nil
+}
+
+// newDocsScraper builds the scraper behind a docs run's page fetches; tests
+// swap it to observe whether a run builds one at all.
+var newDocsScraper = newScraper
+
+// errDocsFetcherClosed reports a fetch after the command released its
+// scraper.
+var errDocsFetcherClosed = errors.New("docs page fetcher used after close")
+
+// docsFetcher is the CLI's docs.Fetcher. It builds the scraper and page cache
+// on the first fetch, so a backend that answers from an API (Context7) never
+// constructs a scraper, and Close releases whatever was built.
+type docsFetcher struct {
+	newScraper func() (*scrape.Scraper, error)
+
+	mu      sync.Mutex
+	closed  bool
+	err     error // construction failure; sticky, the same for every fetch
+	scraper *scrape.Scraper
+	pages   *cache.Cache
+	fetcher *docsfetch.Fetcher
+}
+
+func (f *docsFetcher) FetchRaw(ctx context.Context, url string) (docs.RawContent, error) {
+	inner, err := f.get()
+	if err != nil {
+		return docs.RawContent{}, err
+	}
+	return inner.FetchRaw(ctx, url)
+}
+
+func (f *docsFetcher) FetchPage(ctx context.Context, url string) (docs.PageContent, error) {
+	inner, err := f.get()
+	if err != nil {
+		return docs.PageContent{}, err
+	}
+	return inner.FetchPage(ctx, url)
+}
+
+// get builds the fetcher on first use. Construction does no network I/O, so
+// it runs under the lock and concurrent first fetches share one scraper.
+func (f *docsFetcher) get() (*docsfetch.Fetcher, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	switch {
+	case f.closed:
+		return nil, errDocsFetcherClosed
+	case f.fetcher != nil || f.err != nil:
+		return f.fetcher, f.err
+	}
+	s, err := f.newScraper()
+	if err != nil {
+		f.err = err
+		return nil, err
+	}
+	f.scraper = s
+	f.pages = newPageCache(false)
+	f.fetcher = docsfetch.New(f.scraper, f.pages)
+	return f.fetcher, nil
+}
+
+// classify maps the outcome of a backend call to a CLI error. A scraper that
+// could not be built (invalid url_rewrites, an unreadable cookie_file) is the
+// run's real failure — newScraper's precondition, exit 5 — however the
+// backend reported it, even if it swallowed the fetch error and answered
+// empty. Otherwise a failure goes through upstreamErr. It never builds the
+// scraper itself.
+func (f *docsFetcher) classify(err error, msg string) error {
+	f.mu.Lock()
+	buildErr := f.err
+	f.mu.Unlock()
+	if buildErr != nil {
+		return buildErr
+	}
+	if err != nil {
+		return upstreamErr(err, "%s", msg)
+	}
+	return nil
+}
+
+// Close releases the scraper and page cache if a fetch built them; it never
+// builds them. Later fetches fail with errDocsFetcherClosed.
+func (f *docsFetcher) Close() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.scraper != nil {
+		f.scraper.Close()
+		f.pages.Close()
+	}
+	f.closed = true
+	f.scraper, f.pages, f.fetcher = nil, nil, nil
 }
 
 // docsTaggable maps docs hits onto index entries: library and heading make the

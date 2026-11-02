@@ -60,7 +60,7 @@ func TestDocsUnknownBackendExitsValidationWithOptions(t *testing.T) {
 	if exitErr.Code != ExitValidation {
 		t.Errorf("exit code = %d, want %d (validation)", exitErr.Code, ExitValidation)
 	}
-	if !strings.Contains(exitErr.Error(), "(available: context7)") {
+	if want := "(available: " + strings.Join(docs.AvailableBackends(), ", ") + ")"; !strings.Contains(want, "context7") || !strings.Contains(exitErr.Error(), want) {
 		t.Errorf("error should list the available backends, got: %v", exitErr)
 	}
 }
@@ -88,9 +88,15 @@ func TestDocsResolveRejectsTag(t *testing.T) {
 	}
 }
 
-// upstreamErr must classify docs.ErrNotFound as exit 3 (permanently absent,
-// not retryable) and everything else as exit 4 (upstream, retry may help).
+// upstreamErr must classify docs.ErrLibraryRequired as exit 2 (the caller
+// must add --library), docs.ErrNotFound as exit 3 (permanently absent, not
+// retryable) and everything else as exit 4 (upstream, retry may help).
 func TestUpstreamErrClassification(t *testing.T) {
+	libraryRequired := fmt.Errorf("web: %w: pass the docs site URL with --library", docs.ErrLibraryRequired)
+	if got := asExitError(t, upstreamErr(libraryRequired, "docs search failed")); got.Code != ExitValidation {
+		t.Errorf("docs.ErrLibraryRequired: exit code = %d, want %d (validation)", got.Code, ExitValidation)
+	}
+
 	notFound := fmt.Errorf("context7: library %q %w", "/no/such-lib", docs.ErrNotFound)
 	if got := asExitError(t, upstreamErr(notFound, "docs fetch failed")); got.Code != ExitNotFound {
 		t.Errorf("docs.ErrNotFound: exit code = %d, want %d (not found)", got.Code, ExitNotFound)

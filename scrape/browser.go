@@ -160,29 +160,47 @@ func closeBrowser(b *rod.Browser, l *launcher.Launcher) {
 // per-fetch filtering still bounds what each navigation loads. Acceptable for
 // a single-operator CLI.
 func (r *rodConn) Fetch(ctx context.Context, rawURL string) (string, error) {
+	html, _, err := r.FetchFinal(ctx, rawURL)
+	return html, err
+}
+
+// FetchFinal is Fetch that also returns the URL the tab ended on after
+// redirects and script navigation, read after the HTML so a navigation that
+// races the read is reported rather than missed. A tab that cannot say
+// returns "" rather than failing a render that worked; callers then fall
+// back to the HTTP response URL.
+func (r *rodConn) FetchFinal(ctx context.Context, rawURL string) (string, string, error) {
 	if err := ValidateWebURL(rawURL); err != nil {
-		return "", err
+		return "", "", err
 	}
 	page, err := r.browser.Context(ctx).Page(proto.TargetCreateTarget{}) // about:blank
 	if err != nil {
-		return "", fmt.Errorf("create page: %w", err)
+		return "", "", fmt.Errorf("create page: %w", err)
 	}
 	defer func() { _ = page.Close() }()
 
 	if params := rodCookieParams(r.jar, rawURL); len(params) > 0 {
 		if err := page.SetCookies(params); err != nil {
-			return "", fmt.Errorf("set cookies: %w", err)
+			return "", "", fmt.Errorf("set cookies: %w", err)
 		}
 	}
 	if err := page.Navigate(rawURL); err != nil {
-		return "", fmt.Errorf("navigate: %w", err)
+		return "", "", fmt.Errorf("navigate: %w", err)
 	}
 
 	timedPage := page.Timeout(30 * time.Second)
 	_ = timedPage.WaitLoad()
 	_ = timedPage.WaitStable(time.Second)
 
-	return page.HTML()
+	html, err := page.HTML()
+	if err != nil {
+		return "", "", err
+	}
+	info, err := page.Info()
+	if err != nil {
+		return html, "", nil
+	}
+	return html, info.URL, nil
 }
 
 // rodCookieParams converts jar entries matching pageURL into CDP cookie params.

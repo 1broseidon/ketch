@@ -12,6 +12,12 @@ import (
 // a retryable upstream failure.
 var ErrNotFound = errors.New("not found")
 
+// ErrLibraryRequired reports a docs request the backend cannot answer
+// without knowing which library's docs to search — for the web backend, a
+// docs URL passed as the library. Both surfaces classify it as a validation
+// error (CLI exit 2 / MCP [validation]): the caller fixes it by adding one.
+var ErrLibraryRequired = errors.New("library required")
+
 // Truncate returns at most limit results when limit is positive. A zero or
 // negative limit leaves results unbounded; callers use that for the library
 // path, where the token budget is the only bound unless a limit is explicit.
@@ -30,7 +36,7 @@ type Result struct {
 	Breadcrumb string `json:"breadcrumb,omitempty"`
 	Snippet    string `json:"snippet"`
 	URL        string `json:"url"`
-	Source     string `json:"source"` // "context7" | "local"
+	Source     string `json:"source"` // "context7" | "web"
 }
 
 // Searcher is the interface for docs backends.

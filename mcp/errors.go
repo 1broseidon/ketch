@@ -47,6 +47,8 @@ func warnf(kind, format string, args ...any) string {
 // upstreamErrf wraps a failure from a backend/network call under [upstream],
 // or [cancelled] when the underlying cause is context cancellation or a
 // deadline (client cancelled the tool call, or a server-side timeout fired),
+// or [validation] when the backend needs input the call did not give
+// (docs.ErrLibraryRequired: a backend that cannot search without library),
 // or [not_found] when the shared layer flagged the resource as permanently
 // absent (docs.ErrNotFound, e.g. a Context7 404 for a bad library ID;
 // code.ErrRepoNotFound, a repository the backend does not have) — the same
@@ -56,6 +58,8 @@ func upstreamErrf(err error, format string, args ...any) error {
 	switch {
 	case errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded):
 		kind = kindCancelled
+	case errors.Is(err, docs.ErrLibraryRequired):
+		kind = kindValidation
 	case errors.Is(err, docs.ErrNotFound) || errors.Is(err, code.ErrRepoNotFound):
 		kind = kindNotFound
 	}

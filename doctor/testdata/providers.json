@@ -108,5 +108,12 @@
     "status": "no_key",
     "detail": "API key not set (get one then: ketch config set context7_api_key \u003ckey\u003e)",
     "latency_ms": 0
+  },
+  {
+    "surface": "docs",
+    "backend": "web",
+    "status": "ok",
+    "detail": "keyless; reads the docs site passed as the library",
+    "latency_ms": 0
   }
 ]

@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"maps"
 	"strings"
 	"testing"
 	"time"
@@ -537,5 +538,87 @@ func TestTagPageOverwritesASnippetEntry(t *testing.T) {
 	}
 	if pages[0].Description == "engine blurb" {
 		t.Error("description is still the engine's; the fetched page should have replaced it")
+	}
+}
+
+// fragmentBookmarks tags docs-style page#section results under "docs":
+// two sections of a page whose body is cached under the fragment-less key
+// (with the namespace a configured User-Agent adds), a section of a page
+// never fetched, and a page scraped with a fragment, which the pipeline
+// caches under the fragment's own key.
+func fragmentBookmarks(t *testing.T) *Cache {
+	t.Helper()
+	c := newTestCache(t, time.Hour)
+	c.Put(fragPage+fragNS, page(fragPage, "Authentication", "Configure authentication for a project with login sessions."), scrape.SourceHTTP)
+	c.Put(fragScraped, page(fragScraped, "Tokens", "Refresh tokens are exchanged for new access tokens."), scrape.SourceHTTP)
+	for _, r := range []struct{ key, url string }{
+		{fragPage + "#login" + fragNS, fragPage + "#login"},
+		{fragPage + "#logout" + fragNS, fragPage + "#logout"},
+		{fragCold + fragNS, fragCold},
+		{fragScraped, fragScraped},
+	} {
+		if err := c.TagResult("docs", r.key, r.url, "section", "a docs section"); err != nil {
+			t.Fatalf("TagResult(%s): %v", r.url, err)
+		}
+	}
+	return c
+}
+
+const (
+	fragPage    = "https://docs.example.com/guide/auth"
+	fragNS      = "\x00ua:0123456789abcdef"
+	fragCold    = "https://docs.example.com/guide/cold#x"
+	fragScraped = "https://docs.example.com/guide/tokens#refresh"
+)
+
+// A fragment never reaches the server, so the body cached for a page is the
+// body of every page#section bookmarked from it: show and list report such
+// a bookmark cached when its page is, composite cache keys included. A body
+// cached under the fragment's own key still counts.
+func TestTagWarmthIgnoresTheURLFragment(t *testing.T) {
+	t.Parallel()
+	c := fragmentBookmarks(t)
+	view, err := c.ShowTag("docs", 0)
+	if err != nil {
+		t.Fatalf("ShowTag: %v", err)
+	}
+	got := map[string]bool{}
+	for _, p := range view.Pages {
+		got[p.URL] = p.Cached
+	}
+	want := map[string]bool{fragPage + "#login": true, fragPage + "#logout": true, fragCold: false, fragScraped: true}
+	if view.Entries != 4 || view.Cached != 3 || !maps.Equal(got, want) {
+		t.Errorf("show = %d entries, %d cached, %v; want 4 entries, 3 cached, %v", view.Entries, view.Cached, got, want)
+	}
+	if tags, err := c.TagList(); err != nil || len(tags) != 1 || tags[0].Cached != 3 {
+		t.Errorf("list = %+v, %v; want docs with 3 cached", tags, err)
+	}
+}
+
+// tag add finds the page's cached body for page#section the same way, and
+// takes its title from it.
+func TestTagURLWithAFragmentUsesThePageBody(t *testing.T) {
+	t.Parallel()
+	c := fragmentBookmarks(t)
+	cached, err := c.TagURL("added", fragPage+"#login"+fragNS, fragPage+"#login")
+	if err != nil || !cached {
+		t.Errorf("TagURL(page#login) = %v, %v; want cached", cached, err)
+	}
+	if pages, _ := c.Tagged("added"); len(pages) != 1 || pages[0].Title != "Authentication" {
+		t.Errorf("added = %+v, want the page's title from its cached body", pages)
+	}
+}
+
+// Membership still follows the URL as given (ADR-0004): page#login and
+// page#logout are two bookmarks, each removable by the URL shown.
+func TestTagFragmentsStaySeparateBookmarks(t *testing.T) {
+	t.Parallel()
+	c := fragmentBookmarks(t)
+	removed, missing, err := c.RemoveTagged("docs", []string{fragPage + "#login"})
+	if err != nil || removed != 1 || len(missing) != 0 {
+		t.Fatalf("RemoveTagged(page#login) = %d, %v, %v", removed, missing, err)
+	}
+	if pages, _ := c.Tagged("docs"); len(pages) != 3 {
+		t.Errorf("after removing page#login, %d entries remain, want 3 (page#logout is its own bookmark)", len(pages))
 	}
 }

@@ -182,7 +182,7 @@ func (s *Scraper) CachedScrapeForce(ctx context.Context, pc PageCache, url strin
 		if err != nil {
 			return nil, fmt.Errorf("PDF extraction failed for %s: %w", fetchURL, err)
 		}
-		page := &Page{URL: url, Markdown: markdown}
+		page := &Page{URL: url, Markdown: markdown, FinalURL: content.URL}
 		if fetchURL != url {
 			page.FetchedURL = fetchURL
 		}

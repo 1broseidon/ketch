@@ -1,0 +1,13 @@
+# Acme API
+
+> Acme is a payments API. These docs cover authentication, payments and webhooks.
+
+## Get started
+
+- [Quickstart]({{ORIGIN}}/quickstart.md): Make your first API request
+- [Authentication]({{ORIGIN}}/authentication.md): API keys and key scopes
+
+## Guides
+
+- [Webhooks]({{ORIGIN}}/guides/webhooks.md): Receive payment events and verify their signatures
+- [Webhook signatures explained]({{OFFSITE}}/blog/webhook-signatures.md): an off-site post that must not be fetched

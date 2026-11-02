@@ -49,6 +49,10 @@ type cacheEntry struct {
 	// lazily: only --raw requests back-fill this, so the common markdown-only
 	// path pays no 20 MiB-body cost. omitempty keeps pre-raw entries decodable.
 	RawHTML string `json:"r,omitempty"`
+	// FinalURL is Page.FinalURL, which the page's JSON leaves out: where the
+	// body was finally served from. Empty for entries written before it was
+	// recorded.
+	FinalURL string `json:"f,omitempty"`
 }
 
 // New creates a cache with the default bbolt backend. The file is opened only
@@ -162,6 +166,7 @@ func (c *Cache) getEntry(url string) *cacheEntry {
 	if time.Since(time.Unix(e.CachedAt, 0)) > c.ttl {
 		return nil
 	}
+	e.Page.FinalURL = e.FinalURL
 	return &e
 }
 
@@ -217,6 +222,7 @@ func (c *Cache) GetRaw(url string) (string, string, *scrape.Page) {
 	if e.RawHTML == "" {
 		return "", "", nil
 	}
+	e.Page.FinalURL = e.FinalURL
 	return e.RawHTML, e.Source, &e.Page
 }
 
@@ -237,6 +243,7 @@ func (c *Cache) PutRaw(url string, page *scrape.Page, source, rawHTML string) {
 }
 
 func (c *Cache) putEntry(url string, page *scrape.Page, e cacheEntry) {
+	e.FinalURL = page.FinalURL
 	data, err := json.Marshal(e)
 	if err != nil {
 		return
