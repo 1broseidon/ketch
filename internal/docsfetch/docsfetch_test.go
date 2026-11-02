@@ -23,7 +23,7 @@ const (
 	llmsTxt = "# Example\n\n- [Authentication](https://docs.example.test/guide/auth): configure login\n"
 	sitemap = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://docs.example.test/guide/auth</loc></url></urlset>`
 	mdPage  = "# Authentication\n\nUse `ketch login` to start a session.\n"
-	docHTML = `<html><head><title>Configuring authentication</title></head><body><nav><a href="/">Home</a></nav><main><article><h1>Configuring authentication</h1><p>This guide explains how to configure authentication for a project, including login sessions and application settings.</p><p>Sessions expire after an hour of inactivity unless the remember-me option is enabled in the project settings.</p></article></main></body></html>`
+	docHTML = `<html><head><title>Configuring authentication</title></head><body><nav><a href="/">Home</a></nav><main><article><h1 id="configuring-authentication">Configuring authentication</h1><p>This guide explains how to configure authentication for a project, including login sessions and application settings.</p><p>Sessions expire after an hour of inactivity unless the remember-me option is enabled in the project settings.</p></article></main></body></html>`
 )
 
 // docsSite serves a small docs site and counts requests per path, so tests
@@ -394,6 +394,27 @@ func TestFetchPageRefreshesEntryWithoutFinalURL(t *testing.T) {
 	}
 	if n := site.hitCount("/guide/auth"); n != 1 {
 		t.Errorf("made %d requests, want 1: the refreshed entry serves the second call", n)
+	}
+}
+
+// FetchPage reports the fragment targets the page's HTML carries, and they
+// survive the page cache; an entry written before they were recorded is
+// fetched again, like one without a final URL.
+func TestFetchPageReportsAnchorsThroughTheCache(t *testing.T) {
+	site := newDocsSite(t)
+	s := newScraper(t)
+	pc := newCache(t)
+	pageURL := site.URL + "/guide/auth"
+	pc.Put(s.CacheKey(s.Rewrite(pageURL)), &scrape.Page{URL: pageURL, Title: "Stale", Markdown: "stale body", FinalURL: pageURL}, scrape.SourceHTTP)
+	f := New(s, pc)
+	for i := range 2 {
+		page, err := f.FetchPage(context.Background(), pageURL)
+		if err != nil || page.Anchors == nil || !strings.Contains(page.Markdown, "remember-me option") {
+			t.Fatalf("FetchPage %d = %+v, %v; want the page fetched fresh with its anchors", i, page, err)
+		}
+	}
+	if n := site.hitCount("/guide/auth"); n != 1 {
+		t.Errorf("made %d requests, want 1: the refreshed entry, anchors and all, serves the second call", n)
 	}
 }
 

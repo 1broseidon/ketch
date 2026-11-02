@@ -21,6 +21,19 @@ var webStopwords = map[string]bool{
 	"what": true, "with": true, "my": true, "can": true, "i": true, "it": true, "by": true, "from": true,
 }
 
+// rankStopwords are function words dropped from a query for ranking only,
+// beside webStopwords (which name resolution shares): in a corpus of a few
+// dozen sections a word like "between" is rare enough that its weight
+// would decide the ranking, though it says nothing about the topic.
+var rankStopwords = map[string]bool{
+	"about": true, "after": true, "all": true, "also": true, "any": true, "at": true, "before": true, "between": true,
+	"but": true, "doe": true, "each": true, "if": true, "into": true, "its": true, "me": true, "not": true,
+	"should": true, "so": true, "some": true, "than": true, "that": true, "their": true, "them": true, "then": true,
+	"there": true, "thi": true, "these": true, "they": true, "those": true, "through": true, "via": true, "vs": true,
+	"versu": true, "wa": true, "way": true, "we": true, "when": true, "where": true, "which": true, "while": true,
+	"who": true, "why": true, "will": true, "within": true, "without": true, "would": true, "you": true, "your": true,
+}
+
 // tokenize lower-cases s, splits it on anything but letters and digits, and
 // applies a light plural stemmer so "collections" matches "collection".
 // Name resolution (web_spec.go) reads its output; ranking normalizes it
@@ -55,12 +68,73 @@ func rankTokens(s string) []string {
 	return toks
 }
 
+// textTokens is rankTokens for a section's body: an identifier written in
+// camel case also yields its words (PersistentFlags: persistentflag,
+// persistent, flag; bearerAuth: bearerauth, bearer, auth), so prose words
+// meet the API names that spell them. Snake case already splits.
+func textTokens(s string) []string {
+	return appendCamelWords(rankTokens(s), s)
+}
+
+// qualifierRe matches what qualifies an API heading's name rather than
+// naming it: a Go method's receiver, "func (*SugaredLogger) ", and the
+// owner in a qualified name, "SugaredLogger." or "tokio::task::".
+var qualifierRe = regexp.MustCompile(`^func\s*\([^)]*\)\s*|[A-Za-z_$][\w$]*(?:\.|::|#|->)`)
+
+// headingTokens is rankTokens for a heading, with the camel-case words of
+// what the heading names: "func (*Command) PersistentFlags" gives
+// persistent and flag, but "func (*SugaredLogger) Debugln" does not give
+// sugared and logger, which name the type the method belongs to; every
+// method of a type would otherwise read as about the type.
+func headingTokens(s string) []string {
+	return appendCamelWords(rankTokens(s), qualifierRe.ReplaceAllString(s, " "))
+}
+
+func appendCamelWords(toks []string, s string) []string {
+	for _, w := range camelWords(s) {
+		for _, part := range w {
+			toks = append(toks, normTerm(stem(part)))
+		}
+	}
+	return toks
+}
+
+// camelWords returns the words of each camel-case identifier in s, lower
+// case: getServerSideProps → get, server, side, props; HTTPServer → http,
+// server. Words without an inner capital give none.
+func camelWords(s string) [][]string {
+	var out [][]string
+	for _, f := range strings.FieldsFunc(s, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) }) {
+		if parts := camelSplit(f); len(parts) > 1 {
+			out = append(out, parts)
+		}
+	}
+	return out
+}
+
+// camelSplit splits one word at its case changes, lower-casing the parts.
+func camelSplit(w string) []string {
+	rs := []rune(w)
+	var parts []string
+	start := 0
+	for i := 1; i < len(rs); i++ {
+		lowerToUpper := unicode.IsLower(rs[i-1]) && unicode.IsUpper(rs[i])
+		acronymEnd := i+1 < len(rs) && unicode.IsUpper(rs[i-1]) && unicode.IsUpper(rs[i]) && unicode.IsLower(rs[i+1])
+		if lowerToUpper || acronymEnd {
+			parts = append(parts, strings.ToLower(string(rs[start:i])))
+			start = i
+		}
+	}
+	return append(parts, strings.ToLower(string(rs[start:])))
+}
+
 // normTerm folds the inflections tokenize leaves, deterministically and
 // only on plain ASCII words, so a query and a page that name one thing
 // in different forms meet: -ing and -ed (loading, loaded → load; a doubled
 // final consonant undone, mapping → map), the -ize family (memoize,
-// memoized, memoization → memo) and a final e (cache, caching → cach;
-// configure, configured → configur). Short words are left alone ("string",
+// memoized, memoization → memo), -ation and -ional (configuration →
+// configur, conditionally → conditional → condition) and a final e
+// (cache, caching → cach; configure, configured → configur). Short words are left alone ("string",
 // "based", "size"); what the rules miss, prefixMatch may still catch in
 // candidate picking.
 func normTerm(t string) string {
@@ -69,12 +143,25 @@ func normTerm(t string) string {
 			return t
 		}
 	}
+	if full, ok := abbreviations[t]; ok {
+		return full
+	}
+	t = trimSuffixRule(t, adverbs)
 	t = trimSuffixRule(t, inflections)
 	t = trimSuffixRule(t, izeSuffixes)
+	t = trimSuffixRule(t, nominals)
 	if len(t) >= 5 && t[len(t)-1] == 'e' {
 		t = t[:len(t)-1]
 	}
 	return t
+}
+
+// abbreviations are the short forms docs and queries use for the same
+// word, mapped to the long form's normTerm: QueryParams and "query
+// parameters", "config" and "configuration".
+var abbreviations = map[string]string{
+	"param": "parameter", "arg": "argument", "config": "configur", "env": "environment",
+	"dir": "directory", "repo": "repository", "info": "inform",
 }
 
 // suffixRule strips suffix from a word of at least minLen letters; vowel
@@ -86,12 +173,25 @@ type suffixRule struct {
 	vowel    bool
 	undouble bool
 	unless   string // a longer suffix that keeps the word whole ("eed": need, speed)
+	keep     string // what of the suffix stays ("al" of -ally, "ion" of -ional)
 }
 
 var (
 	inflections = []suffixRule{
 		{suffix: "ing", minLen: 7, vowel: true, undouble: true},
 		{suffix: "ed", minLen: 6, vowel: true, undouble: true, unless: "eed"},
+	}
+	// adverbs fold an -ally adverb into its adjective (conditionally →
+	// conditional), which nominals may fold further.
+	adverbs = []suffixRule{
+		{suffix: "ally", minLen: 9, vowel: true, keep: "al"},
+	}
+	// nominals fold a noun or adjective in -ation or -ional into the word
+	// it is made from: configuration and configure meet (configur),
+	// conditional and condition, optional and option.
+	nominals = []suffixRule{
+		{suffix: "ation", minLen: 9, vowel: true},
+		{suffix: "ional", minLen: 8, vowel: true, keep: "ion"},
 	}
 	izeSuffixes = []suffixRule{
 		{suffix: "ization", minLen: 11},
@@ -113,7 +213,7 @@ func trimSuffixRule(t string, rules []suffixRule) string {
 		if r.undouble {
 			stem = undouble(stem)
 		}
-		return stem
+		return stem + r.keep
 	}
 	return t
 }
@@ -142,7 +242,7 @@ func queryTerms(query string) []string {
 		}
 		seen[n] = true
 		all = append(all, n)
-		if !webStopwords[t] && (len(t) > 1 || unicode.IsDigit(rune(t[0]))) {
+		if !webStopwords[t] && !rankStopwords[t] && (len(t) > 1 || unicode.IsDigit(rune(t[0]))) {
 			terms = append(terms, n)
 		}
 	}
@@ -302,6 +402,33 @@ func exactTerms(text string, terms []string) bool {
 		}
 	}
 	return true
+}
+
+// linkCoverage is how much of the query the best-matching link names: the
+// largest share of query terms one eligible link's title, path or
+// description holds exactly. Discovery that found no page naming most of
+// the query (opaque URLs, titles that word the topic otherwise) has picked
+// candidates by guesswork.
+func linkCoverage(links []webLink, query string, root webRoot) float64 {
+	terms := queryTerms(query)
+	if len(terms) == 0 {
+		return 1
+	}
+	best := 0
+	for _, l := range links {
+		if !isResultLink(l.url) {
+			continue
+		}
+		f := newLinkFields(l, root)
+		n := 0
+		for _, t := range terms {
+			if f.matches(t, false) {
+				n++
+			}
+		}
+		best = max(best, n)
+	}
+	return float64(best) / float64(len(terms))
 }
 
 type scoredLink struct {
@@ -614,6 +741,7 @@ func rankSections(sections []webSection, query string) []scoredSection {
 		return out
 	}
 	c := newSectionCorpus(sections, terms)
+	idents, howTo := queryIdents(query), isHowTo(query)
 	var out []scoredSection
 	for i, s := range sections {
 		score, matched := c.bm25(i, terms)
@@ -625,20 +753,206 @@ func rankSections(sections []webSection, query string) []scoredSection {
 		// alone favours short pages that merely mention every term.
 		switch {
 		case exactTerms(s.heading, terms):
-			score *= 1.5
+			score *= 2
 		case len(s.crumbs) > 0 && exactTerms(s.crumbs[0], terms):
 			score *= 1.25
 		}
+		if s.anchor == "" && len(s.crumbs) == 1 {
+			// A page's lead says what the page is about: the closer its
+			// title to the query, the likelier the lead is the answer.
+			score *= 1 + webLeadBoost*titleCoverage(s.heading, terms)
+		}
+		score *= 1 + entryMatch(s.heading, terms, idents, howTo)
+		score *= 1 + webCodeBoost*codeCoverage(s.text, terms)
+		score *= 1 + webPhraseBoost*c.phrases(i, terms)
 		out = append(out, scoredSection{webSection: s, score: score})
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].score > out[j].score })
 	return out
 }
 
+// entryMatch is the boost for a section headed by the API entry a query
+// asks for, beyond what BM25 gives it: a section that documents the API
+// answers ahead of prose that only mentions it. It is 1 when the entry's
+// name is an identifier the query wrote (useEffect in "useEffect cleanup
+// function", extraReducers), 1/2 when the name's words are exactly the
+// query's terms (PersistentFlags for "persistent flags", waitForLoadState
+// for "wait for load state") unless the query asks how to do something,
+// which a guide answers better than a reference entry, and 0 otherwise,
+// partial matches included: every method named Flags is not about
+// "persistent flags".
+func entryMatch(heading string, terms, idents []string, howTo bool) float64 {
+	name := entryName(heading)
+	if name == "" {
+		return 0
+	}
+	joined := identKey(name)
+	if slices.Contains(idents, joined) {
+		return 1
+	}
+	if howTo {
+		return 0
+	}
+	parts := map[string]bool{}
+	for _, w := range camelSplit(name) {
+		for _, t := range tokenize(w) {
+			if !webStopwords[t] && !rankStopwords[t] {
+				parts[normTerm(t)] = true
+			}
+		}
+	}
+	if len(parts) != len(terms) || len(terms) < 2 {
+		return 0
+	}
+	for _, t := range terms {
+		if !parts[t] {
+			return 0
+		}
+	}
+	return 0.5
+}
+
+// identKey is an identifier's form for comparing names: lower case, with
+// no underscores, stemmed (extraReducers and extra_reducer meet).
+func identKey(name string) string {
+	return normTerm(stem(strings.ToLower(strings.ReplaceAll(name, "_", ""))))
+}
+
+// queryIdents returns the identifiers a query writes as code: a word with
+// an inner capital (useEffect), an underscore (select_related) or a dot
+// or call (res.sendFile, vi.mock()), each as identKey of its last name.
+func queryIdents(query string) []string {
+	var out []string
+	for _, w := range strings.Fields(query) {
+		w = strings.Trim(w, queryQuotes+",.;:!?")
+		if w == "" || !isCamel(w) && !strings.ContainsAny(w, "_.(") {
+			continue
+		}
+		w = qualifierRe.ReplaceAllString(w, "")
+		if id := entryIdentRe.FindString(w); id != "" {
+			out = append(out, identKey(id))
+		}
+	}
+	return out
+}
+
+// isHowTo reports a query phrased as a how-to question.
+func isHowTo(query string) bool {
+	return slices.Contains(tokenize(query), "how")
+}
+
+// webPhraseBoost is the most adjacency can raise a section's score: when
+// every pair of consecutive query terms appears together in it.
+const webPhraseBoost = 0.25
+
+// phrases is the share of consecutive query-term pairs ("share state",
+// "url prefix") that section i's heading or body has within two words of
+// each other, in order: terms that occur together are about one thing,
+// where scattered occurrences may not be.
+func (c sectionCorpus) phrases(i int, terms []string) float64 {
+	if len(terms) < 2 {
+		return 0
+	}
+	pos := map[string][]int{}
+	for j, t := range c.seq[i] {
+		pos[t] = append(pos[t], j)
+	}
+	n := 0
+	for k := 1; k < len(terms); k++ {
+		a, b := pos[terms[k-1]], pos[terms[k]]
+		found := false
+		for _, x := range a {
+			for _, y := range b {
+				if y > x && y-x <= 2 {
+					found = true
+					break
+				}
+			}
+			if found {
+				break
+			}
+		}
+		if found {
+			n++
+		}
+	}
+	return float64(n) / float64(len(terms)-1)
+}
+
+// webLeadBoost is the most a page's lead section gains from a title that
+// names every query term.
+const webLeadBoost = 0.3
+
+// titleCoverage is the share of query terms a title names.
+func titleCoverage(title string, terms []string) float64 {
+	set := tokenSet(title)
+	n := 0
+	for _, t := range terms {
+		if set[t] {
+			n++
+		}
+	}
+	return float64(n) / float64(len(terms))
+}
+
+// webCodeBoost is the most a section's code can raise its score: when its
+// code blocks hold every query term.
+const webCodeBoost = 0.2
+
+// codeCoverage is the share of query terms that appear in the section's
+// fenced code: a section that shows the API at work answers ahead of one
+// that only describes it (an import and a usage example ahead of an
+// option's one-line description).
+func codeCoverage(text string, terms []string) float64 {
+	if !strings.Contains(text, "```") && !strings.Contains(text, "~~~") {
+		return 0
+	}
+	var code strings.Builder
+	var fence fenceState
+	for _, line := range strings.Split(text, "\n") {
+		if open := fence.n > 0; fence.step(line) && open && fence.n > 0 {
+			code.WriteString(line)
+			code.WriteByte('\n')
+		}
+	}
+	toks := map[string]bool{}
+	for _, t := range textTokens(code.String()) {
+		toks[t] = true
+	}
+	n := 0
+	for _, t := range terms {
+		if toks[t] {
+			n++
+		}
+	}
+	return float64(n) / float64(len(terms))
+}
+
+// entryDeclRe matches the declaration keywords before an API entry's name.
+var entryDeclRe = regexp.MustCompile(`^(?:(?:pub(?:\([a-z]+\))?|async|unsafe|const|static|extern|export|default|abstract|final|public|private|protected)\s+)*(?:fn|func|type|def|class|method|function|struct|enum|trait|interface|macro|property|attribute|module|mod|union|var|let)\s+`)
+
+// entryIdentRe matches the identifier an API entry heading starts with.
+var entryIdentRe = regexp.MustCompile(`^[A-Za-z_$][\w$]*`)
+
+// entryName returns the name an API entry heading documents, "" for a
+// heading that is not one (isAPIEntry's reading, from the text alone):
+// "func (*Command) PersistentFlags" → PersistentFlags, "root.render(node)"
+// → render, "fn context<C>(…)" → context, "vi.mock" → mock.
+func entryName(heading string) string {
+	h := strings.TrimSpace(heading)
+	if !isAPIEntry(atxHeading{text: h, raw: h}) {
+		return ""
+	}
+	h = qualifierRe.ReplaceAllString(h, "")
+	h = entryDeclRe.ReplaceAllString(h, "")
+	return entryIdentRe.FindString(strings.TrimSpace(h))
+}
+
 // sectionCorpus holds the per-query BM25 statistics, built in memory for
 // one call and discarded with it.
 type sectionCorpus struct {
 	tf     []map[string]float64 // heading-weighted term frequency per section
+	seq    [][]string           // heading then body tokens in order, for phrases
 	own    []bool               // a query term in the section's heading or body, not only its crumbs
 	length []float64            // body length in tokens per section
 	df     map[string]int       // sections containing each query term
@@ -646,24 +960,33 @@ type sectionCorpus struct {
 }
 
 func newSectionCorpus(sections []webSection, terms []string) sectionCorpus {
-	c := sectionCorpus{tf: make([]map[string]float64, len(sections)), own: make([]bool, len(sections)), length: make([]float64, len(sections)), df: map[string]int{}}
+	c := sectionCorpus{tf: make([]map[string]float64, len(sections)), seq: make([][]string, len(sections)), own: make([]bool, len(sections)), length: make([]float64, len(sections)), df: map[string]int{}}
 	total := 0.0
 	for i, s := range sections {
 		tf := map[string]float64{}
-		body := rankTokens(s.text)
+		body := textTokens(s.text)
 		for _, t := range body {
 			tf[t]++
 		}
-		for _, t := range rankTokens(s.heading) {
+		heading := headingTokens(s.heading)
+		for _, t := range heading {
 			tf[t] += headingWeight
 		}
 		c.own[i] = slices.ContainsFunc(terms, func(t string) bool { return tf[t] > 0 })
+		crumbs := 0
 		for _, crumb := range s.crumbs[:max(len(s.crumbs)-1, 0)] {
 			for _, t := range rankTokens(crumb) {
 				tf[t] += crumbWeight
+				crumbs++
 			}
 		}
-		c.tf[i], c.length[i] = tf, float64(len(body))
+		// The length that normalizes a term's weight is the weighted
+		// pseudo-document's (BM25F): heading and breadcrumbs count too, so
+		// a two-line section does not outrank its page on the page title's
+		// words alone.
+		c.tf[i] = tf
+		c.seq[i] = append(rankTokens(s.heading), rankTokens(s.text)...)
+		c.length[i] = float64(len(body)) + headingWeight*float64(len(heading)) + crumbWeight*float64(crumbs)
 		total += c.length[i]
 		for _, t := range terms {
 			if tf[t] > 0 {
@@ -692,12 +1015,100 @@ func (c sectionCorpus) bm25(i int, terms []string) (float64, int) {
 	return score, matched
 }
 
+// webSiblingRun is how many sections of one parent (a reference page's
+// list of functions, a page's run of options) may lead the results before
+// a near-equal section from elsewhere goes first.
+const webSiblingRun = 2
+
+// webSiblingTie is how close a section from elsewhere must score to the
+// next sibling to go ahead of it.
+const webSiblingTie = 0.9
+
+// diversify reorders ranked sections so a run of near-equal siblings (a
+// package's hundred "func X" entries that all mention the query's words)
+// does not bury a section from elsewhere that scores almost as well: once
+// webSiblingRun sections of one parent are placed, the next best section of
+// another parent goes first when it scores within webSiblingTie of the
+// sibling. A clearly better sibling keeps its place. Nothing is dropped.
+func diversify(ranked []scoredSection) []scoredSection {
+	out := make([]scoredSection, 0, len(ranked))
+	rest := slices.Clone(ranked)
+	placed := map[string]int{}
+	for len(rest) > 0 {
+		pick := 0
+		if g := siblingGroup(rest[0].webSection); placed[g] >= webSiblingRun {
+			for i := 1; i < len(rest) && rest[i].score >= webSiblingTie*rest[0].score; i++ {
+				if placed[siblingGroup(rest[i].webSection)] < webSiblingRun {
+					pick = i
+					break
+				}
+			}
+		}
+		placed[siblingGroup(rest[pick].webSection)]++
+		out = append(out, rest[pick])
+		rest = slices.Delete(rest, pick, pick+1)
+	}
+	return out
+}
+
+// siblingGroup names a section's parent: its page and enclosing headings.
+func siblingGroup(s webSection) string {
+	return s.pageURL + "\x00" + strings.Join(s.crumbs[:max(len(s.crumbs)-1, 0)], "\x00")
+}
+
+// dedupe drops a section whose heading and text repeat a better-ranked
+// one's: the same docs reached at two addresses (docs.rs re-exports an
+// item at clap::Arg and clap::builder::Arg; a page and its llms-full.txt
+// copy) are one answer, cited once at its first address.
+func dedupe(ranked []scoredSection) []scoredSection {
+	seen := map[string]bool{}
+	out := ranked[:0:0]
+	for _, s := range ranked {
+		key := s.heading + "\x00" + strings.Join(strings.Fields(s.text), " ")
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, s)
+	}
+	return out
+}
+
+// webRelevanceRatio is how far below the top section's score a section
+// may fall and still be returned (relevant).
+const webRelevanceRatio = 0.3
+
+// relevant keeps the ranked sections that score at least webRelevanceRatio
+// of the best: a relevance cutoff rather than a count, so a query the
+// docs answer in two sections gets two, not two and eight that merely
+// share a word (a Basic Auth chunk filling out a bearer-auth answer). The
+// token budget and any limit stay ceilings on what is left.
+func relevant(ranked []scoredSection) []scoredSection {
+	if len(ranked) == 0 || ranked[0].score <= 0 {
+		return ranked
+	}
+	floor := ranked[0].score * webRelevanceRatio
+	for i, s := range ranked {
+		if s.score < floor {
+			return ranked[:i]
+		}
+	}
+	return ranked
+}
+
 // budgetResults turns ranked sections into results within the token budget
 // (see GetDocs): about webCharsPerToken bytes of snippet per token, the last
-// snippet trimmed to fit. The first section is always returned, trimmed if
-// it alone exceeds the budget; a later one is only trimmed when enough room
-// is left for it to be useful.
+// snippet trimmed to fit, and none longer than half of it. The first
+// section is always returned, trimmed if it alone exceeds that; a later
+// one is only trimmed when enough room is left for it to be useful.
 func budgetResults(library string, ranked []scoredSection, tokens int) []Result {
+	out, _ := budgetSections(library, ranked, tokens)
+	return out
+}
+
+// budgetSections is budgetResults that also returns the section each
+// result came from.
+func budgetSections(library string, ranked []scoredSection, tokens int) ([]Result, []webSection) {
 	if tokens <= 0 {
 		tokens = webDefaultTokens
 	}
@@ -705,14 +1116,22 @@ func budgetResults(library string, ranked []scoredSection, tokens int) []Result 
 	if tokens <= math.MaxInt/webCharsPerToken {
 		remaining = tokens * webCharsPerToken
 	}
+	// No one section takes more than half the budget: a reference page's
+	// listing can run to tens of kilobytes, and the sections after it are
+	// often the answer.
+	limit := remaining
+	if remaining < math.MaxInt {
+		limit = max(remaining/2, webMinTrimBytes)
+	}
 	var out []Result
+	var used []webSection
 	for _, s := range ranked {
 		snippet := s.text
-		if len(snippet) > remaining {
-			if len(out) > 0 && remaining < webMinTrimBytes {
+		if room := min(limit, remaining); len(snippet) > room {
+			if len(out) > 0 && room < webMinTrimBytes {
 				break
 			}
-			if snippet = trimSnippet(snippet, remaining); snippet == "" {
+			if snippet = trimSnippet(snippet, room); snippet == "" {
 				break
 			}
 		}
@@ -725,11 +1144,12 @@ func budgetResults(library string, ranked []scoredSection, tokens int) []Result 
 			URL:        s.URL(),
 			Source:     "web",
 		})
+		used = append(used, s.webSection)
 		if remaining <= 0 {
 			break
 		}
 	}
-	return out
+	return out, used
 }
 
 const truncatedMarker = "\n[truncated]"

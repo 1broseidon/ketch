@@ -21,7 +21,9 @@ package httpx
 // recorded responses out in that order; a key requested more often than it
 // was recorded gets its last response again, logged as "reused". Transport
 // errors (refused connections, timeouts) are recorded and replayed as
-// errors. Request headers are never stored.
+// errors, each after the time it took live (or as the caller's context
+// error, should that end first), so deadlines spent waiting on them are
+// spent in replay too. Request headers are never stored.
 //
 // The hook wraps every client from New and Default and http.DefaultTransport,
 // so http.DefaultClient (go-rod's DevTools lookup among others) is covered
@@ -323,6 +325,17 @@ func (s *benchState) serve(req *http.Request, key string) (*http.Response, error
 	}
 	ex := recorded[n]
 	if ex.Error != "" {
+		// A failure took time live (a timeout most of all), and callers
+		// budget around it: a discovery deadline the timeout used up stops
+		// the walk there. Replayed instantly, it would leave the budget
+		// untouched and the caller would go on to requests the live run
+		// never made. So the failure arrives as late as it did live
+		// (waitRecorded).
+		if err := waitRecorded(req.Context(), ex); err != nil {
+			line["error"] = err.Error()
+			s.logLine(line)
+			return nil, err
+		}
 		line["error"] = ex.Error
 		s.logLine(line)
 		return nil, &replayedError{msg: ex.Error, timeout: ex.ErrTimeout, canceled: ex.ErrCanceled}
@@ -356,6 +369,31 @@ func (s *benchState) serve(req *http.Request, key string) (*http.Response, error
 	}
 	resp.ProtoMajor, resp.ProtoMinor, _ = http.ParseHTTPVersion(ex.Proto)
 	return resp, nil
+}
+
+// waitRecorded holds a recorded failure back as long as it took live. A
+// recorded context deadline was the caller's own: replay waits for the
+// caller's deadline, which the same code sets the same way, so a budget
+// is spent where it was spent live even though the requests before it
+// replayed instantly. Any other failure waits its recorded elapsed time.
+// Either way it returns ctx's error when ctx ends first.
+func waitRecorded(ctx context.Context, ex Exchange) error {
+	var wait <-chan time.Time
+	if _, ok := ctx.Deadline(); !ok || !ex.ErrTimeout || !strings.Contains(ex.Error, context.DeadlineExceeded.Error()) {
+		d := time.Duration(ex.ElapsedMS * float64(time.Millisecond))
+		if d <= 0 {
+			return ctx.Err()
+		}
+		t := time.NewTimer(d)
+		defer t.Stop()
+		wait = t.C
+	}
+	select {
+	case <-wait:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 // replayedError is a recorded transport failure. It keeps the timeout and

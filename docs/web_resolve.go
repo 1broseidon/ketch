@@ -573,13 +573,20 @@ func withProfileMemo(ctx context.Context) context.Context {
 	return context.WithValue(ctx, profileMemoKey{}, &profileMemo{calls: map[string]*profileCall{}})
 }
 
-// cachedProfile is profile, fetched once per resolution per page.
+// cachedProfile is profile, fetched once per resolution per URL. The memo
+// is keyed by the URL exactly as spelled (its fragment aside), never by a
+// looser identity such as linkKey's: concurrent callers spelling one page
+// differently (a search hit's http://x.org/docs/ beside a homepage's
+// https://www.x.org/docs/) would otherwise race, and whichever arrived
+// first would decide which URL was fetched and what every caller read.
 func (w *Web) cachedProfile(ctx context.Context, u *url.URL) (*siteProfile, error) {
 	memo, _ := ctx.Value(profileMemoKey{}).(*profileMemo)
 	if memo == nil {
 		return w.profile(ctx, u)
 	}
-	key := linkKey(u)
+	exact := *u
+	exact.Fragment, exact.RawFragment = "", ""
+	key := exact.String()
 	memo.mu.Lock()
 	if c, ok := memo.calls[key]; ok {
 		memo.mu.Unlock()
@@ -593,7 +600,7 @@ func (w *Web) cachedProfile(ctx context.Context, u *url.URL) (*siteProfile, erro
 	c := &profileCall{done: make(chan struct{})}
 	memo.calls[key] = c
 	memo.mu.Unlock()
-	c.p, c.err = w.profile(ctx, u)
+	c.p, c.err = w.profile(ctx, &exact)
 	close(c.done)
 	return c.p, c.err
 }

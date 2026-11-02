@@ -421,8 +421,6 @@ func TestWebSplitSectionsPkgsite(t *testing.T) {
 		"SugaredLogger.Debug":            "zap > Documentation > Types > func (*SugaredLogger) Debug",
 		"Logger.Sugar":                   "zap > Documentation > Types > func (*Logger) Sugar",
 		"NewStdLogAt":                    "zap > Documentation > Functions > func NewStdLogAt added in v1.7.0",
-		"section-sourcefiles":            "zap > Source Files",
-		"section-documentation":          "",
 		"hdr-Frequently_Asked_Questions": "zap > Documentation > Overview > Frequently Asked Questions",
 	} {
 		got, ok := anchors[anchor]
@@ -431,7 +429,9 @@ func TestWebSplitSectionsPkgsite(t *testing.T) {
 		}
 	}
 	top := topAnchors(sections, "sugared logger", 3)
-	if !slices.Contains(top, "hdr-Choosing_a_Logger") || !slices.Contains(top, "readme-quick-start") {
+	// The overview's guide and the type's own entry, whose camel-case name
+	// spells the query; the type's methods do not count as about it.
+	if !slices.Contains(top, "hdr-Choosing_a_Logger") || !slices.Contains(top, "SugaredLogger") {
 		t.Errorf("top 3 for sugared logger = %v", top)
 	}
 }
@@ -555,7 +555,10 @@ func TestWebGeneratorIDs(t *testing.T) {
 func TestWebSectionDecorationsStripped(t *testing.T) {
 	click := fixtureSections(t, "click.palletsprojects.com/testing.md", "https://click.palletsprojects.com/en/stable/testing/")
 	basic := sectionNamed(t, click, "Basic Example")
-	if strings.Contains(basic.text, "¶") || !strings.Contains(basic.text, "hello.py") || !strings.Contains(basic.text, "[`CliRunner`](https://click.palletsprojects.com/en/stable/api/#click.testing.CliRunner") {
+	// Links read as their labels; the section keeps them, targets and all,
+	// as anchor evidence.
+	if strings.Contains(basic.text, "¶") || !strings.Contains(basic.text, "hello.py") || !strings.Contains(basic.text, "- `CliRunner` - used to invoke") ||
+		!strings.Contains(basic.links, "[`CliRunner`](https://click.palletsprojects.com/en/stable/api/#click.testing.CliRunner") {
 		t.Errorf("Basic Example:\n%s", basic.text)
 	}
 	django := fixtureSections(t, "docs.djangoproject.com/querysets.md", "https://docs.djangoproject.com/en/6.1/ref/models/querysets/")
@@ -637,5 +640,119 @@ func TestWebAnchorsVitePressSourceFromLinks(t *testing.T) {
 	got = anchorsFor(splitSections(webPage{URL: page, Title: "Build Options", Markdown: one}, 0))
 	if got["build.target"] != "build-target" || got["build.lib"] != "buildlib" {
 		t.Errorf("one punctuation id: build.target #%s (want build-target), build.lib #%s (want the guess buildlib)", got["build.target"], got["build.lib"])
+	}
+}
+
+// When the fetcher read the page's targets, every cited anchor is one of
+// them: a slug the page does not carry takes the id of the page heading
+// with the same words (repeated headings in page order), and a heading
+// with no target cites its enclosing section, at worst the page.
+func TestWebSplitSectionsCitesOnlyAnchorsThePageCarries(t *testing.T) {
+	body := strings.Repeat("Body text long enough to keep this section. ", 2)
+	page := webPage{URL: "https://x.test/api", Title: "API", Markdown: `# API
+
+` + body + `
+
+## Options
+
+` + body + `
+
+### required token: string | string[]
+
+` + body + `
+
+### Framing out a begin / commit block
+
+` + body + `
+
+### Note
+
+` + body + `
+
+## Second
+
+` + body + `
+
+### Note
+
+` + body + `
+
+### Pitfall
+
+` + body + `
+
+## Usage
+
+` + body,
+		Anchors: []PageAnchor{
+			{ID: "options", Text: "Options"},
+			{ID: "token-string-string", Text: "required token: string | string[]"},
+			{ID: "framing-out-a-begin-commit-block", Text: "Framing out a begin / commit block ¶"},
+			{ID: "note", Text: "Note"},
+			{ID: "second", Text: "Second"},
+			{ID: "note-x", Text: "Note"},
+			{ID: "sidebar"},
+		}}
+	got := map[string]string{}
+	var order []string
+	for _, s := range splitSections(page, 0) {
+		got[s.heading] = s.URL()
+		order = append(order, s.URL())
+	}
+	want := []string{
+		"https://x.test/api",
+		"https://x.test/api#options",
+		"https://x.test/api#token-string-string",
+		"https://x.test/api#framing-out-a-begin-commit-block",
+		"https://x.test/api#note",
+		"https://x.test/api#second",
+		"https://x.test/api#note-x",
+		"https://x.test/api#second", // Pitfall: no target, its section's
+		"https://x.test/api",        // Usage: no target, nothing enclosing: the page
+	}
+	if !slices.Equal(order, want) {
+		t.Errorf("anchors =\n%q\nwant\n%q", order, want)
+	}
+	// A page read from Markdown alone keeps its slugs.
+	page.Anchors = nil
+	for _, s := range splitSections(page, 0) {
+		if s.heading == "Usage" && s.anchor != "usage" {
+			t.Errorf("unknown targets: Usage cited as %q, want the slug", s.URL())
+		}
+	}
+}
+
+// A section's URL carries its id percent-encoded: decoding the fragment
+// gives the id back, even when the id holds escapes of its own.
+func TestWebSectionURLEncodesTheID(t *testing.T) {
+	for anchor, want := range map[string]string{
+		"rename":                       "https://x.test/p#rename",
+		"impl-From%3CFile%3E-for-Body": "https://x.test/p#impl-From%253CFile%253E-for-Body",
+		"pkg.field_validator(*fields)": "https://x.test/p#pkg.field_validator(*fields)",
+		"":                             "https://x.test/p",
+	} {
+		got := webSection{pageURL: "https://x.test/p", anchor: anchor}.URL()
+		if got != want {
+			t.Errorf("URL(%q) = %q, want %q", anchor, got, want)
+		}
+		if u, err := url.Parse(got); err != nil || u.Fragment != anchor {
+			t.Errorf("URL(%q) decodes to fragment %q, %v", anchor, u.Fragment, err)
+		}
+	}
+}
+
+func TestWebLinkLabels(t *testing.T) {
+	for in, want := range map[string]string{
+		"See [`CharField`](https://x.test/ref/#django.CharField \"django.CharField\") and [docs](/a_(b)).": "See `CharField` and docs.",
+		"Added via [`#[command(subcommand)]` attribute](https://x.test/x#attrs \"mod\") on the field.":     "Added via `#[command(subcommand)]` attribute on the field.",
+		"![logo](/logo.png) and ![](/x.png)text":                                                           "logo and text",
+		"code `[not](a link)` stays; \\[escaped](no) stays":                                                "code `[not](a link)` stays; \\[escaped](no) stays",
+		"[unclosed](https://x.test/a and [ok](b)":                                                          "[unclosed](https://x.test/a and ok",
+		"```\n[in](code)\n```\n[out](x)":                                                                   "```\n[in](code)\n```\nout",
+		"plain [brackets] (not a link)":                                                                    "plain [brackets] (not a link)",
+	} {
+		if got := linkLabels(in); got != want {
+			t.Errorf("linkLabels(%q) = %q, want %q", in, got, want)
+		}
 	}
 }

@@ -53,6 +53,18 @@ type cacheEntry struct {
 	// body was finally served from. Empty for entries written before it was
 	// recorded.
 	FinalURL string `json:"f,omitempty"`
+	// Anchors is Page.Anchors, which the page's JSON leaves out: the
+	// fragment targets the page carries. nil for entries written before
+	// they were recorded; a pointer so that a page with none (non-nil,
+	// empty) stays distinct from that.
+	Anchors *[]scrape.Anchor `json:"a,omitempty"`
+}
+
+// restoreAnchors puts the stored anchors back on the page.
+func (e *cacheEntry) restoreAnchors() {
+	if e.Anchors != nil {
+		e.Page.Anchors = append([]scrape.Anchor{}, (*e.Anchors)...)
+	}
 }
 
 // New creates a cache with the default bbolt backend. The file is opened only
@@ -167,6 +179,7 @@ func (c *Cache) getEntry(url string) *cacheEntry {
 		return nil
 	}
 	e.Page.FinalURL = e.FinalURL
+	e.restoreAnchors()
 	return &e
 }
 
@@ -223,6 +236,7 @@ func (c *Cache) GetRaw(url string) (string, string, *scrape.Page) {
 		return "", "", nil
 	}
 	e.Page.FinalURL = e.FinalURL
+	e.restoreAnchors()
 	return e.RawHTML, e.Source, &e.Page
 }
 
@@ -244,6 +258,10 @@ func (c *Cache) PutRaw(url string, page *scrape.Page, source, rawHTML string) {
 
 func (c *Cache) putEntry(url string, page *scrape.Page, e cacheEntry) {
 	e.FinalURL = page.FinalURL
+	if page.Anchors != nil {
+		anchors := page.Anchors
+		e.Anchors = &anchors
+	}
 	data, err := json.Marshal(e)
 	if err != nil {
 		return

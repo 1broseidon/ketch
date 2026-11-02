@@ -209,7 +209,9 @@ func TestWebIndexFilesAreDiscoveryInput(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(results) == 0 || !strings.HasPrefix(results[0].URL, "https://expressjs.com/en/5x/guide/error-handling#") {
+	// The fixture holds no rendered page to check a section's anchor
+	// against, so the page itself is cited.
+	if len(results) == 0 || results[0].URL != "https://expressjs.com/en/5x/guide/error-handling" {
 		t.Fatalf("results = %+v", results)
 	}
 	for _, r := range results {

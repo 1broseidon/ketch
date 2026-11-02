@@ -99,12 +99,13 @@ func (f *Fetcher) FetchRaw(ctx context.Context, url string) (docs.RawContent, er
 // FetchPage scrapes url to Markdown through the cache-aware pipeline:
 // rewrites, a page-cache hit when one is warm, JS-shell browser fallback, and
 // a cache write after a fresh fetch. The page's URL is where it was finally
-// served from, the browser's landing URL for a render. A cache entry written
-// before that was recorded cannot say, so it is fetched again and replaced.
+// served from, the browser's landing URL for a render, with the fragment
+// targets the page carries. A cache entry written before those were
+// recorded cannot say, so it is fetched again and replaced.
 // A 404 or 410 wraps docs.ErrNotFound.
 func (f *Fetcher) FetchPage(ctx context.Context, url string) (docs.PageContent, error) {
 	page, err := f.scraper.ScrapeMarkdown(ctx, f.pages, url, false)
-	if err == nil && page.FinalURL == "" && f.pages != nil {
+	if err == nil && (page.FinalURL == "" || page.Anchors == nil) && f.pages != nil {
 		page, err = f.refresh(ctx, url)
 	}
 	if err != nil {
@@ -114,7 +115,21 @@ func (f *Fetcher) FetchPage(ctx context.Context, url string) (docs.PageContent, 
 		Title:    page.Title,
 		Markdown: page.Markdown,
 		URL:      f.callerURL(url, f.scraper.Rewrite(url), page.FinalURL),
+		Anchors:  pageAnchors(page.Anchors),
 	}, nil
+}
+
+// pageAnchors converts the scrape pipeline's anchors, keeping nil (not
+// known) apart from empty (the page has none).
+func pageAnchors(in []scrape.Anchor) []docs.PageAnchor {
+	if in == nil {
+		return nil
+	}
+	out := make([]docs.PageAnchor, len(in))
+	for i, a := range in {
+		out[i] = docs.PageAnchor{ID: a.ID, Text: a.Text}
+	}
+	return out
 }
 
 // refresh fetches url past the page cache and writes the result back under

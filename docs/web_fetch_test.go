@@ -35,7 +35,9 @@ func TestWebFallbackFetcherEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetDocs: %v", err)
 	}
-	if len(results) == 0 || results[0].URL != srv.URL+"/guide/routing#dynamic-routes" {
+	// The fallback fetcher cannot read the rendered page's targets, so the
+	// section's slug is not vouched for: the result cites the page.
+	if len(results) == 0 || results[0].URL != srv.URL+"/guide/routing" || results[0].Title != "Dynamic routes" {
 		t.Fatalf("results = %+v", results)
 	}
 

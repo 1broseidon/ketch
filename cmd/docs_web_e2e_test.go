@@ -168,14 +168,16 @@ type docsFixture struct {
 	fetched []string // paths the run must request
 	never   []string // paths the run must not request
 	// cached is whether the top result's page body ends up in the page
-	// cache: HTML pages go through the scrape pipeline and its cache, raw
-	// Markdown does not. A bookmark of page#anchor is warm when page is.
+	// cache: HTML pages go through the scrape pipeline and its cache, and
+	// so does the rendered page a raw Markdown source's results cite, read
+	// for its anchors. A bookmark of page#anchor is warm when page is.
 	cached bool
 }
 
 var docsFixtures = map[string]docsFixture{
 	// llms.txt lists .md pages served as text/markdown; there is no
-	// llms-full.txt. Pages are read raw and shown at their rendered URL.
+	// llms-full.txt. Pages are read raw and shown at their rendered URL,
+	// which is fetched once to check the anchor a result cites.
 	"mintlify": {
 		site:    "mintlify",
 		root:    "/",
@@ -185,9 +187,9 @@ var docsFixtures = map[string]docsFixture{
 		title:   "Verify webhook signatures",
 		crumb:   "Webhooks > Verify webhook signatures",
 		snippet: []string{"Acme-Signature header", "```js\nconst valid = acme.webhooks.verify("},
-		fetched: []string{"/llms.txt", "/llms-full.txt", "/guides/webhooks.md"},
-		never:   []string{"/guides/webhooks", "/guides/webhooks.html", "/robots.txt", "/sitemap.xml"},
-		cached:  false,
+		fetched: []string{"/llms.txt", "/llms-full.txt", "/guides/webhooks.md", "/guides/webhooks"},
+		never:   []string{"/guides/webhooks.html", "/robots.txt", "/sitemap.xml"},
+		cached:  true,
 	},
 	// No llms.txt (the host's 404 page answers it), a sitemap.xml that also
 	// lists a blog post outside /docs/, and HTML pages whose headings carry

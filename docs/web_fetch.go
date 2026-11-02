@@ -182,6 +182,8 @@ func (w *Web) fetchOne(ctx context.Context, root webRoot, link webLink) (*webPag
 	u := link.url.String()
 	var from *url.URL
 	title, md := "", ""
+	var anchors []PageAnchor
+	fromRaw := false
 	if isMarkdownURL(link.url) {
 		raw, err := w.fetcher.FetchRaw(ctx, u)
 		if err == nil {
@@ -191,7 +193,7 @@ func (w *Web) fetchOne(ctx context.Context, root webRoot, link webLink) (*webPag
 			return nil, err
 		}
 		if !looksLikeHTML(raw.Body, raw.ContentType) {
-			md = string(raw.Body)
+			md, fromRaw = string(raw.Body), true
 		}
 	}
 	if md == "" {
@@ -202,7 +204,7 @@ func (w *Web) fetchOne(ctx context.Context, root webRoot, link webLink) (*webPag
 		if err != nil {
 			return nil, err
 		}
-		title, md = page.Title, page.Markdown
+		title, md, anchors = page.Title, page.Markdown, page.Anchors
 	}
 	md = capText(md, w.maxPageBytes)
 	fmTitle, md := stripFrontmatter(md)
@@ -210,6 +212,8 @@ func (w *Web) fetchOne(ctx context.Context, root webRoot, link webLink) (*webPag
 		URL:      displayURL(from),
 		Title:    firstNonEmpty(fmTitle, cleanPageTitle(title), link.title, pathTitle(from.Path)),
 		Markdown: md,
+		Anchors:  anchors,
+		markdown: fromRaw,
 	}, nil
 }
 

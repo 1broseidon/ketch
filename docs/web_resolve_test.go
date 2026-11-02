@@ -2089,3 +2089,41 @@ func TestRivals(t *testing.T) {
 		}
 	}
 }
+
+// The profile memo fetches each spelling of a page itself: concurrent
+// callers with http:// and https://www. spellings of one docs root each
+// read the URL they named, whichever arrives first, so a resolution never
+// depends on goroutine order.
+func TestCachedProfileKeysByExactURL(t *testing.T) {
+	page := html(`<html><head><title>Docs</title></head><body><a href="/docs/guide">Guide</a></body></html>`)
+	f := &fakeFetcher{raw: map[string]fakeRaw{"http://example.org/docs/": page, "https://www.example.org/docs/": page}}
+	w := NewWeb(f)
+	ctx := withProfileMemo(context.Background())
+	spellings := []string{"http://example.org/docs/", "https://www.example.org/docs/", "https://www.example.org/docs/#top"}
+	var wg sync.WaitGroup
+	served := make([]string, len(spellings))
+	for i, s := range spellings {
+		u, _ := url.Parse(s)
+		wg.Go(func() {
+			p, err := w.cachedProfile(ctx, u)
+			if err != nil {
+				t.Errorf("%s: %v", s, err)
+				return
+			}
+			served[i] = p.served.String()
+		})
+	}
+	wg.Wait()
+	if served[0] != "http://example.org/docs/" || served[1] != "https://www.example.org/docs/" || served[2] != served[1] {
+		t.Fatalf("served = %q, want each spelling's own page", served)
+	}
+	var raw int
+	for _, c := range f.called() {
+		if strings.HasPrefix(c, "raw ") {
+			raw++
+		}
+	}
+	if raw != 2 {
+		t.Errorf("fetches = %v, want one per distinct spelling", f.called())
+	}
+}
