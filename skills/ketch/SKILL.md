@@ -35,7 +35,7 @@ Use only these terms in ketch output.
 | **surface** | One of the five research operations: `search`, `code`, `docs`, `scrape`, `crawl` |
 | **tag** | A label filed across surfaces: search hits, code hits, docs chunks, scraped pages, crawled pages. Not a research surface — it answers "what did I already find?", not "what is out there?" |
 | **transport** | How a surface is called: the CLI binary (default), the optional MCP tools, or the pi package's `ketch_*` tools (which run the CLI) |
-| **backend** | The provider behind a surface: auto (default; a fallback chain, not a provider)/brave/ddg/searxng/exa/firecrawl/keenable/tavily/tinyfish/parallel/serpbase/degoog/serply/youcom (search), grepapp/sourcegraph/github (code), context7/web (docs) |
+| **backend** | The provider behind a surface: auto (default; a fallback chain, not a provider)/brave/ddg/searxng/exa/firecrawl/keenable/tavily/tinyfish/parallel/serpbase/degoog/serply/youcom (search), grepapp/sourcegraph/github (code), context7/web/auto (docs; auto = web, then Context7) |
 | **operator action** | A system-managing or diagnostic command — `config set`, `cache`, `browser install`, background crawls, `doctor` — CLI-only by design |
 | **error prefix** | The stable class on every ketch error: CLI exit codes 2–6, mirrored as the bracketed prefix opening every MCP tool error — `[validation]`, `[not_found]`, `[upstream]`, `[precondition]`, `[cancelled]` |
 | **fan-out** | How many queries are searched and URLs scraped under one plan |
@@ -156,14 +156,14 @@ file; test labs must set `KETCH_TAGS_PATH` as well as isolating the page cache.
 | 5 | `[precondition]` | Operator config missing | Stop researching; enter `ketch setup` |
 | 6 | `[cancelled]` | Cancelled or timed out | Rerun with smaller scope |
 
-Situations → class: unknown backend, `regexp` on github → `[validation]`. Selector matched nothing, a `repo` the code backend does not have → `[not_found]` (for `repo`, change the backend). ddg rate limit (it rate-limits readily under fan-out), DNS failure, grepapp's intermittent 504 → `[upstream]`, rotate or retry once. Missing API key, docs backend `local` (planned, unimplemented), `force_browser` with no browser configured → `[precondition]`. One asymmetry: a CLI `crawl` interrupted by SIGINT exits **0** with partial results, by design.
+Situations → class: unknown backend, `regexp` on github → `[validation]`. Selector matched nothing, a `repo` the code backend does not have → `[not_found]` (for `repo`, change the backend). ddg rate limit (it rate-limits readily under fan-out), DNS failure, grepapp's intermittent 504 → `[upstream]`, rotate or retry once. A spent keyless Context7 quota (about 200 requests a month per IP) is `[upstream]` naming the reset — switch docs to `web` rather than retry. Missing API key, docs backend `local` (planned, unimplemented), `force_browser` with no browser configured → `[precondition]`. One asymmetry: a CLI `crawl` interrupted by SIGINT exits **0** with partial results, by design.
 
 ## Gotchas
 
 Detail for each lives in `references/surfaces.md`.
 
 - Scraping a **bare domain** auto-probes `/llms.txt` and may silently return that instead of the homepage — the `title` field reveals the swap; `no_llms_txt` opts out.
-- `docs` is a two-step: `resolve` the name → **vet the matches** → fetch by `library` ID, and resolve once: a name is resolved again on every call. Context7's resolve never returns empty — garbage in gets confident fuzzy matches out, so check the name, not just the trust score. `web` (keyless, the library's own docs site) returns only verified matches with their evidence, and an ambiguous name is `[validation]` listing each candidate's ID — pass one as `library`.
+- `docs` is a two-step: `resolve` the name → **vet the matches** → fetch by `library` ID, and resolve once: a name is resolved again on every call. Context7's resolve never returns empty — garbage in gets confident fuzzy matches out, so check the name, not just the trust score. `web` (keyless, the library's own docs site) returns only verified matches with their evidence, and an ambiguous name is `[validation]` listing each candidate's ID — pass one as `library`. Context7 needs no key but its anonymous quota is small; `auto` asks `web` first and Context7 only when `web` refuses, and `source` says which answered.
 - Batch scrape reports per-URL failures inside a successful call: `isError=false` with `results[].error` set. Check every entry.
 - `regexp` works on grepapp and sourcegraph only; github rejects it with a pointer to those backends.
 - Background crawls (`--background`, `status`, `stop`) are CLI-only; the MCP `crawl` is synchronous and capped.

@@ -60,7 +60,7 @@ func TestDocsUnknownBackendExitsValidationWithOptions(t *testing.T) {
 	if exitErr.Code != ExitValidation {
 		t.Errorf("exit code = %d, want %d (validation)", exitErr.Code, ExitValidation)
 	}
-	if want := "(available: " + strings.Join(docs.AvailableBackends(), ", ") + ")"; !strings.Contains(want, "context7") || !strings.Contains(exitErr.Error(), want) {
+	if want := "(available: " + strings.Join(docs.SelectableBackends(), ", ") + ")"; !strings.Contains(want, "context7") || !strings.Contains(want, "auto") || !strings.Contains(exitErr.Error(), want) {
 		t.Errorf("error should list the available backends, got: %v", exitErr)
 	}
 }
@@ -104,6 +104,13 @@ func TestUpstreamErrClassification(t *testing.T) {
 
 	if got := asExitError(t, upstreamErr(errors.New("boom"), "docs fetch failed")); got.Code != ExitUpstream {
 		t.Errorf("generic error: exit code = %d, want %d (upstream)", got.Code, ExitUpstream)
+	}
+
+	// A spent Context7 quota is upstream (ADR-0002): it succeeds again
+	// after the reset, or with a key.
+	limited := fmt.Errorf("context7 resolve failed: %w", &docs.RateLimitError{Limit: 200})
+	if got := asExitError(t, upstreamErr(limited, "docs search failed")); got.Code != ExitUpstream {
+		t.Errorf("rate limit: exit code = %d, want %d (upstream)", got.Code, ExitUpstream)
 	}
 }
 

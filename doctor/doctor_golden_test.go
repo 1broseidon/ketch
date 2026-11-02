@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/1broseidon/ketch/config"
+	"github.com/1broseidon/ketch/internal/testutil"
 )
 
 type goldenTransport struct{}
@@ -24,6 +25,9 @@ func TestRegistryDoctorCompatibilityGolden(t *testing.T) {
 		t.Setenv(key, "")
 	}
 	t.Setenv("PATH", t.TempDir())
+	// Keyless Context7 reports from the quota state in the cache
+	// directory; an empty one keeps the report the same on every machine.
+	testutil.SetIsolatedConfigHome(t)
 	cfg := config.Defaults()
 	client := &http.Client{Transport: goldenTransport{}}
 	var checks []Check

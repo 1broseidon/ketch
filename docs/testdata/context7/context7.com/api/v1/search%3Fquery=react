@@ -1,0 +1,101 @@
+{
+ "results": [
+  {
+   "id": "/reactjs/react.dev",
+   "title": "React",
+   "description": "React.dev is the official documentation website for React, a JavaScript library for building user interfaces, providing guides, API references, and tutorials.",
+   "branch": "main",
+   "lastUpdateDate": "2026-11-02T08:58:43.984Z",
+   "state": "finalized",
+   "totalTokens": 708032,
+   "totalSnippets": 4412,
+   "stars": 11311,
+   "trustScore": 9.7,
+   "benchmarkScore": 81.26,
+   "versions": [
+    "__branch__v18",
+    "__branch__v17.0.2"
+   ],
+   "score": 682.5442504882812,
+   "vip": true,
+   "verified": true
+  },
+  {
+   "id": "/react/react",
+   "title": "React",
+   "description": "React is a JavaScript library for building user interfaces.",
+   "branch": "main",
+   "lastUpdateDate": "2026-11-01T11:07:04.421Z",
+   "state": "finalized",
+   "totalTokens": 1290030,
+   "totalSnippets": 5523,
+   "stars": 245757,
+   "trustScore": 8.3,
+   "benchmarkScore": 54.54,
+   "versions": [
+    "v19.2.7",
+    "v18.2.0",
+    "v19.2.8",
+    "v18.3.1",
+    "v19.3.0",
+    "v19.2.6",
+    "v19.1.0"
+   ],
+   "score": 669.10498046875,
+   "vip": true,
+   "verified": true
+  },
+  {
+   "id": "/websites/react_dev",
+   "title": "React",
+   "description": "React is a JavaScript library for building user interfaces. It allows developers to create interactive web and native applications using reusable components, enabling efficient and scalable UI development.",
+   "branch": "main",
+   "lastUpdateDate": "2026-10-19T00:54:46.359Z",
+   "state": "finalized",
+   "totalTokens": 751424,
+   "totalSnippets": 5159,
+   "stars": -1,
+   "trustScore": 10,
+   "benchmarkScore": 77.72,
+   "versions": [],
+   "score": 659.164794921875,
+   "vip": false,
+   "verified": true
+  },
+  {
+   "id": "/websites/react_dev_reference",
+   "title": "React",
+   "description": "React is a JavaScript library for building user interfaces with reusable components, hooks, and APIs for managing state and side effects.",
+   "branch": "_contextdev_",
+   "lastUpdateDate": "2026-10-28T10:46:17.912Z",
+   "state": "finalized",
+   "totalTokens": 396898,
+   "totalSnippets": 3094,
+   "stars": -1,
+   "trustScore": 10,
+   "benchmarkScore": 82.44,
+   "versions": [],
+   "score": 653.6654052734375,
+   "vip": false,
+   "verified": true
+  },
+  {
+   "id": "/websites/react_dev_reference_react",
+   "title": "React",
+   "description": "React is a JavaScript library for building user interfaces using reusable components with reactive data binding and server-side rendering capabilities.",
+   "branch": "main",
+   "lastUpdateDate": "2026-03-29T16:13:34.657Z",
+   "state": "finalized",
+   "totalTokens": 347061,
+   "totalSnippets": 1039,
+   "stars": -1,
+   "trustScore": 10,
+   "benchmarkScore": 83.33,
+   "versions": [],
+   "score": 650.5946044921875,
+   "vip": false,
+   "verified": true
+  }
+ ],
+ "searchFilterApplied": false
+}

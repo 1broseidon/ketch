@@ -242,7 +242,7 @@ func applyConfigSet(c *config.Config, key, value string) error {
 	case "code_backend":
 		return setBackend(&c.CodeBackend, "code", value, func(id string) bool { _, ok := code.Lookup(id); return ok }, config.AvailableCodeBackends())
 	case "docs_backend":
-		return setBackend(&c.DocsBackend, "docs", value, func(id string) bool { _, ok := docs.Lookup(id); return ok }, config.AvailableDocBackends())
+		return setBackend(&c.DocsBackend, "docs", value, func(id string) bool { _, ok := docs.Lookup(id); return ok || id == docs.AutoBackend }, config.AvailableDocBackends())
 	case "url_rewrites":
 		return setURLRewrites(c, value)
 	case "spa_markers":

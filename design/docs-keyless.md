@@ -208,8 +208,13 @@ the aggregate thresholds above.
 When every gate passes keyless on replay, on three live runs and on the holdout,
 `ketch docs` defaults to `web`. Context7 stays one config line away
 (`ketch config set docs_backend context7`). This ADR then closes task-15.
-Until the gates pass, the default stays Context7. A first run without a key
-should then say so plainly and suggest `--backend web` instead of failing bare.
+Until the gates pass, the default stays Context7. Since task-18, Context7
+needs no key: without one it runs on Context7's anonymous quota (about 200
+requests a month per IP), and a spent quota says when it resets and how to set
+a key. The `auto` backend (web first, Context7 only when web refuses; an
+ambiguous name only from one of web's candidates, decision-13) is selectable
+but not the default; it becomes a candidate for the default under the same
+gates.
 
 ## Work plan
 

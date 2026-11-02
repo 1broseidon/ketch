@@ -21,7 +21,7 @@ var docsCmd = &cobra.Command{
 	Use:   "docs <query>",
 	Short: "Search library documentation",
 	Long: `Search library documentation using ` + strings.Join(docs.ProviderNames(), ", ") + ` (default: the configured backend). Supports direct library ID lookup and library name resolution. ` +
-		docs.WithLibraryHelp("A library is a library ID from --resolve") + `. Resolve a name once and pass the ID it returns as --library: a name is resolved again on every call. A local FTS5 backend is planned but not yet implemented.`,
+		docs.WithLibraryHelp("A library is a library ID from --resolve") + `. Resolve a name once and pass the ID it returns as --library: a name is resolved again on every call. Context7 needs no key: without one it uses Context7's anonymous quota (about 200 requests a month per IP), and a key lifts it. The auto backend tries web first and asks Context7 only when web identifies no library, finds several, or fails; Context7's pick must be a library the query names, and for an ambiguous name one of web's candidates. Output names the provider that answered. A local FTS5 backend is planned but not yet implemented.`,
 	Args: exitArgs(cobra.MinimumNArgs(1)),
 	RunE: runDocs,
 }
@@ -74,7 +74,14 @@ func runDocs(cmd *cobra.Command, args []string) error {
 	}
 	defer fetcher.Close()
 
-	results, err := searcher.Search(cmd.Context(), query, limit)
+	var results []docs.Result
+	if selecting, ok := searcher.(docs.SelectingSearcher); ok {
+		var sel docs.Selection
+		results, sel, err = selecting.SearchSelect(cmd.Context(), query, limit)
+		backend = servedDocsBackend(backend, sel)
+	} else {
+		results, err = searcher.Search(cmd.Context(), query, limit)
+	}
 	if err := fetcher.classify(err, "docs search failed"); err != nil {
 		return err
 	}
@@ -101,7 +108,14 @@ func runDocsResolve(cmd *cobra.Command, query string, limit int, asJSON bool) er
 	if !ok {
 		return exitErrf(ExitValidation, "docs backend %q does not support library operations", backend)
 	}
-	matches, err := resolver.ResolveLibrary(cmd.Context(), query, limit)
+	var matches []docs.LibraryMatch
+	if selecting, ok := searcher.(docs.SelectingSearcher); ok {
+		var sel docs.Selection
+		matches, sel, err = selecting.ResolveSelect(cmd.Context(), query, limit)
+		servedDocsBackend(backend, sel)
+	} else {
+		matches, err = resolver.ResolveLibrary(cmd.Context(), query, limit)
+	}
 	if err := fetcher.classify(err, "resolve failed"); err != nil {
 		return err
 	}
@@ -164,7 +178,14 @@ func runDocsWithLibrary(cmd *cobra.Command, query, library string, tokens, limit
 	if !ok {
 		return exitErrf(ExitValidation, "docs backend %q does not support library operations", backend)
 	}
-	results, err := resolver.GetDocs(cmd.Context(), library, query, tokens)
+	var results []docs.Result
+	if selecting, ok := searcher.(docs.SelectingSearcher); ok {
+		var sel docs.Selection
+		results, sel, err = selecting.GetDocsSelect(cmd.Context(), library, query, tokens)
+		backend = servedDocsBackend(backend, sel)
+	} else {
+		results, err = resolver.GetDocs(cmd.Context(), library, query, tokens)
+	}
 	if err := fetcher.classify(err, "docs fetch failed"); err != nil {
 		return err
 	}
@@ -178,6 +199,21 @@ func runDocsWithLibrary(cmd *cobra.Command, query, library string, tokens, limit
 
 	printDocsResults(query, backend, library, results, minimal)
 	return nil
+}
+
+// servedDocsBackend reports an auto chain's selection: the provider that
+// answered replaces "auto" as the backend the output names (each result's
+// source says the same), and the one it fell through is warned about on
+// stderr, as search's auto does. With no answer it keeps backend and warns
+// nothing: the error names every failure.
+func servedDocsBackend(backend string, sel docs.Selection) string {
+	if sel.Backend == "" {
+		return backend
+	}
+	for _, f := range sel.Failures {
+		fmt.Fprintf(os.Stderr, "warn: %s: %v\n", f.Backend, f.Err)
+	}
+	return sel.Backend
 }
 
 func printDocsResults(query, backend, library string, results []docs.Result, minimal bool) {

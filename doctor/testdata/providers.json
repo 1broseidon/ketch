@@ -105,8 +105,8 @@
   {
     "surface": "docs",
     "backend": "context7",
-    "status": "no_key",
-    "detail": "API key not set (get one then: ketch config set context7_api_key \u003ckey\u003e)",
+    "status": "ok",
+    "detail": "keyless (quota not yet seen; Context7 allows about 200 anonymous requests a month per IP; a key lifts the cap: ketch config set context7_api_key \u003ckey\u003e)",
     "latency_ms": 0
   },
   {

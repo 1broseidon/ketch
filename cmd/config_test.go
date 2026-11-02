@@ -680,6 +680,7 @@ func TestApplyConfigSetBackendValidatesAgainstRegistry(t *testing.T) {
 		{"code_backend", "sourcegraph", ""},
 		{"code_backend", "grep", `unknown code backend "grep"`},
 		{"docs_backend", "context7", ""},
+		{"docs_backend", "auto", ""},  // the web-then-Context7 chain
 		{"docs_backend", "local", ""}, // hidden but registered: the command accepts it, so config set must too
 		{"docs_backend", "ctx7", `unknown docs backend "ctx7"`},
 		{"docs_backend", "", "docs_backend cannot be empty"},
