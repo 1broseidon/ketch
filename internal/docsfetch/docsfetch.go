@@ -195,7 +195,7 @@ func sameURL(a, b string) bool {
 // every other failure is returned unchanged.
 func notFound(err error) error {
 	var status *scrape.HTTPStatusError
-	if errors.As(err, &status) && (status.Code == http.StatusNotFound || status.Code == http.StatusGone) {
+	if errors.As(err, &status) && (status.StatusCode == http.StatusNotFound || status.StatusCode == http.StatusGone) {
 		return fmt.Errorf("%w: %w", err, docs.ErrNotFound)
 	}
 	return err

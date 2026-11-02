@@ -20,7 +20,7 @@ const work = mkdtempSync(join(tmpdir(), "ketch-pi-cli-"));
 
 function findBinary(): string | undefined {
 	if (process.env.KETCH_BIN) return process.env.KETCH_BIN;
-	const out = join(work, "ketch");
+	const out = join(work, process.platform === "win32" ? "ketch.exe" : "ketch");
 	try {
 		execFileSync("go", ["version"], { stdio: "ignore" });
 	} catch {
@@ -32,6 +32,9 @@ function findBinary(): string | undefined {
 }
 
 const bin = findBinary();
+// The extension resolves its binary per call. Point it at the checkout build so
+// these tests exercise it instead of whatever `ketch` the host has installed.
+if (bin) process.env.KETCH_PI_BIN = bin;
 
 // An isolated home: no operator config, cache or tag index is read or written.
 // Inherited KETCH_* settings (cookie file, keys, backends) are dropped first.
@@ -63,7 +66,9 @@ function realPi() {
 		},
 		registerCommand() {},
 		exec(command: string, args: string[], options?: { signal?: AbortSignal; timeout?: number }) {
-			assert.equal(command, "ketch");
+			// The tools resolve their binary per call; point them at the binary built
+			// from this checkout so the suite never reaches a PATH install.
+			assert.equal(command, bin);
 			return new Promise((done) => {
 				execFile(bin!, args, { env, signal: options?.signal, timeout: options?.timeout, maxBuffer: 16 << 20 }, (err, stdout, stderr) => {
 					const code = err ? (typeof err.code === "number" ? err.code : 1) : 0;

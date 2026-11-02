@@ -23,7 +23,7 @@ cmd/
   mcp.go                     MCP command: `mcp serve` runs the MCP server over stdio
   proc_unix.go               Unix process management (detach, signals)
   proc_windows.go            Windows process management stub
-search/                      Searcher interface + Brave/DDG/SearXNG/EXA/Firecrawl/Keenable/Tavily/TinyFish/Parallel/SerpBase/Degoog/Serply/Youcom backends; NewFromConfig resolves the ordered provider registry for cmd/ and mcp/. auto.go is the default `auto` backend (keyless fallback chain, AutoRank-ordered), multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), random.go shuffled fallback, canonical.go the URL dedup keys
+search/                      Searcher interface + Brave/DDG/SearXNG/EXA/Firecrawl/Keenable/Tavily/TinyFish/Parallel/SerpBase/Degoog/Serply/Youcom backends; NewFromConfig resolves the ordered provider registry for cmd/ and mcp/. auto.go is the default `auto` backend (keyless fallback chain, AutoRank-ordered; the search_order config key pins it to an operator-chosen list), multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), random.go shuffled fallback, canonical.go the URL dedup keys
 code/                        code.Searcher interface + GrepApp/Sourcegraph/GitHub backends; NewFromConfig resolves the ordered provider registry. Query.Repo (owner/name, filter.go) is exact on every backend: each translates it and narrows a looser native filter itself
 docs/                        docs.Searcher interface + Context7 and keyless web backends (FTS5 local is an unimplemented stub); NewFromConfig resolves the ordered provider registry and hands providers a docs.Deps (fetch.go: the injected Fetcher, which reports each response's final URL)
   web.go                     Web backend: the library is a docs root URL or a library spec, and a bare query names its own; scope (same host, www. twin, path prefix, dot segments cleaned), GetDocs/ResolveLibrary/Search, timeouts as upstream errors; vetoes (a guessed reading never stops a bare query)
@@ -222,7 +222,9 @@ fields out of shared consumers.
   rest. Rank a keyless provider by how well it serves an unconfigured install;
   leave a provider out if it cannot answer without setup. Use `AutoEligible`
   only when `Usable` is deliberately laxer than chain membership should be
-  (SearXNG's localhost default is the one case).
+  (SearXNG's localhost default is the one case). An operator's `search_order`
+  replaces this ordering outright: listed providers are tried in the listed
+  order whatever their rank, and only `Usable` is checked.
 - `Usable` checks configuration without network I/O. `Build` checks it before
   calling `New`.
 - `New` only constructs a client and must accept empty credentials. `Probe`

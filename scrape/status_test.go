@@ -54,8 +54,8 @@ func TestNon200IsHTTPStatusError(t *testing.T) {
 					t.Fatalf("error = %T %v, want *HTTPStatusError", err, err)
 				}
 				wantURL := srv.URL + tc.path
-				if status.Code != tc.code || status.URL != wantURL {
-					t.Errorf("status = %d for %q, want %d for %q", status.Code, status.URL, tc.code, wantURL)
+				if status.StatusCode != tc.code || status.URL != wantURL {
+					t.Errorf("status = %d for %q, want %d for %q", status.StatusCode, status.URL, tc.code, wantURL)
 				}
 				if want := "HTTP " + strconv.Itoa(tc.code) + " for " + wantURL; err.Error() != want {
 					t.Errorf("error text = %q, want %q (unchanged from the untyped error)", err.Error(), want)

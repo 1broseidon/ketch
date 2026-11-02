@@ -29,6 +29,7 @@ import (
 type configInfo struct {
 	ConfigPath                         string             `json:"config_path" order:"0"`
 	Backend                            string             `json:"backend" order:"1"`
+	SearchOrder                        []string           `json:"search_order,omitempty" order:"1"` // operator's auto chain order; sorts right after backend
 	Limit                              int                `json:"limit" order:"16"`
 	CacheTTL                           string             `json:"cache_ttl" order:"17"`
 	Browser                            string             `json:"browser,omitempty" order:"18"`
@@ -103,6 +104,7 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 	info := configInfo{
 		ConfigPath:                         path,
 		Backend:                            c.Backend,
+		SearchOrder:                        c.SearchOrder,
 		Limit:                              c.Limit,
 		CacheTTL:                           c.CacheTTL,
 		Browser:                            c.Browser,
@@ -247,6 +249,8 @@ func applyConfigSet(c *config.Config, key, value string) error {
 		return setSPAMarkers(c, value)
 	case "mcp_tools":
 		return setMCPTools(c, value)
+	case "search_order":
+		return setSearchOrder(c, value)
 	case "cookie_file":
 		return setCookieFile(c, value)
 	case "user_agent":
@@ -464,14 +468,9 @@ func surfaceKeyPrefix(surface string) string {
 // (search, scrape); an empty value or [] clears the key so the server
 // publishes every tool. Names are validated against the known tool set.
 func setMCPTools(c *config.Config, value string) error {
-	trimmed := strings.TrimSpace(value)
-	var raw []string
-	if strings.HasPrefix(trimmed, "[") {
-		if err := json.Unmarshal([]byte(trimmed), &raw); err != nil {
-			return exitErrf(ExitValidation, "mcp_tools must be a JSON array of strings or a comma-separated list: %w", err)
-		}
-	} else if trimmed != "" {
-		raw = strings.Split(trimmed, ",")
+	raw, err := parseNameList(value)
+	if err != nil {
+		return exitErrf(ExitValidation, "mcp_tools must be a JSON array of strings or a comma-separated list: %w", err)
 	}
 	tools, err := config.NormalizeMCPTools(raw)
 	if err != nil {
@@ -479,6 +478,41 @@ func setMCPTools(c *config.Config, value string) error {
 	}
 	c.MCPTools = tools
 	return nil
+}
+
+// setSearchOrder persists the operator's auto chain: the search backends
+// `auto` tries, in the order given. Accepts a JSON array (["exa","brave"]) or
+// a comma-separated list (exa, brave); an empty value or [] clears the key so
+// auto falls back to its default ordering.
+func setSearchOrder(c *config.Config, value string) error {
+	raw, err := parseNameList(value)
+	if err != nil {
+		return exitErrf(ExitValidation, "search_order must be a JSON array of strings or a comma-separated list: %w", err)
+	}
+	order, err := config.NormalizeSearchOrder(raw)
+	if err != nil {
+		return exitErrf(ExitValidation, "invalid search_order: %w", err)
+	}
+	c.SearchOrder = order
+	return nil
+}
+
+// parseNameList reads a list-valued config key given as a JSON array or a
+// comma-separated list. Blank or whitespace-only input is an empty list.
+func parseNameList(value string) ([]string, error) {
+	trimmed := strings.TrimSpace(value)
+	switch {
+	case strings.HasPrefix(trimmed, "["):
+		var raw []string
+		if err := json.Unmarshal([]byte(trimmed), &raw); err != nil {
+			return nil, err
+		}
+		return raw, nil
+	case trimmed == "":
+		return nil, nil
+	default:
+		return strings.Split(trimmed, ","), nil
+	}
 }
 
 func runConfigPath(_ *cobra.Command, _ []string) error {
@@ -491,7 +525,7 @@ func runConfigPath(_ *cobra.Command, _ []string) error {
 }
 
 func validConfigKeys() []string {
-	fields := []configbase.Field{{Name: "backend", Order: 0}, {Name: "limit", Order: 15}, {Name: "cache_ttl", Order: 16}, {Name: "browser", Order: 17}, {Name: "code_backend", Order: 18}, {Name: "docs_backend", Order: 19}, {Name: "url_rewrites", Order: 23}, {Name: "spa_markers", Order: 24}, {Name: "mcp_tools", Order: 25}, {Name: "cookie_file", Order: 26}, {Name: "user_agent", Order: 27}, {Name: "external_pdf_to_md_converter_command", Order: 28}, {Name: "external_pdf_to_md_converter_timeout_sec", Order: 29}, {Name: "extract_mode", Order: 30}, {Name: "http_headers", Order: 31}}
+	fields := []configbase.Field{{Name: "backend", Order: 0}, {Name: "limit", Order: 15}, {Name: "cache_ttl", Order: 16}, {Name: "browser", Order: 17}, {Name: "code_backend", Order: 18}, {Name: "docs_backend", Order: 19}, {Name: "url_rewrites", Order: 23}, {Name: "spa_markers", Order: 24}, {Name: "mcp_tools", Order: 25}, {Name: "cookie_file", Order: 26}, {Name: "user_agent", Order: 27}, {Name: "external_pdf_to_md_converter_command", Order: 28}, {Name: "external_pdf_to_md_converter_timeout_sec", Order: 29}, {Name: "extract_mode", Order: 30}, {Name: "http_headers", Order: 31}, {Name: "search_order", Order: 32}}
 	for _, s := range config.ProviderSettings() {
 		fields = append(fields, configbase.Field{Name: s.Key, Order: s.ValidationOrder})
 		if s.Plural != "" {

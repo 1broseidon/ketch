@@ -578,6 +578,78 @@ func TestApplyConfigSetMCPToolsInvalid(t *testing.T) {
 	}
 }
 
+func TestApplyConfigSetSearchOrder(t *testing.T) {
+	cases := []struct {
+		name  string
+		value string
+		want  []string
+	}{
+		{"JSON array keeps the operator's order", `["exa","tinyfish","brave"]`, []string{"exa", "tinyfish", "brave"}},
+		{"comma-separated list", "brave, ddg", []string{"brave", "ddg"}},
+		{"mixed case trimmed", " Exa , DDG ", []string{"exa", "ddg"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := config.Defaults()
+			if err := applyConfigSet(&cfg, "search_order", tc.value); err != nil {
+				t.Fatal(err)
+			}
+			if strings.Join(cfg.SearchOrder, ",") != strings.Join(tc.want, ",") {
+				t.Errorf("SearchOrder = %v, want %v", cfg.SearchOrder, tc.want)
+			}
+			if info := buildConfigInfo(cfg, "/fixture/config.json"); strings.Join(info.SearchOrder, ",") != strings.Join(tc.want, ",") {
+				t.Errorf("ketch config search_order = %v, want %v", info.SearchOrder, tc.want)
+			}
+		})
+	}
+}
+
+func TestApplyConfigSetSearchOrderClear(t *testing.T) {
+	for _, value := range []string{``, `[]`} {
+		cfg := config.Defaults()
+		cfg.SearchOrder = []string{"exa"}
+		if err := applyConfigSet(&cfg, "search_order", value); err != nil {
+			t.Fatal(err)
+		}
+		if cfg.SearchOrder != nil {
+			t.Errorf("value %q: SearchOrder = %v, want nil (default chain)", value, cfg.SearchOrder)
+		}
+	}
+}
+
+func TestApplyConfigSetSearchOrderInvalid(t *testing.T) {
+	cases := []struct {
+		name  string
+		value string
+		want  string
+	}{
+		{"auto is the chain, not a member", `["exa","auto"]`, "not a backend"},
+		{"unknown backend", "exa,google", `unknown backend "google"`},
+		{"duplicate", "exa, EXA", `duplicate backend "exa"`},
+		{"blank entry", "exa,,ddg", "blank"},
+		{"bad JSON", `[not-json]`, "must be a JSON array of strings or a comma-separated list"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := config.Defaults()
+			cfg.SearchOrder = []string{"ddg"}
+			err := applyConfigSet(&cfg, "search_order", tc.value)
+			if err == nil {
+				t.Fatalf("value %q: expected validation error", tc.value)
+			}
+			if !strings.Contains(err.Error(), tc.want) {
+				t.Errorf("error %q does not contain %q", err, tc.want)
+			}
+			if got := asExitError(t, err); got.Code != ExitValidation {
+				t.Errorf("exit code = %d, want %d", got.Code, ExitValidation)
+			}
+			if strings.Join(cfg.SearchOrder, ",") != "ddg" {
+				t.Errorf("invalid value modified config: %v", cfg.SearchOrder)
+			}
+		})
+	}
+}
+
 func TestEffectiveMCPTools(t *testing.T) {
 	c := config.Defaults()
 	// Compared against the registry, not a literal, so publishing a tool does

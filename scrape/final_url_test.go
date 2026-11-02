@@ -11,9 +11,6 @@ const shellHTML = `<!doctype html><html><head><title>App</title>
 <script id="__NEXT_DATA__" type="application/json">{"buildId":"dev","page":"/","props":{"chunks":["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]}}</script>
 </head><body><div id="root"></div></body></html>`
 
-const renderedPage = `<html><head><title>Rendered</title></head><body><main><h1>Rendered</h1>
-<p>This page was rendered by the browser after its scripts ran, with enough prose to extract.</p></main></body></html>`
-
 // navigatingBrowser renders canned HTML and reports landing somewhere else,
 // as a script redirect would.
 type navigatingBrowser struct{ landed string }
@@ -84,4 +81,61 @@ func TestFinalURLFollowsRedirectsAndBrowserNavigation(t *testing.T) {
 	if err != nil || page.FinalURL != srv.URL+"/shell" {
 		t.Errorf("Scrape without a browser FinalURL = %q, %v; want the HTTP redirect target", page.FinalURL, err)
 	}
+}
+
+// fullBrowser reports the HTML, status and landing URL from one render, as
+// rodConn does.
+type fullBrowser struct {
+	status int
+	landed string
+}
+
+func (b *fullBrowser) Fetch(ctx context.Context, url string) (string, error) {
+	r, err := b.render(ctx, url)
+	return r.html, err
+}
+
+func (b *fullBrowser) render(context.Context, string) (rendering, error) {
+	return rendering{html: renderedPage, status: b.status, finalURL: b.landed}, nil
+}
+
+func (*fullBrowser) Close() {}
+
+// A page fetched through the browser after an HTTP 403 reports where the
+// browser landed, or "" when the browser cannot say: there is no HTTP response
+// URL to fall back on. The status check still applies to a browser that
+// reports the landing URL in the same render.
+func TestFinalURLAfterForbiddenRetry(t *testing.T) {
+	const landed = "https://elsewhere.test/landed"
+	for _, tc := range []struct {
+		name    string
+		browser BrowserConn
+		want    string
+	}{
+		{"one render with status and landing URL", &fullBrowser{status: http.StatusOK, landed: landed}, landed},
+		{"navigating browser", &navigatingBrowser{landed: landed}, landed},
+		{"status-only browser", &statusBrowser{status: http.StatusOK}, ""},
+		{"plain browser", plainBrowser{}, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := statusServer(t, http.StatusForbidden)
+			s := NewWithBrowserConn(tc.browser, nil)
+			captureStderr(t, func() {
+				page, source, err := s.Scrape(t.Context(), server.URL)
+				if err != nil || source != SourceBrowser || page.FinalURL != tc.want {
+					t.Errorf("Scrape = FinalURL %q, source %q, %v; want %q", page.FinalURL, source, err, tc.want)
+				}
+				result, err := s.ScrapeConditional(t.Context(), server.URL, "", "")
+				if err != nil || result.Page.FinalURL != tc.want {
+					t.Errorf("ScrapeConditional FinalURL = %q, %v; want %q", result.Page.FinalURL, err, tc.want)
+				}
+			})
+		})
+	}
+
+	server := statusServer(t, http.StatusForbidden)
+	s := NewWithBrowserConn(&fullBrowser{status: http.StatusForbidden, landed: landed}, nil)
+	var err error
+	captureStderr(t, func() { _, _, err = s.Scrape(t.Context(), server.URL) })
+	assertStatusError(t, err, http.StatusForbidden, server.URL)
 }

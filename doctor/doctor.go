@@ -122,8 +122,20 @@ func withAutoChainCheck(cfg *config.Config, checks []Check) []Check {
 
 	chain := search.AutoChainNames(cfg)
 	status, detail := summarizeAutoChain(chain, checks)
+	if len(chain) == 0 && len(cfg.SearchOrder) > 0 {
+		detail = searchOrderDetail(cfg.SearchOrder)
+	}
 	auto := Check{Surface: "search", Backend: search.AutoBackend, Status: status, Detail: detail, Required: true}
 	return append([]Check{auto}, checks...)
+}
+
+// searchOrderDetail explains an empty chain the operator pinned with
+// search_order: either the list itself is invalid or none of it is usable.
+func searchOrderDetail(order []string) string {
+	if _, err := search.NormalizeSearchOrder(order); err != nil {
+		return "invalid search_order: " + err.Error()
+	}
+	return fmt.Sprintf("no usable providers in search_order (%s)", strings.Join(order, " → "))
 }
 
 // summarizeAutoChain reports the chain healthy when any member is: a fallback

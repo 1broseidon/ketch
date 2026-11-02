@@ -1020,3 +1020,30 @@ func TestWithAutoChainCheckOnlyAppliesToTheAutoBackend(t *testing.T) {
 		t.Fatalf("len(checks) = %d, want no synthesized row for an explicit backend", len(got))
 	}
 }
+
+// doctor reports the chain the operator pinned with search_order, in their
+// order, and says so when nothing in it is usable.
+func TestWithAutoChainCheckFollowsSearchOrder(t *testing.T) {
+	cfg := config.Defaults()
+	cfg.SearchOrder = []string{"ddg", "exa"}
+	checks := []Check{
+		{Surface: "search", Backend: "exa", Status: StatusOK},
+		{Surface: "search", Backend: "ddg", Status: StatusOK},
+	}
+	got := withAutoChainCheck(&cfg, checks)
+	if !strings.HasPrefix(got[0].Detail, "ddg serving") || !strings.Contains(got[0].Detail, "ddg → exa") {
+		t.Fatalf("detail = %q, want ddg serving over ddg → exa", got[0].Detail)
+	}
+
+	cfg.SearchOrder = []string{"tavily"}
+	got = withAutoChainCheck(&cfg, checks)
+	if got[0].Status != StatusMisconfigured || !strings.Contains(got[0].Detail, "no usable providers in search_order (tavily)") {
+		t.Fatalf("auto row = %+v, want misconfigured naming search_order", got[0])
+	}
+
+	cfg.SearchOrder = []string{"auto"}
+	got = withAutoChainCheck(&cfg, checks)
+	if got[0].Status != StatusMisconfigured || !strings.Contains(got[0].Detail, "invalid search_order") {
+		t.Fatalf("auto row = %+v, want misconfigured invalid search_order", got[0])
+	}
+}

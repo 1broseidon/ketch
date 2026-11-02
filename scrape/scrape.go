@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -74,18 +75,6 @@ type FetchedContent struct {
 func (c *FetchedContent) HTML() string {
 	return extract.DecodeHTMLBytes(c.Body, c.ContentType)
 }
-
-// HTTPStatusError reports a response whose status was not 200 OK (nor the 304
-// that answers a conditional fetch). Callers that need the status, such as
-// the docs fetcher telling a missing page from a failing server, read it
-// with errors.As instead of matching the text; the text itself is unchanged
-// from when this was a plain error, so diagnostics read the same.
-type HTTPStatusError struct {
-	Code int    // the response status code
-	URL  string // the URL requested, after URL rewrites
-}
-
-func (e *HTTPStatusError) Error() string { return fmt.Sprintf("HTTP %d for %s", e.Code, e.URL) }
 
 // FetchResult holds the output of a conditional scrape.
 type FetchResult struct {
@@ -233,13 +222,17 @@ func (s *Scraper) browserConnOptions() []ConnOption {
 // Scrape fetches a URL and returns extracted markdown content along with the
 // fetch source (SourceHTTP or SourceBrowser). If the page appears JS-rendered
 // and a browser is configured, automatically retries with the browser for full
-// content extraction.
+// content extraction; an HTTP 403 retries with the browser the same way.
 func (s *Scraper) Scrape(ctx context.Context, rawURL string) (*Page, string, error) {
 	fetchURL := s.Rewrite(rawURL)
 
 	content, err := s.FetchContent(ctx, fetchURL)
 	if err != nil {
-		return nil, "", err
+		rendered, ok := s.browserOnForbidden(ctx, fetchURL, err)
+		if !ok {
+			return nil, "", err
+		}
+		return s.extractPage(rawURL, fetchURL, rendered.html, SourceBrowser, rendered.finalURL)
 	}
 
 	contentType := effectiveContentType(content.ContentType, content.Body)
@@ -256,6 +249,13 @@ func (s *Scraper) Scrape(ctx context.Context, rawURL string) (*Page, string, err
 	}
 
 	html, source, rendered := s.maybeBrowserFetch(ctx, fetchURL, content.HTML())
+	return s.extractPage(rawURL, fetchURL, html, source, finalURL(source, rendered, content.URL))
+}
+
+// extractPage runs the extractor over html fetched from fetchURL and builds
+// the Page Scrape returns, tagged with source. served is where the content
+// came from (Page.FinalURL), "" when unknown.
+func (s *Scraper) extractPage(rawURL, fetchURL, html, source, served string) (*Page, string, error) {
 	result, err := s.extractor.Extract(fetchURL, html)
 	if err != nil {
 		return nil, "", fmt.Errorf("extraction failed for %s: %w", fetchURL, err)
@@ -265,7 +265,7 @@ func (s *Scraper) Scrape(ctx context.Context, rawURL string) (*Page, string, err
 		URL:      rawURL,
 		Title:    result.Title,
 		Markdown: result.Markdown,
-		FinalURL: finalURL(source, rendered, content.URL),
+		FinalURL: served,
 	}
 	if fetchURL != rawURL {
 		page.FetchedURL = fetchURL
@@ -282,7 +282,11 @@ func (s *Scraper) scrapeConditional(ctx context.Context, rawURL, etag, lastModif
 	fetchURL := s.Rewrite(rawURL)
 	content, headers, notModified, err := s.fetchContent(ctx, fetchURL, etag, lastModified)
 	if err != nil {
-		return nil, err
+		rendered, ok := s.browserOnForbidden(ctx, fetchURL, err)
+		if !ok {
+			return nil, err
+		}
+		return s.renderedResult(rawURL, fetchURL, rendered)
 	}
 	if notModified {
 		return &FetchResult{NotModified: true}, nil
@@ -362,6 +366,35 @@ func (s *Scraper) scrapeConditional(ctx context.Context, rawURL, etag, lastModif
 	}, nil
 }
 
+// renderedResult builds the FetchResult for a page the browser rendered after
+// the plain HTTP fetch was refused. The rendered DOM carries no validators, so
+// the page caches without an ETag or Last-Modified. Its FinalURL is where the
+// browser landed, "" when the browser cannot say: there is no HTTP response
+// URL to fall back on.
+func (s *Scraper) renderedResult(rawURL, fetchURL string, rendered rendering) (*FetchResult, error) {
+	html := rendered.html
+	result, err := s.extractor.Extract(fetchURL, html)
+	if err != nil {
+		return nil, fmt.Errorf("extraction failed for %s: %w", fetchURL, err)
+	}
+	page := &Page{
+		URL:         rawURL,
+		Title:       result.Title,
+		Markdown:    result.Markdown,
+		ContentHash: ContentHash(result.Markdown),
+		FinalURL:    rendered.finalURL,
+	}
+	if fetchURL != rawURL {
+		page.FetchedURL = fetchURL
+	}
+	return &FetchResult{
+		Page:        page,
+		RawHTML:     html,
+		ContentType: "text/html",
+		Source:      SourceBrowser,
+	}, nil
+}
+
 // BrowserScrape fetches a URL using the browser directly.
 // Used when a host is known to require browser rendering.
 func (s *Scraper) BrowserScrape(ctx context.Context, rawURL string) (*Page, string, error) {
@@ -373,10 +406,11 @@ func (s *Scraper) BrowserScrape(ctx context.Context, rawURL string) (*Page, stri
 	if browser == nil {
 		return nil, "", ErrNoBrowser
 	}
-	html, landed, err := browserRender(ctx, browser, fetchURL)
+	rendered, err := browserRender(ctx, browser, fetchURL)
 	if err != nil {
 		return nil, "", fmt.Errorf("browser fetch failed for %s: %w", fetchURL, err)
 	}
+	html := rendered.html
 	result, err := s.extractor.Extract(fetchURL, html)
 	if err != nil {
 		return nil, "", fmt.Errorf("extraction failed for %s: %w", fetchURL, err)
@@ -386,7 +420,7 @@ func (s *Scraper) BrowserScrape(ctx context.Context, rawURL string) (*Page, stri
 		Title:       result.Title,
 		Markdown:    result.Markdown,
 		ContentHash: ContentHash(result.Markdown),
-		FinalURL:    landed,
+		FinalURL:    rendered.finalURL,
 	}
 	if fetchURL != rawURL {
 		page.FetchedURL = fetchURL
@@ -420,9 +454,9 @@ func (s *Scraper) maybeBrowserFetch(ctx context.Context, rawURL, html string) (s
 func (s *Scraper) browserFetchOrWarn(ctx context.Context, rawURL, html string) (string, string, string) {
 	browser := s.getBrowser()
 	if browser != nil {
-		rendered, landed, err := browserRender(ctx, browser, rawURL)
+		rendered, err := browserRender(ctx, browser, rawURL)
 		if err == nil {
-			return rendered, SourceBrowser, landed
+			return rendered.html, SourceBrowser, rendered.finalURL
 		}
 		fmt.Fprintf(os.Stderr, "warn: browser fallback failed for %s: %v\n", rawURL, err)
 	} else if !s.HasBrowser() {
@@ -438,6 +472,47 @@ func finalURL(source, rendered, fetched string) string {
 		return rendered
 	}
 	return fetched
+}
+
+// browserOnForbidden retries fetchURL through the configured browser when the
+// plain HTTP fetch failed with HTTP 403. Bot walls commonly refuse Go's client
+// but let a real browser through. Only a 403 escalates: a 429 asks the client
+// to back off, and every other failure would fail the browser too. On success
+// it returns the rendered HTML and prints a notice to stderr, so stdout stays
+// clean. Otherwise it reports false and the caller returns the original error;
+// a browser failure is only a stderr warning, never the reported error. The
+// rendering's finalURL is where the browser landed, "" when it cannot say.
+func (s *Scraper) browserOnForbidden(ctx context.Context, fetchURL string, fetchErr error) (rendering, bool) {
+	var statusErr *HTTPStatusError
+	if !errors.As(fetchErr, &statusErr) || statusErr.StatusCode != http.StatusForbidden {
+		return rendering{}, false
+	}
+	browser := s.getBrowser()
+	if browser == nil {
+		return rendering{}, false
+	}
+	rendered, err := fetchVerified(ctx, browser, fetchURL)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warn: browser retry after HTTP 403 failed for %s: %v\n", fetchURL, err)
+		return rendering{}, false
+	}
+	fmt.Fprintf(os.Stderr, "notice: HTTP 403 for %s; fetched with the browser\n", fetchURL)
+	return rendered, true
+}
+
+// fetchVerified renders fetchURL through browser and, when the browser can
+// report the main document's status, fails on an HTTP error status: a wall
+// that refuses the browser too renders an access-denied page, which must not
+// pass for content. A browser that cannot report a status (0) is trusted.
+func fetchVerified(ctx context.Context, browser BrowserConn, fetchURL string) (rendering, error) {
+	rendered, err := browserRender(ctx, browser, fetchURL)
+	if err != nil {
+		return rendering{}, err
+	}
+	if rendered.status >= http.StatusBadRequest {
+		return rendering{}, fmt.Errorf("browser also got HTTP %d", rendered.status)
+	}
+	return rendered, nil
 }
 
 // CacheStaleForBrowser reports whether a cache entry with the given source
@@ -491,6 +566,20 @@ func (s *Scraper) CacheKey(fetchURL string) string {
 	return key
 }
 
+// HTTPStatusError reports a plain HTTP fetch that answered neither 200 nor
+// 304. Callers match it with errors.As to act on the status code (the 403
+// browser retry, the docs fetcher telling a missing page from a failing
+// server) instead of matching the text, which is unchanged from when this was
+// a plain error.
+type HTTPStatusError struct {
+	StatusCode int    // the response status code
+	URL        string // the URL requested, after URL rewrites
+}
+
+func (e *HTTPStatusError) Error() string {
+	return fmt.Sprintf("HTTP %d for %s", e.StatusCode, e.URL)
+}
+
 // FetchContent fetches a URL without extraction or browser fallback while
 // preserving response bytes and the server-declared content type.
 func (s *Scraper) FetchContent(ctx context.Context, rawURL string) (*FetchedContent, error) {
@@ -501,6 +590,35 @@ func (s *Scraper) FetchContent(ctx context.Context, rawURL string) (*FetchedCont
 	if notModified {
 		return nil, fmt.Errorf("unexpected 304 Not Modified for unconditional fetch of %s", rawURL)
 	}
+	return content, nil
+}
+
+// FetchContentWithBrowser preserves the plain response and retries only HTTP
+// 403 through a content-capable configured browser. Failed/unknown browser
+// statuses retain the original 403; no rendered XML viewer HTML is accepted.
+// Like FetchContent, rawURL must already have configured rewrites applied.
+func (s *Scraper) FetchContentWithBrowser(ctx context.Context, rawURL string) (*FetchedContent, error) {
+	content, err := s.FetchContent(ctx, rawURL)
+	if err == nil {
+		return content, nil
+	}
+	var statusErr *HTTPStatusError
+	if !errors.As(err, &statusErr) || statusErr.StatusCode != http.StatusForbidden {
+		return nil, err
+	}
+	browser, ok := s.getBrowser().(ContentFetcher)
+	if !ok {
+		return nil, err
+	}
+	content, status, browserErr := browser.FetchContent(ctx, rawURL)
+	if browserErr == nil && (status < http.StatusOK || status >= http.StatusMultipleChoices || content == nil) {
+		browserErr = fmt.Errorf("browser returned unusable HTTP status %d", status)
+	}
+	if browserErr != nil {
+		fmt.Fprintf(os.Stderr, "warn: browser retry after HTTP 403 failed for %s: %v\n", rawURL, browserErr)
+		return nil, err
+	}
+	fmt.Fprintf(os.Stderr, "notice: HTTP 403 for %s; fetched with the browser\n", rawURL)
 	return content, nil
 }
 
@@ -596,7 +714,7 @@ func (s *Scraper) fetchContent(ctx context.Context, rawURL, etag, lastModified s
 		return nil, resp.Header, true, nil
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, nil, false, &HTTPStatusError{Code: resp.StatusCode, URL: rawURL}
+		return nil, nil, false, &HTTPStatusError{StatusCode: resp.StatusCode, URL: rawURL}
 	}
 
 	body, err := readBoundedBody(resp.Body)

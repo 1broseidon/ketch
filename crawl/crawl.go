@@ -540,7 +540,7 @@ func fetchSitemapIndex(ctx context.Context, scraper *scrape.Scraper, idx sitemap
 }
 
 func fetchBody(ctx context.Context, scraper *scrape.Scraper, rawURL string) ([]byte, error) {
-	content, err := scraper.FetchContent(ctx, scraper.Rewrite(rawURL))
+	content, err := scraper.FetchContentWithBrowser(ctx, scraper.Rewrite(rawURL))
 	if err != nil {
 		return nil, err
 	}

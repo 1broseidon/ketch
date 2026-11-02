@@ -164,7 +164,7 @@ func TestHTTPStatusClassification(t *testing.T) {
 					t.Errorf("errors.Is(%v, docs.ErrNotFound) = %v, want %v", err, got, tc.notFound)
 				}
 				var status *scrape.HTTPStatusError
-				if !errors.As(err, &status) || status.Code != tc.code {
+				if !errors.As(err, &status) || status.StatusCode != tc.code {
 					t.Errorf("error = %v, want the scrape status error for %d underneath", err, tc.code)
 				}
 				if !strings.HasPrefix(err.Error(), status.Error()) {
