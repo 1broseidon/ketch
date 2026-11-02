@@ -1,0 +1,253 @@
+# React Documentation
+
+> The library for web and native user interfaces.
+
+## Learn React
+
+### GET STARTED
+
+#### Quick Start
+- [Quick Start](https://react.dev/learn.md)
+- [Tutorial: Tic-Tac-Toe](https://react.dev/learn/tutorial-tic-tac-toe.md)
+- [Thinking in React](https://react.dev/learn/thinking-in-react.md)
+
+#### Installation
+- [Installation](https://react.dev/learn/installation.md)
+- [Creating a React App](https://react.dev/learn/creating-a-react-app.md)
+- [Build a React App from Scratch](https://react.dev/learn/build-a-react-app-from-scratch.md)
+- [Add React to an Existing Project](https://react.dev/learn/add-react-to-an-existing-project.md)
+
+#### Setup
+- [Setup](https://react.dev/learn/setup.md)
+- [Editor Setup](https://react.dev/learn/editor-setup.md)
+- [Using TypeScript](https://react.dev/learn/typescript.md)
+- [React Developer Tools](https://react.dev/learn/react-developer-tools.md)
+
+#### React Compiler
+- [React Compiler](https://react.dev/learn/react-compiler.md)
+- [Introduction](https://react.dev/learn/react-compiler/introduction.md)
+- [Installation](https://react.dev/learn/react-compiler/installation.md)
+- [Incremental Adoption](https://react.dev/learn/react-compiler/incremental-adoption.md)
+- [Debugging and Troubleshooting](https://react.dev/learn/react-compiler/debugging.md)
+
+### LEARN REACT
+
+#### Describing the UI
+- [Describing the UI](https://react.dev/learn/describing-the-ui.md)
+- [Your First Component](https://react.dev/learn/your-first-component.md)
+- [Importing and Exporting Components](https://react.dev/learn/importing-and-exporting-components.md)
+- [Writing Markup with JSX](https://react.dev/learn/writing-markup-with-jsx.md)
+- [JavaScript in JSX with Curly Braces](https://react.dev/learn/javascript-in-jsx-with-curly-braces.md)
+- [Passing Props to a Component](https://react.dev/learn/passing-props-to-a-component.md)
+- [Conditional Rendering](https://react.dev/learn/conditional-rendering.md)
+- [Rendering Lists](https://react.dev/learn/rendering-lists.md)
+- [Keeping Components Pure](https://react.dev/learn/keeping-components-pure.md)
+- [Your UI as a Tree](https://react.dev/learn/understanding-your-ui-as-a-tree.md)
+
+#### Adding Interactivity
+- [Adding Interactivity](https://react.dev/learn/adding-interactivity.md)
+- [Responding to Events](https://react.dev/learn/responding-to-events.md)
+- [State: A Component's Memory](https://react.dev/learn/state-a-components-memory.md)
+- [Render and Commit](https://react.dev/learn/render-and-commit.md)
+- [State as a Snapshot](https://react.dev/learn/state-as-a-snapshot.md)
+- [Queueing a Series of State Updates](https://react.dev/learn/queueing-a-series-of-state-updates.md)
+- [Updating Objects in State](https://react.dev/learn/updating-objects-in-state.md)
+- [Updating Arrays in State](https://react.dev/learn/updating-arrays-in-state.md)
+
+#### Managing State
+- [Managing State](https://react.dev/learn/managing-state.md)
+- [Reacting to Input with State](https://react.dev/learn/reacting-to-input-with-state.md)
+- [Choosing the State Structure](https://react.dev/learn/choosing-the-state-structure.md)
+- [Sharing State Between Components](https://react.dev/learn/sharing-state-between-components.md)
+- [Preserving and Resetting State](https://react.dev/learn/preserving-and-resetting-state.md)
+- [Extracting State Logic into a Reducer](https://react.dev/learn/extracting-state-logic-into-a-reducer.md)
+- [Passing Data Deeply with Context](https://react.dev/learn/passing-data-deeply-with-context.md)
+- [Scaling Up with Reducer and Context](https://react.dev/learn/scaling-up-with-reducer-and-context.md)
+
+#### Escape Hatches
+- [Escape Hatches](https://react.dev/learn/escape-hatches.md)
+- [Referencing Values with Refs](https://react.dev/learn/referencing-values-with-refs.md)
+- [Manipulating the DOM with Refs](https://react.dev/learn/manipulating-the-dom-with-refs.md)
+- [Synchronizing with Effects](https://react.dev/learn/synchronizing-with-effects.md)
+- [You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect.md)
+- [Lifecycle of Reactive Effects](https://react.dev/learn/lifecycle-of-reactive-effects.md)
+- [Separating Events from Effects](https://react.dev/learn/separating-events-from-effects.md)
+- [Removing Effect Dependencies](https://react.dev/learn/removing-effect-dependencies.md)
+- [Reusing Logic with Custom Hooks](https://react.dev/learn/reusing-logic-with-custom-hooks.md)
+
+## API Reference
+
+### React
+- [Overview](https://react.dev/reference/react.md)
+
+#### Hooks
+- [Hooks](https://react.dev/reference/react/hooks.md)
+- [useActionState](https://react.dev/reference/react/useActionState.md)
+- [useCallback](https://react.dev/reference/react/useCallback.md)
+- [useContext](https://react.dev/reference/react/useContext.md)
+- [useDebugValue](https://react.dev/reference/react/useDebugValue.md)
+- [useDeferredValue](https://react.dev/reference/react/useDeferredValue.md)
+- [useEffect](https://react.dev/reference/react/useEffect.md)
+- [useEffectEvent](https://react.dev/reference/react/useEffectEvent.md)
+- [useId](https://react.dev/reference/react/useId.md)
+- [useImperativeHandle](https://react.dev/reference/react/useImperativeHandle.md)
+- [useInsertionEffect](https://react.dev/reference/react/useInsertionEffect.md)
+- [useLayoutEffect](https://react.dev/reference/react/useLayoutEffect.md)
+- [useMemo](https://react.dev/reference/react/useMemo.md)
+- [useOptimistic](https://react.dev/reference/react/useOptimistic.md)
+- [useReducer](https://react.dev/reference/react/useReducer.md)
+- [useRef](https://react.dev/reference/react/useRef.md)
+- [useState](https://react.dev/reference/react/useState.md)
+- [useSyncExternalStore](https://react.dev/reference/react/useSyncExternalStore.md)
+- [useTransition](https://react.dev/reference/react/useTransition.md)
+
+#### Components
+- [Components](https://react.dev/reference/react/components.md)
+- [<Fragment> (<>)](https://react.dev/reference/react/Fragment.md)
+- [<Profiler>](https://react.dev/reference/react/Profiler.md)
+- [<StrictMode>](https://react.dev/reference/react/StrictMode.md)
+- [<Suspense>](https://react.dev/reference/react/Suspense.md)
+- [<Activity>](https://react.dev/reference/react/Activity.md)
+- [<ViewTransition>](https://react.dev/reference/react/ViewTransition.md)
+
+#### APIs
+- [APIs](https://react.dev/reference/react/apis.md)
+- [act](https://react.dev/reference/react/act.md)
+- [addTransitionType](https://react.dev/reference/react/addTransitionType.md)
+- [cache](https://react.dev/reference/react/cache.md)
+- [cacheSignal](https://react.dev/reference/react/cacheSignal.md)
+- [captureOwnerStack](https://react.dev/reference/react/captureOwnerStack.md)
+- [createContext](https://react.dev/reference/react/createContext.md)
+- [lazy](https://react.dev/reference/react/lazy.md)
+- [memo](https://react.dev/reference/react/memo.md)
+- [startTransition](https://react.dev/reference/react/startTransition.md)
+- [use](https://react.dev/reference/react/use.md)
+- [experimental_taintObjectReference](https://react.dev/reference/react/experimental_taintObjectReference.md)
+- [experimental_taintUniqueValue](https://react.dev/reference/react/experimental_taintUniqueValue.md)
+
+### React Dom
+
+#### Hooks
+- [Hooks](https://react.dev/reference/react-dom/hooks.md)
+- [useFormStatus](https://react.dev/reference/react-dom/hooks/useFormStatus.md)
+
+#### Components
+- [Components](https://react.dev/reference/react-dom/components.md)
+- [Common (e.g. <div>)](https://react.dev/reference/react-dom/components/common.md)
+- [<form>](https://react.dev/reference/react-dom/components/form.md)
+- [<input>](https://react.dev/reference/react-dom/components/input.md)
+- [<option>](https://react.dev/reference/react-dom/components/option.md)
+- [<progress>](https://react.dev/reference/react-dom/components/progress.md)
+- [<select>](https://react.dev/reference/react-dom/components/select.md)
+- [<textarea>](https://react.dev/reference/react-dom/components/textarea.md)
+- [<img>](https://react.dev/reference/react-dom/components/img.md)
+- [<link>](https://react.dev/reference/react-dom/components/link.md)
+- [<meta>](https://react.dev/reference/react-dom/components/meta.md)
+- [<script>](https://react.dev/reference/react-dom/components/script.md)
+- [<style>](https://react.dev/reference/react-dom/components/style.md)
+- [<title>](https://react.dev/reference/react-dom/components/title.md)
+
+#### APIs
+- [APIs](https://react.dev/reference/react-dom.md)
+- [browser](https://react.dev/reference/react-dom/browser.md)
+- [createPortal](https://react.dev/reference/react-dom/createPortal.md)
+- [flushSync](https://react.dev/reference/react-dom/flushSync.md)
+- [preconnect](https://react.dev/reference/react-dom/preconnect.md)
+- [prefetchDNS](https://react.dev/reference/react-dom/prefetchDNS.md)
+- [preinit](https://react.dev/reference/react-dom/preinit.md)
+- [preinitModule](https://react.dev/reference/react-dom/preinitModule.md)
+- [preload](https://react.dev/reference/react-dom/preload.md)
+- [preloadModule](https://react.dev/reference/react-dom/preloadModule.md)
+
+#### Client APIs
+- [Client APIs](https://react.dev/reference/react-dom/client.md)
+- [createRoot](https://react.dev/reference/react-dom/client/createRoot.md)
+- [hydrateRoot](https://react.dev/reference/react-dom/client/hydrateRoot.md)
+
+#### Server APIs
+- [Server APIs](https://react.dev/reference/react-dom/server.md)
+- [renderToPipeableStream](https://react.dev/reference/react-dom/server/renderToPipeableStream.md)
+- [renderToReadableStream](https://react.dev/reference/react-dom/server/renderToReadableStream.md)
+- [renderToStaticMarkup](https://react.dev/reference/react-dom/server/renderToStaticMarkup.md)
+- [renderToString](https://react.dev/reference/react-dom/server/renderToString.md)
+- [resume](https://react.dev/reference/react-dom/server/resume.md)
+- [resumeToPipeableStream](https://react.dev/reference/react-dom/server/resumeToPipeableStream.md)
+
+#### Static APIs
+- [Static APIs](https://react.dev/reference/react-dom/static.md)
+- [prerender](https://react.dev/reference/react-dom/static/prerender.md)
+- [prerenderToNodeStream](https://react.dev/reference/react-dom/static/prerenderToNodeStream.md)
+- [resumeAndPrerender](https://react.dev/reference/react-dom/static/resumeAndPrerender.md)
+- [resumeAndPrerenderToNodeStream](https://react.dev/reference/react-dom/static/resumeAndPrerenderToNodeStream.md)
+
+### React Compiler
+- [Compiling Libraries](https://react.dev/reference/react-compiler/compiling-libraries.md)
+
+#### Configuration
+- [Configuration](https://react.dev/reference/react-compiler/configuration.md)
+- [compilationMode](https://react.dev/reference/react-compiler/compilationMode.md)
+- [gating](https://react.dev/reference/react-compiler/gating.md)
+- [logger](https://react.dev/reference/react-compiler/logger.md)
+- [panicThreshold](https://react.dev/reference/react-compiler/panicThreshold.md)
+- [target](https://react.dev/reference/react-compiler/target.md)
+
+#### Directives
+- [Directives](https://react.dev/reference/react-compiler/directives.md)
+- ["use memo"](https://react.dev/reference/react-compiler/directives/use-memo.md)
+- ["use no memo"](https://react.dev/reference/react-compiler/directives/use-no-memo.md)
+
+### React DevTools
+- [React Performance tracks](https://react.dev/reference/dev-tools/react-performance-tracks.md)
+- [React DevTools for agents](https://react.dev/reference/dev-tools/react-devtools-cdt-mcp.md)
+
+### Eslint Plugin React Hooks
+
+#### Lints
+- [Lints](https://react.dev/reference/eslint-plugin-react-hooks.md)
+- [exhaustive-deps](https://react.dev/reference/eslint-plugin-react-hooks/lints/exhaustive-deps.md)
+- [rules-of-hooks](https://react.dev/reference/eslint-plugin-react-hooks/lints/rules-of-hooks.md)
+- [component-hook-factories](https://react.dev/reference/eslint-plugin-react-hooks/lints/component-hook-factories.md)
+- [config](https://react.dev/reference/eslint-plugin-react-hooks/lints/config.md)
+- [error-boundaries](https://react.dev/reference/eslint-plugin-react-hooks/lints/error-boundaries.md)
+- [gating](https://react.dev/reference/eslint-plugin-react-hooks/lints/gating.md)
+- [globals](https://react.dev/reference/eslint-plugin-react-hooks/lints/globals.md)
+- [immutability](https://react.dev/reference/eslint-plugin-react-hooks/lints/immutability.md)
+- [incompatible-library](https://react.dev/reference/eslint-plugin-react-hooks/lints/incompatible-library.md)
+- [preserve-manual-memoization](https://react.dev/reference/eslint-plugin-react-hooks/lints/preserve-manual-memoization.md)
+- [purity](https://react.dev/reference/eslint-plugin-react-hooks/lints/purity.md)
+- [refs](https://react.dev/reference/eslint-plugin-react-hooks/lints/refs.md)
+- [set-state-in-effect](https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect.md)
+- [set-state-in-render](https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-render.md)
+- [static-components](https://react.dev/reference/eslint-plugin-react-hooks/lints/static-components.md)
+- [unsupported-syntax](https://react.dev/reference/eslint-plugin-react-hooks/lints/unsupported-syntax.md)
+- [use-memo](https://react.dev/reference/eslint-plugin-react-hooks/lints/use-memo.md)
+
+### Rules Of React
+
+#### Overview
+- [Overview](https://react.dev/reference/rules.md)
+- [Components and Hooks must be pure](https://react.dev/reference/rules/components-and-hooks-must-be-pure.md)
+- [React calls Components and Hooks](https://react.dev/reference/rules/react-calls-components-and-hooks.md)
+- [Rules of Hooks](https://react.dev/reference/rules/rules-of-hooks.md)
+
+### React Server Components
+- [Server Components](https://react.dev/reference/rsc/server-components.md)
+- [Server Functions](https://react.dev/reference/rsc/server-functions.md)
+
+#### Directives
+- [Directives](https://react.dev/reference/rsc/directives.md)
+- ['use client'](https://react.dev/reference/rsc/use-client.md)
+- ['use server'](https://react.dev/reference/rsc/use-server.md)
+
+### Legacy APIs
+
+#### Legacy React APIs
+- [Legacy React APIs](https://react.dev/reference/react/legacy.md)
+- [Children](https://react.dev/reference/react/Children.md)
+- [cloneElement](https://react.dev/reference/react/cloneElement.md)
+- [Component](https://react.dev/reference/react/Component.md)
+- [createElement](https://react.dev/reference/react/createElement.md)
+- [createRef](https://react.dev/reference/react/createRef.md)
+- [forwardRef](https://react.dev/reference/react/forwardRef.md)
+- [isValidElement](https://react.dev/reference/react/isValidElement.md)
+- [PureComponent](https://react.dev/reference/react/PureComponent.md)

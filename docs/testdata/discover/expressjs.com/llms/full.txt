@@ -1,0 +1,1765 @@
+# Express.js — Full Documentation
+
+> Fast, unopinionated, minimalist web framework for Node.js
+
+
+---
+
+## Error Handling
+
+URL: https://expressjs.com/en/5x/guide/error-handling
+
+_Error Handling_ refers to how Express catches and processes errors that
+occur both synchronously and asynchronously. Express comes with a default error
+handler so you don't need to write your own to get started.
+
+## Catching Errors
+
+It's important to ensure that Express catches all errors that occur while
+running route handlers and middleware.
+
+### Errors in synchronous code
+
+Errors that occur in synchronous code inside route handlers and middleware
+require no extra work. If synchronous code throws an error, then Express will
+catch and process it. For example:
+
+```js
+app.get('/', (req, res) => {
+  throw new Error('BROKEN'); // Express will catch this on its own.
+});
+```
+
+```ts
+
+app.get('/', (req: Request, res: Response) => {
+  throw new Error('BROKEN'); // Express will catch this on its own.
+});
+```
+
+### Errors in asynchronous code
+
+The recommended way to write asynchronous handlers is with `async` functions.
+Route handlers and middleware that return a Promise call `next(value)`
+automatically when they reject or throw an error, and `async` functions always
+return a Promise, so their errors reach Express with no extra work. For example:
+
+```js
+app.get('/user/:id', async (req, res) => {
+  const user = await getUserById(req.params.id);
+  res.send(user);
+});
+```
+
+```ts
+
+app.get('/user/:id', async (req: Request, res: Response) => {
+  const user = await getUserById(req.params.id);
+  res.send(user);
+});
+```
+
+If `getUserById` throws an error or rejects, `next` will be called with either
+the thrown error or the rejected value. If no rejected value is provided, `next`
+will be called with a default Error object provided by the Express router.
+
+If you pass anything to the `next()` function (except the string `'route'`),
+Express regards the current request as being an error and will skip any
+remaining non-error handling routing and middleware functions.
+
+### Working with promise chains
+
+If you build a promise chain instead of using an `async` function, return the
+promise from the handler and Express will likewise call `next` automatically
+when it rejects:
+
+```js
+app.get('/', (req, res) => {
+  return Promise.resolve().then(() => {
+    throw new Error('BROKEN'); // Express will catch this and call next.
+  });
+});
+```
+
+```ts
+
+app.get('/', (req: Request, res: Response) => {
+  return Promise.resolve().then(() => {
+    throw new Error('BROKEN'); // Express will catch this and call next.
+  });
+});
+```
+
+If the promise is not returned, Express does not know it exists, and you must
+route the error yourself by providing `next` as the final catch handler.
+Without it, the rejection would be unhandled and crash the process:
+
+```js
+app.get('/', (req, res, next) => {
+  Promise.resolve()
+    .then(() => {
+      throw new Error('BROKEN');
+    })
+    .catch(next); // Errors will be passed to Express.
+});
+```
+
+```ts
+
+app.get('/', (req: Request, res: Response, next: NextFunction) => {
+  Promise.resolve()
+    .then(() => {
+      throw new Error('BROKEN');
+    })
+    .catch(next); // Errors will be passed to Express.
+});
+```
+
+This works because if a callback in the promise chain throws, the chain turns that exception into a rejection, which travels down to the final `.catch`. There, `.catch` calls its handler with the error as the first argument, which is exactly the argument `next` expects, so the error reaches Express.
+
+### Working with callback APIs
+
+Errors produced by callback-based APIs, such as those in `node:fs`, are not
+thrown and are not part of any promise. The callback receives them as its first
+argument, and you must pass them to the `next()` function yourself, where
+Express will catch and process them. For example:
+
+```js
+app.get('/', (req, res, next) => {
+  fs.readFile('/file-does-not-exist', (err, data) => {
+    if (err) {
+      next(err); // Pass errors to Express.
+    } else {
+      res.send(data);
+    }
+  });
+});
+```
+
+```ts
+
+app.get('/', (req: Request, res: Response, next: NextFunction) => {
+  fs.readFile('/file-does-not-exist', (err, data) => {
+    if (err) {
+      next(err); // Pass errors to Express.
+    } else {
+      res.send(data);
+    }
+  });
+});
+```
+
+If the callback in a sequence provides no data, only errors, you can simplify
+this code as follows:
+
+```js
+app.get('/', [
+  function (req, res, next) {
+    fs.writeFile('/inaccessible-path', 'data', next);
+  },
+  function (req, res) {
+    res.send('OK');
+  },
+]);
+```
+
+```ts
+
+app.get('/', [
+  function (req: Request, res: Response, next: NextFunction) {
+    fs.writeFile('/inaccessible-path', 'data', next);
+  },
+  function (req: Request, res: Response) {
+    res.send('OK');
+  },
+]);
+```
+
+In the above example, `next` is provided as the callback for `fs.writeFile`,
+which is called with or without errors. If there is no error, the second
+handler is executed, otherwise Express catches and processes the error.
+
+You could also use a chain of handlers to rely on synchronous error
+catching, by reducing the asynchronous code to something trivial. For example:
+
+```js
+app.get('/', [
+  function (req, res, next) {
+    fs.readFile('/maybe-valid-file', 'utf-8', (err, data) => {
+      res.locals.data = data;
+      next(err);
+    });
+  },
+  function (req, res) {
+    res.locals.data = res.locals.data.split(',')[1];
+    res.send(res.locals.data);
+  },
+]);
+```
+
+```ts
+
+app.get('/', [
+  function (req: Request, res: Response, next: NextFunction) {
+    fs.readFile('/maybe-valid-file', 'utf-8', (err, data) => {
+      res.locals.data = data;
+      next(err);
+    });
+  },
+  function (req: Request, res: Response) {
+    res.locals.data = res.locals.data.split(',')[1];
+    res.send(res.locals.data);
+  },
+]);
+```
+
+The above example contains a couple of trivial statements following the `readFile`
+call. If `readFile` causes an error, then it passes the error to Express, otherwise you
+quickly return to the world of synchronous error handling in the next handler
+in the chain. Then, the example above tries to process the data. If this fails, then the
+synchronous error handler will catch it. If you had done this processing inside
+the `readFile` callback, then the application might exit and the Express error
+handlers would not run.
+
+Finally, for asynchronous code that provides no error-first callback, such as a
+timer, catch errors inside the asynchronous code itself and pass them to
+Express:
+
+```js
+app.get('/', (req, res, next) => {
+  setTimeout(() => {
+    try {
+      throw new Error('BROKEN');
+    } catch (err) {
+      next(err);
+    }
+  }, 100);
+});
+```
+
+```ts
+
+app.get('/', (req: Request, res: Response, next: NextFunction) => {
+  setTimeout(() => {
+    try {
+      throw new Error('BROKEN');
+    } catch (err) {
+      next(err);
+    }
+  }, 100);
+});
+```
+
+The above example uses a `try...catch` block to catch errors in the
+asynchronous code and pass them to Express. If the `try...catch`
+block were omitted, Express would not catch the error since it is not part of the synchronous
+handler code.
+
+Whichever method you use, if you want Express error handlers to be called in and the
+application to survive, you must ensure that Express receives the error.
+
+## The default error handler
+
+Express comes with a built-in error handler that takes care of any errors that might be encountered in the app. This default error-handling middleware function is added at the end of the middleware function stack.
+
+If you pass an error to `next()` and you do not handle it in a custom error
+handler, it will be handled by the built-in error handler; the error will be
+written to the client with the stack trace. The stack trace is not included
+in the production environment.
+
+Set the environment variable `NODE_ENV` to `production`, to run the app in production mode.
+
+When an error is written, the following information is added to the
+response:
+
+- The `res.statusCode` is set from `err.status` (or `err.statusCode`). If
+  this value is outside the 4xx or 5xx range, it will be set to 500.
+- The `res.statusMessage` is set according to the status code.
+- The body will be the HTML of the status code message when in production
+  environment, otherwise will be `err.stack`.
+- Any headers specified in an `err.headers` object.
+
+If you call `next()` with an error after you have started writing the
+response (for example, if you encounter an error while streaming the
+response to the client), the Express default error handler closes the
+connection and fails the request.
+
+So when you add a custom error handler, you must delegate to
+the default Express error handler, when the headers
+have already been sent to the client:
+
+```js
+function errorHandler(err, req, res, next) {
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(500);
+  res.render('error', { error: err });
+}
+```
+
+```ts
+
+function errorHandler(err: Error, req: Request, res: Response, next: NextFunction) {
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(500);
+  res.render('error', { error: err });
+}
+```
+
+Note that the default error handler can get triggered if you call `next()` with an error
+in your code more than once, even if custom error handling middleware is in place.
+
+Other error handling middleware can be found at [Express middleware](/resources/middleware).
+
+## Writing error handlers
+
+Define error-handling middleware functions in the same way as other middleware functions,
+except error-handling functions have four arguments instead of three:
+`(err, req, res, next)`. For example:
+
+```js
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+```
+
+```ts
+
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+```
+
+You define error-handling middleware last, after other `app.use()` and routes calls; for example:
+
+```cjs title="index.cjs"
+const bodyParser = require('body-parser');
+const methodOverride = require('method-override');
+
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+  })
+);
+app.use(bodyParser.json());
+app.use(methodOverride());
+app.use((err, req, res, next) => {
+  // logic
+});
+```
+
+```mjs title="index.mjs"
+
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+  })
+);
+app.use(bodyParser.json());
+app.use(methodOverride());
+app.use((err, req, res, next) => {
+  // logic
+});
+```
+
+```ts title="index.ts"
+
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+  })
+);
+app.use(bodyParser.json());
+app.use(methodOverride());
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  // logic
+});
+```
+
+Responses from within a middleware function can be in any format, such as an HTML error page, a simple message, or a JSON string.
+
+For organizational (and higher-level framework) purposes, you can define
+several error-handling middleware functions, much as you would with
+regular middleware functions. For example, to define an error-handler
+for requests made by using `XHR` and those without:
+
+```cjs title="index.cjs"
+const bodyParser = require('body-parser');
+const methodOverride = require('method-override');
+
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+  })
+);
+app.use(bodyParser.json());
+app.use(methodOverride());
+app.use(logErrors);
+app.use(clientErrorHandler);
+app.use(errorHandler);
+```
+
+```mjs title="index.mjs"
+
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+  })
+);
+app.use(bodyParser.json());
+app.use(methodOverride());
+app.use(logErrors);
+app.use(clientErrorHandler);
+app.use(errorHandler);
+```
+
+In this example, the generic `logErrors` might write request and
+error information to `stderr`, for example:
+
+```js
+function logErrors(err, req, res, next) {
+  console.error(err.stack);
+  next(err);
+}
+```
+
+```ts
+
+function logErrors(err: Error, req: Request, res: Response, next: NextFunction) {
+  console.error(err.stack);
+  next(err);
+}
+```
+
+Also in this example, `clientErrorHandler` is defined as follows; in this case, the error is explicitly passed along to the next one.
+
+Notice that when you do not call `next` in an error-handling function, you are responsible for writing (and ending) the response. Otherwise, those requests will "hang" and will not be eligible for garbage collection.
+
+```js
+function clientErrorHandler(err, req, res, next) {
+  if (req.xhr) {
+    res.status(500).send({ error: 'Something failed!' });
+  } else {
+    next(err);
+  }
+}
+```
+
+```ts
+
+function clientErrorHandler(err: Error, req: Request, res: Response, next: NextFunction) {
+  if (req.xhr) {
+    res.status(500).send({ error: 'Something failed!' });
+  } else {
+    next(err);
+  }
+}
+```
+
+Implement the "catch-all" `errorHandler` function as follows (for example):
+
+```js
+function errorHandler(err, req, res, next) {
+  res.status(500);
+  res.render('error', { error: err });
+}
+```
+
+```ts
+
+function errorHandler(err: Error, req: Request, res: Response, next: NextFunction) {
+  res.status(500);
+  res.render('error', { error: err });
+}
+```
+
+If you have a route handler with multiple callback functions, you can use the `route` parameter to skip to the next route handler. For example:
+
+```js
+app.get(
+  '/a_route_behind_paywall',
+  (req, res, next) => {
+    if (!req.user.hasPaid) {
+      // continue handling this request
+      next('route');
+    } else {
+      next();
+    }
+  },
+  (req, res, next) => {
+    PaidContent.find((err, doc) => {
+      if (err) return next(err);
+      res.json(doc);
+    });
+  }
+);
+```
+
+```ts
+
+app.get(
+  '/a_route_behind_paywall',
+  (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user.hasPaid) {
+      // continue handling this request
+      next('route');
+    } else {
+      next();
+    }
+  },
+  (req: Request, res: Response, next: NextFunction) => {
+    PaidContent.find((err, doc) => {
+      if (err) return next(err);
+      res.json(doc);
+    });
+  }
+);
+```
+
+In this example, the `getPaidContent` handler will be skipped but any remaining handlers in `app` for `/a_route_behind_paywall` would continue to be executed.
+
+Calls to `next()` and `next(err)` indicate that the current handler is complete and in what state.
+`next(err)` will skip all remaining handlers in the chain except for those that are set up to
+handle errors as described above.
+
+---
+
+## Using middleware
+
+URL: https://expressjs.com/en/5x/guide/using-middleware
+
+Express is a routing and middleware web framework with minimal functionality of its own: an Express application is essentially a series of middleware function calls executed during the request-response cycle.
+
+_Middleware_ functions are functions that have access to:
+
+- The [request object](/api/request) (`req`)
+- The [response object](/api/response) (`res`)
+- The next middleware function in the application's request-response cycle, commonly named `next`
+
+Middleware functions can perform the following tasks:
+
+- Execute any code.
+- Modify the request and response objects.
+- End the request-response cycle.
+- Pass control to the next middleware function.
+
+If a middleware function does not end the request-response cycle, it must call `next()` to pass control to the next middleware function. Otherwise, the request will be left hanging.
+
+An Express application can use the following types of middleware:
+
+- [Application-level middleware](#application-level-middleware)
+- [Router-level middleware](#router-level-middleware)
+- [Error-handling middleware](#error-handling-middleware)
+- [Built-in middleware](#built-in-middleware)
+- [Third-party middleware](#third-party-middleware)
+
+You can load application-level and router-level middleware with an optional mount path. Multiple middleware functions can also be loaded together, which creates a middleware sub-stack at a mount point.
+
+## Application-level middleware
+
+Bind application-level middleware to an instance of the [app object](/api/application) by using the `app.use()` and `app.METHOD()` functions, where `METHOD` is the lowercase HTTP method of the request that the middleware function handles, such as `get`, `post`, `put`, or `delete`.
+
+### Middleware without a mount path
+
+The following middleware function runs every time the app receives a request:
+
+```cjs title="index.cjs"
+const express = require('express');
+const app = express();
+
+app.use((req, res, next) => {
+  console.log('Time:', Date.now());
+  next();
+});
+```
+
+```mjs title="index.mjs"
+
+const app = express();
+
+app.use((req, res, next) => {
+  console.log('Time:', Date.now());
+  next();
+});
+```
+
+```ts title="index.ts"
+
+const app: Express = express();
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  console.log('Time:', Date.now());
+  next();
+});
+```
+
+### Middleware mounted on a path
+
+The following middleware function runs for any type of HTTP request on the `/user/:id` path:
+
+```js
+app.use('/user/:id', (req, res, next) => {
+  console.log('Request Type:', req.method);
+  next();
+});
+```
+
+```ts
+
+app.use('/user/:id', (req: Request, res: Response, next: NextFunction) => {
+  console.log('Request Type:', req.method);
+  next();
+});
+```
+
+### Route handlers
+
+This example shows a route and its handler function (middleware system). The function handles GET requests to the `/user/:id` path:
+
+```js
+app.get('/user/:id', (req, res) => {
+  res.send('USER');
+});
+```
+
+```ts
+
+app.get('/user/:id', (req: Request, res: Response) => {
+  res.send('USER');
+});
+```
+
+### Middleware sub-stacks
+
+Multiple middleware functions can be loaded together at a mount point to form a middleware sub-stack. This example prints request info for any type of HTTP request to the `/user/:id` path:
+
+```js
+app.use(
+  '/user/:id',
+  (req, res, next) => {
+    console.log('Request URL:', req.originalUrl);
+    next();
+  },
+  (req, res, next) => {
+    console.log('Request Type:', req.method);
+    next();
+  }
+);
+```
+
+```ts
+
+app.use(
+  '/user/:id',
+  (req: Request, res: Response, next: NextFunction) => {
+    console.log('Request URL:', req.originalUrl);
+    next();
+  },
+  (req: Request, res: Response, next: NextFunction) => {
+    console.log('Request Type:', req.method);
+    next();
+  }
+);
+```
+
+### Multiple route handlers
+
+Route handlers enable you to define multiple routes for a path. The example below defines two routes for GET requests to the `/user/:id` path. The second route will not cause any problems, but it will never get called because the first route ends the request-response cycle.
+
+```js
+app.get(
+  '/user/:id',
+  (req, res, next) => {
+    console.log('ID:', req.params.id);
+    next();
+  },
+  (req, res) => {
+    res.send('User Info');
+  }
+);
+
+// handler for the /user/:id path, which prints the user ID
+app.get('/user/:id', (req, res) => {
+  res.send(req.params.id);
+});
+```
+
+```ts
+
+app.get(
+  '/user/:id',
+  (req: Request, res: Response, next: NextFunction) => {
+    console.log('ID:', req.params.id);
+    next();
+  },
+  (req: Request, res: Response) => {
+    res.send('User Info');
+  }
+);
+
+// handler for the /user/:id path, which prints the user ID
+app.get('/user/:id', (req: Request, res: Response) => {
+  res.send(req.params.id);
+});
+```
+
+### Skipping to the next route
+
+Call `next('route')` to skip the remaining middleware functions in a router middleware stack and pass control to the next route.
+
+`next('route')` will work only in middleware functions that were loaded by using the
+`app.METHOD()` or `router.METHOD()` functions.
+
+In the following example, if the user ID is `0`, the first handler skips to the next route, which sends a special response:
+
+```js
+app.get(
+  '/user/:id',
+  (req, res, next) => {
+    // if the user ID is 0, skip to the next route
+    if (req.params.id === '0') next('route');
+    // otherwise pass the control to the next middleware function in this stack
+    else next();
+  },
+  (req, res) => {
+    // send a regular response
+    res.send('regular');
+  }
+);
+
+// handler for the /user/:id path, which sends a special response
+app.get('/user/:id', (req, res) => {
+  res.send('special');
+});
+```
+
+```ts
+
+app.get(
+  '/user/:id',
+  (req: Request, res: Response, next: NextFunction) => {
+    // if the user ID is 0, skip to the next route
+    if (req.params.id === '0') next('route');
+    // otherwise pass the control to the next middleware function in this stack
+    else next();
+  },
+  (req: Request, res: Response) => {
+    // send a regular response
+    res.send('regular');
+  }
+);
+
+// handler for the /user/:id path, which sends a special response
+app.get('/user/:id', (req: Request, res: Response) => {
+  res.send('special');
+});
+```
+
+### Reusable middleware arrays
+
+Middleware functions can also be grouped into arrays for better reusability. This example shows an array with a middleware sub-stack that handles GET requests to the `/user/:id` path:
+
+```js
+function logOriginalUrl(req, res, next) {
+  console.log('Request URL:', req.originalUrl);
+  next();
+}
+
+function logMethod(req, res, next) {
+  console.log('Request Type:', req.method);
+  next();
+}
+
+const logStuff = [logOriginalUrl, logMethod];
+app.get('/user/:id', logStuff, (req, res) => {
+  res.send('User Info');
+});
+```
+
+```ts
+
+function logOriginalUrl(req: Request, res: Response, next: NextFunction) {
+  console.log('Request URL:', req.originalUrl);
+  next();
+}
+
+function logMethod(req: Request, res: Response, next: NextFunction) {
+  console.log('Request Type:', req.method);
+  next();
+}
+
+const logStuff = [logOriginalUrl, logMethod];
+app.get('/user/:id', logStuff, (req: Request, res: Response) => {
+  res.send('User Info');
+});
+```
+
+## Router-level middleware
+
+Router-level middleware works the same way as application-level middleware, except it is bound to an instance of `express.Router()`.
+
+```js
+const router = express.Router();
+```
+
+```ts
+
+const router = express.Router();
+```
+
+Load router-level middleware by using the `router.use()` and `router.METHOD()` functions.
+
+The following example code replicates the middleware system that is shown above for application-level middleware, by using router-level middleware:
+
+```cjs title="index.cjs"
+const express = require('express');
+const app = express();
+const router = express.Router();
+
+// a middleware function with no mount path. This code is executed for every request to the router
+router.use((req, res, next) => {
+  console.log('Time:', Date.now());
+  next();
+});
+
+// a middleware sub-stack shows request info for any type of HTTP request to the /user/:id path
+router.use(
+  '/user/:id',
+  (req, res, next) => {
+    console.log('Request URL:', req.originalUrl);
+    next();
+  },
+  (req, res, next) => {
+    console.log('Request Type:', req.method);
+    next();
+  }
+);
+
+// a middleware sub-stack that handles GET requests to the /user/:id path
+router.get(
+  '/user/:id',
+  (req, res, next) => {
+    // if the user ID is 0, skip to the next route
+    if (req.params.id === '0') next('route');
+    // otherwise pass control to the next middleware function in this stack
+    else next();
+  },
+  (req, res) => {
+    // render a regular page
+    res.render('regular');
+  }
+);
+
+// handler for the /user/:id path, which renders a special page
+router.get('/user/:id', (req, res) => {
+  console.log(req.params.id);
+  res.render('special');
+});
+
+// mount the router on the app
+app.use('/', router);
+```
+
+```mjs title="index.mjs"
+
+const app = express();
+const router = express.Router();
+
+// a middleware function with no mount path. This code is executed for every request to the router
+router.use((req, res, next) => {
+  console.log('Time:', Date.now());
+  next();
+});
+
+// a middleware sub-stack shows request info for any type of HTTP request to the /user/:id path
+router.use(
+  '/user/:id',
+  (req, res, next) => {
+    console.log('Request URL:', req.originalUrl);
+    next();
+  },
+  (req, res, next) => {
+    console.log('Request Type:', req.method);
+    next();
+  }
+);
+
+// a middleware sub-stack that handles GET requests to the /user/:id path
+router.get(
+  '/user/:id',
+  (req, res, next) => {
+    // if the user ID is 0, skip to the next route
+    if (req.params.id === '0') next('route');
+    // otherwise pass control to the next middleware function in this stack
+    else next();
+  },
+  (req, res) => {
+    // render a regular page
+    res.render('regular');
+  }
+);
+
+// handler for the /user/:id path, which renders a special page
+router.get('/user/:id', (req, res) => {
+  console.log(req.params.id);
+  res.render('special');
+});
+
+// mount the router on the app
+app.use('/', router);
+```
+
+```ts title="index.ts"
+
+const app: Express = express();
+const router = express.Router();
+
+// a middleware function with no mount path. This code is executed for every request to the router
+router.use((req: Request, res: Response, next: NextFunction) => {
+  console.log('Time:', Date.now());
+  next();
+});
+
+// a middleware sub-stack shows request info for any type of HTTP request to the /user/:id path
+router.use(
+  '/user/:id',
+  (req: Request, res: Response, next: NextFunction) => {
+    console.log('Request URL:', req.originalUrl);
+    next();
+  },
+  (req: Request, res: Response, next: NextFunction) => {
+    console.log('Request Type:', req.method);
+    next();
+  }
+);
+
+// a middleware sub-stack that handles GET requests to the /user/:id path
+router.get(
+  '/user/:id',
+  (req: Request, res: Response, next: NextFunction) => {
+    // if the user ID is 0, skip to the next route
+    if (req.params.id === '0') next('route');
+    // otherwise pass control to the next middleware function in this stack
+    else next();
+  },
+  (req: Request, res: Response) => {
+    // render a regular page
+    res.render('regular');
+  }
+);
+
+// handler for the /user/:id path, which renders a special page
+router.get('/user/:id', (req: Request, res: Response) => {
+  console.log(req.params.id);
+  res.render('special');
+});
+
+// mount the router on the app
+app.use('/', router);
+```
+
+### Skipping out of a router
+
+Use `next('router')` to skip the rest of the router's middleware functions and pass control back out of the router instance.
+
+In the following example, the router only responds when the request includes an `x-auth` header. Otherwise, `next('router')` exits the router and the app responds with a 401 status:
+
+```cjs title="index.cjs"
+const express = require('express');
+const app = express();
+const router = express.Router();
+
+// predicate the router with a check and bail out when needed
+router.use((req, res, next) => {
+  if (!req.headers['x-auth']) return next('router');
+  next();
+});
+
+router.get('/user/:id', (req, res) => {
+  res.send('hello, user!');
+});
+
+// use the router and 401 anything falling through
+app.use('/admin', router, (req, res) => {
+  res.sendStatus(401);
+});
+```
+
+```mjs title="index.mjs"
+
+const app = express();
+const router = express.Router();
+
+// predicate the router with a check and bail out when needed
+router.use((req, res, next) => {
+  if (!req.headers['x-auth']) return next('router');
+  next();
+});
+
+router.get('/user/:id', (req, res) => {
+  res.send('hello, user!');
+});
+
+// use the router and 401 anything falling through
+app.use('/admin', router, (req, res) => {
+  res.sendStatus(401);
+});
+```
+
+```ts title="index.ts"
+
+const app: Express = express();
+const router = express.Router();
+
+// predicate the router with a check and bail out when needed
+router.use((req: Request, res: Response, next: NextFunction) => {
+  if (!req.headers['x-auth']) return next('router');
+  next();
+});
+
+router.get('/user/:id', (req: Request, res: Response) => {
+  res.send('hello, user!');
+});
+
+// use the router and 401 anything falling through
+app.use('/admin', router, (req: Request, res: Response) => {
+  res.sendStatus(401);
+});
+```
+
+## Error-handling middleware
+
+Define error-handling middleware functions in the same way as other middleware functions, except with four arguments instead of three, specifically with the signature `(err, req, res, next)`:
+
+```js
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+```
+
+```ts
+
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+```
+
+Error-handling middleware always takes _four_ arguments. You must provide four arguments to
+identify it as an error-handling middleware function. Even if you don't need to use the `next`
+object, you must specify it to maintain the signature. Otherwise, the `next` object will be
+interpreted as regular middleware and will fail to handle errors.
+
+For more information, see the [Error handling](/guide/error-handling) guide.
+
+## Built-in middleware
+
+Express has the following built-in middleware functions:
+
+- [express.static](/api/express/#expressstatic) serves static assets such as HTML files, images, and so on.
+- [express.json](/api/express/#expressjson) parses incoming requests with JSON payloads.
+- [express.raw](/api/express/#expressraw) parses incoming requests with Buffer payloads.
+- [express.text](/api/express/#expresstext) parses incoming requests with text payloads.
+- [express.urlencoded](/api/express/#expressurlencoded) parses incoming requests with URL-encoded payloads.
+
+## Third-party middleware
+
+Use third-party middleware to add functionality to Express apps.
+
+Install the Node.js module for the required functionality, then load it in your app at the application level or at the router level.
+
+The following example illustrates installing and loading the cookie-parsing middleware function `cookie-parser`:
+
+```cjs title="index.cjs"
+const express = require('express');
+const app = express();
+const cookieParser = require('cookie-parser');
+
+// load the cookie-parsing middleware
+app.use(cookieParser());
+```
+
+```mjs title="index.mjs"
+
+const app = express();
+
+// load the cookie-parsing middleware
+app.use(cookieParser());
+```
+
+```ts title="index.ts"
+
+const app: Express = express();
+
+// load the cookie-parsing middleware
+app.use(cookieParser());
+```
+
+For a partial list of third-party middleware functions that are commonly used with Express, see the [Third-party middleware](/resources/middleware) page.
+
+---
+
+## Routing
+
+URL: https://expressjs.com/en/5x/guide/routing
+
+_Routing_ refers to how an application's endpoints (URIs) respond to client requests.
+For an introduction to routing, see [Basic routing](/starter/basic-routing).
+
+You define routing using methods of the Express `app` object that correspond to HTTP methods;
+for example, `app.get()` to handle GET requests and `app.post` to handle POST requests. For a full list,
+see [app.METHOD](/api/application#appmethod). You can also use [app.all()](/api/application#appall) to handle all HTTP methods and [app.use()](/api/application#appuse) to
+specify middleware as the callback function (See [Using middleware](/guide/using-middleware) for details).
+
+These routing methods specify a callback function (sometimes called a "handler function") that Express automatically runs when the application receives a request matching the specified route (endpoint) and HTTP method. In other words, the application "listens" for requests that match the specified route(s) and method(s), and when it detects a match, it calls the specified callback function.
+
+In fact, the routing methods can have more than one callback function as arguments.
+With multiple callback functions, it is important to provide `next` as an argument to the callback function and then call `next()` within the body of the function to hand off control
+to the next callback.
+
+The following code is an example of a very basic route.
+
+```cjs title="index.cjs"
+const express = require('express');
+const app = express();
+
+// respond with "hello world" when a GET request is made to the homepage
+app.get('/', (req, res) => {
+  res.send('hello world');
+});
+```
+
+```mjs title="index.mjs"
+
+const app = express();
+
+// respond with "hello world" when a GET request is made to the homepage
+app.get('/', (req, res) => {
+  res.send('hello world');
+});
+```
+
+```ts title="index.ts"
+
+const app: Express = express();
+
+// respond with "hello world" when a GET request is made to the homepage
+app.get('/', (req: Request, res: Response) => {
+  res.send('hello world');
+});
+```
+
+## Route methods
+
+A route method is derived from one of the HTTP methods, and is attached to an instance of the `express` class.
+
+The following code is an example of routes that are defined for the `GET` and the `POST` methods to the root of the app.
+
+```js
+// GET method route
+app.get('/', (req, res) => {
+  res.send('GET request to the homepage');
+});
+
+// POST method route
+app.post('/', (req, res) => {
+  res.send('POST request to the homepage');
+});
+```
+
+```ts
+
+// GET method route
+app.get('/', (req: Request, res: Response) => {
+  res.send('GET request to the homepage');
+});
+
+// POST method route
+app.post('/', (req: Request, res: Response) => {
+  res.send('POST request to the homepage');
+});
+```
+
+Express supports methods that correspond to all HTTP request methods: `get`, `post`, and so on.
+For a full list, see [app.METHOD](/api/application#appmethod).
+
+There is a special routing method, `app.all()`, used to load middleware functions at a path for _all_ HTTP request methods. For example, the following handler is executed for requests to the route `"/secret"` whether using `GET`, `QUERY`, `POST`, `PUT`, `DELETE`, or any other HTTP request method supported in the [http module](https://nodejs.org/api/http.html#httpmethods).
+
+```js
+app.all('/secret', (req, res, next) => {
+  console.log('Accessing the secret section ...');
+  next(); // pass control to the next handler
+});
+```
+
+```ts
+
+app.all('/secret', (req: Request, res: Response, next: NextFunction) => {
+  console.log('Accessing the secret section ...');
+  next(); // pass control to the next handler
+});
+```
+
+## Route paths
+
+Route paths, in combination with a request method, define the endpoints at which requests can be made. Route paths can be strings or regular expressions. They can also capture values from the URL, as described in [Route parameters](#route-parameters) below.
+
+Express uses [path-to-regexp](https://www.npmjs.com/package/path-to-regexp) v8 for matching the route paths; see the path-to-regexp documentation for all the possibilities in defining route paths.
+[Express Playground Router](https://bjohansebas.github.io/playground-router/) is a handy tool for testing basic Express routes, although it does not support pattern matching.
+
+### String paths
+
+String paths match requests exactly. The dot (`.`) and hyphen (`-`) are interpreted literally.
+
+Query strings are not part of the route path.
+
+```js
+app.get('/', (req, res) => {
+  res.send('root');
+});
+
+app.get('/about', (req, res) => {
+  res.send('about');
+});
+
+app.get('/random.text', (req, res) => {
+  res.send('random.text');
+});
+```
+
+```ts
+
+app.get('/', (req: Request, res: Response) => {
+  res.send('root');
+});
+
+app.get('/about', (req: Request, res: Response) => {
+  res.send('about');
+});
+
+app.get('/random.text', (req: Request, res: Response) => {
+  res.send('random.text');
+});
+```
+
+The characters `?`, `+`, `*`, `[]`, `()`, and `!` are reserved and cannot be used as literal characters in route paths, and braces are reserved for [optional segments](#optional-segments). Use `\` to escape them if needed.
+
+### Regular expressions
+
+You can also use regular expressions as route paths. This is useful when you need more complex matching logic.
+
+```js
+// Matches any path containing "a"
+app.get(/a/, (req, res) => {
+  res.send('/a/');
+});
+
+// Matches paths ending with "fly" (butterfly, dragonfly, etc.)
+app.get(/.*fly$/, (req, res) => {
+  res.send('/.*fly$/');
+});
+```
+
+```ts
+
+// Matches any path containing "a"
+app.get(/a/, (req: Request, res: Response) => {
+  res.send('/a/');
+});
+
+// Matches paths ending with "fly" (butterfly, dragonfly, etc.)
+app.get(/.*fly$/, (req: Request, res: Response) => {
+  res.send('/.*fly$/');
+});
+```
+
+## Route parameters
+
+Route parameters are named URL segments that are used to capture the values specified at their position in the URL. The captured values are populated in the `req.params` object, with the name of the route parameter specified in the path as their respective keys. They come in three forms: [named parameters](#named-parameters) (`:name`), [wildcards](#wildcards) (`*name`), and [optional segments](#optional-segments), which wrap either of them in braces.
+
+### Named parameters
+
+Named parameters capture a single path segment at their position in the URL, or part of one when combined with literal characters, as shown further below.
+
+```
+Route path: /users/:userId/books/:bookId
+Request URL: http://localhost:3000/users/34/books/8989
+req.params: { "userId": "34", "bookId": "8989" }
+```
+
+To define routes with route parameters, simply specify the route parameters in the path of the route as shown below.
+
+```js
+app.get('/users/:userId/books/:bookId', (req, res) => {
+  res.send(req.params);
+});
+```
+
+In TypeScript, `@types/express` infers the parameters from the route path, so in the handler above
+`req.params.userId` and `req.params.bookId` are already typed as `string` with no extra annotation.
+Reading a name that is not in the route (such as `req.params.other`) is a type error. You only need
+to annotate the parameters when the handler is defined separately from the route, because the type
+checker can no longer see the path. In that case, pass them as the first type argument of `Request`:
+
+```ts
+
+const sendParams = (req: Request<{ userId: string; bookId: string }>, res: Response) => {
+  res.send(req.params);
+};
+
+app.get('/users/:userId/books/:bookId', sendParams);
+```
+
+The name of route parameters must be a valid JavaScript identifier. Other names can be used by quoting them, for example `:"user-name"`.
+
+Since the hyphen (`-`) and the dot (`.`) are interpreted literally, they can be used along with route parameters for useful purposes.
+
+```
+Route path: /flights/:from-:to
+Request URL: http://localhost:3000/flights/LAX-SFO
+req.params: { "from": "LAX", "to": "SFO" }
+```
+
+```
+Route path: /plantae/:genus.:species
+Request URL: http://localhost:3000/plantae/Prunus.persica
+req.params: { "genus": "Prunus", "species": "persica" }
+```
+
+Regexp characters are not supported inside string paths, so a parameter cannot be restricted with a suffix such as `:userId(\d+)`. Use an array of paths or a full regular expression instead.
+See the [path route matching syntax](/guide/migrating-5#path-route-matching-syntax) for more information.
+
+### Wildcards
+
+Wildcards match any path after a prefix. Like other route parameters they must have a name, but they are captured as an array of path segments instead of a string.
+
+```js
+app.get('/files/*filepath', (req, res) => {
+  // GET /files/images/logo.png
+  console.dir(req.params.filepath);
+  // => [ 'images', 'logo.png' ]
+  res.send(`File: ${req.params.filepath.join('/')}`);
+});
+```
+
+```ts
+
+app.get('/files/*filepath', (req: Request<{ filepath: string[] }>, res: Response) => {
+  // GET /files/images/logo.png
+  console.dir(req.params.filepath);
+  // => [ 'images', 'logo.png' ]
+  res.send(`File: ${req.params.filepath.join('/')}`);
+});
+```
+
+To also match the root path, wrap the wildcard in braces:
+
+```js
+// Matches / , /foo , /foo/bar , etc.
+app.get('/{*splat}', (req, res) => {
+  // GET / => req.params = {}, splat is omitted
+  // GET /foo/bar => req.params.splat = [ 'foo', 'bar' ]
+  res.send('ok');
+});
+```
+
+```ts
+
+// Matches / , /foo , /foo/bar , etc.
+app.get('/{*splat}', (req: Request, res: Response) => {
+  // GET / => req.params = {}, splat is omitted
+  // GET /foo/bar => req.params.splat = [ 'foo', 'bar' ]
+  res.send('ok');
+});
+```
+
+### Optional segments
+
+Use braces to define optional segments in a route path. When the segment is not present, the parameter is omitted from `req.params`.
+
+```js
+app.get('/:file{.:ext}', (req, res) => {
+  // GET /image.png => req.params = { file: 'image', ext: 'png' }
+  // GET /image => req.params = { file: 'image' }
+  res.send('ok');
+});
+```
+
+```ts
+
+app.get('/:file{.:ext}', (req: Request, res: Response) => {
+  // GET /image.png => req.params = { file: 'image', ext: 'png' }
+  // GET /image => req.params = { file: 'image' }
+  res.send('ok');
+});
+```
+
+The braces can also wrap a whole parameter to make it optional. Note that everything inside the braces is optional, so the position of the slash matters:
+
+```js
+app.get('/user/{:id}', (req, res) => {
+  // GET /user/42 => req.params = { id: '42' }
+  // GET /user/ => req.params = {}
+  // GET /user => 404, only the parameter is optional
+  res.send('ok');
+});
+
+app.get('/order{/:id}', (req, res) => {
+  // GET /order/42 => req.params = { id: '42' }
+  // GET /order => req.params = {}, the whole segment is optional
+  res.send('ok');
+});
+```
+
+```ts
+
+app.get('/user/{:id}', (req: Request, res: Response) => {
+  // GET /user/42 => req.params = { id: '42' }
+  // GET /user/ => req.params = {}
+  // GET /user => 404, only the parameter is optional
+  res.send('ok');
+});
+
+app.get('/order{/:id}', (req: Request, res: Response) => {
+  // GET /order/42 => req.params = { id: '42' }
+  // GET /order => req.params = {}, the whole segment is optional
+  res.send('ok');
+});
+```
+
+Do not confuse the position of the slash in the route path with the [`strict routing` setting](/api/application/#application-settings), which is about the request URL: it controls whether a URL ending in a slash that the route path does not require still matches. For example, a request for `/order/` matches the `/order{/:id}` route by default, but returns a 404 error when strict routing is enabled; the trailing slash of `/user/` is unaffected because the `/user/{:id}` route requires it. All the requests commented in the examples above behave the same regardless of that setting.
+
+## Route handlers
+
+You can provide multiple callback functions that behave like [middleware](/guide/using-middleware) to handle a request. The only exception is that these callbacks might invoke `next('route')` to bypass the remaining route callbacks. You can use this mechanism to impose pre-conditions on a route, then pass control to subsequent routes if there's no reason to proceed with the current route.
+
+```js
+app.get('/user/:id', (req, res, next) => {
+  if (req.params.id === '0') {
+    return next('route');
+  }
+  res.send(`User ${req.params.id}`);
+});
+
+app.get('/user/:id', (req, res) => {
+  res.send('Special handler for user ID 0');
+});
+```
+
+```ts
+
+app.get('/user/:id', (req: Request, res: Response, next: NextFunction) => {
+  if (req.params.id === '0') {
+    return next('route');
+  }
+  res.send(`User ${req.params.id}`);
+});
+
+app.get('/user/:id', (req: Request, res: Response) => {
+  res.send('Special handler for user ID 0');
+});
+```
+
+In this example:
+
+- `GET /user/5` → handled by first route → sends "User 5"
+- `GET /user/0` → first route calls `next('route')`, skipping to the next matching `/user/:id` route
+
+Route handlers can be in the form of a function, an array of functions, or combinations of both, as shown in the following examples.
+
+A single callback function can handle a route. For example:
+
+```js
+app.get('/example/a', (req, res) => {
+  res.send('Hello from A!');
+});
+```
+
+```ts
+
+app.get('/example/a', (req: Request, res: Response) => {
+  res.send('Hello from A!');
+});
+```
+
+More than one callback function can handle a route (make sure you specify the `next` object). For example:
+
+```js
+app.get(
+  '/example/b',
+  (req, res, next) => {
+    console.log('the response will be sent by the next function ...');
+    next();
+  },
+  (req, res) => {
+    res.send('Hello from B!');
+  }
+);
+```
+
+```ts
+
+app.get(
+  '/example/b',
+  (req: Request, res: Response, next: NextFunction) => {
+    console.log('the response will be sent by the next function ...');
+    next();
+  },
+  (req: Request, res: Response) => {
+    res.send('Hello from B!');
+  }
+);
+```
+
+An array of callback functions can handle a route. For example:
+
+```js
+const cb0 = function (req, res, next) {
+  console.log('CB0');
+  next();
+};
+
+const cb1 = function (req, res, next) {
+  console.log('CB1');
+  next();
+};
+
+const cb2 = function (req, res) {
+  res.send('Hello from C!');
+};
+
+app.get('/example/c', [cb0, cb1, cb2]);
+```
+
+```ts
+
+const cb0 = function (req: Request, res: Response, next: NextFunction) {
+  console.log('CB0');
+  next();
+};
+
+const cb1 = function (req: Request, res: Response, next: NextFunction) {
+  console.log('CB1');
+  next();
+};
+
+const cb2 = function (req: Request, res: Response) {
+  res.send('Hello from C!');
+};
+
+app.get('/example/c', [cb0, cb1, cb2]);
+```
+
+A combination of independent functions and arrays of functions can handle a route. For example:
+
+```js
+const cb0 = function (req, res, next) {
+  console.log('CB0');
+  next();
+};
+
+const cb1 = function (req, res, next) {
+  console.log('CB1');
+  next();
+};
+
+app.get(
+  '/example/d',
+  [cb0, cb1],
+  (req, res, next) => {
+    console.log('the response will be sent by the next function ...');
+    next();
+  },
+  (req, res) => {
+    res.send('Hello from D!');
+  }
+);
+```
+
+```ts
+
+const cb0 = function (req: Request, res: Response, next: NextFunction) {
+  console.log('CB0');
+  next();
+};
+
+const cb1 = function (req: Request, res: Response, next: NextFunction) {
+  console.log('CB1');
+  next();
+};
+
+app.get(
+  '/example/d',
+  [cb0, cb1],
+  (req: Request, res: Response, next: NextFunction) => {
+    console.log('the response will be sent by the next function ...');
+    next();
+  },
+  (req: Request, res: Response) => {
+    res.send('Hello from D!');
+  }
+);
+```
+
+## Response methods
+
+The methods on the [response object](/api/response) (`res`) in the following table can send a response to the client, and terminate the request-response cycle. If none of these methods are called from a route handler, the client request will be left hanging.
+
+| Method                                          | Description                                                                           |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------- |
+| [res.download()](/api/response#resdownload)     | Prompt a file to be downloaded.                                                       |
+| [res.end()](/api/response#resend)               | End the response process.                                                             |
+| [res.json()](/api/response#resjson)             | Send a JSON response.                                                                 |
+| [res.jsonp()](/api/response#resjsonp)           | Send a JSON response with JSONP support.                                              |
+| [res.redirect()](/api/response#resredirect)     | Redirect a request.                                                                   |
+| [res.render()](/api/response#resrender)         | Render a view template.                                                               |
+| [res.send()](/api/response#ressend)             | Send a response of various types.                                                     |
+| [res.sendFile()](/api/response#ressendfile)     | Send a file as an octet stream.                                                       |
+| [res.sendStatus()](/api/response#ressendstatus) | Set the response status code and send its string representation as the response body. |
+
+## app.route()
+
+You can create chainable route handlers for a route path by using `app.route()`.
+Because the path is specified in a single location, this helps to create modular routes and reduces redundancy and typos. For more information about routes, see the [Router() documentation](/api/router).
+
+Here is an example of chained route handlers that are defined by using `app.route()`.
+
+```js
+app
+  .route('/book')
+  .get((req, res) => {
+    res.send('Get a random book');
+  })
+  .post((req, res) => {
+    res.send('Add a book');
+  })
+  .put((req, res) => {
+    res.send('Update the book');
+  });
+```
+
+```ts
+
+app
+  .route('/book')
+  .get((req: Request, res: Response) => {
+    res.send('Get a random book');
+  })
+  .post((req: Request, res: Response) => {
+    res.send('Add a book');
+  })
+  .put((req: Request, res: Response) => {
+    res.send('Update the book');
+  });
+```
+
+## express.Router
+
+Use the `express.Router` class to create modular, mountable route handlers. A `Router` instance is a complete middleware and routing system; for this reason, it is often referred to as a "mini-app".
+
+The following example creates a router as a module, loads a middleware function in it, defines some routes, and mounts the router module on a path in the main app.
+
+Create a router file named `birds.js` in the app directory, with the following content:
+
+```cjs title="birds.cjs"
+const express = require('express');
+const router = express.Router();
+
+// middleware that is specific to this router
+const timeLog = (req, res, next) => {
+  console.log('Time: ', Date.now());
+  next();
+};
+router.use(timeLog);
+
+// define the home page route
+router.get('/', (req, res) => {
+  res.send('Birds home page');
+});
+// define the about route
+router.get('/about', (req, res) => {
+  res.send('About birds');
+});
+
+module.exports = router;
+```
+
+```mjs title="birds.mjs"
+
+const router = express.Router();
+
+// middleware that is specific to this router
+const timeLog = (req, res, next) => {
+  console.log('Time: ', Date.now());
+  next();
+};
+router.use(timeLog);
+
+// define the home page route
+router.get('/', (req, res) => {
+  res.send('Birds home page');
+});
+// define the about route
+router.get('/about', (req, res) => {
+  res.send('About birds');
+});
+
+export default router;
+```
+
+```ts title="birds.ts"
+
+const router = express.Router();
+
+// middleware that is specific to this router
+const timeLog = (req: Request, res: Response, next: NextFunction) => {
+  console.log('Time: ', Date.now());
+  next();
+};
+router.use(timeLog);
+
+// define the home page route
+router.get('/', (req: Request, res: Response) => {
+  res.send('Birds home page');
+});
+// define the about route
+router.get('/about', (req: Request, res: Response) => {
+  res.send('About birds');
+});
+
+export default router;
+```
+
+Then, load the router module in the app:
+
+```cjs title="index.cjs"
+const birds = require('./birds');
+
+// ...
+
+app.use('/birds', birds);
+```
+
+```mjs title="index.mjs"
+
+// ...
+
+app.use('/birds', birds);
+```
+
+The app will now be able to handle requests to `/birds` and `/birds/about`, as well as call the `timeLog` middleware function that is specific to the route.
+
+But if the parent route `/birds` has path parameters, it will not be accessible by default from the sub-routes. To make it accessible, you will need to pass the `mergeParams` option to the [Router constructor](/api/express/#expressrouter).
+
+```js
+const router = express.Router({ mergeParams: true });
+```
+
+---
+

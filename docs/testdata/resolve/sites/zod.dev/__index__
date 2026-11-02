@@ -1,0 +1,145 @@
+<!doctype html>
+<html><head>
+<title>Intro | Zod</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/_next/static/chunks/82973c63e98e1ec8.js"></script>
+<script src="/_next/static/chunks/3fa3ae6e53384173.js"></script>
+<script src="/_next/static/chunks/7131bc8358a058fd.js"></script>
+<script src="/_next/static/chunks/476dee84f2370645.js"></script>
+<script src="/_next/static/chunks/turbopack-5d6018c99bf72045.js"></script>
+<script src="/_next/static/chunks/363df8a0a885aa64.js"></script>
+<script src="/_next/static/chunks/7b37a1be3871dd74.js"></script>
+<script src="/_next/static/chunks/a372b072e9e386f6.js"></script>
+<script src="/_next/static/chunks/a229fcc952f8024d.js"></script>
+<script src="/_next/static/chunks/896d862bf70449ae.js"></script>
+<script src="/_next/static/chunks/db14acfa2656b832.js"></script>
+<script src="/_next/static/chunks/331ff862417cb8cf.js"></script>
+<script src="/_next/static/chunks/843521a0fdfa9cc9.js"></script>
+<script src="/_next/static/chunks/716e6fe3d59742f2.js"></script>
+<script src="/_next/static/chunks/5788bad70671279b.js"></script>
+<meta name="next-size-adjust" content="">
+<meta name="description" content="Introduction to Zod - TypeScript-first schema validation library with static type inference">
+<meta name="keywords" content="zod,typescript,validation,schema">
+<meta property="og:title" content="Intro | Zod">
+<meta property="og:description" content="Introduction to Zod - TypeScript-first schema validation library with static type inference">
+<meta property="og:url" content="https://zod.dev/">
+<meta property="og:site_name" content="Zod">
+<meta property="og:image" content="https://zod.dev/og.png?title=Intro&amp;description=Introduction%20to%20Zod%20-%20TypeScript-first%20schema%20validation%20library%20with%20static%20type%20inference&amp;path=zod.dev">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Intro | Zod">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@colinhacks">
+<meta name="twitter:creator" content="@colinhacks">
+<meta name="twitter:title" content="Intro | Zod">
+<meta name="twitter:description" content="Introduction to Zod - TypeScript-first schema validation library with static type inference">
+<meta name="twitter:image" content="https://zod.dev/og.png?title=Intro&amp;description=Introduction%20to%20Zod%20-%20TypeScript-first%20schema%20validation%20library%20with%20static%20type%20inference&amp;path=zod.dev">
+<meta name="twitter:image:width" content="1200">
+<meta name="twitter:image:height" content="630">
+<meta name="twitter:image:alt" content="Intro | Zod">
+<script src="/_next/static/chunks/a6dad97d9634a72d.js"></script>
+<script src="/_next/static/chunks/a9707375ae8e92a8.js"></script>
+<script>self.__next_f.push([1,"4e:[\"$\",\"$L70\",null,{\"as\":\"h2\",\"id\":\"features\",\"children\":\"Features\"}]\n4f:[\"$\",\"ul\",null,{\"children\":[\"\\n\",[\"$\",\"li\",null,{\"children\":\"Zero external dependencies\"}],\"\\n\",[\"$\",\"li\",null,{\"children\":\"Works in Node.js and all modern browsers\"}],\"\\n\",[\"$\",\"li\",null,{\"children\":\"Tiny: 2kb core bundle (gzipped)\"}],\"\\n\",[\"$\",\"li\",null,{\"children\":\"Immutable API: methods return a new instance\"}],\"\\n\",[\"$\",\"li\",null,{\"children\":\"Concise interface\"}],\"\\n\",[\"$\",\"li\",null,{\"children\":\"Works with TypeScript and plain JS\"}],\"\\n\",[\"$\",\"li\",null,{\"children\":\"Built-in JSON Schema conversion\"}],\"\\n\",[\"$\",\"li\",null,{\"children\":\"Extensive ecosystem\"}],\"\\n\"]}]\n50:[\"$\",\"$L70\",null,{\"as\":\"h2\",\"id\":\"installation\",\"children\":\"Installation\"}]\n"])</script>
+<script>self.__next_f.push([1,"53:[\"$\",\"p\",null,{\"children\":[\"Zod provides an MCP server that can be used by agents to search Zod's docs. To add to your editor, follow \",\"$L7c\",\". Zod also provides an \",\"$L7d\",\" file.\"]}]\n54:[\"$\",\"$L70\",null,{\"as\":\"h2\",\"id\":\"requirements\",\"children\":\"Requirements\"}]\n55:[\"$\",\"p\",null,{\"children\":[\"Zod is tested against \",[\"$\",\"em\",null,{\"children\":\"TypeScript v5.5\"}],\" and later. Older versions may work but are not officially supported.\"]}]\n56:[\"$\",\"$L70\",null,{\"as\":\"h3\",\"id\":\"strict\",\"children\":[\"$\",\"code\",null,{\"children\":\"\\\"strict\\\"\"}]}]\n57:[\"$\",\"p\",null,{\"children\":[\"You must enable \",[\"$\",\"code\",null,{\"children\":\"strict\"}],\" mode in your \",[\"$\",\"code\",null,{\"children\":\"tsconfig.json\"}],\". This is a best practice for all TypeScript projects.\"]}]\n7e:T4dc,"])</script>
+</head><body>
+<a href="/blog/zod-4-6" class="underline">Read the announcement.</a>
+<a href="/" class="inline-flex items-center gap-2.5 font-semibold"></a>
+<a href="/" class="inline-flex text-[15px] items-center gap-2.5 font-medium"></a>
+<a href="/" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 bg-fd-primary/10 text-fd-primary">Intro</a>
+<a href="/basics" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">Basic usage</a>
+<a href="/api" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">Defining schemas</a>
+<a href="/error-customization" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">Customizing errors</a>
+<a href="/error-formatting" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">Formatting errors</a>
+<a href="/metadata" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">Metadata and registries</a>
+<a href="/json-schema" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">JSON Schema</a>
+<a href="/codecs" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">Codecs</a>
+<a href="/compile" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">AOT compilation</a>
+<a href="/ecosystem" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">Ecosystem</a>
+<a href="/library-authors" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">For library authors</a>
+<a href="/packages/zod" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">Zod</a>
+<a href="/packages/mini" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">Zod Mini</a>
+<a href="/packages/core" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">Zod Core</a>
+<a href="/blog/zod-4-6" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">Zod 4.6</a>
+<a href="/blog/zod-4-5" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">Zod 4.5</a>
+<a href="/blog/reducing-memory-footprint" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">Reducing Zod&#x27;s memory footprint by an order of magnitude with method memoization</a>
+<a href="/blog" class="relative flex flex-row items-center gap-2 rounded-md p-2 text-start text-fd-muted-foreground [overflow-wrap:anywhere] md:py-1.5 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 hover:transition-none">View all</a>
+<a href="https://github.com/colinhacks/zod" aria-label="GitHub" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors duration-100 disabled:pointer-events-none disabled:opacity-50 hover:bg-fd-accent hover:text-fd-accent-foreground p-1.5 [&amp;_svg]:size-5 text-fd-muted-foreground md:[&amp;_svg]:size-4.5"></a>
+<a href="/blog/zod-4-6" class="not-prose group self-center mb-8 inline-flex items-center gap-2 rounded-full border border-fd-border bg-fd-background py-1 pl-1.5 pr-3 text-sm text-fd-foreground no-underline hover:border-[var(--ui-color)] transition-colors">NewZod 4.6</a>
+<a href="https://x.com/colinhacks">@colinhacks</a>
+<a href="https://github.com/colinhacks/zod/actions?query=branch%3Amain" class="border-none"></a>
+<a href="https://twitter.com/colinhacks" class="border-none"></a>
+<a href="https://opensource.org/licenses/MIT" class="border-none"></a>
+<a href="https://www.npmjs.com/package/zod" class="border-none"></a>
+<a href="https://github.com/colinhacks/zod" class="border-none"></a>
+<a href="https://zod.dev">Website</a>
+<a href="https://discord.gg/RcG33DQJdf">Discord</a>
+<a href="https://twitter.com/colinhacks">𝕏</a>
+<a href="https://bsky.app/profile/zod.dev">Bluesky</a>
+<a href="/v4">release notes</a>
+<a href="/v4/changelog">migration guide</a>
+<a href="?id=introduction#introduction" class="peer">Introduction</a>
+<a href="?id=features#features" class="peer">Features</a>
+<a href="?id=installation#installation" class="peer">Installation</a>
+<a href="https://jsr.io/@zod/zod">jsr.io</a>
+<a href="https://share.inkeep.com/zod/mcp">these instructions</a>
+<a href="https://zod.dev/llms.txt">llms.txt</a>
+<a href="?id=requirements#requirements" class="peer">Requirements</a>
+<a href="?id=strict#strict" class="peer">&quot;strict&quot;</a>
+<a href="?id=ecosystem#ecosystem" class="peer">Ecosystem</a>
+<a href="/ecosystem">Ecosystem page</a>
+<a href="/ecosystem?id=resources">Resources</a>
+<a href="/ecosystem?id=api-libraries">API Libraries</a>
+<a href="/ecosystem?id=form-integrations">Form Integrations</a>
+<a href="/ecosystem?id=zod-to-x">Zod to X</a>
+<a href="/ecosystem?id=x-to-zod">X to Zod</a>
+<a href="/ecosystem?id=mocking-libraries">Mocking Libraries</a>
+<a href="/ecosystem?id=powered-by-zod">Powered by Zod</a>
+<a href="https://trpc.io">tRPC</a>
+<a href="https://react-hook-form.com">React Hook Form</a>
+<a href="https://react-hook-form.com/docs/useform#resolver">Zod resolver</a>
+<a href="https://github.com/colinhacks/zshy">zshy</a>
+<a href="?id=sponsors#sponsors" class="peer">Sponsors</a>
+<a href="https://github.com/sponsors/colinhacks">corporate tiers</a>
+<a href="?id=platinum#platinum" class="peer">Platinum</a>
+<a href="https://trigger.dev/?utm_source=zod"></a>
+<a href="https://trigger.dev/?utm_source=zod" class="transition-colors duration-200">trigger.dev</a>
+<a href="?id=gold#gold" class="peer">Gold</a>
+<a href="https://www.coderabbit.ai/" class="my-0! border-none"></a>
+<a href="https://www.coderabbit.ai/" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">coderabbit.ai</a>
+<a href="?id=silver#silver" class="peer">Silver</a>
+<a href="https://www.subtotal.com/?utm_source=zod" class="flex flex-col items-center">subtotal.com</a>
+<a href="https://www.propelauth.com/" class="flex flex-col items-center">propelauth.com</a>
+<a href="https://scalar.com/" class="flex flex-col items-center">scalar.com</a>
+<a href="https://transloadit.com/?utm_source=zod&amp;utm_medium=referral&amp;utm_campaign=sponsorship&amp;utm_content=github" class="flex flex-col items-center">transloadit.com</a>
+<a href="https://whop.com/" class="flex flex-col items-center">whop.com</a>
+<a href="https://inngest.com/" class="flex flex-col items-center">inngest.com</a>
+<a href="https://storyblok.com/" class="flex flex-col items-center">storyblok.com</a>
+<a href="https://mux.link/zod" class="flex flex-col items-center">mux.link/zod</a>
+<a href="https://www.cybozu.co.jp/" class="flex flex-col items-center">cybozu.co.jp</a>
+<a href="https://www.9thco.com/?utm_source=zod" class="flex flex-col items-center">9thco.com</a>
+<a href="https://stackblitz.com/?utm_source=zod" class="flex flex-col items-center">stackblitz.com</a>
+<a href="?id=bronze#bronze" class="peer">Bronze</a>
+<a href="https://www.code4japan.org/?utm_source=zod" class="flex flex-col items-center m-0 border-none"></a>
+<a href="https://www.code4japan.org/?utm_source=zod" class="hidden">code4japan.org</a>
+<a href="https://github.com/jasonLaster" class="flex flex-col items-center m-0 border-none"></a>
+<a href="https://github.com/jasonLaster" class="hidden">github.com/jasonLaster</a>
+<a href="https://convex.dev/?utm_source=zod" class="flex flex-col items-center m-0 border-none"></a>
+<a href="https://convex.dev/?utm_source=zod" class="hidden">convex.dev</a>
+<a href="https://n8n.io/?utm_source=zod" class="flex flex-col items-center m-0 border-none"></a>
+<a href="https://n8n.io/?utm_source=zod" class="hidden">n8n.io</a>
+<a href="https://www.route4me.com/?utm_source=zod" class="flex flex-col items-center m-0 border-none"></a>
+<a href="https://www.route4me.com/?utm_source=zod" class="hidden">route4me.com</a>
+<a href="/basics" class="flex flex-col gap-2 rounded-lg border p-4 text-sm transition-colors hover:bg-fd-accent/80 hover:text-fd-accent-foreground @max-lg:col-span-full text-end">Basic usageBasic usage guide covering schema definition, parsing data, error handling, and type inference</a>
+<a href="#introduction" class="prose relative py-1.5 text-sm text-fd-muted-foreground transition-colors [overflow-wrap:anywhere] first:pt-0 last:pb-0 data-[active=true]:text-fd-primary">Introduction</a>
+<a href="#features" class="prose relative py-1.5 text-sm text-fd-muted-foreground transition-colors [overflow-wrap:anywhere] first:pt-0 last:pb-0 data-[active=true]:text-fd-primary">Features</a>
+<a href="#installation" class="prose relative py-1.5 text-sm text-fd-muted-foreground transition-colors [overflow-wrap:anywhere] first:pt-0 last:pb-0 data-[active=true]:text-fd-primary">Installation</a>
+<a href="#requirements" class="prose relative py-1.5 text-sm text-fd-muted-foreground transition-colors [overflow-wrap:anywhere] first:pt-0 last:pb-0 data-[active=true]:text-fd-primary">Requirements</a>
+<a href="#strict" class="prose relative py-1.5 text-sm text-fd-muted-foreground transition-colors [overflow-wrap:anywhere] first:pt-0 last:pb-0 data-[active=true]:text-fd-primary">&quot;strict&quot;</a>
+<a href="#ecosystem" class="prose relative py-1.5 text-sm text-fd-muted-foreground transition-colors [overflow-wrap:anywhere] first:pt-0 last:pb-0 data-[active=true]:text-fd-primary">Ecosystem</a>
+<a href="#sponsors" class="prose relative py-1.5 text-sm text-fd-muted-foreground transition-colors [overflow-wrap:anywhere] first:pt-0 last:pb-0 data-[active=true]:text-fd-primary">Sponsors</a>
+<a href="#platinum" class="prose relative py-1.5 text-sm text-fd-muted-foreground transition-colors [overflow-wrap:anywhere] first:pt-0 last:pb-0 data-[active=true]:text-fd-primary">Platinum</a>
+<a href="#gold" class="prose relative py-1.5 text-sm text-fd-muted-foreground transition-colors [overflow-wrap:anywhere] first:pt-0 last:pb-0 data-[active=true]:text-fd-primary">Gold</a>
+<a href="#silver" class="prose relative py-1.5 text-sm text-fd-muted-foreground transition-colors [overflow-wrap:anywhere] first:pt-0 last:pb-0 data-[active=true]:text-fd-primary">Silver</a>
+<a href="#bronze" class="prose relative py-1.5 text-sm text-fd-muted-foreground transition-colors [overflow-wrap:anywhere] first:pt-0 last:pb-0 data-[active=true]:text-fd-primary">Bronze</a>
+</body></html>

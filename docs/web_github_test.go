@@ -179,6 +179,19 @@ func TestGHClientSearchReposRequests(t *testing.T) {
 	}
 }
 
+// A search GitHub cut short (incomplete_results) returns the hits it has
+// and errIncompleteSearch: they are real, but not the whole answer.
+func TestGHClientSearchIncomplete(t *testing.T) {
+	ft := testutil.NewFixtureTransport()
+	ft.Handle(http.MethodGet, "https://api.github.com/search/repositories?q=gin+in:name&sort=stars", testutil.Fixture{
+		Body: `{"total_count":2,"incomplete_results":true,"items":[{"full_name":"codegangsta/gin","stargazers_count":4240,"language":"Go"}]}`,
+	})
+	got, err := newGHClient(ft.Client(), nil).searchRepos(context.Background(), "gin", 10)
+	if !errors.Is(err, errIncompleteSearch) || len(got) != 1 || got[0].key != (repoKey{"codegangsta", "gin"}) {
+		t.Errorf("an incomplete search = %v, %v; want its one hit and errIncompleteSearch", got, err)
+	}
+}
+
 func TestGHClientRateLimits(t *testing.T) {
 	reset := time.Now().Add(41 * time.Minute).Truncate(time.Second)
 	ft := testutil.NewFixtureTransport()

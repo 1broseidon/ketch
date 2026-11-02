@@ -3,12 +3,14 @@ package docs
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -1258,19 +1260,127 @@ func TestResolveFailedSourceIsNoAnswer(t *testing.T) {
 		t.Errorf("ResolveLibrary(widget) with PyPI down = %+v, %v; want npm's widget, noting PyPI's failure first", ms, err)
 	}
 
-	pkgs = widgetPkgs()
+}
+
+// Another project whose repository GitHub did not read (a 502) is
+// unresolved, not absent: GitHub decides its claim, its homepage and its
+// stars, so the pick depended on GitHub and is an upstream error naming
+// it. --resolve still lists what verified, noting the gap. (A site that
+// did not answer only adds a note: TestResolveHangingHomepageDoesNotSinkOthers.)
+func TestResolveUnreadRepositoryIsNoAnswer(t *testing.T) {
+	ctx := context.Background()
+	pkgs := widgetPkgs()
 	delete(pkgs.pkgs, "pypi:widget")
 	pkgs.pkgs["crates:widget"] = pkgInfo{eco: ecoCrates, name: "widget", repoURL: "https://github.com/rusty/widget", repo: repo("rusty", "widget")}
-	w = resolverWeb(widgetSites(), pkgs, nil, nil)
+	w := resolverWeb(widgetSites(), pkgs, nil, nil)
 	w.repos = &failingRepo{fakeRepos: widgetRepos(900, 300), bad: repo("rusty", "widget")}
-	m, err := w.resolveOne(ctx, mustSpec(t, "widget"), false)
-	if err != nil || m.root.String() != "https://widgetjs.dev/" {
-		t.Fatalf("resolveOne(widget), a repository unreadable = %s, %v", m.libraryMatch().ID, err)
+	_, err := w.resolveOne(ctx, mustSpec(t, "widget"), false)
+	if err == nil || errors.Is(err, ErrNotFound) || errors.Is(err, ErrLibraryRequired) ||
+		!strings.Contains(err.Error(), "crates widget") || !strings.Contains(err.Error(), "status 502") {
+		t.Fatalf("resolveOne(widget), another repository unreadable = %v; want an upstream error naming it", err)
 	}
-	if !slices.ContainsFunc(m.libraryMatch().Evidence, func(e string) bool {
-		return strings.HasPrefix(e, "not checked, so another library of this name may be missing: github rusty/widget")
-	}) {
-		t.Errorf("evidence %v lacks the note", m.libraryMatch().Evidence)
+	ms, err := w.ResolveLibrary(ctx, "widget", 5)
+	if err != nil || len(ms) != 1 || len(ms[0].Evidence) == 0 || !strings.HasPrefix(ms[0].Evidence[0], "this list may be incomplete: github rusty/widget") {
+		t.Errorf("ResolveLibrary(widget), a repository unreadable = %+v, %v; want npm's widget noting the gap", ms, err)
+	}
+}
+
+// githubLimited answers GitHub's repository requests (its core quota) with
+// the unauthenticated rate-limit refusal, and its search too when search
+// is set; everything else goes through rt. A fresh install spends its 60
+// core requests an hour first; the search quota (10 a minute) is apart.
+type githubLimited struct {
+	rt     http.RoundTripper
+	search bool
+}
+
+func (g githubLimited) RoundTrip(req *http.Request) (*http.Response, error) {
+	limited := req.URL.Host == "api.github.com" && (strings.HasPrefix(req.URL.Path, "/repos/") || g.search)
+	if !limited {
+		return g.rt.RoundTrip(req)
+	}
+	return searchLimited{rt: g.rt}.limit(req), nil
+}
+
+// A rate-limited GitHub must never let a squatter win (the no-token
+// benchmark run). Without GitHub, npm's express, zod and gin cannot have
+// their repository claims corroborated, so they verify nothing, while
+// crates' same-named crates verify by their docs.rs docs alone. Where one
+// library is needed that is an upstream error naming the token fix, never
+// docs.rs; a bare query stops there rather than falling through; --resolve
+// lists what verified, saying the list may be incomplete. Recorded live.
+func TestResolveRateLimitedGitHubLetsNoSquatterWin(t *testing.T) {
+	queries := map[string]string{"express": "express error handling middleware", "zod": "zod discriminated union", "gin": "gin bind json request body"}
+	for _, search := range []bool{false, true} {
+		for name, query := range queries {
+			t.Run(fmt.Sprintf("%s/search-limited=%v", name, search), func(t *testing.T) {
+				rateLimitedSquatters(t, name, query, search)
+			})
+		}
+	}
+
+	// With GitHub answering, express is Express.
+	w, ft := fixtureWeb(t)
+	w.pkgs = newPkgClient(&http.Client{Transport: notFoundFallback{ft}})
+	w.repos = newGHClient(&http.Client{Transport: notFoundFallback{ft}}, nil)
+	w.fetcher = &fixtureFetcher{client: &http.Client{Transport: notFoundFallback{ft}}}
+	m, err := w.resolveOne(context.Background(), mustSpec(t, "express"), false)
+	if err != nil || m.root.String() != "https://expressjs.com/" || m.project != "github:expressjs/express" {
+		t.Errorf("resolveOne(express) with GitHub = %s (%s), %v; want expressjs.com", m.libraryMatch().ID, m.project, err)
+	}
+}
+
+// rateLimitedSquatters checks one name of TestResolveRateLimitedGitHubLetsNoSquatterWin.
+func rateLimitedSquatters(t *testing.T, name, query string, search bool) {
+	t.Helper()
+	w, ft := fixtureWeb(t)
+	w.pkgs = newPkgClient(&http.Client{Transport: notFoundFallback{ft}})
+	w.repos = newGHClient(&http.Client{Transport: githubLimited{notFoundFallback{ft}, search}}, nil)
+	w.fetcher = &fixtureFetcher{client: &http.Client{Transport: notFoundFallback{ft}}}
+	ctx := context.Background()
+	check := func(what string, err error) {
+		t.Helper()
+		if err == nil || errors.Is(err, ErrNotFound) || errors.Is(err, ErrLibraryRequired) {
+			t.Fatalf("%s = %v; want an upstream error", what, err)
+		}
+		for _, want := range []string{"set github_token or gh auth login", "rate limited"} {
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("%s: error lacks %q: %v", what, want, err)
+			}
+		}
+	}
+	m, err := w.resolveOne(ctx, mustSpec(t, name), false)
+	if err == nil {
+		t.Fatalf("resolveOne(%s) picked %s with GitHub rate-limited", name, m.root)
+	}
+	check("resolveOne("+name+")", err)
+	_, err = w.Search(ctx, query, 5)
+	check("Search("+query+")", err)
+
+	ms, err := w.ResolveLibrary(ctx, name, 5)
+	if err != nil {
+		return // nothing verified at all: an upstream error is as safe
+	}
+	for _, lm := range ms {
+		if !strings.HasPrefix(lm.Evidence[0], "this list may be incomplete") {
+			t.Errorf("ResolveLibrary(%s) lists %s without saying the list may be incomplete: %v", name, lm.ID, lm.Evidence)
+		}
+	}
+}
+
+// A project whose stars GitHub failed to report blocks dominance even
+// when its only docs are index-hosted: the rate limit says nothing about
+// the project, which may be the popular one.
+func TestDominanceBlockedByUnreadStars(t *testing.T) {
+	m := func(project string, stars int, indexOnly, unread bool) webMatch {
+		root, _ := parseWebRoot("https://" + project + ".dev/")
+		return webMatch{root: root, project: project, stars: stars, indexOnly: indexOnly, starsUnread: unread}
+	}
+	if _, ok := dominant([]webMatch{m("a", 53000, false, false), m("b", -1, true, false)}); !ok {
+		t.Errorf("an index-hosted squatter with no stars to read must not block dominance")
+	}
+	if _, ok := dominant([]webMatch{m("a", 53000, false, false), m("b", -1, true, true)}); ok {
+		t.Errorf("index-hosted docs whose stars GitHub did not report must block dominance")
 	}
 }
 
@@ -1400,12 +1510,17 @@ func (s searchLimited) RoundTrip(req *http.Request) (*http.Response, error) {
 	if !limited {
 		return s.rt.RoundTrip(req)
 	}
+	return s.limit(req), nil
+}
+
+// limit is GitHub's unauthenticated rate-limit refusal of req.
+func (searchLimited) limit(req *http.Request) *http.Response {
 	body := `{"message":"API rate limit exceeded"}`
 	return &http.Response{
 		Status: "403 Forbidden", StatusCode: http.StatusForbidden, Proto: "HTTP/1.1", ProtoMajor: 1, ProtoMinor: 1,
 		Header: http.Header{"X-Ratelimit-Remaining": {"0"}, "X-Ratelimit-Reset": {"1893456000"}, "Content-Type": {"application/json"}},
 		Body:   io.NopCloser(strings.NewReader(body)), ContentLength: int64(len(body)), Request: req,
-	}, nil
+	}
 }
 
 // GitHub's search allows 10 unauthenticated requests a minute, and nearly
@@ -1508,6 +1623,11 @@ func TestResolveAnyhowKeepsItsStars(t *testing.T) {
 		"homepage":"https://anyhow.dev","language":"TypeScript","stargazers_count":1500,"fork":false,"archived":false}`})
 	ft.Handle(http.MethodGet, "https://anyhow.dev/", testutil.Fixture{Header: http.Header{"Content-Type": {"text/html"}},
 		Body: `<!doctype html><html><head><title>Anyhow</title><meta name="generator" content="Docusaurus"></head><body><a href="/docs/intro">Docs</a><a href="https://github.com/igoramadas/anyhow">GitHub</a></body></html>`})
+	// Its docs root, /docs/, has no page of its own: it is read through its
+	// nav's /docs/intro.
+	ft.Handle(http.MethodGet, "https://anyhow.dev/docs/intro", testutil.Fixture{Header: http.Header{"Content-Type": {"text/html"}},
+		Body: `<!doctype html><html><head><title>Intro | Anyhow</title><meta name="generator" content="Docusaurus"></head><body><a href="/docs/intro">Intro</a><a href="/docs/api">API</a><a href="https://github.com/igoramadas/anyhow">GitHub</a></body></html>`})
+	w.fetcher = &fixtureFetcher{client: &http.Client{Transport: notFoundFallback{ft}}}
 	_, err = w.resolveOne(context.Background(), mustSpec(t, "anyhow"), false)
 	if !errors.Is(err, ErrAmbiguousLibrary) {
 		t.Errorf("resolveOne(anyhow) = %v; want the ambiguity between 6685 and 1500 stars", err)
@@ -1540,5 +1660,432 @@ func TestLastResortSearchIsNotHopChecked(t *testing.T) {
 	cands := w.lastResortSearch(publicHops(context.Background()), "gizmo")
 	if len(cands) != 1 || cands[0].url.String() != "https://docs.gizmo.dev/" {
 		t.Errorf("last-resort search through a redirecting local instance = %v, want docs.gizmo.dev", cands)
+	}
+}
+
+// fixtureWeb404 is fixtureWeb with what no fixture covers answered as the
+// services answer a name they do not have (notFoundFallback), and the
+// version fixtures loaded too.
+func fixtureWeb404(t *testing.T) (*Web, *testutil.FixtureTransport) {
+	t.Helper()
+	w, ft := fixtureWeb(t)
+	if err := ft.LoadDir(filepath.Join("testdata", "versions")); err != nil {
+		t.Fatal(err)
+	}
+	client := &http.Client{Transport: notFoundFallback{ft}}
+	w.pkgs = newPkgClient(client)
+	w.repos = newGHClient(client, nil)
+	w.fetcher = &fixtureFetcher{client: client}
+	return w, ft
+}
+
+// tokio@1.38: docs.rs has 1.38.2, while tokio.rs, the project's site,
+// publishes no versions and documents the latest, 1.54.1. The site is not
+// taken for 1.38 for sharing its major version, so the version root and
+// the root searched are the same: docs.rs's 1.38.2. Recorded live.
+func TestResolveVersionedRootIsTheOneSearched(t *testing.T) {
+	w, _ := fixtureWeb404(t)
+	for _, spec := range []string{"crates:tokio@1.38", "tokio@1.38"} {
+		m, err := w.resolveOne(context.Background(), mustSpec(t, spec), false)
+		if err != nil || m.root.String() != "https://docs.rs/tokio/1.38.2/tokio/" || m.version != "1.38.2" {
+			t.Errorf("resolveOne(%s) = %s %q, %v; want docs.rs's 1.38.2", spec, m.root, m.version, err)
+		}
+	}
+	m, err := w.resolveOne(context.Background(), mustSpec(t, "crates:tokio@1"), false)
+	if err != nil || m.root.String() != "https://tokio.rs/" || m.version != "1.54.1" {
+		t.Errorf("resolveOne(crates:tokio@1) = %s %q, %v; want tokio.rs as the latest, 1.54.1", m.root, m.version, err)
+	}
+}
+
+// Roots neither too deep nor too broad. PyPI's pydantic names a page,
+// .../validation/latest/get-started/, and its repository's homepage
+// redirects there too: the root ends at the version segment, keeping the
+// product segment before it (pydantic.dev/docs/ holds other products).
+// playwright.dev is a landing page whose Docs and API lead into /docs/
+// (itself a 404, read through /docs/intro), beside its MCP, CLI and other
+// languages' docs: npm's playwright is /docs/. Recorded live.
+func TestResolveRootDepth(t *testing.T) {
+	w, ft := fixtureWeb404(t)
+	ft.Handle(http.MethodGet, "https://pydantic.dev/docs/validation", testutil.Fixture{Status: http.StatusFound, Header: http.Header{"Location": {"/docs/validation/latest/get-started/"}}})
+	cases := []struct{ spec, root string }{
+		{"pypi:pydantic", "https://pydantic.dev/docs/validation/latest/"},
+		{"npm:playwright", "https://playwright.dev/docs/"},
+	}
+	for _, tc := range cases {
+		m, err := w.resolveOne(context.Background(), mustSpec(t, tc.spec), false)
+		if err != nil || m.root.String() != tc.root {
+			t.Errorf("resolveOne(%s) = %s, %v; want %s", tc.spec, m.root, err, tc.root)
+		}
+	}
+	for raw, want := range map[string]string{
+		"https://pydantic.dev/docs/validation/latest/get-started/": "https://pydantic.dev/docs/validation/latest/",
+		"https://requests.readthedocs.io/en/latest/":               "https://requests.readthedocs.io/en/latest/",
+		"https://docs.python.org/3/library/":                       "https://docs.python.org/3/",
+		"https://docs.rs/tokio/latest/tokio/":                      "https://docs.rs/tokio/latest/tokio/",
+		"https://example.com/blog/2024/05/post/":                   "https://example.com/blog/2024/05/post/",
+	} {
+		if got := docsRootOf(mustURL(t, raw)).String(); got != want {
+			t.Errorf("docsRootOf(%s) = %s, want %s", raw, got, want)
+		}
+	}
+}
+
+// A repository GitHub names that is in no registry looked up gets its own
+// package in its language's registry: tokio-rs/axum, with no homepage, is
+// crates' axum, whose docs.rs docs it has; go-chi/chi, a GitHub search hit
+// for chi (npm's, PyPI's and crates' chi verify nothing), is the Go module
+// github.com/go-chi/chi, whose pkg.go.dev page leads to its highest major
+// version, v5. Recorded live.
+func TestResolveRepositoryOwnPackage(t *testing.T) {
+	w, _ := fixtureWeb404(t)
+	cases := []struct{ spec, root, project string }{
+		{"tokio-rs/axum", "https://docs.rs/axum/latest/axum/", "github:tokio-rs/axum"},
+		{"chi", "https://pkg.go.dev/github.com/go-chi/chi/v5/", "github:go-chi/chi"},
+	}
+	for _, tc := range cases {
+		m, err := w.resolveOne(context.Background(), mustSpec(t, tc.spec), false)
+		if err != nil || m.root.String() != tc.root || m.project != tc.project {
+			t.Errorf("resolveOne(%s) = %s (%s), %v; want %s for %s", tc.spec, m.root, m.project, err, tc.root, tc.project)
+		}
+	}
+}
+
+// A package of the repository's language that names another repository is
+// not the repository's: no package is borrowed by name alone.
+func TestRepoPackagesNeedTheClaim(t *testing.T) {
+	pkgs := &fakePkgs{pkgs: map[string]pkgInfo{
+		"crates:gizmo": {eco: ecoCrates, name: "gizmo", repo: repo("squatter", "gizmo"), registryDocs: "https://docs.rs/gizmo/latest/gizmo/"},
+	}}
+	repos := &fakeRepos{repos: map[repoKey]repoInfo{repo("gizmo-org", "gizmo"): {language: "Rust", stars: 900}}}
+	f := &fakeFetcher{raw: map[string]fakeRaw{
+		"https://docs.rs/gizmo/latest/gizmo/": html(`<!doctype html><html><head><title>gizmo - Rust</title></head><body><a href="https://github.com/squatter/gizmo">Repository</a></body></html>`),
+	}}
+	log := &resolveLog{}
+	_, err := resolverWeb(f, pkgs, repos, nil).resolveLogged(context.Background(), mustSpec(t, "gizmo-org/gizmo"), 0, log)
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("resolve gizmo-org/gizmo = %v; want nothing: crates' gizmo is another repository's", err)
+	}
+	assertReasons(t, log, "github gizmo-org/gizmo: crates gizmo names github.com/squatter/gizmo, not it")
+}
+
+// When the registries leave a bare name unsettled (cobra: COBRApy beside
+// a crate, neither dominant), GitHub's search widens it: spf13/cobra, a Go
+// repository in no registry asked, outweighs them both, its module and
+// homepage verified.
+func TestResolveUnsettledNameSearchesGitHub(t *testing.T) {
+	pkgs := &fakePkgs{pkgs: map[string]pkgInfo{
+		"pypi:cobra":   {eco: ecoPyPI, name: "cobra", docsURL: "https://cobrapy.example/", repo: repo("opencobra", "cobrapy")},
+		"crates:cobra": {eco: ecoCrates, name: "cobra", registryDocs: "https://docs.rs/cobra/latest/cobra/"},
+		"go:github.com/spf13/cobra": {eco: ecoGo, name: "github.com/spf13/cobra", repo: repo("spf13", "cobra"),
+			registryDocs: "https://pkg.go.dev/github.com/spf13/cobra"},
+	}}
+	repos := &fakeRepos{
+		repos: map[repoKey]repoInfo{repo("opencobra", "cobrapy"): {homepage: "https://cobrapy.example", language: "Python", stars: 591}},
+		hits:  map[string][]repoInfo{"cobra": {{key: repo("spf13", "cobra"), homepage: "https://cobra.example", language: "Go", stars: 44727}}},
+	}
+	page := func(title, repoURL string) fakeRaw {
+		return html(`<!doctype html><html><head><title>` + title + `</title><meta name="generator" content="Sphinx"></head><body><a href="guide.html">Guide</a><a href="` + repoURL + `">Source</a></body></html>`)
+	}
+	f := &fakeFetcher{raw: map[string]fakeRaw{
+		"https://cobrapy.example/":                   page("cobra documentation", "https://github.com/opencobra/cobrapy"),
+		"https://docs.rs/cobra/latest/cobra/":        page("cobra - Rust", "https://crates.io/crates/cobra"),
+		"https://cobra.example/":                     page("Cobra docs", "https://github.com/spf13/cobra"),
+		"https://pkg.go.dev/github.com/spf13/cobra/": page("cobra package", "https://github.com/spf13/cobra"),
+	}}
+	m, err := resolverWeb(f, pkgs, repos, nil).resolveOne(context.Background(), mustSpec(t, "cobra"), false)
+	if err != nil || m.root.String() != "https://cobra.example/" || m.project != "github:spf13/cobra" {
+		t.Errorf("resolveOne(cobra) = %s (%s), %v; want cobra.example for spf13/cobra", m.root, m.project, err)
+	}
+	if !slices.Contains(repos.calls, "search cobra") {
+		t.Errorf("GitHub was not searched: %v", repos.calls)
+	}
+}
+
+// A docs URL that has moved to another site is followed there when that
+// site is corroborated as a project's docs: docs.python-requests.org
+// redirects to requests.readthedocs.io, which links to psf/requests, whose
+// GitHub homepage it is. A move to a site nothing corroborates is refused
+// as before. Recorded live.
+func TestDocsURLMovedToCorroboratedSite(t *testing.T) {
+	w, _ := fixtureWeb404(t)
+	ms, err := w.ResolveLibrary(context.Background(), "https://docs.python-requests.org", 5)
+	if err != nil || len(ms) != 1 || ms[0].ID != "https://requests.readthedocs.io/en/latest/" {
+		t.Fatalf("ResolveLibrary(docs.python-requests.org) = %+v, %v; want requests.readthedocs.io/en/latest/", ms, err)
+	}
+	if !strings.HasPrefix(ms[0].Evidence[0], "https://docs.python-requests.org/ moved to https://requests.readthedocs.io/en/latest/") {
+		t.Errorf("evidence %v does not say the docs moved", ms[0].Evidence)
+	}
+	root, _ := parseWebRoot("https://docs.python-requests.org/")
+	if moved, _, ok := w.movedRoot(context.Background(), root, nil); !ok || moved.String() != "https://requests.readthedocs.io/en/latest/" {
+		t.Errorf("movedRoot = %s, %v", moved, ok)
+	}
+
+	f := &fakeFetcher{raw: map[string]fakeRaw{
+		"https://elsewhere.example/": html(`<!doctype html><html><head><title>Docs</title></head><body><a href="/guide">Guide</a><a href="https://github.com/psf/requests">GitHub</a></body></html>`),
+	}, redirects: map[string]string{"https://old-docs.example/": "https://elsewhere.example/"}}
+	w2 := resolverWeb(f, nil, &fakeRepos{repos: map[repoKey]repoInfo{repo("psf", "requests"): {homepage: "https://requests.readthedocs.io"}}}, nil)
+	old, _ := parseWebRoot("https://old-docs.example/")
+	if moved, _, ok := w2.movedRoot(context.Background(), old, nil); ok {
+		t.Errorf("a move to a site no repository names was followed to %s", moved)
+	}
+	// Nor into non-public address space, however it is dressed.
+	f.raw["http://169.254.169.254/latest/"] = f.raw["https://elsewhere.example/"]
+	f.redirects["https://old-docs.example/"] = "http://169.254.169.254/latest/"
+	if moved, _, ok := w2.movedRoot(context.Background(), old, nil); ok {
+		t.Errorf("a move into non-public space was followed to %s", moved)
+	}
+}
+
+// beautifulsoup4 names its homepage on a path, which redirects to
+// crummy.com/software/BeautifulSoup/; its Documentation link is
+// bs4/doc/, kept as that path rather than the whole host, and the docs'
+// title names it ("Beautiful Soup"). Recorded live.
+func TestResolveHomepageOnAPath(t *testing.T) {
+	w, _ := fixtureWeb404(t)
+	m, err := w.resolveOne(context.Background(), mustSpec(t, "pypi:beautifulsoup4"), false)
+	if err != nil || m.root.String() != "https://www.crummy.com/software/BeautifulSoup/bs4/doc/" {
+		t.Fatalf("resolveOne(pypi:beautifulsoup4) = %s, %v; want crummy.com's bs4/doc/", m.root, err)
+	}
+	if !hasEvidence(m.evidence, evSiteNames) {
+		t.Errorf("evidence %v: the title Beautiful Soup should name beautifulsoup4", m.evidence)
+	}
+}
+
+// With stars unknown on both sides (GitHub rate-limited), a project with a
+// docs site of its own lists before one whose docs only a package index
+// hosts, whatever their trust: flask@2.3 without a token is refused on
+// Flask's own docs, not on crates' flask.
+func TestOwnSiteBeforeIndexHostedDocs(t *testing.T) {
+	r := &resolution{spec: mustSpec(t, "flask")}
+	site, _ := parseWebRoot("https://flask.palletsprojects.com/en/stable/")
+	reg, _ := parseWebRoot("https://docs.rs/flask/latest/flask/")
+	own := matchGroup{proj: &project{exact: true}, matches: []webMatch{{root: site, project: "pypi:flask", stars: -1, trust: 5}}}
+	idx := matchGroup{proj: &project{exact: true}, matches: []webMatch{{root: reg, project: "crates:flask", stars: -1, trust: 6, indexOnly: true, registry: true}}}
+	if r.compareGroups(own, idx) >= 0 || r.compareGroups(idx, own) <= 0 {
+		t.Errorf("index-hosted docs ordered before a docs site of its own")
+	}
+}
+
+// ginSearch is GitHub's recorded search for gin, the URL it answers.
+const ginSearch = "https://api.github.com/search/repositories?q=gin+in%3Aname&sort=stars"
+
+// ginSearchWithout is the recorded search for gin as GitHub answers a
+// search it cut short: drop's hits missing and incomplete_results set.
+func ginSearchWithout(t *testing.T, drop string) string {
+	t.Helper()
+	body, err := os.ReadFile(filepath.Join("testdata", "resolve", "github", "api.github.com", "search", "repositories%3Fq=gin+in%3Aname&sort=stars"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sr struct {
+		Items []map[string]any `json:"items"`
+	}
+	if err := json.Unmarshal(body, &sr); err != nil {
+		t.Fatal(err)
+	}
+	sr.Items = slices.DeleteFunc(sr.Items, func(it map[string]any) bool { return it["full_name"] == drop })
+	out, err := json.Marshal(map[string]any{"incomplete_results": true, "items": sr.Items})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(out)
+}
+
+// gin, as the round 1 benchmark met "gin bind json request body" twice with
+// one binary. Recorded live. The registries have npm's and PyPI's small
+// gins and crates' reserved one (docs.rs only); GitHub's search finds
+// gin-gonic/gin (89439 stars, gin-gonic.com) and codegangsta/gin (4240, a
+// live-reload tool documented only on pkg.go.dev), each its own Go module.
+// Where one library is needed, none of the runs below answers from
+// codegangsta/gin.
+const ginQuery = "gin bind json request body"
+
+// ginNoAnswer fails unless err says the resolution gave no answer.
+func ginNoAnswer(t *testing.T, what string, m webMatch, err error) {
+	t.Helper()
+	if err == nil {
+		t.Fatalf("%s answered from %s (%s); want no answer", what, m.root, m.project)
+	}
+}
+
+// wantUpstream fails unless err is an upstream error (not a not-found, a
+// missing library or an ambiguity) containing every want fragment.
+func wantUpstream(t *testing.T, what string, err error, want ...string) {
+	t.Helper()
+	var amb *AmbiguousLibraryError
+	if errors.Is(err, ErrNotFound) || errors.Is(err, ErrLibraryRequired) || errors.As(err, &amb) {
+		t.Fatalf("%s = %v; want an upstream error", what, err)
+	}
+	for _, w := range want {
+		if !strings.Contains(err.Error(), w) {
+			t.Errorf("%s: error lacks %q: %v", what, w, err)
+		}
+	}
+}
+
+// round1-1: everything answered. The name is ambiguous: 89439 stars are
+// not 50x 4240 (dominant), so the three verified projects are listed, as
+// the live run listed them.
+func TestResolveGinAllAnswered(t *testing.T) {
+	ctx := context.Background()
+	w, _ := fixtureWeb404(t)
+	m, err := w.resolveOne(ctx, mustSpec(t, "gin"), false)
+	ginNoAnswer(t, "resolveOne(gin)", m, err)
+	var amb *AmbiguousLibraryError
+	if !errors.As(err, &amb) {
+		t.Fatalf("resolveOne(gin) = %v; want ambiguous", err)
+	}
+	var ids []string
+	for _, lm := range amb.Matches {
+		ids = append(ids, lm.ID)
+	}
+	want := []string{"https://gin-gonic.com/", "https://pkg.go.dev/github.com/codegangsta/gin/", "https://docs.rs/gin/latest/gin/"}
+	if !slices.Equal(ids, want) {
+		t.Errorf("ambiguous between %v, want %v", ids, want)
+	}
+	if _, err = w.Search(ctx, ginQuery, 5); !errors.As(err, &amb) {
+		t.Errorf("Search(%q) = %v; want ambiguous", ginQuery, err)
+	}
+}
+
+// round1-2: GitHub's search answered without gin-gonic/gin, as it does
+// when it runs out of time (incomplete_results): no module lookup or
+// homepage for it, and the web search's gin-gonic.com linked to no project
+// known. codegangsta/gin, dominating crates' gin, was the answer: the wrong
+// project. That search failed, so the pick is an upstream error, and
+// --resolve says its list may be incomplete.
+func TestResolveGinPastIncompleteSearch(t *testing.T) {
+	ctx := context.Background()
+	w, ft := fixtureWeb404(t)
+	ft.Handle(http.MethodGet, ginSearch, testutil.Fixture{Body: ginSearchWithout(t, "gin-gonic/gin")})
+	w.sites = &fakeSites{hits: []search.Result{{URL: "https://gin-gonic.com/"}, {URL: "https://go.dev/doc/"}}}
+	m, err := w.resolveOne(ctx, mustSpec(t, "gin"), false)
+	ginNoAnswer(t, "resolveOne(gin)", m, err)
+	wantUpstream(t, "resolveOne(gin)", err, "https://pkg.go.dev/github.com/codegangsta/gin/", `github search "gin": incomplete results`)
+	_, err = w.Search(ctx, ginQuery, 5)
+	wantUpstream(t, "Search("+ginQuery+")", err, "incomplete results")
+	for _, c := range ft.Calls() {
+		if strings.Contains(c.URL, "gin-gonic/gin/@latest") {
+			t.Errorf("gin-gonic/gin was looked up though the search did not return it: %s", c)
+		}
+	}
+	ms, err := w.ResolveLibrary(ctx, "gin", 5)
+	if err != nil || len(ms) == 0 {
+		t.Fatalf("ResolveLibrary(gin) = %v, %v; want what verified", ms, err)
+	}
+	for _, lm := range ms {
+		if !strings.HasPrefix(lm.Evidence[0], `this list may be incomplete: github search "gin": incomplete results`) {
+			t.Errorf("ResolveLibrary(gin) lists %s without saying the search was incomplete: %v", lm.ID, lm.Evidence)
+		}
+	}
+}
+
+// gin-gonic's side down instead (its homepage and its module lookup 503):
+// gin-gonic/gin verifies nothing, and codegangsta/gin, with fewer stars and
+// only index-hosted docs, must not stand past it either.
+func TestResolveGinWithGinGonicDown(t *testing.T) {
+	ctx := context.Background()
+	w, ft := fixtureWeb404(t)
+	ft.Handle(http.MethodGet, "https://gin-gonic.com/", testutil.Fixture{Status: http.StatusServiceUnavailable})
+	ft.Handle(http.MethodGet, "https://proxy.golang.org/github.com/gin-gonic/gin/@latest", testutil.Fixture{Status: http.StatusServiceUnavailable})
+	m, err := w.resolveOne(ctx, mustSpec(t, "gin"), false)
+	ginNoAnswer(t, "resolveOne(gin)", m, err)
+	wantUpstream(t, "resolveOne(gin)", err, "https://gin-gonic.com/", "503")
+	_, err = w.Search(ctx, ginQuery, 5)
+	wantUpstream(t, "Search("+ginQuery+")", err, "503")
+}
+
+// failingSite is a fakeFetcher whose URLs containing bad answer 503: a
+// site down for a while, not gone.
+type failingSite struct {
+	*fakeFetcher
+	bad string
+}
+
+func (f *failingSite) FetchRaw(ctx context.Context, u string) (RawContent, error) {
+	if strings.Contains(u, f.bad) {
+		return RawContent{}, fmt.Errorf("fetching %s: status 503", u)
+	}
+	return f.fakeFetcher.FetchRaw(ctx, u)
+}
+
+func (f *failingSite) FetchPage(ctx context.Context, u string) (PageContent, error) {
+	if strings.Contains(u, f.bad) {
+		return PageContent{}, fmt.Errorf("fetching %s: status 503", u)
+	}
+	return f.fakeFetcher.FetchPage(ctx, u)
+}
+
+// A pick with a docs site of its own does not stand past a project of the
+// same name that could have outranked it, had its site answered: npm's
+// gizmo (1500 stars) verifies, PyPI's (big/pygizmo, 60000 stars) is down
+// for a while. That is an upstream error naming both, never npm's gizmo.
+// A project that could not have outranked it (30 stars) leaves a note, as
+// a junk package's dead homepage does (TestResolveHangingHomepageDoesNotSinkOthers).
+func TestResolveFailedRivalIsNoAnswer(t *testing.T) {
+	ctx := context.Background()
+	f := &failingSite{fakeFetcher: &fakeFetcher{raw: map[string]fakeRaw{
+		"https://gizmo.dev/": html(`<!doctype html><html><head><title>Gizmo docs</title><meta name="generator" content="Docusaurus"></head><body><a href="/docs/intro">Intro</a><a href="https://github.com/small/gizmo">GitHub</a></body></html>`),
+	}}, bad: "pygizmo.example"}
+	pkgs := &fakePkgs{pkgs: map[string]pkgInfo{
+		"npm:gizmo":  {eco: ecoNPM, name: "gizmo", homepage: "https://gizmo.dev/", repoURL: "https://github.com/small/gizmo", repo: repo("small", "gizmo")},
+		"pypi:gizmo": {eco: ecoPyPI, name: "gizmo", homepage: "https://pygizmo.example/", repoURL: "https://github.com/big/gizmo", repo: repo("big", "gizmo")},
+	}}
+	resolveWith := func(bigStars int) (webMatch, error) {
+		repos := &fakeRepos{repos: map[repoKey]repoInfo{
+			repo("small", "gizmo"): {homepage: "https://gizmo.dev", language: "TypeScript", stars: 1500},
+			repo("big", "gizmo"):   {homepage: "https://pygizmo.example", language: "Python", stars: bigStars},
+		}}
+		return resolverWeb(f, pkgs, repos, nil).resolveOne(ctx, mustSpec(t, "gizmo"), false)
+	}
+
+	m, err := resolveWith(60000)
+	if err == nil {
+		t.Fatalf("resolveOne(gizmo) picked %s past a stronger project that did not answer", m.root)
+	}
+	var amb *AmbiguousLibraryError
+	if errors.Is(err, ErrNotFound) || errors.As(err, &amb) {
+		t.Fatalf("resolveOne(gizmo) = %v; want an upstream error", err)
+	}
+	for _, want := range []string{"https://gizmo.dev/ (1500 stars)", "pypi gizmo (60000 stars)", "status 503"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error lacks %q: %v", want, err)
+		}
+	}
+
+	m, err = resolveWith(30)
+	if err != nil || m.root.String() != "https://gizmo.dev/" ||
+		!slices.ContainsFunc(m.libraryMatch().Evidence, func(e string) bool {
+			return strings.Contains(e, "not checked") && strings.Contains(e, "pygizmo.example")
+		}) {
+		t.Errorf("resolveOne(gizmo), the weaker project down = %s %v, %v; want gizmo.dev noting what was not checked", m.libraryMatch().ID, m.libraryMatch().Evidence, err)
+	}
+}
+
+// rivals: which projects that did not answer the pick cannot stand past.
+func TestRivals(t *testing.T) {
+	gone := &project{key: "github:gone/x", repo: repo("gone", "x"), repoGone: true}
+	starred := func(n int) *project { return &project{key: fmt.Sprintf("github:o/x%d", n), info: &repoInfo{stars: n}} }
+	none := &project{key: "pypi:x"} // no repository: stars unknown
+	cases := []struct {
+		name      string
+		pick      webMatch
+		failed    *project
+		wantRival bool
+	}{
+		{"more stars (gin-gonic beside codegangsta)", webMatch{stars: 4240}, starred(89439), true},
+		{"as many stars", webMatch{stars: 1500}, starred(1500), true},
+		{"fewer stars", webMatch{stars: 1500}, starred(30), false},
+		{"fewer stars, though the pick would not dominate them", webMatch{stars: 4240}, starred(3000), false},
+		{"a junk package with no repository beside a starred pick", webMatch{stars: 40000}, none, false},
+		{"no repository beside a pick with none either", webMatch{stars: -1}, none, true},
+		{"a repository that is gone", webMatch{stars: 12}, gone, false},
+		{"any project beside index-hosted docs", webMatch{stars: 90000, indexOnly: true}, starred(3), true},
+	}
+	for _, tc := range cases {
+		got := rivals(tc.pick, []missedSource{{project: tc.failed.key, proj: tc.failed, err: errors.New("status 503")}})
+		if (len(got) > 0) != tc.wantRival {
+			t.Errorf("%s: rival = %v, want %v", tc.name, len(got) > 0, tc.wantRival)
+		}
 	}
 }

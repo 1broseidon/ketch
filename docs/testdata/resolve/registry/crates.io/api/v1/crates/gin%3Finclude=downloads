@@ -1,0 +1,15 @@
+{
+ "crate": {
+  "id": "gin",
+  "name": "gin",
+  "description": "Reserved contact me if you need it!",
+  "homepage": null,
+  "documentation": null,
+  "repository": null,
+  "max_stable_version": null,
+  "max_version": "0.0.0",
+  "newest_version": "0.0.0",
+  "default_version": "0.0.0",
+  "recent_downloads": 6
+ }
+}

@@ -5,6 +5,7 @@ package docs
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -113,10 +114,17 @@ func (g *ghClient) repo(ctx context.Context, key repoKey) (repoInfo, error) {
 	return info, nil
 }
 
+// errIncompleteSearch is a GitHub search that ran out of time on GitHub's
+// side and answered, still 200, with only the hits it had found
+// (incomplete_results): any repository may be missing from them, the most
+// starred included.
+var errIncompleteSearch = errors.New("incomplete results (GitHub's search timed out)")
+
 // searchRepos searches repositories by name; see repoSource: GitHub's
 // in:name search sorted by stars, most first, at most n (n <= 0 is one
 // page). A name with characters no repository name has (which could add
-// search qualifiers) finds nothing, without a request.
+// search qualifiers) finds nothing, without a request. An incomplete
+// search returns the hits it has and errIncompleteSearch.
 func (g *ghClient) searchRepos(ctx context.Context, name string, n int) ([]repoInfo, error) {
 	name = strings.TrimSpace(name)
 	if !ghRepoRe.MatchString(name) {
@@ -127,7 +135,8 @@ func (g *ghClient) searchRepos(ctx context.Context, name string, n int) ([]repoI
 		q.Set("per_page", strconv.Itoa(min(n, 100)))
 	}
 	var sr struct {
-		Items []ghRepoJSON `json:"items"`
+		Incomplete bool         `json:"incomplete_results"`
+		Items      []ghRepoJSON `json:"items"`
 	}
 	if err := g.get(ctx, "search "+name, "/search/repositories", q, &sr); err != nil {
 		return nil, err
@@ -141,6 +150,9 @@ func (g *ghClient) searchRepos(ctx context.Context, name string, n int) ([]repoI
 	sort.SliceStable(out, func(i, j int) bool { return out[i].stars > out[j].stars })
 	if n > 0 && len(out) > n {
 		out = out[:n]
+	}
+	if sr.Incomplete {
+		return out, errIncompleteSearch
 	}
 	return out, nil
 }

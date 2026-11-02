@@ -1,0 +1,227 @@
+<!doctype html>
+<html><head>
+<title>Pydantic Validation | Pydantic Docs</title>
+<meta name="astro-view-transitions-enabled" content="true">
+<meta name="astro-view-transitions-fallback" content="animate">
+<script src="/docs/_astro/ClientRouter.astro_astro_type_script_index_0_lang.DtS7Jegb.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="Astro v7.2.4">
+<meta name="generator" content="Starlight v0.41.7">
+<meta property="og:title" content="Pydantic Validation">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://pydantic.dev/docs/validation/latest/get-started/">
+<meta property="og:locale" content="en">
+<meta property="og:site_name" content="Pydantic Docs">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://pydantic.dev/docs/og/validation/latest/get-started/index.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://pydantic.dev/docs/og/validation/latest/get-started/index.png">
+<script src="/docs/_astro/Head.astro_astro_type_script_index_1_lang.y6aCeTTi.js"></script>
+<script src="/docs/_astro/Head.astro_astro_type_script_index_2_lang.Pp8ggVs0.js"></script>
+<script src="/docs/_astro/Head.astro_astro_type_script_index_3_lang.CJyAELRF.js"></script>
+<script src="/docs/_astro/Head.astro_astro_type_script_index_6_lang.x4XO9Cjw.js"></script>
+<script src="/flarelytics/client.js"></script>
+<script src="/docs/_astro/page.CphabkUM.js"></script>
+<script src="/docs/_astro/Search.astro_astro_type_script_index_0_lang.Dd2cdNrl.js"></script>
+<script>var e=class extends HTMLElement{constructor(){super();let e=this.querySelector(`[data-version-select]`);e&&e.addEventListener(`change`,()=>{let t=e.dataset.lib,n=e.dataset.remaining,r=JSON.parse(e.dataset.sections||`{}`),i=e.value,a=r[i]??[],o=n?.split(`/`)[0]??``,s=`/docs`.replace(/\/$/,``),c=a.includes(o)&&n?`${s}/${t}/${i}/${n}/`:`${s}/${t}/${i}/${a[0]??``}/`;window.location.href=c})}};customElements.define(`version-selector`,e);</script>
+<script src="/docs/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.BcSo_yiZ.js"></script>
+<script src="/docs/_astro/TableOfContents.astro_astro_type_script_index_0_lang.Csloo1VZ.js"></script>
+</head><body>
+<a href="#_top" class="sl-skip-link astro-mljvx3hg">Skip to content</a>
+<a href="https://pydantic.dev/" aria-label="Pydantic home" class="brand-link astro-hen6hmfb"></a>
+<a href="/docs/" class="docs-breadcrumb astro-hen6hmfb">Docs Pydantic Docs</a>
+<a href="/docs/validation/latest/get-started/" class="library-nav-link active-library-link astro-nen7h5rs">Pydantic Validation</a>
+<a href="/docs/ai/" class="library-nav-link astro-nen7h5rs">Pydantic AI</a>
+<a href="/docs/logfire/" class="library-nav-link astro-nen7h5rs">Pydantic Logfire</a>
+<a href="/docs/httpx2/get-started/" class="library-nav-link wide-library-link astro-nen7h5rs">HTTPX2</a>
+<a href="/docs/monty/get-started/" class="library-nav-link wide-library-link astro-nen7h5rs">Monty</a>
+<a href="/docs/httpx2/get-started/" class="more-library-link astro-nen7h5rs">HTTPX2</a>
+<a href="/docs/monty/get-started/" class="more-library-link astro-nen7h5rs">Monty</a>
+<a href="https://github.com/pydantic/pydantic" aria-label="pydantic/pydantic on GitHub" title="pydantic/pydantic on GitHub" class="header-github astro-nen7h5rs"></a>
+<a href="/docs/validation/latest/get-started/" class="library-menu-link active-library-link astro-nen7h5rs">Pydantic Validation</a>
+<a href="/docs/ai/" class="library-menu-link astro-nen7h5rs">Pydantic AI</a>
+<a href="/docs/logfire/" class="library-menu-link astro-nen7h5rs">Pydantic Logfire</a>
+<a href="/docs/httpx2/get-started/" class="library-menu-link astro-nen7h5rs">HTTPX2</a>
+<a href="/docs/monty/get-started/" class="library-menu-link astro-nen7h5rs">Monty</a>
+<a href="https://github.com/pydantic/pydantic" class="library-menu-github astro-nen7h5rs">pydantic/pydantic</a>
+<a href="/docs/validation/latest/get-started/" class="mobile-library-link active astro-wv7whodv">Pydantic Validation</a>
+<a href="/docs/ai/" class="mobile-library-link astro-wv7whodv">Pydantic AI</a>
+<a href="/docs/logfire/" class="mobile-library-link astro-wv7whodv">Pydantic Logfire</a>
+<a href="/docs/httpx2/get-started/" class="mobile-library-link astro-wv7whodv">HTTPX2</a>
+<a href="/docs/monty/get-started/" class="mobile-library-link astro-wv7whodv">Monty</a>
+<a href="https://github.com/pydantic/pydantic" class="mobile-github-link astro-wv7whodv">pydantic/pydantic</a>
+<a href="/docs/validation/latest/get-started/" class="astro-owowa7nx">Welcome to Pydantic</a>
+<a href="/docs/validation/latest/get-started/why/" class="astro-owowa7nx">Why use Pydantic</a>
+<a href="/docs/validation/latest/get-started/help_with_pydantic/" class="astro-owowa7nx">Help with Pydantic</a>
+<a href="/docs/validation/latest/get-started/enterprise-support/" class="astro-owowa7nx">Enterprise Support</a>
+<a href="/docs/validation/latest/get-started/install/" class="astro-owowa7nx">Installation</a>
+<a href="/docs/validation/latest/get-started/migration/" class="astro-owowa7nx">Migration Guide</a>
+<a href="/docs/validation/latest/get-started/version-policy/" class="astro-owowa7nx">Version Policy</a>
+<a href="/docs/validation/latest/get-started/contributing/" class="astro-owowa7nx">Contributing</a>
+<a href="/docs/validation/latest/get-started/changelog/" class="astro-owowa7nx">Changelog</a>
+<a href="/docs/validation/latest/concepts/models/" class="astro-owowa7nx">Models</a>
+<a href="/docs/validation/latest/concepts/fields/" class="astro-owowa7nx">Fields</a>
+<a href="/docs/validation/latest/concepts/json_schema/" class="astro-owowa7nx">JSON Schema</a>
+<a href="/docs/validation/latest/concepts/json/" class="astro-owowa7nx">JSON</a>
+<a href="/docs/validation/latest/concepts/types/" class="astro-owowa7nx">Types</a>
+<a href="/docs/validation/latest/concepts/unions/" class="astro-owowa7nx">Unions</a>
+<a href="/docs/validation/latest/concepts/alias/" class="astro-owowa7nx">Alias</a>
+<a href="/docs/validation/latest/concepts/config/" class="astro-owowa7nx">Configuration</a>
+<a href="/docs/validation/latest/concepts/serialization/" class="astro-owowa7nx">Serialization</a>
+<a href="/docs/validation/latest/concepts/validators/" class="astro-owowa7nx">Validators</a>
+<a href="/docs/validation/latest/concepts/dataclasses/" class="astro-owowa7nx">Dataclasses</a>
+<a href="/docs/validation/latest/concepts/forward_annotations/" class="astro-owowa7nx">Forward Annotations</a>
+<a href="/docs/validation/latest/concepts/strict_mode/" class="astro-owowa7nx">Strict Mode</a>
+<a href="/docs/validation/latest/concepts/type_adapter/" class="astro-owowa7nx">Type Adapter</a>
+<a href="/docs/validation/latest/concepts/validation_decorator/" class="astro-owowa7nx">Validation Decorator</a>
+<a href="/docs/validation/latest/concepts/conversion_table/" class="astro-owowa7nx">Conversion Table</a>
+<a href="/docs/validation/latest/concepts/pydantic_settings/" class="astro-owowa7nx">Settings Management</a>
+<a href="/docs/validation/latest/concepts/performance/" class="astro-owowa7nx">Performance</a>
+<a href="/docs/validation/latest/concepts/experimental/" class="astro-owowa7nx">Experimental</a>
+<a href="/docs/validation/latest/api/pydantic/base_model/" class="astro-owowa7nx">BaseModel</a>
+<a href="/docs/validation/latest/api/pydantic/root_model/" class="astro-owowa7nx">RootModel</a>
+<a href="/docs/validation/latest/api/pydantic/dataclasses/" class="astro-owowa7nx">Pydantic Dataclasses</a>
+<a href="/docs/validation/latest/api/pydantic/type_adapter/" class="astro-owowa7nx">TypeAdapter</a>
+<a href="/docs/validation/latest/api/pydantic/validate_call/" class="astro-owowa7nx">Validate Call</a>
+<a href="/docs/validation/latest/api/pydantic/fields/" class="astro-owowa7nx">Fields</a>
+<a href="/docs/validation/latest/api/pydantic/aliases/" class="astro-owowa7nx">Aliases</a>
+<a href="/docs/validation/latest/api/pydantic/config/" class="astro-owowa7nx">Configuration</a>
+<a href="/docs/validation/latest/api/pydantic/json_schema/" class="astro-owowa7nx">JSON Schema</a>
+<a href="/docs/validation/latest/api/pydantic/errors/" class="astro-owowa7nx">Errors</a>
+<a href="/docs/validation/latest/api/pydantic/functional_validators/" class="astro-owowa7nx">Functional Validators</a>
+<a href="/docs/validation/latest/api/pydantic/functional_serializers/" class="astro-owowa7nx">Functional Serializers</a>
+<a href="/docs/validation/latest/api/pydantic/standard_library_types/" class="astro-owowa7nx">Standard Library Types</a>
+<a href="/docs/validation/latest/api/pydantic/types/" class="astro-owowa7nx">Pydantic Types</a>
+<a href="/docs/validation/latest/api/pydantic/networks/" class="astro-owowa7nx">Network Types</a>
+<a href="/docs/validation/latest/api/pydantic/version/" class="astro-owowa7nx">Version Information</a>
+<a href="/docs/validation/latest/api/pydantic/annotated_handlers/" class="astro-owowa7nx">Annotated Handlers</a>
+<a href="/docs/validation/latest/api/pydantic/experimental/" class="astro-owowa7nx">Experimental</a>
+<a href="/docs/validation/latest/api/pydantic-core/pydantic_core/" class="astro-owowa7nx">Pydantic Core</a>
+<a href="/docs/validation/latest/api/pydantic-core/pydantic_core_schema/" class="astro-owowa7nx">Pydantic Core.core Schema</a>
+<a href="/docs/validation/latest/api/pydantic_settings/" class="astro-owowa7nx">Pydantic Settings</a>
+<a href="/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_color/" class="astro-owowa7nx">Color</a>
+<a href="/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_country/" class="astro-owowa7nx">Country</a>
+<a href="/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_payment/" class="astro-owowa7nx">Payment</a>
+<a href="/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_phone_numbers/" class="astro-owowa7nx">Phone Numbers</a>
+<a href="/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_routing_numbers/" class="astro-owowa7nx">Routing Numbers</a>
+<a href="/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_coordinate/" class="astro-owowa7nx">Coordinate</a>
+<a href="/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_mac_address/" class="astro-owowa7nx">Mac Address</a>
+<a href="/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_isbn/" class="astro-owowa7nx">ISBN</a>
+<a href="/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_pendulum_dt/" class="astro-owowa7nx">Pendulum</a>
+<a href="/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_currency_code/" class="astro-owowa7nx">Currency</a>
+<a href="/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_language_code/" class="astro-owowa7nx">Language</a>
+<a href="/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_script_code/" class="astro-owowa7nx">Script Code</a>
+<a href="/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_semantic_version/" class="astro-owowa7nx">Semantic Version</a>
+<a href="/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_timezone_name/" class="astro-owowa7nx">Timezone Name</a>
+<a href="/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_ulid/" class="astro-owowa7nx">ULID</a>
+<a href="/docs/validation/latest/internals/architecture/" class="astro-owowa7nx">Architecture</a>
+<a href="/docs/validation/latest/internals/resolving_annotations/" class="astro-owowa7nx">Resolving Annotations</a>
+<a href="/docs/validation/latest/examples/files/" class="astro-owowa7nx">Validating File Data</a>
+<a href="/docs/validation/latest/examples/requests/" class="astro-owowa7nx">Web and API Requests</a>
+<a href="/docs/validation/latest/examples/queues/" class="astro-owowa7nx">Queues</a>
+<a href="/docs/validation/latest/examples/orms/" class="astro-owowa7nx">Databases</a>
+<a href="/docs/validation/latest/examples/custom_validators/" class="astro-owowa7nx">Custom Validators</a>
+<a href="/docs/validation/latest/examples/dynamic_models/" class="astro-owowa7nx">Dynamic models</a>
+<a href="/docs/validation/latest/examples/cyclic_references/" class="astro-owowa7nx">Cyclic references</a>
+<a href="/docs/validation/latest/examples/pydantic_ai/" class="astro-owowa7nx">Agent libraries – Pydantic AI</a>
+<a href="/docs/validation/latest/errors/errors/" class="astro-owowa7nx">Error Handling</a>
+<a href="/docs/validation/latest/errors/validation_errors/" class="astro-owowa7nx">Validation Errors</a>
+<a href="/docs/validation/latest/errors/usage_errors/" class="astro-owowa7nx">Usage Errors</a>
+<a href="/docs/validation/latest/errors/troubleshooting/" class="astro-owowa7nx">Troubleshooting with Logfire</a>
+<a href="/docs/validation/latest/integrations/logfire/" class="astro-owowa7nx">Pydantic Logfire</a>
+<a href="/docs/validation/latest/integrations/llms/" class="astro-owowa7nx">LLMs</a>
+<a href="/docs/validation/latest/integrations/dev-tools/mypy/" class="astro-owowa7nx">Mypy</a>
+<a href="/docs/validation/latest/integrations/dev-tools/pyrefly/" class="astro-owowa7nx">Pyrefly</a>
+<a href="/docs/validation/latest/integrations/dev-tools/pycharm/" class="astro-owowa7nx">PyCharm</a>
+<a href="/docs/validation/latest/integrations/dev-tools/hypothesis/" class="astro-owowa7nx">Hypothesis</a>
+<a href="/docs/validation/latest/integrations/dev-tools/visual_studio_code/" class="astro-owowa7nx">Visual Studio Code</a>
+<a href="/docs/validation/latest/integrations/dev-tools/datamodel_code_generator/" class="astro-owowa7nx">Datamodel Code Generator</a>
+<a href="/docs/validation/latest/integrations/dev-tools/devtools/" class="astro-owowa7nx">Devtools</a>
+<a href="/docs/validation/latest/integrations/dev-tools/rich/" class="astro-owowa7nx">Rich</a>
+<a href="/docs/validation/latest/integrations/dev-tools/linting/" class="astro-owowa7nx">Linting</a>
+<a href="/docs/validation/latest/integrations/dev-tools/documentation/" class="astro-owowa7nx">Documentation</a>
+<a href="/docs/validation/latest/integrations/aws_lambda/" class="astro-owowa7nx">AWS Lambda</a>
+<a href="https://pydantic.dev/articles" class="large astro-owowa7nx">Blog</a>
+<a href="/docs/validation/latest/pydantic-people/pydantic_people/" class="large astro-owowa7nx">Pydantic People</a>
+<a href="#_top" class="astro-njaidnrt">Overview</a>
+<a href="#why-use-pydantic" class="astro-njaidnrt">Why use Pydantic?</a>
+<a href="#pydantic-examples" class="astro-njaidnrt">Pydantic examples</a>
+<a href="#who-is-using-pydantic" class="astro-njaidnrt">Who is using Pydantic?</a>
+<a href="#_top" class="astro-njaidnrt">Overview</a>
+<a href="#why-use-pydantic" class="astro-njaidnrt">Why use Pydantic?</a>
+<a href="#pydantic-examples" class="astro-njaidnrt">Pydantic examples</a>
+<a href="#who-is-using-pydantic" class="astro-njaidnrt">Who is using Pydantic?</a>
+<a href="https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI"></a>
+<a href="https://coverage-badge.samuelcolvin.workers.dev/redirect/pydantic/pydantic"></a>
+<a href="https://pypi.python.org/pypi/pydantic"></a>
+<a href="https://anaconda.org/conda-forge/pydantic"></a>
+<a href="https://pepy.tech/project/pydantic"></a>
+<a href="https://github.com/pydantic/pydantic/blob/main/LICENSE"></a>
+<a href="https://pydantic.dev/docs/validation/latest/llms.txt"></a>
+<a href="#why-use-pydantic" aria-label="Section titled Why use Pydantic?" class="sl-anchor-link"></a>
+<a href="/docs/validation/latest/get-started/why/#type-hints">Learn more…</a>
+<a href="/docs/validation/latest/get-started/why/#performance">Learn more…</a>
+<a href="/docs/validation/latest/get-started/why/#json-schema">Learn more…</a>
+<a href="/docs/validation/latest/get-started/why/#strict-lax">Learn more…</a>
+<a href="/docs/validation/latest/get-started/why/#dataclasses-typeddict-more">Learn more…</a>
+<a href="/docs/validation/latest/get-started/why/#customisation">Learn more…</a>
+<a href="/docs/validation/latest/get-started/why/#ecosystem">Learn more…</a>
+<a href="/docs/validation/latest/get-started/why/#using-pydantic">Learn more…</a>
+<a href="/docs/validation/latest/get-started/install/">Installing Pydantic</a>
+<a href="#pydantic-examples" aria-label="Section titled Pydantic examples" class="sl-anchor-link"></a>
+<a href="https://docs.python.org/3/library/datetime.html#datetime.datetime">datetime</a>
+<a href="https://en.wikipedia.org/wiki/Unix_time">Unix timestamp</a>
+<a href="https://en.wikipedia.org/wiki/ISO_8601">ISO 8601</a>
+<a href="https://docs.python.org/3/library/datetime.html#datetime.datetime">datetime</a>
+<a href="/docs/validation/latest/api/pydantic/base_model/#pydantic.BaseModel.model_dump">model_dump()</a>
+<a href="/docs/validation/latest/api/pydantic-core/pydantic_core/#pydantic_core.ValidationError">ValidationError</a>
+<a href="#who-is-using-pydantic" aria-label="Section titled Who is using Pydantic?" class="sl-anchor-link"></a>
+<a href="why/#org-adobe" title="Adobe"></a>
+<a href="why/#org-amazon" title="Amazon and AWS"></a>
+<a href="why/#org-anthropic" title="Anthropic"></a>
+<a href="why/#org-apple" title="Apple"></a>
+<a href="why/#org-asml" title="ASML"></a>
+<a href="why/#org-astrazeneca" title="AstraZeneca"></a>
+<a href="why/#org-cisco" title="Cisco Systems"></a>
+<a href="why/#org-capital_one" title="Capital One"></a>
+<a href="why/#org-comcast" title="Comcast"></a>
+<a href="why/#org-datadog" title="Datadog"></a>
+<a href="why/#org-facebook" title="Facebook"></a>
+<a href="why/#org-github" title="GitHub"></a>
+<a href="why/#org-google" title="Google"></a>
+<a href="why/#org-hsbc" title="HSBC"></a>
+<a href="why/#org-ibm" title="IBM"></a>
+<a href="why/#org-intel" title="Intel"></a>
+<a href="why/#org-intuit" title="Intuit"></a>
+<a href="why/#org-ipcc" title="Intergovernmental Panel on Climate Change"></a>
+<a href="why/#org-jpmorgan" title="JPMorgan"></a>
+<a href="why/#org-jupyter" title="Jupyter"></a>
+<a href="why/#org-microsoft" title="Microsoft"></a>
+<a href="why/#org-molssi" title="Molecular Science Software Institute"></a>
+<a href="why/#org-nasa" title="NASA"></a>
+<a href="why/#org-netflix" title="Netflix"></a>
+<a href="why/#org-nsa" title="NSA"></a>
+<a href="why/#org-nvidia" title="NVIDIA"></a>
+<a href="why/#org-openai" title="OpenAI"></a>
+<a href="why/#org-oracle" title="Oracle"></a>
+<a href="why/#org-palantir" title="Palantir"></a>
+<a href="why/#org-qualcomm" title="Qualcomm"></a>
+<a href="why/#org-redhat" title="Red Hat"></a>
+<a href="why/#org-revolut" title="Revolut"></a>
+<a href="why/#org-robusta" title="Robusta"></a>
+<a href="why/#org-salesforce" title="Salesforce"></a>
+<a href="why/#org-starbucks" title="Starbucks"></a>
+<a href="why/#org-ti" title="Texas Instruments"></a>
+<a href="why/#org-twilio" title="Twilio"></a>
+<a href="why/#org-twitter" title="Twitter"></a>
+<a href="why/#org-ukhomeoffice" title="UK Home Office"></a>
+<a href="https://github.com/pydantic/pydantic/network/dependents">list of dependents on github</a>
+<a href="https://github.com/Kludex/awesome-pydantic">awesome-pydantic</a>
+<a href="/docs/validation/latest/get-started/why/" class="astro-4hov2ejk">Next Why use Pydantic</a>
+<a href="https://github.com/pydantic" title="Pydantic on GitHub" class="astro-7pllvep4"></a>
+<a href="https://x.com/pydantic" title="Pydantic on X" class="astro-7pllvep4"></a>
+<a href="https://www.linkedin.com/company/pydantic/" title="Pydantic on LinkedIn" class="astro-7pllvep4"></a>
+<a href="https://bsky.app/profile/pydantic.dev" title="Pydantic on Bluesky" class="astro-7pllvep4"></a>
+</body></html>

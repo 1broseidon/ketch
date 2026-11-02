@@ -149,7 +149,8 @@ type repoSource interface {
 	// rate limit is a *ghRateLimitError.
 	repo(ctx context.Context, key repoKey) (repoInfo, error)
 	// searchRepos returns repositories whose name matches name, most stars
-	// first, at most n. Rate limits as for repo.
+	// first, at most n. Rate limits as for repo. A search GitHub cut short
+	// returns the hits it has with an error wrapping errIncompleteSearch.
 	searchRepos(ctx context.Context, name string, n int) ([]repoInfo, error)
 }
 

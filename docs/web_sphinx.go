@@ -413,3 +413,26 @@ func parseDocOptions(body []byte) sphinxOptions {
 	}
 	return o
 }
+
+// docutilsID is the id Sphinx gives a section, docutils' make_id: lower
+// case, every run of characters other than ASCII letters and digits one
+// hyphen, leading digits and hyphens and trailing hyphens trimmed
+// (select_related() → select-related). docutils first folds accented
+// letters to ASCII; this drops what is not ASCII instead.
+func docutilsID(text string) string {
+	var b strings.Builder
+	gap := false
+	for _, r := range strings.ToLower(text) {
+		switch {
+		case r >= 'a' && r <= 'z' || r >= '0' && r <= '9':
+			if gap && b.Len() > 0 {
+				b.WriteByte('-')
+			}
+			gap = false
+			b.WriteRune(r)
+		case r < 0x80:
+			gap = true
+		}
+	}
+	return strings.TrimLeft(b.String(), "0123456789-")
+}

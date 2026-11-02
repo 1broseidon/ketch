@@ -1,0 +1,90 @@
+<!doctype html>
+<html><head>
+<title>NumPy Documentation</title>
+<script src="_static/jquery.js"></script>
+<script src="_static/underscore.js"></script>
+<script src="_static/doctools.js"></script>
+<script src="_static/language_data.js"></script>
+<script src="_static/donation.js"></script>
+<script src="_static/js/copybutton.js"></script>
+</head><body>
+<a href="https://numpy.org" class="spc-logo-header"></a>
+<a href="https://numpy.org/doc/stable/" class="biglink">Web</a>
+<a href="https://numpy.org/devdocs/" class="biglink">Latest (development) documentation</a>
+<a href="/neps" class="biglink">NumPy Enhancement Proposals</a>
+<a href="2.5" class="biglink">NumPy 2.5 Manual</a>
+<a href="2.5/numpy-html.zip">[HTML+zip]</a>
+<a href="2.5/numpy-ref.pdf">[Reference Guide PDF]</a>
+<a href="2.5/numpy-user.pdf">[User Guide PDF]</a>
+<a href="2.4" class="biglink">NumPy 2.4 Manual</a>
+<a href="2.4/numpy-html.zip">[HTML+zip]</a>
+<a href="2.4/numpy-ref.pdf">[Reference Guide PDF]</a>
+<a href="2.4/numpy-user.pdf">[User Guide PDF]</a>
+<a href="2.3" class="biglink">NumPy 2.3 Manual</a>
+<a href="2.3/numpy-html.zip">[HTML+zip]</a>
+<a href="2.3/numpy-ref.pdf">[Reference Guide PDF]</a>
+<a href="2.3/numpy-user.pdf">[User Guide PDF]</a>
+<a href="2.2" class="biglink">NumPy 2.2 Manual</a>
+<a href="2.2/numpy-html.zip">[HTML+zip]</a>
+<a href="2.2/numpy-ref.pdf">[Reference Guide PDF]</a>
+<a href="2.2/numpy-user.pdf">[User Guide PDF]</a>
+<a href="2.1" class="biglink">NumPy 2.1 Manual</a>
+<a href="2.1/numpy-html.zip">[HTML+zip]</a>
+<a href="2.1/numpy-ref.pdf">[Reference Guide PDF]</a>
+<a href="2.1/numpy-user.pdf">[User Guide PDF]</a>
+<a href="2.0" class="biglink">NumPy 2.0 Manual</a>
+<a href="2.0/numpy-html.zip">[HTML+zip]</a>
+<a href="2.0/numpy-ref.pdf">[Reference Guide PDF]</a>
+<a href="2.0/numpy-user.pdf">[User Guide PDF]</a>
+<a href="1.26" class="biglink">NumPy 1.26 Manual</a>
+<a href="1.26/numpy-html.zip">[HTML+zip]</a>
+<a href="1.25" class="biglink">NumPy 1.25 Manual</a>
+<a href="1.25/numpy-html.zip">[HTML+zip]</a>
+<a href="1.24" class="biglink">NumPy 1.24 Manual</a>
+<a href="1.24/numpy-html.zip">[HTML+zip]</a>
+<a href="1.23" class="biglink">NumPy 1.23 Manual</a>
+<a href="1.23/numpy-html.zip">[HTML+zip]</a>
+<a href="1.23/numpy-ref.pdf">[Reference Guide PDF]</a>
+<a href="1.23/numpy-user.pdf">[User Guide PDF]</a>
+<a href="1.22" class="biglink">NumPy 1.22 Manual</a>
+<a href="1.22/numpy-html.zip">[HTML+zip]</a>
+<a href="1.22/numpy-ref.pdf">[Reference Guide PDF]</a>
+<a href="1.22/numpy-user.pdf">[User Guide PDF]</a>
+<a href="1.21" class="biglink">NumPy 1.21 Manual</a>
+<a href="1.21/numpy-html.zip">[HTML+zip]</a>
+<a href="1.21/numpy-ref.pdf">[Reference Guide PDF]</a>
+<a href="1.21/numpy-user.pdf">[User Guide PDF]</a>
+<a href="1.20" class="biglink">NumPy 1.20 Manual</a>
+<a href="1.20/numpy-html.zip">[HTML+zip]</a>
+<a href="1.20/numpy-ref.pdf">[Reference Guide PDF]</a>
+<a href="1.20/numpy-user.pdf">[User Guide PDF]</a>
+<a href="1.19" class="biglink">NumPy 1.19 Manual</a>
+<a href="1.19/numpy-html.zip">[HTML+zip]</a>
+<a href="1.19/numpy-ref.pdf">[Reference Guide PDF]</a>
+<a href="1.19/numpy-user.pdf">[User Guide PDF]</a>
+<a href="1.18" class="biglink">NumPy 1.18 Manual</a>
+<a href="1.18/numpy-html.zip">[HTML+zip]</a>
+<a href="1.18/numpy-ref.pdf">[Reference Guide PDF]</a>
+<a href="1.18/numpy-user.pdf">[User Guide PDF]</a>
+<a href="1.17" class="biglink">NumPy 1.17 Manual</a>
+<a href="1.17/numpy-html.zip">[HTML+zip]</a>
+<a href="1.17/numpy-ref.pdf">[Reference Guide PDF]</a>
+<a href="1.17/numpy-user.pdf">[User Guide PDF]</a>
+<a href="1.16" class="biglink">NumPy 1.16 Manual</a>
+<a href="1.16/numpy-html.zip">[HTML+zip]</a>
+<a href="1.16/numpy-ref.pdf">[Reference Guide PDF]</a>
+<a href="1.16/numpy-user.pdf">[User Guide PDF]</a>
+<a href="1.15" class="biglink">NumPy 1.15 Manual</a>
+<a href="_downloads/numpy-html-1.15.4.zip">[HTML+zip]</a>
+<a href="_downloads/numpy-ref-1.15.4.pdf">[Reference Guide PDF]</a>
+<a href="_downloads/numpy-user-1.15.4.pdf">[User Guide PDF]</a>
+<a href="1.14" class="biglink">NumPy 1.14 Manual</a>
+<a href="_downloads/numpy-html-1.14.5.zip">[HTML+zip]</a>
+<a href="_downloads/numpy-ref-1.14.5.pdf">[Reference Guide PDF]</a>
+<a href="_downloads/numpy-user-1.14.5.pdf">[User Guide PDF]</a>
+<a href="1.13" class="biglink">NumPy 1.13 Manual</a>
+<a href="_downloads/numpy-html-1.13.0.zip">[HTML+zip]</a>
+<a href="_downloads/numpy-ref-1.13.0.pdf">[Reference Guide PDF]</a>
+<a href="_downloads/numpy-user-1.13.0.pdf">[User Guide PDF]</a>
+<a href="https://docs.scipy.org/doc/" class="biglink">Older versions (on scipy.org)</a>
+</body></html>

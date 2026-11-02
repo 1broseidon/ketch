@@ -1,0 +1,106 @@
+<!doctype html>
+<html><head>
+<title>Matplotlib documentation — Matplotlib 3.11.2 documentation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+<script src="_static/documentation_options.js?v=1a85da86"></script>
+<script src="_static/doctools.js?v=fd6eb6e6"></script>
+<script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+<script src="_static/sg-tags.js?v=d80f6fa4"></script>
+<script src="_static/clipboard.min.js?v=a7894cd8"></script>
+<script src="_static/copybutton.js?v=ccdb6887"></script>
+<script src="_static/design-tabs.js?v=f930bc37"></script>
+<script src="https://views.scientific-python.org/js/script.js"></script>
+<script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://matplotlib.org/devdocs/_static/switcher.json?v3.11.2-1-g879ad8ebba';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '3.11.2';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="docsearch:language" content="en">
+<meta name="docsearch:version" content="3.11.2">
+<meta name="docbuild:last-update" content="Sep 11, 2026">
+<script src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+<script src="/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js"></script>
+</head><body>
+<a href="#main-content">Skip to main content</a>
+<a href="https://matplotlib.org/stable/" class="navbar-brand logo"></a>
+<a href="plot_types/index.html" class="reference internal nav-link">Plot types</a>
+<a href="users/index.html" class="reference internal nav-link">User guide</a>
+<a href="tutorials/index.html" class="reference internal nav-link">Tutorials</a>
+<a href="gallery/index.html" class="reference internal nav-link">Examples</a>
+<a href="api/index.html" class="reference internal nav-link">Reference</a>
+<a href="devel/index.html" class="reference internal nav-link">Contribute</a>
+<a href="users/release_notes.html" class="reference internal nav-link">Releases</a>
+<a href="https://gitter.im/matplotlib/matplotlib" title="Gitter" class="nav-link pst-navbar-icon">Gitter</a>
+<a href="https://discourse.matplotlib.org" title="Discourse" class="nav-link pst-navbar-icon">Discourse</a>
+<a href="https://github.com/matplotlib/matplotlib" title="GitHub" class="nav-link pst-navbar-icon">GitHub</a>
+<a href="plot_types/index.html" class="reference internal nav-link">Plot types</a>
+<a href="users/index.html" class="reference internal nav-link">User guide</a>
+<a href="tutorials/index.html" class="reference internal nav-link">Tutorials</a>
+<a href="gallery/index.html" class="reference internal nav-link">Examples</a>
+<a href="api/index.html" class="reference internal nav-link">Reference</a>
+<a href="devel/index.html" class="reference internal nav-link">Contribute</a>
+<a href="users/release_notes.html" class="reference internal nav-link">Releases</a>
+<a href="https://gitter.im/matplotlib/matplotlib" title="Gitter" class="nav-link pst-navbar-icon">Gitter</a>
+<a href="https://discourse.matplotlib.org" title="Discourse" class="nav-link pst-navbar-icon">Discourse</a>
+<a href="https://github.com/matplotlib/matplotlib" title="GitHub" class="nav-link pst-navbar-icon">GitHub</a>
+<a href="https://matplotlib.org/cheatsheets/"></a>
+<a href="https://numfocus.org/donate-to-matplotlib" class="sd-btn sd-btn-primary sd-fs-5 sd-px-5 sd-py-2">Support Matplotlib</a>
+<a href="#matplotlib-release-documentation" title="Link to this heading" class="headerlink">#</a>
+<a href="#install" title="Link to this heading" class="headerlink">#</a>
+<a href="install/dependencies.html#optional-dependencies" class="reference internal">supported GUI frameworks</a>
+<a href="install/index.html#install-official" class="reference internal">Install an official release</a>
+<a href="install/index.html#install-third-party" class="reference internal">Third-party distributions</a>
+<a href="install/index.html#install-nightly-build" class="reference internal">Install a nightly build</a>
+<a href="install/index.html#install-source" class="reference internal">Install from source</a>
+<a href="#learn" title="Link to this heading" class="headerlink">#</a>
+<a href="users/explain/quick_start.html" class="reference internal">Quick start guide</a>
+<a href="users/index.html" class="reference internal">User guide</a>
+<a href="tutorials/index.html" class="reference internal">Tutorials</a>
+<a href="users/faq.html" class="reference internal">Frequently Asked Questions</a>
+<a href="plot_types/index.html" class="reference internal">Plot types</a>
+<a href="gallery/index.html" class="reference internal">Examples</a>
+<a href="api/index.html" class="reference internal">API reference</a>
+<a href="api/figure_api.html" class="reference internal">Figure methods</a>
+<a href="api/axes_api.html" class="reference internal">Plotting methods</a>
+<a href="api/_as_gen/matplotlib.pyplot.figure.html#matplotlib.pyplot.figure" title="matplotlib.pyplot.figure" class="reference internal">pyplot.figure</a>
+<a href="api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="reference internal">pyplot.subplots</a>
+<a href="api/_as_gen/matplotlib.pyplot.subplot_mosaic.html#matplotlib.pyplot.subplot_mosaic" title="matplotlib.pyplot.subplot_mosaic" class="reference internal">pyplot.subplot_mosaic</a>
+<a href="#community" title="Link to this heading" class="headerlink">#</a>
+<a href="users/resources/index.html" class="reference internal">External resources</a>
+<a href="users/resources/index.html#books-chapters-and-articles" class="reference internal">Books, chapters and articles</a>
+<a href="users/resources/index.html#videos" class="reference internal">Videos</a>
+<a href="users/resources/index.html#tutorials" class="reference internal">Tutorials</a>
+<a href="users/resources/index.html#galleries" class="reference internal">Galleries</a>
+<a href="https://matplotlib.org/mpl-third-party/" class="reference external">Third-party packages</a>
+<a href="#what-s-new" title="Link to this heading" class="headerlink">#</a>
+<a href="release/release_notes.html" class="reference internal">Release notes</a>
+<a href="#contribute" title="Link to this heading" class="headerlink">#</a>
+<a href="devel/index.html#developers-guide-index" class="reference internal">Contribute</a>
+<a href="devel/index.html" class="reference internal">Contribute</a>
+<a href="devel/index.html#github-issue-tracker" class="reference internal">GitHub issue tracker</a>
+<a href="devel/index.html#contributing-guide" class="reference internal">Contributing guide</a>
+<a href="devel/index.html#development-workflow" class="reference internal">Development workflow</a>
+<a href="devel/index.html#policies-and-guidelines" class="reference internal">Policies and guidelines</a>
+<a href="#about-us" title="Link to this heading" class="headerlink">#</a>
+<a href="project/index.html" class="reference internal">Project information</a>
+<a href="project/mission.html" class="reference internal">Mission Statement</a>
+<a href="project/history.html" class="reference internal">History</a>
+<a href="project/code_of_conduct.html" class="reference internal">Code of Conduct</a>
+<a href="project/citing.html" class="reference internal">Citing Matplotlib</a>
+<a href="project/license.html" class="reference internal">License</a>
+<a href="project/credits.html" class="reference internal">Credits</a>
+<a href="#install" class="reference internal nav-link">Install</a>
+<a href="#learn" class="reference internal nav-link">Learn</a>
+<a href="#community" class="reference internal nav-link">Community</a>
+<a href="#what-s-new" class="reference internal nav-link">What&#x27;s new</a>
+<a href="#contribute" class="reference internal nav-link">Contribute</a>
+<a href="#about-us" class="reference internal nav-link">About us</a>
+<a href="https://www.sphinx-doc.org/">Sphinx</a>
+<a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a>
+</body></html>

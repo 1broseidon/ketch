@@ -1,0 +1,160 @@
+<!doctype html>
+<html><head>
+<title>Introduction</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<script src="/_next/static/immutable/chunks/261v_dk1rk2w5.js"></script>
+<script src="/_next/static/immutable/chunks/3c65rbbl1b9_w.js"></script>
+<script src="/_next/static/immutable/chunks/3l4u49ac-_ccg.js"></script>
+<script src="/_next/static/immutable/chunks/3tcz7xzv92plr.js"></script>
+<script src="/_next/static/immutable/chunks/turbopack-22zuhxnmsa7m2.js"></script>
+<script src="/_next/static/immutable/chunks/0z72zl2rx1h6t.js"></script>
+<script src="/_next/static/immutable/chunks/2zyyp-ewolx0f.js"></script>
+<script src="/_next/static/immutable/chunks/1l5qg9x-vt43n.js"></script>
+<script src="/_next/static/immutable/chunks/2q6evjwm-565v.js"></script>
+<script src="/_next/static/immutable/chunks/3zlhpygcwqg-9.js"></script>
+<script src="/_next/static/immutable/chunks/284d_5_rqcaos.js"></script>
+<script src="/_next/static/immutable/chunks/2qfbt6071x6yn.js"></script>
+<script src="/_next/static/immutable/chunks/3pqb1fq_sr6li.js"></script>
+<script src="/_next/static/immutable/chunks/3dtqcrdhnsdex.js"></script>
+<script src="/_next/static/immutable/chunks/1e3kjd___72th.js"></script>
+<script src="/_next/static/immutable/chunks/174jbpph1dsys.js"></script>
+<script src="/_next/static/immutable/chunks/2rsc1vna4vfkk.js"></script>
+<script src="/_next/static/immutable/chunks/3sqgvn9r9et3g.js"></script>
+<script src="/_next/static/immutable/chunks/3fjk3z4w9r9hv.js"></script>
+<script src="/_next/static/immutable/chunks/06b8-10k8d0jz.js"></script>
+<script src="/_next/static/immutable/chunks/2u3zjg8fohtu7.js"></script>
+<script src="/_next/static/immutable/chunks/3wz29kp-oew02.js"></script>
+<script src="/_next/static/immutable/chunks/0ra0xoe9tfmlw.js"></script>
+<script src="/_next/static/immutable/chunks/2fie77uqvmsyv.js"></script>
+<script src="/_next/static/immutable/chunks/13svsvg9le95d.js"></script>
+<script src="/_next/static/immutable/chunks/181___up7zhl1.js"></script>
+<script src="/_next/static/immutable/chunks/2mzfnw-komtqy.js"></script>
+<script src="/_next/static/immutable/chunks/2apcuyubik732.js"></script>
+<script src="/_next/static/immutable/chunks/1ltqrte-ptu72.js"></script>
+<meta name="next-size-adjust" content="">
+<meta name="description" content="Welcome to the Next.js Documentation.">
+<meta property="og:title" content="Introduction">
+<meta property="og:description" content="Welcome to the Next.js Documentation.">
+<meta property="og:image" content="https://nextjs.org/api/og?title=Introduction&amp;sig=c68437f91e8d5f18">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Introduction">
+<meta name="twitter:description" content="Welcome to the Next.js Documentation.">
+<meta name="twitter:image" content="https://nextjs.org/api/og?title=Introduction&amp;sig=c68437f91e8d5f18">
+<script>((a,b,c,d,e,f,g,h,i)=>{let j=document.documentElement,k=["light","dark"],l=a=>f?.[a]||a,m=Array.from(new Set([...e.map(a=>l(a)),...Object.values(f??{})]));function n(b){var c;let d=Array.isArray(a)?a:[a],e=l(b);d.forEach(a=>{"class"===a?(j.classList.remove(...m),j.classList.add(e)):j.setAttribute(a,e)}),c=b,h&&k.includes(c)&&(j.style.colorScheme=c)}if(d)n(d);else try{let a=localStorage.getItem(b)||c,d=g&&"system"===a?window.matchMedia("(prefers-color-scheme: dark)"):null,e=d?d.matches?"dark":"light":a;if(n(e),d){var o;let a=(o=a=>{try{let d=localStorage.getItem(b)||c;"system"===d&&n(a.matches?"dark":"light")}catch(a){}},d.addEventListener?(d.addEventListener("change",o),()=>d.removeEventListener("change",o)):(d.addListener(o),()=>d.removeListener(o)));window.addEventListener(i,a,{once:!0})}}catch(a){}})("class","geistdocs-theme","system",null,["light","dark"],{"light":"light-theme","dark":"dark-theme"},true,true,"next-themes:geistdocs-theme:[\"class\"]:provider-mounted")</script>
+<script src="/_next/static/immutable/chunks/0c0hxoamwjsbw.js"></script>
+<script src="/_next/static/immutable/chunks/1747y1ewjrw07.js"></script>
+</head><body>
+<a href="https://vercel.com/oss" aria-label="Vercel Open Source" class="-mx-2 flex items-center rounded-md p-2 text-gray-1000 outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"></a>
+<a href="/" class="flex @min-[1024px]:hidden items-center text-gray-1000"></a>
+<a href="/" class="relative flex h-full items-center text-gray-1000 outline-none before:absolute before:inset-x-0 before:top-1/2 before:h-9 before:-translate-y-1/2 before:rounded-md before:content-[&#x27;&#x27;] focus-visible:before:ring-2 focus-visible:before:ring-blue-700 focus-visible:before:ring-inset"></a>
+<a href="https://eve.dev/" class="block w-full text-sm outline-none transition-colors w-fit! rounded-lg no-underline outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 focus-visible:ring-offset-background-200">The framework for building agents</a>
+<a href="https://svelte.dev/" class="block w-full text-sm outline-none transition-colors group/osslink inline-flex w-full no-underline outline-none">Svelte</a>
+<a href="https://nuxt.com/" class="block w-full text-sm outline-none transition-colors group/osslink inline-flex w-full no-underline outline-none">Nuxt</a>
+<a href="https://nitro.build/" class="block w-full text-sm outline-none transition-colors group/osslink inline-flex w-full no-underline outline-none">Nitro</a>
+<a href="https://ai-sdk.dev/" class="block w-full text-sm outline-none transition-colors group/osslink inline-flex w-full no-underline outline-none">AI SDK</a>
+<a href="https://chat-sdk.dev/" class="block w-full text-sm outline-none transition-colors group/osslink inline-flex w-full no-underline outline-none">Chat SDK</a>
+<a href="https://flags-sdk.dev/" class="block w-full text-sm outline-none transition-colors group/osslink inline-flex w-full no-underline outline-none">Flags SDK</a>
+<a href="https://workflow-sdk.dev/" class="block w-full text-sm outline-none transition-colors group/osslink inline-flex w-full no-underline outline-none">Workflow SDK</a>
+<a href="https://turborepo.dev/" class="block w-full text-sm outline-none transition-colors group/osslink inline-flex w-full no-underline outline-none">Turborepo</a>
+<a href="https://ui.shadcn.com/" class="block w-full text-sm outline-none transition-colors group/osslink inline-flex w-full no-underline outline-none">shadcn/ui</a>
+<a href="https://swr.vercel.app/" class="block w-full text-sm outline-none transition-colors group/osslink inline-flex w-full no-underline outline-none">SWR</a>
+<a href="https://justbash.dev/" class="block w-full text-sm outline-none transition-colors group/osslink inline-flex w-full no-underline outline-none">just-bash</a>
+<a href="https://deepsec.sh/" class="block w-full text-sm outline-none transition-colors group/osslink inline-flex w-full no-underline outline-none">deepsec</a>
+<a href="/docs" class="w-full relative flex h-full items-center px-3 text-gray-900 text-sm outline-none transition-colors duration-100 before:absolute before:top-1/2 before:right-1 before:h-9 before:-translate-y-1/2 before:rounded-md before:content-[&#x27;&#x27;] hover:text-gray-1000 focus-visible:before:ring-2 focus-visible:before:ring-blue-700 focus-visible:before:ring-inset data-[active]:text-gray-1000 pl-6 before:left-4">Docs</a>
+<a href="/learn" class="w-full relative flex h-full items-center px-3 text-gray-900 text-sm outline-none transition-colors duration-100 before:absolute before:top-1/2 before:right-1 before:left-1 before:h-9 before:-translate-y-1/2 before:rounded-md before:content-[&#x27;&#x27;] hover:text-gray-1000 focus-visible:before:ring-2 focus-visible:before:ring-blue-700 focus-visible:before:ring-inset data-[active]:text-gray-1000">Learn</a>
+<a href="/showcase" class="w-full relative flex h-full items-center px-3 text-gray-900 text-sm outline-none transition-colors duration-100 before:absolute before:top-1/2 before:right-1 before:left-1 before:h-9 before:-translate-y-1/2 before:rounded-md before:content-[&#x27;&#x27;] hover:text-gray-1000 focus-visible:before:ring-2 focus-visible:before:ring-blue-700 focus-visible:before:ring-inset data-[active]:text-gray-1000">Showcase</a>
+<a href="/blog" class="w-full relative flex h-full items-center px-3 text-gray-900 text-sm outline-none transition-colors duration-100 before:absolute before:top-1/2 before:right-1 before:left-1 before:h-9 before:-translate-y-1/2 before:rounded-md before:content-[&#x27;&#x27;] hover:text-gray-1000 focus-visible:before:ring-2 focus-visible:before:ring-blue-700 focus-visible:before:ring-inset data-[active]:text-gray-1000">Blog</a>
+<a href="https://vercel.com/templates/next.js" class="w-full relative flex h-full items-center px-3 text-gray-900 text-sm outline-none transition-colors duration-100 before:absolute before:top-1/2 before:right-1 before:left-1 before:h-9 before:-translate-y-1/2 before:rounded-md before:content-[&#x27;&#x27;] hover:text-gray-1000 focus-visible:before:ring-2 focus-visible:before:ring-blue-700 focus-visible:before:ring-inset data-[active]:text-gray-1000 flex flex-row items-center gap-1">Templates</a>
+<a href="https://vercel.com/new" class="w-full relative flex h-full items-center px-3 text-gray-900 text-sm outline-none transition-colors duration-100 before:absolute before:top-1/2 before:right-1 before:left-1 before:h-9 before:-translate-y-1/2 before:rounded-md before:content-[&#x27;&#x27;] hover:text-gray-1000 focus-visible:before:ring-2 focus-visible:before:ring-blue-700 focus-visible:before:ring-inset data-[active]:text-gray-1000 flex flex-row items-center gap-1">Deploy</a>
+<a href="https://github.com/vercel/next.js" aria-label="GitHub repository" class="size-8 items-center justify-center @min-[768px]:inline-flex hidden shrink-0"></a>
+<a href="/docs" class="flex min-h-11 items-center gap-1 rounded-md px-3 font-normal text-2xl no-underline outline-none transition-colors hover:bg-gray-alpha-100 hover:text-gray-1000 text-gray-1000">Docs</a>
+<a href="/learn" class="flex min-h-11 items-center gap-1 rounded-md px-3 font-normal text-2xl text-gray-900 no-underline outline-none transition-colors hover:bg-gray-alpha-100 hover:text-gray-1000">Learn</a>
+<a href="/showcase" class="flex min-h-11 items-center gap-1 rounded-md px-3 font-normal text-2xl text-gray-900 no-underline outline-none transition-colors hover:bg-gray-alpha-100 hover:text-gray-1000">Showcase</a>
+<a href="/blog" class="flex min-h-11 items-center gap-1 rounded-md px-3 font-normal text-2xl text-gray-900 no-underline outline-none transition-colors hover:bg-gray-alpha-100 hover:text-gray-1000">Blog</a>
+<a href="https://vercel.com/templates/next.js" class="flex min-h-11 items-center gap-1 rounded-md px-3 font-normal text-2xl text-gray-900 no-underline outline-none transition-colors hover:bg-gray-alpha-100 hover:text-gray-1000">Templates</a>
+<a href="https://vercel.com/new" class="flex min-h-11 items-center gap-1 rounded-md px-3 font-normal text-2xl text-gray-900 no-underline outline-none transition-colors hover:bg-gray-alpha-100 hover:text-gray-1000">Deploy</a>
+<a href="https://github.com/vercel/next.js" class="flex min-h-11 items-center gap-1 rounded-md px-3 font-normal text-2xl text-gray-900 no-underline outline-none transition-colors hover:bg-gray-alpha-100 hover:text-gray-1000">GitHub</a>
+<a href="https://eve.dev/" class="flex items-center gap-1 rounded-md px-3 py-1.5 font-normal text-gray-1000 text-xl no-underline outline-none transition-colors hover:bg-gray-alpha-100">eve</a>
+<a href="https://svelte.dev/" class="flex items-center gap-1 rounded-md px-3 py-1.5 font-normal text-gray-1000 text-xl no-underline outline-none transition-colors hover:bg-gray-alpha-100">Svelte</a>
+<a href="https://nuxt.com/" class="flex items-center gap-1 rounded-md px-3 py-1.5 font-normal text-gray-1000 text-xl no-underline outline-none transition-colors hover:bg-gray-alpha-100">Nuxt</a>
+<a href="https://nitro.build/" class="flex items-center gap-1 rounded-md px-3 py-1.5 font-normal text-gray-1000 text-xl no-underline outline-none transition-colors hover:bg-gray-alpha-100">Nitro</a>
+<a href="https://ai-sdk.dev/" class="flex items-center gap-1 rounded-md px-3 py-1.5 font-normal text-gray-1000 text-xl no-underline outline-none transition-colors hover:bg-gray-alpha-100">AI SDK</a>
+<a href="https://chat-sdk.dev/" class="flex items-center gap-1 rounded-md px-3 py-1.5 font-normal text-gray-1000 text-xl no-underline outline-none transition-colors hover:bg-gray-alpha-100">Chat SDK</a>
+<a href="https://flags-sdk.dev/" class="flex items-center gap-1 rounded-md px-3 py-1.5 font-normal text-gray-1000 text-xl no-underline outline-none transition-colors hover:bg-gray-alpha-100">Flags SDK</a>
+<a href="https://workflow-sdk.dev/" class="flex items-center gap-1 rounded-md px-3 py-1.5 font-normal text-gray-1000 text-xl no-underline outline-none transition-colors hover:bg-gray-alpha-100">Workflow SDK</a>
+<a href="https://turborepo.dev/" class="flex items-center gap-1 rounded-md px-3 py-1.5 font-normal text-gray-1000 text-xl no-underline outline-none transition-colors hover:bg-gray-alpha-100">Turborepo</a>
+<a href="https://ui.shadcn.com/" class="flex items-center gap-1 rounded-md px-3 py-1.5 font-normal text-gray-1000 text-xl no-underline outline-none transition-colors hover:bg-gray-alpha-100">shadcn/ui</a>
+<a href="https://swr.vercel.app/" class="flex items-center gap-1 rounded-md px-3 py-1.5 font-normal text-gray-1000 text-xl no-underline outline-none transition-colors hover:bg-gray-alpha-100">SWR</a>
+<a href="https://justbash.dev/" class="flex items-center gap-1 rounded-md px-3 py-1.5 font-normal text-gray-1000 text-xl no-underline outline-none transition-colors hover:bg-gray-alpha-100">just-bash</a>
+<a href="https://deepsec.sh/" class="flex items-center gap-1 rounded-md px-3 py-1.5 font-normal text-gray-1000 text-xl no-underline outline-none transition-colors hover:bg-gray-alpha-100">deepsec</a>
+<a href="/docs/13/getting-started" class="flex h-9 origin-left touch-manipulation flex-row items-center rounded-md pr-1 pl-2.5 motion-reduce:transition-none text-gray-1000 hover:bg-gray-100 focus-visible:bg-gray-100 min-w-0 flex-1 no-underline outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Getting Started</a>
+<a href="/docs/13/getting-started/installation" class="flex h-9 origin-left touch-manipulation flex-row items-center rounded-md pr-1 pl-2.5 motion-reduce:transition-none text-gray-900 hover:bg-gray-100 hover:text-gray-1000 focus-visible:bg-gray-100 focus-visible:text-gray-1000 min-w-0 flex-1 no-underline outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Installation</a>
+<a href="/docs/13/getting-started/project-structure" class="flex h-9 origin-left touch-manipulation flex-row items-center rounded-md pr-1 pl-2.5 motion-reduce:transition-none text-gray-900 hover:bg-gray-100 hover:text-gray-1000 focus-visible:bg-gray-100 focus-visible:text-gray-1000 min-w-0 flex-1 no-underline outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Project Structure</a>
+<a href="/docs/13/app/building-your-application" class="flex h-9 origin-left touch-manipulation flex-row items-center rounded-md pr-1 pl-2.5 motion-reduce:transition-none text-gray-1000 hover:bg-gray-100 focus-visible:bg-gray-100 min-w-0 flex-1 no-underline outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Building Your Application</a>
+<a href="/docs/13/app/api-reference" class="flex h-9 origin-left touch-manipulation flex-row items-center rounded-md pr-1 pl-2.5 motion-reduce:transition-none text-gray-1000 hover:bg-gray-100 focus-visible:bg-gray-100 min-w-0 flex-1 no-underline outline-none focus-visible:shadow-[var(--ds-focus-ring)]">API Reference</a>
+<a href="/docs/13/architecture" class="flex h-9 origin-left touch-manipulation flex-row items-center rounded-md pr-1 pl-2.5 motion-reduce:transition-none text-gray-1000 hover:bg-gray-100 focus-visible:bg-gray-100 min-w-0 flex-1 no-underline outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Architecture</a>
+<a href="/docs/13/architecture/accessibility" class="flex h-9 origin-left touch-manipulation flex-row items-center rounded-md pr-1 pl-2.5 motion-reduce:transition-none text-gray-900 hover:bg-gray-100 hover:text-gray-1000 focus-visible:bg-gray-100 focus-visible:text-gray-1000 min-w-0 flex-1 no-underline outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Accessibility</a>
+<a href="/docs/13/architecture/fast-refresh" class="flex h-9 origin-left touch-manipulation flex-row items-center rounded-md pr-1 pl-2.5 motion-reduce:transition-none text-gray-900 hover:bg-gray-100 hover:text-gray-1000 focus-visible:bg-gray-100 focus-visible:text-gray-1000 min-w-0 flex-1 no-underline outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Fast Refresh</a>
+<a href="/docs/13/architecture/nextjs-compiler" class="flex h-9 origin-left touch-manipulation flex-row items-center rounded-md pr-1 pl-2.5 motion-reduce:transition-none text-gray-900 hover:bg-gray-100 hover:text-gray-1000 focus-visible:bg-gray-100 focus-visible:text-gray-1000 min-w-0 flex-1 no-underline outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Next.js Compiler</a>
+<a href="/docs/13/architecture/supported-browsers" class="flex h-9 origin-left touch-manipulation flex-row items-center rounded-md pr-1 pl-2.5 motion-reduce:transition-none text-gray-900 hover:bg-gray-100 hover:text-gray-1000 focus-visible:bg-gray-100 focus-visible:text-gray-1000 min-w-0 flex-1 no-underline outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Supported Browsers</a>
+<a href="/docs/13/architecture/turbopack" class="flex h-9 origin-left touch-manipulation flex-row items-center rounded-md pr-1 pl-2.5 motion-reduce:transition-none text-gray-900 hover:bg-gray-100 hover:text-gray-1000 focus-visible:bg-gray-100 focus-visible:text-gray-1000 min-w-0 flex-1 no-underline outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Turbopack</a>
+<a href="/docs/13/community" class="flex h-9 origin-left touch-manipulation flex-row items-center rounded-md pr-1 pl-2.5 motion-reduce:transition-none text-gray-1000 hover:bg-gray-100 focus-visible:bg-gray-100 min-w-0 flex-1 no-underline outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Community</a>
+<a href="/docs/13/community/contribution-guide" class="flex h-9 origin-left touch-manipulation flex-row items-center rounded-md pr-1 pl-2.5 motion-reduce:transition-none text-gray-900 hover:bg-gray-100 hover:text-gray-1000 focus-visible:bg-gray-100 focus-visible:text-gray-1000 min-w-0 flex-1 no-underline outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Contribution Guide</a>
+<a href="#what-is-nextjs" class="peer">What is Next.js?</a>
+<a href="#main-features" class="peer">Main Features</a>
+<a href="/docs/app/building-your-application/routing" class="font-normal text-gray-1000! underline decoration-1 decoration-gray-700 underline-offset-4 hover:text-gray-1000! hover:decoration-gray-1000 hover:opacity-100!">Routing</a>
+<a href="/docs/app/building-your-application/rendering" class="font-normal text-gray-1000! underline decoration-1 decoration-gray-700 underline-offset-4 hover:text-gray-1000! hover:decoration-gray-1000 hover:opacity-100!">Rendering</a>
+<a href="/docs/app/building-your-application/data-fetching" class="font-normal text-gray-1000! underline decoration-1 decoration-gray-700 underline-offset-4 hover:text-gray-1000! hover:decoration-gray-1000 hover:opacity-100!">Data Fetching</a>
+<a href="/docs/app/building-your-application/styling" class="font-normal text-gray-1000! underline decoration-1 decoration-gray-700 underline-offset-4 hover:text-gray-1000! hover:decoration-gray-1000 hover:opacity-100!">Styling</a>
+<a href="/docs/app/building-your-application/optimizing" class="font-normal text-gray-1000! underline decoration-1 decoration-gray-700 underline-offset-4 hover:text-gray-1000! hover:decoration-gray-1000 hover:opacity-100!">Optimizations</a>
+<a href="/docs/app/building-your-application/configuring/typescript" class="font-normal text-gray-1000! underline decoration-1 decoration-gray-700 underline-offset-4 hover:text-gray-1000! hover:decoration-gray-1000 hover:opacity-100!">TypeScript</a>
+<a href="#how-to-use-these-docs" class="peer">How to Use These Docs</a>
+<a href="/docs/getting-started/installation" class="font-normal text-gray-1000! underline decoration-1 decoration-gray-700 underline-offset-4 hover:text-gray-1000! hover:decoration-gray-1000 hover:opacity-100!">Installation</a>
+<a href="#app-router-vs-pages-router" class="peer">App Router vs Pages Router</a>
+<a href="#pre-requisite-knowledge" class="peer">Pre-Requisite Knowledge</a>
+<a href="/learn/foundations/about-nextjs" class="font-normal text-gray-1000! underline decoration-1 decoration-gray-700 underline-offset-4 hover:text-gray-1000! hover:decoration-gray-1000 hover:opacity-100!">Next.js Foundations Course</a>
+<a href="#accessibility" class="peer">Accessibility</a>
+<a href="#join-our-community" class="peer">Join our Community</a>
+<a href="https://github.com/vercel/next.js/discussions" class="font-normal text-gray-1000! underline decoration-1 decoration-gray-700 underline-offset-4 hover:text-gray-1000! hover:decoration-gray-1000 hover:opacity-100!">GitHub Discussions</a>
+<a href="https://discord.com/invite/bUG2bvbtHy" class="font-normal text-gray-1000! underline decoration-1 decoration-gray-700 underline-offset-4 hover:text-gray-1000! hover:decoration-gray-1000 hover:opacity-100!">Discord</a>
+<a href="https://twitter.com/nextjs" class="font-normal text-gray-1000! underline decoration-1 decoration-gray-700 underline-offset-4 hover:text-gray-1000! hover:decoration-gray-1000 hover:opacity-100!">Twitter</a>
+<a href="https://www.reddit.com/r/nextjs" class="font-normal text-gray-1000! underline decoration-1 decoration-gray-700 underline-offset-4 hover:text-gray-1000! hover:decoration-gray-1000 hover:opacity-100!">Reddit</a>
+<a href="/docs/13/getting-started" class="group block space-y-2 rounded-md bg-background-100 p-6 pt-5 no-underline shadow-(--ds-shadow-border) transition-shadow duration-300 hover:shadow-(--ds-shadow-border-medium)">Getting StartedLearn how to create full-stack web applications with Next.js.</a>
+<a href="/docs/13/app" class="group block space-y-2 rounded-md bg-background-100 p-6 pt-5 no-underline shadow-(--ds-shadow-border) transition-shadow duration-300 hover:shadow-(--ds-shadow-border-medium)">App RouterUse the new App Router with Next.js&#x27; and React&#x27;s latest features, including Layouts, Server Components, Suspense, and more.</a>
+<a href="/docs/13/pages" class="group block space-y-2 rounded-md bg-background-100 p-6 pt-5 no-underline shadow-(--ds-shadow-border) transition-shadow duration-300 hover:shadow-(--ds-shadow-border-medium)">Pages RouterBefore Next.js 13, the Pages Router was the main way to create routes in Next.js with an intuitive file-system router.</a>
+<a href="/docs/13/architecture" class="group block space-y-2 rounded-md bg-background-100 p-6 pt-5 no-underline shadow-(--ds-shadow-border) transition-shadow duration-300 hover:shadow-(--ds-shadow-border-medium)">ArchitectureHow Next.js Works</a>
+<a href="/docs/13/community" class="group block space-y-2 rounded-md bg-background-100 p-6 pt-5 no-underline shadow-(--ds-shadow-border) transition-shadow duration-300 hover:shadow-(--ds-shadow-border-medium)">CommunityGet involved in the Next.js community.</a>
+<a href="/docs/13/getting-started" class="group grid w-fit grid-cols-[1fr_auto] items-center gap-x-1.5 gap-y-1 justify-self-end text-right text-gray-1000">NextGetting Started</a>
+<a href="#what-is-nextjs" class="prose wrap-anywhere border-fd-foreground/10 border-s py-1.5 text-gray-900 text-sm transition-colors first:pt-0 last:pb-0 hover:text-fd-accent-foreground data-[active=true]:border-fd-primary data-[active=true]:text-fd-primary">What is Next.js?</a>
+<a href="#main-features" class="prose wrap-anywhere border-fd-foreground/10 border-s py-1.5 text-gray-900 text-sm transition-colors first:pt-0 last:pb-0 hover:text-fd-accent-foreground data-[active=true]:border-fd-primary data-[active=true]:text-fd-primary">Main Features</a>
+<a href="#how-to-use-these-docs" class="prose wrap-anywhere border-fd-foreground/10 border-s py-1.5 text-gray-900 text-sm transition-colors first:pt-0 last:pb-0 hover:text-fd-accent-foreground data-[active=true]:border-fd-primary data-[active=true]:text-fd-primary">How to Use These Docs</a>
+<a href="#app-router-vs-pages-router" class="prose wrap-anywhere border-fd-foreground/10 border-s py-1.5 text-gray-900 text-sm transition-colors first:pt-0 last:pb-0 hover:text-fd-accent-foreground data-[active=true]:border-fd-primary data-[active=true]:text-fd-primary">App Router vs Pages Router</a>
+<a href="#pre-requisite-knowledge" class="prose wrap-anywhere border-fd-foreground/10 border-s py-1.5 text-gray-900 text-sm transition-colors first:pt-0 last:pb-0 hover:text-fd-accent-foreground data-[active=true]:border-fd-primary data-[active=true]:text-fd-primary">Pre-Requisite Knowledge</a>
+<a href="#accessibility" class="prose wrap-anywhere border-fd-foreground/10 border-s py-1.5 text-gray-900 text-sm transition-colors first:pt-0 last:pb-0 hover:text-fd-accent-foreground data-[active=true]:border-fd-primary data-[active=true]:text-fd-primary">Accessibility</a>
+<a href="#join-our-community" class="prose wrap-anywhere border-fd-foreground/10 border-s py-1.5 text-gray-900 text-sm transition-colors first:pt-0 last:pb-0 hover:text-fd-accent-foreground data-[active=true]:border-fd-primary data-[active=true]:text-fd-primary">Join our Community</a>
+<a href="/docs" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Docs</a>
+<a href="/support-policy" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Support Policy</a>
+<a href="/learn" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Learn</a>
+<a href="/showcase" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Showcase</a>
+<a href="/blog" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Blog</a>
+<a href="/team" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Team</a>
+<a href="https://vercel.com/analytics?utm_source=next-site&amp;utm_medium=footer&amp;utm_campaign=docs_13_" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Analytics</a>
+<a href="/conf" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Next.js Conf</a>
+<a href="https://vercel.com/products/previews?utm_source=next-site&amp;utm_medium=footer&amp;utm_campaign=docs_13_" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Previews</a>
+<a href="/evals" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Evals</a>
+<a href="https://vercel.com/templates/next.js/nextjs-commerce?utm_source=next-site&amp;utm_medium=footer&amp;utm_campaign=docs_13_" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Next.js Commerce</a>
+<a href="https://vercel.com/contact/sales?utm_source=next-site&amp;utm_medium=footer&amp;utm_campaign=docs_13_" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Contact Sales</a>
+<a href="https://community.vercel.com" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Community</a>
+<a href="https://github.com/vercel/next.js" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">GitHub</a>
+<a href="https://github.com/vercel/next.js/releases" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Releases</a>
+<a href="/telemetry" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Telemetry</a>
+<a href="/governance" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Governance</a>
+<a href="/ecosystem-working-group" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Ecosystem Working Group</a>
+<a href="https://vercel.com/about?utm_source=next-site&amp;utm_medium=footer&amp;utm_campaign=docs_13_" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">About Vercel</a>
+<a href="https://vercel.com/solutions/nextjs?utm_source=next-site&amp;utm_medium=footer&amp;utm_campaign=docs_13_" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Next.js + Vercel</a>
+<a href="https://vercel.com/oss?utm_source=next-site&amp;utm_medium=footer&amp;utm_campaign=docs_13_" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Open Source Software</a>
+<a href="https://github.com/vercel" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">GitHub</a>
+<a href="https://bsky.app/profile/vercel.com" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Bluesky</a>
+<a href="https://x.com/vercel" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">X</a>
+<a href="https://vercel.com/legal/privacy-policy" class="w-fit rounded-sm text-label-14 text-gray-900 no-underline transition-colors duration-150 hover:text-gray-1000 focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)]">Privacy Policy</a>
+</body></html>

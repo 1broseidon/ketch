@@ -1,0 +1,151 @@
+<!doctype html>
+<html><head>
+<title>gin package - github.com/gin-gonic/gin - Go Packages</title>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="Description" content="Package gin implements a HTTP web framework called gin.">
+<meta class="js-gtmID" data-gtmid="GTM-W8MVQXG">
+</head><body>
+<a class="go-SurveyBanner-link js-surveyBannerLink" href="https://blink.qualtrics.com/jfe/form/SV_ba8fa1ZcSQQdTRs?s=p" rel="noopener">Take the 2026 Go Developer Survey</a>
+<a href="https://go.dev/" class="js-headerLogo"></a>
+<a class="skip-to-content-link" aria-label="Skip to main content" href="#main-content">Skip to Main Content</a>
+<a class="js-desktop-menu-hover" href="#">Why Go</a>
+<a href="https://go.dev/solutions/case-studies">Case Studies</a>
+<a href="https://go.dev/solutions/use-cases">Use Cases</a>
+<a href="https://go.dev/security/">Security</a>
+<a href="https://go.dev/learn/">Learn</a>
+<a class="js-desktop-menu-hover" href="#">Docs</a>
+<a href="https://go.dev/doc/effective_go">Effective Go</a>
+<a href="https://go.dev/doc/">Go User Manual</a>
+<a href="https://pkg.go.dev/std">Standard library</a>
+<a href="https://go.dev/doc/devel/release">Release Notes</a>
+<a href="/api">API</a>
+<a href="/">Packages</a>
+<a class="js-desktop-menu-hover" href="#">Community</a>
+<a href="https://go.dev/talks/">Recorded Talks</a>
+<a href="https://www.meetup.com/pro/go">Meetups</a>
+<a href="https://github.com/golang/go/wiki/Conferences">Conferences</a>
+<a href="https://go.dev/blog">Go blog</a>
+<a href="https://go.dev/help">Go project</a>
+<a class="go-Header-socialIcon" aria-label="Get connected with google-groups (Opens in new window)" title="Get connected with google-groups (Opens in new window)" href="https://groups.google.com/g/golang-nuts"></a>
+<a class="go-Header-socialIcon" aria-label="Get connected with github (Opens in new window)" title="Get connected with github (Opens in new window)" href="https://github.com/golang"></a>
+<a class="go-Header-socialIcon" aria-label="Get connected with twitter (Opens in new window)" title="Get connected with twitter (Opens in new window)" href="https://twitter.com/golang"></a>
+<a class="go-Header-socialIcon" aria-label="Get connected with reddit (Opens in new window)" title="Get connected with reddit (Opens in new window)" href="https://www.reddit.com/r/golang/"></a>
+<a class="go-Header-socialIcon" aria-label="Get connected with slack (Opens in new window)" title="Get connected with slack (Opens in new window)" href="https://invite.slack.golangbridge.org/"></a>
+<a class="go-Header-socialIcon" aria-label="Get connected with stack-overflow (Opens in new window)" title="" href="https://stackoverflow.com/collectives/go"></a>
+<a href="https://go.dev/"></a>
+<a href="#">Why Go</a>
+<a href="#">Why Go</a>
+<a href="https://go.dev/solutions/case-studies">Case Studies</a>
+<a href="https://go.dev/solutions/use-cases">Use Cases</a>
+<a href="https://go.dev/security/">Security</a>
+<a href="https://go.dev/learn/">Learn</a>
+<a href="#">Docs</a>
+<a href="#">Docs</a>
+<a href="https://go.dev/doc/effective_go">Effective Go</a>
+<a href="https://go.dev/doc/">Go User Manual</a>
+<a href="https://pkg.go.dev/std">Standard library</a>
+<a href="https://go.dev/doc/devel/release">Release Notes</a>
+<a href="/api">API</a>
+<a href="/">Packages</a>
+<a href="#">Community</a>
+<a href="#">Community</a>
+<a href="https://go.dev/talks/">Recorded Talks</a>
+<a href="https://www.meetup.com/pro/go">Meetups</a>
+<a href="https://github.com/golang/go/wiki/Conferences">Conferences</a>
+<a href="https://go.dev/blog">Go blog</a>
+<a href="https://go.dev/help">Go project</a>
+<a class="go-Header-socialIcon" href="https://groups.google.com/g/golang-nuts"></a>
+<a class="go-Header-socialIcon" href="https://github.com/golang"></a>
+<a class="go-Header-socialIcon" href="https://twitter.com/golang"></a>
+<a class="go-Header-socialIcon" href="https://www.reddit.com/r/golang/"></a>
+<a class="go-Header-socialIcon" href="https://invite.slack.golangbridge.org/"></a>
+<a class="go-Header-socialIcon" href="https://stackoverflow.com/collectives/go"></a>
+<a href="/">Discover Packages</a>
+<a href="/github.com/gin-gonic/gin@v1.12.0">github.com/gin-gonic/gin</a>
+<a class="go-Main-headerLogo" href="https://go.dev/" aria-label="Link to Go Homepage"></a>
+<a href="?tab=versions" aria-label="Version: v1.12.0">Version: v1.12.0</a>
+<a href="/github.com/gin-gonic/gin" aria-label="Go to Latest Version">Go to latest</a>
+<a href="/github.com/gin-gonic/gin?tab=licenses">MIT</a>
+<a href="/github.com/gin-gonic/gin?tab=imports" aria-label="Imports: 44">Imports: 44</a>
+<a href="/github.com/gin-gonic/gin?tab=importedby" aria-label="Imported By: 191,418">Imported by: 191,418</a>
+<a href="https://github.com/gin-gonic/gin/tree/v1.12.0/go.mod" rel="noopener">go.mod</a>
+<a href="/about#best-practices">Learn more about best practices</a>
+<a href="https://github.com/gin-gonic/gin" title="https://github.com/gin-gonic/gin" rel="noopener">github.com/gin-gonic/gin</a>
+<a href="https://deps.dev/go/github.com%2Fgin-gonic%2Fgin/v1.12.0" title="View this module on Open Source Insights" rel="noopener">Open Source Insights</a>
+<a href="#section-readme">README</a>
+<a href="#readme-announcing-gin-1-12-0">📰 Announcing Gin 1.12.0!</a>
+<a href="#readme-getting-started">Getting Started</a>
+<a href="#readme-prerequisites">Prerequisites</a>
+<a href="#readme-installation">Installation</a>
+<a href="#readme-your-first-gin-application">Your First Gin Application</a>
+<a href="#readme-next-steps">Next Steps</a>
+<a href="#readme-learning-resources">📚 Learning Resources</a>
+<a href="#readme-documentation">📖 Documentation</a>
+<a href="#readme-api-reference">API Reference</a>
+<a href="#readme-user-guides">User Guides</a>
+<a href="#readme-official-tutorials">Official Tutorials</a>
+<a href="#readme-performance-benchmarks">⚡ Performance Benchmarks</a>
+<a href="#readme-middleware-ecosystem">🔌 Middleware Ecosystem</a>
+<a href="#readme-production-usage">🏢 Production Usage</a>
+<a href="#readme-contributing">🤝 Contributing</a>
+<a href="#readme-how-to-contribute">How to Contribute</a>
+<a href="#readme-getting-started-with-contributing">Getting Started with Contributing</a>
+<a href="#section-documentation">Documentation</a>
+<a href="#pkg-overview">Overview</a>
+<a href="#pkg-index">Index</a>
+<a href="#pkg-constants">Constants</a>
+<a href="#pkg-variables">Variables</a>
+<a href="#pkg-functions">Functions</a>
+<a href="#CreateTestContext" title="CreateTestContext(w)">CreateTestContext(w)</a>
+<a href="#Dir" title="Dir(root, listDirectory)">Dir(root, listDirectory)</a>
+<a href="#DisableBindValidation" title="DisableBindValidation()">DisableBindValidation()</a>
+<a href="#DisableConsoleColor" title="DisableConsoleColor()">DisableConsoleColor()</a>
+<a href="#EnableJsonDecoderDisallowUnknownFields" title="EnableJsonDecoderDisallowUnknownFields()">EnableJsonDecoderDisallowUnknownFields()</a>
+<a href="#EnableJsonDecoderUseNumber" title="EnableJsonDecoderUseNumber()">EnableJsonDecoderUseNumber()</a>
+<a href="#ForceConsoleColor" title="ForceConsoleColor()">ForceConsoleColor()</a>
+<a href="#IsDebugging" title="IsDebugging()">IsDebugging()</a>
+<a href="#Mode" title="Mode()">Mode()</a>
+<a href="#SetMode" title="SetMode(value)">SetMode(value)</a>
+<a href="#pkg-types">Types</a>
+<a href="#Accounts" title="type Accounts">type Accounts</a>
+<a href="#Context" title="type Context">type Context</a>
+<a href="#CreateTestContextOnly" title="CreateTestContextOnly(w, r)">CreateTestContextOnly(w, r)</a>
+<a href="#Context.Abort" title="(c) Abort()">(c) Abort()</a>
+<a href="#Context.AbortWithError" title="(c) AbortWithError(code, err)">(c) AbortWithError(code, err)</a>
+<a href="#Context.AbortWithStatus" title="(c) AbortWithStatus(code)">(c) AbortWithStatus(code)</a>
+<a href="#Context.AbortWithStatusJSON" title="(c) AbortWithStatusJSON(code, jsonObj)">(c) AbortWithStatusJSON(code, jsonObj)</a>
+<a href="#Context.AbortWithStatusPureJSON" title="(c) AbortWithStatusPureJSON(code, jsonObj)">(c) AbortWithStatusPureJSON(code, jsonObj)</a>
+<a href="#Context.AddParam" title="(c) AddParam(key, value)">(c) AddParam(key, value)</a>
+<a href="#Context.AsciiJSON" title="(c) AsciiJSON(code, obj)">(c) AsciiJSON(code, obj)</a>
+<a href="#Context.BSON" title="(c) BSON(code, obj)">(c) BSON(code, obj)</a>
+<a href="#Context.Bind" title="(c) Bind(obj)">(c) Bind(obj)</a>
+<a href="#Context.BindHeader" title="(c) BindHeader(obj)">(c) BindHeader(obj)</a>
+<a href="#Context.BindJSON" title="(c) BindJSON(obj)">(c) BindJSON(obj)</a>
+<a href="#Context.BindPlain" title="(c) BindPlain(obj)">(c) BindPlain(obj)</a>
+<a href="#Context.BindQuery" title="(c) BindQuery(obj)">(c) BindQuery(obj)</a>
+<a href="#Context.BindTOML" title="(c) BindTOML(obj)">(c) BindTOML(obj)</a>
+<a href="#Context.BindUri" title="(c) BindUri(obj)">(c) BindUri(obj)</a>
+<a href="#Context.BindWith" title="(c) BindWith(obj, b)">(c) BindWith(obj, b)</a>
+<a href="#Context.BindXML" title="(c) BindXML(obj)">(c) BindXML(obj)</a>
+<a href="#Context.BindYAML" title="(c) BindYAML(obj)">(c) BindYAML(obj)</a>
+<a href="#Context.ClientIP" title="(c) ClientIP()">(c) ClientIP()</a>
+<a href="#Context.ContentType" title="(c) ContentType()">(c) ContentType()</a>
+<a href="#Context.Cookie" title="(c) Cookie(name)">(c) Cookie(name)</a>
+<a href="#Context.Copy" title="(c) Copy()">(c) Copy()</a>
+<a href="#Context.Data" title="(c) Data(code, contentType, data)">(c) Data(code, contentType, data)</a>
+<a href="#Context.DataFromReader" title="(c) DataFromReader(code, contentLength, contentType, reader, extraHeaders)">(c) DataFromReader(code, contentLength, contentType, reader, extraHeaders)</a>
+<a href="#Context.Deadline" title="(c) Deadline()">(c) Deadline()</a>
+<a href="#Context.DefaultPostForm" title="(c) DefaultPostForm(key, defaultValue)">(c) DefaultPostForm(key, defaultValue)</a>
+<a href="#Context.DefaultQuery" title="(c) DefaultQuery(key, defaultValue)">(c) DefaultQuery(key, defaultValue)</a>
+<a href="#Context.Delete" title="(c) Delete(key)">(c) Delete(key)</a>
+<a href="#Context.Done" title="(c) Done()">(c) Done()</a>
+<a href="#Context.Err" title="(c) Err()">(c) Err()</a>
+<a href="#Context.Error" title="(c) Error(err)">(c) Error(err)</a>
+<a href="#Context.File" title="(c) File(filepath)">(c) File(filepath)</a>
+<a href="#Context.FileAttachment" title="(c) FileAttachment(filepath, filename)">(c) FileAttachment(filepath, filename)</a>
+<a href="#Context.FileFromFS" title="(c) FileFromFS(filepath, fs)">(c) FileFromFS(filepath, fs)</a>
+<a href="#Context.FormFile" title="(c) FormFile(name)">(c) FormFile(name)</a>
+<a href="#Context.FullPath" title="(c) FullPath()">(c) FullPath()</a>
+</body></html>

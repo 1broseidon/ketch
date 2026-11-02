@@ -1,0 +1,13 @@
+{
+ "info": {
+  "name": "gin",
+  "version": "0.1.006",
+  "summary": "Git index file parser",
+  "home_page": "https://github.com/sbp/gin",
+  "docs_url": null,
+  "project_urls": {
+   "Download": "UNKNOWN",
+   "Homepage": "https://github.com/sbp/gin"
+  }
+ }
+}

@@ -13,7 +13,9 @@ import (
 	"path"
 	"regexp"
 	"slices"
+	"sort"
 	"strings"
+	"sync"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -36,14 +38,20 @@ type webSite struct {
 //     sitemapBudget.
 //  3. Links on the root page (and the root page itself, following one meta
 //     refresh), the last resort, merged with every page of the Sphinx
-//     build the root page belongs to (its searchindex.js).
+//     build the root page belongs to (its searchindex.js). A root page that
+//     is only a hub (a landing page linking to a few sections) has the
+//     links of up to webMaxHubs of those sections read too: their
+//     sidebars list the pages.
 //
-// A sitemap that lists only the root or version roots (Read the Docs lists
-// /en/latest/ and /en/stable/) does not stop discovery, and registry docs
-// hosts (pkg.go.dev, docs.rs) go straight to the root page. Only in-scope
-// pages are kept from any source. Discovery files are probes: their
-// absence is expected and never an error. The root page is not, so its
-// fetch error is returned when nothing else turned up.
+// An llms.txt that lists only index files (.txt sets of pages, such as
+// expressjs.com's llms/guides-5x.txt) has those read like llms-full.txt:
+// they are discovery input, never results. A sitemap that lists only the
+// root or version roots (Read the Docs lists /en/latest/ and /en/stable/)
+// does not stop discovery, and registry docs hosts (pkg.go.dev, docs.rs)
+// go straight to the root page. Only in-scope pages are kept from any
+// source. Discovery files are probes: their absence is expected and never
+// an error. The root page is not, so its fetch error is returned when
+// nothing else turned up.
 func (w *Web) discover(ctx context.Context, root webRoot) (webSite, error) {
 	var site webSite
 	if w.discoverListed(ctx, root, &site) {
@@ -58,7 +66,7 @@ func (w *Web) discover(ctx context.Context, root webRoot) (webSite, error) {
 	if len(links) == 1 && info.page != nil && strings.TrimSpace(info.page.Markdown) == "" {
 		return site, nil // an empty root page with no links: nothing to search
 	}
-	site.links = links
+	site.links = w.withHubLinks(ctx, root, links, &site.tried)
 	return site, nil
 }
 
@@ -70,7 +78,12 @@ func (w *Web) discoverListed(ctx context.Context, root webRoot, site *webSite) b
 	if probes.llms {
 		llms := w.findLLMSTxt(ctx, root, &site.tried)
 		if llms.url != nil {
+			var index []webLink
+			llms.links, index = splitIndexLinks(llms.links)
 			site.pages = w.fullText(ctx, root, llms, &site.tried)
+			if len(site.pages) == 0 && len(llms.links) == 0 && len(index) > 0 {
+				site.pages, llms.links = w.indexFiles(ctx, root, llms, index, &site.tried)
+			}
 			if len(site.pages) > 0 || len(llms.links) > 0 {
 				site.links = llms.links
 				return true
@@ -183,6 +196,200 @@ func mergeLinks(links, extra []webLink) []webLink {
 		}
 		out[i].title = firstNonEmpty(out[i].title, l.title)
 		out[i].description = firstNonEmpty(out[i].description, l.description)
+	}
+	return out
+}
+
+// Hub expansion bounds. A root page with more in-scope links than
+// webHubMaxLinks lists its pages itself; one with fewer is a hub, and up to
+// webMaxHubs of its section links are read for theirs, concurrently, each
+// a probe-sized raw fetch: it costs no more than the sitemap files a site
+// with sitemaps would have had read.
+const (
+	webHubMaxLinks = 30
+	webMaxHubs     = 2
+)
+
+// withHubLinks returns links (the root page first, then its links), merged
+// with the links of the hub's sections when the root page is only a hub:
+// tokio.rs links to /tokio/tutorial and a blog post, v2.vuejs.org to
+// /v2/guide/ and /v2/api/, reactrouter.com to /home, and the pages are
+// listed in those sections' sidebars. A section that cannot be read is
+// skipped.
+func (w *Web) withHubLinks(ctx context.Context, root webRoot, links []webLink, tried *[]string) []webLink {
+	if len(links) == 0 || len(links)-1 > webHubMaxLinks || registryDocsHosts[scopeHost(root.u)] {
+		return links
+	}
+	hubs := pickHubs(links[1:], root, webMaxHubs)
+	found := make([][]webLink, len(hubs))
+	var wg sync.WaitGroup
+	for i, h := range hubs {
+		*tried = append(*tried, "links on "+h.url.String())
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if info, err := w.readPage(ctx, root, h.url); err == nil {
+				found[i] = info.links
+			}
+		}()
+	}
+	wg.Wait()
+	for _, f := range found {
+		links = mergeLinks(links, f)
+	}
+	return links
+}
+
+// hubWords name a docs section: a link titled or pathed with one leads to
+// a page whose sidebar lists that section's pages.
+var hubWords = map[string]bool{
+	"doc": true, "docs": true, "documentation": true, "guide": true, "tutorial": true, "learn": true,
+	"manual": true, "handbook": true, "book": true, "reference": true, "api": true, "topic": true,
+	"started": true, "introduction": true, "intro": true, "overview": true, "concept": true, "cookbook": true,
+}
+
+// notHubWords name sections that are not docs: a blog's sidebar lists posts.
+var notHubWords = map[string]bool{
+	"blog": true, "news": true, "changelog": true, "release": true, "community": true, "sponsor": true,
+	"support": true, "eol": true, "about": true, "team": true, "job": true, "career": true, "event": true,
+	"showcase": true, "pricing": true, "login": true, "signup": true, "search": true, "tag": true, "author": true,
+	"archive": true, "privacy": true, "term": true, "contact": true, "download": true, "upgrading": true,
+}
+
+// pickHubs returns up to n of links that look like docs sections, best
+// first, ties in link order: a path segment that is a hub word counts 2, a
+// hub word in the link's title 1; a link naming a non-docs section, or the
+// root itself, is never one.
+func pickHubs(links []webLink, root webRoot, n int) []webLink {
+	type hub struct {
+		link  webLink
+		score int
+	}
+	var hubs []hub
+	for _, l := range links {
+		if linkKey(l.url) == linkKey(root.u) {
+			continue
+		}
+		score, skip := 0, false
+		for _, seg := range pathSegments(strings.TrimPrefix(l.url.Path, root.prefix)) {
+			for _, t := range tokenize(seg) {
+				skip = skip || notHubWords[t]
+			}
+			if hubWords[stem(strings.ToLower(strings.TrimSuffix(seg, path.Ext(seg))))] {
+				score += 2
+			}
+		}
+		for _, t := range tokenize(l.title) {
+			skip = skip || notHubWords[t]
+			if hubWords[t] {
+				score++
+			}
+		}
+		if score > 0 && !skip {
+			hubs = append(hubs, hub{l, score})
+		}
+	}
+	sort.SliceStable(hubs, func(i, j int) bool { return hubs[i].score > hubs[j].score })
+	out := make([]webLink, 0, n)
+	for _, h := range hubs[:min(n, len(hubs))] {
+		out = append(out, h.link)
+	}
+	return out
+}
+
+// webMaxIndexFiles caps the index files read from one llms.txt.
+const webMaxIndexFiles = 3
+
+// splitIndexLinks separates llms.txt's page links from its index files:
+// text files that collect several pages (expressjs.com's
+// llms/guides-5x.txt, a Starlight site's _llms-txt/ sets). An index file
+// is no answer itself (isResultLink), but it may name the pages it holds.
+func splitIndexLinks(links []webLink) (pages, index []webLink) {
+	for _, l := range links {
+		if strings.EqualFold(path.Ext(l.url.Path), ".txt") {
+			index = append(index, l)
+		} else {
+			pages = append(pages, l)
+		}
+	}
+	return pages, index
+}
+
+// indexFiles reads an llms.txt's index files as discovery input: one that
+// says it holds everything ("full" in its name or title), else the first
+// webMaxIndexFiles, within maxFullBytes in all. Each is split like
+// llms-full.txt; a chunk whose URL line names an in-scope page becomes that
+// page, and the file's own page links are kept. A chunk naming no page is
+// dropped: the index file is not a page to show. Version and locale copies
+// of one page (guides for 5.x and 4.x) collapse as candidate links do.
+func (w *Web) indexFiles(ctx context.Context, root webRoot, llms llmsTxt, index []webLink, tried *[]string) ([]webPage, []webLink) {
+	files := index[:min(len(index), webMaxIndexFiles)]
+	if i := slices.IndexFunc(index, isFullIndex); i >= 0 {
+		files = index[i : i+1]
+	}
+	bodies := make([][]byte, len(files))
+	served := make([]*url.URL, len(files))
+	var wg sync.WaitGroup
+	for i, f := range files {
+		*tried = append(*tried, f.url.String())
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if body, from, ok := w.probe(ctx, root, f.url.String()); ok {
+				bodies[i], served[i] = body, from
+			}
+		}()
+	}
+	wg.Wait()
+	var pages []webPage
+	var links []webLink
+	seenPage, seenLink := map[string]bool{}, map[string]bool{}
+	total := 0
+	for i, body := range bodies {
+		if body == nil || total+len(body) > w.maxFullBytes {
+			continue
+		}
+		total += len(body)
+		for _, chunk := range splitFullText(string(body)) {
+			pageURL, how := fullPageURL(chunk, served[i], root, llms.pageTitled(chunk.title, nil))
+			if how != chunkInScope || strings.TrimSpace(chunk.body) == "" || seenPage[pageURL] {
+				continue
+			}
+			seenPage[pageURL] = true
+			pages = append(pages, webPage{URL: pageURL, Title: chunk.title, Markdown: capText(chunk.body, w.maxPageBytes)})
+		}
+		for _, l := range markdownLinks(string(body), root, served[i]) {
+			if isResultLink(l.url) && !seenLink[linkKey(l.url)] {
+				seenLink[linkKey(l.url)] = true
+				links = append(links, l)
+			}
+		}
+	}
+	return collapsePages(pages, root), links
+}
+
+// isFullIndex reports an index file that says it holds all the docs.
+func isFullIndex(l webLink) bool {
+	name := strings.ToLower(strings.TrimSuffix(path.Base(l.url.Path), path.Ext(l.url.Path)))
+	title := strings.ToLower(l.title)
+	return strings.Contains(name, "full") || strings.Contains(title, "full") || strings.Contains(title, "complete")
+}
+
+// collapsePages keeps one page per collapseVariants group, in order.
+func collapsePages(pages []webPage, root webRoot) []webPage {
+	ranked := make([]scoredLink, 0, len(pages))
+	byURL := map[string]webPage{}
+	for _, p := range pages {
+		u, err := url.Parse(p.URL)
+		if err != nil {
+			continue
+		}
+		byURL[u.String()] = p
+		ranked = append(ranked, scoredLink{link: webLink{url: u}})
+	}
+	var out []webPage
+	for _, r := range collapseVariants(ranked, root) {
+		out = append(out, byURL[r.link.url.String()])
 	}
 	return out
 }
@@ -445,8 +652,11 @@ type fullChunk struct {
 var metaLineRe = regexp.MustCompile(`(?i)^\s*(url|source|source_url|link)\s*:\s*<?(\S+?)>?\s*$`)
 
 // splitFullText splits llms-full.txt into pages at H1 headings outside code
-// fences. Metadata lines right after an H1, or in a --- block right before
-// it, name the page's URL and are removed from the body.
+// fences, and at deeper headings followed by a URL line naming an absolute
+// or root-relative address (an index file's "## Error Handling" then
+// "URL: https://expressjs.com/en/5x/guide/error-handling"). Metadata lines
+// right after the heading, or in a --- block right before it, name the
+// page's URL and are removed from the body.
 func splitFullText(body string) []fullChunk {
 	var chunks []fullChunk
 	cur := &fullChunk{}
@@ -456,13 +666,14 @@ func splitFullText(body string) []fullChunk {
 		cur.body = takeLeadingMeta(cur, lines)
 		chunks = append(chunks, *cur)
 	}
-	for _, line := range strings.Split(body, "\n") {
+	all := strings.Split(body, "\n")
+	for i, line := range all {
 		if fence.step(line) {
 			lines = append(lines, line)
 			continue
 		}
 		h, ok := parseATX(line)
-		if !ok || h.level != 1 {
+		if !ok || (h.level != 1 && !pageURLFollows(all[i+1:])) {
 			lines = append(lines, line)
 			continue
 		}
@@ -481,6 +692,20 @@ func splitFullText(body string) []fullChunk {
 		chunks = chunks[1:]
 	}
 	return chunks
+}
+
+// pageURLFollows reports a URL metadata line, blank lines aside, at the
+// start of lines whose value is an absolute http(s) URL or a root-relative
+// path: what makes a heading below H1 the start of a page.
+func pageURLFollows(lines []string) bool {
+	for _, l := range lines {
+		if strings.TrimSpace(l) == "" {
+			continue
+		}
+		m := metaLineRe.FindStringSubmatch(l)
+		return m != nil && (isHTTPURL(m[2]) || strings.HasPrefix(m[2], "/") && !strings.HasPrefix(m[2], "//"))
+	}
+	return false
 }
 
 // takeLeadingMeta moves metadata lines at the top of a chunk into its refs

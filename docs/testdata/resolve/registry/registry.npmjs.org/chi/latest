@@ -1,0 +1,9 @@
+{
+ "name": "chi",
+ "version": "0.0.10",
+ "description": "dependency injected routing with express",
+ "repository": {
+  "url": "git://github.com/bzwheeler/chi.git",
+  "type": "git"
+ }
+}

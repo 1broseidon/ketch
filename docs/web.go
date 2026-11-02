@@ -199,10 +199,15 @@ func (w *Web) resolveQuery(ctx context.Context, query string, splits []querySpli
 //   - Nothing else vetoes a guessed (strict) reading, which needs an exact
 //     package's own site: a GitHub failure (its search, a repository's
 //     rate limit) counts as not found.
-//   - For another reading, a homepage or docs root that did not answer
-//     for a package a registry has vetoes; GitHub failing alone (its
-//     search, a rate-limited repository, which hide only a repository's
-//     homepage and stars) vetoes only the query's only reading.
+//   - For another reading, a library that verified but could not be
+//     confirmed past a failed source (a registry, GitHub's search, or a
+//     repository GitHub did not read for another project of the name)
+//     vetoes: the reading names a library, so a weaker one must not answer
+//     in its place. So does a homepage or docs root that did not answer
+//     for a package a registry has; GitHub failing alone with nothing
+//     verified (its search, a rate-limited repository, which hide only a
+//     repository's homepage and stars) vetoes only the query's only
+//     reading.
 //
 // Anything else reads as not found, so the next reading is tried: a
 // rate-limited GitHub for the guess "fastapi-dependency", or for the junk
@@ -217,7 +222,7 @@ func vetoes(err error, s querySplit, readings int) bool {
 		return true
 	case s.strict:
 		return false
-	case up.nameKnown && up.siteFailed:
+	case up.picked, up.nameKnown && up.siteFailed:
 		return true
 	}
 	return readings == 1
@@ -315,7 +320,9 @@ func (w *Web) parseLibrary(raw string) (libSpec, error) {
 
 // docsForURL searches the docs root the caller passed. When discovery
 // finds nothing there and the root redirects to a version root
-// (canonicalRoot), it searches that root instead.
+// (canonicalRoot), it searches that root instead; when it redirects to
+// another site that is corroborated as the same project's docs (movedRoot:
+// docs.python-requests.org to requests.readthedocs.io), that site.
 func (w *Web) docsForURL(ctx context.Context, raw, query string, tokens int) ([]Result, error) {
 	root, err := parseWebRoot(raw)
 	if err != nil {
@@ -328,6 +335,9 @@ func (w *Web) docsForURL(ctx context.Context, raw, query string, tokens int) ([]
 		if canon, ok := w.versionRedirect(opCtx, root); ok {
 			root = canon
 			pages, err = w.collect(opCtx, root, query)
+		} else if moved, _, ok := w.movedRoot(opCtx, root, nil); ok {
+			root = moved
+			pages, err = w.collect(publicHops(opCtx), root, query)
 		}
 	}
 	if err != nil {
@@ -456,7 +466,12 @@ func isPageFile(base string) bool {
 	return pageFileExts[path.Ext(base)] || strings.HasPrefix(base, "index.")
 }
 
-func (r webRoot) String() string { return r.u.String() }
+func (r webRoot) String() string {
+	if r.u == nil {
+		return ""
+	}
+	return r.u.String()
+}
 
 // origin returns scheme://host with no trailing slash.
 func (r webRoot) origin() string { return r.u.Scheme + "://" + r.u.Host }

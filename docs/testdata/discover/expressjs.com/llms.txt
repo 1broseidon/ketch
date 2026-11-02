@@ -1,0 +1,26 @@
+# Express.js
+
+> Express is a minimal and flexible Node.js web application framework that provides
+> a robust set of features for building web and mobile applications. It is the
+> standard server framework for Node.js and is part of the OpenJS Foundation.
+
+- Website: https://expressjs.com
+- GitHub: https://github.com/expressjs/express
+- npm: https://www.npmjs.com/package/express
+- License: MIT
+
+## Documentation Sets
+
+- [Guides (v5)](https://expressjs.com/llms/guides-5x.txt): Getting started, routing, middleware, error handling, debugging, and advanced topics for Express v5
+- [Guides (v4)](https://expressjs.com/llms/guides-4x.txt): Getting started, routing, middleware, error handling, debugging, and advanced topics for Express v4
+- [API Reference (v5)](https://expressjs.com/llms/api-5x.txt): Complete API documentation for Express v5
+- [API Reference (v4)](https://expressjs.com/llms/api-4x.txt): Complete API documentation for Express v4
+- [API Reference (v3)](https://expressjs.com/llms/api-3x.txt): Complete API documentation for Express v3
+- [Official Middleware](https://expressjs.com/llms/middleware.txt): Documentation for middleware modules maintained by the Express.js team
+- [Resources](https://expressjs.com/llms/resources.txt): Community resources, tools, and utilities for Express.js
+- [Full Documentation](https://expressjs.com/llms/full.txt): All content in a single file
+
+## Notes
+
+- All content is sourced from the official Express.js documentation at https://expressjs.com
+- Documentation is maintained by the Express.js team

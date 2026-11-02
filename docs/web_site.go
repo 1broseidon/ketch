@@ -372,22 +372,27 @@ func docsRootsFor(homepage *url.URL, p *siteProfile) []*url.URL {
 	if page == nil {
 		page = homepage
 	}
+	home := pageDir(page)
 	var specific, general []*url.URL
 	for _, l := range docsNavLinks(p) {
 		u := l.url
-		switch seg := docsSegment(u.Path); {
+		switch dir := docsDir(u, home); {
 		case isRegistryHost(u):
 			// docs.rs or pkg.go.dev: only a package's own registry docs
 			// count, never a link to the registry.
 		case scopeHost(u) != scopeHost(page):
 			specific = append(specific, hostRootFor(u))
-		case seg != "":
-			specific = append(specific, &url.URL{Scheme: u.Scheme, Host: u.Host, Path: "/" + seg + "/"})
+		case dir != "":
+			specific = append(specific, &url.URL{Scheme: u.Scheme, Host: u.Host, Path: dir})
+		case home.contains(u):
+			// A homepage on a path is kept as a path: its own docs nav
+			// stays below it, not on the whole host.
+			general = append(general, &url.URL{Scheme: u.Scheme, Host: u.Host, Path: home.prefix})
 		default:
 			general = append(general, &url.URL{Scheme: u.Scheme, Host: u.Host, Path: "/"})
 		}
 	}
-	if looksLikeDocs(page, p) {
+	if looksLikeDocs(page, p) && !landingPage(page, p) {
 		// The page is docs itself: its section links (API, Guide) are its
 		// own navigation, not a pointer to the host's root.
 		if self, ok := homeRoot(homepage, page); ok {
@@ -400,10 +405,86 @@ func docsRootsFor(homepage *url.URL, p *siteProfile) []*url.URL {
 	return uniqueRoots(specific)
 }
 
+// pageDir is the directory holding page, as a root.
+func pageDir(page *url.URL) webRoot {
+	r, err := parseWebRoot(page.String())
+	if err != nil {
+		return webRoot{u: page, prefix: "/"}
+	}
+	return r
+}
+
+// docsDir is the docs directory a same-host link leads into, "" for
+// none: through its first docs segment (docs, doc, documentation,
+// manual), the host's first, or, for a link below a homepage on a path,
+// one anywhere below it (crummy.com/software/BeautifulSoup/'s
+// Documentation is bs4/doc/).
+func docsDir(u *url.URL, home webRoot) string {
+	if seg := docsSegment(u.Path); seg != "" {
+		return "/" + seg + "/"
+	}
+	if home.prefix == "/" || !home.contains(u) {
+		return ""
+	}
+	segs := pathSegments(strings.TrimPrefix(u.Path, home.prefix))
+	for i, seg := range segs {
+		if i == len(segs)-1 && isPageFile(seg) {
+			break
+		}
+		if docsSegments[strings.ToLower(seg)] {
+			return home.prefix + strings.Join(segs[:i+1], "/") + "/"
+		}
+	}
+	return ""
+}
+
+// landingPage reports a docs generator's site root that is not its docs
+// root: a page outside any docs segment whose every docs nav link on its
+// own host (Docs, API, Get started) leads into a docs segment
+// (playwright.dev's Docs to /docs/intro, API to /docs/api/). Docusaurus
+// keeps such docs under /docs/ beside a blog and, on playwright.dev, the
+// MCP, CLI and other languages' docs; the docs root is that segment, so
+// those sibling products are out of scope. A site whose nav also leads
+// elsewhere on its host (pptr.dev's Docs to /category/introduction) is
+// docs at its root.
+func landingPage(page *url.URL, p *siteProfile) bool {
+	if docsSegment(page.Path) != "" {
+		return false
+	}
+	into := false
+	for _, l := range p.links {
+		if scopeHost(l.url) != scopeHost(page) || linkKey(l.url) == linkKey(page) || !docsNavTexts[navText(l.text)] {
+			continue
+		}
+		if docsSegment(l.url.Path) == "" {
+			return false
+		}
+		into = true
+	}
+	return into
+}
+
+// navPage is a page of root that p's docs nav links to (playwright.dev's
+// /docs/intro for /docs/): where a root with no page of its own is read.
+func navPage(p *siteProfile, root *url.URL) *url.URL {
+	r, err := parseWebRoot(root.String())
+	if err != nil {
+		return nil
+	}
+	for _, l := range docsNavLinks(p) {
+		if r.contains(l.url) && linkKey(l.url) != linkKey(r.u) {
+			return l.url
+		}
+	}
+	return nil
+}
+
 // homeRoot is the root a homepage stands for as a docs site itself: the
 // homepage, unless it was served from outside it (a redirect elsewhere),
-// then where it was served from. A refresh to a page inside it
-// (saurvs.github.io/astro-rust/ to astro/index.html) keeps the homepage.
+// then the root the page it was served from sits under (siteRootOf: a
+// redirect to .../latest/get-started/ is inside .../latest/). A refresh
+// to a page inside it (saurvs.github.io/astro-rust/ to astro/index.html)
+// keeps the homepage.
 func homeRoot(homepage, served *url.URL) (webRoot, bool) {
 	if home, err := parseWebRoot(homepage.String()); err == nil && (served == nil || home.contains(served)) {
 		return home, true
@@ -411,7 +492,7 @@ func homeRoot(homepage, served *url.URL) (webRoot, bool) {
 	if served == nil {
 		return webRoot{}, false
 	}
-	r, err := parseWebRoot(served.String())
+	r, err := parseWebRoot(siteRootOf(served).String())
 	return r, err == nil
 }
 

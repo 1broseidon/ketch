@@ -523,10 +523,40 @@ func siblingVersions(root webRoot, p *siteProfile) []siteVersion {
 	return foldStable(tidyVersions(append([]siteVersion{self}, sibs...)))
 }
 
+// indexChild returns the current docs a version index links below
+// itself: a root with no version of its own (numpy.org/doc/,
+// matplotlib.org/) whose versions include a child root labelled stable,
+// current or latest, in that order of preference. Such a root is a picker
+// or a landing page, not docs. ok is false for any other root.
+func indexChild(root webRoot, vs versionSet) (siteVersion, bool) {
+	if root.u == nil {
+		return siteVersion{}, false
+	}
+	if label, _ := rootVersion(root); label != "" {
+		return siteVersion{}, false
+	}
+	for _, want := range []string{"stable", labelCurrent, "latest"} {
+		for _, v := range vs.versions {
+			if isChildRoot(root, v.root) && hasVersionLabel(v, want) {
+				return v, true
+			}
+		}
+	}
+	return siteVersion{}, false
+}
+
+// isChildRoot reports raw as a root strictly below root.
+func isChildRoot(root webRoot, raw string) bool {
+	u, err := url.Parse(raw)
+	return err == nil && root.contains(u) && linkKey(u) != linkKey(root.u)
+}
+
 // foldStable makes a "stable" or "current" sibling an alias of the
 // current version when that is the newest release listed: Django's
 // /en/6.1/ links /en/stable/, which is 6.1. ("latest" is left alone: on
-// Read the Docs it is the development build.)
+// Read the Docs it is the development build.) A child of an unversioned
+// root (matplotlib.org/ links /stable/) is not folded: it is a docs tree
+// of its own, which indexChild moves to.
 func foldStable(vs []siteVersion) []siteVersion {
 	if len(vs) == 0 || !vs[0].current {
 		return vs
@@ -539,14 +569,22 @@ func foldStable(vs []siteVersion) []siteVersion {
 	first := vs[0]
 	first.aliases = slices.Clone(first.aliases)
 	out := []siteVersion{first}
+	self, _ := parseWebRoot(first.root)
 	for _, v := range vs[1:] {
-		if v.label == "stable" || v.label == labelCurrent {
+		child := self.u != nil && rootVersionless(self) && isChildRoot(self, v.root)
+		if (v.label == "stable" || v.label == labelCurrent) && !child {
 			out[0].aliases = append(out[0].aliases, v.label)
 			continue
 		}
 		out = append(out, v)
 	}
 	return out
+}
+
+// rootVersionless reports a root whose URL names no version.
+func rootVersionless(root webRoot) bool {
+	label, _ := rootVersion(root)
+	return label == ""
 }
 
 // enoughSiblings reports siblings that make a version list: a release
@@ -1059,6 +1097,62 @@ func sameMajor(want, version string) bool {
 	a, okA := parseVerNum(want)
 	b, okB := parseVerNum(version)
 	return okA && okB && a.parts[0] == b.parts[0]
+}
+
+// namesRelease reports want naming release on dot boundaries, no more
+// precisely than release itself: 7 and 7.1 name 7.1.2, 1.38 does not name
+// 1.54.1, and 7.1.2.4 is not named by 7.1.2.
+func namesRelease(want, release string) bool {
+	w, okW := parseVerNum(want)
+	r, okR := parseVerNum(release)
+	return okW && okR && len(w.parts) <= len(r.parts) && verPrefixMatch(w, r)
+}
+
+// dottedLabels returns versions with their two-digit labels also read as
+// releases, "14" as "1.4", when the site's scheme is known to be that: one
+// of its labels is the latest release's major and minor written without
+// the dot (SQLAlchemy's 21 for 2.1.6). Otherwise, or with no release to
+// check against, nil: a bare 14 may as well be release 14.
+func dottedLabels(versions []siteVersion, latest string) []siteVersion {
+	l, ok := parseVerNum(latest)
+	if !ok || len(l.parts) < 2 || l.parts[0] > 9 || l.parts[1] > 9 {
+		return nil
+	}
+	dotless := strconv.Itoa(l.parts[0]) + strconv.Itoa(l.parts[1])
+	if !slices.ContainsFunc(versions, func(v siteVersion) bool { return hasVersionLabel(v, dotless) }) {
+		return nil
+	}
+	out := make([]siteVersion, 0, len(versions))
+	for _, v := range versions {
+		v.aliases = slices.Clone(v.aliases)
+		for _, label := range versionLabels(v) {
+			if n := normLabel(label); len(n) == 2 && isBareInt(n) {
+				v.aliases = append(v.aliases, n[:1]+"."+n[1:])
+			}
+		}
+		out = append(out, v)
+	}
+	return out
+}
+
+// styledLabel writes want's release in the style of a label the site
+// uses: 4x beside 5x, v3 beside v4, 2.x beside 3.x, 4.2 beside 5.1. ok is
+// false when like is no release or want has fewer parts than like shows.
+func styledLabel(like, want string) (string, bool) {
+	l, okL := parseVerNum(like)
+	w, okW := parseVerNum(want)
+	if !okL || !okW || len(w.parts) < len(l.parts) || l.pre != "" {
+		return "", false
+	}
+	prefix := ""
+	if t := strings.TrimLeft(strings.ToLower(like), "~^="); strings.HasPrefix(t, "v") {
+		prefix = "v"
+	}
+	suffix := ""
+	if l.wild {
+		suffix = strings.TrimPrefix(strings.ToLower(like), strings.ToLower(prefix+joinParts(l.parts)))
+	}
+	return prefix + joinParts(w.parts[:len(l.parts)]) + suffix, true
 }
 
 // registryVersionRoot returns the root of p's registry-hosted docs at the

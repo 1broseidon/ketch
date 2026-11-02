@@ -2,10 +2,15 @@ package docs
 
 import (
 	"context"
+	"errors"
+	"net/http"
 	"net/url"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/1broseidon/ketch/internal/testutil"
 )
 
 func TestVersionLabelRe(t *testing.T) {
@@ -629,5 +634,160 @@ func TestVersionsNeverFail(t *testing.T) {
 	}
 	if calls := quiet.called(); len(calls) != 0 {
 		t.Errorf("a page with no version source made requests: %v", calls)
+	}
+}
+
+// versionSitesWeb is a backend over the sites recorded in testdata/versions;
+// any other URL is a 404, as the site would answer.
+func versionSitesWeb(t *testing.T) *Web {
+	t.Helper()
+	ft := testutil.LoadFixtures(t, filepath.Join("testdata", "versions"))
+	return NewWeb(&fixtureFetcher{client: &http.Client{Transport: notFoundFallback{ft}}})
+}
+
+// describeAt verifies nothing but describes the recorded site at rootURL
+// as finish does for a match of spec's project, whose latest release is
+// latest: its versions, a version index's current docs, the version asked
+// for.
+func describeAt(t *testing.T, w *Web, rootURL, spec, latest string, registry bool) (webMatch, error) {
+	t.Helper()
+	root, err := parseWebRoot(rootURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := withProfileMemo(publicHops(context.Background()))
+	prof, err := w.cachedProfile(ctx, root.u)
+	if err != nil {
+		t.Fatalf("profile %s: %v", root, err)
+	}
+	if root, err = adoptServed(root, prof.served, registry); err != nil {
+		t.Fatalf("adoptServed %s: %v", rootURL, err)
+	}
+	s := mustSpec(t, spec)
+	pkg := pkgInfo{eco: s.eco, name: s.name, version: latest}
+	if registry {
+		pkg.registryDocs = rootURL
+	}
+	m := webMatch{root: root, prof: prof, registry: registry, proj: &project{pkgs: []pkgInfo{pkg}}}
+	r := &resolution{w: w, spec: s, log: &resolveLog{}}
+	err = r.describe(ctx, &m)
+	return m, err
+}
+
+// A version a site does not list is looked for where its own layout puts
+// it: a version host label (18.react.dev, v3.tailwindcss.com), a version
+// segment below the docs (nextjs.org/docs/13/), the listed releases'
+// style and place (express lists 5x, so 4x is /en/4x/, read through the
+// page of the 5x tree the root links to), or the root's own version
+// segment (pydantic's /latest/ to /1.10/, whose root has no page, read
+// through the page the current docs land on). Recorded live.
+func TestPickVersionWhereTheSiteKeepsIt(t *testing.T) {
+	cases := []struct{ root, spec, latest, want, label string }{
+		{"https://react.dev/", "npm:react@18", "19.2.0", "https://18.react.dev/", "18"},
+		{"https://nextjs.org/docs/", "npm:next@13", "16.0.1", "https://nextjs.org/docs/13/", "13"},
+		{"https://tailwindcss.com/docs/", "npm:tailwindcss@3", "4.1.16", "https://v3.tailwindcss.com/docs/", "v3"},
+		{"https://expressjs.com/", "npm:express@4", "5.1.0", "https://expressjs.com/en/4x/", "4x"},
+		{"https://pydantic.dev/docs/validation/latest/", "pypi:pydantic@1.10", "2.14.1", "https://pydantic.dev/docs/validation/1.10/", "1.10"},
+	}
+	w := versionSitesWeb(t)
+	for _, tc := range cases {
+		t.Run(tc.spec, func(t *testing.T) {
+			m, err := describeAt(t, w, tc.root, tc.spec, tc.latest, false)
+			if err != nil || m.root.String() != tc.want || m.version != tc.label {
+				t.Fatalf("%s at %s = %s version %q, %v; want %s version %q", tc.spec, tc.root, m.root, m.version, err, tc.want, tc.label)
+			}
+			if !slices.ContainsFunc(m.evidence, func(e evidence) bool {
+				return e.kind == evNote && strings.Contains(e.detail, "its docs for it are at "+tc.want)
+			}) {
+				t.Errorf("evidence %v lacks the note naming %s", m.evidence, tc.want)
+			}
+		})
+	}
+	// A version the site does not have is still not found: 17.react.dev
+	// and react.dev/17/ do not answer.
+	if m, err := describeAt(t, w, "https://react.dev/", "npm:react@17", "19.2.0", false); !errors.Is(err, ErrNotFound) {
+		t.Errorf("react@17 = %s, %v; want not found", m.root, err)
+	}
+	// The latest major is the current docs, without probing.
+	if m, err := describeAt(t, w, "https://react.dev/", "npm:react@19", "19.2.0", false); err != nil || m.root.String() != "https://react.dev/" || m.version != "19.2.0" {
+		t.Errorf("react@19 = %s %q, %v; want react.dev as 19.2.0", m.root, m.version, err)
+	}
+}
+
+// The current docs of a site with no version list are taken for a
+// version only when it names the latest release: tokio@1 is tokio.rs's
+// 1.54.1, tokio@1.38 is not (it shares only the major).
+func TestNamesRelease(t *testing.T) {
+	cases := []struct {
+		want, release string
+		names         bool
+	}{
+		{"1", "1.54.1", true}, {"1.54", "1.54.1", true}, {"1.54.1", "1.54.1", true}, {"v7.x", "7.1.2", true},
+		{"1.38", "1.54.1", false}, {"2", "1.54.1", false}, {"1.54.1.4", "1.54.1", false}, {"stable", "1.54.1", false},
+	}
+	for _, tc := range cases {
+		if got := namesRelease(tc.want, tc.release); got != tc.names {
+			t.Errorf("namesRelease(%q, %q) = %v, want %v", tc.want, tc.release, got, tc.names)
+		}
+	}
+}
+
+// SQLAlchemy labels its versions 21, 20 and 14, the release without its
+// dot: 1.4 is 14 once a label is known to be written so (21 is the latest
+// release, 2.1.6). A site whose two-digit labels are not that keeps them
+// as releases.
+func TestDottedLabels(t *testing.T) {
+	vs := []siteVersion{
+		{label: "21", root: "https://docs.sqlalchemy.org/en/21/", current: true},
+		{label: "20", root: "https://docs.sqlalchemy.org/en/20/"},
+		{label: "14", root: "https://docs.sqlalchemy.org/en/14/"},
+	}
+	for want, root := range map[string]string{"1.4": "https://docs.sqlalchemy.org/en/14/", "2": "https://docs.sqlalchemy.org/en/21/", "2.0": "https://docs.sqlalchemy.org/en/20/"} {
+		if _, ok := matchVersion(want, vs); ok && want == "1.4" {
+			t.Errorf("1.4 matched the labels as written")
+		}
+		v, ok := matchVersion(want, dottedLabels(vs, "2.1.6"))
+		if !ok || v.root != root {
+			t.Errorf("sqlalchemy@%s = %s, %v; want %s", want, v.root, ok, root)
+		}
+	}
+	if dottedLabels(vs, "14.2.0") != nil || dottedLabels(vs, "") != nil {
+		t.Errorf("labels not known to be dotless releases were read as such")
+	}
+}
+
+// docs.rs answers a version whose docs build failed (clap 3.2.25 and
+// 3.2.24) with the crate's page: the nearest release that built (3.2.23)
+// stands in, noted. Recorded live.
+func TestResolveDocsRSFailedBuild(t *testing.T) {
+	w := versionSitesWeb(t)
+	for _, spec := range []string{"crates:clap@3", "crates:clap@3.2.25"} {
+		m, err := describeAt(t, w, "https://docs.rs/clap/latest/clap/", spec, "4.6.7", true)
+		if err != nil || m.root.String() != "https://docs.rs/clap/3.2.23/clap/" || m.version != "3.2.23" {
+			t.Errorf("%s = %s %q, %v; want docs.rs's 3.2.23", spec, m.root, m.version, err)
+			continue
+		}
+		if !slices.ContainsFunc(m.evidence, func(e evidence) bool {
+			return strings.Contains(e.detail, "docs.rs failed to build clap 3.2.25; 3.2.23 is the nearest release")
+		}) {
+			t.Errorf("%s evidence %v lacks the failed-build note", spec, m.evidence)
+		}
+	}
+}
+
+// A version index is not docs: numpy.org/doc/ links its versions,
+// matplotlib.org/ is a landing page linking /stable/. Each stands for the
+// stable docs it links below itself. Recorded live.
+func TestVersionIndexIsItsStableDocs(t *testing.T) {
+	w := versionSitesWeb(t)
+	for root, want := range map[string]string{"https://numpy.org/doc/": "https://numpy.org/doc/stable/", "https://matplotlib.org/": "https://matplotlib.org/stable/"} {
+		m, err := describeAt(t, w, root, "pypi:x", "", false)
+		if err != nil || m.root.String() != want {
+			t.Errorf("%s = %s, %v; want %s", root, m.root, err, want)
+		}
+	}
+	root, _ := parseWebRoot("https://expressjs.com/")
+	if _, ok := indexChild(root, versionSet{versions: []siteVersion{{label: labelCurrent, root: "https://expressjs.com/", current: true}, {label: "5x", root: "https://expressjs.com/en/5x/"}}}); ok {
+		t.Errorf("a root that is the current docs, beside an older tree, is no index")
 	}
 }
