@@ -243,11 +243,12 @@ $ ketch docs --resolve "next.js"                          # name → Context7 ID
 $ ketch docs -b web --resolve click                       # name → its docs site, no key
 $ ketch docs -b web --library django@5.2 "middleware"     # one version's docs
 $ ketch docs -b web "how do I set retries in requests"    # library named in the query
+$ ketch docs -b auto "how do I set retries in requests"   # web first, then Context7
 ```
 
 | Flag | Meaning |
 | --- | --- |
-| `--backend, -b` | `context7` (default), `web` |
+| `--backend, -b` | `context7` (default), `web`, `auto` (web, then Context7) |
 | `--library` | A library ID from `--resolve`, or for `web` any library spec (below); skips the resolve step |
 | `--tokens` | Token budget, default 4000 |
 | `--resolve` | Resolve the query as a library name or spec instead of searching |
@@ -255,7 +256,14 @@ $ ketch docs -b web "how do I set retries in requests"    # library named in the
 | `--minimal` | One result per line |
 | `--tag <name>` | Bookmark every result URL under a tag |
 
-Context7 serves curated snippets and takes a free key. `web` needs no key: it
+Context7 serves curated snippets and needs no key: without one it runs on
+Context7's anonymous quota, which is small — about 200 requests a month per IP
+address, shared by everything on that address, and a docs search spends two
+(resolve, then fetch). When it runs out, `docs` exits **4** (`[upstream]`) and
+says when the quota resets and how to lift it with a free key
+(`ketch config set context7_api_key <key>`). A library Context7 has moved
+(`/facebook/react` is now `/react/react`) is followed once, and the output's
+`library:` line shows the new ID. `web` needs no key either: it
 reads the library's own documentation site — its `llms.txt`, `llms-full.txt`,
 sitemaps, or the links on its docs root — fetches the few pages that best match
 the query, and returns their matching sections, each with its heading
@@ -335,6 +343,30 @@ token.
 With Context7, `docs` is a two-step: resolve the name, *vet the matches*, then
 fetch by ID. Its resolve never returns empty. A bad name still returns
 confident fuzzy matches, so check the name, not just the trust score.
+
+**`auto` chains the two, like `search`'s auto.** It asks `web` first, which has
+no quota, and asks Context7 only when `web` refuses: it identified no library,
+the one named does not exist, a source failed, or the name is ambiguous. It
+never replaces an answer `web` gave, an empty one included. An ambiguous name
+is answered from Context7 only when Context7's pick is one of the candidates
+`web` listed (the same GitHub repository, or the same docs site); otherwise the
+ambiguity error stands, naming Context7's pick, since docs for the wrong
+project are worse than none. For any other refusal Context7's pick must be a
+library the query names — its title or repository name is a word of the query
+(`react`, `next.js`) or two words run together (`react router`) — because
+Context7 reads a whole question fuzzily: `useState in react` can come back as
+some React Native library's docs. A library pinned to an ecosystem or a version
+(`npm:react`, `react@18`, `@tanstack/query`) or given as a docs URL stays
+`web`'s, because Context7's matches carry neither; an `owner/repo` goes to
+Context7 only if it has exactly that ID. A Context7 ID passed as `--library`
+(`/reactjs/react.dev`) goes straight to Context7, and `--resolve` lists
+Context7's matches only when `web` has none. The output's `backend:` line, and
+every result's `source` in `--json`, say which provider answered; when it was
+Context7, `web`'s refusal is printed to stderr as a warning. When both fail,
+the error is `web`'s, with its exit code, followed by Context7's. `auto` runs
+only when you select it: an explicit `-b web` or `-b context7` never chains.
+It is not the default yet; the default stays Context7 until keyless `web`
+passes its accuracy gates.
 
 #### scrape — URL(s) → clean markdown
 
@@ -525,6 +557,14 @@ Concurrent read-only probes against every backend, plus the browser, the
 cache, and an informational `tags` row for the bookmark index that never
 affects the exit code.
 Each comes back `ok`, `no_key`, `unreachable`, `misconfigured`, or `skipped`.
+Context7 without a key is `ok` and `keyless`, and doctor sends it nothing: it
+reports the quota the last real Context7 response left (`~187 of 200 left as of
+…, resets …`, or `quota not yet seen`), kept in a small file in ketch's cache
+directory, so running doctor never spends the anonymous quota. A spent keyless
+quota is `no_key`, since a key is the fix. With a key, doctor probes Context7 as
+before.
+With `docs_backend` set to `auto`, a docs `auto` row sums up `web` and
+Context7 from their own rows, without probing again.
 Exits **0** when healthy and **5** when a configured surface is broken — so it
 works in CI.
 
@@ -691,7 +731,7 @@ rather than averaged away.
 | --- | --- | --- |
 | `search` | `auto` | brave, ddg, searxng, exa, firecrawl, keenable, tavily, tinyfish, parallel, serpbase, degoog, serply, youcom |
 | `code` | `grepapp` | sourcegraph, github |
-| `docs` | `context7` | web |
+| `docs` | `context7` | web, auto (web, then Context7) |
 
 > **`auto` is a chain, not a provider.** It falls through
 > `parallel → exa → keenable → youcom → firecrawl → ddg`, none of which need a
@@ -770,8 +810,11 @@ come from the instance itself, so the backend's own advice follows the hint.
 #### Code and docs — grepapp, sourcegraph, github, context7, web
 
 Grep and Sourcegraph need nothing. GitHub uses `gh auth login`,
-`$GITHUB_TOKEN`, or `ketch config set github_token <tok>`. Context7 takes a
-free key via `ketch config set context7_api_key <key>`. The `web` docs backend
+`$GITHUB_TOKEN`, or `ketch config set github_token <tok>`. Context7 works
+with no key on its anonymous quota (about 200 requests a month per IP);
+`ketch doctor` shows it as `keyless` with the requests left as of the last
+Context7 response and when they renew (without spending one), and a free key via
+`ketch config set context7_api_key <key>` lifts the cap. The `web` docs backend
 needs nothing either; resolving a library name asks GitHub about its
 repository, and the same GitHub token lifts the 60-requests-an-hour limit an
 unauthenticated install gets. Rate-limited, `web` still answers from the

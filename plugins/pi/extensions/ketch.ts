@@ -134,7 +134,8 @@ const DocsParams = Type.Object({
 	backend: Type.Optional(
 		Type.String({
 			description:
-				"docs backend: context7 (curated snippets, needs an API key) or web (reads the library's own docs site, no key) (default: the configured backend)",
+				"docs backend: context7 (curated snippets; no key needed, but keyless use has a small anonymous quota, about 200 requests a month per IP), web (reads the library's own docs site, no key), " +
+				"or auto (web first, then Context7 only when web finds no library, several, or fails) (default: the configured backend)",
 		}),
 	),
 	library: Type.Optional(
@@ -672,7 +673,8 @@ export default function ketch(pi: ExtensionAPI): void {
 		...renderers("docs"),
 		label: "ketch docs",
 		description:
-			"Search library documentation using Context7 or Web (backend=web reads the library's own docs site, no API key). " +
+			"Search library documentation using Context7 or Web (backend=web reads the library's own docs site, no API key; Context7 needs no key either, but keyless it runs on an anonymous quota of about 200 requests a month per IP, and a spent quota is an [upstream] error naming when it resets). " +
+			"backend=auto asks web first and Context7 only when web refuses; Context7's pick must be a library the query names, and for an ambiguous name one of web's candidates, and each result's source says which answered. " +
 			"Supports resolving a library name to library IDs (resolve=true), and fetching docs directly from a known library (library, bounded by tokens): a Context7 ID such as /vercel/next.js, " +
 			"or for web a docs URL, a package spec such as django@5.2 or pypi:click, owner/repo, or a Go module path. " +
 			"Resolve a name once and pass the returned ID as library on later calls: a name is resolved again on every call. " +

@@ -45,7 +45,15 @@ func TestRegistryDiscoversOptionalLibraryInterface(t *testing.T) {
 }
 
 func TestRegistryKeepsUnknownAndUnavailableDistinct(t *testing.T) {
-	for _, backend := range []string{"local", "context7", "unknown"} {
+	// Context7 is usable with no key (its anonymous quota), so the
+	// unavailable case is the unimplemented local backend alone.
+	if _, err := NewFromConfig(&config.Config{}, "context7", Deps{}); err != nil {
+		t.Fatalf("context7 with no key must build (keyless), got %v", err)
+	}
+	if _, err := NewFromConfig(&config.Config{}, AutoBackend, Deps{}); err != nil {
+		t.Fatalf("auto must build with no keys, got %v", err)
+	}
+	for _, backend := range []string{"local", "unknown"} {
 		_, err := NewFromConfig(&config.Config{}, backend, Deps{})
 		if err == nil || errors.Is(err, ErrUnknownBackend) != (backend == "unknown") {
 			t.Fatalf("%s error taxonomy = %v", backend, err)

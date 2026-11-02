@@ -410,3 +410,41 @@ func TestDocsToolResolveSaysWhenIncomplete(t *testing.T) {
 		t.Errorf("resolve widget with PyPI down = %+v, want npm's widget noting PyPI's failure", matches)
 	}
 }
+
+// The auto backend reports which provider answered and what it fell
+// through: web finds "widget" ambiguous, Context7 (keyless) picks PyPI's,
+// one of web's candidates.
+func TestDocsToolAutoReportsProvider(t *testing.T) {
+	ft := testutil.LoadFixtures(t, widgetFixtureDir)
+	ft.Handle(http.MethodGet, "https://context7.com/api/v1/search?query=widget+configure+themes", testutil.Fixture{
+		Body: `{"results":[{"id":"/pywidget/widget","title":"Widget"}]}`,
+	})
+	ft.Handle(http.MethodGet, "https://context7.com/api/v2/context?libraryId=/pywidget/widget&query=widget+configure+themes&type=json&tokens=4000", testutil.Fixture{
+		Body: `{"codeSnippets":[{"codeTitle":"Configure themes","codeId":"https://widget.readthedocs.io/en/stable/themes/","codeList":[{"code":"x"}]}],"infoSnippets":[]}`,
+	})
+	session := docsSession(t, fixtureFallback{ft})
+
+	res, err := session.CallTool(context.Background(), &mcpsdk.CallToolParams{Name: "docs", Arguments: map[string]any{"query": "widget configure themes", "backend": "auto"}})
+	if err != nil || res.IsError {
+		t.Fatalf("auto: %v %s", err, toolText(res))
+	}
+	var out DocsOutput
+	data, _ := json.Marshal(res.StructuredContent)
+	if err := json.Unmarshal(data, &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Backend != "context7" || len(out.Results) != 1 || out.Results[0].Source != "context7" || !strings.HasPrefix(out.Errors["web"], "ambiguous library") {
+		t.Errorf("auto output = %+v", out)
+	}
+	for _, c := range ft.Calls() {
+		if strings.Contains(c.URL, "://context7.com/") && c.Header.Get("Authorization") != "" {
+			t.Errorf("keyless Context7 request sent Authorization: %s", c.URL)
+		}
+	}
+
+	// A named provider reports neither field.
+	res, err = session.CallTool(context.Background(), &mcpsdk.CallToolParams{Name: "docs", Arguments: map[string]any{"query": "widget configure themes", "backend": "web"}})
+	if err != nil || !res.IsError || !strings.HasPrefix(toolText(res), "[validation] ") || strings.Contains(toolText(res), "context7") {
+		t.Errorf("web: %v %s", err, toolText(res))
+	}
+}

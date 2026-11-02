@@ -266,6 +266,8 @@ describe("argument construction", () => {
 		assert.match(docs.description, /Resolve a name once/);
 		const props = docs.parameters.properties as Record<string, { description: string }>;
 		assert.match(props.backend.description, /\bweb\b/);
+		assert.match(props.backend.description, /\bauto\b/);
+		assert.match(docs.description, /anonymous quota/);
 		for (const form of ["name@version", "npm:/pypi:/crates:/go:/github:", "owner/repo", "Go module path"]) {
 			assert.ok(props.library.description.includes(form), `library description names ${form}`);
 		}

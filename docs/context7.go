@@ -7,23 +7,38 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
+	"time"
 
 	"github.com/1broseidon/ketch/health"
 	"github.com/1broseidon/ketch/httpx"
 	config "github.com/1broseidon/ketch/internal/configbase"
 )
 
-// Context7 searches library documentation via the Context7 API.
+// Context7 searches library documentation via the Context7 API. It works
+// with no key on Context7's anonymous quota (rate limited per IP, about 200
+// requests a month at the time of writing); a key sends the same requests
+// authenticated and lifts the cap.
 type Context7 struct {
 	apiKey string
 	client *http.Client
+	// quota is the last rate limit Context7 reported for this key (or for
+	// anonymous use), shared by every client in the process with the same
+	// key so a long-lived MCP server stops asking once it is spent. nil
+	// tracks nothing between calls.
+	quota *context7QuotaTracker
 }
 
-// NewContext7 creates a new Context7 docs backend.
+// context7Base is the Context7 API root.
+const context7Base = "https://context7.com"
+
+// NewContext7 creates a new Context7 docs backend. An empty apiKey uses the
+// anonymous quota: no Authorization header is sent.
 func NewContext7(apiKey string) *Context7 {
 	return &Context7{
 		apiKey: apiKey,
 		client: httpx.Default(),
+		quota:  sharedContext7Quota(apiKey),
 	}
 }
 
@@ -84,9 +99,12 @@ type context7InfoSnippet struct {
 // context7ErrorResponse is the body Context7 sends alongside some 4xx
 // responses. A 404 with error "no_relevant_snippets" means the library
 // exists but nothing matched the query — a normal empty result, not a
-// missing library.
+// missing library. A 301 with error "library_redirected" names the
+// library's new ID in redirectUrl (/facebook/react moved to /react/react);
+// it carries no Location header, so the HTTP client does not follow it.
 type context7ErrorResponse struct {
-	Error string `json:"error"`
+	Error       string `json:"error"`
+	RedirectURL string `json:"redirectUrl"`
 }
 
 // Search resolves a library from the query and fetches documentation,
@@ -95,16 +113,15 @@ type context7ErrorResponse struct {
 // --limit and the MCP limit argument mean the same thing here as on every
 // other surface.
 func (c *Context7) Search(ctx context.Context, query string, limit int) ([]Result, error) {
-	// Only the top-ranked library is used, so resolve just that one.
-	libs, err := c.ResolveLibrary(ctx, query, 1)
-	if err != nil {
-		return nil, fmt.Errorf("context7 resolve failed: %w", err)
-	}
-	if len(libs) == 0 {
-		return nil, fmt.Errorf("context7: no library found for %q", query)
-	}
+	return c.search(ctx, query, limit, nil)
+}
 
-	results, err := c.GetDocs(ctx, libs[0].ID, query, 4000)
+// search is Search with a check on the library Context7 picks: accept, when
+// set, sees the top-ranked match before any docs are fetched, and an error
+// from it ends the search. The auto backend uses it to hold Context7 to the
+// candidates the web backend found.
+func (c *Context7) search(ctx context.Context, query string, limit int, accept func(LibraryMatch) error) ([]Result, error) {
+	results, err := c.docsFor(ctx, query, query, 4000, accept)
 	if err != nil {
 		return nil, err
 	}
@@ -118,19 +135,25 @@ func (c *Context7) Search(ctx context.Context, query string, limit int) ([]Resul
 func (c *Context7) ResolveLibrary(ctx context.Context, name string, limit int) ([]LibraryMatch, error) {
 	// Upstream param is `query` (was `q` on an older revision — API returns
 	// 400 "Query is required" if we send `q`).
-	u := fmt.Sprintf("https://context7.com/api/v1/search?query=%s", url.QueryEscape(name))
-
-	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
+	resp, err := c.get(ctx, "resolve", context7Base+"/api/v1/search?query="+url.QueryEscape(name))
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.apiKey)
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("context7 resolve request failed: %w", err)
-	}
 	defer resp.Body.Close()
+
+	// A name Context7 has moved answers with the new ID: search for that
+	// once instead.
+	if to, ok := context7Redirect(resp); ok {
+		resp.Body.Close()
+		resp, err = c.get(ctx, "resolve", context7Base+"/api/v1/search?query="+url.QueryEscape(to))
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		if again, ok := context7Redirect(resp); ok {
+			return nil, fmt.Errorf("context7: %q redirected to %q, which redirected again to %q", name, to, again)
+		}
+	}
 
 	if resp.StatusCode == http.StatusUnauthorized {
 		return nil, fmt.Errorf("context7: invalid API key (set via: ketch config set context7_api_key <key>)")
@@ -149,20 +172,13 @@ func (c *Context7) ResolveLibrary(ctx context.Context, name string, limit int) (
 	return body.Results, nil
 }
 
-// GetDocs fetches documentation snippets for a resolved library ID.
+// GetDocs fetches documentation snippets for a resolved library ID. A
+// library Context7 has moved (library_redirected) is followed once, and the
+// results carry the ID it moved to as their Library.
 func (c *Context7) GetDocs(ctx context.Context, libraryID, query string, tokens int) ([]Result, error) {
-	u := fmt.Sprintf("https://context7.com/api/v2/context?libraryId=%s&query=%s&type=json&tokens=%d",
-		url.QueryEscape(libraryID), url.QueryEscape(query), tokens)
-
-	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
+	resp, libraryID, err := c.getDocsFollowing(ctx, libraryID, query, tokens)
 	if err != nil {
 		return nil, err
-	}
-	req.Header.Set("Authorization", "Bearer "+c.apiKey)
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("context7 docs request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -224,22 +240,112 @@ func (c *Context7) GetDocs(ctx context.Context, libraryID, query string, tokens 
 	return results, nil
 }
 
-// ProbeContext7 checks the provider using a caller-supplied client and endpoint.
+// getDocsFollowing requests libraryID's docs, following a
+// library_redirected answer once. It returns the response and the ID it
+// answers for.
+func (c *Context7) getDocsFollowing(ctx context.Context, libraryID, query string, tokens int) (*http.Response, string, error) {
+	resp, err := c.getDocs(ctx, libraryID, query, tokens)
+	if err != nil {
+		return nil, "", err
+	}
+	to, ok := context7Redirect(resp)
+	if !ok {
+		return resp, libraryID, nil
+	}
+	resp.Body.Close()
+	if !strings.HasPrefix(to, "/") || to == libraryID {
+		return nil, "", fmt.Errorf("context7: library %q redirected to %q, which is not another library ID", libraryID, to)
+	}
+	resp, err = c.getDocs(ctx, to, query, tokens)
+	if err != nil {
+		return nil, "", err
+	}
+	if again, ok := context7Redirect(resp); ok {
+		resp.Body.Close()
+		return nil, "", fmt.Errorf("context7: library %q redirected to %q, which redirected again to %q", libraryID, to, again)
+	}
+	return resp, to, nil
+}
+
+func (c *Context7) getDocs(ctx context.Context, libraryID, query string, tokens int) (*http.Response, error) {
+	u := fmt.Sprintf(context7Base+"/api/v2/context?libraryId=%s&query=%s&type=json&tokens=%d",
+		url.QueryEscape(libraryID), url.QueryEscape(query), tokens)
+	return c.get(ctx, "docs", u)
+}
+
+// get sends one Context7 request: authenticated when there is a key, and
+// with no Authorization header at all when there is not (the anonymous
+// quota). It records the rate limit the response reports, and turns a
+// spent quota into a *RateLimitError: a 429, an error status with
+// ratelimit-remaining 0, or — without asking — a quota an earlier response
+// in this process already reported spent, until it resets. op names the
+// call in transport errors ("resolve", "docs").
+func (c *Context7) get(ctx context.Context, op, u string) (*http.Response, error) {
+	if err := c.quota.spent(c.apiKey != "", time.Now()); err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+	if c.apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	}
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("context7 %s request failed: %w", op, err)
+	}
+	q := parseContext7Quota(resp.Header, time.Now())
+	c.quota.observe(q)
+	if resp.StatusCode == http.StatusTooManyRequests || (resp.StatusCode >= 400 && q.known && q.remaining == 0) {
+		health.Drain(resp)
+		return nil, &RateLimitError{Keyed: c.apiKey != "", Limit: q.limit, Reset: q.reset}
+	}
+	return resp, nil
+}
+
+// context7Redirect reads a library_redirected response: a 3xx whose JSON
+// body names the library's new ID. It reports the ID. Another 3xx has its
+// body read and is left for the caller's status check; any other status is
+// left unread.
+func context7Redirect(resp *http.Response) (string, bool) {
+	if resp.StatusCode < 300 || resp.StatusCode > 399 {
+		return "", false
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
+	if err != nil {
+		return "", false
+	}
+	var errBody context7ErrorResponse
+	if json.Unmarshal(body, &errBody) != nil || errBody.Error != "library_redirected" || errBody.RedirectURL == "" {
+		return "", false
+	}
+	return errBody.RedirectURL, true
+}
+
+// ProbeContext7 checks the provider using a caller-supplied client and
+// endpoint. With a key it probes the API as it always has. With no key it
+// sends nothing: every request spends the anonymous quota (about 200 a
+// month per IP, 400s included), and `ketch doctor` runs often, so it
+// reports the quota the last real Context7 response left in the state file
+// (context7KeylessStatus).
 func ProbeContext7(ctx context.Context, client *http.Client, apiBase, apiKey string) (health.Status, string) {
 	if apiKey == "" {
-		return health.StatusNoKey, "API key not set (get one then: ketch config set context7_api_key <key>)"
+		return context7KeylessStatus(defaultContext7State(), time.Now())
 	}
-	resp, err := health.Get(ctx, client, apiBase+"/api/v1/search?query=go", map[string]string{
-		"Authorization": "Bearer " + apiKey,
-	})
+	resp, err := health.Get(ctx, client, apiBase+"/api/v1/search?query=go", map[string]string{"Authorization": "Bearer " + apiKey})
 	if err != nil {
 		return health.StatusUnreachable, health.ErrorDetail(err)
 	}
 	defer health.Drain(resp)
 
+	q := parseContext7Quota(resp.Header, time.Now())
+	if resp.StatusCode == http.StatusTooManyRequests || (resp.StatusCode >= 400 && q.known && q.remaining == 0) {
+		return health.StatusOK, "reachable, key accepted (rate limited)"
+	}
 	switch resp.StatusCode {
 	case http.StatusOK:
-		return health.StatusOK, ""
+		return health.StatusOK, q.detail()
 	case http.StatusUnauthorized:
 		return health.StatusMisconfigured, "API key rejected (ketch config set context7_api_key <key>)"
 	default:
@@ -247,17 +353,46 @@ func ProbeContext7(ctx context.Context, client *http.Client, apiBase, apiKey str
 	}
 }
 
+// context7KeyFix ends every keyless doctor detail.
+const context7KeyFix = "a key lifts the cap: ketch config set context7_api_key <key>"
+
+// context7KeylessStatus is keyless Context7's health from the state file
+// alone: ok while the last quota seen has requests left or has since reset
+// (or none was seen yet), no_key while it is spent, since a key is the fix.
+func context7KeylessStatus(state *context7State, now time.Time) (health.Status, string) {
+	q, ok := state.load(context7StateEntry(""))
+	switch {
+	case !ok:
+		return health.StatusOK, "keyless (quota not yet seen; Context7 allows about 200 anonymous requests a month per IP; " + context7KeyFix + ")"
+	case !q.reset.IsZero() && !now.Before(q.reset):
+		return health.StatusOK, "keyless (quota renewed " + formatContext7Time(q.reset) + " since last seen; " + context7KeyFix + ")"
+	case q.remaining == 0:
+		return health.StatusNoKey, (&RateLimitError{Limit: q.limit, Reset: q.reset}).Error() + " (as of " + formatContext7Time(q.observedAt) + ")"
+	}
+	left := fmt.Sprintf("~%d", q.remaining)
+	if q.limit > 0 {
+		left += fmt.Sprintf(" of %d", q.limit)
+	}
+	detail := "keyless (" + left + " left as of " + formatContext7Time(q.observedAt)
+	if !q.reset.IsZero() {
+		detail += ", resets " + formatContext7Time(q.reset)
+	}
+	return health.StatusOK, detail + "; " + context7KeyFix + ")"
+}
+
 func context7Provider() Provider {
-	return Provider{Setup: "context7: API key not set (get one then: ketch config set context7_api_key <key>)", LibrarySetup: "context7: API key not set (set with: ketch config set context7_api_key <key>)",
+	return Provider{
 		Settings: []config.Setting{{Key: "context7_api_key", ValidationOrder: 20, Secret: true, GateDoctor: true, FileOrder: 20, DiscoveryOrder: 23, EnvOrder: 14}},
 		ID:       "context7",
 		Name:     "Context7",
-		Usable:   func(c *config.Config) bool { return c.String("context7_api_key") != "" },
+		// Keyless use runs on the anonymous quota, so Context7 needs no
+		// setup; a key only lifts the cap.
+		Usable: func(*config.Config) bool { return true },
 		New: func(c *config.Config, _ Deps) (Searcher, error) {
 			return NewContext7(c.String("context7_api_key")), nil
 		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
-			return ProbeContext7(ctx, client, "https://context7.com", c.String("context7_api_key"))
+			return ProbeContext7(ctx, client, context7Base, c.String("context7_api_key"))
 		},
 	}
 }

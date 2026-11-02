@@ -27,10 +27,29 @@ type DocsInput struct {
 // is set. Exactly one of the two is non-empty for a given call. The result
 // objects match the CLI's `ketch docs --json` (which emits a bare array; MCP
 // structured content needs the object wrapper).
+//
+// Backend and Errors are set only by the auto backend: the provider that
+// answered ("web" or "context7") and the one it fell through, by provider,
+// as the search tool reports its auto chain. Any other backend leaves both
+// out, so its output is unchanged.
 type DocsOutput struct {
 	Warnings []string            `json:"warnings,omitempty"`
 	Results  []docs.Result       `json:"results,omitempty"`
 	Matches  []docs.LibraryMatch `json:"matches,omitempty"`
+	Backend  string              `json:"backend,omitempty"`
+	Errors   map[string]string   `json:"errors,omitempty"`
+}
+
+// withSelection records an auto call's selection on out.
+func (out DocsOutput) withSelection(sel docs.Selection) DocsOutput {
+	out.Backend = sel.Backend
+	if len(sel.Failures) > 0 {
+		out.Errors = make(map[string]string, len(sel.Failures))
+		for _, f := range sel.Failures {
+			out.Errors[f.Backend] = f.Err.Error()
+		}
+	}
+	return out
 }
 
 func (s *Server) registerDocsTool() {
@@ -39,6 +58,8 @@ func (s *Server) registerDocsTool() {
 		InputSchema: docsInputSchema(),
 		Description: "Search library documentation using " + strings.Join(docs.ProviderNames(), ", ") + ". Supports resolving a library name to a " + strings.Join(docs.LibraryProviderNames(), ", ") + " library ID (resolve), and fetching docs directly from a known library ID (library)." +
 			docs.WithLibraryHelp(" A library is a library ID from resolve") + ". Resolve a name once and pass the returned ID as library on later calls: a name is resolved again on every call." +
+			" Context7 needs no key: without one it runs on Context7's anonymous quota (about 200 requests a month per IP; a spent quota is an [upstream] error naming when it resets), and a key lifts it." +
+			" Backend auto tries web first and asks Context7 only when web identifies no library, finds several, or fails; Context7's pick must be a library the query names, and for an ambiguous name one of web's candidates. It reports the provider that answered in backend (each result's source says the same) and what it fell through in errors." +
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in DocsInput) (*mcpsdk.CallToolResult, DocsOutput, error) {
@@ -86,13 +107,19 @@ func (s *Server) registerDocsTool() {
 			return nil, DocsOutput{}, backendErrf(err, docs.ErrUnknownBackend)
 		}
 
-		results, err := searcher.Search(ctx, in.Query, limit)
+		var results []docs.Result
+		var sel docs.Selection
+		if selecting, ok := searcher.(docs.SelectingSearcher); ok {
+			results, sel, err = selecting.SearchSelect(ctx, in.Query, limit)
+		} else {
+			results, err = searcher.Search(ctx, in.Query, limit)
+		}
 		if err != nil {
 			return nil, DocsOutput{}, upstreamErrf(err, "docs search failed")
 		}
 
 		s.recordResults(ctx, in.Tag, docsTagged(results))
-		return nil, DocsOutput{Results: results, Warnings: diagnostics.values()}, nil
+		return nil, DocsOutput{Results: results, Warnings: diagnostics.values()}.withSelection(sel), nil
 	})
 }
 
@@ -104,11 +131,17 @@ func (s *Server) docsResolve(ctx context.Context, backend, query string, limit i
 	if err != nil {
 		return nil, DocsOutput{}, err
 	}
-	matches, err := resolver.ResolveLibrary(ctx, query, limit)
+	var matches []docs.LibraryMatch
+	var sel docs.Selection
+	if selecting, ok := resolver.(docs.SelectingSearcher); ok {
+		matches, sel, err = selecting.ResolveSelect(ctx, query, limit)
+	} else {
+		matches, err = resolver.ResolveLibrary(ctx, query, limit)
+	}
 	if err != nil {
 		return nil, DocsOutput{}, upstreamErrf(err, "resolve failed")
 	}
-	return nil, DocsOutput{Matches: matches}, nil
+	return nil, DocsOutput{Matches: matches}.withSelection(sel), nil
 }
 
 // docsForLibrary fetches docs for a known library ID, capped at limit
@@ -118,13 +151,19 @@ func (s *Server) docsForLibrary(ctx context.Context, backend, query, library str
 	if err != nil {
 		return nil, DocsOutput{}, err
 	}
-	results, err := resolver.GetDocs(ctx, library, query, tokens)
+	var results []docs.Result
+	var sel docs.Selection
+	if selecting, ok := resolver.(docs.SelectingSearcher); ok {
+		results, sel, err = selecting.GetDocsSelect(ctx, library, query, tokens)
+	} else {
+		results, err = resolver.GetDocs(ctx, library, query, tokens)
+	}
 	if err != nil {
 		return nil, DocsOutput{}, upstreamErrf(err, "docs fetch failed")
 	}
 	results = docs.Truncate(results, limit)
 	s.recordResults(ctx, tag, docsTagged(results))
-	out := DocsOutput{Results: results}
+	out := DocsOutput{Results: results}.withSelection(sel)
 	if d, ok := ctx.Value(tagDiagnosticsKey{}).(*tagDiagnostics); ok {
 		out.Warnings = d.values()
 	}
@@ -162,7 +201,7 @@ func (s *Server) docsDeps(ctx context.Context) docs.Deps {
 // and direct library lookup, and what each accepts as a library (its
 // descriptor's LibraryHelp), so no description names a provider itself.
 func docsInputSchema() *jsonschema.Schema {
-	backends := docs.AvailableBackends()
+	backends := docs.SelectableBackends()
 	implemented := "implemented backends: " + configbase.JoinNames(backends)
 	if len(backends) == 1 {
 		implemented = backends[0] + " is the only implemented backend"

@@ -69,6 +69,22 @@ func AvailableBackends() []string {
 	return names
 }
 
+// SelectableBackends returns every value --backend and the docs_backend
+// config key accept: the providers in registry order, then the auto chain
+// (last, since it is not the default).
+func SelectableBackends() []string {
+	return append(AvailableBackends(), AutoBackend)
+}
+
+// IsBackend reports whether id names a selectable backend.
+func IsBackend(id string) bool {
+	if id == AutoBackend {
+		return true
+	}
+	p, ok := Lookup(id)
+	return ok && !p.Hidden
+}
+
 // ProviderNames returns human-readable names in registry order.
 func ProviderNames() []string {
 	var names []string
@@ -124,8 +140,11 @@ func LibraryBackends() []string {
 	return names
 }
 
-// SupportsLibraries reports whether a registered provider has library operations.
-func SupportsLibraries(id string) bool { return slices.Contains(LibraryBackends(), id) }
+// SupportsLibraries reports whether a registered provider, or the auto
+// chain (whose providers all have them), has library operations.
+func SupportsLibraries(id string) bool {
+	return id == AutoBackend || slices.Contains(LibraryBackends(), id)
+}
 
 // ResolveBackend retains the legacy resolve fallback while allowing additional
 // library-capable providers to handle an explicitly selected backend.
