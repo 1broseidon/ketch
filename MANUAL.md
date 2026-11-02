@@ -299,7 +299,18 @@ own (a Go module's always counts). So a package that merely claims a popular
 repository gets neither its stars nor its place. A same-named package with no such evidence is dropped, so
 `click` is PyPI's Click, not npm's or crates.io's unrelated `click`. A bare
 query names its library itself: `web` reads it from the query (`retries in
-requests`, `react router loaders`) and searches the rest.
+requests`, `react router loaders`) and searches the rest. It looks for the
+name only where the query's wording puts one: in a question, after a closing
+`in`, `with`, `using` or `for` (`how do I set retries in requests`), after
+`use`, before `library` or `package`, or right after `does` or `is` (`how
+does httpx follow redirects`); in a keyword query, its first word (`flask
+blueprint url prefix`) unless an article follows it (`parse a date with
+dayjs` is about dayjs). A language (`in python`) or an API name (`useState`)
+is never the library, and a common word (`click`, `set`, `best`) names one only
+when that library is widely used, since registries hold a package for nearly
+every word. When two words of the query each name a different library, one
+must far outweigh the other in downloads, or the query is ambiguous; a
+question that names no library is refused rather than guessed.
 
 ```console
 $ ketch docs -b web --resolve click
@@ -324,7 +335,10 @@ answers to it, none far ahead of the rest on GitHub stars, and the error lists
 each one's ID and package specs to pass as `--library` instead (`--resolve`
 lists them all rather than failing). A same-named package whose only docs a
 package index hosts (docs.rs, pkg.go.dev, pythonhosted.org), or whose
-repository is gone, does not stand in a popular library's way. It exits **3**
+repository is gone, does not stand in a popular library's way unless it is at
+least as popular; and a docs.rs or pkg.go.dev page never answers for a name
+whose far more popular package in another registry has no docs site (npm's
+`commander`, documented in its README): that name is ambiguous. It exits **3**
 when the library you name is in no registry or repository, when nothing found
 for it verifies (the error gives each candidate's reason), or when the version
 you ask for is not offered (the error lists the versions that are). It exits

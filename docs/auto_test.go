@@ -362,6 +362,13 @@ func TestAutoNamedBy(t *testing.T) {
 		{"how do I use hooks", "/facebook/react", "React", false},
 		{"tailwind dark mode", "/websites/tailwindcss_com", "Tailwind CSS", false},
 		{"tailwindcss dark mode", "/websites/tailwindcss_com", "Tailwind CSS", true},
+		// decision-15: only the words the query's syntax puts a name in.
+		{"how do I configure the themes", "/acme/themes", "Themes", false},
+		{"how do I configure the themes", "/acme/configure", "Configure", false},
+		{"parse a date string with tempora", "/acme/parse", "Parse", false},
+		{"parse a date string with tempora", "/acme/tempora", "Tempora", true},
+		{"mock fetch calls in vitality", "/acme/vitality", "Vitality", true},
+		{"tempora", "/acme/tempora", "Tempora", true},
 	} {
 		err := namedBy(tc.query)(LibraryMatch{ID: tc.id, Title: tc.title})
 		if (err == nil) != tc.ok {

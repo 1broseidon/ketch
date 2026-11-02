@@ -1,6 +1,7 @@
 package docs
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -33,7 +34,7 @@ const (
 // registries' roots are: a hit is a candidate, never evidence.
 func (r *resolution) runKeyless(ctx context.Context) []webMatch {
 	var hits chan []search.Result
-	if !r.strict && r.w.sites != nil {
+	if r.searches() && r.w.sites != nil {
 		hits = make(chan []search.Result, 1)
 		go func() {
 			results, err := r.w.searchHits(ctx, r.searchQuery(ctx))
@@ -44,14 +45,14 @@ func (r *resolution) runKeyless(ctx context.Context) []webMatch {
 		}()
 	}
 	var goNames chan []*project
-	if !r.strict && r.spec.eco == ecoAny {
+	if r.searches() && r.spec.eco == ecoAny {
 		// Go has no registry of names: pkg.go.dev's search stands in, and
 		// a cold search can take seconds, so it runs beside everything
 		// else and its modules are verified when they arrive.
 		goNames = make(chan []*project, 1)
 		go func() { goNames <- r.w.goNameProjects(ctx, r.spec, r.log) }()
 	}
-	projects := r.w.gather(ctx, r.spec, r.log, !r.strict)
+	projects := r.w.gather(ctx, r.spec, r.log, r.searches())
 	r.log.consider(projects...)
 	var hitMatches, goMatches []webMatch
 	var hitProjects, goProjects []*project
@@ -343,18 +344,28 @@ func (r *resolution) readTieBreak(ctx context.Context, matches []webMatch) {
 }
 
 // keylessRivals checks a keyless pick against the packages of exactly the
-// queried name whose metadata put docs forward that did not verify:
-// dominance weighs only projects that verified, so without this a
-// squatter's registry docs would answer for a name whose real, far more
-// popular package has a site that failed the edge rule (docs.rs's numpy
-// for PyPI's numpy). The pick stands only when it has dominanceRatio
-// times the weekly downloads of each such package; else the call is
-// ambiguous, listing the pick and the package specs to pass instead. A
-// package whose metadata names no docs at all (only a code forge page, no
-// registry-hosted docs: npm's clap) offers nothing a docs answer could be
-// and does not block. A count that could not be read is a keyless source that did
-// not answer: an upstream error naming the pick. Without a popularity
-// source (a backend built for tests) there is nothing to weigh.
+// queried name that verified nothing: dominance weighs only projects that
+// verified, so without this a squatter's registry docs would answer for a
+// name whose real, far more popular package has a site that failed the
+// edge rule (docs.rs's numpy for PyPI's numpy), or has no docs site at all
+// (docs.rs's commander for npm's commander, whose docs are its README).
+//
+//   - A package whose metadata put forward a docs site of its own that did
+//     not verify blocks the pick unless the pick has dominanceRatio times
+//     its weekly downloads.
+//   - A package that put forward no docs, or only docs a package index
+//     hosts (docs.rs, pkg.go.dev), shows that it was published, not that
+//     the name means it: it blocks the pick only when it is at least as
+//     popular (decision-15). npm's clap, with a GitHub page and a few
+//     downloads, does not block crates' clap; npm's commander, with
+//     millions, blocks crates' commander.
+//
+// A blocked pick is an ambiguity listing it and the package specs to pass
+// instead. A count that could not be read is a keyless source that did
+// not answer: an upstream error naming the pick, except a weak rival's
+// (the second kind) beside a pick with its own docs site, which only an
+// already popular rival could outweigh. Without a popularity source (a
+// backend built for tests) there is nothing to weigh.
 //
 // A package outside the ecosystem the query or working directory names
 // (hint) is no rival to a pick inside it, as applyHint has it.
@@ -370,18 +381,19 @@ func (w *Web) keylessRivals(spec libSpec, m webMatch, matches []webMatch, log *r
 	var unread []error
 	seen := map[string]bool{}
 	for _, p := range log.considered() {
-		if seen[p.key] || !rivalOf(p, m, matched, log, hint) {
+		if seen[p.key] || !rivalOf(p, m, matched, hint) {
 			continue
 		}
 		seen[p.key] = true
-		switch err := outweighs(p, m); {
+		switch blocks, err := rivalBlocks(p, m, !log.hasOfferedSite(p.key)); {
 		case err != nil:
 			unread = append(unread, err)
-		case p.popKnown && p.pop > 0 && int64(m.stars) < dominanceRatio*p.pop:
+		case blocks:
 			stronger = append(stronger, p)
 		}
 	}
 	if len(unread) > 0 {
+		slices.SortFunc(unread, func(a, b error) int { return cmp.Compare(a.Error(), b.Error()) })
 		err := log.upstreamErr(fmt.Sprintf("web: %q resolved to %s, but %s, so a more popular package of that name may be the library meant; retry, or pass the library you mean as a docs URL or package spec",
 			spec.raw, m.root, joinErrors(unread)), false)
 		err.picked = true
@@ -390,6 +402,9 @@ func (w *Web) keylessRivals(spec libSpec, m webMatch, matches []webMatch, log *r
 	if len(stronger) == 0 {
 		return nil
 	}
+	// The projects were considered as concurrent sources answered: list
+	// them in a fixed order, most popular first.
+	slices.SortFunc(stronger, func(a, b *project) int { return cmp.Or(cmp.Compare(b.pop, a.pop), cmp.Compare(a.key, b.key)) })
 	amb := &AmbiguousLibraryError{Library: spec.raw, Matches: []LibraryMatch{m.libraryMatch()}}
 	for _, p := range stronger {
 		amb.Matches = append(amb.Matches, LibraryMatch{
@@ -397,6 +412,26 @@ func (w *Web) keylessRivals(spec libSpec, m webMatch, matches []webMatch, log *r
 		})
 	}
 	return amb
+}
+
+// rivalBlocks reports rival p keeping the pick m from answering, or why
+// the two could not be weighed. weak marks a rival that put forward no
+// docs site of its own: it blocks only when at least as popular, and its
+// count unread (or a modest count beside the pick's unread one) does not
+// count against a pick with a site of its own.
+func rivalBlocks(p *project, m webMatch, weak bool) (bool, error) {
+	err := outweighs(p, m)
+	switch {
+	case err != nil && weak && !m.indexOnly && (p.popErr != nil || p.pop < dominanceStars):
+		return false, nil
+	case err != nil:
+		return false, err
+	case !p.popKnown || p.pop <= 0:
+		return false, nil
+	case weak:
+		return int64(m.stars) <= p.pop, nil
+	}
+	return int64(m.stars) < dominanceRatio*p.pop, nil
 }
 
 // outweighs is why rival p and the pick m cannot be weighed: a count that
@@ -418,10 +453,10 @@ func outweighs(p *project, m webMatch) error {
 
 // rivalOf reports p as a package keylessRivals weighs against the pick m:
 // one of exactly the queried name, not the pick's, that verified nothing
-// (matched), whose metadata put docs forward, and that is not outside the
-// ecosystem a hint names for a pick inside it, unless it outweighs the pick
-// by the dominance margin (a hint breaks ties, it does not overrule).
-func rivalOf(p *project, m webMatch, matched map[string]bool, log *resolveLog, hint []ecosystem) bool {
+// (matched), and that is not outside the ecosystem a hint names for a
+// pick inside it, unless it outweighs the pick by the dominance margin (a
+// hint breaks ties, it does not overrule).
+func rivalOf(p *project, m webMatch, matched map[string]bool, hint []ecosystem) bool {
 	switch {
 	case !p.exact || len(p.pkgs) == 0 || matched[p.key] || p == m.proj || ownedBy(p, m.proj):
 		return false
@@ -430,7 +465,7 @@ func rivalOf(p *project, m webMatch, matched map[string]bool, log *resolveLog, h
 	case len(hint) > 0 && hinted(m.proj, hint) && !hinted(p, hint) && (!p.popKnown || !outweighsBy(p.pop, int64(m.stars))):
 		return false // the hint settles a contest the rival does not dominate
 	}
-	return log.hasOffered(p.key)
+	return true
 }
 
 // applyHint narrows a single-library contest to the projects in the
@@ -618,25 +653,29 @@ func moduleRootPath(path string) bool {
 // goNameRe is a name that can be a Go module path's last element.
 var goNameRe = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]*$`)
 
-// strictMissError is a bare query's guessed reading (react-router in
-// "react router loaders") that verified no docs although a registry has a
-// package of exactly that name, with that package's popularity: the query
-// may well be about it, so a shorter reading (react) answers only if it
-// outweighs it (pastStrictMisses). Keyless resolutions only.
+// strictMissError is a bare query's reading (react-router in "react
+// router loaders") that verified no docs although a registry has a
+// package of exactly that name: the query may well be about it, so
+// another reading (react) answers only if it outweighs that package
+// (pastStrictMisses). Its popularity is read only then (weigh). Keyless
+// resolutions only.
 type strictMissError struct {
-	err  error
-	spec string  // the package
-	repo repoKey // the repository it names; zero for none
-	pop  int64   // its weekly downloads; -1 when they could not be read
+	err   error
+	exact []*project // the packages of exactly the reading's name
+
+	weighed bool
+	spec    string  // the most popular package, once weighed
+	repo    repoKey // the repository it names; zero for none
+	pop     int64   // its weekly downloads; -1 when they could not be read
 }
 
 func (e *strictMissError) Error() string { return e.err.Error() }
 func (e *strictMissError) Unwrap() error { return e.err }
 
-// strictMiss is err for a keyless guessed reading that failed as not
-// found, as a *strictMissError when a registry has a package of exactly
-// its name with downloads, else err.
-func (w *Web) strictMiss(ctx context.Context, err error, log *resolveLog) error {
+// strictMiss is err for a keyless reading that failed as not found, as a
+// *strictMissError when a registry has a package of exactly its name,
+// else err.
+func (w *Web) strictMiss(err error, log *resolveLog) error {
 	if w.popularity == nil || !errors.Is(err, ErrNotFound) {
 		return err
 	}
@@ -649,42 +688,54 @@ func (w *Web) strictMiss(ctx context.Context, err error, log *resolveLog) error 
 	if len(exact) == 0 {
 		return err
 	}
-	w.readPopularity(ctx, exact)
-	miss := &strictMissError{err: err}
-	for _, p := range exact {
-		switch {
-		case p.popErr != nil:
-			miss.spec, miss.repo, miss.pop = p.pkgs[0].spec(), p.repo, -1
-			return miss
-		case p.pop > miss.pop:
-			miss.spec, miss.repo, miss.pop = p.pkgs[0].spec(), p.repo, p.pop
-		}
-	}
-	if miss.pop <= 0 {
-		return err
-	}
-	return miss
+	return &strictMissError{err: err, exact: exact}
 }
 
-// pastStrictMisses checks a bare query's pick against the guessed
-// readings before it that named a real package but verified no docs: the
-// pick, a shorter reading, stands only when it has dominanceRatio times
-// the downloads of each (react's 245M a week against react-router's 20M
-// does not), else the query is ambiguous between them. A package from the
-// pick's own repository (clap_derive for clap) is part of it. A miss whose
-// downloads could not be read is a source that did not answer.
-func (w *Web) pastStrictMisses(ctx context.Context, query string, m webMatch, missed []*strictMissError) error {
+// weigh reads the miss's packages' popularity, once: the most popular
+// package stands for the miss, and one whose count could not be read
+// makes the miss's unknown.
+func (e *strictMissError) weigh(ctx context.Context, w *Web) {
+	if e.weighed {
+		return
+	}
+	e.weighed = true
+	w.readPopularity(ctx, e.exact)
+	for _, p := range e.exact {
+		switch {
+		case p.popErr != nil:
+			e.spec, e.repo, e.pop = p.pkgs[0].spec(), p.repo, -1
+			return
+		case p.pop > e.pop:
+			e.spec, e.repo, e.pop = p.pkgs[0].spec(), p.repo, p.pop
+		}
+	}
+}
+
+// readingMiss is a reading's miss, and whether its name is a common word.
+type readingMiss struct {
+	miss   *strictMissError
+	common bool
+}
+
+// pastStrictMisses checks a bare query's pick against the readings that
+// named a real package but verified no docs: the pick stands only when it
+// has dominanceRatio times the downloads of each (react's 245M a week
+// against react-router's 20M does not), else the query is ambiguous
+// between them. A package from the pick's own repository (clap_derive for
+// clap) is part of it. A miss whose downloads could not be read is a
+// source that did not answer, except a common word's, which is no
+// evidence that the query is about it.
+func (w *Web) pastStrictMisses(ctx context.Context, query string, m webMatch, missed []readingMiss) error {
 	if len(missed) == 0 {
 		return nil
 	}
-	weight := int64(m.stars)
-	if m.proj != nil && !m.proj.popKnown && m.proj.info == nil {
-		w.readPopularity(ctx, []*project{m.proj})
-		weight = int64(m.proj.stars())
-	}
+	weight := w.pickWeight(ctx, m)
 	amb := &AmbiguousLibraryError{Library: query, Matches: []LibraryMatch{m.libraryMatch()}}
-	for _, miss := range missed {
+	for _, rm := range missed {
+		miss := rm.miss
+		miss.weigh(ctx, w)
 		switch {
+		case miss.pop == 0, miss.pop < 0 && rm.common:
 		case m.proj != nil && !miss.repo.isZero() && m.proj.isRepo(miss.repo):
 			// The same repository's other package (clap_derive beside
 			// clap): one project, not a rival.
@@ -698,4 +749,14 @@ func (w *Web) pastStrictMisses(ctx context.Context, query string, m webMatch, mi
 		return amb
 	}
 	return nil
+}
+
+// pickWeight is the pick's weight, its popularity read first when a
+// keyless resolution has not read it; -1 when unknown.
+func (w *Web) pickWeight(ctx context.Context, m webMatch) int64 {
+	if m.proj != nil && !m.proj.popKnown && m.proj.info == nil {
+		w.readPopularity(ctx, []*project{m.proj})
+		return int64(m.proj.stars())
+	}
+	return int64(m.stars)
 }

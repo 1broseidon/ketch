@@ -147,33 +147,60 @@ func TestSplitLibraryQuery(t *testing.T) {
 		q    string
 		want []split
 	}{
-		{"how do I set retries in requests", []split{
-			{"requests", "how do I set retries", false},
-			{"set-retries", "how do I in requests", true},
-			{"set", "how do I retries in requests", false},
+		// A sentence names its library by syntax: the object closing it
+		// after in/with/using/for. The verb after "how do I" is no name.
+		{"how do I set retries in requests", []split{{"requests", "how do I set retries", false}}},
+		{"How do I parse args with Click?", []split{{"Click", "How do I parse args", false}}},
+		{"how can I retry a failed call using tenacity", []split{{"tenacity", "how can I retry a failed call", false}}},
+		{"what is a loader in remix", []split{{"remix", "what is a loader", false}}},
+		// An article or a kind noun may stand around the object.
+		{"how do I add a custom header with the axios library", []split{{"axios", "how do I add a custom header library", false}}},
+		{"how to pass props in a vue component", []split{{"vue", "how to pass props component", false}}},
+		{"configure retries for boto3 clients", []split{
+			{"configure-retries", "for boto3 clients", true},
+			{"configure", "retries for boto3 clients", false},
+			{"boto3", "configure retries clients", false},
 		}},
-		{"How do I parse args with Click?", []split{
-			{"Click", "How do I parse args", false},
-			{"parse-args", "How do I with Click?", true},
-			{"parse", "How do I args with Click?", false},
-		}},
+		// Two words closing the query are a guess at one name.
+		{"how to define loaders in react router", []split{{"react-router", "how to define loaders", true}}},
+		// The subject after an auxiliary, when nothing closes the query.
+		{"how does httpx follow redirects", []split{{"httpx", "how does follow redirects", false}}},
+		{"Does sqlmodel support async sessions?", []split{{"sqlmodel", "Does support async sessions?", false}}},
+		{"how do signals work in solid", []split{{"solid", "how do signals work", false}}},
+		// "use X" names X.
+		{"how do I use marshmallow to load nested data", []split{{"marshmallow", "how do I use to load nested data", false}}},
+		// The topic a question opens with.
+		{"In Starlette, how do I mount a sub-application?", []split{{"Starlette", "how do I mount a sub-application?", false}}},
+		{"polars: how do I pivot a frame?", []split{{"polars", "how do I pivot a frame?", false}}},
+		{"pandas how to merge two frames?", []split{{"pandas", "how to merge two frames?", false}}},
+		// No word in the name's place: a language names no library, and an
+		// article after "is" means a noun phrase.
+		{"what is the best way to cache results in python", nil},
+		{"how do I deploy to production", nil},
+		// A keyword query's first word, unless an article or particle after
+		// it makes it a verb; a closing "in X" too.
 		{"react router loaders", []split{
 			{"react-router", "loaders", true},
 			{"react", "router loaders", false},
 		}},
-		// The hyphen-join would leave nothing to search for.
 		{"react hooks", []split{{"react", "hooks", false}}},
-		// The trailing "in <tok>" needs a question before it.
 		{"retries in requests", []split{
 			{"retries", "in requests", false},
+			{"requests", "retries", false},
 		}},
+		{"parse a date string with dayjs", []split{{"dayjs", "parse a date string", false}}},
+		{"set up structured logging in loguru", []split{{"loguru", "set up structured logging", false}}},
+		{"add middleware to an express app", []split{
+			{"add-middleware", "to an express app", true},
+			{"add", "middleware to an express app", false},
+			{"express", "add middleware app", false},
+		}},
+		// API identifiers are no names.
+		{"useState in react", []split{{"react", "useState", false}}},
+		{"pendulum's timezone handling", []split{{"pendulum", "timezone handling", false}}},
 		{"next.js app router", []split{
 			{"next.js", "app router", false},
 			{"next", "app router", false},
-		}},
-		{"what is a loader in remix", []split{
-			{"remix", "what is a loader", false},
-			{"loader", "what is a in remix", false},
 		}},
 		// Explicit specs win alone.
 		{"npm:react hooks", []split{{"npm:react", "hooks", false}}},
@@ -215,12 +242,12 @@ func TestSplitLibraryQuery(t *testing.T) {
 
 // Candidates are parsed specs, at most three, never repeated.
 func TestSplitLibraryQueryCandidates(t *testing.T) {
-	splits := splitLibraryQuery("how do I set retries in requests")
-	if len(splits) != 3 {
-		t.Fatalf("got %d candidates, want 3", len(splits))
+	splits := splitLibraryQuery("tenacity retry with backoff in python")
+	if len(splits) != 2 {
+		t.Fatalf("got %d candidates (%+v), want 2", len(splits), splits)
 	}
-	if s := splits[0].spec; s.eco != ecoAny || s.name != "requests" || s.version != "" {
-		t.Errorf("first candidate = %+v, want the bare name requests", s)
+	if s := splits[0].spec; s.eco != ecoAny || s.name != "tenacity-retry" || s.version != "" {
+		t.Errorf("first candidate = %+v, want the bare name tenacity-retry", s)
 	}
 	for _, q := range []string{"next next next docs", "how do I use next in next"} {
 		seen := map[string]bool{}

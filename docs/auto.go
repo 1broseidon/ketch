@@ -382,28 +382,26 @@ var genericNames = map[string]bool{
 }
 
 // namedBy holds Context7's pick for a bare query (or a bare name) to the
-// words: its title, or its repository's name, must be a word of the query,
-// or two adjacent words run together ("react router" for React Router),
-// compared without case, punctuation or a .js suffix. Context7 resolves a
-// whole question fuzzily: "useState in react" can come back as a React
-// Native sign-in library's docs, and docs for a project the query never
-// named are worse than none. A generic word ("docs", "api") never counts.
+// words that name a library in it: its title, or its repository's name,
+// must be the name of one of the query's readings (splitLibraryQuery: the
+// words its syntax puts a library's name in, "react" in "useState in
+// react", "react router" run together), or the bare name itself, compared
+// without case, punctuation or a .js suffix. Context7 resolves a whole
+// question fuzzily: "useState in react" can come back as a React Native
+// sign-in library's docs, and docs for a project the query never named are
+// worse than none. A word in the question's other places ("configure" in
+// "how do I configure the themes") names nothing (decision-15), and a
+// generic word ("docs", "api") never counts.
 func namedBy(query string) func(LibraryMatch) error {
 	words := map[string]bool{}
-	var prev string
-	for _, w := range strings.Fields(query) {
-		k := libraryKey(w)
-		if k == "" || isQueryFiller(w) {
-			prev = ""
-			continue
-		}
-		if !genericNames[k] {
+	splits := splitLibraryQuery(query)
+	if fields := strings.Fields(query); len(fields) == 1 {
+		splits = []querySplit{{spec: libSpec{raw: fields[0], name: fields[0]}}}
+	}
+	for _, s := range splits {
+		if k := libraryKey(s.spec.name); k != "" && !genericNames[k] {
 			words[k] = true
 		}
-		if prev != "" {
-			words[prev+k] = true
-		}
-		prev = k
 	}
 	return func(m LibraryMatch) error {
 		names := []string{libraryKey(m.Title)}

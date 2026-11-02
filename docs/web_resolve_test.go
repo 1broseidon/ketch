@@ -625,7 +625,12 @@ func TestPickUnique(t *testing.T) {
 		{"repository gone", []webMatch{m("a", 15000, true), m("b", 0, false)}, "a"},
 		{"index-hosted docs alone, stars unknown", []webMatch{m("a", 53000, false), m("b", -1, true)}, "a"},
 		{"index-hosted top beside index-hosted docs alone", []webMatch{m("a", 16000, true), m("b", -1, true)}, "a"},
-		{"index-hosted docs alone, stars known", []webMatch{m("a", 53000, false), m("b", 5000, true)}, ""},
+		// decision-15: docs a package index hosts block a library with a
+		// site of its own only when at least as popular.
+		{"index-hosted docs alone, stars known, outweighed", []webMatch{m("a", 53000, false), m("b", 5000, true)}, "a"},
+		{"index-hosted docs alone, stars known, as popular", []webMatch{m("a", 53000, false), m("b", 53000, true)}, ""},
+		{"index-hosted docs alone, more popular", []webMatch{m("a", 53000, false), m("b", 90000, true)}, ""},
+		{"own site under the floor beside index-hosted docs", []webMatch{m("a", 900, false), m("b", 10, true)}, ""},
 		{"own site, stars unknown", []webMatch{m("a", 53000, true), m("b", -1, false)}, ""},
 		{"top's stars unknown", []webMatch{m("a", -1, false), m("b", 0, true)}, ""},
 	}
@@ -1923,28 +1928,24 @@ func wantUpstream(t *testing.T, what string, err error, want ...string) {
 	}
 }
 
-// round1-1: everything answered. The name is ambiguous: 89439 stars are
-// not 50x 4240 (dominant), so the three verified projects are listed, as
-// the live run listed them.
+// round1-1: everything answered. The live run listed the three verified
+// projects, as 89439 stars are not 50x 4240. Under decision-15
+// codegangsta/gin and crates' gin, documented only where a package index
+// hosts docs, do not block gin-gonic/gin, which outweighs both and has a
+// site of its own: gin answers from gin-gonic.com, as --resolve does.
 func TestResolveGinAllAnswered(t *testing.T) {
 	ctx := context.Background()
 	w, _ := fixtureWeb404(t)
 	m, err := w.resolveOne(ctx, mustSpec(t, "gin"), false)
-	ginNoAnswer(t, "resolveOne(gin)", m, err)
-	var amb *AmbiguousLibraryError
-	if !errors.As(err, &amb) {
-		t.Fatalf("resolveOne(gin) = %v; want ambiguous", err)
+	if err != nil || m.root.String() != "https://gin-gonic.com/" {
+		t.Fatalf("resolveOne(gin) = %s, %v; want gin-gonic.com", m.root, err)
 	}
-	var ids []string
-	for _, lm := range amb.Matches {
-		ids = append(ids, lm.ID)
+	if _, err = w.Search(ctx, ginQuery, 5); err != nil {
+		t.Errorf("Search(%q) = %v; want gin-gonic.com's docs", ginQuery, err)
 	}
-	want := []string{"https://gin-gonic.com/", "https://pkg.go.dev/github.com/codegangsta/gin/", "https://docs.rs/gin/latest/gin/"}
-	if !slices.Equal(ids, want) {
-		t.Errorf("ambiguous between %v, want %v", ids, want)
-	}
-	if _, err = w.Search(ctx, ginQuery, 5); !errors.As(err, &amb) {
-		t.Errorf("Search(%q) = %v; want ambiguous", ginQuery, err)
+	ms, err := w.ResolveLibrary(ctx, "gin", 5)
+	if err != nil || len(ms) == 0 || ms[0].ID != "https://gin-gonic.com/" {
+		t.Errorf("ResolveLibrary(gin) = %v, %v; want gin-gonic.com first", ms, err)
 	}
 }
 

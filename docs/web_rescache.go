@@ -8,7 +8,7 @@ import (
 
 // resolutionCacheVersion versions the cached value's shape and the rules
 // that produced it: a change to either starts a fresh cache.
-const resolutionCacheVersion = "docs-resolution/v1"
+const resolutionCacheVersion = "docs-resolution/v2"
 
 // cachedResolution is what the resolution cache keeps for one pick.
 type cachedResolution struct {
@@ -18,12 +18,15 @@ type cachedResolution struct {
 	Packages []string `json:"packages,omitempty"`
 	Project  string   `json:"project,omitempty"`
 	Trust    float64  `json:"trust,omitempty"`
+	// Weight is the pick's weight (stars, or weekly downloads keyless)
+	// when it was read: a bare query's readings compare it.
+	Weight *int `json:"weight,omitempty"`
 }
 
 // resolutionKey keys a single-library pick by everything that decides it:
 // the spec (ecosystem, name, version), whether it is a bare query's guessed
-// reading, whether GitHub was asked, and the ecosystem hint.
-func resolutionKey(spec libSpec, strict, keyless bool, hint []ecosystem) string {
+// or lean reading, whether GitHub was asked, and the ecosystem hint.
+func resolutionKey(spec libSpec, strict, lean, keyless bool, hint []ecosystem) string {
 	mode := "github"
 	if keyless {
 		mode = "keyless"
@@ -33,7 +36,11 @@ func resolutionKey(spec libSpec, strict, keyless bool, hint []ecosystem) string 
 		h = append(h, string(e))
 	}
 	slices.Sort(h)
-	return strings.Join([]string{resolutionCacheVersion, mode, boolText(strict), strings.Join(h, ","),
+	reading := boolText(strict)
+	if lean && !strict {
+		reading = "lean"
+	}
+	return strings.Join([]string{resolutionCacheVersion, mode, reading, strings.Join(h, ","),
 		string(spec.eco), strings.ToLower(spec.name), strings.ToLower(spec.version)}, "|")
 }
 
@@ -70,7 +77,7 @@ func (w *Web) loadResolution(key string) (webMatch, bool) {
 	}
 	return webMatch{
 		root: root, version: c.Version, title: c.Title, packages: c.Packages, project: c.Project, trust: c.Trust,
-		primary: true, stars: -1,
+		primary: true, stars: weightOr(c.Weight, -1),
 		evidence: []evidence{{kind: evNote, detail: "resolved earlier and cached"}},
 	}, true
 }
@@ -81,9 +88,21 @@ func (w *Web) storeResolution(key string, m webMatch) {
 	if rc == nil || m.root.u == nil {
 		return
 	}
-	b, err := json.Marshal(cachedResolution{Root: m.root.String(), Version: m.version, Title: m.title, Packages: m.packages, Project: m.project, Trust: m.trust})
+	c := cachedResolution{Root: m.root.String(), Version: m.version, Title: m.title, Packages: m.packages, Project: m.project, Trust: m.trust}
+	if m.stars >= 0 {
+		c.Weight = &m.stars
+	}
+	b, err := json.Marshal(c)
 	if err != nil {
 		return
 	}
 	rc.PutResolution(key, string(b))
+}
+
+// weightOr is *n, or def when n is nil.
+func weightOr(n *int, def int) int {
+	if n == nil {
+		return def
+	}
+	return *n
 }

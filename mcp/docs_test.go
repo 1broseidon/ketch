@@ -378,12 +378,18 @@ func (downTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 // With every source down, a bare query is [upstream], worth retrying, not
-// [validation]: the library it names may well exist.
+// [validation]: the library it names may well exist. A question that
+// names no library is [validation] whatever is down (decision-15: the
+// verb after "how do i" is no library's name).
 func TestDocsToolBareQueryWithSourcesDownIsUpstream(t *testing.T) {
 	session := docsSession(t, downTransport{})
-	res, _ := callDocs(t, session, map[string]any{"query": "how do i configure the themes", "backend": "web"})
+	res, _ := callDocs(t, session, map[string]any{"query": "how do i configure the themes in starlight", "backend": "web"})
 	if text := toolText(res); !res.IsError || !strings.HasPrefix(text, "[upstream]") {
 		t.Errorf("bare query, every source down: isError=%v %q, want [upstream]", res.IsError, text)
+	}
+	res, _ = callDocs(t, session, map[string]any{"query": "how do i configure the themes", "backend": "web"})
+	if text := toolText(res); !res.IsError || !strings.HasPrefix(text, "[validation]") {
+		t.Errorf("bare query naming no library, every source down: isError=%v %q, want [validation]", res.IsError, text)
 	}
 }
 

@@ -367,7 +367,8 @@ func TestDocsWebResolveExitCodes(t *testing.T) {
 		{"version not offered", recorded, []string{"--library", "django@4.0", "middleware"}, ExitNotFound, []string{"4.0", "5.2"}},
 		{"resolve a version not offered", recorded, []string{"--resolve", "django@4.0"}, ExitNotFound, []string{"4.0", "5.2"}},
 		{"every source down", down, []string{"--resolve", "widget"}, ExitUpstream, nil},
-		{"bare query while every source is down", down, []string{"how do i configure the themes"}, ExitUpstream, []string{"configure", "503"}},
+		{"bare query while every source is down", down, []string{"how do i configure the themes in starlight"}, ExitUpstream, []string{"starlight", "503"}},
+		{"bare question naming no library, every source down", down, []string{"how do i configure the themes"}, ExitValidation, []string{"--library"}},
 		{"docs while every source is down", down, []string{"--library", "widget", "configure themes"}, ExitUpstream, nil},
 		{"github the only source, down", down, []string{"--resolve", "github:widgetjs/widget"}, ExitUpstream, nil},
 	}

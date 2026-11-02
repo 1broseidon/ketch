@@ -1,6 +1,7 @@
 package docs
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -167,53 +168,193 @@ func (w *Web) Search(ctx context.Context, query string, limit int) ([]Result, er
 	return Truncate(results, limit), nil
 }
 
-// resolveQuery resolves a bare query's library candidates concurrently and
-// picks the first, in priority order, that resolves. One that is ambiguous,
-// or whose failure could have changed the pick (vetoes: a registry down, a
-// package whose docs could not be checked), stops the search rather than
-// falling through to a weaker reading it might have outranked; one that
-// names nothing, or whose only failure is a search that could not have
-// found it, gives way to the next.
+// resolveQuery resolves a bare query's readings concurrently and picks one
+// (decision-15):
+//
+//   - A reading inside the words of a more specific reading that answered
+//     (react inside react-router) is settled by it, whatever it gave.
+//   - A reading that is ambiguous stops the query with its ambiguity,
+//     unless it is a common word and another reading answered.
+//   - A failure that could have changed the pick (vetoes: a registry down,
+//     a package whose docs could not be checked) stops it as an upstream
+//     error, the first in priority order. A guess's never does, and a
+//     common word's only when no other reading answered: "set" failing in
+//     "set up logging in loguru" says nothing about loguru.
+//   - Readings of different words that answered with different libraries
+//     contest: one stands only when it outweighs every other by the
+//     dominance margin (contest), else the query is ambiguous between
+//     them. Which reading the query's syntax ranks first does not decide
+//     which library it is about.
+//   - A reading that named a real package whose docs did not verify
+//     (strictMissError) keeps another from answering unless outweighed
+//     (pastStrictMisses).
+//   - A common word's pick must clear commonWordBar.
+//
+// With nothing answered the query is a validation error naming what was
+// tried.
 func (w *Web) resolveQuery(ctx context.Context, query string, splits []querySplit) (webMatch, querySplit, error) {
 	if len(splits) == 0 {
 		return webMatch{}, querySplit{}, fmt.Errorf("%w: no library named in %q; pass one with --library (CLI) or library (MCP): a docs URL, or a package name such as npm:astro", ErrLibraryRequired, query)
 	}
-	matches := make([]webMatch, len(splits))
-	errs := make([]error, len(splits))
 	ctx = withProfileMemo(ctx)
-	var wg sync.WaitGroup
-	for i, s := range splits {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			matches[i], errs[i] = w.resolveOne(ctx, s.spec, s.strict)
-		}()
+	matches, errs := w.resolveReadings(ctx, splits)
+	if ctx.Err() != nil {
+		return webMatch{}, querySplit{}, fmt.Errorf("web: %w", ctx.Err())
 	}
-	wg.Wait()
+	var picks []int
+	for i := range splits {
+		if errs[i] == nil {
+			picks = append(picks, i)
+		}
+	}
+	picks = slices.DeleteFunc(slices.Clone(picks), func(i int) bool { return settledBy(i, picks, splits) })
 	var tried []string
-	var missed []*strictMissError
+	var missed []readingMiss
 	for i, s := range splits {
-		var amb *AmbiguousLibraryError
-		var miss *strictMissError
-		switch {
-		case errs[i] == nil:
-			if err := w.pastStrictMisses(ctx, query, matches[i], missed); err != nil {
-				return webMatch{}, s, err
-			}
-			return matches[i], s, nil
-		case errors.As(errs[i], &amb):
-			return webMatch{}, s, errs[i]
-		case ctx.Err() != nil:
-			return webMatch{}, s, fmt.Errorf("web: %w", ctx.Err())
-		case vetoes(errs[i], s, len(splits)):
-			return webMatch{}, s, fmt.Errorf("web: reading %q as library %q: %s", query, s.spec.raw, errs[i]) // plain: upstream
-		case errors.As(errs[i], &miss):
-			missed = append(missed, miss)
+		if errs[i] == nil || settledBy(i, picks, splits) {
+			continue
+		}
+		if miss, stop := readingStop(query, s, errs[i], len(picks) > 0, len(splits)); stop != nil {
+			return webMatch{}, s, stop
+		} else if miss != nil {
+			missed = append(missed, readingMiss{miss, s.common})
 		}
 		tried = append(tried, fmt.Sprintf("%s: %v", s.spec.raw, errs[i]))
 	}
-	return webMatch{}, querySplit{}, fmt.Errorf("%w: no library identified in %q; pass one with --library (CLI) or library (MCP), a docs URL or a package name such as npm:astro (tried %s)",
-		ErrLibraryRequired, query, strings.Join(tried, "; "))
+	if len(picks) == 0 {
+		return webMatch{}, querySplit{}, fmt.Errorf("%w: no library identified in %q; pass one with --library (CLI) or library (MCP), a docs URL or a package name such as npm:astro (tried %s)",
+			ErrLibraryRequired, query, strings.Join(tried, "; "))
+	}
+	i, err := w.contest(ctx, query, splits, matches, picks)
+	if err != nil {
+		return webMatch{}, splits[picks[0]], err
+	}
+	if err := w.pastStrictMisses(ctx, query, matches[i], missed); err != nil {
+		return webMatch{}, splits[i], err
+	}
+	return matches[i], splits[i], nil
+}
+
+// resolveReadings resolves every reading concurrently; a common word's
+// pick that does not clear commonWordBar is its reading's error.
+func (w *Web) resolveReadings(ctx context.Context, splits []querySplit) ([]webMatch, []error) {
+	matches := make([]webMatch, len(splits))
+	errs := make([]error, len(splits))
+	var wg sync.WaitGroup
+	for i, s := range splits {
+		wg.Go(func() {
+			matches[i], errs[i] = w.resolveReading(ctx, s)
+			if errs[i] == nil && s.common {
+				errs[i] = commonWordBar(s, matches[i])
+			}
+		})
+	}
+	wg.Wait()
+	return matches, errs
+}
+
+// readingStop is what a reading's failure means for the query: an error
+// that stops it (its ambiguity, a common word's only when nothing
+// answered; an upstream failure that vetoes, a common word's only when
+// nothing answered), or a miss that weighs against the pick.
+func readingStop(query string, s querySplit, err error, answered bool, readings int) (*strictMissError, error) {
+	var amb *AmbiguousLibraryError
+	var miss *strictMissError
+	switch {
+	case errors.As(err, &amb) && (!s.common || !answered):
+		return nil, err
+	case (!s.common || !answered) && vetoes(err, s, readings):
+		return nil, fmt.Errorf("web: reading %q as library %q: %s", query, s.spec.raw, err) // plain: upstream
+	case errors.As(err, &miss):
+		return miss, nil
+	}
+	return nil, nil
+}
+
+// settledBy reports reading i lying within the words of another reading
+// in picks that is more specific (spans more words) or, over the same
+// words, comes first.
+func settledBy(i int, picks []int, splits []querySplit) bool {
+	s := splits[i]
+	for _, j := range picks {
+		o := splits[j]
+		if j == i || o.from > s.from || s.to > o.to {
+			continue
+		}
+		if o.to-o.from > s.to-s.from || j < i {
+			return true
+		}
+	}
+	return false
+}
+
+// contest picks among readings that answered: the first in priority
+// order when they all name one library; else the one that outweighs each
+// other by the dominance margin (>= dominanceStars and dominanceRatio
+// times, weights as the dominance rule reads them), and with none, an
+// ambiguity listing them. A weight that could not be read outweighs
+// nothing and is outweighed by nothing, and a common word's reading
+// outweighs no reading of an uncommon word: npm's debug has far more
+// downloads than quasar, but "debug output in quasar" is not therefore
+// about debug.
+func (w *Web) contest(ctx context.Context, query string, splits []querySplit, matches []webMatch, picks []int) (int, error) {
+	var distinct []int
+	seen := map[string]bool{}
+	for _, i := range picks {
+		k := cmp.Or(matches[i].project, matches[i].root.String())
+		if !seen[k] {
+			seen[k] = true
+			distinct = append(distinct, i)
+		}
+	}
+	if len(distinct) == 1 {
+		return distinct[0], nil
+	}
+	for _, i := range distinct {
+		if p := matches[i].proj; p != nil && matches[i].stars < 0 {
+			w.readPopularity(ctx, []*project{p})
+			matches[i].stars = p.stars()
+		}
+	}
+	for _, i := range distinct {
+		if !slices.ContainsFunc(distinct, func(j int) bool { return j != i && !readingOutweighs(splits, matches, i, j) }) {
+			return i, nil
+		}
+	}
+	amb := &AmbiguousLibraryError{Library: query}
+	for _, i := range distinct {
+		amb.Matches = append(amb.Matches, matches[i].libraryMatch())
+	}
+	return 0, amb
+}
+
+// readingOutweighs reports reading i's pick outweighing reading j's by the
+// dominance margin, both weights known, and i no common word beside an
+// uncommon j.
+func readingOutweighs(splits []querySplit, matches []webMatch, i, j int) bool {
+	if matches[j].stars < 0 || splits[i].common && !splits[j].common {
+		return false
+	}
+	return outweighsBy(int64(matches[i].stars), int64(matches[j].stars))
+}
+
+// commonWordBar is why a common word's reading does not name the library
+// it resolved to, nil when it does: the library must be in common use,
+// with at least dominanceStars weekly downloads (stars, with GitHub), the
+// weight the dominance rule asks of any pick. A registry has a package for
+// nearly every word, and a word in a question is far more often the word.
+// A weight that could not be read does not clear the bar: the reading is
+// then not found, never an upstream failure.
+func commonWordBar(s querySplit, m webMatch) error {
+	if m.stars >= dominanceStars {
+		return nil
+	}
+	weight := "its weight could not be read"
+	if m.stars >= 0 {
+		weight = fmt.Sprintf("%s has %s", m.root, weightText(m.proj, m.stars))
+	}
+	return fmt.Errorf("web: %q is a common word, which names a library only when that library is in common use (a weight of %d or more); %s: %w",
+		s.spec.raw, dominanceStars, weight, ErrNotFound)
 }
 
 // vetoes reports a reading's failure that stops a bare query: an upstream

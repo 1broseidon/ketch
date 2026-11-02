@@ -284,9 +284,10 @@ type resolveLog struct {
 
 	mu    sync.Mutex
 	limit *ghRateLimitError // GitHub's first refusal for its rate limit: ask it nothing more
-	// offered are the projects whose own metadata put a docs root
-	// forward (candidateRoots), verified or not, by key.
-	offered map[string]bool
+	// offeredSite are the projects whose own metadata put forward a docs
+	// root of their own (candidateRoots), not only docs a package index
+	// hosts, verified or not, by key.
+	offeredSite map[string]bool
 	// projects are every project the resolution considered, verified or
 	// not: where one library is needed, the pick is checked against those
 	// GitHub left unresolved (unreadBeside).
@@ -469,21 +470,23 @@ func ownedBy(p, pick *project) bool {
 	return true
 }
 
-// offer records that p's metadata put a docs root forward.
-func (l *resolveLog) offer(key string) {
+// offer records that p's metadata put docs roots forward; site that one
+// of them is not docs a package index hosts.
+func (l *resolveLog) offer(key string, site bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if l.offered == nil {
-		l.offered = map[string]bool{}
+	if l.offeredSite == nil {
+		l.offeredSite = map[string]bool{}
 	}
-	l.offered[key] = true
+	l.offeredSite[key] = l.offeredSite[key] || site
 }
 
-// hasOffered reports a project whose metadata put a docs root forward.
-func (l *resolveLog) hasOffered(key string) bool {
+// hasOfferedSite reports a project whose metadata put forward a docs root
+// of its own, not only docs a package index hosts.
+func (l *resolveLog) hasOfferedSite(key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	return l.offered[key]
+	return l.offeredSite[key]
 }
 
 // considered is every project the resolution looked at (consider).
@@ -615,6 +618,9 @@ type resolution struct {
 	// strict): only an exact package's own site can answer it, so GitHub
 	// and the web are never searched for it.
 	strict bool
+	// lean resolves a common word's reading beside a reading that names a
+	// library outright (querySplit.lean): the registries only, tried once.
+	lean bool
 	// keyless marks a resolution without GitHub (Web.gh): projects keep
 	// their packages' claimed repositories, roots need two independent
 	// edges, and registry popularity stands in for stars.
@@ -658,10 +664,11 @@ func (w *Web) resolveRun(ctx context.Context, spec libSpec, limit int, log *reso
 	rctx, cancel := context.WithTimeout(publicHops(ctx), w.resolveTimeout)
 	defer cancel()
 	rctx = withProfileMemo(rctx)
-	if strict {
+	lean := isLean(ctx)
+	if strict || lean {
 		rctx = withSpeculative(rctx)
 	}
-	r := &resolution{w: w, spec: spec, log: log, strict: strict, keyless: w.gh() == nil}
+	r := &resolution{w: w, spec: spec, log: log, strict: strict, lean: lean, keyless: w.gh() == nil}
 	if pick {
 		r.hint = w.ecoHint(ctx)
 	}
@@ -677,6 +684,21 @@ func (w *Web) resolveRun(ctx context.Context, spec libSpec, limit int, log *reso
 		matches = matches[:limit]
 	}
 	return matches, nil
+}
+
+// searches reports a resolution that may search (the web, GitHub,
+// pkg.go.dev's names) beside asking the registries: not a guessed or a
+// lean reading's.
+func (r *resolution) searches() bool { return !r.strict && !r.lean }
+
+type leanKey struct{}
+
+// withLean marks ctx as a lean reading's resolution (resolution.lean).
+func withLean(ctx context.Context) context.Context { return context.WithValue(ctx, leanKey{}, true) }
+
+func isLean(ctx context.Context) bool {
+	v, _ := ctx.Value(leanKey{}).(bool)
+	return v
 }
 
 // finishErr classifies a failure to finish the matches (a version root
@@ -706,10 +728,10 @@ func (r *resolution) run(ctx context.Context) []webMatch {
 	if r.keyless {
 		return r.runKeyless(ctx)
 	}
-	projects := r.w.gather(ctx, r.spec, r.log, !r.strict)
+	projects := r.w.gather(ctx, r.spec, r.log, r.searches())
 	r.log.consider(projects...)
 	matches := r.verifyAll(ctx, projects)
-	if r.strict {
+	if !r.searches() {
 		return r.assemble(projects, matches) // searches find no exact package
 	}
 	if r.spec.eco == ecoAny && anyExact(projects) && (!hasSite(matches) || !settled(matches)) {
@@ -791,14 +813,33 @@ func errNoNameSources(name string) error {
 // fetcher has one, and a repeat of the same spec, mode and hint answers
 // from it without resolving.
 func (w *Web) resolveOne(ctx context.Context, spec libSpec, strict bool) (webMatch, error) {
+	return w.resolveOneAs(ctx, spec, strict, false, false)
+}
+
+// resolveReading is resolveOne for one reading of a bare query: a common
+// word's pick is weighed (commonWordBar compares its weight), and a
+// reading that verifies nothing reports the packages of exactly its name
+// (strictMiss), so another reading cannot answer in its place unless it
+// outweighs them.
+func (w *Web) resolveReading(ctx context.Context, s querySplit) (webMatch, error) {
+	if s.lean {
+		ctx = withLean(ctx)
+	}
+	return w.resolveOneAs(ctx, s.spec, s.strict, true, s.common)
+}
+
+// resolveOneAs is resolveOne, or resolveReading when reading is set; weigh
+// asks for the pick's weight, and a cached pick without one is resolved
+// again.
+func (w *Web) resolveOneAs(ctx context.Context, spec libSpec, strict, reading, weigh bool) (webMatch, error) {
 	var key string
 	if spec.url == "" && w.resolvesNames() {
-		key = resolutionKey(spec, strict, w.gh() == nil, w.ecoHint(ctx))
-		if m, ok := w.loadResolution(key); ok {
+		key = resolutionKey(spec, strict, isLean(ctx), w.gh() == nil, w.ecoHint(ctx))
+		if m, ok := w.loadResolution(key); ok && (!weigh || m.stars >= 0) {
 			return m, nil
 		}
 	}
-	m, cacheable, err := w.resolveOnce(ctx, spec, strict)
+	m, cacheable, err := w.resolveOnce(ctx, spec, strict, reading, weigh)
 	if err == nil && cacheable && key != "" {
 		w.storeResolution(key, m)
 	}
@@ -808,12 +849,12 @@ func (w *Web) resolveOne(ctx context.Context, spec libSpec, strict bool) (webMat
 // resolveOnce is resolveOne without the cache. cacheable reports a pick
 // made with every source answering: one that stood past a source that
 // failed (with a note) is not kept, so the next call asks again.
-func (w *Web) resolveOnce(ctx context.Context, spec libSpec, strict bool) (m webMatch, cacheable bool, err error) {
+func (w *Web) resolveOnce(ctx context.Context, spec libSpec, strict, reading, weigh bool) (m webMatch, cacheable bool, err error) {
 	log := &resolveLog{}
 	matches, err := w.resolveRun(ctx, spec, 0, log, strict, true)
 	if err != nil {
-		if strict && w.gh() == nil {
-			err = w.strictMiss(ctx, err, log)
+		if (strict || reading) && w.gh() == nil {
+			err = w.strictMiss(err, log)
 		}
 		return webMatch{}, false, err
 	}
@@ -830,15 +871,34 @@ func (w *Web) resolveOnce(ctx context.Context, spec libSpec, strict bool) (m web
 		}
 	}
 	if strict && (m.proj == nil || !m.proj.exact || m.registry || m.trust < strictMinTrust) {
-		err := fmt.Errorf("web: %q is a guess at a library name and %s (trust %.1f) does not prove it: a guess needs an exact package name, its own docs site and trust %.0f: %w",
-			spec.raw, m.root, m.trust, strictMinTrust, ErrNotFound)
-		if w.gh() == nil {
-			err = w.strictMiss(ctx, err, log)
-		}
-		return webMatch{}, false, err
+		return webMatch{}, false, w.guessUnproven(ctx, spec, m, log)
+	}
+	if weigh {
+		w.weigh(ctx, &m)
 	}
 	_, failed := log.snapshot()
 	return m, len(failed) == 0, nil
+}
+
+// guessUnproven is the error for a guessed reading whose pick does not
+// prove it (an exact package name, its own docs site and strictMinTrust).
+func (w *Web) guessUnproven(ctx context.Context, spec libSpec, m webMatch, log *resolveLog) error {
+	err := fmt.Errorf("web: %q is a guess at a library name and %s (trust %.1f) does not prove it: a guess needs an exact package name, its own docs site and trust %.0f: %w",
+		spec.raw, m.root, m.trust, strictMinTrust, ErrNotFound)
+	if w.gh() == nil {
+		err = w.strictMiss(err, log)
+	}
+	return err
+}
+
+// weigh reads the pick's weight when it is not known yet: popularity
+// is read keyless only for a contest (readTieBreak), and a bare query's
+// readings compare it.
+func (w *Web) weigh(ctx context.Context, m *webMatch) {
+	if m.stars < 0 && m.proj != nil {
+		w.readPopularity(ctx, []*project{m.proj})
+		m.stars = m.proj.stars()
+	}
 }
 
 // answerPastFailures checks the one library picked for spec against the
@@ -1914,7 +1974,7 @@ func (w *Web) candidateRoots(ctx context.Context, p *project, log *resolveLog) [
 	set := &candidateSet{}
 	listed := false
 	for _, pkg := range p.pkgs {
-		listed = listed || pkg.registryDocs != "" || pkg.docsURL != "" || pkg.homepage != ""
+		listed = listed || pkg.registryDocs != "" || pkg.docsURL != "" || pkg.homepage != "" || pkg.pageURL != ""
 		w.pkgCandidates(ctx, p, pkg, set, log)
 	}
 	if p.info != nil && p.info.homepage != "" {
@@ -1931,7 +1991,7 @@ func (w *Web) candidateRoots(ctx context.Context, p *project, log *resolveLog) [
 	}
 	out := set.sorted()
 	if len(out) > 0 {
-		log.offer(p.key)
+		log.offer(p.key, slices.ContainsFunc(out, func(c rootCandidate) bool { return !indexHosted(c.url) }))
 	}
 	return out
 }
@@ -1955,6 +2015,26 @@ func (w *Web) pkgCandidates(ctx context.Context, p *project, pkg pkgInfo, set *c
 	}
 	if pkg.homepage != "" {
 		w.homepageCandidates(ctx, p, pkg.homepage, src, evPkgHomepage, set, log)
+	}
+	if pkg.docsURL == "" && pkg.pageURL != "" {
+		pageCandidate(pkg.pageURL, src, set)
+	}
+}
+
+// pageCandidate puts forward the docs root above a page the metadata
+// publishes besides its docs URL (a changelog), when the page sits in a
+// versioned docs tree (marshmallow's Changelog at
+// marshmallow.readthedocs.io/en/latest/changelog.html): the owner names a
+// page of those docs, as good as naming the root. A page elsewhere (a
+// CHANGELOG.md on GitHub, a site's /changes) names no docs root.
+func pageCandidate(raw, src string, set *candidateSet) {
+	u, reason := checkMetaURL(raw)
+	if reason != "" || isRegistryHost(u) || isNonDocsHost(u.Hostname()) {
+		return
+	}
+	if root := docsRootOf(u); root.String() != u.String() {
+		set.add(root, false, false, &evidence{kind: evPkgDocs, detail: src + " lists a page under it (" + u.String() + ")"})
+		set.namedBy(root, u)
 	}
 }
 
@@ -3048,6 +3128,12 @@ func (r *resolution) pruneDominated(groups []matchGroup) []matchGroup {
 //     PyPI's Clap on pythonhosted.org beside clap-rs/clap). Not when
 //     GitHub failed to report the count (starsUnread): a rate limit says
 //     nothing about the project, which may be the popular one.
+//   - A project whose only docs a package index hosts, with a known count,
+//     blocks a top project with a docs site of its own only when it is at
+//     least as popular (decision-15): every published crate and module has
+//     such docs, so they show publication, not that the name means it. A
+//     popular library is not refused for a namesake it outweighs (arrow's
+//     site beside crates' arrow on docs.rs).
 //
 // Two projects with known, modest counts (900 and 300) stay ambiguous.
 func dominant(ms []webMatch) (int, bool) {
@@ -3067,6 +3153,10 @@ func dominant(ms []webMatch) (int, bool) {
 	for i, m := range ms {
 		switch {
 		case i == top:
+		case m.stars >= 0 && m.indexOnly && !t.indexOnly:
+			if m.stars >= t.stars {
+				return 0, false
+			}
 		case m.stars >= 0:
 			if t.stars < dominanceRatio*m.stars {
 				return 0, false

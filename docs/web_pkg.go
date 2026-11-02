@@ -631,6 +631,8 @@ var pypiLabels = map[string][]string{
 	"homepage":      {"homepage"},
 	// PEP 753's source aliases, plus "code" and "repo", which projects use.
 	"source": {"source", "repository", "sourcecode", "github", "code", "repo"},
+	// PEP 753's changelog aliases: a page of the project's docs, often.
+	"changelog": {"changelog", "changes", "history", "releasenotes", "news", "whatsnew"},
 }
 
 func (c *pkgClient) lookupPyPI(ctx context.Context, name string) (pkgInfo, error) {
@@ -652,6 +654,7 @@ func (c *pkgClient) lookupPyPI(ctx context.Context, name string) (pkgInfo, error
 		homepage: firstNonEmpty(urls["homepage"], metaText(info.HomePage)),
 		docsURL:  firstNonEmpty(urls["documentation"], metaText(info.DocsURL)),
 		repoURL:  urls["source"],
+		pageURL:  urls["changelog"],
 	}
 	if p.name == "" {
 		p.name = name

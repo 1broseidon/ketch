@@ -55,6 +55,18 @@ type querySplit struct {
 	// exact registry name, a verified site and trust >= 5. Set for
 	// candidates guessed by joining two query words ("react router").
 	strict bool
+	// from and to are the reading's words, query words [from, to): a
+	// reading spanning another's is the more specific one.
+	from, to int
+	// common marks a name that is a common English or programming word,
+	// which registry existence alone does not make a library
+	// (commonWordBar).
+	common bool
+	// lean marks a common word's reading beside a reading that names a
+	// library outright: it is resolved from the registries alone, tried
+	// once, so it neither spends the shared rate limits of the web search
+	// and pkg.go.dev nor holds up the stronger reading behind them.
+	lean bool
 }
 
 // repoKey identifies a GitHub repository. Both parts are lower-cased, so
@@ -83,7 +95,11 @@ type pkgInfo struct {
 	// URL the metadata labels as documentation (PyPI Documentation keys,
 	// crates documentation); homepage may well be a GitHub page.
 	homepage, docsURL, repoURL string
-	repo                       repoKey // parsed from repoURL; zero when it is not a GitHub repo
+	// pageURL is another page the metadata publishes on the project's own
+	// site (PyPI's Changelog), "" for none: under a versioned docs tree
+	// (/en/latest/changelog.html) it names that tree's root.
+	pageURL string
+	repo    repoKey // parsed from repoURL; zero when it is not a GitHub repo
 	// registryDocs is the docs the registry hosts for the package:
 	// https://docs.rs/<crate>/latest/<ident>/, https://pkg.go.dev/<module>;
 	// "" for registries that host none.

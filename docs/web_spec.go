@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -291,32 +292,114 @@ func registriesFor(spec libSpec) []ecosystem {
 	return out
 }
 
-// Splitting bare queries (plan §3).
+// Splitting bare queries (plan §3, decision-15).
+//
+// A bare query names its library somewhere among its words, and most of
+// its words name no library: they are the question. Registry existence
+// says nothing about which word is the name (npm has set, parse and add;
+// crates.io has best), so a word becomes a reading only where the query's
+// syntax puts a name:
+//
+//   - an explicit spec token (a URL, eco:name, name@version, @scope/pkg, a
+//     module path, owner/repo);
+//   - in a sentence (a question, or a query ending in "?"), the topic it
+//     opens with ("django: how ...", "In Django, how ...", "pandas how to
+//     ..."), the object of a closing "in/with/using/for/via X" ("... in
+//     requests", "with the stripe api"), of "use X", a word before
+//     "library", "package",
+//     "framework" and the like, a possessive ("react's"), and, only when
+//     none of those names one, the subject right after an auxiliary ("how
+//     does tokio ...", "is httpx ..."). The first word after "how do I" or
+//     "how to" is the verb of the question, never a name;
+//   - in a keyword query (no question opener), its first word ("flask
+//     blueprint url prefix"), unless the next word is an article or a
+//     particle, which makes it an imperative verb ("parse a date ...", "set
+//     up logging ..."); and a closing "in/with/... X" as in a sentence.
+//
+// Never a reading: a programming language or ecosystem word (python,
+// rust, npm), which names a language the query is about, and a
+// camel-case identifier such as useState or createSignal, which names an
+// API. A reading whose name is a common English or programming word is
+// marked common: it names a library only past commonWordBar.
 
-// queryFiller are words a question opens with before it names anything,
-// beside webStopwords: question words, auxiliaries and pronouns.
-var queryFiller = map[string]bool{
-	"why": true, "when": true, "where": true, "which": true, "who": true, "whats": true, "hows": true,
-	"does": true, "did": true, "should": true, "would": true, "could": true, "will": true, "shall": true,
-	"am": true, "was": true, "were": true, "there": true, "way": true, "any": true, "some": true,
-	"me": true, "we": true, "you": true, "use": true, "using": true, "need": true, "want": true, "please": true,
+// sentenceOpeners are the first words of a question or a first-person
+// request: question words, auxiliaries and subject pronouns.
+var sentenceOpeners = wordSet(`how hows what whats why when where which who whom whose
+	can could should would will shall may might must is are am was were does do did doe
+	i im ive id we lets`)
+
+// linkWords introduce the library closing a query: "... in requests",
+// "... with zod", "... using tenacity".
+var linkWords = wordSet(`in with using for via`)
+
+// kindLinkWords introduce a library only before a kind noun: "add
+// middleware to an express app", "import it from the lodash package".
+var kindLinkWords = wordSet(`to into on from inside`)
+
+// kindNouns are the nouns that say the word before them names a software
+// thing: "the stripe api", "a django project", "a vue component".
+var kindNouns = wordSet(`library libraries lib libs package packages pkg module modules framework frameworks
+	crate crates sdk api apis app apps application applications project projects component components
+	server client plugin plugins docs documentation codebase cli`)
+
+// isKindNoun reports a kind noun, singular or plural.
+func isKindNoun(w string) bool {
+	k := queryWordKey(w)
+	return kindNouns[k] || kindNouns[stem(k)]
 }
 
-// queryLinkWords introduce the library at the end of a question: "... in
-// requests".
-var queryLinkWords = map[string]bool{"in": true, "with": true, "using": true, "for": true}
+// libKindNouns are the kind nouns that name a library outright, wherever
+// they stand: "the requests library", "the clap crate".
+var libKindNouns = wordSet(`library lib package module framework crate sdk plugin`)
+
+// queryDeterminers stand between a link word and its object, and after a
+// verb: an imperative's first word is followed by one ("parse a date").
+var queryDeterminers = wordSet(`a an the my your our their its this that these those some all each every
+	any multiple several another`)
+
+// queryParticles follow a phrasal verb: "set up", "spin off", "log out".
+var queryParticles = wordSet(`up out off down over away back`)
+
+// queryPronouns are subjects: the word after one is a verb.
+var queryPronouns = wordSet(`i we you they he she it one`)
+
+// useWords take the tool a question is about as their object: "use X".
+var useWords = wordSet(`use using uses`)
+
+// auxWords put a subject right after them: "how does tokio select work".
+var auxWords = wordSet(`does do did is are was were can could should would will doe`)
+
+// languageWords name a programming language, runtime or package ecosystem:
+// a query names its library's language with them ("... in python"), never
+// the library. queryEcoWords are among them.
+var languageWords = wordSet(`python python3 py javascript js typescript ts node nodejs deno bun rust golang go
+	java kotlin scala swift ruby php perl csharp cpp c html css sql bash shell zsh powershell lua elixir erlang
+	haskell dart r julia npm pypi pip cargo crate crates`)
+
+// apiIdentRe is a camel-case identifier with a lower-case word first
+// (useState, createSignal, formatDistanceToNow): an API's name. A single
+// lower-case letter first (jQuery, iOS) is a product's way of writing its
+// name, not an identifier.
+var apiIdentRe = regexp.MustCompile(`^[a-z]{2,}[a-z0-9]*[A-Z]`)
 
 // plainWordRe is a word the hyphen-join guess may use.
 var plainWordRe = regexp.MustCompile(`^[a-z0-9]+$`)
 
 const maxQuerySplits = 3
 
+// wordSet is a set of the whitespace-separated words of s.
+func wordSet(s string) map[string]bool {
+	m := map[string]bool{}
+	for _, w := range strings.Fields(s) {
+		m[w] = true
+	}
+	return m
+}
+
 // splitLibraryQuery reads a bare docs query as at most three library
-// candidates, in priority order (plan §3): an explicit spec token alone;
-// else a trailing "in|with|using|for <tok>" after leading filler; the first
-// two remaining words hyphen-joined (strict); the first remaining word,
-// also without a .js suffix. Each candidate leaves at least one
-// non-stopword in its query; nil when no reading does.
+// readings, in priority order: an explicit spec token alone; else the
+// readings the query's syntax gives its words (see above). Each reading
+// leaves at least one non-stopword in its query; nil when none does.
 //
 // An unprefixed owner/repo token is the one weak explicit spec:
 // "async/await" and "app/page.tsx" have its shape. It goes first, and the
@@ -331,14 +414,26 @@ func splitLibraryQuery(q string) []querySplit {
 		}
 		var out []querySplit
 		if rest := joinWithout(words, i, i+1); hasQueryTerms(rest) {
-			out = append(out, querySplit{spec: spec, query: rest})
+			out = append(out, querySplit{spec: spec, query: rest, from: i, to: i + 1})
 		}
 		if spec.eco == ecoGitHub && !strings.Contains(spec.raw, ":") {
 			out = append(out, wordSplits(words)...)
 		}
-		return capSplits(out)
+		return leanCommon(capSplits(out))
 	}
-	return capSplits(wordSplits(words))
+	return leanCommon(capSplits(wordSplits(words)))
+}
+
+// leanCommon marks the common words' readings lean when another reading,
+// not a guess, names a library by an uncommon word.
+func leanCommon(splits []querySplit) []querySplit {
+	if !slices.ContainsFunc(splits, func(s querySplit) bool { return !s.common && !s.strict }) {
+		return splits
+	}
+	for i := range splits {
+		splits[i].lean = splits[i].common
+	}
+	return splits
 }
 
 // explicitSpec parses a query word as a spec that is more than a bare
@@ -361,48 +456,219 @@ func explicitSpec(w string) (libSpec, bool) {
 	return spec, spec.eco != ecoAny
 }
 
-// wordSplits are the readings of a query with no explicit spec: the
-// trailing "in <tok>" after filler, the hyphen-joined first two words, the
-// first word and its .js stem.
+// queryReader collects a query's word readings.
+type queryReader struct {
+	words []string
+	out   []querySplit
+}
+
+// wordSplits are the readings of a query with no explicit spec, in
+// priority order: for a sentence the named ones; for a keyword query the
+// hyphen-joined first two words, the first word and its .js stem, then a
+// closing "in X".
 func wordSplits(words []string) []querySplit {
+	r := &queryReader{words: words}
 	start := 0
 	for start < len(words) && isQueryFiller(words[start]) {
 		start++
 	}
-	var out []querySplit
-	add := func(name string, strict bool, from, to int) {
-		if s, ok := wordSplit(words, name, strict, from, to); ok {
-			out = append(out, s)
+	if isSentence(words) {
+		r.topic()
+		r.linkObject()
+		r.useObjects()
+		r.kindNamed()
+		r.possessives()
+		if len(r.out) == 0 {
+			r.auxSubject()
 		}
+		return r.out
 	}
-	n := len(words)
-	if start > 0 && n-2 > start && queryLinkWords[strings.ToLower(words[n-2])] {
-		add(cleanQueryWord(words[n-1]), false, n-2, n)
-	}
-	if name, ok := hyphenJoin(words, start); ok {
-		add(name, true, start, start+2)
-	}
-	if start < n {
-		first := cleanQueryWord(words[start])
-		add(first, false, start, start+1)
-		add(trimJSSuffix(first), false, start, start+1) // capSplits drops it when there is no suffix
-	}
-	return out
+	r.head(start)
+	r.linkObject()
+	r.kindNamed()
+	r.possessives()
+	return r.out
 }
 
-// wordSplit reads name as the library and the query without
-// words[from:to]; false when name is not a bare name or nothing is left
-// to search for.
-func wordSplit(words []string, name string, strict bool, from, to int) (querySplit, bool) {
+// isSentence reports a query written as a question or a first-person
+// request: it opens with a question word, an auxiliary or a subject
+// pronoun, or ends in "?".
+func isSentence(words []string) bool {
+	if len(words) == 0 {
+		return false
+	}
+	return strings.HasSuffix(words[len(words)-1], "?") || sentenceOpeners[queryWordKey(words[0])]
+}
+
+// queryWordKey is a word as the word lists hold it: lower case, without
+// the punctuation and apostrophes it picks up in a sentence.
+func queryWordKey(w string) string {
+	k := strings.ToLower(cleanQueryWord(w))
+	return strings.NewReplacer("'", "", "’", "").Replace(k)
+}
+
+// topic reads the words a question opens with before it asks: a label
+// ("django: how do I ..."), a phrase "in/with/for X," ("In Django, how do
+// I ..."), or a word right before the question word ("pandas how to merge
+// ..."). The question that follows is about it.
+func (r *queryReader) topic() {
+	n := len(r.words)
+	if n < 2 {
+		return
+	}
+	first := r.words[0]
+	switch {
+	case linkWords[queryWordKey(first)] && nameLike(r.words[1]) && (strings.HasSuffix(r.words[1], ",") || n > 2 && sentenceOpeners[queryWordKey(r.words[2])]):
+		r.add(cleanQueryWord(r.words[1]), false, 1, 2, 0, 2)
+	case !sentenceOpeners[queryWordKey(first)] && nameLike(first) && (strings.HasSuffix(first, ":") || sentenceOpeners[queryWordKey(r.words[1])]):
+		r.add(cleanQueryWord(first), false, 0, 1, 0, 1)
+	}
+}
+
+// head reads a keyword query's first word (from start, past filler), and
+// it joined with the next, unless the next word makes it a verb.
+func (r *queryReader) head(start int) {
+	n := len(r.words)
+	if start >= n {
+		return
+	}
+	if start+1 < n {
+		next := queryWordKey(r.words[start+1])
+		if queryDeterminers[next] || queryParticles[next] {
+			return // "parse a date ...", "set up logging ...": an imperative verb
+		}
+	}
+	if name, ok := hyphenJoin(r.words, start); ok && nameLike(r.words[start]) && nameLike(r.words[start+1]) {
+		r.add(name, true, start, start+2, start, start+2)
+	}
+	if first := cleanQueryWord(r.words[start]); nameLike(first) {
+		r.add(first, false, start, start+1, start, start+1)
+		r.add(trimJSSuffix(first), false, start, start+1, start, start+1) // capSplits drops it when there is no suffix
+	}
+}
+
+// linkObject reads the object closing the query after a link word, an
+// article between them and a kind noun after it allowed: "in requests",
+// "with the stripe api", "to an express app". Two words there ("in react
+// router") are a hyphen-joined guess.
+func (r *queryReader) linkObject() {
+	n := len(r.words)
+	end := n
+	kind := end > 0 && isKindNoun(r.words[end-1])
+	if kind {
+		end--
+	}
+	if i, ok := r.linkBefore(end-1, kind); ok && nameLike(r.words[end-1]) {
+		r.add(cleanQueryWord(r.words[end-1]), false, end-1, end, i, end)
+		r.add(trimJSSuffix(cleanQueryWord(r.words[end-1])), false, end-1, end, i, end)
+		return
+	}
+	if i, ok := r.linkBefore(end-2, kind); ok && nameLike(r.words[end-2]) && nameLike(r.words[end-1]) {
+		if name, ok := hyphenJoin(r.words, end-2); ok {
+			r.add(name, true, end-2, end, i, end)
+		}
+	}
+}
+
+// linkBefore is the index of the link word governing the object at j,
+// with an article between them allowed; a kind link word ("to") counts
+// only before a kind noun.
+func (r *queryReader) linkBefore(j int, kind bool) (int, bool) {
+	i := j - 1
+	if i >= 0 && queryDeterminers[queryWordKey(r.words[i])] {
+		i--
+	}
+	if j < 1 || i < 0 {
+		return 0, false
+	}
+	w := queryWordKey(r.words[i])
+	return i, linkWords[w] || kind && kindLinkWords[w]
+}
+
+// useObjects reads the object of "use X" ("how do I use zod to ...").
+func (r *queryReader) useObjects() {
+	for i := 0; i+1 < len(r.words); i++ {
+		if !useWords[queryWordKey(r.words[i])] {
+			continue
+		}
+		j := i + 1
+		if queryDeterminers[queryWordKey(r.words[j])] && j+1 < len(r.words) {
+			j++
+		}
+		if nameLike(r.words[j]) {
+			r.add(cleanQueryWord(r.words[j]), false, j, j+1, j, j+1)
+		}
+	}
+}
+
+// kindNamed reads the word before a noun that names a library: "the
+// requests library", "the clap crate".
+func (r *queryReader) kindNamed() {
+	for j := 0; j+1 < len(r.words); j++ {
+		if libKindNouns[queryWordKey(r.words[j+1])] && nameLike(r.words[j]) {
+			r.add(cleanQueryWord(r.words[j]), false, j, j+1, j, j+1)
+		}
+	}
+}
+
+// possessives reads a possessive: "react's useEffect".
+func (r *queryReader) possessives() {
+	for j, w := range r.words {
+		c := cleanQueryWord(w)
+		for _, suffix := range []string{"'s", "’s"} {
+			if stem, ok := strings.CutSuffix(c, suffix); ok && nameLike(stem) {
+				r.add(stem, false, j, j+1, j, j+1)
+			}
+		}
+	}
+}
+
+// auxSubject reads the subject right after an auxiliary near the start of
+// a question: "how does tokio select work", "is httpx async". An article
+// or pronoun there ("what is the best way", "how do I") means no name.
+func (r *queryReader) auxSubject() {
+	for i := 0; i+1 < len(r.words) && i < 3; i++ {
+		if !auxWords[queryWordKey(r.words[i])] {
+			continue
+		}
+		if next := r.words[i+1]; nameLike(next) {
+			r.add(cleanQueryWord(next), false, i+1, i+2, i+1, i+2)
+		}
+		return
+	}
+}
+
+// add reads name as the library over words [from, to), searching the
+// query without words [cutFrom, cutTo); nothing when name is not a bare
+// name or nothing is left to search for.
+func (r *queryReader) add(name string, strict bool, from, to, cutFrom, cutTo int) {
 	spec, err := parseLibSpec(name)
 	if err != nil || spec.eco != ecoAny || spec.version != "" {
-		return querySplit{}, false
+		return
 	}
-	rest := joinWithout(words, from, to)
+	rest := joinWithout(r.words, cutFrom, cutTo)
 	if !hasQueryTerms(rest) {
-		return querySplit{}, false
+		return
 	}
-	return querySplit{spec: spec, query: rest, strict: strict}, true
+	r.out = append(r.out, querySplit{spec: spec, query: rest, strict: strict, from: from, to: to,
+		common: !strict && isCommonWord(name)})
+}
+
+// nameLike reports a query word that can be a library's name: a bare
+// name of two or more characters that is not filler, an article, a
+// pronoun, a language word, a number or an API identifier.
+func nameLike(w string) bool {
+	c := cleanQueryWord(w)
+	k := queryWordKey(w)
+	switch {
+	case len(c) < 2 || isBareInt(c), !bareNameRe.MatchString(c):
+		return false
+	case isQueryFiller(c), queryDeterminers[k], queryPronouns[k], languageWords[k], languageWords[strings.ToLower(trimJSSuffix(c))]:
+		return false
+	case apiIdentRe.MatchString(c):
+		return false
+	}
+	return true
 }
 
 // hyphenJoin is the first two words from start joined with "-" ("react
@@ -412,7 +678,7 @@ func hyphenJoin(words []string, start int) (string, bool) {
 		return "", false
 	}
 	a, b := strings.ToLower(cleanQueryWord(words[start])), strings.ToLower(cleanQueryWord(words[start+1]))
-	ok := plainWordRe.MatchString(a) && plainWordRe.MatchString(b) && !isQueryFiller(b) && !queryLinkWords[b]
+	ok := plainWordRe.MatchString(a) && plainWordRe.MatchString(b) && !isQueryFiller(b) && !linkWords[b]
 	return a + "-" + b, ok
 }
 
@@ -454,9 +720,17 @@ func cleanQueryWord(w string) string {
 
 // isQueryFiller reports a word that names nothing: a stopword or filler.
 func isQueryFiller(w string) bool {
-	k := strings.ToLower(cleanQueryWord(w))
-	k = strings.NewReplacer("'", "", "’", "").Replace(k)
+	k := queryWordKey(w)
 	return webStopwords[k] || webStopwords[stem(k)] || queryFiller[k]
+}
+
+// queryFiller are words a question opens with before it names anything,
+// beside webStopwords: question words, auxiliaries and pronouns.
+var queryFiller = map[string]bool{
+	"why": true, "when": true, "where": true, "which": true, "who": true, "whats": true, "hows": true,
+	"does": true, "did": true, "should": true, "would": true, "could": true, "will": true, "shall": true,
+	"am": true, "was": true, "were": true, "there": true, "way": true, "any": true, "some": true,
+	"me": true, "we": true, "you": true, "use": true, "using": true, "need": true, "want": true, "please": true,
 }
 
 // hasQueryTerms reports a query with a word worth searching for.
