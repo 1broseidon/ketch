@@ -1,0 +1,206 @@
+[
+ {
+  "url": "https://pkg.go.dev/github.com/Nigel2392/go-django/",
+  "status": 429,
+  "headers": {
+   "Content-Type": "text/html; charset=UTF-8"
+  },
+  "body": "000"
+ },
+ {
+  "url": "https://docs.djangoproject.com/",
+  "status": 302,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8",
+   "Location": "https://docs.djangoproject.com/en/6.1/"
+  },
+  "body": "001"
+ },
+ {
+  "url": "https://docs.djangoproject.com/en/6.1/llms.txt/",
+  "status": 404,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8"
+  },
+  "body": "002"
+ },
+ {
+  "url": "https://proxy.golang.org/github.com/nigel2392/go-django/@latest",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "003"
+ },
+ {
+  "url": "https://dev.to/",
+  "status": 200,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8"
+  },
+  "body": "004"
+ },
+ {
+  "url": "https://registry.npmjs.org/go-django-js/latest",
+  "status": 404,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "005"
+ },
+ {
+  "url": "https://pypistats.org/api/packages/django/recent",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "006"
+ },
+ {
+  "url": "https://registry.npmjs.org/go-django/latest",
+  "status": 404,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "007"
+ },
+ {
+  "url": "https://proxy.golang.org/github.com/!nigel2392/go-django/@latest",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "008"
+ },
+ {
+  "url": "https://docs.djangoproject.com/llms.txt",
+  "status": 301,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8",
+   "Location": "/llms.txt/"
+  },
+  "body": "009"
+ },
+ {
+  "url": "https://pkg.go.dev/github.com/Nigel2392/go-django",
+  "status": 429,
+  "headers": {
+   "Content-Type": "text/html; charset=UTF-8"
+  },
+  "body": "010"
+ },
+ {
+  "url": "https://docs.djangoproject.com/en/6.1/llms.txt",
+  "status": 301,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8",
+   "Location": "/en/6.1/llms.txt/"
+  },
+  "body": "011"
+ },
+ {
+  "url": "https://pypi.org/pypi/django/json",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "012"
+ },
+ {
+  "url": "https://registry.npmjs.org/django/latest",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "013"
+ },
+ {
+  "url": "https://pkg.go.dev/search?m=package&q=django",
+  "status": 200,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8"
+  },
+  "body": "014"
+ },
+ {
+  "url": "https://registry.npmjs.org/go-djangojs/latest",
+  "status": 404,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "015"
+ },
+ {
+  "url": "https://pkg.go.dev/v1/module/github.com/nigel2392/go-django",
+  "status": 404,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "016"
+ },
+ {
+  "url": "https://pypi.org/pypi/go-django/json",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "017"
+ },
+ {
+  "url": "https://www.djangoproject.com/",
+  "status": 200,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8"
+  },
+  "body": "018"
+ },
+ {
+  "url": "http://ljupcho.github.io/posts/",
+  "status": 404,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8"
+  },
+  "body": "019"
+ },
+ {
+  "url": "https://news.ycombinator.com/",
+  "status": 200,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8"
+  },
+  "body": "020"
+ },
+ {
+  "url": "https://crates.io/api/v1/crates/go-django?include=downloads",
+  "status": 404,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "021"
+ },
+ {
+  "url": "https://docs.djangoproject.com/en/6.1/",
+  "status": 200,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8"
+  },
+  "body": "022"
+ },
+ {
+  "url": "https://docs.djangoproject.com/llms.txt/",
+  "status": 302,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8",
+   "Location": "https://docs.djangoproject.com/en/6.1/"
+  },
+  "body": "023"
+ },
+ {
+  "url": "https://crates.io/api/v1/crates/django?include=downloads",
+  "status": 404,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "024"
+ }
+]

@@ -887,7 +887,7 @@ func TestResolveCapsVerifiedRoots(t *testing.T) {
 	raw["https://manyroots.dev/"] = html(`<!doctype html><html><head><title>Many</title></head><body>` + nav.String() + `</body></html>`)
 	f := &fakeFetcher{raw: raw}
 	pkgs := &fakePkgs{pkgs: map[string]pkgInfo{"npm:many": {eco: ecoNPM, name: "many", homepage: "https://manyroots.dev"}}}
-	w := resolverWeb(f, pkgs, nil, nil)
+	w := resolverWeb(f, pkgs, &fakeRepos{}, nil) // with GitHub: keyless, the shared domain is a second edge
 	if _, err := w.ResolveLibrary(context.Background(), "npm:many", 5); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("nav links alone (trust 2) verify nothing: %v", err)
 	}
@@ -1566,7 +1566,7 @@ func TestVetoes(t *testing.T) {
 	}{
 		{"not found", fmt.Errorf("x: %w", ErrNotFound), plain, 3, false},
 		{"a registry down", &upstreamError{registryFailed: true}, plain, 3, true},
-		{"a registry down for a guess", &upstreamError{registryFailed: true}, guess, 3, true},
+		{"a registry down for a guess (a 429 on a speculative reading)", &upstreamError{registryFailed: true}, guess, 3, false},
 		{"a known package's site down", &upstreamError{nameKnown: true, siteFailed: true}, plain, 3, true},
 		{"a known package's site down, for a guess", &upstreamError{nameKnown: true, siteFailed: true}, guess, 3, false},
 		{"a known package, GitHub rate-limited", &upstreamError{nameKnown: true}, plain, 3, false},

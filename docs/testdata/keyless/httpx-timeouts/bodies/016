@@ -1,0 +1,155 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `httpx` crate."><title>httpx - Rust</title><link rel="stylesheet" href="/-/rustdoc.static/normalize-9960930a.css"><link rel="stylesheet" href="/-/static/vendored.css?0-0-0-b08ae31424b673932017ef56007e3dd39ae6a25c-2026-10-30" media="all" /><link rel="stylesheet" href="/-/rustdoc.static/rustdoc-203241e4.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="/-/rustdoc.static/" data-current-crate="httpx" data-themes="" data-resource-suffix="-20260917-1.100.0-nightly-330d31712" data-rustdoc-version="1.100.0-nightly (330d31712 2026-09-17)" data-channel="nightly" data-search-js="search-b167f383.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-170eb4bf.js" ><script src="/-/rustdoc.static/storage-41dd4d93.js"></script><script defer src="../crates-20260917-1.100.0-nightly-330d31712.js"></script><script defer src="/-/rustdoc.static/main-1814ead3.js"></script><link rel="alternate icon" type="image/png" href="/-/rustdoc.static/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="/-/rustdoc.static/favicon-044be391.svg"><link rel="stylesheet" href="/-/static/rustdoc-2025-08-20.css?0-0-0-b08ae31424b673932017ef56007e3dd39ae6a25c-2026-10-30" media="all" /><link rel="stylesheet" href="/-/static/font-awesome.css?0-0-0-b08ae31424b673932017ef56007e3dd39ae6a25c-2026-10-30" media="all" />
+<link rel="search" href="/-/static/opensearch.xml" type="application/opensearchdescription+xml" title="Docs.rs" />
+</head><body>
+<div>
+ <div>
+ <div role="navigation" aria-label="Main navigation">
+ <form action="/releases/search"
+ method="GET"
+ id="nav-search-form">
+ <a href="/" aria-label="Docs.rs">
+ <span title="Docs.rs"><span aria-hidden="true"></span></span>
+ <span>Docs.rs</span>
+ </a><ul>
+ <li>
+ <a href="#" title="HTTP client library for rust">
+ <span aria-hidden="true"></span>
+ <span>httpx-0.0.1</span>
+ </a><div>
+ <ul>
+ <li id="crate-title">
+ httpx 0.0.1
+ <span id="clipboard" title="Copy crate name and version information"></span>
+ </li><li>
+ <a href="/httpx/0.0.1/httpx/" id="permalink" data-fragment="retain" title="Get a link to this specific version"><span aria-hidden="true"></span> Permalink
+ </a>
+ </li><li>
+ <a href="/crate/httpx/latest" title="See httpx in docs.rs">
+ <span aria-hidden="true"></span> Docs.rs crate page
+ </a>
+ </li><li>
+ <span><span aria-hidden="true"></span>
+ <a href="https://spdx.org/licenses/MIT">MIT</a></span>
+ </li><li>
+ <span title="Built with rustc 1.100.0-nightly (330d31712 2026-09-17)">
+ <span aria-hidden="true"></span> 18 September 2026
+ </span>
+ </li></ul>
+ <div>
+ <div>
+ <ul>
+ <li>Links</li>
+ <li>
+ <a href="https://github.com/httpx-rs/">
+ <span aria-hidden="true"></span> Homepage
+ </a>
+ </li><li>
+ <a href="https://github.com/httpx-rs/httpx-rs">
+ <span aria-hidden="true"></span> Repository
+ </a>
+ </li><li>
+ <a href="https://crates.io/crates/httpx" title="See httpx in crates.io">
+ <span aria-hidden="true"></span> crates.io
+ </a>
+ </li>
+ <li>
+ <a href="/crate/httpx/latest/source/" title="Browse source of httpx-0.0.1">
+ <span aria-hidden="true"></span> Source
+ </a>
+ </li>
+ </ul>
+ </div><div>
+ <ul id="topbar-owners">
+ <li>Owners</li><li>
+ <a href="https://crates.io/users/Lispython">
+ <span aria-hidden="true"></span> Lispython
+ </a>
+ </li></ul>
+ </div>
+ </div>
+ <div>
+ <div>
+ <ul>
+ <li>Dependencies</li>
+ <li>
+ <div tabindex="-1">
+ <ul>
+ </ul>
+ </div>
+ </li>
+ </ul>
+ </div>
+ <div>
+ <ul>
+ <li>Versions</li>
+ <li>
+ <div id="releases-list" tabindex="-1" data-url="/crate/httpx/latest/menus/releases/httpx/">
+ <span><span aria-hidden="true"></span></span>
+ </div>
+ </li>
+ </ul>
+ </div>
+ </div>
+ <div>
+ <div>
+ <ul>
+ <li>
+ <a href="/crate/httpx/latest">
+ <b>0%</b>
+ of the crate is documented
+ </a>
+ </li>
+ </ul>
+ </div>
+ </div></div>
+ </li><li>
+ <a href="#" aria-label="Platform">
+ <span aria-hidden="true"></span>
+ <span>Platform</span>
+ </a>
+ <ul id="platforms" data-url="/crate/httpx/latest/menus/platforms/httpx/"><li>
+ <a href="/crate/httpx/latest/target-redirect/httpx/" data-fragment="retain" rel="nofollow">x86_64-unknown-linux-gnu</a>
+ </li></ul>
+ </li><li>
+ <a href="/crate/httpx/latest/features" title="Browse available feature flags of httpx-0.0.1">
+ <span aria-hidden="true"></span>
+ <span>Feature flags</span>
+ </a>
+ </li>
+ <li id="crate-warnings" data-url="/-/partial/crate-warnings/httpx/"></li>
+</ul><div></div>
+ <div id="abnormalities"></div>
+ <ul>
+ <li>
+ <a href="#" aria-label="docs.rs">docs.rs</a>
+ <ul><li><a href="/about"><span aria-hidden="true"></span> About docs.rs</a></li><li><a href="/about/badges"><span aria-hidden="true"></span> Badges</a></li><li><a href="/about/builds"><span aria-hidden="true"></span> Builds</a></li><li><a href="/about/metadata"><span aria-hidden="true"></span> Metadata</a></li><li><a href="/about/redirections"><span aria-hidden="true"></span> Shorthand URLs</a></li><li><a href="/about/download"><span aria-hidden="true"></span> Download</a></li><li><a href="/about/rustdoc-json"><span aria-hidden="true"></span> Rustdoc JSON</a></li><li><a href="/releases/queue"><span aria-hidden="true"></span> Build queue</a></li><li><a href="https://foundation.rust-lang.org/policies/privacy-policy/#docs.rs" target="_blank"><span aria-hidden="true"></span> Privacy policy</a></li>
+ </ul>
+ </li>
+ </ul>
+ <ul><li>
+ <a href="#" aria-label="Rust">Rust</a>
+ <ul>
+ <li><a href="https://www.rust-lang.org/" target="_blank">Rust website</a></li>
+ <li><a href="https://doc.rust-lang.org/book/" target="_blank">The Book</a></li>
+ <li><a href="https://doc.rust-lang.org/std/" target="_blank">Standard Library API Reference</a></li>
+ <li><a href="https://doc.rust-lang.org/rust-by-example/" target="_blank">Rust by Example</a></li>
+ <li><a href="https://doc.rust-lang.org/cargo/guide/" target="_blank">The Cargo Guide</a></li>
+ <li><a href="https://doc.rust-lang.org/nightly/clippy" target="_blank">Clippy Documentation</a></li>
+ </ul>
+ </li>
+ </ul>
+ <div id="search-input-nav">
+ <label for="nav-search">
+ <span aria-hidden="true"></span>
+ </label>
+ <input id="nav-search" name="query" type="text" aria-label="Find crate by search query" tabindex="-1"
+ placeholder="Find crate"
+ >
+ </div>
+ </form>
+ </div>
+ </div>
+</div>
+<div id="alerts"></div><div id="rustdoc_body_wrapper" tabindex="-1"><script async src="/-/static/menu.js?0-0-0-b08ae31424b673932017ef56007e3dd39ae6a25c-2026-10-30"></script>
+<script async src="/-/static/index.js?0-0-0-b08ae31424b673932017ef56007e3dd39ae6a25c-2026-10-30"></script>
+<iframe src="/-/storage-change-detection.html" width="0" height="0" style="display: none"></iframe><a href="#main-content">Skip to main content</a><rustdoc-topbar><h2><a href="#">Crate httpx</a></h2></rustdoc-topbar><nav><div><h2><a href="../httpx/index.html">httpx</a><span>0.0.1</span></h2></div><div><ul><li><a id="all-types" href="all.html">All Items</a></li></ul><div id="rustdoc-modnav"></div></div></nav><div title="Drag to resize sidebar"></div><main><div><section id="main-content" tabindex="-1"><div><h1>Crate <span>httpx</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span><a href="../src/httpx/lib.rs.html#1-7">Source</a> </span></div></section></div></main></div></body></html>

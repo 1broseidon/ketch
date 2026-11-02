@@ -48,3 +48,15 @@ type PageContent struct {
 type Deps struct {
 	Fetcher Fetcher
 }
+
+// ResolutionCache is an optional interface a Fetcher implements to keep the
+// web backend's resolved names: a verified library[@version] and the docs
+// root it resolved to, kept in the page cache under its normal TTL, so a
+// repeat query (how assistants work) skips resolution. Values are small
+// opaque strings; a miss, an expired entry or a fetcher without a cache is
+// ("", false). This is a cache of answers, not an index: nothing is seeded
+// and nothing outlives the TTL (ADR-0004).
+type ResolutionCache interface {
+	GetResolution(key string) (string, bool)
+	PutResolution(key, value string)
+}

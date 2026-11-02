@@ -23,6 +23,7 @@ import (
 	"golang.org/x/net/publicsuffix"
 
 	"github.com/1broseidon/ketch/httpx"
+	"github.com/1broseidon/ketch/search"
 )
 
 // Resolution budgets and caps (plan §4).
@@ -73,6 +74,12 @@ type project struct {
 	// link to: the hits named it, so they cannot vouch for themselves
 	// through it (relatedEvidence).
 	fromHits bool
+	// pop is the project's registry popularity in weekly downloads (or
+	// their equivalent, popularity.go), the keyless tie-break between
+	// same-name projects; popKnown says it was read, popErr why not.
+	pop      int64
+	popKnown bool
+	popErr   error
 }
 
 // label names the project in reasons: its first package ("pypi click"),
@@ -141,14 +148,38 @@ func (p *project) specs() []string {
 // unknown, whenever no count was read: the packages name no repository
 // (old PyPI packages often list only a homepage), it is hosted elsewhere
 // (GitLab), or GitHub was not asked, refused (a rate limit) or failed.
+//
+// In a keyless resolution, where GitHub is never asked, it is the
+// project's registry popularity in weekly downloads instead (popKnown,
+// web_popularity.go): the same role, decided the same way.
 func (p *project) stars() int {
 	switch {
 	case p.info != nil:
 		return p.info.stars
 	case p.repoGone:
 		return 0
+	case p.popKnown:
+		return int(min(p.pop, int64(maxWeight)))
 	}
 	return -1
+}
+
+// maxWeight caps a weight so it fits an int anywhere.
+const maxWeight = 1<<31 - 1
+
+// weightUnread reports a weight a source failed to report: GitHub's stars
+// (a rate limit, an outage), or, keyless, a registry's download count.
+func (p *project) weightUnread() bool {
+	return p.info == nil && (p.repoErr != nil || p.popErr != nil)
+}
+
+// weightText is a project's weight as an error states it: stars, or
+// weekly downloads in a keyless resolution.
+func weightText(p *project, n int) string {
+	if p != nil && (p.popKnown || p.popErr != nil) {
+		return popularityText(int64(n))
+	}
+	return starsText(n)
 }
 
 // authURL is a URL the project's own metadata publishes.
@@ -195,6 +226,11 @@ type rootCandidate struct {
 	// the root has no page of its own (playwright.dev/docs/ is a 404, its
 	// nav's /docs/intro is not); nil for none.
 	page *url.URL
+	// namedBy are the owner-published URLs (linkKey) that put the root
+	// forward: a docs URL naming it, a homepage that is it or links to it.
+	// They are the metadata edge itself, so none of them is also the DNS
+	// edge (relatedHostEvidence).
+	namedBy []string
 }
 
 // v4Only reports a candidate that only V4 can verify: on the project's
@@ -225,6 +261,7 @@ type webMatch struct {
 	starsUnread bool
 
 	registry bool         // registry-hosted docs
+	fromHit  bool         // a web search hit's root, which no metadata named
 	proj     *project     // nil for a docs URL the caller passed
 	prof     *siteProfile // the root's profile
 }
@@ -247,6 +284,9 @@ type resolveLog struct {
 
 	mu    sync.Mutex
 	limit *ghRateLimitError // GitHub's first refusal for its rate limit: ask it nothing more
+	// offered are the projects whose own metadata put a docs root
+	// forward (candidateRoots), verified or not, by key.
+	offered map[string]bool
 	// projects are every project the resolution considered, verified or
 	// not: where one library is needed, the pick is checked against those
 	// GitHub left unresolved (unreadBeside).
@@ -363,11 +403,18 @@ func (l *resolveLog) missedBeside(matched map[string]bool, sites bool) (whole []
 // codegangsta/gin's 4k. A count unknown for want of a repository (a
 // package naming none, or one on GitLab) ranks below any known count and
 // level with another unknown one, so a junk package's dead homepage beside
-// a pick with stars is no rival: the pick stands, with a note.
+// a pick with stars is no rival: the pick stands, with a note. Keyless, a
+// project whose download count could not be read (popErr) is a rival
+// whatever its count, as one GitHub did not answer for is.
 func rivals(pick webMatch, partial []missedSource) []missedSource {
 	var out []missedSource
 	for _, m := range partial {
-		if pick.indexOnly || m.proj == nil || m.proj.stars() >= pick.stars {
+		if m.proj != nil && m.proj.fromHits && !m.proj.exact && m.proj.info == nil {
+			// Keyless, a project a search hit named under another name
+			// (go-django beside django) is no library of the pick's name.
+			continue
+		}
+		if pick.indexOnly || m.proj == nil || m.proj.stars() >= pick.stars || m.proj.popErr != nil {
 			out = append(out, m)
 		}
 	}
@@ -420,6 +467,30 @@ func ownedBy(p, pick *project) bool {
 		}
 	}
 	return true
+}
+
+// offer records that p's metadata put a docs root forward.
+func (l *resolveLog) offer(key string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.offered == nil {
+		l.offered = map[string]bool{}
+	}
+	l.offered[key] = true
+}
+
+// hasOffered reports a project whose metadata put a docs root forward.
+func (l *resolveLog) hasOffered(key string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.offered[key]
+}
+
+// considered is every project the resolution looked at (consider).
+func (l *resolveLog) considered() []*project {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return slices.Clone(l.projects)
 }
 
 func (l *resolveLog) setLimited(err *ghRateLimitError) {
@@ -482,6 +553,7 @@ func logFetch(log *resolveLog, p *project, what string, err error) {
 type profileMemo struct {
 	mu    sync.Mutex
 	calls map[string]*profileCall
+	llms  map[string]*llmsCall // cachedLLMS
 }
 
 type profileCall struct {
@@ -536,6 +608,13 @@ type resolution struct {
 	// strict): only an exact package's own site can answer it, so GitHub
 	// and the web are never searched for it.
 	strict bool
+	// keyless marks a resolution without GitHub (Web.gh): projects keep
+	// their packages' claimed repositories, roots need two independent
+	// edges, and registry popularity stands in for stars.
+	keyless bool
+	// hint are the ecosystems the query or the working directory names
+	// (ecoHint), for a single-library context only; nil for none.
+	hint []ecosystem
 }
 
 // resolve finds the docs for spec (plan §4): every verified match, best
@@ -549,12 +628,16 @@ func (w *Web) resolve(ctx context.Context, spec libSpec, limit int) ([]webMatch,
 
 // resolveLogged is resolve recording into log.
 func (w *Web) resolveLogged(ctx context.Context, spec libSpec, limit int, log *resolveLog) ([]webMatch, error) {
-	return w.resolveRun(ctx, spec, limit, log, false)
+	return w.resolveRun(ctx, spec, limit, log, false, false)
 }
 
 // resolveRun is resolveLogged, strict for a bare query's guessed reading
 // (resolution.strict).
-func (w *Web) resolveRun(ctx context.Context, spec libSpec, limit int, log *resolveLog, strict bool) ([]webMatch, error) {
+//
+// pick marks a single-library context (resolveOne), where an ecosystem
+// hint may narrow a same-name contest; a listing (--resolve) keeps every
+// project.
+func (w *Web) resolveRun(ctx context.Context, spec libSpec, limit int, log *resolveLog, strict, pick bool) ([]webMatch, error) {
 	if spec.url != "" {
 		m, err := w.resolveURL(ctx, spec.url)
 		if err != nil {
@@ -568,7 +651,13 @@ func (w *Web) resolveRun(ctx context.Context, spec libSpec, limit int, log *reso
 	rctx, cancel := context.WithTimeout(publicHops(ctx), w.resolveTimeout)
 	defer cancel()
 	rctx = withProfileMemo(rctx)
-	r := &resolution{w: w, spec: spec, log: log, strict: strict}
+	if strict {
+		rctx = withSpeculative(rctx)
+	}
+	r := &resolution{w: w, spec: spec, log: log, strict: strict, keyless: w.gh() == nil}
+	if pick {
+		r.hint = w.ecoHint(ctx)
+	}
 	matches := r.run(rctx)
 	if len(matches) == 0 {
 		return nil, r.failure(ctx, rctx)
@@ -601,7 +690,15 @@ func finishErr(parent context.Context, err error) error {
 // run gathers and verifies, widening the search only while nothing has
 // verified: GitHub repository search when the registries came up short,
 // then the web search.
+//
+// A keyless resolution (no GitHub) makes the web search a candidate source
+// of its own: it runs beside the registries from the start, and its hits
+// are verified beside the registries' roots (keylessHits), never trusted
+// for being hits.
 func (r *resolution) run(ctx context.Context) []webMatch {
+	if r.keyless {
+		return r.runKeyless(ctx)
+	}
 	projects := r.w.gather(ctx, r.spec, r.log, !r.strict)
 	r.log.consider(projects...)
 	matches := r.verifyAll(ctx, projects)
@@ -663,6 +760,16 @@ func hasSite(matches []webMatch) bool {
 // library name with.
 func (w *Web) resolvesNames() bool { return w.pkgs != nil || w.repos != nil || w.sites != nil }
 
+// gh is the GitHub source when it may be asked (githubOn: a token is
+// configured), else nil: keyless resolution never calls GitHub, so its
+// anonymous quota can neither slow a resolution down nor veto a pick.
+func (w *Web) gh() repoSource {
+	if w.repos == nil || w.githubOn != nil && !w.githubOn() {
+		return nil
+	}
+	return w.repos
+}
+
 // errNoNameSources is the error for a name given to a backend built
 // without resolution sources (NewWeb).
 func errNoNameSources(name string) error {
@@ -672,24 +779,59 @@ func errNoNameSources(name string) error {
 // resolveOne resolves spec where exactly one library is needed (GetDocs
 // with a name, Search): resolve, then pickUnique. strict applies a strict
 // query split's bar (an exact registry name and strictMinTrust).
+//
+// A pick is kept in the resolution cache (web_rescache.go) when the
+// fetcher has one, and a repeat of the same spec, mode and hint answers
+// from it without resolving.
 func (w *Web) resolveOne(ctx context.Context, spec libSpec, strict bool) (webMatch, error) {
-	log := &resolveLog{}
-	matches, err := w.resolveRun(ctx, spec, 0, log, strict)
-	if err != nil {
-		return webMatch{}, err
+	var key string
+	if spec.url == "" && w.resolvesNames() {
+		key = resolutionKey(spec, strict, w.gh() == nil, w.ecoHint(ctx))
+		if m, ok := w.loadResolution(key); ok {
+			return m, nil
+		}
 	}
-	m, err := pickUnique(spec.raw, matches)
+	m, cacheable, err := w.resolveOnce(ctx, spec, strict)
+	if err == nil && cacheable && key != "" {
+		w.storeResolution(key, m)
+	}
+	return m, err
+}
+
+// resolveOnce is resolveOne without the cache. cacheable reports a pick
+// made with every source answering: one that stood past a source that
+// failed (with a note) is not kept, so the next call asks again.
+func (w *Web) resolveOnce(ctx context.Context, spec libSpec, strict bool) (m webMatch, cacheable bool, err error) {
+	log := &resolveLog{}
+	matches, err := w.resolveRun(ctx, spec, 0, log, strict, true)
 	if err != nil {
-		return webMatch{}, err
+		if strict && w.gh() == nil {
+			err = w.strictMiss(ctx, err, log)
+		}
+		return webMatch{}, false, err
+	}
+	m, err = pickUnique(spec.raw, matches)
+	if err != nil {
+		return webMatch{}, false, err
 	}
 	if m, err = answerPastFailures(spec, m, matches, log); err != nil {
-		return webMatch{}, err
+		return webMatch{}, false, err
+	}
+	if w.gh() == nil {
+		if err := w.keylessRivals(spec, m, matches, log, w.ecoHint(ctx)); err != nil {
+			return webMatch{}, false, err
+		}
 	}
 	if strict && (m.proj == nil || !m.proj.exact || m.registry || m.trust < strictMinTrust) {
-		return webMatch{}, fmt.Errorf("web: %q is a guess at a library name and %s (trust %.1f) does not prove it: a guess needs an exact package name, its own docs site and trust %.0f: %w",
+		err := fmt.Errorf("web: %q is a guess at a library name and %s (trust %.1f) does not prove it: a guess needs an exact package name, its own docs site and trust %.0f: %w",
 			spec.raw, m.root, m.trust, strictMinTrust, ErrNotFound)
+		if w.gh() == nil {
+			err = w.strictMiss(ctx, err, log)
+		}
+		return webMatch{}, false, err
 	}
-	return m, nil
+	_, failed := log.snapshot()
+	return m, len(failed) == 0, nil
 }
 
 // answerPastFailures checks the one library picked for spec against the
@@ -741,7 +883,7 @@ func answerPastFailures(spec libSpec, m webMatch, matches []webMatch, log *resol
 			spec.raw, m.root, joinErrors(missedErrs(rival)))
 	case len(rival) > 0:
 		msg = fmt.Sprintf("web: %q resolved to %s (%s), but %s did not answer (%s), which may be the library meant or outweigh it; retry, or pass the library you mean as a docs URL or package spec",
-			spec.raw, m.root, starsText(m.stars), rivalNames(rival), joinErrors(missedErrs(rival)))
+			spec.raw, m.root, weightText(m.proj, m.stars), rivalNames(rival), joinErrors(missedErrs(rival)))
 	default:
 		if len(partial) > 0 {
 			m.evidence = append(m.evidence, evidence{kind: evNote, detail: "not checked, so another library of this name may be missing: " + joinErrors(missedErrs(partial))})
@@ -765,7 +907,7 @@ func rivalNames(rival []missedSource) string {
 			names = append(names, r.project)
 			continue
 		}
-		names = append(names, fmt.Sprintf("%s (%s)", r.proj.label(), starsText(r.proj.stars())))
+		names = append(names, fmt.Sprintf("%s (%s)", r.proj.label(), weightText(r.proj, r.proj.stars())))
 	}
 	return strings.Join(uniqueStrings(names...), ", ")
 }
@@ -808,7 +950,11 @@ func (w *Web) gather(ctx context.Context, spec libSpec, log *resolveLog, search 
 	if spec.eco == ecoGitHub {
 		projects = githubProject(spec)
 	}
-	projects = corroborateClaims(spec, w.enrich(ctx, projects, log), log)
+	if w.gh() == nil {
+		projects = claimedProjects(spec, projects)
+	} else {
+		projects = corroborateClaims(spec, w.enrich(ctx, projects, log), log)
+	}
 	if spec.eco == ecoGitHub {
 		w.repoPackages(ctx, spec, projects, log)
 	}
@@ -845,11 +991,48 @@ func (w *Web) repoPackages(ctx context.Context, spec libSpec, projects []*projec
 	}
 	var wg sync.WaitGroup
 	for _, p := range projects {
+		if w.gh() == nil && len(p.pkgs) == 0 && !p.repo.isZero() {
+			// Keyless: GitHub cannot name the repository's language, so
+			// each registry is asked for a package named like it; only one
+			// that names the repository back is taken.
+			wg.Go(func() { w.addRepoPackages(ctx, spec, p, log) })
+			continue
+		}
 		if eco, name, ok := repoPackageName(spec, p); ok {
 			wg.Go(func() { w.addRepoPackage(ctx, spec, p, eco, name, log) })
 		}
 	}
 	wg.Wait()
+}
+
+// addRepoPackages is addRepoPackage in every registry, for a keyless
+// resolution: the Go module at the repository's path, and the npm, PyPI
+// and crates packages named like the repository, each kept only when it
+// names the repository back. They are looked up concurrently and kept in
+// registry order.
+func (w *Web) addRepoPackages(ctx context.Context, spec libSpec, p *project, log *resolveLog) {
+	tries := repoPackageTries(spec, p)
+	found := make([]*project, len(tries))
+	var wg sync.WaitGroup
+	for i, t := range tries {
+		wg.Go(func() {
+			q := &project{key: p.key, repo: p.repo, aliases: p.aliases, fromHits: p.fromHits}
+			w.addRepoPackage(ctx, spec, q, t.eco, t.name, log)
+			if len(q.pkgs) > 0 && t.eco == ecoGo && !w.realGoModule(ctx, t.name, log) {
+				return
+			}
+			if len(q.pkgs) > 0 {
+				found[i] = q
+			}
+		})
+	}
+	wg.Wait()
+	for _, q := range found {
+		if q != nil {
+			p.pkgs = append(p.pkgs, q.pkgs...)
+			p.exact = p.exact || q.exact
+		}
+	}
 }
 
 // repoPackageName is the package repoPackages looks up for p: in the
@@ -882,6 +1065,11 @@ func (w *Web) addRepoPackage(ctx context.Context, spec libSpec, p *project, eco 
 	case errors.Is(err, ErrNotFound):
 		log.reject("github %s: no %s package %s", p.repo, eco, name)
 		return
+	case err != nil && p.fromHits:
+		// A search hit only suggested the repository: its packages not
+		// answering hides nothing a registry was asked about.
+		log.reject("github %s: its %s package %s: %v", p.repo, eco, name, err)
+		return
 	case err != nil:
 		log.failFor(p, fmt.Errorf("github %s: its %s package %s: %w", p.repo, eco, name, err))
 		return
@@ -895,6 +1083,77 @@ func (w *Web) addRepoPackage(ctx context.Context, spec libSpec, p *project, eco 
 	p.exact = p.exact || exactName(spec, pkg)
 }
 
+// goModChecker is the optional pkgSource method realGoModule asks.
+type goModChecker interface {
+	hasGoMod(ctx context.Context, module string) (bool, error)
+}
+
+// realGoModule reports a module found at a repository's path that is a Go
+// library: pkg.go.dev records its go.mod (hasGoMod). A source that cannot
+// say (a test double) is taken at its word.
+func (w *Web) realGoModule(ctx context.Context, module string, log *resolveLog) bool {
+	gm, ok := w.pkgs.(goModChecker)
+	if !ok {
+		return true
+	}
+	has, err := gm.hasGoMod(ctx, module)
+	if err != nil || !has {
+		log.reject("go %s: no go.mod on pkg.go.dev, not a Go module (%v)", module, err)
+		return false
+	}
+	return true
+}
+
+// pkgTry is one package addRepoPackages looks up.
+type pkgTry struct {
+	eco  ecosystem
+	name string
+}
+
+// repoPackageTries are the packages addRepoPackages looks up for p's
+// repository: the Go module at its path, and the packages named like it
+// (repoPackageNames). A search hit's repository counts as a Go module only
+// when it is named as the library itself, not a namesake (go-react for
+// react), and a bare name's own packages, looked up already, are skipped.
+func repoPackageTries(spec libSpec, p *project) []pkgTry {
+	var tries []pkgTry
+	if !p.fromHits || strings.EqualFold(p.repo.name, searchName(spec)) {
+		tries = append(tries, pkgTry{ecoGo, "github.com/" + p.repo.String()})
+	}
+	for _, eco := range []ecosystem{ecoNPM, ecoPyPI, ecoCrates} {
+		for _, name := range repoPackageNames(eco, p.repo.name) {
+			if normalizeName(eco, name) == normalizeName(eco, spec.name) && spec.eco == ecoAny && len(p.pkgs) == 0 && p.fromHits {
+				continue
+			}
+			tries = append(tries, pkgTry{eco, name})
+		}
+	}
+	return tries
+}
+
+// repoPackageNames are the package names in eco a repository called repo
+// may publish under: the name itself, and on npm, where a short name is
+// often taken, solid-js and solidjs for solidjs/solid. Only valid names
+// for eco are listed.
+func repoPackageNames(eco ecosystem, repo string) []string {
+	n := strings.ToLower(repo)
+	names := []string{n}
+	if eco == ecoNPM && !strings.HasSuffix(n, "js") {
+		names = append(names, n+"-js", n+"js")
+	}
+	var out []string
+	for _, name := range names {
+		switch {
+		case eco == ecoNPM && !npmNameRe.MatchString(name),
+			eco == ecoPyPI && !pypiNameRe.MatchString(name),
+			eco == ecoCrates && !crateNameRe.MatchString(name):
+			continue
+		}
+		out = append(out, name)
+	}
+	return out
+}
+
 // registryProjects looks spec up in the registries it allows and groups
 // what they have by repository. Deprecated npm packages are dropped unless
 // the spec named npm.
@@ -905,7 +1164,7 @@ func (w *Web) registryProjects(ctx context.Context, spec libSpec, log *resolveLo
 	actx, cancel := context.WithTimeout(ctx, apiCallTimeout)
 	defer cancel()
 	var pkgs []pkgInfo
-	for _, l := range w.pkgs.lookupAll(actx, spec) {
+	for _, l := range w.lookupRegistries(actx, spec) {
 		label := string(l.eco) + " " + l.name
 		switch {
 		case errors.Is(l.err, ErrNotFound):
@@ -921,6 +1180,26 @@ func (w *Web) registryProjects(ctx context.Context, spec libSpec, log *resolveLo
 		}
 	}
 	return groupPackages(spec, pkgs)
+}
+
+// lookupRegistries is pkgSource.lookupAll, except that a guessed reading
+// (speculative) of a bare query with an ecosystem hint is looked up only
+// in the hinted registries: the hint settles the ecosystem, and probing
+// the others would only spend their rate limits on a guess.
+func (w *Web) lookupRegistries(ctx context.Context, spec libSpec) []pkgLookup {
+	hint := w.ecoHint(ctx)
+	if !speculative(ctx) || spec.eco != ecoAny || len(hint) == 0 {
+		return w.pkgs.lookupAll(ctx, spec)
+	}
+	ecos := slices.DeleteFunc(registriesFor(spec), func(e ecosystem) bool { return !slices.Contains(hint, e) })
+	out := make([]pkgLookup, len(ecos))
+	var wg sync.WaitGroup
+	for i, eco := range ecos {
+		out[i] = pkgLookup{eco: eco, name: lookupName(eco, spec.name)}
+		wg.Go(func() { out[i].info, out[i].err = w.pkgs.lookup(ctx, eco, out[i].name) })
+	}
+	wg.Wait()
+	return out
 }
 
 // groupPackages makes one project per repository the packages name, and
@@ -980,6 +1259,32 @@ func corroborateClaims(spec libSpec, projects []*project, log *resolveLog) []*pr
 			out = append(out, p)
 		}
 		out = append(out, alone...)
+	}
+	return out
+}
+
+// claimedProjects is corroborateClaims for a keyless resolution, where
+// GitHub cannot be asked whether a repository backs the packages naming
+// it: every package is a project of its own that keeps the repository its
+// metadata names, and nothing merges on that claim alone. The claim is
+// evidence only where the docs site agrees with it, by linking to that
+// repository (linkEvidence), never a reason to fold one package into
+// another's project; two packages that verify the same docs root still
+// become one library (mergeSameRoot).
+func claimedProjects(spec libSpec, projects []*project) []*project {
+	var out []*project
+	for _, p := range projects {
+		if len(p.pkgs) < 2 {
+			out = append(out, p)
+			continue
+		}
+		for _, pkg := range p.pkgs {
+			key := pkg.spec()
+			if pkg.eco == ecoGo {
+				key = p.key
+			}
+			out = append(out, &project{key: key, pkgs: []pkgInfo{pkg}, repo: pkg.repo, exact: exactName(spec, pkg), notes: slices.Clone(p.notes)})
+		}
 	}
 	return out
 }
@@ -1184,7 +1489,7 @@ func githubProject(spec libSpec) []*project {
 // renames, homepage, fork, archived, stars) and merges projects whose
 // repositories turn out to be one.
 func (w *Web) enrich(ctx context.Context, projects []*project, log *resolveLog) []*project {
-	if w.repos == nil {
+	if w.gh() == nil {
 		return projects
 	}
 	var wg sync.WaitGroup
@@ -1212,7 +1517,7 @@ func (w *Web) enrichOne(ctx context.Context, p *project, log *resolveLog) {
 	}
 	actx, cancel := context.WithTimeout(ctx, apiCallTimeout)
 	defer cancel()
-	info, err := w.repos.repo(actx, p.repo)
+	info, err := w.gh().repo(actx, p.repo)
 	if err != nil {
 		repoFailed(p, err, log)
 		return
@@ -1276,7 +1581,7 @@ func mergeProjects(projects []*project) []*project {
 // variant, nameVariants) and makes projects of the most-starred ones not
 // already known: forks and archived repositories are skipped.
 func (w *Web) searchProjects(ctx context.Context, spec libSpec, existing []*project, log *resolveLog) []*project {
-	if w.repos == nil || spec.eco != ecoAny {
+	if w.gh() == nil || spec.eco != ecoAny {
 		return nil
 	}
 	if limit := log.rateLimited(); limit != nil {
@@ -1287,7 +1592,7 @@ func (w *Web) searchProjects(ctx context.Context, spec libSpec, existing []*proj
 	}
 	actx, cancel := context.WithTimeout(ctx, apiCallTimeout)
 	defer cancel()
-	hits, err := w.repos.searchRepos(actx, spec.name, webSearchRepos)
+	hits, err := w.gh().searchRepos(actx, spec.name, webSearchRepos)
 	switch {
 	case errors.Is(err, errIncompleteSearch):
 		// GitHub cut the search short and answered with what it had: the
@@ -1509,6 +1814,30 @@ func (s *candidateSet) addNav(root, home *url.URL, ev *evidence) {
 	s.add(root, false, false, ev)
 }
 
+// namedBy records the owner-published URLs that put root forward
+// (rootCandidate.namedBy).
+func (s *candidateSet) namedBy(root *url.URL, by ...*url.URL) {
+	c := s.byKey[candidateKey(root)]
+	if c == nil {
+		return
+	}
+	for _, u := range by {
+		if u != nil && !slices.Contains(c.namedBy, linkKey(u)) {
+			c.namedBy = append(c.namedBy, linkKey(u))
+		}
+	}
+}
+
+// candidateKey is the key candidateSet files u's root under; "" when u is
+// not a docs root.
+func candidateKey(u *url.URL) string {
+	root, err := parseWebRoot(docsRootOf(u).String())
+	if err != nil {
+		return ""
+	}
+	return scopeHost(root.u) + root.prefix
+}
+
 // setPage records page as where root is read when it has no page of its
 // own (rootCandidate.page), unless one is recorded.
 func (s *candidateSet) setPage(root, page *url.URL) {
@@ -1542,7 +1871,7 @@ func (s *candidateSet) candidate(u *url.URL, like rootCandidate) *rootCandidate 
 	if s.byKey == nil {
 		s.byKey = map[string]*rootCandidate{}
 	}
-	k := scopeHost(root.u) + root.prefix
+	k := candidateKey(u)
 	c := s.byKey[k]
 	if c == nil {
 		like.url = root.u
@@ -1593,7 +1922,11 @@ func (w *Web) candidateRoots(ctx context.Context, p *project, log *resolveLog) [
 	if !listed {
 		log.reject("%s: lists no docs URL or homepage", p.label())
 	}
-	return set.sorted()
+	out := set.sorted()
+	if len(out) > 0 {
+		log.offer(p.key)
+	}
+	return out
 }
 
 // pkgCandidates adds one package's roots: its registry-hosted docs, its
@@ -1610,6 +1943,7 @@ func (w *Web) pkgCandidates(ctx context.Context, p *project, pkg pkgInfo, set *c
 			log.reject("%s: documentation URL %s", src, reason)
 		case !isRegistryHost(u):
 			set.add(u, false, false, &evidence{kind: evPkgDocs, detail: src + " lists it as Documentation"})
+			set.namedBy(u, u)
 		}
 	}
 	if pkg.homepage != "" {
@@ -1650,6 +1984,7 @@ func (w *Web) homepageCandidates(ctx context.Context, p *project, raw, src strin
 		return
 	}
 	for _, root := range roots {
+		set.namedBy(root, u, home)
 		if sameRoot(root, home) || sameRoot(root, u) {
 			set.add(root, false, false, &evidence{kind: kind, detail: src + " homepage"})
 		} else {
@@ -1781,9 +2116,15 @@ func (w *Web) verifyRoot(ctx context.Context, p *project, c rootCandidate) (webM
 	if c.registry {
 		root, prof = w.latestMajor(ctx, root, prof)
 	}
-	evs, err := rootEvidence(root, prof, p, c)
+	keyless := w.gh() == nil
+	evs, err := rootEvidence(root, prof, p, c, keyless)
 	if err != nil {
 		return webMatch{}, err
+	}
+	if keyless {
+		if evs, err = w.keylessEvidence(ctx, root, prof, p, c, evs); err != nil {
+			return webMatch{}, err
+		}
 	}
 	trust, ok := score(evs)
 	if !ok {
@@ -1791,8 +2132,8 @@ func (w *Web) verifyRoot(ctx context.Context, p *project, c rootCandidate) (webM
 	}
 	return webMatch{
 		root: root, title: siteTitle(prof, root), description: prof.description, trust: trust, evidence: evs,
-		packages: p.specs(), project: p.key, stars: p.stars(), starsUnread: p.info == nil && p.repoErr != nil,
-		registry: c.registry, proj: p, prof: prof,
+		packages: p.specs(), project: p.key, stars: p.stars(), starsUnread: p.weightUnread(),
+		registry: c.registry, fromHit: c.search, proj: p, prof: prof,
 	}, nil
 }
 
@@ -1980,17 +2321,28 @@ func searchRootOf(u *url.URL) *url.URL {
 // back-links, the project's standing and whether the site names it. A
 // root that links only to a same-named repository of another owner, or a
 // search hit or guessed root without V4's support, is rejected.
-func rootEvidence(root webRoot, prof *siteProfile, p *project, c rootCandidate) ([]evidence, error) {
+//
+// keyless (no GitHub) leaves V4 to keylessEvidence's two-edge rule, which
+// a mirror (a back-link alone) fails just the same, and lets a link to
+// the package's own registry page stand in for the repository back-link
+// an offsite docs link needs.
+func rootEvidence(root webRoot, prof *siteProfile, p *project, c rootCandidate, keyless bool) ([]evidence, error) {
 	evs := slices.Clone(c.evidence)
 	links, err := linkEvidence(root, prof, p)
 	if err != nil {
 		return nil, err
 	}
 	evs = append(evs, links...)
-	if c.offsite && !hasEvidence(links, evLinksRepo) {
+	if keyless && !c.registry {
+		links = append(links, packageEvidence(root, profileLinkURLs(prof), p, "the site")...)
+		evs = append(evs, links...)
+	}
+	if c.offsite && !hasEvidence(links, evLinksRepo) && !hasEvidence(links, evLinksPackage) {
 		return nil, rejectf("%s is on another domain than the homepage linking to it as its docs, and does not link back to %s", root, p.label())
 	}
-	if c.v4Only() {
+	if c.v4Only() && keyless {
+		evs = append(evs, relatedEvidence(root, p)...)
+	} else if c.v4Only() {
 		rel := relatedEvidence(root, p)
 		if err := v4Verdict(root, p, c, rel, links); err != nil {
 			return nil, err
@@ -2231,7 +2583,16 @@ func (w *Web) movedRoot(ctx context.Context, root webRoot, prof *siteProfile) (w
 	if links, err := linkEvidence(next, prof, p); err != nil || !hasEvidence(links, evLinksRepo) {
 		return webRoot{}, evidence{}, false
 	}
-	return next, evidence{kind: evNote, detail: fmt.Sprintf("%s moved to %s, the docs github %s names as its homepage", root, next, p.repo)}, true
+	return next, evidence{kind: evNote, detail: fmt.Sprintf("%s moved to %s, %s", root, next, movedWhy(p))}, true
+}
+
+// movedWhy says what vouches for a moved docs root: the repository's
+// GitHub homepage, or keyless, the package naming it.
+func movedWhy(p *project) string {
+	if p.info == nil && len(p.notes) > 0 {
+		return "the docs " + p.notes[0].detail
+	}
+	return fmt.Sprintf("the docs github %s names as its homepage", p.repo)
 }
 
 // describeURL adds a docs URL's versions and evidence: a repository the
@@ -2245,7 +2606,11 @@ func (w *Web) describeURL(ctx context.Context, m *webMatch, prof *siteProfile, l
 	evs := notes
 	if p != nil {
 		m.proj, m.packages, m.stars = p, p.specs(), p.stars()
-		evs = append(evs, evidence{kind: evRepoHomepage, detail: "github " + p.repo.String() + " homepage"})
+		if p.info != nil {
+			evs = append(evs, evidence{kind: evRepoHomepage, detail: "github " + p.repo.String() + " homepage"})
+		} else {
+			evs = append(evs, p.notes...) // keyless: the package naming the site
+		}
 		links, _ := linkEvidence(m.root, prof, p)
 		evs = append(evs, links...)
 		evs = append(evs, projectEvidence(p)...)
@@ -2264,13 +2629,14 @@ func (w *Web) describeURL(ctx context.Context, m *webMatch, prof *siteProfile, l
 // first repositories it links to, one whose GitHub homepage is this site.
 // notes report a GitHub that could not be asked.
 func (w *Web) linkedProject(ctx context.Context, root webRoot, prof *siteProfile) (*project, []evidence) {
-	if w.repos == nil {
-		return nil, nil
+	gh := w.gh()
+	if gh == nil {
+		return w.linkedProjectKeyless(ctx, root, prof), nil
 	}
 	links := repoLinks(prof)
 	for _, k := range links[:min(len(links), webMaxURLRepos)] {
 		actx, cancel := context.WithTimeout(ctx, apiCallTimeout)
-		info, err := w.repos.repo(actx, k)
+		info, err := gh.repo(actx, k)
 		cancel()
 		var limit *ghRateLimitError
 		switch {
@@ -2288,6 +2654,36 @@ func (w *Web) linkedProject(ctx context.Context, root webRoot, prof *siteProfile
 		}
 	}
 	return nil, nil
+}
+
+// linkedProjectKeyless is linkedProject without GitHub: among the first
+// repositories the site links to, one with a package named like it that
+// names the repository back (addRepoPackages) and names this site as its
+// documentation or homepage. Both sides are owner-set, so the site and
+// the package agree on each other. The project carries that as a note,
+// with the package's evidence kind.
+func (w *Web) linkedProjectKeyless(ctx context.Context, root webRoot, prof *siteProfile) *project {
+	if w.pkgs == nil {
+		return nil
+	}
+	links := repoLinks(prof)
+	for _, k := range links[:min(len(links), webMaxURLRepos)] {
+		p := &project{key: k.spec(), repo: k, exact: true}
+		w.addRepoPackages(ctx, libSpec{raw: k.spec(), eco: ecoGitHub, name: k.String()}, p, &resolveLog{})
+		for _, pkg := range p.pkgs {
+			for _, f := range []struct {
+				raw  string
+				kind evidenceKind
+				what string
+			}{{pkg.docsURL, evPkgDocs, " lists it as Documentation"}, {pkg.homepage, evPkgHomepage, " homepage"}} {
+				if u, reason := checkMetaURL(f.raw); reason == "" && sameSite(u, root.u) {
+					p.notes = append(p.notes, evidence{kind: f.kind, detail: pkgLabel(pkg) + f.what})
+					return p
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // sameSite is V1's test: the same host, "www." aside, and one path a
@@ -2338,11 +2734,21 @@ func (r *resolution) lastResort(ctx context.Context, projects []*project) ([]web
 }
 
 // verifyHit verifies a search hit for the first target it belongs to.
+//
+// Keyless, a hit is a candidate of the search's, never of a project's: a
+// hit that does not answer (a 403, a timeout) is a rejection, not a site of
+// the project failing, so it can neither block a pick (rivals) nor turn a
+// resolution into an upstream error.
 func (r *resolution) verifyHit(ctx context.Context, targets []*project, c rootCandidate) *webMatch {
 	for _, p := range targets {
 		m, err := r.w.verifyRoot(ctx, p, c)
 		if err == nil {
 			return &m
+		}
+		var rej *rejectError
+		if r.keyless && !errors.As(err, &rej) {
+			r.log.reject("%s: search hit %s did not answer: %v", p.label(), c.url, err)
+			return nil // it answers for no target either
 		}
 		r.noteRejection(p, err)
 	}
@@ -2405,15 +2811,28 @@ func searchName(spec libSpec) string {
 // (SearXNG on localhost) may redirect within its own network; the hits'
 // pages are fetched under the check as usual.
 func (w *Web) lastResortSearch(ctx context.Context, name string) []rootCandidate {
-	if w.sites == nil || strings.TrimSpace(name) == "" {
+	if strings.TrimSpace(name) == "" {
 		return nil
+	}
+	results, _ := w.searchHits(ctx, name+" documentation")
+	return hitRoots(results)
+}
+
+// searchHits asks the site searcher for query within its own sub-budget;
+// nil with no searcher. The error is the search's own.
+func (w *Web) searchHits(ctx context.Context, query string) ([]search.Result, error) {
+	if w.sites == nil {
+		return nil, nil
 	}
 	sctx, cancel := context.WithTimeout(httpx.WithoutRedirectCheck(ctx), webSearchTimeout)
 	defer cancel()
-	results, err := w.sites.Search(sctx, name+" documentation", webSearchHits)
-	if err != nil {
-		return nil
-	}
+	return w.sites.Search(sctx, query, webSearchHits)
+}
+
+// hitRoots turns search hits into candidate roots (searchRootOf), at most
+// webMaxSearchRoots, skipping code forges, registries and other non-docs
+// hosts.
+func hitRoots(results []search.Result) []rootCandidate {
 	set := &candidateSet{}
 	for _, res := range results {
 		u, err := url.Parse(strings.TrimSpace(res.URL))
@@ -2445,6 +2864,11 @@ func (r *resolution) assemble(projects []*project, matches []webMatch) []webMatc
 	var groups []matchGroup
 	index := map[string]int{}
 	for _, m := range matches {
+		if m.proj != nil {
+			// The weight as it stands now: a keyless resolution reads
+			// popularity only once verification is over (readTieBreak).
+			m.stars, m.starsUnread = m.proj.stars(), m.proj.weightUnread()
+		}
 		i, ok := index[m.project]
 		if !ok {
 			i = len(groups)
@@ -2462,6 +2886,7 @@ func (r *resolution) assemble(projects []*project, matches []webMatch) []webMatc
 	}
 	groups = mergeSameRoot(groups)
 	slices.SortStableFunc(groups, func(a, b matchGroup) int { return r.compareGroups(a, b) })
+	groups = r.applyHint(groups)
 	groups = r.pruneDominated(groups)
 	var out []webMatch
 	for _, g := range groups {
@@ -2472,9 +2897,22 @@ func (r *resolution) assemble(projects []*project, matches []webMatch) []webMatc
 
 // pickRoots keeps a project's best site and its best registry docs, the
 // site first; registry docs lead only when there is no site.
+//
+// A root the project's own metadata led to comes before one only a web
+// search found: the search finds docs the registries do not name, it does
+// not overrule the docs they do (svelte.dev's /docs/ over the svelte.dev
+// a hit stands for).
 func pickRoots(ms []webMatch) []webMatch {
 	ms = mergeRootEvidence(ms)
-	slices.SortStableFunc(ms, func(a, b webMatch) int { return cmp.Compare(b.trust, a.trust) })
+	slices.SortStableFunc(ms, func(a, b webMatch) int {
+		if a.fromHit != b.fromHit {
+			if a.fromHit {
+				return 1
+			}
+			return -1
+		}
+		return cmp.Compare(b.trust, a.trust)
+	})
 	site := slices.IndexFunc(ms, func(m webMatch) bool { return !m.registry })
 	reg := slices.IndexFunc(ms, func(m webMatch) bool { return m.registry })
 	var out []webMatch
@@ -2503,6 +2941,7 @@ func mergeRootEvidence(ms []webMatch) []webMatch {
 		}
 		out[i].evidence = uniqueEvidence(append(slices.Clone(out[i].evidence), m.evidence...))
 		out[i].trust, _ = score(out[i].evidence)
+		out[i].fromHit = out[i].fromHit && m.fromHit
 	}
 	return out
 }
@@ -2672,7 +3111,7 @@ func (r *resolution) describe(ctx context.Context, m *webMatch) error {
 	}
 	llms := llmsTxt{}
 	if !m.registry {
-		llms = r.w.findLLMSTxt(ctx, m.root, &[]string{})
+		llms = r.w.cachedLLMS(ctx, m.root)
 	}
 	m.title = firstNonEmpty(llms.title, vs.project, m.title)
 	m.description = firstNonEmpty(m.description, llms.description)

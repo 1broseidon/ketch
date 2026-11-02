@@ -4,6 +4,7 @@ package docs
 
 import (
 	"bufio"
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -11,12 +12,15 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 	"unicode"
+
+	"github.com/PuerkitoBio/goquery"
 
 	"github.com/1broseidon/ketch/httpx"
 )
@@ -51,6 +55,12 @@ type pkgClient struct {
 	npm, pypi, crates, goproxy, pkgsite string // API bases, no trailing slash
 	ua                                  string
 	timeout                             time.Duration // per API call; 0 is apiCallTimeout
+	// pkgsiteSlot and cratesSlot take turns at pkg.go.dev and crates.io
+	// (getPatient): both answer bursts with 429, and crates.io asks
+	// crawlers for one request at a time. nil for none. retryWait
+	// overrides patientWait (tests).
+	pkgsiteSlot, cratesSlot *turns
+	retryWait               time.Duration
 }
 
 // newPkgClient returns a pkgClient for the public registries over client.
@@ -65,6 +75,9 @@ func newPkgClient(client *http.Client) *pkgClient {
 		pkgsite: pkgsiteBase,
 		ua:      webUserAgent,
 		timeout: apiCallTimeout,
+
+		pkgsiteSlot: newTurns(0),
+		cratesSlot:  newTurns(cratesGap),
 	}
 }
 
@@ -141,6 +154,28 @@ func (c *pkgClient) goVersions(ctx context.Context, module string) ([]string, er
 // one module count once, at the module's highest importer count. A 404
 // (the API is new) is no results.
 func (c *pkgClient) searchGo(ctx context.Context, name string, n int) ([]string, error) {
+	mods, err := c.searchGoModules(ctx, name, n)
+	if err != nil || mods == nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(mods))
+	for _, m := range mods {
+		out = append(out, m.path)
+	}
+	return out, nil
+}
+
+// goModule is a module pkg.go.dev's search found, with the number of
+// modules importing it.
+type goModule struct {
+	path      string
+	importers int64
+}
+
+// searchGoModules is searchGo with each module's importer count, most
+// imported first. pkg.go.dev answers bursts with 429, so its requests go
+// one at a time and are retried (getPatient).
+func (c *pkgClient) searchGoModules(ctx context.Context, name string, n int) ([]goModule, error) {
 	var resp struct {
 		Items []struct {
 			ModulePath       string `json:"modulePath"`
@@ -150,7 +185,7 @@ func (c *pkgClient) searchGo(ctx context.Context, name string, n int) ([]string,
 		} `json:"items"`
 	}
 	u := c.pkgsite + "/v1/search?" + url.Values{"q": {name}}.Encode()
-	err := c.get(ctx, "pkg.go.dev search "+name, u, pkgMaxBody, decodeJSON(&resp))
+	err := c.getPatient(ctx, c.pkgsiteSlot, "pkg.go.dev search "+name, u, decodeJSON(&resp))
 	if errors.Is(err, ErrNotFound) {
 		return nil, nil
 	}
@@ -158,21 +193,212 @@ func (c *pkgClient) searchGo(ctx context.Context, name string, n int) ([]string,
 		return nil, err
 	}
 	imported := map[string]int64{}
-	var mods []string
+	var mods []goModule
 	for _, it := range resp.Items {
 		if it.ModulePath == "" {
 			continue
 		}
 		if _, seen := imported[it.ModulePath]; !seen {
-			mods = append(mods, it.ModulePath)
+			mods = append(mods, goModule{path: it.ModulePath})
 		}
 		imported[it.ModulePath] = max(imported[it.ModulePath], it.ImportedByCounts.Modules)
 	}
-	sort.SliceStable(mods, func(i, j int) bool { return imported[mods[i]] > imported[mods[j]] })
+	for i := range mods {
+		mods[i].importers = imported[mods[i].path]
+	}
+	sort.SliceStable(mods, func(i, j int) bool { return mods[i].importers > mods[j].importers })
 	if n > 0 && len(mods) > n {
 		mods = mods[:n]
 	}
 	return mods, nil
+}
+
+// searchGoPage is searchGoModules over pkg.go.dev's search page, which
+// answers where its API's search (/v1/search) is held to a few requests a
+// minute: each result's package and module path and its importer count
+// (packages importing it). A module whose result is one of its packages
+// (cosmos-sdk/server) is reported at the module path the page names.
+func (c *pkgClient) searchGoPage(ctx context.Context, name string, n int) ([]goModule, error) {
+	u := c.pkgsite + "/search?" + url.Values{"q": {name}, "m": {"package"}}.Encode()
+	var mods []goModule
+	err := c.getPatient(ctx, c.pkgsiteSlot, "pkg.go.dev search "+name, u, func(r io.Reader) error {
+		doc, err := goquery.NewDocumentFromReader(r)
+		if err != nil {
+			return err
+		}
+		doc.Find(".SearchSnippet").Each(func(_ int, snip *goquery.Selection) {
+			path := strings.TrimSpace(snip.Find("a[data-test-id=snippet-title]").AttrOr("data-clicked-package", ""))
+			if path == "" {
+				return
+			}
+			if mod, ok := strings.CutPrefix(collapseSpace(snip.Find(".SearchSnippet-sub strong").First().Text()), "Other packages in module "); ok {
+				path = strings.TrimSuffix(mod, ":")
+			}
+			count := strings.ReplaceAll(strings.TrimSpace(snip.Find(".SearchSnippet-infoLabel strong").First().Text()), ",", "")
+			importers, _ := strconv.ParseInt(count, 10, 64)
+			mods = append(mods, goModule{path: path, importers: importers})
+		})
+		return nil
+	})
+	if errors.Is(err, ErrNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	sort.SliceStable(mods, func(i, j int) bool { return mods[i].importers > mods[j].importers })
+	if n > 0 && len(mods) > n {
+		mods = mods[:n]
+	}
+	return mods, nil
+}
+
+// goImportedBy reads the "Imported by" count on a module's pkg.go.dev
+// page; 0 when the page shows none.
+func (c *pkgClient) goImportedBy(ctx context.Context, module string) (int64, error) {
+	var n int64
+	err := c.getPatient(ctx, c.pkgsiteSlot, "pkg.go.dev "+module, c.pkgsite+"/"+module, func(r io.Reader) error {
+		doc, err := goquery.NewDocumentFromReader(r)
+		if err != nil {
+			return err
+		}
+		doc.Find("a[aria-label='Go to Imported By'], [data-test-id=UnitHeader-importedby] a").EachWithBreak(func(_ int, a *goquery.Selection) bool {
+			m := importedByRe.FindStringSubmatch(collapseSpace(a.Text()))
+			if m == nil {
+				return true
+			}
+			n, _ = strconv.ParseInt(strings.ReplaceAll(m[1], ",", ""), 10, 64)
+			return false
+		})
+		return nil
+	})
+	return n, err
+}
+
+// importedByRe reads "Imported by: 191,418".
+var importedByRe = regexp.MustCompile(`Imported by:?\s*([0-9][0-9,]*)`)
+
+// Patient requests: services that answer a burst of requests with 429
+// (pypistats.org, pkg.go.dev) are asked one request at a time per slot and
+// retried while they answer 429 or 5xx, waiting what the response's
+// Retry-After asks (at most patientMaxWait), else patientWait doubling.
+const (
+	patientAttempts = 5
+	patientWait     = time.Second
+	patientMaxWait  = 5 * time.Second
+)
+
+// getPatient is get for such a service: it waits its turn in slot (nil:
+// no turn taking), and tries up to patientAttempts times while the
+// service answers 429 or 5xx, backing off from patientWait (c.retryWait in
+// tests), within the caller's deadline. A 404 or 410 wraps ErrNotFound.
+func (c *pkgClient) getPatient(ctx context.Context, slot *turns, what, u string, read func(io.Reader) error) error {
+	release, err := slot.take(ctx)
+	if err != nil {
+		return fmt.Errorf("%s: %w", what, err)
+	}
+	defer release()
+	wait := cmp.Or(c.retryWait, patientWait)
+	attempts := patientAttempts
+	if speculative(ctx) {
+		attempts = 1 // a guessed reading: its failure vetoes nothing, so it waits for nothing
+	}
+	for attempt := range attempts {
+		if attempt > 0 {
+			select {
+			case <-time.After(wait):
+			case <-ctx.Done():
+				return fmt.Errorf("%s: %w (after %v)", what, ctx.Err(), err)
+			}
+			wait = min(2*wait, patientMaxWait)
+		}
+		var retry bool
+		var asked time.Duration
+		if retry, asked, err = c.tryOnce(ctx, what, u, read); !retry {
+			return err
+		}
+		if asked > 0 && c.retryWait == 0 {
+			wait = min(asked, patientMaxWait)
+		}
+	}
+	return err
+}
+
+// cratesGap spaces crates.io requests: its crawler policy asks for at most
+// one a second. A variable only so tests over recorded fixtures need not
+// wait it out.
+var cratesGap = time.Second
+
+// turns takes turns at one service: one request at a time, and at least
+// gap between the starts of two. A nil *turns takes no turns.
+type turns struct {
+	ch   chan struct{}
+	gap  time.Duration
+	last time.Time // guarded by ch
+}
+
+func newTurns(gap time.Duration) *turns { return &turns{ch: make(chan struct{}, 1), gap: gap} }
+
+// take waits for t's turn, and the gap since the last one, within ctx.
+func (t *turns) take(ctx context.Context) (release func(), err error) {
+	if t == nil {
+		return func() {}, nil
+	}
+	select {
+	case t.ch <- struct{}{}:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+	if wait := time.Until(t.last.Add(t.gap)); wait > 0 {
+		select {
+		case <-time.After(wait):
+		case <-ctx.Done():
+			<-t.ch
+			return nil, ctx.Err()
+		}
+	}
+	t.last = time.Now()
+	return func() { <-t.ch }, nil
+}
+
+type speculativeKey struct{}
+
+// withSpeculative marks ctx as a bare query's guessed reading
+// (resolution.strict): its registry lookups are tried once, without
+// retries, since nothing waits on or is vetoed by their failure (vetoes).
+func withSpeculative(ctx context.Context) context.Context {
+	return context.WithValue(ctx, speculativeKey{}, true)
+}
+
+func speculative(ctx context.Context) bool {
+	v, _ := ctx.Value(speculativeKey{}).(bool)
+	return v
+}
+
+// tryOnce is one getPatient request: retry reports a failure worth
+// another try (a network error, 429, 5xx), with the wait the response's
+// Retry-After asks for, if any.
+func (c *pkgClient) tryOnce(ctx context.Context, what, u string, read func(io.Reader) error) (retry bool, wait time.Duration, err error) {
+	resp, err := c.send(ctx, what, u)
+	if err != nil {
+		return true, 0, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	switch status := resp.StatusCode; {
+	case status == http.StatusNotFound || status == http.StatusGone:
+		return false, 0, fmt.Errorf("%s: %w", what, ErrNotFound)
+	case transientStatus(status):
+		if n, aerr := strconv.Atoi(strings.TrimSpace(resp.Header.Get("Retry-After"))); aerr == nil && n > 0 {
+			wait = time.Duration(n) * time.Second
+		}
+		return true, wait, fmt.Errorf("%s: status %d", what, status)
+	case status != http.StatusOK:
+		return false, 0, fmt.Errorf("%s: status %d", what, status)
+	}
+	if err := read(io.LimitReader(resp.Body, pkgMaxBody)); err != nil {
+		return false, 0, fmt.Errorf("%s: unreadable response: %w", what, err)
+	}
+	return false, 0, nil
 }
 
 // get fetches u within the per-call budget and hands a 200 body, capped at
@@ -527,7 +753,7 @@ type crateResponse struct {
 func (c *pkgClient) lookupCrate(ctx context.Context, name string) (pkgInfo, error) {
 	var resp crateResponse
 	u := c.crates + "/api/v1/crates/" + url.PathEscape(name) + "?include=downloads"
-	if err := c.get(ctx, "crates "+name, u, pkgMaxBody, decodeJSON(&resp)); err != nil {
+	if err := c.getPatient(ctx, c.cratesSlot, "crates "+name, u, decodeJSON(&resp)); err != nil {
 		return pkgInfo{}, err
 	}
 	cr := resp.Crate
@@ -594,6 +820,21 @@ func (c *pkgClient) lookupGo(ctx context.Context, module string) (pkgInfo, error
 		repoURL:      metaText(repo),
 		registryDocs: pkgsiteBase + "/" + module,
 	}, nil
+}
+
+// hasGoMod reports whether pkg.go.dev records a go.mod for module. The
+// module proxy answers for any GitHub repository with version tags,
+// synthesizing a module for code that never was one (an npm project's
+// repository at v14.2.15+incompatible), so a module found only by its
+// repository's path is a Go library only when it has a go.mod.
+func (c *pkgClient) hasGoMod(ctx context.Context, module string) (bool, error) {
+	var m struct {
+		HasGoMod bool `json:"hasGoMod"`
+	}
+	if err := c.get(ctx, "pkg.go.dev "+module, c.pkgsite+"/v1/module/"+module, pkgMaxBody, decodeJSON(&m)); err != nil {
+		return false, err
+	}
+	return m.HasGoMod, nil
 }
 
 // pkgsiteRepo is the repository pkg.go.dev records for module, or "".

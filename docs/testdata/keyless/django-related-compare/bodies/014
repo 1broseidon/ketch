@@ -1,0 +1,1637 @@
+
+<!DOCTYPE html>
+<html lang="en" data-layout="" data-local="" data-version="prod-frontend-00275-2gh">
+ <head>
+ <meta charset="utf-8">
+ <meta http-equiv="X-UA-Compatible" content="IE=edge">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <meta name="description" content="Go is an open source programming language that makes it easy to build simple, reliable, and efficient software.">
+ <meta name="robots" content="noindex">
+ <meta class="js-gtmID" data-gtmid="GTM-W8MVQXG">
+ <link rel="shortcut icon" href="/static/shared/icon/favicon.ico">
+ <link href="/static/frontend/frontend.min.css?version=prod-frontend-00275-2gh" rel="stylesheet">
+ <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="Go Packages">
+ <title>django - Search Results - Go Packages</title>
+ <link href="/static/frontend/search/search.min.css?version=prod-frontend-00275-2gh" rel="stylesheet">
+ </head>
+ <body>
+ <section class="go-SurveyBanner js-surveyBanner" role="region" aria-label="2026 Go Developer Survey" data-survey-id="go-survey-2026">
+ <img class="go-SurveyBanner-gopher" src="/static/shared/survey/gopher-announcement.png" width="108" height="80" alt="" aria-hidden="true">
+ <img class="go-SurveyBanner-bullhornMobile" src="/static/shared/survey/bullhorn-mobile.svg" width="22" height="23" alt="" aria-hidden="true">
+ <img class="go-SurveyBanner-bullhornDesktop" src="/static/shared/survey/bullhorn-desktop.svg" width="28" height="28" alt="" aria-hidden="true">
+ <div class="go-SurveyBanner-content">
+ <span class="go-SurveyBanner-lead">Help us shape the future of Go!</span>
+ <a class="go-SurveyBanner-link js-surveyBannerLink" href="https://blink.qualtrics.com/jfe/form/SV_ba8fa1ZcSQQdTRs?s=p" target="_blank" rel="noopener"><span class="go-SurveyBanner-linkPrefix">Take the </span>2026 Go Developer Survey</a>
+ </div>
+ <button class="go-SurveyBanner-close js-surveyBannerClose" type="button" aria-label="Minimize the survey banner">
+ <img class="go-SurveyBanner-minimizeIcon" src="/static/shared/survey/minimize.svg" width="20" height="20" alt="" aria-hidden="true">
+ </button>
+ </section>
+ <header class="go-Header js-siteHeader">
+ <div class="go-Header-inner go-Header-inner--dark">
+ <nav class="go-Header-nav">
+ <a href="https://go.dev/" class="js-headerLogo" data-gtmc="nav link"
+ data-test-id="go-header-logo-link" role="heading" aria-level="1">
+ <img class="go-Header-logo" src="/static/shared/logo/go-white.svg" alt="Go">
+ </a>
+ <div class="skip-navigation-wrapper">
+ <a class="skip-to-content-link" aria-label="Skip to main content" href="#main-content"> Skip to Main Content </a>
+ </div>
+ <div class="go-Header-rightContent">
+<div class="go-SearchForm js-searchForm">
+ <form
+ class="go-InputGroup go-ShortcutKey go-SearchForm-form"
+ action="/search"
+ data-shortcut="/"
+ data-shortcut-alt="search"
+ data-gtmc="search form"
+ aria-label="Search for a package"
+ role="search"
+ >
+ <input name="q" class="go-Input js-searchFocus" aria-label="Search for a package" type="search"
+ autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"
+ placeholder="Search packages or symbols"
+ value="django" />
+ <input name="m" value="package" hidden>
+ <button class="go-Button go-Button--inverted" aria-label="Submit search">
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/search_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </form>
+ <button class="go-SearchForm-expandSearch js-expandSearch" data-gtmc="nav button"
+ aria-label="Open search" data-test-id="expand-search">
+ <img class="go-Icon go-Icon--inverted" height="24" width="24"
+ src="/static/shared/icon/search_gm_grey_24dp.svg" alt="">
+ </button>
+</div>
+ <ul class="go-Header-menu">
+ <li class="go-Header-menuItem">
+ <a class="js-desktop-menu-hover" href="#" data-gtmc="nav link">
+ Why Go
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_drop_down_gm_grey_24dp.svg" alt="submenu dropdown icon">
+ </a>
+ <ul class="go-Header-submenu go-Header-submenu--why js-desktop-submenu-hover" aria-label="submenu">
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/solutions/case-studies">
+ <span>Case Studies</span>
+ </a>
+ </div>
+ <p>Common problems companies solve with Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/solutions/use-cases">
+ <span>Use Cases</span>
+ </a>
+ </div>
+ <p>Stories about how and why companies use Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/security/">
+ <span>Security</span>
+ </a>
+ </div>
+ <p>How Go can help keep you secure by default</p>
+ </li>
+ </ul>
+ </li>
+ <li class="go-Header-menuItem">
+ <a href="https://go.dev/learn/" data-gtmc="nav link">Learn</a>
+ </li>
+ <li class="go-Header-menuItem">
+ <a class="js-desktop-menu-hover" href="#" data-gtmc="nav link">
+ Docs
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_drop_down_gm_grey_24dp.svg" alt="submenu dropdown icon">
+ </a>
+ <ul class="go-Header-submenu go-Header-submenu--docs js-desktop-submenu-hover" aria-label="submenu">
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/doc/effective_go">
+ <span>Effective Go</span>
+ </a>
+ </div>
+ <p>Tips for writing clear, performant, and idiomatic Go code</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/doc/">
+ <span>Go User Manual</span>
+ </a>
+ </div>
+ <p>A complete introduction to building software with Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://pkg.go.dev/std">
+ <span>Standard library</span>
+ </a>
+ </div>
+ <p>Reference documentation for Go's standard library</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/doc/devel/release">
+ <span>Release Notes</span>
+ </a>
+ </div>
+ <p>Learn what's new in each Go release</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="/api">
+ <span>API</span>
+ </a>
+ </div>
+ <p>Reference documentation for the pkg.go.dev API</p>
+ </li>
+ </ul>
+ </li>
+ <li class="go-Header-menuItem go-Header-menuItem--active">
+ <a href="/" data-gtmc="nav link">Packages</a>
+ </li>
+ <li class="go-Header-menuItem">
+ <a class="js-desktop-menu-hover" href="#" data-gtmc="nav link">
+ Community
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_drop_down_gm_grey_24dp.svg" alt="submenu dropdown icon">
+ </a>
+ <ul class="go-Header-submenu go-Header-submenu--community js-desktop-submenu-hover" aria-label="submenu">
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/talks/">
+ <span>Recorded Talks</span>
+ </a>
+ </div>
+ <p>Videos from prior events</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://www.meetup.com/pro/go">
+ <span>Meetups</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </div>
+ <p>Meet other local Go developers</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://github.com/golang/go/wiki/Conferences">
+ <span>Conferences</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </div>
+ <p>Learn and network with Go developers from around the world</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/blog">
+ <span>Go blog</span>
+ </a>
+ </div>
+ <p>The Go project's official blog.</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/help">
+ <span>Go project</span>
+ </a>
+ </div>
+ <p>Get help and stay informed from Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ Get connected
+ </div>
+ <p></p>
+ <div class="go-Header-socialIcons">
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with google-groups (Opens in new window)"
+ title="Get connected with google-groups (Opens in new window)"
+ href="https://groups.google.com/g/golang-nuts">
+ <img src="/static/shared/logo/social/google-groups.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with github (Opens in new window)"
+ title="Get connected with github (Opens in new window)"
+ href="https://github.com/golang">
+ <img src="/static/shared/logo/social/github.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with twitter (Opens in new window)"
+ title="Get connected with twitter (Opens in new window)"
+ href="https://twitter.com/golang">
+ <img src="/static/shared/logo/social/twitter.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with reddit (Opens in new window)"
+ title="Get connected with reddit (Opens in new window)"
+ href="https://www.reddit.com/r/golang/">
+ <img src="/static/shared/logo/social/reddit.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with slack (Opens in new window)"
+ title="Get connected with slack (Opens in new window)"
+ href="https://invite.slack.golangbridge.org/">
+ <img src="/static/shared/logo/social/slack.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with stack-overflow (Opens in new window)"
+ title=""
+ href="https://stackoverflow.com/collectives/go">
+ <img src="/static/shared/logo/social/stack-overflow.svg" />
+ </a>
+ </div>
+ </li>
+ </ul>
+ </li>
+ </ul>
+ <button class="go-Header-navOpen js-headerMenuButton go-Header-navOpen--white" data-gtmc="nav button" aria-label="Open navigation">
+ </button>
+ </div>
+ </nav>
+ </div>
+ </header>
+ <aside class="go-NavigationDrawer js-header">
+ <nav class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="https://go.dev/">
+ <img class="go-NavigationDrawer-logo" src="/static/shared/logo/go-blue.svg" alt="Go.">
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem js-mobile-subnav-trigger go-NavigationDrawer-hasSubnav">
+ <a href="#">
+ <span>Why Go</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_next_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ <div class="go-NavigationDrawer go-NavigationDrawer-submenuItem">
+ <div class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="#">
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_before_gm_grey_24dp.svg" alt="">
+ </i>
+ Why Go
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/solutions/case-studies">
+ Case Studies
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/solutions/use-cases">
+ Use Cases
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/security/">
+ Security
+ </a>
+ </li>
+ </ul>
+ </div>
+ </div>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/learn/">Learn</a>
+ </li>
+ <li class="go-NavigationDrawer-listItem js-mobile-subnav-trigger go-NavigationDrawer-hasSubnav">
+ <a href="#">
+ <span>Docs</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_next_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ <div class="go-NavigationDrawer go-NavigationDrawer-submenuItem">
+ <div class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="#"><i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_before_gm_grey_24dp.svg" alt="">
+ </i>
+ Docs
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/doc/effective_go">
+ Effective Go
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/doc/">
+ Go User Manual
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://pkg.go.dev/std">
+ Standard library
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/doc/devel/release">
+ Release Notes
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="/api">
+ API
+ </a>
+ </li>
+ </ul>
+ </div>
+ </div>
+ </li>
+ <li class="go-NavigationDrawer-listItem go-NavigationDrawer-listItem--active">
+ <a href="/">Packages</a>
+ </li>
+ <li class="go-NavigationDrawer-listItem js-mobile-subnav-trigger go-NavigationDrawer-hasSubnav">
+ <a href="#">
+ <span>Community</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_next_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ <div class="go-NavigationDrawer go-NavigationDrawer-submenuItem">
+ <div class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="#">
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_before_gm_grey_24dp.svg" alt="">
+ </i>
+ Community
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/talks/">
+ Recorded Talks
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://www.meetup.com/pro/go">
+ Meetups
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://github.com/golang/go/wiki/Conferences">
+ Conferences
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/blog">
+ Go blog
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/help">
+ Go project
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <div>Get connected</div>
+ <div class="go-Header-socialIcons">
+ <a class="go-Header-socialIcon" href="https://groups.google.com/g/golang-nuts"><img src="/static/shared/logo/social/google-groups.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://github.com/golang"><img src="/static/shared/logo/social/github.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://twitter.com/golang"><img src="/static/shared/logo/social/twitter.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://www.reddit.com/r/golang/"><img src="/static/shared/logo/social/reddit.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://invite.slack.golangbridge.org/"><img src="/static/shared/logo/social/slack.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://stackoverflow.com/collectives/go"><img src="/static/shared/logo/social/stack-overflow.svg" /></a>
+ </div>
+ </li>
+ </ul>
+ </div>
+ </div>
+ </li>
+ </ul>
+ </nav>
+ </aside>
+ <div class="go-NavigationDrawer-scrim js-scrim" role="presentation"></div>
+ <main class="go-Container" id="main-content">
+ <header class="SearchResults-header js-searchHeader">
+ <div class="SearchResults-headerContent">
+ <a class="SearchResults-headerLogo" href="https://go.dev/" aria-hidden="true" tabindex="-1" data-gtmc="header link"
+ aria-label="Link to Go Homepage">
+ <img height="78" width="207" src="/static/shared/logo/go-blue.svg" alt="Go">
+ </a>
+ <form
+ class="go-InputGroup go-ShortcutKey SearchResults-search"
+ action="/search"
+ data-shortcut="/"
+ data-shortcut-alt="search"
+ data-gtmc="search form"
+ aria-label="Search for a package"
+ role="search"
+ >
+ <input name="q" class="go-Input js-searchFocus" aria-label="Search for a package" type="search"
+ autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"
+ placeholder="Search packages or symbols" value="django" />
+ <input name="m" value="package" hidden>
+ <button class="go-Button go-Button--inverted" aria-label="Submit search">
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/search_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </form>
+ </div>
+ </header>
+ <div class="SearchResults-tabs">
+ <nav class="go-TabNav">
+ <ul>
+ <li aria-current="page">
+ <a href="/search?limit=25&amp;m=package&amp;q=django">Packages</a>
+ </li>
+ <li >
+ <a href="/search?limit=25&amp;m=symbol&amp;q=django">Symbols</a>
+ </li>
+ </ul>
+ </nav>
+ </div>
+ <div class="go-Content SearchResults">
+ <div class="SearchResults-summary" role="heading" aria-level="1">
+ Showing <strong>25</strong> modules with matching packages. <a href="/search-help">Search help</a>
+ </div>
+ <div>
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/flosch/pongo2/v7" data-gtmc="search result" data-gtmv="0"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/flosch/pongo2/v7"
+ data-rank="0"
+ data-experiment-cohort="control">
+ pongo2
+ <span class="SearchSnippet-header-path">(github.com/flosch/pongo2/v7)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package pongo2 is a Django-syntax like template-engine
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/flosch/pongo2/v7?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>3</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v7.0.0-alpha.1</strong> published on <span data-test-id="snippet-published"><strong>Jan 15, 2026</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/flosch/pongo2/v7?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ <div class="go-textSubtle">
+ <span class="go-textSubtle">Other major versions:</span>
+ <a href="/github.com/flosch/pongo2/v6" data-gtmc="search result other major">
+ <strong>v6</strong><span class="go-textSubtle">,</span>
+ </a>
+ <a href="/github.com/flosch/pongo2/v5" data-gtmc="search result other major">
+ <strong>v5</strong><span class="go-textSubtle">,</span>
+ </a>
+ <a href="/github.com/flosch/pongo2/v4" data-gtmc="search result other major">
+ <strong>v4</strong><span class="go-textSubtle">,</span>
+ </a>
+ <a href="/github.com/flosch/pongo2" data-gtmc="search result other major">
+ <strong>v0</strong><span class="go-textSubtle"></span>
+ </a>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/gofiber/template/django/v4" data-gtmc="search result" data-gtmv="1"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/gofiber/template/django/v4"
+ data-rank="1"
+ data-experiment-cohort="control">
+ django
+ <span class="SearchSnippet-header-path">(github.com/gofiber/template/django/v4)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/gofiber/template/django/v4?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>0</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v4.0.13</strong> published on <span data-test-id="snippet-published"><strong>4 days ago</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/gofiber/template/django/v4?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ <div class="go-textSubtle">
+ <span class="go-textSubtle">Other major versions:</span>
+ <a href="/github.com/gofiber/template/django/v3" data-gtmc="search result other major">
+ <strong>v3</strong><span class="go-textSubtle">,</span>
+ </a>
+ <a href="/github.com/gofiber/template/django/v2" data-gtmc="search result other major">
+ <strong>v2</strong><span class="go-textSubtle"></span>
+ </a>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/gopkg.in/flosch/pongo2.v3" data-gtmc="search result" data-gtmv="2"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="gopkg.in/flosch/pongo2.v3"
+ data-rank="2"
+ data-experiment-cohort="control">
+ pongo2
+ <span class="SearchSnippet-header-path">(gopkg.in/flosch/pongo2.v3)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ A Django-syntax like template-engine Blog posts about pongo2 (including introduction and migration): https://www.florian-schlachter.de/?tag=pongo2 Complete documentation on the template language: https://docs.djangoproject.com/en/dev/topics/templates/ Try out pongo2 live in the pongo2 playground: https://www.florian-schlachter.de/pongo2/ Make sure to read README.md in the repository as well.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/gopkg.in/flosch/pongo2.v3?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>125</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v3.0.0-...-5e81b81</strong> published on <span data-test-id="snippet-published"><strong>Oct 28, 2014</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/gopkg.in/flosch/pongo2.v3?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/RichardKnop/go-fixtures" data-gtmc="search result" data-gtmv="3"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/RichardKnop/go-fixtures"
+ data-rank="3"
+ data-experiment-cohort="control">
+ fixtures
+ <span class="SearchSnippet-header-path">(github.com/RichardKnop/go-fixtures)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package fixtures implements Django like fixtures for Postgres and MySQL
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/RichardKnop/go-fixtures?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>41</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.0-...-8d7ddb7</strong> published on <span data-test-id="snippet-published"><strong>Dec 26, 2019</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/RichardKnop/go-fixtures?tab=licenses" aria-label="Go to Licenses">
+ MPL-2.0
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/Nigel2392/go-django/src/core/attrs" data-gtmc="search result" data-gtmv="4"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/Nigel2392/go-django/src/core/attrs"
+ data-rank="4"
+ data-experiment-cohort="control">
+ attrs
+ <span class="SearchSnippet-header-path">(github.com/Nigel2392/go-django/src/core/attrs)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/Nigel2392/go-django/src/core/attrs?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>23</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v1.7.4</strong> published on <span data-test-id="snippet-published"><strong>Jul 8, 2026</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/Nigel2392/go-django/src/core/attrs?tab=licenses" aria-label="Go to Licenses">
+ GPL-2.0
+ </a>
+ </span>
+ </div>
+ <div class="SearchSnippet-sub go-textSubtle">
+ <strong>Other packages in module github.com/Nigel2392/go-django:</strong>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/Nigel2392/go-django/src"
+ data-gtmc="search result same module">
+ src
+ </a>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/Nigel2392/go-django/src/core/logger"
+ data-gtmc="search result same module">
+ src/core/logger
+ </a>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/Nigel2392/go-django/src/core/contenttypes"
+ data-gtmc="search result same module">
+ src/core/contenttypes
+ </a>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/Nigel2392/go-django/src/core/trans"
+ data-gtmc="search result same module">
+ src/core/trans
+ </a>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/Nigel2392/go-django/src/forms/fields"
+ data-gtmc="search result same module">
+ src/forms/fields
+ </a>
+ <a href="github.com/Nigel2392/go-django#section-directories" class="go-Chip go-Chip--subtle"
+ data-gtmc="search result more packages">
+ +24 more
+ </a>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/alexandrevicenzi/unchained" data-gtmc="search result" data-gtmv="5"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/alexandrevicenzi/unchained"
+ data-rank="5"
+ data-experiment-cohort="control">
+ unchained
+ <span class="SearchSnippet-header-path">(github.com/alexandrevicenzi/unchained)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package unchained provides password hashers that are compatible with Django.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/alexandrevicenzi/unchained?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>13</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v1.3.0</strong> published on <span data-test-id="snippet-published"><strong>Feb 11, 2020</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/alexandrevicenzi/unchained?tab=licenses" aria-label="Go to Licenses">
+ BSD-3-Clause
+ </a>
+ </span>
+ </div>
+ <div class="SearchSnippet-sub go-textSubtle">
+ <strong>Other packages in module github.com/alexandrevicenzi/unchained:</strong>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/alexandrevicenzi/unchained/pbkdf2"
+ data-gtmc="search result same module">
+ pbkdf2
+ </a>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/kataras/go-template" data-gtmc="search result" data-gtmv="6"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/kataras/go-template"
+ data-rank="6"
+ data-experiment-cohort="control">
+ template
+ <span class="SearchSnippet-header-path">(github.com/kataras/go-template)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package template provides the easier way to use templates via template engine supports multiple template engines with different file extensions 6 template engines supported: standard html/template amber django handlebars pug(jade) markdown
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/kataras/go-template?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>23</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.3</strong> published on <span data-test-id="snippet-published"><strong>Nov 11, 2016</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/kataras/go-template?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ <div class="SearchSnippet-sub go-textSubtle">
+ <strong>Other packages in module github.com/kataras/go-template:</strong>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/kataras/go-template/django"
+ data-gtmc="search result same module">
+ django
+ </a>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/go-gorf/gorf" data-gtmc="search result" data-gtmv="7"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/go-gorf/gorf"
+ data-rank="7"
+ data-experiment-cohort="control">
+ gorf
+ <span class="SearchSnippet-header-path">(github.com/go-gorf/gorf)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/go-gorf/gorf?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>6</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.14</strong> published on <span data-test-id="snippet-published"><strong>Jun 18, 2023</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/go-gorf/gorf?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/iris-contrib/pongo2" data-gtmc="search result" data-gtmv="8"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/iris-contrib/pongo2"
+ data-rank="8"
+ data-experiment-cohort="control">
+ pongo2
+ <span class="SearchSnippet-header-path">(github.com/iris-contrib/pongo2)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ A Django-syntax like template-engine Blog posts about pongo2 (including introduction and migration): https://www.iris-go.com/?tag=pongo2 Complete documentation on the template language: https://docs.djangoproject.com/en/dev/topics/templates/ Try out pongo2 live in the pongo2 playground: https://www.iris-go.com/pongo2/ Make sure to read README.md in the repository as well.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/iris-contrib/pongo2?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>5</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.1</strong> published on <span data-test-id="snippet-published"><strong>Dec 12, 2019</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/iris-contrib/pongo2?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/Nigel2392/go-django/queries/src/drivers/errors" data-gtmc="search result" data-gtmv="9"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/Nigel2392/go-django/queries/src/drivers/errors"
+ data-rank="9"
+ data-experiment-cohort="control">
+ errors
+ <span class="SearchSnippet-header-path">(github.com/Nigel2392/go-django/queries/src/drivers/errors)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/Nigel2392/go-django/queries/src/drivers/errors?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>6</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v1.7.4</strong> published on <span data-test-id="snippet-published"><strong>Jul 8, 2026</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/Nigel2392/go-django/queries/src/drivers/errors?tab=licenses" aria-label="Go to Licenses">
+ GPL-2.0
+ </a>
+ </span>
+ </div>
+ <div class="SearchSnippet-sub go-textSubtle">
+ <strong>Other packages in module github.com/Nigel2392/go-django/queries:</strong>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/Nigel2392/go-django/queries/src/expr"
+ data-gtmc="search result same module">
+ src/expr
+ </a>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/Nigel2392/go-django/queries/src/models"
+ data-gtmc="search result same module">
+ src/models
+ </a>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/Nigel2392/go-django/queries/src"
+ data-gtmc="search result same module">
+ src
+ </a>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/Nigel2392/go-django/queries/src/drivers"
+ data-gtmc="search result same module">
+ src/drivers
+ </a>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/meehow/go-django-hashers" data-gtmc="search result" data-gtmv="10"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/meehow/go-django-hashers"
+ data-rank="10"
+ data-experiment-cohort="control">
+ hashers
+ <span class="SearchSnippet-header-path">(github.com/meehow/go-django-hashers)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/meehow/go-django-hashers?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>4</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.0-...-5e5d6af</strong> published on <span data-test-id="snippet-published"><strong>Dec 31, 2017</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/meehow/go-django-hashers?tab=licenses" aria-label="Go to Licenses">
+ GPL-3.0
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/gopkg.in/kataras/go-template.v0" data-gtmc="search result" data-gtmv="11"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="gopkg.in/kataras/go-template.v0"
+ data-rank="11"
+ data-experiment-cohort="control">
+ template
+ <span class="SearchSnippet-header-path">(gopkg.in/kataras/go-template.v0)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package template provides the easier way to use templates via template engine supports multiple template engines with different file extensions 6 template engines supported: standard html/template amber django handlebars pug(jade) markdown
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/gopkg.in/kataras/go-template.v0?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>8</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.3</strong> published on <span data-test-id="snippet-published"><strong>Nov 11, 2016</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/gopkg.in/kataras/go-template.v0?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ <div class="SearchSnippet-sub go-textSubtle">
+ <strong>Other packages in module gopkg.in/kataras/go-template.v0:</strong>
+ <a class="go-Chip go-Chip--subtle"
+ href="/gopkg.in/kataras/go-template.v0/django"
+ data-gtmc="search result same module">
+ django
+ </a>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/nathan-osman/pongo2-embed-loader" data-gtmc="search result" data-gtmv="12"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/nathan-osman/pongo2-embed-loader"
+ data-rank="12"
+ data-experiment-cohort="control">
+ loader
+ <span class="SearchSnippet-header-path">(github.com/nathan-osman/pongo2-embed-loader)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/nathan-osman/pongo2-embed-loader?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>4</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v1.0.1</strong> published on <span data-test-id="snippet-published"><strong>Jan 25, 2022</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/nathan-osman/pongo2-embed-loader?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/shubhodeep9/witness" data-gtmc="search result" data-gtmv="13"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/shubhodeep9/witness"
+ data-rank="13"
+ data-experiment-cohort="control">
+ witness
+ <span class="SearchSnippet-header-path">(github.com/shubhodeep9/witness)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package witness is an audit log library modelled on django-auditlog.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/shubhodeep9/witness?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>3</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.1.0</strong> published on <span data-test-id="snippet-published"><strong>Oct 2, 2026</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/shubhodeep9/witness?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/flosch/pongo" data-gtmc="search result" data-gtmv="14"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/flosch/pongo"
+ data-rank="14"
+ data-experiment-cohort="control">
+ pongo
+ <span class="SearchSnippet-header-path">(github.com/flosch/pongo)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Pongo implements a Django-syntax-like templating engine.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/flosch/pongo?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>6</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.0-...-9f6442c</strong> published on <span data-test-id="snippet-published"><strong>Jul 1, 2014</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/flosch/pongo?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/yansuan/pongo2" data-gtmc="search result" data-gtmv="15"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/yansuan/pongo2"
+ data-rank="15"
+ data-experiment-cohort="control">
+ pongo2
+ <span class="SearchSnippet-header-path">(github.com/yansuan/pongo2)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ A Django-syntax like template-engine Blog posts about pongo2 (including introduction and migration): https://www.florian-schlachter.de/?tag=pongo2 Complete documentation on the template language: https://docs.djangoproject.com/en/dev/topics/templates/ Try out pongo2 live in the pongo2 playground: https://www.florian-schlachter.de/pongo2/ Make sure to read README.md in the repository as well.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/yansuan/pongo2?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>5</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.0-...-ab3ab0d</strong> published on <span data-test-id="snippet-published"><strong>Jul 20, 2017</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/yansuan/pongo2?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/xo/xo/_examples/django/mysql" data-gtmc="search result" data-gtmv="16"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/xo/xo/_examples/django/mysql"
+ data-rank="16"
+ data-experiment-cohort="control">
+ mysql
+ <span class="SearchSnippet-header-path">(github.com/xo/xo/_examples/django/mysql)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package mysql contains generated code for schema &#39;django&#39;.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/xo/xo/_examples/django/mysql?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>1</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.0-...-42b11c7</strong> published on <span data-test-id="snippet-published"><strong>Apr 29, 2022</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/xo/xo/_examples/django/mysql?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ <div class="SearchSnippet-sub go-textSubtle">
+ <strong>Other packages in module github.com/xo/xo/_examples:</strong>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/xo/xo/_examples/django/oracle"
+ data-gtmc="search result same module">
+ django/oracle
+ </a>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/xo/xo/_examples/django/sqlserver"
+ data-gtmc="search result same module">
+ django/sqlserver
+ </a>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/hemantasapkota/djangobot" data-gtmc="search result" data-gtmv="17"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/hemantasapkota/djangobot"
+ data-rank="17"
+ data-experiment-cohort="control">
+ djangobot
+ <span class="SearchSnippet-header-path">(github.com/hemantasapkota/djangobot)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/hemantasapkota/djangobot?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>4</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.0-...-bed3a30</strong> published on <span data-test-id="snippet-published"><strong>Mar 12, 2020</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/hemantasapkota/djangobot?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/kohkimakimoto/echo-viewkit/pongo2" data-gtmc="search result" data-gtmv="18"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/kohkimakimoto/echo-viewkit/pongo2"
+ data-rank="18"
+ data-experiment-cohort="control">
+ pongo2
+ <span class="SearchSnippet-header-path">(github.com/kohkimakimoto/echo-viewkit/pongo2)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package pongo2 is a Django-syntax like template-engine
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/kohkimakimoto/echo-viewkit/pongo2?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>2</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.9.0</strong> published on <span data-test-id="snippet-published"><strong>Oct 24, 2025</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/kohkimakimoto/echo-viewkit/pongo2?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/tada-team/lorm" data-gtmc="search result" data-gtmv="19"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/tada-team/lorm"
+ data-rank="19"
+ data-experiment-cohort="control">
+ lorm
+ <span class="SearchSnippet-header-path">(github.com/tada-team/lorm)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/tada-team/lorm?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>0</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.17.2</strong> published on <span data-test-id="snippet-published"><strong>Feb 20, 2022</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/tada-team/lorm?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/admpub/pongo2" data-gtmc="search result" data-gtmv="20"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/admpub/pongo2"
+ data-rank="20"
+ data-experiment-cohort="control">
+ pongo2
+ <span class="SearchSnippet-header-path">(github.com/admpub/pongo2)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ A Django-syntax like template-engine Blog posts about pongo2 (including introduction and migration): https://www.florian-schlachter.de/?tag=pongo2 Complete documentation on the template language: https://docs.djangoproject.com/en/dev/topics/templates/ Try out pongo2 live in the pongo2 playground: https://www.florian-schlachter.de/pongo2/ Make sure to read README.md in the repository as well.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/admpub/pongo2?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>3</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.0-...-9419e32</strong> published on <span data-test-id="snippet-published"><strong>Jul 23, 2016</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/admpub/pongo2?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/gorim.org/gorim" data-gtmc="search result" data-gtmv="21"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="gorim.org/gorim"
+ data-rank="21"
+ data-experiment-cohort="control">
+ gorim
+ <span class="SearchSnippet-header-path">(gorim.org/gorim)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/gorim.org/gorim?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>0</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.0-...-7160c59</strong> published on <span data-test-id="snippet-published"><strong>Feb 22, 2025</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/gorim.org/gorim?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/AIGamer28100/gobase" data-gtmc="search result" data-gtmv="22"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/AIGamer28100/gobase"
+ data-rank="22"
+ data-experiment-cohort="control">
+ gobase
+ <span class="SearchSnippet-header-path">(github.com/AIGamer28100/gobase)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package gobase provides a Django-inspired ORM library for Go that makes database operations simple and elegant.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/AIGamer28100/gobase?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>1</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.2</strong> published on <span data-test-id="snippet-published"><strong>Aug 12, 2025</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/AIGamer28100/gobase?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/acsellers/multitemplate" data-gtmc="search result" data-gtmv="23"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/acsellers/multitemplate"
+ data-rank="23"
+ data-experiment-cohort="control">
+ multitemplate
+ <span class="SearchSnippet-header-path">(github.com/acsellers/multitemplate)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Multitemplate is a library to allow you to write html templates in multiple languages, then allowing those templates to work with each other using either a Rails-like yield/content_for paradigm or a Django style block/extend paradigm.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/acsellers/multitemplate?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>3</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.4.3</strong> published on <span data-test-id="snippet-published"><strong>May 2, 2014</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/acsellers/multitemplate?tab=licenses" aria-label="Go to Licenses">
+ BSD-2-Clause
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" id="more-results">
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/gozelle/pongo2" data-gtmc="search result" data-gtmv="24"
+ data-test-id="snippet-title"
+ data-search-query="django"
+ data-clicked-package="github.com/gozelle/pongo2"
+ data-rank="24"
+ data-experiment-cohort="control">
+ pongo2
+ <span class="SearchSnippet-header-path">(github.com/gozelle/pongo2)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package pongo2 is a Django-syntax like template-engine
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/gozelle/pongo2?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>1</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.0-...-b7891e8</strong> published on <span data-test-id="snippet-published"><strong>Jan 18, 2023</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/gozelle/pongo2?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ </div>
+ <div class="SearchPagination" data-test-id="pagination">
+ Didn't find what you were looking for?
+ <a href="/search?limit=100&amp;m=package&amp;q=django#more-results" data-gtmc="search more results">Show more results.</a></div>
+ </div>
+ </main>
+ <footer class="go-Footer">
+ <div class="go-Footer-links">
+ <div class="go-Footer-linkColumn">
+ <a href="https://go.dev/solutions" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Why Go
+ </a>
+ <a href="https://go.dev/solutions/use-cases" class="go-Footer-link"
+ data-gtmc="footer link">
+ Use Cases
+ </a>
+ <a href="https://go.dev/solutions/case-studies" class="go-Footer-link"
+ data-gtmc="footer link">
+ Case Studies
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://learn.go.dev/" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Get Started
+ </a>
+ <a href="https://play.golang.org" class="go-Footer-link" data-gtmc="footer link">
+ Playground
+ </a>
+ <a href="https://tour.golang.org" class="go-Footer-link" data-gtmc="footer link">
+ Tour
+ </a>
+ <a href="https://stackoverflow.com/questions/tagged/go?tab=Newest" class="go-Footer-link"
+ data-gtmc="footer link">
+ Stack Overflow
+ </a>
+ <a href="https://go.dev/help" class="go-Footer-link"
+ data-gtmc="footer link">
+ Help
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://pkg.go.dev" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Packages
+ </a>
+ <a href="/std" class="go-Footer-link" data-gtmc="footer link">
+ Standard Library
+ </a>
+ <a href="/golang.org/x" class="go-Footer-link" data-gtmc="footer link">
+ Sub-repositories
+ </a>
+ <a href="https://pkg.go.dev/about" class="go-Footer-link" data-gtmc="footer link">
+ About Go Packages
+ </a>
+ <a href="/api" class="go-Footer-link" data-gtmc="footer link">
+ pkg.go.dev API
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://go.dev/project" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ About
+ </a>
+ <a href="https://go.dev/dl/" class="go-Footer-link" data-gtmc="footer link">Download</a>
+ <a href="https://go.dev/blog" class="go-Footer-link" data-gtmc="footer link">Blog</a>
+ <a href="https://github.com/golang/go/issues" class="go-Footer-link" data-gtmc="footer link">
+ Issue Tracker
+ </a>
+ <a href="https://go.dev/doc/devel/release.html" class="go-Footer-link"
+ data-gtmc="footer link">
+ Release Notes
+ </a>
+ <a href="https://go.dev/brand" class="go-Footer-link" data-gtmc="footer link">
+ Brand Guidelines
+ </a>
+ <a href="https://go.dev/conduct" class="go-Footer-link" data-gtmc="footer link">
+ Code of Conduct
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://www.twitter.com/golang" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Connect
+ </a>
+ <a href="https://www.twitter.com/golang" class="go-Footer-link" data-gtmc="footer link">
+ Twitter
+ </a>
+ <a href="https://github.com/golang" class="go-Footer-link" data-gtmc="footer link">GitHub</a>
+ <a href="https://invite.slack.golangbridge.org/" class="go-Footer-link"
+ data-gtmc="footer link">
+ Slack
+ </a>
+ <a href="https://reddit.com/r/golang" class="go-Footer-link" data-gtmc="footer link">
+ r/golang
+ </a>
+ <a href="https://www.meetup.com/pro/go" class="go-Footer-link" data-gtmc="footer link">
+ Meetup
+ </a>
+ <a href="https://golangweekly.com/" class="go-Footer-link" data-gtmc="footer link">
+ Golang Weekly
+ </a>
+ </div>
+ </div>
+ <div class="go-Footer-bottom">
+ <img class="go-Footer-gopher" width="1431" height="901"
+ src="/static/shared/gopher/pilot-bust-1431x901.svg" alt="Gopher in flight goggles">
+ <ul class="go-Footer-listRow">
+ <li class="go-Footer-listItem">
+ <a href="https://go.dev/copyright" data-gtmc="footer link">Copyright</a>
+ </li>
+ <li class="go-Footer-listItem">
+ <a href="https://go.dev/tos" data-gtmc="footer link">Terms of Service</a>
+ </li>
+ <li class="go-Footer-listItem">
+ <a href="http://www.google.com/intl/en/policies/privacy/" data-gtmc="footer link"
+ target="_blank" rel="noopener">
+ Privacy Policy
+ </a>
+ </li>
+ <li class="go-Footer-listItem">
+ <a href="https://go.dev/s/pkgsite-feedback" target="_blank" rel="noopener"
+ data-gtmc="footer link">
+ Report an Issue
+ </a>
+ </li>
+ <li class="go-Footer-listItem">
+ <button class="go-Button go-Button--text go-Footer-toggleTheme js-toggleTheme" aria-label="Theme Toggle">
+ <img data-value="auto" class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/brightness_6_gm_grey_24dp.svg" alt="System theme">
+ <img data-value="dark" class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/brightness_2_gm_grey_24dp.svg" alt="Dark theme">
+ <img data-value="light" class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/light_mode_gm_grey_24dp.svg" alt="Light theme">
+ <p> Theme Toggle </p>
+ </button>
+ </li>
+ <li class="go-Footer-listItem">
+ <button class="go-Button go-Button--text go-Footer-keyboard js-openShortcuts" aria-label="Shorcuts Modal">
+ <img class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/keyboard_grey_24dp.svg" alt="">
+ <p> Shortcuts Modal </p>
+ </button>
+ </li>
+ </ul>
+ <a class="go-Footer-googleLogo" href="https://google.com" target="_blank"rel="noopener"
+ data-gtmc="footer link">
+ <img class="go-Footer-googleLogoImg" height="24" width="72"
+ src="/static/shared/logo/google-white.svg" alt="Google logo">
+ </a>
+ </div>
+ </footer>
+ <dialog id="jump-to-modal" class="JumpDialog go-Modal go-Modal--md js-modal">
+ <form method="dialog" data-gmtc="jump to form" aria-label="Jump to Identifier">
+ <div class="Dialog-title go-Modal-header">
+ <h2>Jump to</h2>
+ <button
+ class="go-Button go-Button--inline"
+ type="button"
+ data-modal-close
+ data-gtmc="modal button"
+ aria-label="Close"
+ >
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/close_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </div>
+ <div class="JumpDialog-filter">
+ <input class="JumpDialog-input go-Input" autocomplete="off" type="text">
+ </div>
+ <div class="JumpDialog-body go-Modal-body">
+ <div class="JumpDialog-list"></div>
+ </div>
+ <div class="go-Modal-actions">
+ <button class="go-Button" data-test-id="close-dialog">Close</button>
+ </div>
+ </form>
+ </dialog>
+ <dialog class="ShortcutsDialog go-Modal go-Modal--sm js-modal">
+ <form method="dialog">
+ <div class="go-Modal-header">
+ <h2>Keyboard shortcuts</h2>
+ <button
+ class="go-Button go-Button--inline"
+ type="button"
+ data-modal-close
+ data-gtmc="modal button"
+ aria-label="Close"
+ >
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/close_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </div>
+ <div class="go-Modal-body">
+ <table>
+ <tbody>
+ <tr><td class="ShortcutsDialog-key">
+ <strong>?</strong></td><td> : This menu</td>
+ </tr>
+ <tr><td class="ShortcutsDialog-key">
+ <strong>/</strong></td><td> : Search site</td>
+ </tr>
+ <tr><td class="ShortcutsDialog-key">
+ <strong>f</strong> or <strong>F</strong></td><td> : Jump to</td>
+ </tr>
+ <tr>
+ <td class="ShortcutsDialog-key"><strong>y</strong> or <strong>Y</strong></td>
+ <td> : Canonical URL</td>
+ </tr>
+ </tbody>
+ </table>
+ </div>
+ <div class="go-Modal-actions">
+ <button class="go-Button" data-test-id="close-dialog">Close</button>
+ </div>
+ </form>
+ </dialog>
+ <section class="Cookie-notice js-cookieNotice">
+ <div>go.dev uses cookies from Google to deliver and enhance the quality of its services and to
+ analyze traffic. <a target=_blank href="https://policies.google.com/technologies/cookies">Learn more.</a></div>
+ <div><button class="go-Button">Okay</button></div>
+ </section>
+ </body>
+</html>

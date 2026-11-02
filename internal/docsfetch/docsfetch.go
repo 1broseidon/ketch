@@ -27,7 +27,39 @@ type Fetcher struct {
 	pages   scrape.PageCache // nil interface when caching is off
 }
 
-var _ docs.Fetcher = (*Fetcher)(nil)
+var (
+	_ docs.Fetcher         = (*Fetcher)(nil)
+	_ docs.ResolutionCache = (*Fetcher)(nil)
+)
+
+// resolutionKeyPrefix keeps resolution entries apart from pages in the page
+// cache: no page URL starts with it, so no scrape ever reads one.
+const resolutionKeyPrefix = "ketch-docs-resolution:"
+
+// resolutionSource is the fetch source recorded on a resolution entry.
+const resolutionSource = "docs-resolution"
+
+// GetResolution reads a web docs resolution from the page cache, under its
+// normal TTL; ("", false) without a cache.
+func (f *Fetcher) GetResolution(key string) (string, bool) {
+	if f.pages == nil {
+		return "", false
+	}
+	page, source := f.pages.Get(resolutionKeyPrefix + key)
+	if page == nil || source != resolutionSource {
+		return "", false
+	}
+	return page.Markdown, true
+}
+
+// PutResolution writes a web docs resolution to the page cache; nothing
+// without a cache.
+func (f *Fetcher) PutResolution(key, value string) {
+	if f.pages == nil {
+		return
+	}
+	f.pages.Put(resolutionKeyPrefix+key, &scrape.Page{URL: resolutionKeyPrefix + key, Markdown: value}, resolutionSource)
+}
 
 // New returns a Fetcher over s and pc. A nil pc fetches uncached. The Fetcher
 // borrows both: the caller still owns s and pc and closes them.

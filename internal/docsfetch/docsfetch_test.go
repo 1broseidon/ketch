@@ -424,3 +424,28 @@ func TestFetchHonoursContextRedirectCheck(t *testing.T) {
 		t.Errorf("FetchRaw same-host redirect under the check = %q, %v", raw.URL, err)
 	}
 }
+
+// Web docs resolutions round-trip through the page cache under their own
+// key space; without a cache there is nothing to keep, and a page entry is
+// never read as a resolution.
+func TestResolutionCache(t *testing.T) {
+	pc := newCache(t)
+	f := New(newScraper(t), pc)
+	if _, ok := f.GetResolution("k"); ok {
+		t.Fatal("a miss reads as a hit")
+	}
+	f.PutResolution("k", `{"root":"https://docs.example.dev/"}`)
+	if v, ok := f.GetResolution("k"); !ok || v != `{"root":"https://docs.example.dev/"}` {
+		t.Errorf("GetResolution = %q, %v", v, ok)
+	}
+	pc.Put(resolutionKeyPrefix+"page", &scrape.Page{Markdown: "a page"}, scrape.SourceHTTP)
+	if _, ok := f.GetResolution("page"); ok {
+		t.Error("a page entry read as a resolution")
+	}
+	var disabled *cache.Cache
+	nf := New(newScraper(t), disabled)
+	nf.PutResolution("k", "v")
+	if _, ok := nf.GetResolution("k"); ok {
+		t.Error("no cache, yet a hit")
+	}
+}

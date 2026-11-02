@@ -248,6 +248,7 @@ const (
 	evRelatedDomain evidenceKind = "related-domain" // same registrable domain, or <owner>.github.io (V4, needs evLinksRepo)
 	evLinksRepo     evidenceKind = "links-repo"     // the root links to the canonical repo or an alias
 	evLinksOwner    evidenceKind = "links-owner"    // the root links to another repo of the same owner
+	evLinksPackage  evidenceKind = "links-package"  // the root (or its llms.txt) links to the package's registry page
 	evRepoAgrees    evidenceKind = "repo-agrees"    // the package's repository field is the canonical repo
 	evSiteNames     evidenceKind = "site-names"     // the site names the project (llms.txt H1, objects.inv, title)
 	evRTDRepo       evidenceKind = "rtd-repo"       // Read the Docs records the canonical repo

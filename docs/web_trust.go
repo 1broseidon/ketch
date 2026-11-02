@@ -23,6 +23,7 @@ var trustPoints = map[evidenceKind]float64{
 	evRelatedDomain: 1,
 	evLinksRepo:     2,
 	evLinksOwner:    1,
+	evLinksPackage:  2,
 	evRepoAgrees:    1,
 	evSiteNames:     1,
 	evRTDRepo:       1,
@@ -79,4 +80,66 @@ func uniqueEvidence(evs []evidence) []evidence {
 		}
 	}
 	return out
+}
+
+// edgeClass groups evidence kinds into the independent edges a keyless
+// resolution counts (design/docs-keyless.md, Verify): what the package
+// owner published (metadata naming the root, directly or through its
+// homepage's docs link), what the site itself links to (the repository or
+// the package the registry names, or Read the Docs' record of the
+// repository), DNS (the root on the registrable domain of another host
+// the owner published), and, with a token, the repository's own GitHub
+// homepage. Registry-hosted docs for the exact package are a sufficient
+// edge alone. The site naming the project is weak: a tie-break, never an
+// edge. A search hit is never evidence at all.
+type edgeClass int
+
+const (
+	edgeNone edgeClass = iota
+	edgeMeta
+	edgeSiteLink
+	edgeDomain
+	edgeGitHub
+	edgeRegistry
+)
+
+var edgeOf = map[evidenceKind]edgeClass{
+	evPkgDocs:       edgeMeta,
+	evPkgHomepage:   edgeMeta,
+	evNavChain:      edgeMeta,
+	evRepoHomepage:  edgeGitHub,
+	evLinksRepo:     edgeSiteLink,
+	evLinksPackage:  edgeSiteLink,
+	evRTDRepo:       edgeSiteLink,
+	evRelatedDomain: edgeDomain,
+	evRegistryDocs:  edgeRegistry,
+}
+
+// minKeylessEdges is how many independent edges a keyless resolution
+// needs to tie a docs root to a project.
+const minKeylessEdges = 2
+
+// edges counts the distinct independent edges in evs; registry reports
+// registry-hosted docs for the exact package, which suffice alone.
+func edges(evs []evidence) (n int, registry bool) {
+	seen := map[edgeClass]bool{}
+	for _, e := range evs {
+		c := edgeOf[e.kind]
+		switch {
+		case c == edgeRegistry:
+			registry = true
+		case c != edgeNone && !seen[c]:
+			seen[c] = true
+			n++
+		}
+	}
+	return n, registry
+}
+
+// keylessVerified reports evs that tie a root to its project without
+// GitHub: registry-hosted docs for the exact package, or two independent
+// edges (edges).
+func keylessVerified(evs []evidence) bool {
+	n, registry := edges(evs)
+	return registry || n >= minKeylessEdges
 }

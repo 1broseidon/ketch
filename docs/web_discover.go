@@ -400,6 +400,10 @@ type llmsTxt struct {
 	title       string   // the H1
 	description string   // the first blockquote
 	links       []webLink
+	// identity are the manifest's links to a code forge repository or a
+	// package registry page, in any scope: what the site says it is
+	// (repoLinks, packageLinked).
+	identity []*url.URL
 	// titled maps each lower-cased link title to the page it names, in
 	// scope or not, and to nil when links to different pages share it.
 	titled map[string]*url.URL
@@ -482,6 +486,7 @@ func parseLLMSTxt(body string, base *url.URL, root webRoot) llmsTxt {
 			quote = 2
 		}
 		out.links = appendMarkdownLinks(out.links, line, base, root, section, seen, out.titled)
+		out.identity = appendIdentityLinks(out.identity, line, base)
 		if len(out.links) >= webMaxURLs {
 			break
 		}
@@ -524,6 +529,27 @@ func appendMarkdownLinks(links []webLink, line string, base *url.URL, root webRo
 		links = append(links, webLink{url: u, title: cleanInline(line[m[2]:m[3]]), description: desc})
 	}
 	return links
+}
+
+// webMaxIdentityLinks caps the identity links kept from one manifest.
+const webMaxIdentityLinks = 32
+
+// appendIdentityLinks adds the Markdown links on one line that point at a
+// GitHub repository or a package registry's page for a package.
+func appendIdentityLinks(out []*url.URL, line string, base *url.URL) []*url.URL {
+	for _, m := range mdLinkRe.FindAllStringSubmatch(line, -1) {
+		if len(out) >= webMaxIdentityLinks {
+			break
+		}
+		u, ok := resolveRef(base, m[2])
+		if !ok {
+			continue
+		}
+		if _, repo := githubRepoOf(u); repo || registryPackageOf(u) != (pkgRef{}) {
+			out = append(out, u)
+		}
+	}
+	return out
 }
 
 // noteTitle records that title names u, or that it is ambiguous (nil) when

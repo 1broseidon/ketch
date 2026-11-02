@@ -31,8 +31,20 @@ type Web struct {
 	// Name resolution sources (phase 2). A nil source is not consulted:
 	// NewWeb leaves all three nil, newWebFromConfig sets them.
 	pkgs  pkgSource    // package registries
-	repos repoSource   // GitHub
-	sites siteSearcher // web search, the last resort for finding a docs site
+	repos repoSource   // GitHub, consulted only while githubOn allows (gh)
+	sites siteSearcher // web search: beside the registries keyless, the last resort with GitHub
+	// githubOn reports whether GitHub may be asked: a token is configured.
+	// Without one the backend is keyless and never calls GitHub at all, so
+	// nothing waits on its 60-an-hour anonymous quota and nothing is vetoed
+	// because it did not answer. nil means repos is always asked (tests).
+	githubOn func() bool
+	// popularity reads registry download counts, the keyless tie-break
+	// between same-name projects; nil asks no one (counts unknown).
+	popularity popularitySource
+	// workdirHint names the ecosystems the working directory's project files
+	// (package.json, pyproject.toml, Cargo.toml, go.mod) belong to; nil for
+	// none. Read once per call, never at construction.
+	workdirHint func() []ecosystem
 
 	resolveTimeout time.Duration // whole name resolution, within opTimeout
 	opTimeout      time.Duration // whole GetDocs/ResolveLibrary call
@@ -101,11 +113,16 @@ func newWebFromConfig(c *config.Config, deps Deps) *Web {
 		cfg = *c
 	}
 	w := NewWeb(deps.Fetcher)
-	w.pkgs = newPkgClient(httpx.Default())
-	w.repos = newGHClient(httpx.Default(), sync.OnceValue(func() string {
+	pkgs := newPkgClient(httpx.Default())
+	w.pkgs = pkgs
+	token := sync.OnceValue(func() string {
 		token, _ := cfg.ResolveGithubToken()
 		return token
-	}))
+	})
+	w.repos = newGHClient(httpx.Default(), token)
+	w.githubOn = func() bool { return token() != "" }
+	w.popularity = newPopularityClient(pkgs)
+	w.workdirHint = sync.OnceValue(workdirEcosystems)
 	auto := sync.OnceValues(func() (*search.Auto, error) { return search.NewAutoFromConfig(&cfg, "") })
 	w.sites = siteSearchFunc(func(ctx context.Context, query string, limit int) ([]search.Result, error) {
 		a, err := auto()
@@ -136,7 +153,7 @@ func (w *Web) Search(ctx context.Context, query string, limit int) ([]Result, er
 	if !w.resolvesNames() {
 		return nil, fmt.Errorf("%w: the web backend searches one docs site; pass its URL with --library (CLI) or library (MCP), e.g. --library https://docs.astro.build", ErrLibraryRequired)
 	}
-	m, split, err := w.resolveQuery(ctx, query, splitLibraryQuery(query))
+	m, split, err := w.resolveQuery(withQueryHint(ctx, queryEcosystems(query)), query, splitLibraryQuery(query))
 	if err != nil {
 		return nil, err
 	}
@@ -173,10 +190,15 @@ func (w *Web) resolveQuery(ctx context.Context, query string, splits []querySpli
 	}
 	wg.Wait()
 	var tried []string
+	var missed []*strictMissError
 	for i, s := range splits {
 		var amb *AmbiguousLibraryError
+		var miss *strictMissError
 		switch {
 		case errs[i] == nil:
+			if err := w.pastStrictMisses(ctx, query, matches[i], missed); err != nil {
+				return webMatch{}, s, err
+			}
 			return matches[i], s, nil
 		case errors.As(errs[i], &amb):
 			return webMatch{}, s, errs[i]
@@ -184,6 +206,8 @@ func (w *Web) resolveQuery(ctx context.Context, query string, splits []querySpli
 			return webMatch{}, s, fmt.Errorf("web: %w", ctx.Err())
 		case vetoes(errs[i], s, len(splits)):
 			return webMatch{}, s, fmt.Errorf("web: reading %q as library %q: %s", query, s.spec.raw, errs[i]) // plain: upstream
+		case errors.As(errs[i], &miss):
+			missed = append(missed, miss)
 		}
 		tried = append(tried, fmt.Sprintf("%s: %v", s.spec.raw, errs[i]))
 	}
@@ -194,11 +218,13 @@ func (w *Web) resolveQuery(ctx context.Context, query string, splits []querySpli
 // vetoes reports a reading's failure that stops a bare query: an upstream
 // one that could plausibly have changed which library was picked.
 //
-//   - A registry that could not be asked about the name vetoes any
+//   - Nothing vetoes a guessed (strict) reading (react-router from
+//     "react router"), which only speculates that the words name a
+//     package: a registry rate-limiting it (crates.io's 429), GitHub
+//     failing or a site not answering counts as not found, so the readings
+//     other sources settle still answer.
+//   - A registry that could not be asked about the name vetoes any other
 //     reading: the package may exist.
-//   - Nothing else vetoes a guessed (strict) reading, which needs an exact
-//     package's own site: a GitHub failure (its search, a repository's
-//     rate limit) counts as not found.
 //   - For another reading, a library that verified but could not be
 //     confirmed past a failed source (a registry, GitHub's search, or a
 //     repository GitHub did not read for another project of the name)
@@ -216,12 +242,13 @@ func vetoes(err error, s querySplit, readings int) bool {
 	if errors.Is(err, ErrNotFound) || errors.Is(err, ErrLibraryRequired) {
 		return false
 	}
+	if s.strict {
+		return false
+	}
 	var up *upstreamError
 	switch {
 	case !errors.As(err, &up), up.registryFailed:
 		return true
-	case s.strict:
-		return false
 	case up.picked, up.nameKnown && up.siteFailed:
 		return true
 	}

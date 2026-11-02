@@ -265,6 +265,23 @@ func (f *docsFetcher) FetchPage(ctx context.Context, url string) (docs.PageConte
 	return inner.FetchPage(ctx, url)
 }
 
+// GetResolution reads a cached web docs resolution (docs.ResolutionCache)
+// through the fetcher, building it as a fetch would.
+func (f *docsFetcher) GetResolution(key string) (string, bool) {
+	inner, err := f.get()
+	if err != nil {
+		return "", false
+	}
+	return inner.GetResolution(key)
+}
+
+// PutResolution caches a web docs resolution through the fetcher.
+func (f *docsFetcher) PutResolution(key, value string) {
+	if inner, err := f.get(); err == nil {
+		inner.PutResolution(key, value)
+	}
+}
+
 // get builds the fetcher on first use. Construction does no network I/O, so
 // it runs under the lock and concurrent first fetches share one scraper.
 func (f *docsFetcher) get() (*docsfetch.Fetcher, error) {

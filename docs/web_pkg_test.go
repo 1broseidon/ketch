@@ -505,6 +505,7 @@ func TestPkgClientSearchGo(t *testing.T) {
 	ft.Handle(http.MethodGet, "https://pkg.go.dev/v1/search?q=gone", testutil.Fixture{Status: http.StatusNotFound})
 	ft.Handle(http.MethodGet, "https://pkg.go.dev/v1/search?q=down", testutil.Fixture{Status: http.StatusBadGateway})
 	c = newPkgClient(ft.Client())
+	c.retryWait = time.Millisecond
 	if got, err := c.searchGo(context.Background(), "gone", 5); got != nil || err != nil {
 		t.Errorf("a 404 search = %v, %v; want nil, nil", got, err)
 	}
@@ -671,6 +672,7 @@ func TestPkgClientRetriesTransientStatus(t *testing.T) {
 	for _, status := range []int{http.StatusTooManyRequests, http.StatusServiceUnavailable} {
 		ft := testutil.LoadFixtures(t, registryFixtureDir)
 		c := newPkgClient(&http.Client{Transport: &flakyOnce{rt: ft, status: status, seen: map[string]bool{}}})
+		c.retryWait = time.Millisecond
 		if got, err := c.lookup(context.Background(), ecoCrates, "clap"); err != nil || got.name != "clap" {
 			t.Errorf("crates clap after a %d = %+v, %v; want the retry's answer", status, got, err)
 		}

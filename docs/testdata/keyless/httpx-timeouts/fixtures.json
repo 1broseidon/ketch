@@ -1,0 +1,206 @@
+[
+ {
+  "url": "https://pkg.go.dev/github.com/chi07/httpx",
+  "status": 200,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8"
+  },
+  "body": "000"
+ },
+ {
+  "url": "https://pkg.go.dev/search?m=package&q=httpx",
+  "status": 200,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8"
+  },
+  "body": "001"
+ },
+ {
+  "url": "https://pkg.go.dev/github.com/zeromicro/go-zero",
+  "status": 200,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8"
+  },
+  "body": "002"
+ },
+ {
+  "url": "https://api.npmjs.org/downloads/point/last-week/httpx",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json; charset=utf-8"
+  },
+  "body": "003"
+ },
+ {
+  "url": "https://pkg.go.dev/github.com/projectdiscovery/httpx/",
+  "status": 301,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8",
+   "Location": "/github.com/projectdiscovery/httpx"
+  },
+  "body": "004"
+ },
+ {
+  "url": "https://crates.io/api/v1/crates/httpx?include=downloads",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "005"
+ },
+ {
+  "url": "https://www.python-httpx.org/",
+  "status": 200,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8"
+  },
+  "body": "006"
+ },
+ {
+  "url": "https://pkg.go.dev/github.com/gogama/httpx",
+  "status": 200,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8"
+  },
+  "body": "007"
+ },
+ {
+  "url": "https://proxy.golang.org/github.com/chi07/httpx/@latest",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "008"
+ },
+ {
+  "url": "https://pkg.go.dev/github.com/zeromicro/go-zero/",
+  "status": 301,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8",
+   "Location": "/github.com/zeromicro/go-zero"
+  },
+  "body": "009"
+ },
+ {
+  "url": "https://proxy.golang.org/github.com/zeromicro/go-zero/rest/httpx/@latest",
+  "status": 404,
+  "headers": {
+   "Content-Type": "text/plain; charset=UTF-8"
+  },
+  "body": "010"
+ },
+ {
+  "url": "https://proxy.golang.org/github.com/zeromicro/go-zero/@latest",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "011"
+ },
+ {
+  "url": "https://registry.npmjs.org/httpxjs/latest",
+  "status": 404,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "012"
+ },
+ {
+  "url": "https://registry.npmjs.org/httpx/latest",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "013"
+ },
+ {
+  "url": "https://registry.npmjs.org/httpx-js/latest",
+  "status": 404,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "014"
+ },
+ {
+  "url": "https://pkg.go.dev/v1/module/github.com/chi07/httpx",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "015"
+ },
+ {
+  "url": "https://docs.rs/httpx/latest/httpx/",
+  "status": 200,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8"
+  },
+  "body": "016"
+ },
+ {
+  "url": "https://pkg.go.dev/github.com/gogama/httpx/",
+  "status": 301,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8",
+   "Location": "/github.com/gogama/httpx"
+  },
+  "body": "017"
+ },
+ {
+  "url": "https://pypi.org/pypi/httpx/json",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "018"
+ },
+ {
+  "url": "https://pkg.go.dev/github.com/chi07/httpx/",
+  "status": 301,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8",
+   "Location": "/github.com/chi07/httpx"
+  },
+  "body": "019"
+ },
+ {
+  "url": "https://pypistats.org/api/packages/httpx/recent",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "020"
+ },
+ {
+  "url": "https://pkg.go.dev/v1/module/github.com/gogama/httpx",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "021"
+ },
+ {
+  "url": "https://proxy.golang.org/github.com/projectdiscovery/httpx/@latest",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "022"
+ },
+ {
+  "url": "https://pkg.go.dev/github.com/projectdiscovery/httpx",
+  "status": 200,
+  "headers": {
+   "Content-Type": "text/html; charset=utf-8"
+  },
+  "body": "023"
+ },
+ {
+  "url": "https://proxy.golang.org/github.com/gogama/httpx/@latest",
+  "status": 200,
+  "headers": {
+   "Content-Type": "application/json"
+  },
+  "body": "024"
+ }
+]
