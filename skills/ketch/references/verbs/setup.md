@@ -77,7 +77,7 @@ On older ketch versions without `doctor`, configured-state detection is imperfec
 ## Code, docs, browser
 
 - **code:** `grepapp` is the default and keyless — a healthy probe means leave it alone. `sourcegraph` is keyless too (`sourcegraph_url` can point at another instance). `github` needs auth by any of: `gh auth login`, `$GITHUB_TOKEN`, or `ketch config set github_token <tok>`.
-- **docs:** `context7` needs a free key: `ketch config set context7_api_key <key>`. The `local` backend is planned but unimplemented — selecting it is `[precondition]` / exit 5, not a bug in your call.
+- **docs:** `context7` needs a free key: `ketch config set context7_api_key <key>`. `web` needs nothing — it reads the library's own docs site; resolving a library name asks GitHub about its repository, and the `code` surface's GitHub auth (`gh auth login`, `$GITHUB_TOKEN` or `github_token`) lifts the 60-requests-an-hour unauthenticated limit. The `local` backend is planned but unimplemented — selecting it is `[precondition]` / exit 5, not a bug in your call.
 - **browser** (JS-rendered pages): check `ketch browser status`. Either point at an installed binary — `ketch config set browser <binary>` — or download Chromium with `ketch browser install`. Both are mutations: propose, confirm.
 
 ---

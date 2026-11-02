@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Widget: accessible widgets for the browser</title>
+<meta name="description" content="Widget renders accessible menus, dialogs and tabs in the browser.">
+<meta property="og:site_name" content="Widget">
+</head>
+<body>
+<header><nav>
+<a href="/">Widget</a>
+<a href="/docs/">Docs</a>
+<a href="/blog/">Blog</a>
+<a href="https://github.com/widgetjs/widget">GitHub</a>
+</nav></header>
+<main>
+<h1>Widget</h1>
+<p>Widget renders accessible menus, dialogs and tabs in the browser, with keyboard support and screen reader labels built in.</p>
+<p>Install it from npm, import the components you need, and theme them with CSS custom properties. Read the docs to get started.</p>
+</main>
+</body>
+</html>

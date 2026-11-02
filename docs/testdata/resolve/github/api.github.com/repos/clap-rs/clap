@@ -1,0 +1,12 @@
+{
+ "id": 31315121,
+ "name": "clap",
+ "full_name": "clap-rs/clap",
+ "html_url": "https://github.com/clap-rs/clap",
+ "description": "A full featured, fast Command Line Argument Parser for Rust",
+ "fork": false,
+ "homepage": "docs.rs/clap",
+ "language": "Rust",
+ "stargazers_count": 16802,
+ "archived": false
+}

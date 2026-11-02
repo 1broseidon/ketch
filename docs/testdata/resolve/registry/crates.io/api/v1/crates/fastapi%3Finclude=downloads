@@ -1,0 +1,19 @@
+{
+ "crate": {
+  "id": "fastapi",
+  "name": "fastapi",
+  "description": "Compile time generated OpenAPI documentation for Rust",
+  "homepage": null,
+  "documentation": null,
+  "repository": "https://github.com/nxpkg/fastapi",
+  "max_stable_version": null,
+  "max_version": "0.0.0",
+  "newest_version": "0.0.0",
+  "default_version": "0.1.1",
+  "recent_downloads": 63,
+  "downloads": 1946
+ },
+ "versions": null,
+ "keywords": [],
+ "categories": []
+}

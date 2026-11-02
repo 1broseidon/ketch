@@ -1,0 +1,12 @@
+{
+ "id": 154964515,
+ "name": "serde",
+ "full_name": "rossmacarthur/serde",
+ "html_url": "https://github.com/rossmacarthur/serde",
+ "description": " :monorail: (unmaintained) A framework for defining, serializing, deserializing, and validating data structures",
+ "fork": false,
+ "homepage": "https://rossmacarthur.github.io/serde",
+ "language": "Python",
+ "stargazers_count": 53,
+ "archived": true
+}

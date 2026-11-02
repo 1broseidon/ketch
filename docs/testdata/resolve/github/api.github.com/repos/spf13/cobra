@@ -1,0 +1,12 @@
+{
+ "id": 12574344,
+ "name": "cobra",
+ "full_name": "spf13/cobra",
+ "html_url": "https://github.com/spf13/cobra",
+ "description": "A Commander for modern Go CLI interactions",
+ "fork": false,
+ "homepage": "https://cobra.dev",
+ "language": "Go",
+ "stargazers_count": 44726,
+ "archived": false
+}

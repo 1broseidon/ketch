@@ -49,10 +49,17 @@ In pi, the package's tools are the MCP tools under a `ketch_` prefix — `ketch_
 
 ## docs
 
-- Backend: `context7` — curated, version-aware snippets; free key via `ketch config set context7_api_key <key>`. A `local` backend is planned but unimplemented; selecting it is `[precondition]` / exit 5.
-- Two-step usage: `resolve` → vet → `library`.
-  - Resolve row shape: `/org/repo  Name  (snippets: N, trust: X)`.
-  - **Resolve never returns empty.** A garbage query returns confident fuzzy matches, some with trust 8–10. Trust scores the source, not the match — vet that the *name* is the library you meant before fetching by ID.
+- Backends: `context7` — curated, version-aware snippets; free key via `ketch config set context7_api_key <key>`. `web` — keyless; reads the library's own docs site (`llms.txt`, `llms-full.txt`, sitemaps, root-page links) and returns the matching sections, each with a heading breadcrumb and an anchor URL, within `tokens`; it never leaves the docs root (same host, paths under it). A `local` backend is planned but unimplemented; selecting it is `[precondition]` / exit 5.
+- `library` / `--library`: Context7 takes its `/org/repo` ID. `web` takes one spec:
+  - a docs URL (`https://docs.astro.build`) — used as given; it already names its version, so `<url>@x` is `[validation]`;
+  - `[eco:]name[@version]` — `click`, `django@5.2`, `next@14`, `pypi:click`, `npm:@astrojs/starlight@0.30`; prefixes `npm:` `pypi:` `crates:`/`cargo:` `go:` `github:`; a bare name is looked up in npm, PyPI and crates.io;
+  - `owner/repo` (a GitHub repository), or a Go module path (`github.com/spf13/cobra`).
+  - `@version`: exact label, alias (`latest`/`stable`, `dev`/`main`), or a prefix that picks the newest release under it (`5` → newest `5.x`), never across a major. A site with no version list answers only for the package's current major.
+- Without `library`, the library is picked from the query: Context7 resolves the whole query; `web` reads a library out of it (`how do I set retries in requests` → requests) and searches the rest.
+- Two-step usage: `resolve` → vet → `library`. **Resolve once, then pass the returned ID as `library`**: a name is resolved again on every call, and for `web` that is a round of registry, GitHub and site requests before the docs fetch.
+  - Context7 resolve row: `/org/repo  Name  (snippets: N, trust: X)`. **Context7's resolve never returns empty.** A garbage query returns confident fuzzy matches, some with trust 8–10. Trust scores the source, not the match — vet that the *name* is the library you meant before fetching by ID.
+  - `web` resolve row: `<docs root URL>  Name  (trust: X, version: V, versions: a b c)`, then indented `packages:` (specs usable as `library`, e.g. `pypi:click, github:pallets/click`) and `evidence:` (why this site is the library's docs). `--json` and MCP `matches` add `version`, `versions`, `evidence` and `packages`; Context7 matches never carry them. The ID is the docs root (for a version, that version's root). `web` returns only verified matches: the registry entry or repository names the site, or the site is the package's docs.rs/pkg.go.dev docs, or it sits on the project's domain and links back to its repository. Same-named junk packages and mirrors are dropped; a package's repository counts only when the repository backs the claim (its homepage names the package's site, or it is named like the package in the registry's language), and a same-named package with only docs.rs/pkg.go.dev/pythonhosted.org docs never makes a popular name ambiguous. Trust is 0–10, scored from the evidence; a GitHub rate limit shows up as an evidence note, not a failure.
+- `web` errors: `[validation]` / exit 2 — a malformed spec, a bare query naming no library that verifies, or an **ambiguous name** (more than one verified project; the message lists each candidate's ID and package specs — pass one as `library`; `resolve` lists them instead of failing). `[not_found]` / exit 3 — the named library is in no registry or repository, nothing found verifies (the message gives each candidate's reason), or the requested version is not offered (the message lists the versions that are). `[upstream]` / exit 4 — nothing verified and a registry, GitHub or the site failed or timed out; or, where one library is needed (a name as `library`, or a bare query), a registry or GitHub search failed, so the library meant may be the one missing: the message names the docs root that would have been picked — retry, or pass it as `library`. `resolve` never fails for that: each match's evidence then begins `this list may be incomplete:`, naming what failed. A GitHub rate limit names the fix (`gh auth login` / `ketch config set github_token <tok>`).
 - `tokens` (default 4000) is the docs token budget; the default returns ~3.3 KB.
 
 ## scrape
@@ -139,7 +146,7 @@ page-cache file and leaves bookmarks alone.
 | --- | --- | --- | --- |
 | search | **auto (default)**, ddg, searxng (self-hosted), exa, firecrawl, keenable, parallel, youcom | brave, tavily, tinyfish, serpbase, serply | `ketch config set brave_api_key <key>` / `tavily_api_key` / `tinyfish_api_key` / `serpbase_api_key` / `serply_api_key` (optional `firecrawl_api_key` / `parallel_api_key` / `youcom_api_key` lift the hosted caps) |
 | code | grepapp, sourcegraph | github | `gh auth login` / `$GITHUB_TOKEN` / `ketch config set github_token <tok>` |
-| docs | — | context7 (free key) | `ketch config set context7_api_key <key>` |
+| docs | web (`gh auth login` / `github_token` lifts GitHub's 60 req/h limit on name resolution) | context7 (free key) | `ketch config set context7_api_key <key>` |
 
 Search needs no key at all on the default `auto` backend. Naming a keyed backend explicitly without its key fails with `[precondition]` / exit 5 and an error message that names the fix (brave's includes the signup URL and the exact `config set` command).
 

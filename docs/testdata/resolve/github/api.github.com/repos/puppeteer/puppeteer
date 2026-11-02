@@ -1,0 +1,12 @@
+{
+ "id": 90796663,
+ "name": "puppeteer",
+ "full_name": "puppeteer/puppeteer",
+ "html_url": "https://github.com/puppeteer/puppeteer",
+ "description": "JavaScript API for Chrome and Firefox",
+ "fork": false,
+ "homepage": "https://pptr.dev",
+ "language": "TypeScript",
+ "stargazers_count": 95748,
+ "archived": false
+}

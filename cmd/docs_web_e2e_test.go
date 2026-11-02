@@ -1,11 +1,16 @@
 package cmd_test
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"slices"
@@ -13,8 +18,10 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/1broseidon/ketch/cache"
+	"github.com/1broseidon/ketch/internal/testutil"
 )
 
 // These tests are the web docs backend's acceptance check: a Mintlify-style,
@@ -400,23 +407,119 @@ func TestDocsWebFixtureSitesMCP(t *testing.T) {
 	}
 }
 
-// The web backend searches one site, so a query without a library is input
-// the caller must fix: exit 2 on the CLI, [validation] over MCP, and no
-// request leaves the process.
+// refusingProxy is an HTTP(S) proxy that refuses every request (403, CONNECT
+// included) and records what was asked of it. A binary run with it as
+// HTTP_PROXY and HTTPS_PROXY reaches no live service.
+func refusingProxy(t *testing.T) (*httptest.Server, func() []string) {
+	t.Helper()
+	var mu sync.Mutex
+	var asked []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		asked = append(asked, r.Method+" "+r.Host)
+		mu.Unlock()
+		http.Error(w, "offline test", http.StatusForbidden)
+	}))
+	t.Cleanup(srv.Close)
+	return srv, func() []string {
+		mu.Lock()
+		defer mu.Unlock()
+		return slices.Clone(asked)
+	}
+}
+
+// offlineCLI runs the binary like cli, with every proxy variable pointing
+// at proxy (and none bypassed), so a request it makes goes nowhere live.
+func offlineCLI(t *testing.T, proxy string, args ...string) (int, string, string) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, binary, args...)
+	for _, kv := range os.Environ() {
+		name, _, _ := strings.Cut(kv, "=")
+		switch strings.ToUpper(name) {
+		case "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY":
+			continue
+		}
+		cmd.Env = append(cmd.Env, kv)
+	}
+	cmd.Env = append(cmd.Env, "HTTP_PROXY="+proxy, "HTTPS_PROXY="+proxy, "http_proxy="+proxy, "https_proxy="+proxy, "NO_PROXY=", "no_proxy=")
+	var out, stderr bytes.Buffer
+	cmd.Stdout, cmd.Stderr = &out, &stderr
+	err := cmd.Run()
+	code := 0
+	if err != nil {
+		var exit *exec.ExitError
+		if !errors.As(err, &exit) {
+			t.Fatal(err)
+		}
+		code = exit.ExitCode()
+	}
+	return code, out.String(), stderr.String()
+}
+
+// notFoundTransport answers every request the way the registries, GitHub
+// and docs sites answer for a name they do not have: searches with no
+// hits, anything else 404. It counts the requests.
+type notFoundTransport struct{ n *atomic.Int32 }
+
+func (t notFoundTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	t.n.Add(1)
+	status, body := http.StatusNotFound, ""
+	switch req.URL.Host + req.URL.Path {
+	case "api.github.com/search/repositories":
+		status, body = http.StatusOK, `{"total_count":0,"incomplete_results":false,"items":[]}`
+	case "pkg.go.dev/v1/search":
+		status, body = http.StatusOK, `{"items":[]}`
+	}
+	return &http.Response{
+		Status: http.StatusText(status), StatusCode: status, Proto: "HTTP/1.1", ProtoMajor: 1, ProtoMinor: 1,
+		Header: http.Header{"Content-Type": {"application/json"}}, Body: io.NopCloser(strings.NewReader(body)),
+		ContentLength: int64(len(body)), Request: req,
+	}, nil
+}
+
+// A web docs query that names no library is input the caller must fix: exit
+// 2 on the CLI, [validation] over MCP, and no request leaves the process.
+// The binary runs behind a proxy that refuses everything, and the MCP
+// server's HTTP client is swapped for a fixture transport with no
+// fixtures, so neither can reach the network whatever it tries. A query
+// whose words do name candidates that no registry has is input to fix too;
+// over MCP it is answered by notFoundTransport.
 func TestDocsWebWithoutLibraryIsValidation(t *testing.T) {
 	isolated(t)
-	code, out, stderr := cli(t, "docs", "-b", "web", "verify webhook signatures")
+	t.Setenv("KETCH_GITHUB_TOKEN", "fixture-token") // so `gh auth token` never runs
+	proxy, asked := refusingProxy(t)
+	code, out, stderr := offlineCLI(t, proxy.URL, "docs", "-b", "web", "how to verify")
 	if code != 2 || out != "" || !strings.Contains(stderr, "--library") {
-		t.Fatalf("docs -b web without --library: exit %d, stdout %q, stderr %q; want exit 2 naming --library", code, out, stderr)
+		t.Fatalf("docs -b web naming no library: exit %d, stdout %q, stderr %q; want exit 2 naming --library", code, out, stderr)
 	}
-	code, _, stderr = cli(t, "--json", "docs", "-b", "web", "verify webhook signatures")
+	code, _, stderr = offlineCLI(t, proxy.URL, "--json", "docs", "-b", "web", "how to verify")
 	if code != 2 {
-		t.Fatalf("docs --json -b web without --library: exit %d, stderr %q; want 2", code, stderr)
+		t.Fatalf("docs --json -b web naming no library: exit %d, stderr %q; want 2", code, stderr)
+	}
+	if got := asked(); len(got) > 0 {
+		t.Errorf("a query naming no library made requests: %v", got)
 	}
 
-	r := call(t, session(t), "docs", map[string]any{"query": "verify webhook signatures", "backend": "web"})
+	ft := testutil.NewFixtureTransport()
+	testutil.SwapDefaultTransport(t, ft)
+	r := call(t, session(t), "docs", map[string]any{"query": "how to verify", "backend": "web"})
 	if !r.IsError || !strings.HasPrefix(output(r), "[validation]") || !strings.Contains(output(r), "library") {
-		t.Fatalf("MCP docs backend web without library: isError=%v %q; want [validation] naming library", r.IsError, output(r))
+		t.Fatalf("MCP docs backend web naming no library: isError=%v %q; want [validation] naming library", r.IsError, output(r))
+	}
+	if calls := ft.Calls(); len(calls) > 0 {
+		t.Errorf("a query naming no library made requests over MCP: %v", calls)
+	}
+
+	var n atomic.Int32
+	testutil.SwapDefaultTransport(t, notFoundTransport{&n})
+	r = call(t, session(t), "docs", map[string]any{"query": "verify webhook signatures", "backend": "web"})
+	if !r.IsError || !strings.HasPrefix(output(r), "[validation]") || !strings.Contains(output(r), "library") {
+		t.Fatalf("MCP docs backend web, no candidate published: isError=%v %q; want [validation] naming library", r.IsError, output(r))
+	}
+	if n.Load() == 0 {
+		t.Error("the candidates were never looked up")
 	}
 }
 

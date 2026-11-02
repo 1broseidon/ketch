@@ -1,0 +1,12 @@
+{
+ "id": 96584339,
+ "name": "click",
+ "full_name": "databricks/click",
+ "html_url": "https://github.com/databricks/click",
+ "description": "The \"Command Line Interactive Controller for Kubernetes\"",
+ "fork": false,
+ "homepage": "",
+ "language": "Rust",
+ "stargazers_count": 1511,
+ "archived": false
+}

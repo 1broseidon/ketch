@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>fastapi - Rust</title>
+<meta name="generator" content="rustdoc" />
+<meta name="description" content="Want to have your API documented with OpenAPI? But you don’t want to see the trouble with manual yaml or json tweaking? Would like it to be so easy that it would almost be like utopic? Don’t worry fastapi is just there to fill this gap. It aims to do if not all then the most of heavy lifting for you enabling you to focus writing the actual API logic instead of documentation. It aims to be minimal, simple and fast. It uses simple proc macros which you can use to annotate your code to have items documented." />
+<meta name="rustdoc-vars" data-root-path="../" data-static-root-path="/-/rustdoc.static/" data-current-crate="fastapi" data-themes="" data-resource-suffix="-20261001-1.101.0-nightly-c36f14571" data-rustdoc-version="1.101.0-nightly (c36f14571 2026-10-01)" data-channel="nightly" data-search-js="search-b167f383.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-170eb4bf.js" />
+<script src="/-/rustdoc.static/storage-41dd4d93.js"></script>
+<script src="../crates-20261001-1.101.0-nightly-c36f14571.js"></script>
+<script src="/-/rustdoc.static/main-1814ead3.js"></script>
+<script src="/-/static/menu.js?0-0-0-f0b23e4a5bd8f96c85fdca936d0cd760092107f6-2026-10-23"></script>
+<script src="/-/static/index.js?0-0-0-f0b23e4a5bd8f96c85fdca936d0cd760092107f6-2026-10-23"></script>
+</head>
+<body>
+<h1>Crate fastapi Copy item path</h1>
+<a href="/">Docs.rs</a>
+<a href="#">fastapi-0.1.1</a>
+<a href="/fastapi/0.1.1/fastapi/">Permalink</a>
+<a href="/crate/fastapi/latest">Docs.rs crate page</a>
+<a href="https://spdx.org/licenses/MIT">MIT</a>
+<a href="https://spdx.org/licenses/Apache-2.0">Apache-2.0</a>
+<a href="https://github.com/nxpkg/fastapi">Repository</a>
+<a href="https://crates.io/crates/fastapi">crates.io</a>
+<a href="/crate/fastapi/latest/source/">Source</a>
+<a href="https://crates.io/users/ghost_272239">ghost_272239</a>
+<a href="/fastapi-gen/^0.1.1/">fastapi-gen ^0.1.1 normal optional</a>
+<a href="https://github.com/actix/actix-web">actix-web</a>
+<a href="https://github.com/tokio-rs/axum">axum</a>
+<a href="https://github.com/SergioBenitez/Rocket">rocket</a>
+<a href="https://github.com/seanmonstar/warp">warp</a>
+<a href="https://github.com/nxpkg/fastapi/tree/master/examples">examples</a>
+<a href="https://github.com/actix/actix-web/">actix-web</a>
+<a href="https://github.com/uuid-rs/uuid">uuid</a>
+<a href="https://github.com/dylanhart/ulid-rs">ulid</a>
+<a href="https://github.com/servo/rust-url">url</a>
+<a href="https://github.com/dtolnay/serde-repr">repr_serde</a>
+<a href="https://github.com/nxpkg/fastapi/issues/214#issuecomment-1179589373">issue 214 comment</a>
+</body>
+</html>

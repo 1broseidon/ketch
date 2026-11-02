@@ -1,0 +1,19 @@
+{
+ "crate": {
+  "id": "astro",
+  "name": "astro",
+  "description": "Advanced algorithms for astronomy",
+  "homepage": null,
+  "documentation": "https://saurvs.github.io/astro-rust",
+  "repository": "https://www.github.com/saurvs/astro-rust",
+  "max_stable_version": null,
+  "max_version": "0.0.0",
+  "newest_version": "0.0.0",
+  "default_version": "2.0.0",
+  "recent_downloads": 48478,
+  "downloads": 200856
+ },
+ "versions": null,
+ "keywords": [],
+ "categories": []
+}

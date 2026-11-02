@@ -1,0 +1,74 @@
+{
+ "info": {
+  "name": "serde",
+  "version": "0.9.0",
+  "summary": "Define, serialize, deserialize, and validate Python data structures.",
+  "home_page": "https://github.com/rossmacarthur/serde",
+  "docs_url": null,
+  "project_urls": {
+   "Documentation": "https://rossmacarthur.github.io/serde/",
+   "Download": "https://github.com/rossmacarthur/serde/archive/0.9.0.tar.gz",
+   "Homepage": "https://github.com/rossmacarthur/serde",
+   "Issue Tracker": "https://github.com/rossmacarthur/serde/issues"
+  }
+ },
+ "last_serial": 15200366,
+ "releases": {
+  "0.8.0b1": [
+   {
+    "filename": "serde-0.8.0b1-py2.py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "py2.py3",
+    "size": 25945,
+    "upload_time_iso_8601": "2020-02-15T16:58:18.673592Z",
+    "url": "https://files.pythonhosted.org/packages/1b/7f/c7c4181de5ca14c92029dbe69f76acbd443653c6b38179bb6d6bbbb5a22c/serde-0.8.0b1-py2.py3-none-any.whl",
+    "yanked": false
+   }
+  ],
+  "0.8.0b2": [
+   {
+    "filename": "serde-0.8.0b2-py2.py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "py2.py3",
+    "size": 26347,
+    "upload_time_iso_8601": "2020-03-02T13:50:54.685964Z",
+    "url": "https://files.pythonhosted.org/packages/da/38/253ad946fe3b82de9a06b7cd4081628ee4d5214ab356d7e55d42a62f3eeb/serde-0.8.0b2-py2.py3-none-any.whl",
+    "yanked": false
+   }
+  ],
+  "0.8.1": [
+   {
+    "filename": "serde-0.8.1-py2.py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "py2.py3",
+    "size": 26302,
+    "upload_time_iso_8601": "2020-10-08T11:44:40.462728Z",
+    "url": "https://files.pythonhosted.org/packages/70/cf/39bb5fd3945ee17808b80bd171d349b8de427ad70d575f126ca4e7b9db32/serde-0.8.1-py2.py3-none-any.whl",
+    "yanked": false
+   }
+  ],
+  "0.9.0": [
+   {
+    "filename": "serde-0.9.0-py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "py3",
+    "size": 26204,
+    "upload_time_iso_8601": "2022-09-24T18:54:14.489696Z",
+    "url": "https://files.pythonhosted.org/packages/ec/94/9831ede822ed8fec518bd3d73c56880b40e0973740e91c6f97324282afe0/serde-0.9.0-py3-none-any.whl",
+    "yanked": false
+   }
+  ]
+ },
+ "urls": [
+  {
+   "filename": "serde-0.9.0-py3-none-any.whl",
+   "packagetype": "bdist_wheel",
+   "python_version": "py3",
+   "size": 26204,
+   "upload_time_iso_8601": "2022-09-24T18:54:14.489696Z",
+   "url": "https://files.pythonhosted.org/packages/ec/94/9831ede822ed8fec518bd3d73c56880b40e0973740e91c6f97324282afe0/serde-0.9.0-py3-none-any.whl",
+   "yanked": false
+  }
+ ],
+ "vulnerabilities": []
+}

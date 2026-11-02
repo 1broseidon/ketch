@@ -175,12 +175,8 @@ func pickCandidates(links []webLink, query string, root webRoot, n int) []webLin
 	return out
 }
 
-var (
-	// localeRe matches a locale path segment: en, pt-br, zh-hans, en_US.
-	localeRe = regexp.MustCompile(`(?i)^[a-z]{2}(?:[-_][a-z]{2,4})?$`)
-	// versionRe matches a docs version path segment: 2.x, 3.1.1, v4, next.
-	versionRe = regexp.MustCompile(`(?i)^(?:v?\d+(?:\.(?:\d+|x))*|next|latest|stable)$`)
-)
+// localeRe matches a locale path segment: en, pt-br, zh-hans, en_US.
+var localeRe = regexp.MustCompile(`(?i)^[a-z]{2}(?:[-_][a-z]{2,4})?$`)
 
 // collapseVariants keeps one page per path once leading locale and version
 // segments are set aside: sitemaps list /en/x, /es/x, /ja/x… and /docs/2.x/x,
@@ -219,7 +215,7 @@ func variantKey(u *url.URL, root webRoot) (string, bool) {
 			break
 		}
 		switch {
-		case versionRe.MatchString(seg):
+		case versionLabelRe.MatchString(seg): // web_version.go's version labels: 2.x, 3.1.1, v4, next, 4x, main
 			preferred = false
 		case localeRe.MatchString(seg):
 			preferred = preferred && strings.EqualFold(seg[:2], "en")

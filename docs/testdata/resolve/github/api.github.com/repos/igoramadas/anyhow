@@ -1,0 +1,12 @@
+{
+ "id": 177165894,
+ "name": "anyhow",
+ "full_name": "igoramadas/anyhow",
+ "html_url": "https://github.com/igoramadas/anyhow",
+ "description": "A choose-your-own logging wrapper for Winston, Bunyan, console and other logging libraries.",
+ "fork": false,
+ "homepage": "",
+ "language": "TypeScript",
+ "stargazers_count": 0,
+ "archived": false
+}

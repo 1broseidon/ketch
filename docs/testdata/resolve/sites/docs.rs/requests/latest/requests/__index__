@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>requests - Rust</title>
+<meta name="generator" content="rustdoc" />
+<meta name="description" content="API documentation for the Rust `requests` crate." />
+<meta name="keywords" content="rust, rustlang, rust-lang, requests" />
+<script src="/-/static/menu.js?0-0-0-cf3269774c51a008146afe83721a0b835401562a-2026-10-21"></script>
+<script src="/-/static/index.js?0-0-0-cf3269774c51a008146afe83721a0b835401562a-2026-10-21"></script>
+<script src="../../../main-20170531-1.19.0-dev-28a93c1f4.js"></script>
+<script src="../search-index.js"></script>
+</head>
+<body>
+<h1>Crate requests [−] [src]</h1>
+<a href="/">Docs.rs</a>
+<a href="#">requests-0.0.30</a>
+<a href="/requests/0.0.30/requests/">Permalink</a>
+<a href="/crate/requests/latest">Docs.rs crate page</a>
+<a href="https://spdx.org/licenses/MIT">MIT</a>
+<a href="https://gitlab.com/imp/requests-rs">Homepage</a>
+<a href="https://gitlab.com/imp/requests-rs.git">Repository</a>
+<a href="https://crates.io/crates/requests">crates.io</a>
+<a href="/crate/requests/latest/source/">Source</a>
+<a href="https://crates.io/users/seanmonstar">seanmonstar</a>
+</body>
+</html>

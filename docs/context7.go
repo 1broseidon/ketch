@@ -31,6 +31,10 @@ func NewContext7(apiKey string) *Context7 {
 // Field names track the upstream schema: "title" (not "name"),
 // "totalSnippets" (not "codeSnippets"), and "trustScore" (numeric, not
 // the older string "trust").
+//
+// Version, Evidence and Packages belong to the web backend. Context7 never
+// sets them and they are omitted when empty, so Context7's JSON does not
+// change.
 type LibraryMatch struct {
 	ID            string   `json:"id"`
 	Title         string   `json:"title"`
@@ -38,6 +42,15 @@ type LibraryMatch struct {
 	TotalSnippets int      `json:"totalSnippets"`
 	TrustScore    float64  `json:"trustScore"`
 	Versions      []string `json:"versions"`
+	// Version is the version the ID's docs are for: the requested one, else
+	// the site's current one, as a concrete label rather than an alias.
+	Version string `json:"version,omitempty"`
+	// Evidence says, one finding per entry, why the ID is this library's
+	// docs ("pypi click lists it as Documentation").
+	Evidence []string `json:"evidence,omitempty"`
+	// Packages are the library's package and repository specs, each usable
+	// as the library (pypi:click, github:pallets/click).
+	Packages []string `json:"packages,omitempty"`
 }
 
 type context7SearchResponse struct {

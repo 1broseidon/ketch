@@ -1,0 +1,12 @@
+{
+ "id": 14367737,
+ "name": "serde",
+ "full_name": "serde-rs/serde",
+ "html_url": "https://github.com/serde-rs/serde",
+ "description": "Serialization framework for Rust",
+ "fork": false,
+ "homepage": "https://serde.rs/",
+ "language": "Rust",
+ "stargazers_count": 10918,
+ "archived": false
+}

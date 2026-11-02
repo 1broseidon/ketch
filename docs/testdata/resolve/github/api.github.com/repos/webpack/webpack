@@ -1,0 +1,12 @@
+{
+ "id": 3678731,
+ "name": "webpack",
+ "full_name": "webpack/webpack",
+ "html_url": "https://github.com/webpack/webpack",
+ "description": "A bundler for javascript and friends. Packs many modules into a few bundled assets. Code Splitting allows for loading parts of the application on demand. Through \"loaders\", modules can be CommonJs, AMD, ES6 modules, CSS, Images, JSON, Coffeescript, LESS, ... and your custom stuff.",
+ "fork": false,
+ "homepage": "https://webpack.js.org",
+ "language": "JavaScript",
+ "stargazers_count": 65972,
+ "archived": false
+}

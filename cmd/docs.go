@@ -20,18 +20,19 @@ import (
 var docsCmd = &cobra.Command{
 	Use:   "docs <query>",
 	Short: "Search library documentation",
-	Long:  `Search library documentation using ` + strings.Join(docs.ProviderNames(), ", ") + ` (default: the configured backend). Supports direct library ID lookup and library name resolution. A local FTS5 backend is planned but not yet implemented.`,
-	Args:  exitArgs(cobra.MinimumNArgs(1)),
-	RunE:  runDocs,
+	Long: `Search library documentation using ` + strings.Join(docs.ProviderNames(), ", ") + ` (default: the configured backend). Supports direct library ID lookup and library name resolution. ` +
+		docs.WithLibraryHelp("A library is a library ID from --resolve") + `. Resolve a name once and pass the ID it returns as --library: a name is resolved again on every call. A local FTS5 backend is planned but not yet implemented.`,
+	Args: exitArgs(cobra.MinimumNArgs(1)),
+	RunE: runDocs,
 }
 
 func init() {
 	rootCmd.AddCommand(docsCmd)
 	docsCmd.Flags().StringP("backend", "b", cfg.DocsBackend, "docs backend: "+strings.Join(config.AvailableDocBackends(), ", "))
-	docsCmd.Flags().String("library", "", strings.Join(docs.LibraryProviderNames(), ", ")+" library ID (skip resolve step)")
+	docsCmd.Flags().String("library", "", docs.WithLibraryHelp(strings.Join(docs.LibraryProviderNames(), ", ")+" library ID, skipping the resolve step"))
 	docsCmd.Flags().Int("tokens", 4000, strings.Join(docs.LibraryProviderNames(), ", ")+" token budget")
 	docsCmd.Flags().IntP("limit", "l", cfg.Limit, "max number of results")
-	docsCmd.Flags().Bool("resolve", false, "resolve library name instead of searching")
+	docsCmd.Flags().Bool("resolve", false, docs.WithLibraryHelp("resolve the query as a library name to "+strings.Join(docs.LibraryProviderNames(), ", ")+" library IDs instead of searching"))
 	docsCmd.Flags().String("tag", "", "record each result under this tag (see `ketch tag`)")
 	docsCmd.PreRunE = validateTagFlag
 	docsCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/library/snippet)")
@@ -109,10 +110,45 @@ func runDocsResolve(cmd *cobra.Command, query string, limit int, asJSON bool) er
 		return json.NewEncoder(os.Stdout).Encode(matches)
 	}
 
-	for _, m := range matches {
-		fmt.Printf("%s  %s  (snippets: %d, trust: %.1f)\n", m.ID, m.Title, m.TotalSnippets, m.TrustScore)
-	}
+	fmt.Print(formatLibraryMatches(matches))
 	return nil
+}
+
+// formatLibraryMatches is --resolve's text output, one block per match. It
+// goes by the fields a match carries, never by backend. A match with no
+// evidence, version or package specs (every Context7 match) is the one
+// line resolve has always printed, byte for byte. Any other says what it
+// knows: its trust, version and versions on the ID line, then its package
+// specs and evidence, each on an indented line when it has them. So a docs
+// URL with no evidence still shows the site's versions.
+func formatLibraryMatches(matches []docs.LibraryMatch) string {
+	var b strings.Builder
+	for _, m := range matches {
+		if len(m.Evidence) == 0 && m.Version == "" && len(m.Packages) == 0 {
+			fmt.Fprintf(&b, "%s  %s  (snippets: %d, trust: %.1f)\n", m.ID, m.Title, m.TotalSnippets, m.TrustScore)
+			continue
+		}
+		var about []string
+		if m.TotalSnippets > 0 {
+			about = append(about, fmt.Sprintf("snippets: %d", m.TotalSnippets))
+		}
+		about = append(about, fmt.Sprintf("trust: %.1f", m.TrustScore))
+		if m.Version != "" {
+			about = append(about, "version: "+m.Version)
+		}
+		if len(m.Versions) > 0 {
+			// Space-separated: the labels are a list inside a comma list.
+			about = append(about, "versions: "+strings.Join(m.Versions, " "))
+		}
+		b.WriteString(m.ID + "  " + m.Title + "  (" + strings.Join(about, ", ") + ")\n")
+		if len(m.Packages) > 0 {
+			b.WriteString("  packages: " + strings.Join(m.Packages, ", ") + "\n")
+		}
+		if len(m.Evidence) > 0 {
+			b.WriteString("  evidence: " + strings.Join(m.Evidence, "; ") + "\n")
+		}
+	}
+	return b.String()
 }
 
 // runDocsWithLibrary fetches docs for a known library ID. tokens bounds what
@@ -156,10 +192,13 @@ func printDocsResults(query, backend, library string, results []docs.Result, min
 	fmt.Println("---")
 	fmt.Printf("query: %s\n", query)
 	fmt.Printf("backend: %s\n", backend)
-	if library != "" {
-		fmt.Printf("library: %s\n", library)
-	} else if len(results) > 0 && results[0].Library != "" {
+	// The results' library is the ID the backend answered from: the one a
+	// name or spec passed as --library resolved to, or the one a bare query
+	// picked. Without results, the flag is all there is.
+	if len(results) > 0 && results[0].Library != "" {
 		fmt.Printf("library: %s\n", results[0].Library)
+	} else if library != "" {
+		fmt.Printf("library: %s\n", library)
 	}
 	fmt.Printf("result_count: %d\n", len(results))
 	fmt.Println("---")

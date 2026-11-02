@@ -55,3 +55,24 @@ func TestRegistryKeepsUnknownAndUnavailableDistinct(t *testing.T) {
 		}
 	}
 }
+
+// LibraryHelp is shared by the CLI help and the MCP descriptions: each
+// library provider's LibraryHelp, labelled with its name.
+func TestLibraryHelp(t *testing.T) {
+	var parts []string
+	for _, id := range LibraryBackends() {
+		if p, _ := Lookup(id); p.LibraryHelp != "" {
+			parts = append(parts, p.Name+": "+p.LibraryHelp)
+		}
+	}
+	if len(parts) == 0 {
+		t.Fatal("no library provider declares LibraryHelp; the web backend should")
+	}
+	want := strings.Join(parts, "; ")
+	if got := LibraryHelp(); got != want {
+		t.Errorf("LibraryHelp() = %q, want %q", got, want)
+	}
+	if got := WithLibraryHelp("a library ID"); got != "a library ID ("+want+")" {
+		t.Errorf("WithLibraryHelp = %q", got)
+	}
+}

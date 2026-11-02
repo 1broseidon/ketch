@@ -24,6 +24,9 @@ func TestUpstreamErrfClassification(t *testing.T) {
 		{"cancelled", context.Canceled, "[cancelled]"},
 		{"deadline", context.DeadlineExceeded, "[cancelled]"},
 		{"docs library required", fmt.Errorf("web: %w: pass the docs site URL as library", docs.ErrLibraryRequired), "[validation]"},
+		// Ambiguity reaches [validation] through docs.ErrLibraryRequired, which
+		// *docs.AmbiguousLibraryError also wraps: no MCP rule of its own.
+		{"docs ambiguous library", fmt.Errorf("web: %w", &docs.AmbiguousLibraryError{Library: "widget", Matches: []docs.LibraryMatch{{ID: "https://widget.dev/"}, {ID: "https://widget.readthedocs.io/en/stable/"}}}), "[validation]"},
 		{"docs not found", fmt.Errorf("context7: library %q %w", "/no/such-lib", docs.ErrNotFound), "[not_found]"},
 		{"repo not found", fmt.Errorf("%w: facebook/react is not on https://sourcegraph.com", code.ErrRepoNotFound), "[not_found]"},
 	}

@@ -1,0 +1,18 @@
+{
+  "info": {
+    "name": "widget",
+    "version": "2.4.1",
+    "summary": "Widgets for Python GUIs",
+    "home_page": null,
+    "docs_url": null,
+    "project_urls": {
+      "Documentation": "https://widget.readthedocs.io/en/stable/",
+      "Source": "https://github.com/pywidget/widget"
+    },
+    "yanked": false
+  },
+  "releases": {
+    "2.3.0": [],
+    "2.4.1": []
+  }
+}

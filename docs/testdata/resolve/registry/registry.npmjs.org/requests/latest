@@ -1,0 +1,14 @@
+{
+ "name": "requests",
+ "version": "0.3.0",
+ "description": "An streaming XHR abstraction that works in browsers and node.js",
+ "homepage": "https://github.com/unshiftio/requests",
+ "repository": {
+  "url": "git+https://github.com/unshiftio/requests.git",
+  "type": "git"
+ },
+ "bugs": {
+  "url": "https://github.com/unshiftio/requests/issues"
+ },
+ "license": "MIT"
+}

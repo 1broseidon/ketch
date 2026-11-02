@@ -1,0 +1,12 @@
+{
+ "id": 67836789,
+ "name": "tokio",
+ "full_name": "tokio-rs/tokio",
+ "html_url": "https://github.com/tokio-rs/tokio",
+ "description": "A runtime for writing reliable asynchronous applications with Rust. Provides I/O, networking, scheduling, timers, ...",
+ "fork": false,
+ "homepage": "https://tokio.rs",
+ "language": "Rust",
+ "stargazers_count": 33525,
+ "archived": false
+}

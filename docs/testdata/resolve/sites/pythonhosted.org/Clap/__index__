@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Welcome to Clap’s documentation! — Clap v0.7 documentation</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<script src="_static/jquery.js"></script>
+<script src="_static/doctools.js"></script>
+</head>
+<body>
+<h1>Welcome to Clap’s documentation!¶</h1>
+<a href="genindex.html">index</a>
+<a href="commands.html">next</a>
+<a href="#">Clap v0.7 documentation</a>
+<a href="#welcome-to-clap-s-documentation">¶</a>
+<a href="commands.html#the-command-base-class">The Command Base Class</a>
+<a href="commands.html#shortcuts">Shortcuts</a>
+<a href="commands.html#usage-errors-from-commands">Usage Errors from Commands</a>
+<a href="bases.html">Using Bases</a>
+<a href="bases.html#single-command-base">Single-Command Base</a>
+<a href="bases.html#multi-command-base">Multi-Command Base</a>
+</body>
+</html>

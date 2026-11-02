@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"path"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -31,49 +32,159 @@ type webSite struct {
 //  2. Sitemaps: robots.txt Sitemap: lines, else sitemap.xml and
 //     sitemap-index.xml under the root path and at the origin; indexes are
 //     followed webSitemapDepth levels deep, at most webMaxSitemaps files
-//     and webMaxURLs URLs.
+//     and webMaxURLs URLs, skipping other locales' sitemaps, all within
+//     sitemapBudget.
 //  3. Links on the root page (and the root page itself, following one meta
-//     refresh), the last resort.
+//     refresh), the last resort, merged with every page of the Sphinx
+//     build the root page belongs to (its searchindex.js).
 //
-// Only in-scope pages are kept from any source. Discovery files are probes:
-// their absence is expected and never an error. The root page is not, so
-// its fetch error is returned when nothing else turned up.
+// A sitemap that lists only the root or version roots (Read the Docs lists
+// /en/latest/ and /en/stable/) does not stop discovery, and registry docs
+// hosts (pkg.go.dev, docs.rs) go straight to the root page. Only in-scope
+// pages are kept from any source. Discovery files are probes: their
+// absence is expected and never an error. The root page is not, so its
+// fetch error is returned when nothing else turned up.
 func (w *Web) discover(ctx context.Context, root webRoot) (webSite, error) {
 	var site webSite
-	llms := w.findLLMSTxt(ctx, root, &site.tried)
-	if llms.url != nil {
-		site.pages = w.fullText(ctx, root, llms, &site.tried)
-		if len(site.pages) > 0 || len(llms.links) > 0 {
-			site.links = llms.links
-			return site, nil
-		}
-	}
-	if site.links = w.sitemapLinks(ctx, root, &site.tried); len(site.links) > 0 {
+	if w.discoverListed(ctx, root, &site) {
 		return site, nil
 	}
 	site.tried = append(site.tried, "links on "+root.String())
 	info, err := w.rootPage(ctx, root)
 	if err != nil {
-		if ctx.Err() != nil {
-			return site, ctx.Err()
-		}
-		var scope *scopeError
-		if errors.As(err, &scope) {
-			// Say where the root went, so the caller can pass that URL instead.
-			site.tried[len(site.tried)-1] += " (" + scope.reason() + ")"
-		}
-		if errors.Is(err, ErrNotFound) {
-			return site, nil // nothing at all (a 404 or 410): the caller reports what was tried
-		}
-		// Any other failure (a 5xx, a refused connection) stays upstream, but
-		// still says what else was tried.
-		return site, fmt.Errorf("web: fetching %s failed (tried %s): %w", root, strings.Join(site.tried[:len(site.tried)-1], ", "), err)
+		return site, rootPageFailure(ctx, root, &site, err)
 	}
-	if len(info.links) == 1 && info.page != nil && strings.TrimSpace(info.page.Markdown) == "" {
+	links := w.withSphinxLinks(ctx, root, info, &site.tried)
+	if len(links) == 1 && info.page != nil && strings.TrimSpace(info.page.Markdown) == "" {
 		return site, nil // an empty root page with no links: nothing to search
 	}
-	site.links = info.links
+	site.links = links
 	return site, nil
+}
+
+// discoverListed tries the sources that list a site's pages, llms.txt
+// (with llms-full.txt) then sitemaps, as far as root's host is worth
+// probing, and reports whether one answered with pages.
+func (w *Web) discoverListed(ctx context.Context, root webRoot, site *webSite) bool {
+	probes := hostDiscovery(root)
+	if probes.llms {
+		llms := w.findLLMSTxt(ctx, root, &site.tried)
+		if llms.url != nil {
+			site.pages = w.fullText(ctx, root, llms, &site.tried)
+			if len(site.pages) > 0 || len(llms.links) > 0 {
+				site.links = llms.links
+				return true
+			}
+		}
+	}
+	if !probes.sitemaps {
+		return false
+	}
+	if links := w.sitemapLinks(ctx, root, &site.tried); usefulSitemap(links, root) {
+		site.links = links
+		return true
+	}
+	return false
+}
+
+// rootPageFailure is discover's error for a root page that could not be
+// read: the caller's cancellation; nil for a missing page (the caller
+// reports what was tried); else the failure, upstream, naming what else
+// was tried. A root that redirected away says where, in site.tried.
+func rootPageFailure(ctx context.Context, root webRoot, site *webSite, err error) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	var scope *scopeError
+	if errors.As(err, &scope) {
+		// Say where the root went, so the caller can pass that URL instead.
+		site.tried[len(site.tried)-1] += " (" + scope.reason() + ")"
+	}
+	if errors.Is(err, ErrNotFound) {
+		return nil // nothing at all (a 404 or 410)
+	}
+	// Any other failure (a 5xx, a refused connection) stays upstream, but
+	// still says what else was tried.
+	return fmt.Errorf("web: fetching %s failed (tried %s): %w", root, strings.Join(site.tried[:len(site.tried)-1], ", "), err)
+}
+
+// discoveryProbes says which discovery files a host is worth asking for.
+type discoveryProbes struct {
+	llms, sitemaps bool
+}
+
+// registryDocsHosts serve generated API docs with no llms.txt, and a
+// robots.txt naming global sitemap indexes that list nothing under one
+// package's root: probing them costs up to a dozen large fetches for
+// nothing.
+var registryDocsHosts = map[string]bool{"pkg.go.dev": true, "docs.rs": true}
+
+// hostDiscovery returns the probes discovery makes for root's host.
+func hostDiscovery(root webRoot) discoveryProbes {
+	if registryDocsHosts[scopeHost(root.u)] {
+		return discoveryProbes{}
+	}
+	return discoveryProbes{llms: true, sitemaps: true}
+}
+
+// usefulSitemap reports sitemap links that include a page: something
+// other than the root or a version root (a path below the root of at most
+// two segments, each a locale or a version label). Read the Docs sitemaps
+// list only /en/latest/, /en/stable/ and the like.
+func usefulSitemap(links []webLink, root webRoot) bool {
+	return slices.ContainsFunc(links, func(l webLink) bool { return !isVersionRootPath(l.url, root) })
+}
+
+// isVersionRootPath reports u as the root itself or a version root below
+// it (/en/stable/, /latest/).
+func isVersionRootPath(u *url.URL, root webRoot) bool {
+	rel := pathSegments(strings.TrimPrefix(u.Path, root.prefix))
+	if len(rel) > 2 {
+		return false
+	}
+	for _, s := range rel {
+		if _, ok := segmentLabel(s); !ok && !localeRe.MatchString(s) {
+			return false
+		}
+	}
+	return true
+}
+
+// withSphinxLinks returns the root page's links, merged with the pages of
+// the Sphinx build it belongs to when it is one and its search index
+// answers.
+func (w *Web) withSphinxLinks(ctx context.Context, root webRoot, info rootInfo, tried *[]string) []webLink {
+	s, ok := detectSphinx(info.at, info.generator, info.scripts)
+	if !ok {
+		return info.links
+	}
+	*tried = append(*tried, s.root.String()+"searchindex.js")
+	links, err := w.sphinxLinks(ctx, root, s)
+	if err != nil {
+		return info.links
+	}
+	return mergeLinks(info.links, links)
+}
+
+// mergeLinks appends extra's links to links, in order, filling in the
+// title or description a link already present lacks.
+func mergeLinks(links, extra []webLink) []webLink {
+	out := slices.Clone(links)
+	pos := make(map[string]int, len(out)+len(extra))
+	for i, l := range out {
+		pos[linkKey(l.url)] = i
+	}
+	for _, l := range extra {
+		i, ok := pos[linkKey(l.url)]
+		if !ok {
+			pos[linkKey(l.url)] = len(out)
+			out = append(out, l)
+			continue
+		}
+		out[i].title = firstNonEmpty(out[i].title, l.title)
+		out[i].description = firstNonEmpty(out[i].description, l.description)
+	}
+	return out
 }
 
 // llmsTxt is a parsed llms.txt.
@@ -453,8 +564,17 @@ func parseSitemap(body []byte, limit int) (index bool, locs []string) {
 // sitemapLinks collects in-scope page URLs from the site's sitemaps:
 // every robots.txt Sitemap: entry, or, when those yield nothing, the first
 // of sitemap.xml and sitemap-index.xml (under the root path, then at the
-// origin) that does.
+// origin) that does. The walk gets sitemapBudget in all, however many
+// files it reads, and keeps what it has when that runs out: the files are
+// read one after another, and a slow host's (Django's, uncached, took 2 to
+// 10s each) would otherwise spend the call's whole budget, where the root
+// page's links still answer.
 func (w *Web) sitemapLinks(ctx context.Context, root webRoot, tried *[]string) []webLink {
+	if w.sitemapBudget > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, w.sitemapBudget)
+		defer cancel()
+	}
 	robots := root.origin() + "/robots.txt"
 	*tried = append(*tried, robots+" sitemaps")
 	var listed []string
@@ -517,7 +637,7 @@ func (s *sitemapWalk) fetch(ctx context.Context, loc string, depth int) {
 	index, locs := parseSitemap(gunzipMaybe(body), 2*webMaxURLs)
 	if index {
 		if depth < webSitemapDepth {
-			for _, child := range preferScoped(sameHostLocs(locs, base, s.root), s.root) {
+			for _, child := range preferScoped(ownLocale(sameHostLocs(locs, base, s.root), s.root), s.root) {
 				s.fetch(ctx, child, depth+1)
 			}
 		}
@@ -547,6 +667,45 @@ func sameHostLocs(locs []string, base *url.URL, root webRoot) []string {
 		}
 	}
 	return out
+}
+
+// sitemapLocaleRe matches the locale ending a sitemap file's name:
+// sitemap-en.xml, sitemap-pt-br.xml, sitemap_zh-hans.xml.gz.
+var sitemapLocaleRe = regexp.MustCompile(`(?i)[-_.]([a-z]{2}(?:[-_][a-z]{2,4})?)\.xml(?:\.gz)?$`)
+
+// sitemapLocale is the locale a sitemap is for, lower case: the one its
+// file name ends with, else its directory's (/fr/sitemap.xml); "" for none.
+func sitemapLocale(loc string) string {
+	u, err := url.Parse(loc)
+	if err != nil {
+		return ""
+	}
+	if m := sitemapLocaleRe.FindStringSubmatch(path.Base(u.Path)); m != nil {
+		return strings.ToLower(m[1])
+	}
+	if dir := path.Base(path.Dir(u.Path)); localeRe.MatchString(dir) {
+		return strings.ToLower(dir)
+	}
+	return ""
+}
+
+// ownLocale drops an index's sitemaps for other locales when the root sits
+// under a locale and the index has one for it: Django's lists
+// sitemap-el.xml to sitemap-zh-hans.xml beside sitemap-en.xml, eleven
+// files and 1.2 MB a root under /en/ has no use for.
+func ownLocale(children []string, root webRoot) []string {
+	segs := pathSegments(root.prefix)
+	if len(segs) == 0 || !localeRe.MatchString(segs[0]) {
+		return children
+	}
+	want := strings.ToLower(segs[0])
+	if !slices.ContainsFunc(children, func(c string) bool { return sitemapLocale(c) == want }) {
+		return children
+	}
+	return slices.DeleteFunc(slices.Clone(children), func(c string) bool {
+		l := sitemapLocale(c)
+		return l != "" && l != want
+	})
 }
 
 // preferScoped orders an index's children so ones naming the root's last
@@ -588,6 +747,11 @@ type rootInfo struct {
 	links              []webLink // in-scope links; rootPage puts the page itself first
 	page               *webPage  // the page's content when already in hand
 	refresh            *url.URL  // in-scope <meta http-equiv="refresh"> target
+	// generator is the page's generator meta and scripts the absolute URLs
+	// of its <script src>, from the raw HTML: how a framework build (Sphinx)
+	// is recognised.
+	generator string
+	scripts   []string
 }
 
 // rootPage reads the root page for the site's title, description and
@@ -631,6 +795,9 @@ func (w *Web) readPage(ctx context.Context, root webRoot, u *url.URL) (rootInfo,
 			return info, rawErr
 		}
 	}
+	if errors.Is(rawErr, errRefusedRedirect) {
+		return info, rawErr // FetchPage would only follow it
+	}
 	switch {
 	case rawErr != nil:
 	case looksLikeHTML(raw.Body, raw.ContentType):
@@ -649,7 +816,7 @@ func (w *Web) readPage(ctx context.Context, root webRoot, u *url.URL) (rootInfo,
 	switch {
 	case err == nil:
 		md := markdownRootInfo(page.Markdown, firstNonEmpty(info.title, cleanPageTitle(page.Title)), root, at, w.maxPageBytes)
-		md.description = info.description
+		md.description, md.generator, md.scripts = info.description, info.generator, info.scripts
 		return md, nil
 	case rawErr != nil:
 		return info, err
@@ -691,12 +858,14 @@ func htmlRootInfo(body []byte, root webRoot, u *url.URL) rootInfo {
 	}
 	info.title = cleanPageTitle(collapseSpace(doc.Find("title").First().Text()))
 	info.description = collapseSpace(doc.Find(`meta[name="description"]`).AttrOr("content", ""))
+	info.generator = metaNamed(doc, "generator")
 	base := u
 	if href, ok := doc.Find("base[href]").Attr("href"); ok {
 		if b, err := u.Parse(href); err == nil {
 			base = b
 		}
 	}
+	info.scripts = scriptURLs(doc, base)
 	doc.Find("meta[http-equiv]").Each(func(_ int, m *goquery.Selection) {
 		if strings.EqualFold(m.AttrOr("http-equiv", ""), "refresh") && info.refresh == nil {
 			if target, ok := root.resolve(base, metaRefreshURL(m.AttrOr("content", ""))); ok && linkKey(target) != linkKey(u) {
@@ -715,6 +884,32 @@ func htmlRootInfo(body []byte, root webRoot, u *url.URL) rootInfo {
 		info.links = append(info.links, webLink{url: link, title: title})
 	})
 	return info
+}
+
+// metaNamed returns the space-collapsed content of the first <meta> whose
+// name is name, in any case.
+func metaNamed(doc *goquery.Document, name string) string {
+	content := ""
+	doc.Find("meta[name]").EachWithBreak(func(_ int, m *goquery.Selection) bool {
+		if strings.EqualFold(strings.TrimSpace(m.AttrOr("name", "")), name) {
+			content = collapseSpace(m.AttrOr("content", ""))
+			return false
+		}
+		return true
+	})
+	return content
+}
+
+// scriptURLs returns the absolute web URLs of a page's <script src>
+// elements, resolved against base.
+func scriptURLs(doc *goquery.Document, base *url.URL) []string {
+	var out []string
+	doc.Find("script[src]").Each(func(_ int, s *goquery.Selection) {
+		if u, err := base.Parse(strings.TrimSpace(s.AttrOr("src", ""))); err == nil && isWebScheme(u.Scheme) {
+			out = append(out, u.String())
+		}
+	})
+	return out
 }
 
 // metaRefreshURL returns the target of a refresh content value such as

@@ -13,7 +13,7 @@ import (
 
 // DocsInput is the input schema for the "docs" tool.
 type DocsInput struct {
-	Query   string `json:"query" jsonschema:"the docs search query, or a library name when resolve is true"`
+	Query   string `json:"query" jsonschema:"the docs search query, or the library to resolve when resolve is true"`
 	Backend string `json:"backend,omitempty" jsonschema:"docs backend (default: the configured backend)"`
 	Library string `json:"library,omitempty" jsonschema:"library ID to fetch docs from directly, skipping the resolve step; requires a backend with library operations"`
 	Tokens  int    `json:"tokens,omitempty" jsonschema:"library token budget when library is set (default 4000)"`
@@ -37,7 +37,8 @@ func (s *Server) registerDocsTool() {
 	mcpsdk.AddTool(s.mcp, &mcpsdk.Tool{
 		Name:        "docs",
 		InputSchema: docsInputSchema(),
-		Description: "Search library documentation using " + strings.Join(docs.ProviderNames(), ", ") + ". Supports resolving a library name to a " + strings.Join(docs.LibraryProviderNames(), ", ") + " library ID, and fetching docs directly from a known library ID." +
+		Description: "Search library documentation using " + strings.Join(docs.ProviderNames(), ", ") + ". Supports resolving a library name to a " + strings.Join(docs.LibraryProviderNames(), ", ") + " library ID (resolve), and fetching docs directly from a known library ID (library)." +
+			docs.WithLibraryHelp(" A library is a library ID from resolve") + ". Resolve a name once and pass the returned ID as library on later calls: a name is resolved again on every call." +
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in DocsInput) (*mcpsdk.CallToolResult, DocsOutput, error) {
@@ -95,8 +96,9 @@ func (s *Server) registerDocsTool() {
 	})
 }
 
-// docsResolve maps a free-form library name to Context7 library IDs,
-// returning at most limit matches.
+// docsResolve maps a library name or spec to library IDs, returning at most
+// limit matches. Each match goes out as the backend gave it, with whatever
+// version, evidence and package specs it carries.
 func (s *Server) docsResolve(ctx context.Context, backend, query string, limit int) (*mcpsdk.CallToolResult, DocsOutput, error) {
 	resolver, err := s.libraryResolver(ctx, backend)
 	if err != nil {
@@ -156,8 +158,9 @@ func (s *Server) docsDeps(ctx context.Context) docs.Deps {
 }
 
 // docsInputSchema names the registered docs providers in the argument
-// descriptions: which backends exist, and which of them own library
-// resolution and direct library lookup.
+// descriptions: which backends exist, which of them own library resolution
+// and direct library lookup, and what each accepts as a library (its
+// descriptor's LibraryHelp), so no description names a provider itself.
 func docsInputSchema() *jsonschema.Schema {
 	backends := docs.AvailableBackends()
 	implemented := "implemented backends: " + configbase.JoinNames(backends)
@@ -167,10 +170,11 @@ func docsInputSchema() *jsonschema.Schema {
 	libNames := strings.Join(docs.LibraryProviderNames(), ", ")
 	libIDs := configbase.JoinNames(docs.LibraryBackends())
 	return inputSchema[DocsInput](map[string]string{
+		"query":   docs.WithLibraryHelp("the docs search query (without library, the library is picked from it), or the library to resolve when resolve is true"),
 		"backend": "docs backend (default: the configured backend); " + implemented,
-		"library": libNames + " library ID to fetch docs from directly, skipping the resolve step; requires the " + libIDs + " backend",
+		"library": docs.WithLibraryHelp(libNames + " library ID to fetch docs from directly, skipping the resolve step; requires the " + libIDs + " backend"),
 		"tokens":  libNames + " token budget when library is set (default 4000)",
-		"resolve": "resolve a library name to " + libNames + " library IDs instead of searching docs",
+		"resolve": docs.WithLibraryHelp("resolve the query as a library name to " + libNames + " library IDs instead of searching docs"),
 	})
 }
 

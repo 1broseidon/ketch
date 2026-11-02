@@ -2,6 +2,8 @@ package docs
 
 import (
 	"net/url"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -257,6 +259,46 @@ func TestWebHeadingCodeSpansAndCombiningMarks(t *testing.T) {
 		}
 		if got := claimAnchor(slugger{}, h); got != tc.anchor {
 			t.Errorf("anchor for %q = %q, want %q", tc.line, got, tc.anchor)
+		}
+	}
+}
+
+// react.dev's Markdown pages (the .md links its llms.txt lists) carry each
+// heading's id as a trailing MDX comment, {/*id*/}. It is the anchor, not
+// words to slug: slugging it as text doubled every anchor
+// (#my-cleanup-…-unmount-my-cleanup-…-unmount) and left the comment in the
+// heading and breadcrumb. The fixture is the recorded page, trimmed.
+func TestWebSplitSectionsMDXCommentIDs(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "sections", "react.dev", "useEffect.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, markdown := stripFrontmatter(string(body))
+	sections := splitSections(webPage{URL: "https://react.dev/reference/react/useEffect", Title: "useEffect", Markdown: markdown}, 0)
+	type got struct{ heading, crumbs, url string }
+	var have []got
+	for _, s := range sections {
+		have = append(have, got{s.heading, strings.Join(s.crumbs, " > "), s.URL()})
+	}
+	want := []got{
+		{"useEffect", "useEffect", "https://react.dev/reference/react/useEffect"},
+		{"useEffect(setup, dependencies?)", "useEffect > Reference > useEffect(setup, dependencies?)", "https://react.dev/reference/react/useEffect#useeffect"},
+		{"My Effect runs twice when the component mounts", "useEffect > Troubleshooting > My Effect runs twice when the component mounts",
+			"https://react.dev/reference/react/useEffect#my-effect-runs-twice-when-the-component-mounts"},
+		{"My cleanup logic runs even though my component didn't unmount", "useEffect > Troubleshooting > My cleanup logic runs even though my component didn't unmount",
+			"https://react.dev/reference/react/useEffect#my-cleanup-logic-runs-even-though-my-component-didnt-unmount"},
+	}
+	if !slices.Equal(have, want) {
+		t.Errorf("sections:\n got %q\nwant %q", have, want)
+	}
+	for _, tc := range []struct{ line, text, id string }{
+		{"## Usage {/* usage */}", "Usage", "usage"},
+		{"## Not an id {/* a comment with spaces */}", "Not an id {/* a comment with spaces */}", ""},
+		{"## Pandoc {#pandoc .unnumbered}", "Pandoc", "pandoc"},
+	} {
+		h, ok := parseATX(tc.line)
+		if !ok || h.text != tc.text || h.id != tc.id {
+			t.Errorf("parseATX(%q) = %q #%q, want %q #%q", tc.line, h.text, h.id, tc.text, tc.id)
 		}
 	}
 }

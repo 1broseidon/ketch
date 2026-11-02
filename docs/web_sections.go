@@ -90,8 +90,9 @@ type atxHeading struct {
 
 var (
 	// explicitIDRe matches a trailing {#id} (Docusaurus, MyST, Pandoc
-	// attributes; extra classes are ignored).
-	explicitIDRe = regexp.MustCompile(`\s*\{#([^\s}]+)[^}]*\}\s*$`)
+	// attributes; extra classes are ignored), or the MDX comment react.dev's
+	// Markdown pages carry as a heading's id, {/*id*/}.
+	explicitIDRe = regexp.MustCompile(`\s*\{(?:#([^\s}]+)[^}]*|/\*\s*([\w-]+)\s*\*/)\}\s*$`)
 	// fragmentLinkRe matches a link with a fragment, [text](#id) or
 	// [text](page#id), inside a heading: the permalink HTML-to-Markdown
 	// leaves behind (Docusaurus: a zero-width space linked to #x, titled
@@ -133,15 +134,15 @@ func parseATX(line string) (atxHeading, bool) {
 }
 
 // headingAnchor splits heading text into its words and its explicit anchor:
-// a trailing {#id}, else the fragment of a [text](#id) link in the heading
-// or of a permalink placeholder linking to any URL's #id. A worded link to
-// another page's fragment is just a link: it keeps its words and names no
-// anchor. Permalink placeholders are dropped.
+// a trailing {#id} or {/*id*/}, else the fragment of a [text](#id) link in
+// the heading or of a permalink placeholder linking to any URL's #id. A
+// worded link to another page's fragment is just a link: it keeps its words
+// and names no anchor. Permalink placeholders are dropped.
 func headingAnchor(text string) atxHeading {
 	var h atxHeading
-	if m := explicitIDRe.FindStringSubmatchIndex(text); m != nil {
-		h.id = text[m[2]:m[3]]
-		text = text[:m[0]]
+	if m := explicitIDRe.FindStringSubmatch(text); m != nil {
+		h.id = firstNonEmpty(m[1], m[2])
+		text = strings.TrimSuffix(text, m[0])
 	}
 	text = fragmentLinkRe.ReplaceAllStringFunc(text, func(link string) string {
 		m := fragmentLinkRe.FindStringSubmatch(link)

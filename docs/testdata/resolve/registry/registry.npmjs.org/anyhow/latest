@@ -1,0 +1,11 @@
+{
+ "name": "anyhow",
+ "version": "4.0.0",
+ "description": "Drop-in wrapper for Winston, Bunyan, Pino and console logs.",
+ "homepage": "https://github.com/igoramadas/anyhow#readme",
+ "repository": {
+  "url": "git+https://github.com/igoramadas/anyhow.git",
+  "type": "git"
+ },
+ "license": "MIT"
+}

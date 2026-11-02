@@ -1,0 +1,11 @@
+{
+ "name": "puppeteer",
+ "version": "25.16.0",
+ "description": "A high-level API to control headless Chrome over the DevTools Protocol",
+ "homepage": "https://github.com/puppeteer/puppeteer/tree/main#readme",
+ "repository": {
+  "url": "git+https://github.com/puppeteer/puppeteer.git#main",
+  "type": "git"
+ },
+ "license": "Apache-2.0"
+}

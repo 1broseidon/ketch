@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"slices"
+	"strings"
 
 	"github.com/1broseidon/ketch/health"
 	config "github.com/1broseidon/ketch/internal/configbase"
@@ -15,12 +16,17 @@ type Provider struct {
 	ID           string
 	Setup        string
 	LibrarySetup string
-	Name         string
-	Hidden       bool
-	Usable       func(*config.Config) bool
-	Settings     []config.Setting
-	New          func(*config.Config, Deps) (Searcher, error)
-	Probe        func(context.Context, *http.Client, *config.Config) (health.Status, string)
+	// LibraryHelp says what the provider accepts as a library. It feeds the
+	// --library and --resolve help and the MCP library, resolve and query
+	// descriptions, so shared help text never names a provider; empty adds
+	// nothing.
+	LibraryHelp string
+	Name        string
+	Hidden      bool
+	Usable      func(*config.Config) bool
+	Settings    []config.Setting
+	New         func(*config.Config, Deps) (Searcher, error)
+	Probe       func(context.Context, *http.Client, *config.Config) (health.Status, string)
 }
 
 // Required reports whether a failing health check must fail doctor. Selection
@@ -142,4 +148,26 @@ func LibraryProviderNames() []string {
 		names = append(names, p.Name)
 	}
 	return names
+}
+
+// LibraryHelp joins what each library provider says it accepts as a
+// library beyond a resolved ID (its descriptor's LibraryHelp), labelled with
+// the provider's name, so the CLI help and the MCP descriptions that use it
+// name no provider themselves. Empty when no provider says anything.
+func LibraryHelp() string {
+	var parts []string
+	for _, id := range LibraryBackends() {
+		if p, ok := Lookup(id); ok && p.LibraryHelp != "" {
+			parts = append(parts, p.Name+": "+p.LibraryHelp)
+		}
+	}
+	return strings.Join(parts, "; ")
+}
+
+// WithLibraryHelp appends LibraryHelp to s in parentheses, when there is any.
+func WithLibraryHelp(s string) string {
+	if help := LibraryHelp(); help != "" {
+		return s + " (" + help + ")"
+	}
+	return s
 }

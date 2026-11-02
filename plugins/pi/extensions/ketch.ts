@@ -125,12 +125,21 @@ const CodeParams = Type.Object({
 });
 
 const DocsParams = Type.Object({
-	query: Type.String({ description: "the docs search query, or a library name when resolve is true" }),
-	backend: Type.Optional(Type.String({ description: "docs backend: context7 (default: the configured backend)" })),
+	query: Type.String({
+		description:
+			"the docs search query (without library, the library is picked from it), or the library to resolve when resolve is true",
+	}),
+	backend: Type.Optional(
+		Type.String({
+			description:
+				"docs backend: context7 (curated snippets, needs an API key) or web (reads the library's own docs site, no key) (default: the configured backend)",
+		}),
+	),
 	library: Type.Optional(
 		Type.String({
 			description:
-				"library ID to fetch docs from directly, skipping the resolve step; requires a backend with library operations",
+				"library to fetch docs from directly, skipping the resolve step: a library ID from resolve (context7: /org/repo; web: the docs root URL). " +
+				"web also takes a docs URL, or a package name: name@version (django@5.2), npm:/pypi:/crates:/go:/github: prefixes (pypi:click), owner/repo, or a Go module path; requires a backend with library operations",
 		}),
 	),
 	tokens: Type.Optional(
@@ -143,7 +152,10 @@ const DocsParams = Type.Object({
 		}),
 	),
 	resolve: Type.Optional(
-		Type.Boolean({ description: "resolve a library name to library IDs instead of searching docs" }),
+		Type.Boolean({
+			description:
+				"resolve the query as a library name to library IDs instead of searching docs; web matches also carry their version, versions, package specs and the evidence for each",
+		}),
 	),
 	tag: Type.Optional(
 		Type.String({
@@ -624,9 +636,14 @@ export default function ketch(pi: ExtensionAPI): void {
 		...renderers("docs"),
 		label: "ketch docs",
 		description:
-			"Search library documentation using Context7. Supports resolving a library name to a Context7 library ID (resolve=true), and fetching docs directly from a known library ID (library=/org/repo, bounded by tokens)." +
+			"Search library documentation using Context7 or Web (backend=web reads the library's own docs site, no API key). " +
+			"Supports resolving a library name to library IDs (resolve=true), and fetching docs directly from a known library (library, bounded by tokens): a Context7 ID such as /vercel/next.js, " +
+			"or for web a docs URL, a package spec such as django@5.2 or pypi:click, owner/repo, or a Go module path. " +
+			"Resolve a name once and pass the returned ID as library on later calls: a name is resolved again on every call. " +
+			"A name more than one library answers to is a [validation] error listing each candidate's ID and package specs; pass one of them as library. " +
+			"A library nobody publishes, or a version its docs do not offer, is [not_found]; for a version, the error lists the ones on offer." +
 			ERR_TAXONOMY,
-		promptSnippet: "ketch_docs for a library's own documentation; resolve the name first, then fetch by library ID",
+		promptSnippet: "ketch_docs for a library's own documentation; resolve the name once, then fetch by the returned library ID",
 		parameters: DocsParams,
 		async execute(_id, p, signal) {
 			if (!p.query?.trim()) return validation("query is required");

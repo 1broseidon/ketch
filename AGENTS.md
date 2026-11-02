@@ -14,7 +14,7 @@ cmd/
   crawl.go                   Crawl command: BFS/sitemap crawl with streaming output
   crawl_bg.go                Background crawl: status, stop subcommands, worker mode
   code.go                    Code search command: query → snippet results, --lang/--repo filters, literal-qualifier warnings
-  docs.go                    Docs search command: query → docs/snippet results, --library, --resolve
+  docs.go                    Docs search command: query → docs/snippet results, --library (an ID or a library spec), --resolve (one line per match; the evidence form when a match carries evidence), help text from each provider's LibraryHelp
   config.go                  Config command: discovery, init, set, path
   cache.go                   Cache command: stats (page cache and tag index), clear
   tag.go                     Tag command: add, show, list, remove over the durable tag index
@@ -26,11 +26,22 @@ cmd/
 search/                      Searcher interface + Brave/DDG/SearXNG/EXA/Firecrawl/Keenable/Tavily/TinyFish/Parallel/SerpBase/Degoog/Serply/Youcom backends; NewFromConfig resolves the ordered provider registry for cmd/ and mcp/. auto.go is the default `auto` backend (keyless fallback chain, AutoRank-ordered), multi.go adds federated --multi search (RRF fusion, NewMultiFromConfig), random.go shuffled fallback, canonical.go the URL dedup keys
 code/                        code.Searcher interface + GrepApp/Sourcegraph/GitHub backends; NewFromConfig resolves the ordered provider registry. Query.Repo (owner/name, filter.go) is exact on every backend: each translates it and narrows a looser native filter itself
 docs/                        docs.Searcher interface + Context7 and keyless web backends (FTS5 local is an unimplemented stub); NewFromConfig resolves the ordered provider registry and hands providers a docs.Deps (fetch.go: the injected Fetcher, which reports each response's final URL)
-  web.go                     Web backend: one docs root passed as the library; scope (same host, www. twin, path prefix, dot segments cleaned), GetDocs/ResolveLibrary, timeouts as upstream errors
-  web_discover.go            Discovery, cheapest first: llms.txt, llms-full.txt (chunk attribution), on-host sitemaps, root-page links; only in-scope pages are kept
+  web.go                     Web backend: the library is a docs root URL or a library spec, and a bare query names its own; scope (same host, www. twin, path prefix, dot segments cleaned), GetDocs/ResolveLibrary/Search, timeouts as upstream errors
+  web_types.go               Name-resolution contract: libSpec, querySplit, pkgInfo, repoKey/repoInfo, siteProfile, siteVersion/versionSet, evidence; the pkgSource, repoSource and siteSearcher interfaces
+  web_spec.go                Library spec grammar (docs URL, [eco:]name[@version], owner/repo, Go module path), bare-query splitting, per-registry name normalization and name variants
+  web_pkg.go                 Package registries: npm, PyPI (streams only "info"), crates.io (User-Agent required), Go module proxy and pkg.go.dev
+  web_github.go              GitHub repository metadata and search: renames followed, token resolved lazily and never echoed, rate-limit errors, repository URL parsing
+  web_site.go                Site profiles (title, meta, links, repository back-links; one probe budget per profile), docs nav links, registrable domains, non-docs and non-public hosts, publicHops (no redirect into non-public space)
+  web_trust.go               Evidence kinds, their points and the 0-10 trust score (a match is verified with trust >= 3)
+  web_resolve.go             Name resolution: packages → projects → GitHub (repository claims kept only when corroborated) → candidate roots (a docs. guess beside a homepage with no docs link) → verification → versions; pickUnique (dominance: stars, index-hosted squatters; else AmbiguousLibraryError); a single-library answer past a failed registry is an upstream error
+  web_version.go             Version labels and sources (Read the Docs addons, mike, pydata switcher, sibling links, Sphinx), matchVersion, registry version roots, canonical roots, Result.Version
+  web_sphinx.go              Sphinx adapter: searchindex.js pages (html/dirhtml), objects.inv and documentation_options.js headers
+  web_discover.go            Discovery, cheapest first: llms.txt, llms-full.txt (chunk attribution), on-host sitemaps (the root's locale only, within sitemapBudget), root-page links; only in-scope pages are kept
   web_fetch.go               Fallback fetcher (no injected Fetcher), probes, bounded page fetches; a response served from outside the scope is dropped
-  web_sections.go            Heading sections, breadcrumbs and github-slugger anchors
+  web_sections.go            Heading sections, breadcrumbs and github-slugger anchors ({#id} and MDX {/*id*/} explicit ids)
   web_rank.go                Candidate picking, locale/version collapse, BM25 section ranking, token budget
+internal/testutil/           Test helpers: isolated config home, hostile instances for redaction tests
+  fixturetransport.go        FixtureTransport: an http.RoundTripper serving recorded fixtures under real hostnames (a request with no fixture is an error, never the network); SwapDefaultTransport puts it behind httpx.Default for in-process cmd and MCP tests
 internal/docsfetch/          docs.Fetcher over the shared scraper and page cache, built by cmd/ and mcp/: URL rewrites, cookies, browser fallback and caching apply to docs pages; reports final URLs in the caller's terms and wraps docs.ErrNotFound for 404/410
 mcp/                         MCP server (search/code/docs/scrape/crawl/tag tools; the mcp_tools config key is an allowlist over the published set) over the go-sdk mcp package; Server struct holds the shared scraper + cache, tools call the same NewFromConfig constructors as the CLI
 scrape/                      HTTP fetch + Page type, JS detection fallback, Rod browser; pipeline.go has the cache-aware scrape pipeline (CachedScrape*, ScrapeSelector, FetchLLMSTxt) shared by cmd/ and mcp/
@@ -41,7 +52,7 @@ config/                      JSON config loading/saving (~/.config/ketch/)
 doctor/                      Health checks: concurrent read-only probes per backend + browser + cache + tag index (informational, never gates the exit code), status classification (ok/no_key/unreachable/misconfigured/skipped)
 health/                      Shared bounded provider health checks (Status classification, HTTP probe helpers) used by doctor and the search/code/docs provider probes
 cache/                       TTL page cache (Store interface, BBoltStore backend) and durable bookmarks in a separate tags.db (tags.go/tag_store.go). Both open their bbolt file per transaction through boltfile.go and never hold it between operations (ADR-0006); writes sweep expired pages at most hourly, and cache clear deletes the file without touching bookmarks
-httpx/                       Shared tuned *http.Transport for all HTTP backends
+httpx/                       Shared tuned *http.Transport for all HTTP backends; WithRedirectCheck puts a per-request redirect check on the context, which every httpx client's CheckRedirect applies
 updatecheck/                 "new release available" probe + throttled stderr hint
 site/                        Builds ketch.run from MANUAL.md with inkcap (GitHub Pages, docs.yml)
 skills/ketch/                Bundled research skill (SKILL.md + references), loaded by Claude Code and pi
@@ -125,7 +136,10 @@ ketch code "query" --repo owner/name       # one repository, exact on every back
 ketch docs "query"                          # docs search (context7)
 ketch docs "query" --library /org/repo     # skip resolve, fetch directly
 ketch docs "query" -b web --library https://docs.astro.build  # search one docs site, no key
+ketch docs "query" -b web --library django@5.2  # a library spec: [eco:]name[@version], owner/repo, Go module path
+ketch docs -b web "how do I set retries in requests"  # web reads the library from the query
 ketch docs --resolve "library name"        # resolve library name → Context7 IDs
+ketch docs -b web --resolve click          # name → docs root ID, with version, versions, packages, evidence
 ketch config                                # show effective config + backends (incl. *_key_set presence booleans)
 ketch code "query" --tag remote-access      # record results under a tag (any surface)
 ketch scrape <url> --tag docs               # fetch and record the page under a tag
@@ -158,12 +172,12 @@ ketch mcp serve                             # run as an MCP server over stdio (s
 | --allow | crawl | — | Path substring filters |
 | --deny | crawl | — | Regex deny patterns |
 | --backend, -b | code | grepapp | Code backend (grepapp/sourcegraph/github) |
-| --backend, -b | docs | context7 | Docs backend (context7, or web: a keyless search of the one docs site passed as --library; local is planned, not implemented) |
+| --backend, -b | docs | context7 | Docs backend (context7, or web: a keyless search of the library's own docs site, named by --library or by the query; local is planned, not implemented) |
 | --lang | code | — | Language qualifier (appended to query) |
 | --repo | code | — | One repository, owner/name or a GitHub URL; exact on every backend. A backend that lacks it exits 3 (sourcegraph, github) or warns on an empty result (grepapp, partial index) |
-| --library | docs | — | Context7 library ID, or the docs root URL for web; skips resolve (web exits 2 without it) |
+| --library | docs | — | A library ID from --resolve; web also takes a docs URL, `[eco:]name[@version]` (npm:/pypi:/crates:/go:/github:), owner/repo or a Go module path. Skips resolve. web exits 2 on a malformed spec or an ambiguous name (the error lists the candidates), and without --library when the query names no library; 3 when the library or version is not found |
 | --tokens | docs | 4000 | Token budget (Context7, web) |
-| --resolve | docs | false | Resolve library name instead of searching |
+| --resolve | docs | false | Resolve the query as a library name or spec instead of searching; web matches add version, versions, packages and evidence (text and JSON) |
 | --max-chars N | scrape, search --scrape | 0 (off) | Truncate markdown output to N chars, appends `[truncated]` |
 | --trim | scrape, search --scrape | false | Strip markdown formatting syntax, keep content text only |
 | --minimal | search, code, docs | false | One result per line, tab-separated, no frontmatter (a 4th backends column is appended under `search --multi`, plain search only) |

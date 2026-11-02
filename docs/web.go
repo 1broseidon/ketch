@@ -9,10 +9,13 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/1broseidon/ketch/health"
+	"github.com/1broseidon/ketch/httpx"
 	config "github.com/1broseidon/ketch/internal/configbase"
+	"github.com/1broseidon/ketch/search"
 )
 
 // Web searches one documentation site directly, with no API key: the library
@@ -25,19 +28,30 @@ import (
 type Web struct {
 	fetcher Fetcher
 
-	opTimeout    time.Duration // whole GetDocs/ResolveLibrary call
-	probeTimeout time.Duration // each discovery file (llms.txt, robots.txt, sitemap)
-	maxFetch     int           // candidate pages fetched per query
-	concurrency  int           // concurrent page fetches
-	maxFullBytes int           // llms-full.txt larger than this is ignored
-	maxPageBytes int           // page text beyond this is cut before splitting
+	// Name resolution sources (phase 2). A nil source is not consulted:
+	// NewWeb leaves all three nil, newWebFromConfig sets them.
+	pkgs  pkgSource    // package registries
+	repos repoSource   // GitHub
+	sites siteSearcher // web search, the last resort for finding a docs site
+
+	resolveTimeout time.Duration // whole name resolution, within opTimeout
+	opTimeout      time.Duration // whole GetDocs/ResolveLibrary call
+	probeTimeout   time.Duration // each discovery file (llms.txt, robots.txt, sitemap)
+	sitemapBudget  time.Duration // all of one discovery's sitemaps together
+	candidateWait  time.Duration // how long verification waits for every project's candidate roots
+	maxFetch       int           // candidate pages fetched per query
+	concurrency    int           // concurrent page fetches
+	maxFullBytes   int           // llms-full.txt larger than this is ignored
+	maxPageBytes   int           // page text beyond this is cut before splitting
 }
 
 const (
 	webDefaultTokens  = 4000
 	webCharsPerToken  = 4
 	webOpTimeout      = 45 * time.Second
+	webResolveTimeout = 20 * time.Second
 	webProbeTimeout   = 10 * time.Second
+	webSitemapBudget  = 8 * time.Second
 	webMaxFetch       = 6
 	webFallbackFetch  = 3
 	webConcurrency    = 4
@@ -54,65 +68,198 @@ const (
 // NewWeb creates the web docs backend. A nil fetcher falls back to a minimal
 // HTTP fetcher that reads llms.txt, sitemaps and Markdown pages but cannot
 // convert HTML; the CLI and MCP server inject the scrape pipeline instead.
-// Construction performs no I/O.
+// Construction performs no I/O. The backend it returns resolves no library
+// names (no registry, GitHub or search sources); the docs provider builds
+// one that does with newWebFromConfig.
 func NewWeb(f Fetcher) *Web {
 	if f == nil {
 		f = newWebHTTPFetcher()
 	}
 	return &Web{
-		fetcher:      f,
-		opTimeout:    webOpTimeout,
-		probeTimeout: webProbeTimeout,
-		maxFetch:     webMaxFetch,
-		concurrency:  webConcurrency,
-		maxFullBytes: webMaxFullBytes,
-		maxPageBytes: webMaxPageBytes,
+		fetcher:        f,
+		resolveTimeout: webResolveTimeout,
+		opTimeout:      webOpTimeout,
+		probeTimeout:   webProbeTimeout,
+		sitemapBudget:  webSitemapBudget,
+		candidateWait:  webCandidateWait,
+		maxFetch:       webMaxFetch,
+		concurrency:    webConcurrency,
+		maxFullBytes:   webMaxFullBytes,
+		maxPageBytes:   webMaxPageBytes,
 	}
 }
 
-// Search cannot pick a site on its own: the web backend searches the one docs
-// site passed as the library, so a bare query is a validation error.
-func (w *Web) Search(_ context.Context, _ string, _ int) ([]Result, error) {
-	return nil, fmt.Errorf("%w: the web backend searches one docs site; pass its URL with --library (CLI) or library (MCP), e.g. --library https://docs.astro.build", ErrLibraryRequired)
+// newWebFromConfig is NewWeb with the name resolution sources: the package
+// registries and GitHub over httpx.Default, and web search from c's search
+// providers. It copies c and stays side-effect free, as LibraryBackends
+// requires: the GitHub token (which can run `gh auth token`) is resolved on
+// the first GitHub request and the search chain built on the first search,
+// each at most once per backend.
+func newWebFromConfig(c *config.Config, deps Deps) *Web {
+	var cfg config.Config
+	if c != nil {
+		cfg = *c
+	}
+	w := NewWeb(deps.Fetcher)
+	w.pkgs = newPkgClient(httpx.Default())
+	w.repos = newGHClient(httpx.Default(), sync.OnceValue(func() string {
+		token, _ := cfg.ResolveGithubToken()
+		return token
+	}))
+	auto := sync.OnceValues(func() (*search.Auto, error) { return search.NewAutoFromConfig(&cfg, "") })
+	w.sites = siteSearchFunc(func(ctx context.Context, query string, limit int) ([]search.Result, error) {
+		a, err := auto()
+		if err != nil {
+			return nil, err
+		}
+		return a.Search(ctx, query, limit)
+	})
+	return w
 }
 
-// ResolveLibrary turns a docs site URL into its library ID: the normalized
-// root URL, titled from the site's llms.txt (H1 and first blockquote) or the
-// root page. It returns at most one match whatever the limit. Library names
-// are not resolved; the caller passes the docs URL.
-func (w *Web) ResolveLibrary(ctx context.Context, name string, _ int) ([]LibraryMatch, error) {
-	if !isHTTPURL(name) {
-		return nil, fmt.Errorf("%w: the web backend takes a docs site URL, not a library name (got %q); pass the URL, e.g. https://docs.astro.build", ErrLibraryRequired, name)
+// siteSearchFunc adapts a function to siteSearcher.
+type siteSearchFunc func(ctx context.Context, query string, limit int) ([]search.Result, error)
+
+func (f siteSearchFunc) Search(ctx context.Context, query string, limit int) ([]search.Result, error) {
+	return f(ctx, query, limit)
+}
+
+// Search answers a bare docs query: splitLibraryQuery reads it as at most
+// three library candidates, resolved concurrently; the first in priority
+// order that resolves to exactly one library is searched for the rest of
+// the query, and the first that is ambiguous stops the search with its
+// *AmbiguousLibraryError. With no candidate resolved the query is a
+// validation error (ErrLibraryRequired) naming what was tried. A backend
+// with no resolution sources (NewWeb) takes no bare queries at all. limit
+// caps the results when positive; the token budget is the default.
+func (w *Web) Search(ctx context.Context, query string, limit int) ([]Result, error) {
+	if !w.resolvesNames() {
+		return nil, fmt.Errorf("%w: the web backend searches one docs site; pass its URL with --library (CLI) or library (MCP), e.g. --library https://docs.astro.build", ErrLibraryRequired)
 	}
-	root, err := parseWebRoot(name)
+	m, split, err := w.resolveQuery(ctx, query, splitLibraryQuery(query))
 	if err != nil {
 		return nil, err
 	}
-	opCtx, cancel := context.WithTimeout(ctx, w.opTimeout)
-	defer cancel()
-
-	match := LibraryMatch{ID: root.String()}
-	var tried []string
-	llms := w.findLLMSTxt(opCtx, root, &tried)
-	match.Title, match.Description = llms.title, llms.description
-	if match.Title == "" {
-		info, err := w.rootPage(opCtx, root)
-		if err != nil {
-			return nil, w.callErr(ctx, opCtx, root, fmt.Errorf("web: fetching %s failed: %w", root, err))
-		}
-		match.Title = info.title
-		if match.Description == "" {
-			match.Description = info.description
-		}
+	// The root came from third-party metadata: its pages' redirects stay
+	// public too.
+	results, err := w.docsAt(publicHops(ctx), m.root, split.query, webDefaultTokens, m.version)
+	if err != nil {
+		return nil, err
 	}
-	if match.Title == "" {
-		match.Title = root.u.Host + strings.TrimSuffix(root.prefix, "/")
-	}
-	return []LibraryMatch{match}, nil
+	return Truncate(results, limit), nil
 }
 
-// GetDocs returns the sections of the docs site at libraryID (its root URL)
-// that best match query, best first.
+// resolveQuery resolves a bare query's library candidates concurrently and
+// picks the first, in priority order, that resolves. One that is ambiguous,
+// or whose failure could have changed the pick (vetoes: a registry down, a
+// package whose docs could not be checked), stops the search rather than
+// falling through to a weaker reading it might have outranked; one that
+// names nothing, or whose only failure is a search that could not have
+// found it, gives way to the next.
+func (w *Web) resolveQuery(ctx context.Context, query string, splits []querySplit) (webMatch, querySplit, error) {
+	if len(splits) == 0 {
+		return webMatch{}, querySplit{}, fmt.Errorf("%w: no library named in %q; pass one with --library (CLI) or library (MCP): a docs URL, or a package name such as npm:astro", ErrLibraryRequired, query)
+	}
+	matches := make([]webMatch, len(splits))
+	errs := make([]error, len(splits))
+	ctx = withProfileMemo(ctx)
+	var wg sync.WaitGroup
+	for i, s := range splits {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			matches[i], errs[i] = w.resolveOne(ctx, s.spec, s.strict)
+		}()
+	}
+	wg.Wait()
+	var tried []string
+	for i, s := range splits {
+		var amb *AmbiguousLibraryError
+		switch {
+		case errs[i] == nil:
+			return matches[i], s, nil
+		case errors.As(errs[i], &amb):
+			return webMatch{}, s, errs[i]
+		case ctx.Err() != nil:
+			return webMatch{}, s, fmt.Errorf("web: %w", ctx.Err())
+		case vetoes(errs[i], s, len(splits)):
+			return webMatch{}, s, fmt.Errorf("web: reading %q as library %q: %s", query, s.spec.raw, errs[i]) // plain: upstream
+		}
+		tried = append(tried, fmt.Sprintf("%s: %v", s.spec.raw, errs[i]))
+	}
+	return webMatch{}, querySplit{}, fmt.Errorf("%w: no library identified in %q; pass one with --library (CLI) or library (MCP), a docs URL or a package name such as npm:astro (tried %s)",
+		ErrLibraryRequired, query, strings.Join(tried, "; "))
+}
+
+// vetoes reports a reading's failure that stops a bare query: an upstream
+// one that could plausibly have changed which library was picked.
+//
+//   - A registry that could not be asked about the name vetoes any
+//     reading: the package may exist.
+//   - Nothing else vetoes a guessed (strict) reading, which needs an exact
+//     package's own site: a GitHub failure (its search, a repository's
+//     rate limit) counts as not found.
+//   - For another reading, a homepage or docs root that did not answer
+//     for a package a registry has vetoes; GitHub failing alone (its
+//     search, a rate-limited repository, which hide only a repository's
+//     homepage and stars) vetoes only the query's only reading.
+//
+// Anything else reads as not found, so the next reading is tried: a
+// rate-limited GitHub for the guess "fastapi-dependency", or for the junk
+// npm package "production" in "… in production", does not stop the query.
+func vetoes(err error, s querySplit, readings int) bool {
+	if errors.Is(err, ErrNotFound) || errors.Is(err, ErrLibraryRequired) {
+		return false
+	}
+	var up *upstreamError
+	switch {
+	case !errors.As(err, &up), up.registryFailed:
+		return true
+	case s.strict:
+		return false
+	case up.nameKnown && up.siteFailed:
+		return true
+	}
+	return readings == 1
+}
+
+// ResolveLibrary resolves a library spec to its docs roots. A docs URL
+// gives one match, the normalized root (moved to the version root a
+// redirect names), titled from the site's llms.txt (H1 and first
+// blockquote) or the root page, with the site's versions and whatever
+// evidence ties it to a repository; it is never refused for want of
+// evidence. A name ([eco:]name[@version], owner/repo, a Go module) gives
+// every verified match, best first, at most limit when positive: per
+// library its docs site and its registry-hosted docs, each with trust,
+// evidence, versions and the package specs to pass as the library.
+func (w *Web) ResolveLibrary(ctx context.Context, name string, limit int) ([]LibraryMatch, error) {
+	spec, err := w.parseLibrary(name)
+	if err != nil {
+		return nil, err
+	}
+	log := &resolveLog{}
+	matches, err := w.resolveLogged(ctx, spec, limit, log)
+	if err != nil {
+		return nil, err
+	}
+	note, incomplete := incompleteNote(matches, log)
+	out := make([]LibraryMatch, 0, len(matches))
+	for _, m := range matches {
+		if incomplete {
+			// First, so the evidence line and the JSON lead with it.
+			m.evidence = append([]evidence{note}, m.evidence...)
+		}
+		out = append(out, m.libraryMatch())
+	}
+	return out, nil
+}
+
+// GetDocs returns the sections of the library's docs that best match
+// query, best first. libraryID is a docs root URL, searched as given (a
+// root that redirects to a version root, such as /en/stable/ to /en/6.1/,
+// is followed there), or a library spec, resolved to exactly one library
+// first: an ambiguous name is an *AmbiguousLibraryError. Results carry the
+// resolved root as their Library and the version their URL names.
 //
 // tokens bounds the total snippet text at about 4 bytes per token (a value
 // <= 0 means 4000): sections are added in rank order until the budget is
@@ -123,25 +270,111 @@ func (w *Web) ResolveLibrary(ctx context.Context, name string, _ int) ([]Library
 // match no query term are not returned, so a query the site does not cover
 // yields an empty result rather than an error.
 func (w *Web) GetDocs(ctx context.Context, libraryID, query string, tokens int) ([]Result, error) {
-	if !isHTTPURL(libraryID) {
-		return nil, fmt.Errorf("%w: the web backend takes the docs site URL as the library (got %q), e.g. https://docs.astro.build", ErrLibraryRequired, libraryID)
+	spec, err := w.parseLibrary(libraryID)
+	if err != nil {
+		return nil, err
 	}
-	root, err := parseWebRoot(libraryID)
+	if spec.url != "" {
+		return w.docsForURL(ctx, spec.url, query, tokens)
+	}
+	m, err := w.resolveOne(ctx, spec, false)
+	if err != nil {
+		return nil, err
+	}
+	return w.docsAt(publicHops(ctx), m.root, query, tokens, m.version)
+}
+
+// parseLibrary reads a library value. A docs URL is taken as given (phase
+// 1), unless parseLibSpec finds it malformed (a URL with @version). A name
+// needs resolution sources; without them (NewWeb) it is a validation
+// error, as is a malformed spec.
+func (w *Web) parseLibrary(raw string) (libSpec, error) {
+	raw = strings.TrimSpace(raw)
+	if isHTTPURL(raw) {
+		spec, err := parseLibSpec(raw)
+		switch {
+		case errors.Is(err, ErrLibraryRequired):
+			return libSpec{}, err
+		case err == nil && spec.url != "":
+			return spec, nil
+		}
+		return libSpec{raw: raw, url: raw}, nil
+	}
+	if !w.resolvesNames() {
+		return libSpec{}, errNoNameSources(raw)
+	}
+	spec, err := parseLibSpec(raw)
+	switch {
+	case err != nil && !errors.Is(err, ErrLibraryRequired):
+		return libSpec{}, fmt.Errorf("%w: %v", ErrLibraryRequired, err)
+	case err != nil:
+		return libSpec{}, err
+	}
+	return spec, nil
+}
+
+// docsForURL searches the docs root the caller passed. When discovery
+// finds nothing there and the root redirects to a version root
+// (canonicalRoot), it searches that root instead.
+func (w *Web) docsForURL(ctx context.Context, raw, query string, tokens int) ([]Result, error) {
+	root, err := parseWebRoot(raw)
 	if err != nil {
 		return nil, err
 	}
 	opCtx, cancel := context.WithTimeout(ctx, w.opTimeout)
 	defer cancel()
+	pages, err := w.collect(opCtx, root, query)
+	if errors.Is(err, ErrNotFound) && opCtx.Err() == nil {
+		if canon, ok := w.versionRedirect(opCtx, root); ok {
+			root = canon
+			pages, err = w.collect(opCtx, root, query)
+		}
+	}
+	if err != nil {
+		return nil, w.callErr(ctx, opCtx, root, err)
+	}
+	label, _ := rootVersion(root)
+	return w.rankPages(root, pages, query, tokens, label), nil
+}
 
+// versionRedirect reports the version root root redirects to, when it
+// redirects only by swapping or adding a version segment.
+func (w *Web) versionRedirect(ctx context.Context, root webRoot) (webRoot, bool) {
+	pctx, cancel := context.WithTimeout(ctx, w.probeTimeout)
+	defer cancel()
+	raw, err := w.fetcher.FetchRaw(pctx, root.String())
+	if err != nil || raw.URL == "" {
+		return webRoot{}, false
+	}
+	served, err := url.Parse(raw.URL)
+	if err != nil || linkKey(served) == linkKey(root.u) {
+		return webRoot{}, false
+	}
+	return canonicalRoot(root, served)
+}
+
+// docsAt searches a resolved root, labelling results with version where
+// their URLs name none.
+func (w *Web) docsAt(ctx context.Context, root webRoot, query string, tokens int, version string) ([]Result, error) {
+	opCtx, cancel := context.WithTimeout(ctx, w.opTimeout)
+	defer cancel()
 	pages, err := w.collect(opCtx, root, query)
 	if err != nil {
 		return nil, w.callErr(ctx, opCtx, root, err)
 	}
+	return w.rankPages(root, pages, query, tokens, version), nil
+}
+
+// rankPages sections the pages, ranks the sections for query within the
+// token budget and labels each result's version.
+func (w *Web) rankPages(root webRoot, pages []webPage, query string, tokens int, version string) []Result {
 	var sections []webSection
 	for i, p := range pages {
 		sections = append(sections, splitSections(p, i)...)
 	}
-	return budgetResults(root.String(), rankSections(sections, query), tokens), nil
+	results := budgetResults(root.String(), rankSections(sections, query), tokens)
+	labelResults(results, root, version)
+	return results
 }
 
 // callErr classifies a failed call. A cancelled caller is reported as such;
@@ -473,10 +706,11 @@ func probeWeb(context.Context, *http.Client, *config.Config) (health.Status, str
 
 func webProvider() Provider {
 	return Provider{
-		ID:     "web",
-		Name:   "Web",
-		Usable: func(*config.Config) bool { return true },
-		New:    func(_ *config.Config, deps Deps) (Searcher, error) { return NewWeb(deps.Fetcher), nil },
-		Probe:  probeWeb,
+		ID:          "web",
+		Name:        "Web",
+		LibraryHelp: "a docs URL, or a package name: name@version, npm:/pypi:/crates:/go:/github: prefixes, owner/repo",
+		Usable:      func(*config.Config) bool { return true },
+		New:         func(c *config.Config, deps Deps) (Searcher, error) { return newWebFromConfig(c, deps), nil },
+		Probe:       probeWeb,
 	}
 }

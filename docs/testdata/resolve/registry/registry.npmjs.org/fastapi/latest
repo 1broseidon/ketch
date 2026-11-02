@@ -1,0 +1,14 @@
+{
+ "name": "fastapi",
+ "version": "0.0.8",
+ "description": "A simple CLI utility for quickly creating Express-based servers with a single configuration file",
+ "homepage": "https://github.com/tkambler/fastapi#readme",
+ "repository": {
+  "url": "git+https://github.com/tkambler/fastapi.git",
+  "type": "git"
+ },
+ "bugs": {
+  "url": "https://github.com/tkambler/fastapi/issues"
+ },
+ "license": "ISC"
+}

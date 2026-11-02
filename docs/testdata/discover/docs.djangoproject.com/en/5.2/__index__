@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="" />
+<meta property="og:title" content="Django documentation | Django documentation" />
+<meta property="og:description" content="The web framework for perfectionists with deadlines." />
+<meta property="og:url" content="https://docs.djangoproject.com/en/5.2/" />
+<meta property="og:site_name" content="Django Project" />
+<link rel="canonical" href="https://docs.djangoproject.com/en/5.2/">
+<title>Django documentation | Django documentation | Django</title>
+</head>
+<body>
+<header>
+<a href="https://www.djangoproject.com/">Django</a>
+<a href="https://docs.djangoproject.com/en/5.2/">Documentation</a>
+<a href="https://github.com/django/django">Code</a>
+</header>
+<div id="version-switcher">
+<ul id="doc-languages" class="language-switcher doc-switcher">
+<li class="current"><button>Language: <strong>en</strong></button></li>
+<li class="other"><a href="https://docs.djangoproject.com/zh-hans/5.2/">zh-hans</a></li>
+<li class="other"><a href="https://docs.djangoproject.com/sv/5.2/">sv</a></li>
+<li class="other"><a href="https://docs.djangoproject.com/pt-br/5.2/">pt-br</a></li>
+</ul>
+<ul id="doc-versions" class="version-switcher doc-switcher">
+<li class="current "><button>Documentation version: <strong>5.2</strong></button></li>
+<li class="other"><a href="https://docs.djangoproject.com/en/dev/">dev</a></li>
+<li class="other"><a href="https://docs.djangoproject.com/en/6.1/">6.1</a></li>
+<li class="other"><a href="https://docs.djangoproject.com/en/6.0/">6.0</a></li>
+<li class="other"><a href="https://docs.djangoproject.com/en/5.1/">5.1</a></li>
+<li class="other"><a href="https://docs.djangoproject.com/en/5.0/">5.0</a></li>
+<li class="other"><a href="https://docs.djangoproject.com/en/4.2/">4.2</a></li>
+</ul>
+</div>
+<h1>Django documentation</h1>
+<ul>
+<li><p><a class="reference internal" href="intro/"><span class="doc">Tutorials</span></a> take you by the hand through a series of steps to create a web application.</p></li>
+<li><p><a class="reference internal" href="topics/"><span class="doc">Topic guides</span></a> discuss key topics and concepts at a fairly high level.</p></li>
+<li><p><a class="reference internal" href="ref/"><span class="doc">Reference guides</span></a> contain technical reference for APIs and other aspects of Django's machinery.</p></li>
+<li><p><a class="reference internal" href="topics/http/middleware/"><span class="doc">Middleware</span></a></p></li>
+</ul>
+<p><a class="reference internal" href="topics/db/models/"><span class="doc">Introduction to models</span></a> |
+<a class="reference internal" href="ref/models/fields/"><span class="doc">Field types</span></a></p>
+<footer>
+<a href="https://docs.djangoproject.com/en/dev/internals/contributing/">Contribute to Django</a>
+<a href="https://github.com/django">GitHub</a>
+<a href="https://github.com/sponsors/django">GitHub Sponsors</a>
+</footer>
+</body>
+</html>

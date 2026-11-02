@@ -1,0 +1,72 @@
+{
+ "info": {
+  "name": "requests",
+  "version": "2.34.2",
+  "summary": "Python HTTP for Humans.",
+  "home_page": null,
+  "docs_url": null,
+  "project_urls": {
+   "Documentation": "https://requests.readthedocs.io",
+   "Source": "https://github.com/psf/requests"
+  }
+ },
+ "last_serial": 37059094,
+ "releases": {
+  "2.8.1": [
+   {
+    "filename": "requests-2.8.1-py2.py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "2.7",
+    "size": 497953,
+    "upload_time_iso_8601": "2015-10-13T12:56:41.375848Z",
+    "url": "https://files.pythonhosted.org/packages/c0/0f/a911a44c89ba01b23d8fe3defbdfca1e962de6f11a11da32658902cdc2a4/requests-2.8.1-py2.py3-none-any.whl",
+    "yanked": false
+   }
+  ],
+  "2.9.0": [
+   {
+    "filename": "requests-2.9.0-py2.py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "2.7",
+    "size": 500695,
+    "upload_time_iso_8601": "2015-12-15T15:30:34.276097Z",
+    "url": "https://files.pythonhosted.org/packages/bf/b7/c0b5a7fcf561577178ffd65af9af37c412cf6fbb1a2a198b9308b343d63f/requests-2.9.0-py2.py3-none-any.whl",
+    "yanked": false
+   }
+  ],
+  "2.9.1": [
+   {
+    "filename": "requests-2.9.1-py2.py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "2.7",
+    "size": 501205,
+    "upload_time_iso_8601": "2015-12-21T14:55:10.646407Z",
+    "url": "https://files.pythonhosted.org/packages/b8/f7/3bb4d18c234a8ce7044d5ee2e1082b7d72bf6c550afb8d51ae266dea56f1/requests-2.9.1-py2.py3-none-any.whl",
+    "yanked": false
+   }
+  ],
+  "2.9.2": [
+   {
+    "filename": "requests-2.9.2-py2.py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "2.7",
+    "size": 502812,
+    "upload_time_iso_8601": "2016-04-29T21:57:23.021820Z",
+    "url": "https://files.pythonhosted.org/packages/8b/e7/229a428b8eb9a7f925ef16ff09ab25856efe789410d661f10157919f2ae2/requests-2.9.2-py2.py3-none-any.whl",
+    "yanked": false
+   }
+  ]
+ },
+ "urls": [
+  {
+   "filename": "requests-2.34.2-py3-none-any.whl",
+   "packagetype": "bdist_wheel",
+   "python_version": "py3",
+   "size": 73075,
+   "upload_time_iso_8601": "2026-05-14T19:25:26.443000Z",
+   "url": "https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl",
+   "yanked": false
+  }
+ ],
+ "vulnerabilities": []
+}

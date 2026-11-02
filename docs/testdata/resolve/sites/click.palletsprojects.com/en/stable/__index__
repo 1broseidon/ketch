@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" data-content_root="./">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Welcome to Click &#8212; Click Documentation (8.5.x)</title>
+<script src="_static/documentation_options.js?v=2a4eea78"></script>
+<script src="_static/doctools.js?v=fd6eb6e6"></script>
+<meta name="readthedocs-project-slug" content="pallets-click" />
+<meta name="readthedocs-version-slug" content="stable" />
+<meta name="readthedocs-resolver-filename" content="/" />
+<meta name="readthedocs-http-status" content="200" />
+<script src="/_/static/javascript/readthedocs-addons.js"></script>
+</head>
+<body>
+<nav><a href="genindex/" title="General Index">index</a> <a href="faqs/" title="Frequently Asked Questions">next</a> <a href="#">Click Documentation (8.5.x)</a></nav>
+<section id="welcome-to-click">
+<h1>Welcome to Click<a class="headerlink" href="#welcome-to-click" title="Link to this heading">¶</a></h1>
+<p>Click is a Python package for creating beautiful command line interfaces in a composable way with as little code as necessary.</p>
+<section id="documentation"><h2>Documentation<a class="headerlink" href="#documentation">¶</a></h2>
+<ul>
+<li><a href="faqs/">Frequently Asked Questions</a></li>
+<li><a href="quickstart/">Quickstart</a></li>
+<li><a href="virtualenv/">Virtualenv</a></li>
+<li><a href="parameters/">Parameters</a></li>
+<li><a href="options/">Options</a></li>
+<li><a href="arguments/">Arguments</a></li>
+<li><a href="commands-and-groups/">Basic Commands, Groups, Context</a></li>
+<li><a href="testing/">Testing Click Applications</a></li>
+<li><a href="api/">API</a></li>
+</ul></section>
+</section>
+<aside>
+<h3>Project Links</h3>
+<ul>
+<li><a href="https://palletsprojects.com/donate">Donate</a></li>
+<li><a href="https://pypi.org/project/click/">PyPI Releases</a></li>
+<li><a href="https://github.com/pallets/click/">Source Code</a></li>
+<li><a href="https://github.com/pallets/click/issues/">Issue Tracker</a></li>
+<li><a href="https://discord.gg/pallets">Chat</a></li>
+</ul>
+</aside>
+<footer>Created using <a href="https://www.sphinx-doc.org/">Sphinx</a></footer>
+</body>
+</html>

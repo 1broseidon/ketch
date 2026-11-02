@@ -152,7 +152,7 @@ First match wins. The Not column names the most common mistake for each row.
 
 | The question needs | Use | Not |
 | --- | --- | --- |
-| Current pages, opinions, news, comparisons | `search` | `docs` — that's curated library docs only |
+| Current pages, opinions, news, comparisons | `search` | `docs` — that's library docs only |
 | How real projects call an API | `code` | `search` — blogs talk *about* code; `code` greps the source |
 | A library's own documentation, version-aware | `docs` | `scrape` of the docs site — `docs` is already extracted and budgeted |
 | The content of a URL you already hold | `scrape` | `search` — never re-find a known URL |
@@ -235,24 +235,106 @@ repository is never a silent empty result: sourcegraph and github exit 3 and
 name the other backends, and grepapp, which indexes a subset of public
 repositories, warns when a repository search comes back empty.
 
-#### docs — Curated, version-aware library documentation
+#### docs — Version-aware library documentation, curated or from the docs site
 
 ```console
-$ ketch docs "routing" --library /vercel/next.js
-$ ketch docs --resolve "next.js"     # name → Context7 IDs
+$ ketch docs "routing" --library /vercel/next.js          # Context7
+$ ketch docs --resolve "next.js"                          # name → Context7 IDs
+$ ketch docs -b web --resolve click                       # name → its docs site, no key
+$ ketch docs -b web --library django@5.2 "middleware"     # one version's docs
+$ ketch docs -b web "how do I set retries in requests"    # library named in the query
 ```
 
 | Flag | Meaning |
 | --- | --- |
-| `--backend, -b` | `context7` (default) |
-| `--library` | Context7 library ID; skips the resolve step |
+| `--backend, -b` | `context7` (default), `web` |
+| `--library` | A library ID from `--resolve`, or for `web` any library spec (below); skips the resolve step |
 | `--tokens` | Token budget, default 4000 |
-| `--resolve` | Resolve a library name instead of searching |
+| `--resolve` | Resolve the query as a library name or spec instead of searching |
+| `--limit, -l` | Max results; with `--library`, only `--tokens` bounds them unless set |
+| `--minimal` | One result per line |
 | `--tag <name>` | Bookmark every result URL under a tag |
 
-`docs` is a two-step: resolve the name, *vet the matches*, then fetch by ID.
-Resolve never returns empty. A bad name still returns confident fuzzy matches,
-so check the name, not just the trust score.
+Context7 serves curated snippets and takes a free key. `web` needs no key: it
+reads the library's own documentation site — its `llms.txt`, `llms-full.txt`,
+sitemaps, or the links on its docs root — fetches the few pages that best match
+the query, and returns their matching sections, each with its heading
+breadcrumb and an anchor link, within `--tokens`. It never leaves the docs
+root: the same host, and paths under it. Pages go through the scrape pipeline,
+so URL rewrites, cookies, the browser fallback and the page cache apply.
+
+A `web` library is one spec:
+
+| Spec | Example | Means |
+| --- | --- | --- |
+| Docs URL | `https://docs.astro.build` | That site, as given; the URL already names its version, so no `@` |
+| Package name | `click`, `next@14`, `django@5.2` | Looked up in npm, PyPI and crates.io |
+| Ecosystem prefix | `pypi:click`, `npm:@astrojs/starlight@0.30` | Only that registry: `npm:`, `pypi:`, `crates:` (or `cargo:`), `go:`, `github:` |
+| Repository | `pallets/click`, `github:pallets/click` | A GitHub repository |
+| Go module path | `github.com/spf13/cobra` | The module, and the repository it names |
+
+`@version` asks for that version's docs: an exact label, an alias (`latest`,
+`stable`, `dev`, `main`), or a prefix that picks the newest release under it
+(`5` → the newest `5.x`), never across a major version. A site that publishes
+no version list answers only for the package's current major.
+
+A name only becomes a docs site on evidence: the package's registry entry or
+its GitHub repository names the site, or the homepage they name links to it as
+its docs, or it is the package's own docs on docs.rs or pkg.go.dev. A site
+found any other way, or linked as the docs from a homepage on another domain,
+counts only when it links back to the repository, and a site found by search
+only on the project's own domain too, so a mirror never does. A package's
+repository counts only when the repository backs the claim: its GitHub homepage
+is the package's site or registry page, or it is named like the package and
+written in the registry's language with no conflicting site of the package's
+own (a Go module's always counts). So a package that merely claims a popular
+repository gets neither its stars nor its place. A same-named package with no such evidence is dropped, so
+`click` is PyPI's Click, not npm's or crates.io's unrelated `click`. A bare
+query names its library itself: `web` reads it from the query (`retries in
+requests`, `react router loaders`) and searches the rest.
+
+```console
+$ ketch docs -b web --resolve click
+https://click.palletsprojects.com/en/stable/  Click  (trust: 10.0, version: 8.5.x, versions: stable)
+  packages: pypi:click, github:pallets/click
+  evidence: pypi click lists it as Documentation; github pallets/click homepage; links to github.com/pallets/click
+```
+
+The ID is the docs root URL; for a version, that version's root. Trust is on
+Context7's 0–10 scale but scored from the evidence listed, and `packages` are
+specs you can pass as `--library`. With `--json`, each match carries
+`version`, `versions`, `evidence` and `packages`; Context7's matches have none
+of them and print as they always have.
+
+**Resolve once, then pass the ID.** A name is resolved again on every call:
+for `web` that is a round of registry, GitHub and site requests before the
+docs fetch even starts. `--library` with the ID from `--resolve` skips it.
+
+`web` exits **2** for a malformed spec, when a bare query names no library it
+can verify, and when a name is ambiguous: more than one verified project
+answers to it, none far ahead of the rest on GitHub stars, and the error lists
+each one's ID and package specs to pass as `--library` instead (`--resolve`
+lists them all rather than failing). A same-named package whose only docs a
+package index hosts (docs.rs, pkg.go.dev, pythonhosted.org), or whose
+repository is gone, does not stand in a popular library's way. It exits **3**
+when the library you name is in no registry or repository, when nothing found
+for it verifies (the error gives each candidate's reason), or when the version
+you ask for is not offered (the error lists the versions that are). It exits
+**4** when nothing verified and a registry, GitHub or the docs site failed or
+was too slow, and, where one library is needed (`--library` with a name, or a
+bare query), when a registry or GitHub's search failed at all: the library
+that did not answer could be the one meant, so the error names the docs root
+that would have been picked, to retry or pass as `--library`. A bare query
+stops there too, rather than reading a weaker library out of the query, when
+the failure could have changed which library it picked; a failed search for a
+word no registry knows does not stop it. `--resolve` still lists what answered,
+and each match's evidence then begins `this list may be incomplete:` with what
+failed. When GitHub's rate limit was the cause, the error says how to set a
+token.
+
+With Context7, `docs` is a two-step: resolve the name, *vet the matches*, then
+fetch by ID. Its resolve never returns empty. A bad name still returns
+confident fuzzy matches, so check the name, not just the trust score.
 
 #### scrape — URL(s) → clean markdown
 
@@ -582,6 +664,8 @@ rather than averaged away.
 - **Good** Rotate to another provider from `available_backends`, retry once, and note the swap. When `auto` itself fails it has already tried every usable provider — retry once, then report the outage.
 - **Bad** Fetch docs from resolve's first match because its trust score is high, even though the name isn't the library you asked about.
 - **Good** Vet name, snippet count, and trust together. If no match names the intended library, say so instead of fetching junk docs.
+- **Bad** `ketch docs -b web --library django "…"` on every call of a session — each one resolves the name again.
+- **Good** `ketch docs -b web --resolve django` once, then `--library https://docs.djangoproject.com/en/6.1/` from its output.
 
 ## Backends
 
@@ -589,7 +673,7 @@ rather than averaged away.
 | --- | --- | --- |
 | `search` | `auto` | brave, ddg, searxng, exa, firecrawl, keenable, tavily, tinyfish, parallel, serpbase, degoog, serply, youcom |
 | `code` | `grepapp` | sourcegraph, github |
-| `docs` | `context7` | — |
+| `docs` | `context7` | web |
 
 > **`auto` is a chain, not a provider.** It falls through
 > `parallel → exa → keenable → youcom → firecrawl → ddg`, none of which need a
@@ -648,11 +732,15 @@ misconfigured and names the origin and its header names, so an expired or
 mistyped token is not mistaken for a backend problem. A 401 or 403 can also
 come from the instance itself, so the backend's own advice follows the hint.
 
-#### Code and docs — grepapp, sourcegraph, github, context7
+#### Code and docs — grepapp, sourcegraph, github, context7, web
 
 Grep and Sourcegraph need nothing. GitHub uses `gh auth login`,
 `$GITHUB_TOKEN`, or `ketch config set github_token <tok>`. Context7 takes a
-free key via `ketch config set context7_api_key <key>`.
+free key via `ketch config set context7_api_key <key>`. The `web` docs backend
+needs nothing either; resolving a library name asks GitHub about its
+repository, and the same GitHub token lifts the 60-requests-an-hour limit an
+unauthenticated install gets. Rate-limited, `web` still answers from the
+registries, and says so in the match's evidence.
 
 ## Configuration
 
@@ -750,7 +838,7 @@ Use `ketch` for external research — web pages, OSS code, library docs.
 - `ketch scrape <url> [url...]` for clean markdown from one or more URLs
 - `ketch extract` for already-fetched HTML piped in
 - `ketch code "query" --lang go` for real OSS code with line context; `--repo owner/name` searches one repository
-- `ketch docs "query" --library /org/repo` for version-aware docs
+- `ketch docs "query" --library /org/repo` for version-aware docs; `-b web --library django@5.2` reads the library's own docs site, no key
 - `--tag <name>` on any of them keeps the sources; `ketch tag show <name>` brings them back
 All commands support `--json`. `ketch config` reports active backends.
 Bound every scrape with --max-chars and --trim. Cite every claim.
@@ -828,7 +916,7 @@ is this manual as plain Markdown.
 
 - Scraping a **bare domain** auto-probes `/llms.txt` and may return that instead of the homepage. The `title` field reveals the swap; `--no-llms-txt` opts out.
 - **Batch scrape reports per-URL failures inside a successful call.** The command exits 0 with per-result errors set — check every entry, don't just check the exit code.
-- **`docs` resolve never returns empty.** Garbage in gets confident fuzzy matches out, so vet the name rather than trusting the score.
+- **Context7's resolve never returns empty.** Garbage in gets confident fuzzy matches out, so vet the name rather than trusting the score. The `web` backend's returns only verified matches, with their evidence, and exits 3 when nothing verifies.
 - **Regex is per-backend.** grepapp and sourcegraph accept it; github rejects it with a pointer to the other two.
 - **Background crawls are CLI-only.** The MCP `crawl` tool is synchronous and capped at 30 pages by default, 100 hard, three minutes wall clock.
 - **The page cache is shared across processes.** An idle MCP server holds no page-cache lock; individual operations open and close the bbolt file.

@@ -1,0 +1,7 @@
+{
+  "status": 301,
+  "location": "{{ORIGIN}}/repositories/234884461",
+  "headers": {
+    "Content-Type": "application/json; charset=utf-8"
+  }
+}

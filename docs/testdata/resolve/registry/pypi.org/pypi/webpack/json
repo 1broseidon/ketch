@@ -1,0 +1,15 @@
+{
+ "info": {
+  "name": "webpack",
+  "version": "6.0.0",
+  "summary": "Python bindings to Webpack",
+  "home_page": "https://github.com/markfinger/python-webpack",
+  "project_urls": {
+   "Download": "UNKNOWN",
+   "Homepage": "https://github.com/markfinger/python-webpack"
+  },
+  "docs_url": null,
+  "license": "UNKNOWN"
+ },
+ "releases": {}
+}

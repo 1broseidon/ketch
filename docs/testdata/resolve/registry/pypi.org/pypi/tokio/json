@@ -1,0 +1,49 @@
+{
+ "info": {
+  "name": "tokio",
+  "version": "0.2.0",
+  "summary": "Asyncio event loop written in Rust language",
+  "home_page": "https://github.com/PyO3/tokio/",
+  "docs_url": null,
+  "project_urls": {
+   "Homepage": "https://github.com/PyO3/tokio/"
+  }
+ },
+ "last_serial": 3043517,
+ "releases": {
+  "0.1.0": [
+   {
+    "filename": "tokio-0.1.0.tar.gz",
+    "packagetype": "sdist",
+    "python_version": "source",
+    "size": 94797,
+    "upload_time_iso_8601": "2017-05-10T17:42:47.777305Z",
+    "url": "https://files.pythonhosted.org/packages/b0/e0/6a4d494e689c670c2b39ac7b752f2b31f00df15b67fc18680528bb9b3624/tokio-0.1.0.tar.gz",
+    "yanked": false
+   }
+  ],
+  "0.2.0": [
+   {
+    "filename": "tokio-0.2.0.tar.gz",
+    "packagetype": "sdist",
+    "python_version": "source",
+    "size": 102343,
+    "upload_time_iso_8601": "2017-07-23T20:00:27.688374Z",
+    "url": "https://files.pythonhosted.org/packages/38/79/7039fb417ab95d511bca9389cb459c1298e3227389a1fc27a417ab9791a8/tokio-0.2.0.tar.gz",
+    "yanked": false
+   }
+  ]
+ },
+ "urls": [
+  {
+   "filename": "tokio-0.2.0.tar.gz",
+   "packagetype": "sdist",
+   "python_version": "source",
+   "size": 102343,
+   "upload_time_iso_8601": "2017-07-23T20:00:27.688374Z",
+   "url": "https://files.pythonhosted.org/packages/38/79/7039fb417ab95d511bca9389cb459c1298e3227389a1fc27a417ab9791a8/tokio-0.2.0.tar.gz",
+   "yanked": false
+  }
+ ],
+ "vulnerabilities": []
+}

@@ -40,7 +40,7 @@ func newWebHTTPFetcher() webHTTPFetcher {
 		if scopeHost(req.URL) != scopeHost(via[0].URL) {
 			return fmt.Errorf("redirect to %s leaves %s", req.URL.Host, via[0].URL.Host)
 		}
-		return nil
+		return httpx.CheckRedirect(req, via) // the context's check (publicHops)
 	}
 	return webHTTPFetcher{client: &client}
 }

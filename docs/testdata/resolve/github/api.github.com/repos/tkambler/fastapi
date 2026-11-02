@@ -1,0 +1,12 @@
+{
+ "id": 67509874,
+ "name": "fastapi",
+ "full_name": "tkambler/fastapi",
+ "html_url": "https://github.com/tkambler/fastapi",
+ "description": "A simple CLI utility for quickly creating Express-based servers with a single configuration file",
+ "fork": false,
+ "homepage": "",
+ "language": "JavaScript",
+ "stargazers_count": 0,
+ "archived": false
+}

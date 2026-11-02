@@ -1,0 +1,75 @@
+{
+ "info": {
+  "name": "click",
+  "version": "8.5.0",
+  "summary": "Composable command line interface toolkit",
+  "home_page": null,
+  "docs_url": null,
+  "project_urls": {
+   "Changes": "https://click.palletsprojects.com/page/changes/",
+   "Chat": "https://discord.gg/pallets",
+   "Documentation": "https://click.palletsprojects.com/",
+   "Donate": "https://palletsprojects.com/donate",
+   "Source": "https://github.com/pallets/click/"
+  }
+ },
+ "last_serial": 40411242,
+ "releases": {
+  "8.4.0": [
+   {
+    "filename": "click-8.4.0-py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "py3",
+    "size": 116147,
+    "upload_time_iso_8601": "2026-05-17T00:47:56.842423Z",
+    "url": "https://files.pythonhosted.org/packages/ee/ae/8e92f8058baf87f6c7d86ee7e457668690195cc77efedb8d3797a06e3940/click-8.4.0-py3-none-any.whl",
+    "yanked": false
+   }
+  ],
+  "8.4.1": [
+   {
+    "filename": "click-8.4.1-py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "py3",
+    "size": 116639,
+    "upload_time_iso_8601": "2026-05-22T04:08:35.260922Z",
+    "url": "https://files.pythonhosted.org/packages/c7/0d/67e5b4109ea4a837e80daa87c2c696711955e40449a97e8926672534def2/click-8.4.1-py3-none-any.whl",
+    "yanked": false
+   }
+  ],
+  "8.4.2": [
+   {
+    "filename": "click-8.4.2-py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "py3",
+    "size": 119243,
+    "upload_time_iso_8601": "2026-06-24T17:45:13.730054Z",
+    "url": "https://files.pythonhosted.org/packages/fb/e2/79c688af8b210d232694e31e59da9f6ec747bae31c3f5946e4e9b98860d5/click-8.4.2-py3-none-any.whl",
+    "yanked": false
+   }
+  ],
+  "8.5.0": [
+   {
+    "filename": "click-8.5.0-py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "py3",
+    "size": 125251,
+    "upload_time_iso_8601": "2026-08-26T13:33:12.928043Z",
+    "url": "https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl",
+    "yanked": false
+   }
+  ]
+ },
+ "urls": [
+  {
+   "filename": "click-8.5.0-py3-none-any.whl",
+   "packagetype": "bdist_wheel",
+   "python_version": "py3",
+   "size": 125251,
+   "upload_time_iso_8601": "2026-08-26T13:33:12.928043Z",
+   "url": "https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl",
+   "yanked": false
+  }
+ ],
+ "vulnerabilities": []
+}

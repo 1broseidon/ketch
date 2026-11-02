@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	neturl "net/url"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/1broseidon/ketch/cache"
 	"github.com/1broseidon/ketch/docs"
+	"github.com/1broseidon/ketch/httpx"
 	"github.com/1broseidon/ketch/scrape"
 	"github.com/1broseidon/ketch/urlrewrite"
 )
@@ -392,5 +394,33 @@ func TestFetchPageRefreshesEntryWithoutFinalURL(t *testing.T) {
 	}
 	if n := site.hitCount("/guide/auth"); n != 1 {
 		t.Errorf("made %d requests, want 1: the refreshed entry serves the second call", n)
+	}
+}
+
+// A redirect check on the request context (httpx.WithRedirectCheck, which
+// the web backend sets for third-party URLs) applies to every hop of both
+// fetches: a refused hop is an error, and its target is never requested.
+func TestFetchHonoursContextRedirectCheck(t *testing.T) {
+	site, offsite := redirectSite(t)
+	f := New(newScraper(t), nil)
+	refused := errors.New("refused hop")
+	ctx := httpx.WithRedirectCheck(context.Background(), func(u *neturl.URL) error {
+		if "http://"+u.Host == offsite.URL {
+			return refused
+		}
+		return nil
+	})
+	if _, err := f.FetchRaw(ctx, site.URL+"/guide/away"); !errors.Is(err, refused) {
+		t.Errorf("FetchRaw = %v, want the refused hop", err)
+	}
+	if _, err := f.FetchPage(ctx, site.URL+"/guide/away"); !errors.Is(err, refused) {
+		t.Errorf("FetchPage = %v, want the refused hop", err)
+	}
+	if n := offsite.hitCount("/elsewhere"); n != 0 {
+		t.Errorf("the refused target was requested %d times", n)
+	}
+	// Same-host hops pass the check.
+	if raw, err := f.FetchRaw(ctx, site.URL+"/llms-moved.txt"); err != nil || raw.URL != site.URL+"/llms.txt" {
+		t.Errorf("FetchRaw same-host redirect under the check = %q, %v", raw.URL, err)
 	}
 }

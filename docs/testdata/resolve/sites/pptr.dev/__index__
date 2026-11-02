@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Puppeteer</title>
+<meta name="generator" content="Docusaurus v3.10.2" />
+<meta data-rh="true" name="twitter:card" content="summary_large_image" />
+<meta data-rh="true" property="og:url" content="https://pptr.dev/" />
+<meta data-rh="true" property="og:locale" content="en" />
+<meta data-rh="true" name="docsearch:language" content="en" />
+<meta data-rh="true" name="docsearch:counter" content="2" />
+<meta data-rh="true" property="og:title" content="Puppeteer" />
+<meta data-rh="true" name="description" content="build" />
+<meta data-rh="true" property="og:description" content="build" />
+<script src="https://www.googletagmanager.com/gtag/js?id=G-J15CTWBVHX"></script>
+<script src="/fix-location.js"></script>
+<script src="/assets/js/runtime~main.cbf0f269.js"></script>
+<script src="/assets/js/main.20908d9f.js"></script>
+</head>
+<body>
+<h1>Puppeteer</h1>
+<a href="#__docusaurus_skipToContent_fallback">Skip to main content</a>
+<a href="/">Puppeteer</a>
+<a href="/category/introduction">Docs</a>
+<a href="/api/puppeteer.puppeteernode">Puppeteer API</a>
+<a href="/browsers-api">@puppeteer/browsers API</a>
+<a href="/next">Next</a>
+<a href="https://github.com/puppeteer/puppeteer" aria-label="GitHub repository"></a>
+<a href="https://github.com/puppeteer/puppeteer/actions/workflows/ci.yml"></a>
+<a href="https://npmjs.org/package/puppeteer"></a>
+<a href="https://chromedevtools.github.io/devtools-protocol/">DevTools Protocol</a>
+<a href="https://pptr.dev/webdriver-bidi">WebDriver BiDi</a>
+<a href="https://pptr.dev/docs">Get started</a>
+<a href="https://pptr.dev/api">API</a>
+<a href="https://pptr.dev/faq">FAQ</a>
+<a href="https://github.com/npm/rfcs/pull/868">RFC</a>
+<a href="https://github.com/ChromeDevTools/chrome-devtools-mcp">chrome-devtools-mcp</a>
+</body>
+</html>
