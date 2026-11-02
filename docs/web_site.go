@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 
@@ -51,8 +52,8 @@ func (w *Web) profile(ctx context.Context, u *url.URL) (*siteProfile, error) {
 }
 
 // rawProfile reads u through FetchRaw, following one same-site meta
-// refresh from a stub page with no anchors (docs.astro.build/ refreshes to
-// /en/getting-started/).
+// refresh from a stub page with no anchors but to its target
+// (docs.astro.build/ refreshes to /en/getting-started/).
 func (w *Web) rawProfile(ctx context.Context, u *url.URL) (*siteProfile, error) {
 	body, ct, served, err := w.fetchRawServed(ctx, u)
 	if err != nil {
@@ -62,11 +63,8 @@ func (w *Web) rawProfile(ctx context.Context, u *url.URL) (*siteProfile, error) 
 		return markdownSiteProfile(string(body), "", u, served), nil
 	}
 	p := parseProfile(body, u, served)
-	if len(p.links) > 0 {
-		return p, nil
-	}
 	target := metaRefreshTarget(body, served)
-	if target == nil || scopeHost(target) != scopeHost(served) || linkKey(target) == linkKey(served) {
+	if target == nil || scopeHost(target) != scopeHost(served) || linkKey(target) == linkKey(served) || !onlyLinksTo(p, target) {
 		return p, nil
 	}
 	nbody, nct, nserved, err := w.fetchRawServed(ctx, target)
@@ -77,6 +75,12 @@ func (w *Web) rawProfile(ctx context.Context, u *url.URL) (*siteProfile, error) 
 	next.title = firstNonEmpty(next.title, p.title)
 	next.description = firstNonEmpty(next.description, p.description)
 	return next, nil
+}
+
+// onlyLinksTo reports a page with no links but ones to target: a redirect
+// stub, whether bare or with a "Redirecting to …" link (fastify.dev/docs/).
+func onlyLinksTo(p *siteProfile, target *url.URL) bool {
+	return !slices.ContainsFunc(p.links, func(l siteLink) bool { return linkKey(l.url) != linkKey(target) })
 }
 
 // fetchRawServed is FetchRaw, with the URL the response was served from.
@@ -225,6 +229,8 @@ func parseProfile(body []byte, requested, served *url.URL) *siteProfile {
 	})
 	p.description = firstNonEmpty(p.meta["description"], p.meta["og:description"])
 	p.links = anchorLinks(doc, base)
+	p.selects = selectMenus(doc)
+	p.links = appendOptionLinks(p.links, doc, base)
 	var inline strings.Builder
 	doc.Find("script").Each(func(_ int, s *goquery.Selection) {
 		if src, ok := s.Attr("src"); ok {
@@ -257,6 +263,61 @@ func anchorLinks(doc *goquery.Document, base *url.URL) []siteLink {
 		links = append(links, siteLink{url: u, text: collapseSpace(firstNonEmpty(text.Text(), a.AttrOr("aria-label", ""), a.AttrOr("title", "")))})
 	})
 	return links
+}
+
+// webMaxSelects caps the <select> menus a profile keeps.
+const webMaxSelects = 8
+
+// selectMenus returns the page's <select> menus with their options.
+func selectMenus(doc *goquery.Document) [][]selectOption {
+	var out [][]selectOption
+	doc.Find("select").EachWithBreak(func(_ int, sel *goquery.Selection) bool {
+		var opts []selectOption
+		sel.Find("option").Each(func(_ int, o *goquery.Selection) {
+			text := collapseSpace(o.Text())
+			linked := slices.ContainsFunc(optionURLAttrs, func(a string) bool { return looksLikeLinkValue(strings.TrimSpace(o.AttrOr(a, ""))) })
+			opts = append(opts, selectOption{value: strings.TrimSpace(o.AttrOr("value", text)), text: text, selected: o.AttrOr("selected", "\x00") != "\x00", linked: linked})
+		})
+		if len(opts) > 1 {
+			out = append(out, opts)
+		}
+		return len(out) < webMaxSelects
+	})
+	return out
+}
+
+// optionURLAttrs are the <option> attributes switchers keep a page URL in.
+var optionURLAttrs = []string{"value", "data-url", "data-href", "data-link", "data-path"}
+
+// appendOptionLinks adds the pages a menu's options lead to as links with
+// the option's text: a version <select> (eslint.org's options carry
+// data-url="/docs/v8.x/") is as much navigation as anchors are. Only a
+// value written as a URL or a path counts, never a bare word.
+func appendOptionLinks(links []siteLink, doc *goquery.Document, base *url.URL) []siteLink {
+	seen := map[string]bool{}
+	for _, l := range links {
+		seen[l.url.String()] = true
+	}
+	doc.Find("select option").Each(func(_ int, o *goquery.Selection) {
+		for _, attr := range optionURLAttrs {
+			v := strings.TrimSpace(o.AttrOr(attr, ""))
+			if !looksLikeLinkValue(v) {
+				continue
+			}
+			if u, ok := resolveRef(base, v); ok && isWebScheme(u.Scheme) && u.Hostname() != "" && !seen[u.String()] {
+				seen[u.String()] = true
+				links = append(links, siteLink{url: u, text: collapseSpace(o.Text())})
+			}
+			return
+		}
+	})
+	return links
+}
+
+// looksLikeLinkValue reports an attribute value written as a URL or a
+// path: absolute http(s), root-relative, or ./ and ../ relative.
+func looksLikeLinkValue(v string) bool {
+	return isHTTPURL(v) || strings.HasPrefix(v, "/") && !strings.HasPrefix(v, "//") || strings.HasPrefix(v, "./") || strings.HasPrefix(v, "../")
 }
 
 // githubReserved are github.com first path segments that are not owners.

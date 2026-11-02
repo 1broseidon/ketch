@@ -1,0 +1,11 @@
+# Sinon.JS
+
+> Sinon.js documentation
+
+## Table of Contents
+
+### Fake timers
+
+- [Fake timers](/concepts/fake-timers.md): Replace setTimeout, setInterval, Date, and Temporal with controllable fake implementations.
+- [clock.tick](/concepts/fake-timers/tick.md): Advances the clock by the specified time in milliseconds.
+- [clock.restore](/concepts/fake-timers/restore.md): Restores the original timer functions.

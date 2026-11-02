@@ -43,8 +43,9 @@ func TestWebSitemapSkipsOtherLocales(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(site.links) != 8 || !strings.HasPrefix(site.links[0].url.String(), "https://docs.djangoproject.com/en/5.2/ref/models/") {
-		t.Errorf("links = %d (%v), want the 8 /en/5.2/ pages sitemap-en.xml lists", len(site.links), site.links)
+	// The sitemap's pages lead; the root page's nav adds its own after them.
+	if len(site.links) < 8 || !strings.HasPrefix(site.links[0].url.String(), "https://docs.djangoproject.com/en/5.2/ref/models/") {
+		t.Errorf("links = %d (%v), want the 8 /en/5.2/ pages sitemap-en.xml lists first", len(site.links), site.links)
 	}
 	calls := requested(ft)
 	if !slices.Contains(calls, "GET https://docs.djangoproject.com/sitemap-en.xml") {

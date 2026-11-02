@@ -791,3 +791,82 @@ func TestVersionIndexIsItsStableDocs(t *testing.T) {
 		t.Errorf("a root that is the current docs, beside an older tree, is no index")
 	}
 }
+
+// Version switchers drawn as a <select>: eslint.org's options carry their
+// docs root in data-url (read as links, so sibling versions), fastify.dev's
+// carry only the version segment (selectVersions puts it where the root's
+// own version is). Trimmed from the live pages.
+func TestPickVersionFromSelectMenu(t *testing.T) {
+	cases := []struct{ root, spec, latest, want, label string }{
+		{"https://eslint.org/docs/latest/", "npm:eslint@8", "10.14.0", "https://eslint.org/docs/v8.x/", "v8.x"},
+		{"https://fastify.dev/docs/latest/", "npm:fastify@4", "5.12.8", "https://fastify.dev/docs/v4.29.x/", "v4.29.x"},
+		// /docs/ is a redirect stub (a meta refresh and a link to its target).
+		{"https://fastify.dev/docs/", "npm:fastify@4", "5.12.8", "https://fastify.dev/docs/v4.29.x/", "v4.29.x"},
+	}
+	w := versionSitesWeb(t)
+	for _, tc := range cases {
+		t.Run(tc.spec, func(t *testing.T) {
+			m, err := describeAt(t, w, tc.root, tc.spec, tc.latest, false)
+			if err != nil || m.root.String() != tc.want || m.version != tc.label {
+				t.Fatalf("%s at %s = %s version %q (versions %v), %v; want %s version %q", tc.spec, tc.root, m.root, m.version, m.versions, err, tc.want, tc.label)
+			}
+		})
+	}
+	// A version the menu does not offer is not found.
+	if m, err := describeAt(t, w, "https://fastify.dev/docs/latest/", "npm:fastify@2", "5.12.8", false); !errors.Is(err, ErrNotFound) {
+		t.Errorf("fastify@2 = %s, %v; want not found", m.root, err)
+	}
+}
+
+func TestSelectVersionsNeedsVersionValues(t *testing.T) {
+	root, _ := parseWebRoot("https://site.test/docs/")
+	lang := &siteProfile{selects: [][]selectOption{{{value: "en", text: "English", selected: true}, {value: "fr", text: "Français"}}}}
+	if got := selectVersions(root, lang); got != nil {
+		t.Errorf("a language menu read as versions: %+v", got)
+	}
+	vs := selectVersions(root, &siteProfile{selects: [][]selectOption{{{value: "latest", text: "latest (v5.1.0)", selected: true}, {value: "v4.x", text: "v4.9.2"}}}})
+	if len(vs) != 2 || vs[0].root != "https://site.test/docs/" || vs[0].label != "v5.1.0" || vs[1].root != "https://site.test/docs/v4.x/" {
+		t.Errorf("selectVersions = %+v", vs)
+	}
+}
+
+// A pydata switcher whose JSON lives on another host (scipy keeps it with
+// its development docs on github.io) still lists the root host's versions;
+// the other host's own entry is no version of this root.
+func TestVersionsSwitcherOnAnotherHost(t *testing.T) {
+	w, _ := newFixtureSiteWeb(t, nil, "versions")
+	root, _ := parseWebRoot("https://docs.scipy.org/doc/scipy/")
+	p := &siteProfile{served: root.u, inline: "DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://scipy.github.io/devdocs/_static/version_switcher.json';\nDOCUMENTATION_OPTIONS.theme_switcher_version_match = '1.18.0';\n"}
+	set := w.siteVersions(context.Background(), root, p)
+	if set.source != versionsSwitcher {
+		t.Fatalf("source = %q", set.source)
+	}
+	if got, want := set.labels(), []string{"1.18.0", "1.17.0", "1.10.1"}; !slices.Equal(got, want) {
+		t.Errorf("labels = %q, want %q", got, want)
+	}
+	if v, ok := matchVersion("1.10", set.versions); !ok || v.root != "https://docs.scipy.org/doc/scipy-1.10.1/" {
+		t.Errorf("1.10 = %+v %v", v, ok)
+	}
+	// A switcher URL on a private address is never fetched.
+	p.inline = "DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'http://127.0.0.1/versions.json';"
+	if set := w.siteVersions(context.Background(), root, p); set.source == versionsSwitcher {
+		t.Errorf("a private switcher URL was read: %+v", set)
+	}
+}
+
+// A <select>'s options that carry a URL are links (with the option's
+// text); its menu is kept either way, linked or not.
+func TestParseProfileSelectMenus(t *testing.T) {
+	u, _ := url.Parse("https://eslint.org/docs/latest/")
+	p := parseProfile([]byte(`<html><body><select id="v"><option value="10.14.0" data-url="/docs/latest/" selected>v10.14.0</option><option value="8.57.1" data-url="/docs/v8.x/">v8.57.1</option></select>`+
+		`<select aria-label="Theme"><option value="light">Light</option><option value="dark">Dark</option></select></body></html>`), u, u)
+	if len(p.selects) != 2 || !p.selects[0][0].linked || !p.selects[0][0].selected || p.selects[1][0].linked {
+		t.Errorf("selects = %+v", p.selects)
+	}
+	if !slices.ContainsFunc(p.links, func(l siteLink) bool { return l.url.String() == "https://eslint.org/docs/v8.x/" && l.text == "v8.57.1" }) {
+		t.Errorf("option URLs were not read as links: %+v", p.links)
+	}
+	if slices.ContainsFunc(p.links, func(l siteLink) bool { return strings.Contains(l.url.Path, "dark") }) {
+		t.Errorf("a bare option value was read as a link: %+v", p.links)
+	}
+}

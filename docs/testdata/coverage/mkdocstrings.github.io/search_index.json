@@ -1,0 +1,84 @@
+{
+ "config": {
+  "lang": [
+   "en"
+  ],
+  "separator": "[\\s\\-]+",
+  "pipeline": [
+   "stopWordFilter"
+  ],
+  "fields": {
+   "title": {
+    "boost": 1000.0
+   },
+   "text": {
+    "boost": 1.0
+   },
+   "tags": {
+    "boost": 1000000.0
+   }
+  }
+ },
+ "docs": [
+  {
+   "location": "",
+   "title": "mkdocstrings",
+   "text": "<p>Automatic documentation from sources, for MkDocs. Come have a chat or ask questions on our Gitter channel.</p> <p>Features - Installation - Quick usage</p> <p></p>"
+  },
+  {
+   "location": "recipes/",
+   "title": "Recipes",
+   "text": "<p>On this page you will find various recipes, tips and tricks for mkdocstrings and more generally Markdown documentation.</p>"
+  },
+  {
+   "location": "troubleshooting/",
+   "title": "Troubleshooting",
+   "text": ""
+  },
+  {
+   "location": "troubleshooting/#warning-could-not-find-cross-reference-target",
+   "title": "Warning: could not find cross-reference target",
+   "text": "<p>New in version 0.15.</p> <p>Cross-linking used to include any Markdown heading, but now it's only for mkdocstrings identifiers by default. See Cross-references to any Markdown heading to opt back in.</p> <p>Make sure the referenced object is properly rendered: verify your configuration options.</p> <p>For false-positives, you can wrap the text in backticks (`) to prevent <code>mkdocstrings</code> from trying to process it.</p>"
+  },
+  {
+   "location": "reference/api/",
+   "title": "API reference",
+   "text": ""
+  },
+  {
+   "location": "reference/api/#mkdocstrings.AutoDocProcessor",
+   "title": "AutoDocProcessor",
+   "text": "<pre><code>AutoDocProcessor(\n    md: Markdown,\n    *,\n    handlers: Handlers,\n    autorefs: AutorefsPlugin,\n)\n</code></pre> <p>               Bases: <code>BlockProcessor</code></p> <p>Our \"autodoc\" Markdown block processor.</p> <p>It has a <code>test</code> method that tells if a block matches a criterion, and a <code>run</code> method that processes it.</p> <p>It also has utility methods allowing to get handlers and their configuration easily, useful when processing a matched block.</p> <p>Parameters:</p> Referenced by: <ul> <li> <code></code> mkdocstrings <code></code> MkdocstringsExtension <code></code> extendMarkdown </li> </ul> <p>Methods:</p> <ul> <li> <code>run</code>             –   "
+  },
+  {
+   "location": "reference/api/#mkdocstrings.Handlers",
+   "title": "Handlers",
+   "text": "<pre><code>Handlers(\n    *,\n    theme: str,\n    default: str,\n    inventory_project: str,\n    inventory_version: str = \"0.0.0\",\n    handlers_config: dict[str, HandlerConfig] | None = None,\n    custom_templates: str | None = None,\n    mdx: Sequence[str | Extension] | None = None,\n    mdx_config: Mapping[str, Any] | None = None,\n    locale: str = \"en\",\n    tool_config: Any,\n)\n</code></pre> <p>A collection of handlers.</p> <p>Do not instantiate this directly. The plugin will keep one instance of this for the purpose of caching. Use mkdocstrings.MkdocstringsPlugin.get_handler for convenient access.</p> <p>Parameters:</p> Referenced by: <ul> <li> <code></code> mkdocstrings <code></code> Mkdocstri"
+  },
+  {
+   "location": "reference/api/#mkdocstrings.MkdocstringsExtension",
+   "title": "MkdocstringsExtension",
+   "text": "<pre><code>MkdocstringsExtension(\n    handlers: Handlers,\n    autorefs: AutorefsPlugin,\n    **kwargs: Any,\n)\n</code></pre> <p>               Bases: <code>Extension</code></p> <p>Our Markdown extension.</p> <p>It cannot work outside of <code>mkdocstrings</code>.</p> <p>Parameters:</p> Referenced by: <ul> <li> <code></code> mkdocstrings <code></code> MkdocstringsPlugin <code></code> on_config </li> </ul> Returned by: <ul> <li> <code></code> mkdocstrings <code></code> makeExtension </li> </ul> <p>Methods:</p> <ul> <li> <code>extendMarkdown</code>             –              <p>Register the extension.</p> </li> </ul> Source code in <code>src/mkdocstrings/_internal/extension.py</code> <pre><code>d"
+  },
+  {
+   "location": "usage/",
+   "title": "Usage",
+   "text": ""
+  },
+  {
+   "location": "usage/#global-options",
+   "title": "Global options",
+   "text": "<p>mkdocstrings accepts a few top-level configuration options in <code>mkdocs.yml</code>:</p> <ul> <li><code>default_handler</code>: The handler that is used by default when no handler is specified.</li> <li><code>custom_templates</code>: The path to a directory containing custom templates.   The path is relative to the MkDocs configuration file.   See Theming.</li> <li><code>handlers</code>: The handlers' global configuration.</li> <li><code>enable_inventory</code>: Whether to enable inventory file generation.   See Cross-references to other projects / inventories</li> <li><code>locale</code>: The locale used for translations. See Internationalization.</li> <li><code>enabled</code> (New in "
+  },
+  {
+   "location": "usage/#cross-references",
+   "title": "Cross-references",
+   "text": "<p>Cross-references are written as Markdown reference-style links:</p> MarkdownHTML Result <pre><code>With a custom title:\n[`Object 1`][full.path.object1]\n\nWith the identifier as title:\n[full.path.object2][]\n</code></pre> <pre><code>&lt;p&gt;With a custom title:\n&lt;a href=\"https://example.com/page1#full.path.object1\"&gt;&lt;code&gt;Object 1&lt;/code&gt;&lt;/a&gt;&lt;p&gt;\n&lt;p&gt;With the identifier as title:\n&lt;a href=\"https://example.com/page2#full.path.object2\"&gt;full.path.object2&lt;/a&gt;&lt;/p&gt;\n</code></pre> <p>Any item that was inserted using the autodoc syntax (e.g. <code>::: full.path.object1</code>) is possible to link to by using the same identifier with the cross-reference"
+  },
+  {
+   "location": "usage/#cross-references-to-any-markdown-heading",
+   "title": "Cross-references to any Markdown heading",
+   "text": "<p>Changed in version 0.15.</p> <p> Linking to any Markdown heading used to be the default, but now opt-in is required.</p> <p>If you want to link to any Markdown heading, not just mkdocstrings-inserted items, please enable the autorefs plugin for MkDocs by adding <code>autorefs</code> to <code>plugins</code>:</p> mkdocs.yml<pre><code>plugins:\n- search\n- autorefs\n- mkdocstrings:\n    [...]\n</code></pre> <p>Note that you don't need to (<code>pip</code>) install anything more; this plugin is guaranteed to be pulled in with mkdocstrings.</p> <p>Example</p> doc1.mddoc2.mdResult HTML for doc2 <pre><code>## Hello, world!\n\nTesting\n</code></pre> <pre><code>## Something else\n\nPlease see the [Hello, Wo"
+  }
+ ]
+}

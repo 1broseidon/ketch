@@ -439,18 +439,103 @@ func (c *pkgClient) get(ctx context.Context, what, u string, limit int64, read f
 	return nil
 }
 
-// send makes one GET of u with the client's User-Agent.
+// send makes one GET of u with the client's User-Agent, and the Accept
+// header the context carries (withAccept), if any.
 func (c *pkgClient) send(ctx context.Context, what, u string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", what, err)
 	}
 	req.Header.Set("User-Agent", c.ua)
+	if accept, ok := ctx.Value(acceptKey{}).(string); ok {
+		req.Header.Set("Accept", accept)
+	}
 	resp, err := orDefaultClient(c.client).Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", what, err)
 	}
 	return resp, nil
+}
+
+// acceptKey carries the Accept header a registry request asks for.
+type acceptKey struct{}
+
+// releases lists the releases a registry publishes for a package, newest
+// first by version, pre-releases included: npm's abbreviated metadata
+// (its versions object) and PyPI's JSON (its releases object), read as a
+// stream of keys. Other registries are not asked: crates are documented
+// per release on docs.rs, Go modules by goVersions.
+func (c *pkgClient) releases(ctx context.Context, eco ecosystem, name string) ([]string, error) {
+	var u, field string
+	var limit int64
+	switch eco {
+	case ecoNPM:
+		// The abbreviated document: versions without their READMEs.
+		ctx = context.WithValue(ctx, acceptKey{}, "application/vnd.npm.install-v1+json")
+		u, field, limit = c.npm+"/"+npmPath(name), "versions", pypiMaxBody
+	case ecoPyPI:
+		u, field, limit = c.pypi+"/pypi/"+url.PathEscape(normalizeName(ecoPyPI, name))+"/json", "releases", pypiMaxBody
+	default:
+		return nil, fmt.Errorf("%s %s: %w (no release list)", eco, name, ErrNotFound)
+	}
+	var out []string
+	err := c.get(ctx, string(eco)+" releases "+name, u, limit, func(r io.Reader) (err error) {
+		out, err = objectKeys(r, field)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		a, okA := parseVerNum(out[i])
+		b, okB := parseVerNum(out[j])
+		return okA && (!okB || compareVer(a, b) > 0)
+	})
+	return out, nil
+}
+
+// objectKeys reads the keys of the top-level JSON object's field, an
+// object, skipping every value.
+func objectKeys(r io.Reader, field string) ([]string, error) {
+	dec := json.NewDecoder(r)
+	if tok, err := dec.Token(); err != nil {
+		return nil, err
+	} else if d, ok := tok.(json.Delim); !ok || d != '{' {
+		return nil, errors.New("not a JSON object")
+	}
+	var skip json.RawMessage
+	for dec.More() {
+		key, err := dec.Token()
+		if err != nil {
+			return nil, err
+		}
+		if key != field {
+			if err := dec.Decode(&skip); err != nil {
+				return nil, err
+			}
+			continue
+		}
+		if tok, err := dec.Token(); err != nil {
+			return nil, err
+		} else if d, ok := tok.(json.Delim); !ok || d != '{' {
+			return nil, fmt.Errorf("%s is not an object", field)
+		}
+		var keys []string
+		for dec.More() {
+			k, err := dec.Token()
+			if err != nil {
+				return nil, err
+			}
+			if s, ok := k.(string); ok {
+				keys = append(keys, s)
+			}
+			if err := dec.Decode(&skip); err != nil {
+				return nil, err
+			}
+		}
+		return keys, nil
+	}
+	return nil, fmt.Errorf("no %q object", field)
 }
 
 // transientStatus is a status worth one retry: 429 and 5xx.

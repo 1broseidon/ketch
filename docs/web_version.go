@@ -204,6 +204,7 @@ func (w *Web) versionSources(root webRoot, p *siteProfile) []versionSource {
 	}
 	out = append(out,
 		list(versionsSwitcher, func(ctx context.Context) ([]siteVersion, error) { return w.switcherVersions(ctx, root, p) }),
+		list(versionsSelect, func(context.Context) ([]siteVersion, error) { return selectVersions(root, p), nil }),
 		list(versionsSiblings, func(context.Context) ([]siteVersion, error) { return siblingVersions(root, p), nil }))
 	if rtd {
 		out = append(out, list(versionsSitemap, func(ctx context.Context) ([]siteVersion, error) { return w.rtdSitemapVersions(ctx, root) }))
@@ -445,7 +446,7 @@ func (w *Web) switcherVersions(ctx context.Context, root webRoot, p *siteProfile
 		return nil, errNoVersionList
 	}
 	var entries []switcherEntry
-	if err := w.probeJSON(ctx, root, loc.String(), &entries); err != nil {
+	if err := w.switcherJSON(ctx, root, loc, &entries); err != nil {
 		return nil, err
 	}
 	var out []siteVersion
@@ -459,6 +460,27 @@ func (w *Web) switcherVersions(ctx context.Context, root webRoot, p *siteProfile
 	}
 	markCurrent(out)
 	return tidyVersions(out), nil
+}
+
+// switcherJSON reads the switcher JSON at loc into v: a discovery probe
+// on root's host, or, where the page names one on another public host
+// (scipy's docs keep theirs with the development docs on github.io), that
+// file, as long as it is JSON. Only entries on root's host are versions
+// either way (switcherVersion), so another host can add no docs root.
+func (w *Web) switcherJSON(ctx context.Context, root webRoot, loc *url.URL, v any) error {
+	if root.sameHost(loc) {
+		return w.probeJSON(ctx, root, loc.String(), v)
+	}
+	if !isPublicWebURL(loc) {
+		return errNoVersionList
+	}
+	pctx, cancel := context.WithTimeout(ctx, w.probeTimeout)
+	defer cancel()
+	raw, err := w.fetcher.FetchRaw(pctx, loc.String())
+	if err != nil || looksLikeHTML(raw.Body, raw.ContentType) {
+		return errNoVersionList
+	}
+	return json.Unmarshal(raw.Body, v)
 }
 
 // switcherVersion maps a switcher entry on root's host. Its label is the
@@ -487,6 +509,70 @@ func switcherVersion(e switcherEntry, root webRoot) (siteVersion, bool) {
 		v.aliases = []string{l}
 	}
 	return v, true
+}
+
+// selectVersions reads a version <select> menu on p whose option values
+// are version labels rather than URLs (fastify.dev's "latest", "v4.29.x"):
+// the switcher's script puts the chosen value where the root's own version
+// segment is, or below an unversioned root. The selected option is the
+// root's own version. An option's text may name the release it stands for
+// ("latest (v5.12.8)", "v4.29.1"), which becomes its label, the value an
+// alias. A menu needs two options that read as versions; one whose values
+// are URLs is read as links instead (appendOptionLinks), and a root whose
+// version is a host label takes none. Nil when no menu qualifies.
+func selectVersions(root webRoot, p *siteProfile) []siteVersion {
+	if p == nil || root.u == nil {
+		return nil
+	}
+	if label, seg := rootVersion(root); label != "" && seg < 0 {
+		return nil
+	}
+	for _, menu := range p.selects {
+		if out := menuVersions(root, menu); len(tidyVersions(out)) >= 2 {
+			markCurrent(out, "latest", "stable", labelCurrent)
+			return tidyVersions(out)
+		}
+	}
+	return nil
+}
+
+// menuVersions reads one menu's options as versions of root (see
+// selectVersions); nil when an option is a link or a path.
+func menuVersions(root webRoot, menu []selectOption) []siteVersion {
+	_, seg := rootVersion(root)
+	var out []siteVersion
+	for _, o := range menu {
+		if o.linked || strings.ContainsAny(o.value, "/?#") {
+			return nil
+		}
+		l, ok := segmentLabel(o.value)
+		if !ok || !safeSegment(o.value) || isBareInt(l) && optionRelease(o.text) == "" {
+			continue // a bare number (a page-size menu's 10, 25) needs a release in its text
+		}
+		u := *root.u
+		u.RawPath, u.RawQuery, u.Fragment = "", "", ""
+		switch segs := pathSegments(root.prefix); {
+		case seg >= 0:
+			segs[seg] = o.value
+			u.Path = segmentsPath(segs)
+		case !o.selected:
+			u.Path = root.prefix + o.value + "/"
+		}
+		v := siteVersion{label: l, root: u.String(), current: o.selected}
+		out = append(out, withConcreteLabel(v, optionRelease(o.text)))
+	}
+	return out
+}
+
+// optionRelease returns the release an option's text names ("v5.12.8" in
+// "latest (v5.12.8)"), or "".
+func optionRelease(text string) string {
+	for _, tok := range strings.FieldsFunc(text, func(r rune) bool { return r == ' ' || r == '(' || r == ')' || r == ',' || r == '[' || r == ']' }) {
+		if l := linkLabel(tok); l != "" {
+			return l
+		}
+	}
+	return ""
 }
 
 // siblingVersions reads versions from p's links: same host (or a version
@@ -926,7 +1012,10 @@ func parseVerNum(label string) (verNum, bool) {
 	if len(n.parts) == 0 {
 		return verNum{}, false
 	}
-	n.pre = strings.TrimLeft(s, "-.+")
+	// Build metadata (+incompatible, Go's mark for a v2+ release of a
+	// module without a /vN path; +wasi-0.2) does not make a pre-release.
+	s, _, _ = strings.Cut(s, "+")
+	n.pre = strings.TrimLeft(s, "-.")
 	return n, true
 }
 
@@ -1245,6 +1334,150 @@ func pkgGoVersionRoot(u *url.URL, want string, goVersions []string) (siteVersion
 		return siteVersion{}, false
 	}
 	return siteVersion{label: best, root: base + "@" + best}, true
+}
+
+// goModuleVersions finds the module that publishes the release want
+// names, for registry docs of Go module pkg, and returns pkg moved to it
+// with that module's versions (newest first). Under semantic import
+// versioning a major version from 2 on is its own module, base/vN
+// (gopkg.in/name.vN), and v0 and v1 are the base path, so go-redis@9 is
+// github.com/redis/go-redis/v9 and echo/v4@3 is github.com/labstack/echo
+// (its v3 releases tagged +incompatible). The module want's major implies
+// is tried first, then pkg's own; with neither listing such a release,
+// pkg and its own versions come back unchanged.
+func (w *Web) goModuleVersions(ctx context.Context, pkg pkgInfo, want string) (pkgInfo, []string) {
+	if pkg.eco != ecoGo || w.pkgs == nil {
+		return pkg, nil
+	}
+	wn, numeric := parseVerNum(want)
+	var own []string
+	for _, mod := range uniqueStrings(append(goMajorModules(pkg.name, want), pkg.name)...) {
+		actx, cancel := context.WithTimeout(ctx, apiCallTimeout)
+		versions, _ := w.pkgs.goVersions(actx, mod)
+		cancel()
+		if mod == pkg.name {
+			own = versions
+		}
+		names := slices.ContainsFunc(versions, func(v string) bool { n, ok := parseVerNum(v); return ok && verPrefixMatch(wn, n) })
+		if numeric && names && mod != pkg.name {
+			moved := pkg
+			moved.name, moved.registryDocs = mod, pkgsiteBase+"/"+mod
+			return moved, versions
+		}
+	}
+	return pkg, own
+}
+
+// goMajorModules returns the module paths that may carry want's major
+// version (see goModuleVersions), best first: base/vN then the base path,
+// where a v2+ release made before modules is tagged +incompatible; the
+// base path alone for v0 and v1. Nil when want names no release or module
+// is not a module path.
+func goMajorModules(module, want string) []string {
+	n, ok := parseVerNum(want)
+	if !ok || !isModulePath(module) {
+		return nil
+	}
+	major := strconv.Itoa(n.parts[0])
+	dir, last := path.Split(module)
+	if strings.HasPrefix(module, "gopkg.in/") {
+		name, _, _ := strings.Cut(last, ".v")
+		return []string{dir + name + ".v" + major}
+	}
+	base := module
+	if dir != "" && goMajorSuffix(last) {
+		base = strings.TrimSuffix(dir, "/")
+	}
+	if n.parts[0] < 2 {
+		return []string{base}
+	}
+	return []string{base + "/v" + major, base}
+}
+
+// goMajorSuffix reports a module path element that is a major version
+// suffix: v2, v3, … (never v0 or v1).
+func goMajorSuffix(elem string) bool {
+	n, err := strconv.Atoi(strings.TrimPrefix(elem, "v"))
+	return strings.HasPrefix(elem, "v") && err == nil && n >= 2 && "v"+strconv.Itoa(n) == elem
+}
+
+// releaseLister is a package source that lists a package's releases
+// (pkgClient.releases).
+type releaseLister interface {
+	releases(ctx context.Context, eco ecosystem, name string) ([]string, error)
+}
+
+// releaseProbes are where a site that names its version trees by release
+// (chartjs.org/docs/3.9.1/, docs.celeryq.dev/en/v4.4.7/) and lists none
+// of them in its HTML would keep want's docs: the newest release the
+// project's npm or PyPI package publishes that want names (a pre-release
+// only when want is one), written as the release, v and the release, and
+// the same for its major.minor, put where the root's own version segment
+// is, or below an unversioned root. Like every probe, each counts only
+// when it is served as a docs tree that holds want (probeVersion). At
+// most webMaxVersionProbes, none already in have; nil when the registry
+// lists no such release.
+func (w *Web) releaseProbes(ctx context.Context, root webRoot, proj *project, want string, have []versionProbe) []versionProbe {
+	label, seg := rootVersion(root)
+	if root.u == nil || label != "" && seg < 0 {
+		return nil
+	}
+	newest := w.newestRelease(ctx, proj, want)
+	n, ok := parseVerNum(newest)
+	if !ok {
+		return nil
+	}
+	labels := []string{normLabel(newest), "v" + normLabel(newest)}
+	if len(n.parts) > 2 {
+		mm := joinParts(n.parts[:2])
+		labels = append(labels, mm, "v"+mm)
+	}
+	seen := map[string]bool{}
+	for _, p := range have {
+		seen[linkKey(p.page)] = true
+	}
+	var out []versionProbe
+	for _, l := range labels {
+		u := *root.u
+		u.RawPath, u.RawQuery, u.Fragment = "", "", ""
+		if segs := pathSegments(root.prefix); seg >= 0 {
+			segs[seg] = l
+			u.Path = segmentsPath(segs)
+		} else {
+			u.Path = root.prefix + l + "/"
+		}
+		if !seen[linkKey(&u)] && len(out) < webMaxVersionProbes {
+			seen[linkKey(&u)] = true
+			out = append(out, versionProbe{v: siteVersion{label: l, root: u.String()}, page: &u})
+		}
+	}
+	return out
+}
+
+// newestRelease is the newest release of proj's npm or PyPI package that
+// want names (a pre-release only when want is one), or "".
+func (w *Web) newestRelease(ctx context.Context, proj *project, want string) string {
+	lister, ok := w.pkgs.(releaseLister)
+	wn, numeric := parseVerNum(want)
+	if !ok || !numeric || proj == nil {
+		return ""
+	}
+	i := slices.IndexFunc(proj.pkgs, func(p pkgInfo) bool { return p.eco == ecoNPM || p.eco == ecoPyPI })
+	if i < 0 {
+		return ""
+	}
+	actx, cancel := context.WithTimeout(ctx, apiCallTimeout)
+	releases, err := lister.releases(actx, proj.pkgs[i].eco, proj.pkgs[i].name)
+	cancel()
+	if err != nil {
+		return ""
+	}
+	for _, r := range releases { // newest first
+		if n, ok := parseVerNum(r); ok && namesRelease(want, r) && (n.pre == "" || wn.pre != "") {
+			return r
+		}
+	}
+	return ""
 }
 
 // canonicalRoot adopts a same-host redirect of requested that only swaps

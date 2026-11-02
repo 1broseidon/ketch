@@ -686,16 +686,88 @@ func (w *Web) collect(ctx context.Context, root webRoot, query string) ([]webPag
 		return nil, err
 	}
 	if len(site.pages) > 0 {
-		return site.pages, nil
+		return w.fullTextPages(ctx, root, site, query), nil
 	}
 	if len(site.links) == 0 {
 		return nil, fmt.Errorf("web: no docs pages under %s: %w (tried %s)", root, ErrNotFound, strings.Join(site.tried, ", "))
 	}
+	w.widenLLMS(ctx, root, &site, query)
+	cands := w.linkCandidates(ctx, root, site, query)
+	if len(site.index) > 0 {
+		cands = interleaveLinks(indexPages(site.index, query, w.maxFetch), cands, w.maxFetch)
+	}
+	return w.fetchPages(ctx, root, cands)
+}
+
+// linkCandidates are the pages the site's page list offers for query, best
+// first (pickCandidates), led by a web search's pages on the site when the
+// list names little of the query (searchPages): its titles and paths are
+// all the candidates have to go on, where a site's full text (its search
+// index, llms-full.txt) is a ranking of its own (collect, fullTextPages).
+func (w *Web) linkCandidates(ctx context.Context, root webRoot, site webSite, query string) []webLink {
 	cands := pickCandidates(site.links, query, root, w.maxFetch)
 	if linkCoverage(site.links, query, root) < webWeakCoverage && !registryDocsHosts[scopeHost(root.u)] {
 		cands = withSearchPages(w.searchPages(ctx, root, query), cands, w.maxFetch)
 	}
-	return w.fetchPages(ctx, root, cands)
+	return cands
+}
+
+// fullTextPages picks the pages to answer from when llms-full.txt holds
+// the docs' text: as for any site with a full-text index (collect), the
+// pages whose sections best match the query, interleaved one for one with
+// the best llms.txt candidates by title and description, at most
+// maxFetch. A page llms-full.txt holds is read from it; one it does not
+// hold is fetched (GitBook's llms-full.txt is paginated, its first part a
+// hundred pages of hundreds, while llms.txt lists them all). Ranking a
+// few chosen pages rather than every page llms-full.txt holds keeps
+// sections of pages that only mention the query's words (a large site's
+// many reference pages) from crowding out the page about it. A page that
+// cannot be fetched is left out.
+func (w *Web) fullTextPages(ctx context.Context, root webRoot, site webSite, query string) []webPage {
+	held := map[string][]webPage{}
+	var sections []webSection
+	for i, p := range site.pages {
+		sections = append(sections, splitSections(p, i)...)
+		if u, err := url.Parse(p.URL); err == nil {
+			held[displayKey(u)] = append(held[displayKey(u)], p)
+		}
+	}
+	var listed []webLink
+	switch {
+	case linkCoverage(site.links, query, root) > 0:
+		listed = w.linkCandidates(ctx, root, site, query)
+	case !registryDocsHosts[scopeHost(root.u)]:
+		listed = w.searchPages(ctx, root, query) // no listed page to guess with
+	}
+	var out []webPage
+	var missing []webLink
+	for _, l := range interleaveLinks(indexPages(sections, query, w.maxFetch), listed, w.maxFetch) {
+		if ps, ok := held[displayKey(l.url)]; ok {
+			out = append(out, ps...)
+			delete(held, displayKey(l.url)) // x and x.md are one page
+		} else {
+			missing = append(missing, l)
+		}
+	}
+	if len(missing) > 0 {
+		if fetched, err := w.fetchPages(ctx, root, missing); err == nil {
+			out = append(out, fetched...)
+		}
+	}
+	if len(out) == 0 {
+		return site.pages
+	}
+	return out
+}
+
+// displayKey is linkKey of the page a URL is shown as (displayURL): a
+// page and its Markdown variant share it.
+func displayKey(u *url.URL) string {
+	d, err := url.Parse(displayURL(u))
+	if err != nil {
+		return linkKey(u)
+	}
+	return linkKey(d)
 }
 
 // webWeakCoverage is the link coverage (linkCoverage) below which the

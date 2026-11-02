@@ -3352,13 +3352,7 @@ func (r *resolution) registryVersion(ctx context.Context, m *webMatch, want stri
 	if i < 0 {
 		return r.versionNotFound(want, nil, "")
 	}
-	pkg := m.proj.pkgs[i]
-	var goVersions []string
-	if pkg.eco == ecoGo && r.w.pkgs != nil {
-		actx, cancel := context.WithTimeout(ctx, apiCallTimeout)
-		goVersions, _ = r.w.pkgs.goVersions(actx, pkg.name)
-		cancel()
-	}
+	pkg, goVersions := r.w.goModuleVersions(ctx, m.proj.pkgs[i], want)
 	sv, ok := registryVersionRoot(pkg, want, goVersions)
 	if !ok {
 		return r.versionNotFound(want, goVersions, "")
@@ -3476,6 +3470,7 @@ type versionProbe struct {
 // false, with a nil error, when no probe held.
 func (r *resolution) probeVersion(ctx context.Context, m *webMatch, want string, vs versionSet) (found bool, err error) {
 	probes := versionProbes(m.root, m.prof, vs, want)
+	probes = append(probes, r.w.releaseProbes(ctx, m.root, m.proj, want, probes)...)
 	if len(probes) == 0 {
 		return false, nil
 	}

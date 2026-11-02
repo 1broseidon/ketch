@@ -204,10 +204,21 @@ type siteProfile struct {
 	// inline is the text of the page's inline scripts, joined and capped:
 	// where version switchers keep their JSON URL.
 	inline string
+	// selects are the page's <select> menus, each its options in order: a
+	// version switcher drawn as a form control rather than links.
+	selects [][]selectOption
 	// fromMarkdown is set when the raw page had no usable anchors (a JS
 	// shell) and links came from FetchPage's Markdown instead; meta,
 	// scripts and inline are then empty.
 	fromMarkdown bool
+}
+
+// selectOption is one <option> of a <select> menu.
+type selectOption struct {
+	value    string // the value attribute, else the text
+	text     string // space-collapsed
+	selected bool
+	linked   bool // an attribute holds a URL or path (optionURLAttrs)
 }
 
 // siteVersion is one version a docs site publishes.
@@ -224,6 +235,7 @@ const (
 	versionsMike     = "mike"        // mike versions.json
 	versionsSwitcher = "switcher"    // pydata-sphinx-theme switcher JSON
 	versionsSiblings = "siblings"    // sibling version links on the root page
+	versionsSelect   = "select"      // a version <select> menu on the root page
 	versionsSitemap  = "sitemap"     // Read the Docs version-root sitemap
 	versionsSphinx   = "sphinx"      // the build's own VERSION, current only
 )

@@ -25,23 +25,31 @@ type webSite struct {
 	pages []webPage // full content from llms-full.txt; no per-page fetches needed
 	links []webLink // candidate pages, in discovery order
 	tried []string  // sources consulted, for the not-found message
+	llms  bool      // the links are llms.txt's
+	// index is the site's own full-text search index, as sections, when
+	// its generator publishes one (web_searchindex.go): a second ranking
+	// of the candidates, by what the pages say.
+	index []webSection
 }
 
 // discover finds the site's pages, cheapest source first:
 //
 //  1. llms.txt under the root path, then at the origin. A usable sibling
-//     llms-full.txt (at most maxFullBytes) supplies the content outright.
+//     llms-full.txt (at most maxFullBytes) supplies the content outright
+//     (collect then chooses its pages: fullTextPages).
 //  2. Sitemaps: robots.txt Sitemap: lines, else sitemap.xml and
 //     sitemap-index.xml under the root path and at the origin; indexes are
 //     followed webSitemapDepth levels deep, at most webMaxSitemaps files
 //     and webMaxURLs URLs, skipping other locales' sitemaps, all within
-//     sitemapBudget.
+//     sitemapBudget. The root page's raw HTML then titles the sitemap's
+//     pages from its nav and adds the ones it left out, and names the
+//     site's search index when its generator publishes one (site.index).
 //  3. Links on the root page (and the root page itself, following one meta
 //     refresh), the last resort, merged with every page of the Sphinx
 //     build the root page belongs to (its searchindex.js). A root page that
 //     is only a hub (a landing page linking to a few sections) has the
 //     links of up to webMaxHubs of those sections read too: their
-//     sidebars list the pages.
+//     sidebars list the pages. The search index it names is read too.
 //
 // An llms.txt that lists only index files (.txt sets of pages, such as
 // expressjs.com's llms/guides-5x.txt) has those read like llms-full.txt:
@@ -51,10 +59,14 @@ type webSite struct {
 // go straight to the root page. Only in-scope pages are kept from any
 // source. Discovery files are probes: their absence is expected and never
 // an error. The root page is not, so its fetch error is returned when
-// nothing else turned up.
+// nothing else turned up. An llms.txt that names little of the query is
+// widened later with step 2's sources (widenLLMS).
 func (w *Web) discover(ctx context.Context, root webRoot) (webSite, error) {
 	var site webSite
-	if w.discoverListed(ctx, root, &site) {
+	if w.discoverLLMS(ctx, root, &site) {
+		return site, nil
+	}
+	if w.discoverSitemap(ctx, root, &site) {
 		return site, nil
 	}
 	site.tried = append(site.tried, "links on "+root.String())
@@ -67,13 +79,45 @@ func (w *Web) discover(ctx context.Context, root webRoot) (webSite, error) {
 		return site, nil // an empty root page with no links: nothing to search
 	}
 	site.links = w.withHubLinks(ctx, root, links, &site.tried)
+	site.index = w.searchIndex(ctx, root, info.indexLocs, &site.tried)
 	return site, nil
 }
 
-// discoverListed tries the sources that list a site's pages, llms.txt
-// (with llms-full.txt) then sitemaps, as far as root's host is worth
-// probing, and reports whether one answered with pages.
-func (w *Web) discoverListed(ctx context.Context, root webRoot, site *webSite) bool {
+// discoverSitemap reads the site's sitemaps, when its host is worth
+// probing, and reports whether they list pages. The root page's nav, when
+// its HTML carries one, titles them and adds what the sitemap left out,
+// and the search index it names ranks them (site.index).
+func (w *Web) discoverSitemap(ctx context.Context, root webRoot, site *webSite) bool {
+	if !hostDiscovery(root).sitemaps {
+		return false
+	}
+	sitemap := w.sitemapLinks(ctx, root, &site.tried)
+	if !usefulSitemap(sitemap, root) {
+		return false
+	}
+	site.links = mergeLinks(site.links, sitemap)
+	site.tried = append(site.tried, "nav on "+root.String())
+	if info, ok := w.rootNav(ctx, root); ok {
+		site.links = mergeLinks(site.links, info.links)
+		site.index = w.searchIndex(ctx, root, info.indexLocs, &site.tried)
+	}
+	return true
+}
+
+// widenLLMS adds the site's other page lists to an llms.txt that names
+// little of the query (its link coverage is under webWeakCoverage): a
+// hand-written llms.txt lists a few pages the site's sitemap, nav and
+// search index do not stop at. The llms.txt links keep the lead.
+func (w *Web) widenLLMS(ctx context.Context, root webRoot, site *webSite, query string) {
+	if !site.llms || len(site.pages) > 0 || linkCoverage(site.links, query, root) >= webWeakCoverage {
+		return
+	}
+	w.discoverSitemap(ctx, root, site)
+}
+
+// discoverLLMS tries llms.txt (with llms-full.txt), as far as root's host
+// is worth probing, and reports whether it answered with pages.
+func (w *Web) discoverLLMS(ctx context.Context, root webRoot, site *webSite) bool {
 	probes := hostDiscovery(root)
 	if probes.llms {
 		llms := w.findLLMSTxt(ctx, root, &site.tried)
@@ -85,17 +129,10 @@ func (w *Web) discoverListed(ctx context.Context, root webRoot, site *webSite) b
 				site.pages, llms.links = w.indexFiles(ctx, root, llms, index, &site.tried)
 			}
 			if len(site.pages) > 0 || len(llms.links) > 0 {
-				site.links = llms.links
+				site.links, site.llms = llms.links, true
 				return true
 			}
 		}
-	}
-	if !probes.sitemaps {
-		return false
-	}
-	if links := w.sitemapLinks(ctx, root, &site.tried); usefulSitemap(links, root) {
-		site.links = links
-		return true
 	}
 	return false
 }
@@ -672,52 +709,147 @@ type fullChunk struct {
 	body  string
 }
 
-// metaLineRe matches the per-page metadata generators put by the H1:
-// "Source: https://…" (Mintlify), "URL: /docs/x" (Fumadocs), "url: /x.md"
-// (VitePress frontmatter).
-var metaLineRe = regexp.MustCompile(`(?i)^\s*(url|source|source_url|link)\s*:\s*<?(\S+?)>?\s*$`)
+// metaLineRe matches the per-page metadata generators put by the H1 or in
+// a page's frontmatter: "Source: https://…" (Mintlify), "URL: /docs/x"
+// (Fumadocs), url: /x.md (VitePress), url: "https://…" (YAML-quoted).
+var metaLineRe = regexp.MustCompile(`(?i)^\s*(url|source|source_url|canonical_url|link)\s*:\s*["']?<?([^\s"'<>]+?)>?["']?\s*$`)
 
-// splitFullText splits llms-full.txt into pages at H1 headings outside code
-// fences, and at deeper headings followed by a URL line naming an absolute
-// or root-relative address (an index file's "## Error Handling" then
-// "URL: https://expressjs.com/en/5x/guide/error-handling"). Metadata lines
-// right after the heading, or in a --- block right before it, name the
-// page's URL and are removed from the body.
-func splitFullText(body string) []fullChunk {
-	var chunks []fullChunk
-	cur := &fullChunk{}
-	var lines []string
-	var fence fenceState
-	flush := func() {
-		cur.body = takeLeadingMeta(cur, lines)
-		chunks = append(chunks, *cur)
+var (
+	// frontmatterKeyRe matches a YAML key line in a frontmatter block.
+	frontmatterKeyRe = regexp.MustCompile(`^[A-Za-z_][\w.-]*\s*:(?:\s|$)`)
+	// frontmatterTitleRe takes a frontmatter block's title value.
+	frontmatterTitleRe = regexp.MustCompile(`(?i)^title\s*:\s*(.+?)\s*$`)
+	// linkedHeadingRe matches a heading that is only a link: "# [Aliases](https://…)".
+	linkedHeadingRe = regexp.MustCompile(`^\[([^\]]+)\]\(\s*<?([^)\s>]+)>?\s*\)$`)
+	// pathTitleRe matches a heading that ends with its page's address in
+	// parentheses: "Choose a setup path (/docs/getting-started)".
+	pathTitleRe = regexp.MustCompile(`^(.+?)\s+\((/[^\s()]*|https?://[^\s()]+)\)$`)
+)
+
+// webMaxFrontmatterLines bounds how far a frontmatter block is looked for
+// its closing "---"; a longer run is not frontmatter.
+const webMaxFrontmatterLines = 40
+
+// fullSplitter is splitFullText's state: the page being read.
+type fullSplitter struct {
+	chunks []fullChunk
+	cur    fullChunk
+	lines  []string
+	// open: the page was opened by a delimiter that does not title it
+	// (a frontmatter block, a heading that is only a link), so the H1 that
+	// follows before any text is its title, not another page.
+	open bool
+}
+
+// hasText reports body text in the page being read, metadata lines aside.
+func (s *fullSplitter) hasText() bool {
+	return slices.ContainsFunc(s.lines, func(l string) bool {
+		return strings.TrimSpace(l) != "" && !metaLineRe.MatchString(l)
+	})
+}
+
+func (s *fullSplitter) flush() {
+	s.cur.body = takeLeadingMeta(&s.cur, s.lines)
+	if s.cur.title != "" || s.cur.body != "" || len(s.cur.refs) > 0 {
+		s.chunks = append(s.chunks, s.cur)
 	}
-	all := strings.Split(body, "\n")
-	for i, line := range all {
+	s.cur, s.lines, s.open = fullChunk{}, nil, false
+}
+
+// startPage begins a page, unless the page being read is still waiting
+// for its title and has no text: then that page goes on.
+func (s *fullSplitter) startPage() {
+	if !s.open || s.hasText() {
+		s.flush()
+	}
+}
+
+// splitFullText splits llms-full.txt into pages. A page starts at an H1
+// outside code fences; at a YAML frontmatter block (---, key: value lines,
+// ---), which generators put before each page (VitePress, Next.js docs),
+// with or without an H1 after it; and at a deeper heading followed by a
+// URL line naming an absolute or root-relative address (an index file's
+// "## Error Handling" then "URL: https://expressjs.com/en/5x/guide/error-handling").
+//
+// A frontmatter block, or a heading that is only a link to the page
+// ("# [Aliases](https://…)" before "# Aliases"), opens a page that the
+// next H1 titles when no text came between: one page, not an empty one
+// and an unattributed one. The page's URL comes from its frontmatter's
+// url/source keys, the heading's link, or metadata lines right after the
+// heading, all removed from the body; its title from the H1, else the
+// frontmatter's title.
+func splitFullText(body string) []fullChunk {
+	s := &fullSplitter{}
+	var fence fenceState
+	all := strings.Split(strings.ReplaceAll(body, "\r\n", "\n"), "\n")
+	for i := 0; i < len(all); i++ {
+		line := all[i]
 		if fence.step(line) {
-			lines = append(lines, line)
+			s.lines = append(s.lines, line)
+			continue
+		}
+		if end, ok := frontmatterEnd(all, i); ok {
+			s.startPage()
+			for _, l := range all[i+1 : end] {
+				if m := metaLineRe.FindStringSubmatch(l); m != nil {
+					s.cur.refs = append(s.cur.refs, m[2])
+				} else if m := frontmatterTitleRe.FindStringSubmatch(l); m != nil && s.cur.title == "" {
+					s.cur.title = strings.Trim(m[1], `"'`)
+				}
+			}
+			s.open, i = true, end
 			continue
 		}
 		h, ok := parseATX(line)
 		if !ok || (h.level != 1 && !pageURLFollows(all[i+1:])) {
-			lines = append(lines, line)
+			s.lines = append(s.lines, line)
 			continue
 		}
-		var pre []string
-		lines, pre = popFrontmatter(lines)
-		flush()
-		cur, lines = &fullChunk{title: h.text}, nil
-		for _, l := range pre {
-			if m := metaLineRe.FindStringSubmatch(l); m != nil {
-				cur.refs = append(cur.refs, m[2])
+		s.startPage()
+		title, ref := h.text, ""
+		if m := linkedHeadingRe.FindStringSubmatch(strings.TrimSpace(h.raw)); m != nil {
+			title, ref = cleanInline(m[1]), m[2]
+			s.cur.refs = append(s.cur.refs, ref)
+		} else if m := pathTitleRe.FindStringSubmatch(h.text); m != nil {
+			// "# Title (/docs/path)": the page's address after its title
+			// (Fumadocs' default llms-full.txt). It titles the page itself.
+			title = m[1]
+			s.cur.refs = append(s.cur.refs, m[2])
+		}
+		if title != "" {
+			s.cur.title = title
+		}
+		s.open = ref != ""
+	}
+	s.flush()
+	return s.chunks
+}
+
+// frontmatterEnd reports a YAML frontmatter block opening at line i: "---"
+// then key: value lines (with indented continuations, list items and
+// blank lines) and a closing "---" within webMaxFrontmatterLines, holding
+// at least one key. end is the closing line.
+func frontmatterEnd(lines []string, i int) (end int, ok bool) {
+	if strings.TrimRight(lines[i], " \t") != "---" {
+		return 0, false
+	}
+	keys := 0
+	for j := i + 1; j < len(lines) && j <= i+webMaxFrontmatterLines; j++ {
+		l := lines[j]
+		switch t := strings.TrimSpace(l); {
+		case t == "---":
+			return j, keys > 0
+		case frontmatterKeyRe.MatchString(l):
+			keys++
+		case t == "" || l[0] == ' ' || l[0] == '\t' || strings.HasPrefix(t, "- "):
+			if keys == 0 {
+				return 0, false // a rule, then text: not frontmatter
 			}
+		default:
+			return 0, false
 		}
 	}
-	flush()
-	if chunks[0].title == "" && chunks[0].body == "" {
-		chunks = chunks[1:]
-	}
-	return chunks
+	return 0, false
 }
 
 // pageURLFollows reports a URL metadata line, blank lines aside, at the
@@ -748,28 +880,18 @@ func takeLeadingMeta(c *fullChunk, lines []string) string {
 		}
 		c.refs = append(c.refs, m[2])
 	}
-	return strings.TrimSpace(strings.Join(lines[i:], "\n"))
+	end := len(lines)
+	for end > i && (strings.TrimSpace(lines[end-1]) == "" || isThematicBreak(lines[end-1])) {
+		end-- // the rule a generator puts between pages
+	}
+	return strings.TrimSpace(strings.Join(lines[i:end], "\n"))
 }
 
-// popFrontmatter removes a trailing "---\nkey: value\n---" block (blank
-// lines aside) from lines and returns it.
-func popFrontmatter(lines []string) ([]string, []string) {
-	end := len(lines) - 1
-	for end >= 0 && strings.TrimSpace(lines[end]) == "" {
-		end--
-	}
-	if end < 1 || strings.TrimSpace(lines[end]) != "---" {
-		return lines, nil
-	}
-	for start := end - 1; start >= 0 && end-start <= 12; start-- {
-		if strings.TrimSpace(lines[start]) == "---" {
-			return lines[:start], lines[start+1 : end]
-		}
-		if !strings.Contains(lines[start], ":") {
-			return lines, nil
-		}
-	}
-	return lines, nil
+// isThematicBreak reports a Markdown thematic break: three or more of one
+// of -, * or _, spaces aside.
+func isThematicBreak(line string) bool {
+	t := strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(line), " ", ""), "\t", "")
+	return len(t) >= 3 && (strings.Trim(t, "-") == "" || strings.Trim(t, "*") == "" || strings.Trim(t, "_") == "")
 }
 
 // parseSitemap streams a urlset or sitemapindex and returns whether it is
@@ -998,6 +1120,9 @@ type rootInfo struct {
 	links              []webLink // in-scope links; rootPage puts the page itself first
 	page               *webPage  // the page's content when already in hand
 	refresh            *url.URL  // in-scope <meta http-equiv="refresh"> target
+	// indexLocs are where the page says its site's search index is
+	// (searchIndexLocs), best first.
+	indexLocs []string
 	// generator is the page's generator meta and scripts the absolute URLs
 	// of its <script src>, from the raw HTML: how a framework build (Sphinx)
 	// is recognised.
@@ -1024,6 +1149,24 @@ func (w *Web) rootPage(ctx context.Context, root webRoot) (rootInfo, error) {
 	self := webLink{url: info.at, title: info.title, description: info.description, page: info.page}
 	info.links = append([]webLink{self}, dropLink(dropLink(info.links, info.at), root.u)...)
 	return info, nil
+}
+
+// rootNav reads the root page's raw HTML for its links and search index,
+// without rendering it: ok is false when the page cannot be read that way
+// (a failed fetch, a redirect out of the root, Markdown, a JS shell).
+func (w *Web) rootNav(ctx context.Context, root webRoot) (rootInfo, bool) {
+	pctx, cancel := context.WithTimeout(ctx, w.probeTimeout)
+	raw, err := w.fetcher.FetchRaw(pctx, root.u.String())
+	cancel()
+	if err != nil || !looksLikeHTML(raw.Body, raw.ContentType) {
+		return rootInfo{}, false
+	}
+	at, err := servedFrom(root.u, raw.URL, root.contains)
+	if err != nil {
+		return rootInfo{}, false
+	}
+	info := htmlRootInfo(raw.Body, root, at)
+	return info, len(info.links) > 0
 }
 
 // readPage reads one page for discovery. Raw HTML is parsed for title,
@@ -1118,6 +1261,7 @@ func htmlRootInfo(body []byte, root webRoot, u *url.URL) rootInfo {
 		}
 	}
 	info.scripts = scriptURLs(doc, base)
+	info.indexLocs = searchIndexLocs(body, info.generator, base, root)
 	doc.Find("meta[http-equiv]").Each(func(_ int, m *goquery.Selection) {
 		if strings.EqualFold(m.AttrOr("http-equiv", ""), "refresh") && info.refresh == nil {
 			if target, ok := root.resolve(base, metaRefreshURL(m.AttrOr("content", ""))); ok && linkKey(target) != linkKey(u) {
@@ -1125,14 +1269,19 @@ func htmlRootInfo(body []byte, root webRoot, u *url.URL) rootInfo {
 			}
 		}
 	})
-	seen := map[string]bool{}
+	seen := map[string]int{}
 	doc.Find("a[href]").Each(func(_ int, a *goquery.Selection) {
 		link, ok := root.resolve(base, a.AttrOr("href", ""))
-		if !ok || !isPageURL(link) || seen[linkKey(link)] {
+		if !ok || !isPageURL(link) {
 			return
 		}
-		seen[linkKey(link)] = true
 		title := firstNonEmpty(collapseSpace(a.Text()), a.AttrOr("aria-label", ""), a.AttrOr("title", ""))
+		if i, ok := seen[linkKey(link)]; ok {
+			// A logo or icon link first, the titled nav entry after it.
+			info.links[i].title = firstNonEmpty(info.links[i].title, title)
+			return
+		}
+		seen[linkKey(link)] = len(info.links)
 		info.links = append(info.links, webLink{url: link, title: title})
 	})
 	return info

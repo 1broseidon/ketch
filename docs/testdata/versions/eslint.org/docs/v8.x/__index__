@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head><title>Getting Started with ESLint - ESLint - Pluggable JavaScript Linter</title></head>
+<body>
+<nav>
+  <a href="/docs/v8.x/use/getting-started">Getting Started</a>
+  <a href="/docs/v8.x/use/configure/ignore">Ignoring Code</a>
+</nav>
+<select name="version selector" id="nav-version-select" class="c-custom-select switcher__select auto-switcher">
+  <option value="10.14.0" data-url="/docs/latest/">v10.14.0</option>
+  <option value="8.57.1" data-url="/docs/v8.x/" selected>v8.57.1</option>
+</select>
+<main><h1>Getting Started with ESLint</h1><p>ESLint v8 documentation.</p></main>
+</body>
+</html>

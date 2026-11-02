@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en">
+<head><title>Introduction | Fastify</title></head>
+<body>
+<nav>
+  <a href="/docs/latest/Guides/Getting-Started/">Getting Started</a>
+  <a href="/docs/latest/Reference/Plugins/">Plugins</a>
+  <select data-version-switch class="w-full appearance-none rounded-md" aria-label="Select documentation version"><option value="latest" selected>latest (v5.12.8)</option><option value="v5.12.x">v5.12.8</option><option value="v5.11.x">v5.11.3</option><option value="v5.0.x">v5.0.0</option><option value="v4.29.x">v4.29.1</option><option value="v3.29.x">v3.29.5</option></select>
+</nav>
+<main><h1>Introduction</h1><p>Fastify is a web framework highly focused on providing the best developer experience.</p></main>
+</body>
+</html>

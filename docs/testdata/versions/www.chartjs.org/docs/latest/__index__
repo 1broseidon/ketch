@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head><title>Chart.js | Chart.js</title><meta name="generator" content="VuePress 1.9.9"></head>
+<body>
+<div id="app"><header class="navbar"><a href="/docs/latest/" class="home-link router-link-active"><span class="site-name">Chart.js</span></a>
+<nav class="nav-links"><a href="/docs/latest/" class="nav-link">Home</a><a href="/docs/latest/api/" class="nav-link">API</a><a href="/docs/latest/samples/" class="nav-link">Samples</a></nav></header>
+<aside class="sidebar"><ul class="sidebar-links"><li><a href="/docs/latest/axes/cartesian/time.html" class="sidebar-link">Time Cartesian Axis</a></li></ul></aside>
+<main class="page"><div class="theme-default-content content__default"><h1 id="chart-js">Chart.js</h1><p>Simple yet flexible JavaScript charting library for the modern web.</p></div></main></div>
+</body></html>
