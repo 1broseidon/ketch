@@ -36,7 +36,7 @@ func New(timeout time.Duration, maxIdleConnsPerHost int) *http.Client {
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 	}
-	return &http.Client{Transport: t, Timeout: timeout, CheckRedirect: CheckRedirect}
+	return &http.Client{Transport: benchTransport(t), Timeout: timeout, CheckRedirect: CheckRedirect}
 }
 
 var defaultClient = New(DefaultTimeout, DefaultMaxIdleConnsPerHost)
