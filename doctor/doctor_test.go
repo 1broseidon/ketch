@@ -17,8 +17,14 @@ import (
 
 	"github.com/1broseidon/ketch/cache"
 	"github.com/1broseidon/ketch/config"
+	"github.com/1broseidon/ketch/internal/testutil"
 	"github.com/1broseidon/ketch/search"
 )
+
+// roundTripFunc adapts a function to http.RoundTripper.
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
 func testCtx(t *testing.T) context.Context {
 	t.Helper()
@@ -641,13 +647,52 @@ func TestProbeGitHubTokenRejected(t *testing.T) {
 
 // --- context7 ---
 
-func TestProbeContext7(t *testing.T) {
-	t.Run("no key", func(t *testing.T) {
-		status, _ := probeContext7(testCtx(t), http.DefaultClient, "http://unused.invalid", "")
-		if status != StatusNoKey {
-			t.Fatalf("status = %q, want no_key", status)
+func TestProbeContext7Keyless(t *testing.T) {
+	// With no key the probe sends nothing (each request spends the
+	// anonymous quota) and reports the quota a real Context7 response last
+	// left in ketch's cache directory.
+	noRequests := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		t.Errorf("keyless probe sent %s", r.URL)
+		return nil, errors.New("no requests")
+	})}
+	keyless := func(t *testing.T, state string) (Status, string) {
+		home := testutil.SetIsolatedConfigHome(t)
+		if state != "" {
+			base, err := os.UserCacheDir()
+			if err != nil || !strings.HasPrefix(base, home) {
+				t.Fatalf("cache dir %q not isolated under %q: %v", base, home, err)
+			}
+			if err := os.MkdirAll(filepath.Join(base, "ketch"), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(base, "ketch", "context7-quota.json"), []byte(state), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return probeContext7(testCtx(t), noRequests, "http://unused.invalid", "")
+	}
+	t.Run("keyless, quota not yet seen", func(t *testing.T) {
+		status, detail := keyless(t, "")
+		if status != StatusOK || !strings.HasPrefix(detail, "keyless (quota not yet seen;") {
+			t.Fatalf("got %q %q", status, detail)
 		}
 	})
+	t.Run("keyless, quota seen", func(t *testing.T) {
+		status, detail := keyless(t, `{"keyless":{"limit":200,"remaining":187,"reset":"2999-12-01T00:00:00Z","observed_at":"2026-11-02T13:30:00Z"}}`)
+		want := "keyless (~187 of 200 left as of 2026-11-02 13:30 UTC, resets 2999-12-01 00:00 UTC; a key lifts the cap: ketch config set context7_api_key <key>)"
+		if status != StatusOK || detail != want {
+			t.Fatalf("got %q %q, want ok %q", status, detail, want)
+		}
+	})
+	t.Run("keyless quota spent", func(t *testing.T) {
+		status, detail := keyless(t, `{"keyless":{"limit":200,"remaining":0,"reset":"2999-12-01T00:00:00Z","observed_at":"2026-11-02T13:30:00Z"}}`)
+		if status != StatusNoKey || !strings.Contains(detail, "2999-12-01 00:00 UTC") || !strings.Contains(detail, "ketch config set context7_api_key") {
+			t.Fatalf("got %q %q, want no_key naming the reset and the key fix", status, detail)
+		}
+	})
+}
+
+func TestProbeContext7(t *testing.T) {
 	t.Run("key rejected", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -666,9 +711,9 @@ func TestProbeContext7(t *testing.T) {
 			_, _ = w.Write([]byte(`{"results":[]}`))
 		}))
 		defer ts.Close()
-		status, _ := probeContext7(testCtx(t), ts.Client(), ts.URL, "k")
-		if status != StatusOK {
-			t.Fatalf("status = %q, want ok", status)
+		status, detail := probeContext7(testCtx(t), ts.Client(), ts.URL, "k")
+		if status != StatusOK || detail != "" {
+			t.Fatalf("status = %q detail %q, want ok and no detail", status, detail)
 		}
 	})
 }

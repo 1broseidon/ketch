@@ -252,7 +252,7 @@ Every command supports `-h/--help` for its full flag list; `--json` is the only 
 |---|---|---|---|
 | `search` | `auto` | `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `tinyfish`, `parallel`, `serpbase`, `degoog`, `serply`, `youcom` | Nothing — `auto` falls back through the keyless providers (`parallel` → `exa` → `keenable` → `youcom` → `firecrawl` → `ddg`) and needs no key. Brave, Tavily, TinyFish, SerpBase, and Serply need a free key (`ketch config set brave_api_key <key>` / `tavily_api_key` / `tinyfish_api_key` / `serpbase_api_key` / `serply_api_key`) and `auto` prefers them once set; `firecrawl_api_key`, `exa_api_key`, `keenable_api_key`, `parallel_api_key`, and `youcom_api_key` are optional and lift the hosted caps. `degoog` needs a self-hosted instance (`ketch config set degoog_url <url>`), `searxng` an instance URL (`ketch config set searxng_url <url>`); both are preferred over hosted APIs once configured |
 | `code` | `grepapp` | `sourcegraph`, `github` | Grep and Sourcegraph need nothing; GitHub uses `gh auth login`, `$GITHUB_TOKEN`, or `ketch config set github_token <tok>` |
-| `docs` | `context7` | `local` (planned, not yet implemented) | Free key: `ketch config set context7_api_key <key>` |
+| `docs` | `context7` (no key: ~200 requests/month per IP) | `local` (planned, not yet implemented) | Optional free key lifts the cap: `ketch config set context7_api_key <key>` |
 
 ## Why it works well for agents
 
