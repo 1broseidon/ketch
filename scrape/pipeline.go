@@ -26,10 +26,10 @@ import (
 // dependency points this way via an interface). Callers may pass nil to
 // bypass caching entirely.
 type PageCache interface {
-	Get(url string) (*Page, string)
-	Put(url string, page *Page, source string)
-	GetRaw(url string) (rawHTML, source string, page *Page)
-	PutRaw(url string, page *Page, source, rawHTML string)
+	Get(url string) (*Page, Source)
+	Put(url string, page *Page, source Source)
+	GetRaw(url string) (rawHTML string, source Source, page *Page)
+	PutRaw(url string, page *Page, source Source, rawHTML string)
 }
 
 // Sentinel errors for selector scrapes so callers can classify failures
@@ -115,7 +115,7 @@ func (s *Scraper) CachedScrape(ctx context.Context, pc PageCache, url string) (*
 	}
 	key := s.CacheKey(fetchURL)
 	if pc != nil {
-		if page, source := pc.Get(key); page != nil && !CacheStaleForBrowser(source, s.HasBrowser()) {
+		if page, source := pc.Get(key); page != nil && s.ServeFromCache(source) {
 			return page, nil
 		}
 	}
@@ -138,14 +138,14 @@ func (s *Scraper) CachedScrape(ctx context.Context, pc PageCache, url string) (*
 // existing markdown entry, the refetch back-fills RawHTML while preserving the
 // cached Page (one fetch, both representations cached). A nil pc skips cache
 // read/write and returns the fresh fetch result directly.
-func (s *Scraper) CachedScrapeRaw(ctx context.Context, pc PageCache, url string) (*Page, string, string, error) {
+func (s *Scraper) CachedScrapeRaw(ctx context.Context, pc PageCache, url string) (*Page, string, Source, error) {
 	fetchURL := s.Rewrite(url)
 	if err := ValidateWebURL(fetchURL); err != nil {
 		return nil, "", "", err
 	}
 	key := s.CacheKey(fetchURL)
 	if pc != nil {
-		if rawHTML, source, page := pc.GetRaw(key); page != nil {
+		if rawHTML, source, page := pc.GetRaw(key); page != nil && s.ServeFromCache(source) {
 			return page, rawHTML, source, nil
 		}
 	}
@@ -183,7 +183,7 @@ func (s *Scraper) CachedScrapeForce(ctx context.Context, pc PageCache, url strin
 		if err != nil {
 			return nil, fmt.Errorf("PDF extraction failed for %s: %w", fetchURL, err)
 		}
-		page := &Page{URL: url, Markdown: markdown, FinalURL: content.URL, Anchors: []Anchor{}}
+		page := &Page{URL: url, Markdown: markdown, FinalURL: content.URL, Anchors: []Anchor{}, Source: SourceHTTP}
 		if fetchURL != url {
 			page.FetchedURL = fetchURL
 		}
@@ -213,7 +213,7 @@ func (s *Scraper) CachedScrapeForce(ctx context.Context, pc PageCache, url strin
 // CachedScrapeRawForce is the forced-browser raw path. It classifies the HTTP
 // response before consulting the browser cache or rendering, rejecting PDFs
 // rather than returning Chromium's PDF-viewer HTML.
-func (s *Scraper) CachedScrapeRawForce(ctx context.Context, pc PageCache, url string) (*Page, string, string, error) {
+func (s *Scraper) CachedScrapeRawForce(ctx context.Context, pc PageCache, url string) (*Page, string, Source, error) {
 	fetchURL := s.Rewrite(url)
 	if err := ValidateWebURL(fetchURL); err != nil {
 		return nil, "", "", err
@@ -255,7 +255,7 @@ func (s *Scraper) ScrapeMarkdown(ctx context.Context, pc PageCache, url string, 
 
 // ScrapeRaw picks the raw-HTML fetch path, rejecting PDFs before any forced
 // browser render.
-func (s *Scraper) ScrapeRaw(ctx context.Context, pc PageCache, url string, forceBrowser bool) (*Page, string, string, error) {
+func (s *Scraper) ScrapeRaw(ctx context.Context, pc PageCache, url string, forceBrowser bool) (*Page, string, Source, error) {
 	if forceBrowser {
 		return s.CachedScrapeRawForce(ctx, pc, url)
 	}

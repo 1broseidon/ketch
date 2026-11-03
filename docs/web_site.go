@@ -113,6 +113,9 @@ func (w *Web) markdownProfile(ctx context.Context, u *url.URL, raw *siteProfile)
 	p := markdownSiteProfile(page.Markdown, page.Title, u, served)
 	if raw != nil {
 		if len(p.links) == 0 {
+			if page.Shell {
+				return nil, errors.New("the page is a JS shell no browser rendered (configure one with: ketch config set browser chrome)")
+			}
 			return nil, errors.New("the rendered page has no links either")
 		}
 		p.title = firstNonEmpty(raw.title, p.title)

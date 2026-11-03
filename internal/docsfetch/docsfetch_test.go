@@ -397,6 +397,27 @@ func TestFetchPageRefreshesEntryWithoutFinalURL(t *testing.T) {
 	}
 }
 
+// A render whose browser could not say where it landed is not a legacy
+// entry: it is served from the cache, not fetched again on every call.
+func TestFetchPageKeepsUnknownFinalURLEntry(t *testing.T) {
+	site := newDocsSite(t)
+	s := newScraper(t)
+	pc := newCache(t)
+	pageURL := site.URL + "/guide/auth"
+	pc.Put(s.CacheKey(s.Rewrite(pageURL)), &scrape.Page{URL: pageURL, Title: "Rendered", Markdown: "rendered body", Anchors: []scrape.Anchor{}, FinalURLUnknown: true}, scrape.SourceBrowser)
+
+	f := New(s, pc)
+	for i := range 2 {
+		page, err := f.FetchPage(context.Background(), pageURL)
+		if err != nil || page.Markdown != "rendered body" || !page.Rendered {
+			t.Fatalf("FetchPage %d = %+v, %v; want the cached render", i, page, err)
+		}
+	}
+	if n := site.hitCount("/guide/auth"); n != 0 {
+		t.Errorf("made %d requests, want 0: an unknown final URL is not a stale entry", n)
+	}
+}
+
 // FetchPage reports the fragment targets the page's HTML carries, and they
 // survive the page cache; an entry written before they were recorded is
 // fetched again, like one without a final URL.

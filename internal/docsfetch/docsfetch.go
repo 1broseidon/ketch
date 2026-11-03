@@ -105,7 +105,10 @@ func (f *Fetcher) FetchRaw(ctx context.Context, url string) (docs.RawContent, er
 // A 404 or 410 wraps docs.ErrNotFound.
 func (f *Fetcher) FetchPage(ctx context.Context, url string) (docs.PageContent, error) {
 	page, err := f.scraper.ScrapeMarkdown(ctx, f.pages, url, false)
-	if err == nil && (page.FinalURL == "" || page.Anchors == nil) && f.pages != nil {
+	// A cache entry from before final URLs and anchors were recorded is
+	// fetched again and replaced; a render whose browser could not say where
+	// it landed is not legacy and is not refetched on every call.
+	if err == nil && ((page.FinalURL == "" && !page.FinalURLUnknown) || page.Anchors == nil) && f.pages != nil {
 		page, err = f.refresh(ctx, url)
 	}
 	if err != nil {
@@ -116,6 +119,8 @@ func (f *Fetcher) FetchPage(ctx context.Context, url string) (docs.PageContent, 
 		Markdown: page.Markdown,
 		URL:      f.callerURL(url, f.scraper.Rewrite(url), page.FinalURL),
 		Anchors:  pageAnchors(page.Anchors),
+		Shell:    page.Source.Shell(),
+		Rendered: page.Source.Rendered(),
 	}, nil
 }
 

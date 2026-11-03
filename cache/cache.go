@@ -34,9 +34,9 @@ type Cache struct {
 }
 
 type cacheEntry struct {
-	CachedAt int64       `json:"t"`
-	Source   string      `json:"s,omitempty"`
-	Page     scrape.Page `json:"p"`
+	CachedAt int64         `json:"t"`
+	Source   scrape.Source `json:"s,omitempty"`
+	Page     scrape.Page   `json:"p"`
 	// Links is the set of resolved HTTP(S) links discovered by a crawl. A nil
 	// pointer means the entry predates crawl-link caching (or was written by a
 	// non-crawl scrape); a pointer to an empty slice means the page is known to
@@ -51,8 +51,11 @@ type cacheEntry struct {
 	RawHTML string `json:"r,omitempty"`
 	// FinalURL is Page.FinalURL, which the page's JSON leaves out: where the
 	// body was finally served from. Empty for entries written before it was
-	// recorded.
+	// recorded, and for a render whose browser could not say (FinalUnknown).
 	FinalURL string `json:"f,omitempty"`
+	// FinalUnknown is Page.FinalURLUnknown: the browser could not report
+	// where it landed, so an empty FinalURL is not a legacy entry.
+	FinalUnknown bool `json:"fu,omitempty"`
 	// Anchors is Page.Anchors, which the page's JSON leaves out: the
 	// fragment targets the page carries. nil for entries written before
 	// they were recorded; a pointer so that a page with none (non-nil,
@@ -60,8 +63,12 @@ type cacheEntry struct {
 	Anchors *[]scrape.Anchor `json:"a,omitempty"`
 }
 
-// restoreAnchors puts the stored anchors back on the page.
-func (e *cacheEntry) restoreAnchors() {
+// restore puts back on the page what its JSON leaves out: the source, the
+// final URL and whether it is known, and the anchors.
+func (e *cacheEntry) restore() {
+	e.Page.Source = e.Source
+	e.Page.FinalURL = e.FinalURL
+	e.Page.FinalURLUnknown = e.FinalUnknown
 	if e.Anchors != nil {
 		e.Page.Anchors = append([]scrape.Anchor{}, (*e.Anchors)...)
 	}
@@ -139,9 +146,9 @@ func ensurePrivateDir(dir string) error {
 }
 
 // Get looks up a cached page by URL. Returns (nil, "") if missing or expired.
-// The second return is the fetch source recorded at Put time (scrape.SourceHTTP
-// or scrape.SourceBrowser); empty for entries written before source tracking.
-func (c *Cache) Get(url string) (*scrape.Page, string) {
+// The second return is the fetch source recorded at Put time;
+// scrape.SourceUnknown for entries written before source tracking.
+func (c *Cache) Get(url string) (*scrape.Page, scrape.Source) {
 	e := c.getEntry(url)
 	if e == nil {
 		return nil, ""
@@ -152,7 +159,7 @@ func (c *Cache) Get(url string) (*scrape.Page, string) {
 // GetCrawl returns a cached page and any outgoing links previously discovered
 // by a crawl. linksKnown distinguishes an old/page-only cache entry from a
 // page that was crawled and is known to have no outgoing links.
-func (c *Cache) GetCrawl(url string) (page *scrape.Page, source string, links []string, linksKnown bool) {
+func (c *Cache) GetCrawl(url string) (page *scrape.Page, source scrape.Source, links []string, linksKnown bool) {
 	e := c.getEntry(url)
 	if e == nil {
 		return nil, "", nil, false
@@ -178,13 +185,12 @@ func (c *Cache) getEntry(url string) *cacheEntry {
 	if time.Since(time.Unix(e.CachedAt, 0)) > c.ttl {
 		return nil
 	}
-	e.Page.FinalURL = e.FinalURL
-	e.restoreAnchors()
+	e.restore()
 	return &e
 }
 
 // Put writes a page to the cache with the fetch source that produced it.
-func (c *Cache) Put(url string, page *scrape.Page, source string) {
+func (c *Cache) Put(url string, page *scrape.Page, source scrape.Source) {
 	if c == nil || c.store == nil {
 		return
 	}
@@ -198,7 +204,7 @@ func (c *Cache) Put(url string, page *scrape.Page, source string) {
 
 // PutCrawl stores a page and its resolved outgoing links. Even when links is
 // empty, the cache records that the page was inspected and is a known leaf.
-func (c *Cache) PutCrawl(url string, page *scrape.Page, source string, links []string) {
+func (c *Cache) PutCrawl(url string, page *scrape.Page, source scrape.Source, links []string) {
 	if c == nil || c.store == nil {
 		return
 	}
@@ -217,7 +223,7 @@ func (c *Cache) PutCrawl(url string, page *scrape.Page, source string, links []s
 // RawHTML — a markdown-only entry must not poison a --raw request (serving
 // empty HTML). On miss or empty raw, returns ("", "", nil) so the caller
 // refetches and back-fills.
-func (c *Cache) GetRaw(url string) (string, string, *scrape.Page) {
+func (c *Cache) GetRaw(url string) (string, scrape.Source, *scrape.Page) {
 	if c == nil || c.store == nil {
 		return "", "", nil
 	}
@@ -235,15 +241,14 @@ func (c *Cache) GetRaw(url string) (string, string, *scrape.Page) {
 	if e.RawHTML == "" {
 		return "", "", nil
 	}
-	e.Page.FinalURL = e.FinalURL
-	e.restoreAnchors()
+	e.restore()
 	return e.RawHTML, e.Source, &e.Page
 }
 
 // PutRaw writes a page plus its raw HTML to the cache with the fetch source.
 // Used by --raw to persist both representations from a single fetch. The
 // markdown-only Put path is unchanged and keeps omitting RawHTML.
-func (c *Cache) PutRaw(url string, page *scrape.Page, source, rawHTML string) {
+func (c *Cache) PutRaw(url string, page *scrape.Page, source scrape.Source, rawHTML string) {
 	if c == nil || c.store == nil {
 		return
 	}
@@ -258,6 +263,7 @@ func (c *Cache) PutRaw(url string, page *scrape.Page, source, rawHTML string) {
 
 func (c *Cache) putEntry(url string, page *scrape.Page, e cacheEntry) {
 	e.FinalURL = page.FinalURL
+	e.FinalUnknown = page.FinalURLUnknown
 	if page.Anchors != nil {
 		anchors := page.Anchors
 		e.Anchors = &anchors

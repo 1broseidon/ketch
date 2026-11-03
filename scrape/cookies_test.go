@@ -316,22 +316,22 @@ func TestCacheKeyUserAgent(t *testing.T) {
 // mapPageCache is an in-memory PageCache for cache-divergence integration.
 type mapPageCache struct {
 	pages map[string]*Page
-	src   map[string]string
+	src   map[string]Source
 }
 
 func newMapPageCache() *mapPageCache {
-	return &mapPageCache{pages: map[string]*Page{}, src: map[string]string{}}
+	return &mapPageCache{pages: map[string]*Page{}, src: map[string]Source{}}
 }
 
-func (m *mapPageCache) Get(url string) (*Page, string) { return m.pages[url], m.src[url] }
-func (m *mapPageCache) Put(url string, p *Page, s string) {
+func (m *mapPageCache) Get(url string) (*Page, Source) { return m.pages[url], m.src[url] }
+func (m *mapPageCache) Put(url string, p *Page, s Source) {
 	m.pages[url] = p
 	m.src[url] = s
 }
-func (m *mapPageCache) GetRaw(url string) (string, string, *Page) {
+func (m *mapPageCache) GetRaw(url string) (string, Source, *Page) {
 	return "", m.src[url], m.pages[url]
 }
-func (m *mapPageCache) PutRaw(url string, p *Page, s, raw string) { m.Put(url, p, s) }
+func (m *mapPageCache) PutRaw(url string, p *Page, s Source, raw string) { m.Put(url, p, s) }
 
 func TestCachedScrapeCookieCacheDoesNotCollide(t *testing.T) {
 	var hits int32

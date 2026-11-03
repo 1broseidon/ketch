@@ -25,20 +25,50 @@ import (
 // Prevents a malicious or misconfigured server from OOMing the process.
 const MaxBodyBytes = 20 << 20 // 20 MiB
 
-// Source identifies how a Page was fetched. Stored in the cache so we can
-// invalidate stale entries (notably JS-shell extractions cached before the
-// user configured a browser) without churning entries for plain HTTP pages
-// that don't need rendering.
+// Source is how a page was fetched, the state that decides whether a cached
+// copy may be served. It is stored with every cache entry.
+//
+//	SourceHTTP       plain HTTP, not a JS shell: authoritative
+//	SourceHTTPShell  a JS shell that could not be rendered (no browser
+//	                 configured, or the render failed): never served from
+//	                 cache, so a later call renders it
+//	SourceBrowser    rendered by the headless browser
+//	SourceUnknown    an entry written before sources were recorded
+type Source string
+
 const (
-	// SourceHTTP — page is not a JS shell; plain HTTP fetch is authoritative.
-	SourceHTTP = "http"
-	// SourceHTTPShell — page is a JS shell but rendering wasn't possible
-	// (no browser configured, or browser fetch failed). Always invalid as a
-	// cache hit when a browser is now available, so we retry rendering.
-	SourceHTTPShell = "http_shell"
-	// SourceBrowser — page was rendered via the headless browser.
-	SourceBrowser = "browser"
+	SourceUnknown   Source = ""
+	SourceHTTP      Source = "http"
+	SourceHTTPShell Source = "http_shell"
+	SourceBrowser   Source = "browser"
 )
+
+// Rendered reports a page the browser rendered.
+func (s Source) Rendered() bool { return s == SourceBrowser }
+
+// Shell reports a page known to be an unrendered JS shell.
+func (s Source) Shell() bool { return s == SourceHTTPShell }
+
+// ServeFromCache reports whether a cached page fetched this way may be
+// served, given whether a browser is configured. This is the only cache
+// validity rule for page sources; every cached read path applies it.
+//
+// It depends on configuration, never on whether a browser launched in this
+// process: a launch that failed here would otherwise make the same entry
+// fresh in this process and stale in the next. An unrendered shell is never
+// served. An entry from before sources were recorded is served only when no
+// browser is configured, since it may be an unrendered shell a browser could
+// now do better.
+func (s Source) ServeFromCache(browserConfigured bool) bool {
+	switch s {
+	case SourceHTTP, SourceBrowser:
+		return true
+	case SourceHTTPShell:
+		return false
+	default:
+		return !browserConfigured
+	}
+}
 
 // Page represents a scraped web page.
 type Page struct {
@@ -64,6 +94,14 @@ type Page struct {
 	// anchors were recorded. Left out of the page's JSON like FinalURL; the
 	// page cache stores it beside the page.
 	Anchors []Anchor `json:"-"`
+	// Source is how the page was fetched, from the fetch or the cache entry
+	// it came from. Left out of the page's JSON; the raw mode reports it
+	// separately.
+	Source Source `json:"-"`
+	// FinalURLUnknown marks a page whose FinalURL is empty because the
+	// browser that rendered it could not say where it landed, as opposed to
+	// a cache entry written before final URLs were recorded.
+	FinalURLUnknown bool `json:"-"`
 }
 
 // Anchor is a fragment target on a page (extract.Anchor).
@@ -101,8 +139,8 @@ type FetchResult struct {
 	// rendered HTML and needs a fresh parse.
 	Doc *goquery.Document
 
-	// Source is the fetch path that produced Page (SourceHTTP or SourceBrowser).
-	Source string
+	// Source is the fetch path that produced Page.
+	Source Source
 }
 
 // Scraper fetches web pages and extracts content as markdown.
@@ -112,11 +150,13 @@ type Scraper struct {
 	pdfExtractor extract.PDFExtractor
 	detector     *extract.Detector
 	browserBin   string
-	browserMu    sync.Mutex
-	browser      BrowserConn
-	rewriter     *urlrewrite.Rewriter
-	jar          *cookies.Jar
-	userAgent    string
+	// browserConfigured is browserBin != "" at construction; never cleared.
+	browserConfigured bool
+	browserMu         sync.Mutex
+	browser           BrowserConn
+	rewriter          *urlrewrite.Rewriter
+	jar               *cookies.Jar
+	userAgent         string
 	// userAgentConfigured records that the operator explicitly set user_agent
 	// (config, env, or flag) instead of riding the built-in default. Only an
 	// explicitly configured UA reaches the headless browser; when unset, the
@@ -131,13 +171,14 @@ type Scraper struct {
 // built-in SPA markers; use NewWithConfig to add operator-configured markers.
 func NewWithRewriter(browserBin string, rw *urlrewrite.Rewriter) *Scraper {
 	return &Scraper{
-		client:       httpx.Default(),
-		extractor:    extract.New(),
-		pdfExtractor: extract.NewPDFExtractor(),
-		detector:     extract.NewDetector(nil),
-		browserBin:   browserBin,
-		rewriter:     rw,
-		userAgent:    DefaultUserAgent(),
+		client:            httpx.Default(),
+		extractor:         extract.New(),
+		pdfExtractor:      extract.NewPDFExtractor(),
+		detector:          extract.NewDetector(nil),
+		browserBin:        browserBin,
+		browserConfigured: browserBin != "",
+		rewriter:          rw,
+		userAgent:         DefaultUserAgent(),
 	}
 }
 
@@ -171,6 +212,11 @@ func NewWithBrowserConn(conn BrowserConn, rw *urlrewrite.Rewriter) *Scraper {
 // Guarded by browserMu because getBrowser clears browserBin on failed
 // resolution — concurrent callers (MCP tool calls, multi-URL scrapes) must
 // not race that write.
+// BrowserConfigured reports whether a browser was configured when the scraper
+// was built. Unlike HasBrowser it never changes when a launch fails, so
+// decisions that must agree across processes (cache validity) use it.
+func (s *Scraper) BrowserConfigured() bool { return s.browserConfigured }
+
 func (s *Scraper) HasBrowser() bool {
 	s.browserMu.Lock()
 	defer s.browserMu.Unlock()
@@ -233,7 +279,7 @@ func (s *Scraper) browserConnOptions() []ConnOption {
 // fetch source (SourceHTTP or SourceBrowser). If the page appears JS-rendered
 // and a browser is configured, automatically retries with the browser for full
 // content extraction; an HTTP 403 retries with the browser the same way.
-func (s *Scraper) Scrape(ctx context.Context, rawURL string) (*Page, string, error) {
+func (s *Scraper) Scrape(ctx context.Context, rawURL string) (*Page, Source, error) {
 	fetchURL := s.Rewrite(rawURL)
 
 	content, err := s.FetchContent(ctx, fetchURL)
@@ -251,7 +297,7 @@ func (s *Scraper) Scrape(ctx context.Context, rawURL string) (*Page, string, err
 		if err != nil {
 			return nil, "", fmt.Errorf("PDF extraction failed for %s: %w", fetchURL, err)
 		}
-		page := &Page{URL: rawURL, Markdown: markdown, FinalURL: content.URL, Anchors: []Anchor{}}
+		page := &Page{URL: rawURL, Markdown: markdown, FinalURL: content.URL, Anchors: []Anchor{}, Source: SourceHTTP}
 		if fetchURL != rawURL {
 			page.FetchedURL = fetchURL
 		}
@@ -265,7 +311,7 @@ func (s *Scraper) Scrape(ctx context.Context, rawURL string) (*Page, string, err
 // extractPage runs the extractor over html fetched from fetchURL and builds
 // the Page Scrape returns, tagged with source. served is where the content
 // came from (Page.FinalURL), "" when unknown.
-func (s *Scraper) extractPage(rawURL, fetchURL, html, source, served string) (*Page, string, error) {
+func (s *Scraper) extractPage(rawURL, fetchURL, html string, source Source, served string) (*Page, Source, error) {
 	result, err := s.extractor.Extract(fetchURL, html)
 	if err != nil {
 		return nil, "", fmt.Errorf("extraction failed for %s: %w", fetchURL, err)
@@ -277,6 +323,7 @@ func (s *Scraper) extractPage(rawURL, fetchURL, html, source, served string) (*P
 		Markdown: result.Markdown,
 		FinalURL: served,
 		Anchors:  extract.Anchors(html),
+		Source:   source,
 	}
 	if fetchURL != rawURL {
 		page.FetchedURL = fetchURL
@@ -320,6 +367,7 @@ func (s *Scraper) scrapeConditional(ctx context.Context, rawURL, etag, lastModif
 			ContentHash:  ContentHash(markdown),
 			FinalURL:     content.URL,
 			Anchors:      []Anchor{},
+			Source:       SourceHTTP,
 		}
 		if fetchURL != rawURL {
 			page.FetchedURL = fetchURL
@@ -364,6 +412,7 @@ func (s *Scraper) scrapeConditional(ctx context.Context, rawURL, etag, lastModif
 		ContentHash:  ContentHash(result.Markdown),
 		FinalURL:     finalURL(source, rendered, content.URL),
 		Anchors:      pageAnchors(doc, html),
+		Source:       source,
 	}
 	if fetchURL != rawURL {
 		page.FetchedURL = fetchURL
@@ -391,12 +440,14 @@ func (s *Scraper) renderedResult(rawURL, fetchURL string, rendered rendering) (*
 		return nil, fmt.Errorf("extraction failed for %s: %w", fetchURL, err)
 	}
 	page := &Page{
-		URL:         rawURL,
-		Title:       result.Title,
-		Markdown:    result.Markdown,
-		ContentHash: ContentHash(result.Markdown),
-		FinalURL:    rendered.finalURL,
-		Anchors:     extract.Anchors(html),
+		URL:             rawURL,
+		Title:           result.Title,
+		Markdown:        result.Markdown,
+		ContentHash:     ContentHash(result.Markdown),
+		FinalURL:        rendered.finalURL,
+		Anchors:         extract.Anchors(html),
+		Source:          SourceBrowser,
+		FinalURLUnknown: rendered.finalURL == "",
 	}
 	if fetchURL != rawURL {
 		page.FetchedURL = fetchURL
@@ -430,12 +481,14 @@ func (s *Scraper) BrowserScrape(ctx context.Context, rawURL string) (*Page, stri
 		return nil, "", fmt.Errorf("extraction failed for %s: %w", fetchURL, err)
 	}
 	page := &Page{
-		URL:         rawURL,
-		Title:       result.Title,
-		Markdown:    result.Markdown,
-		ContentHash: ContentHash(result.Markdown),
-		FinalURL:    rendered.finalURL,
-		Anchors:     extract.Anchors(html),
+		URL:             rawURL,
+		Title:           result.Title,
+		Markdown:        result.Markdown,
+		ContentHash:     ContentHash(result.Markdown),
+		FinalURL:        rendered.finalURL,
+		Anchors:         extract.Anchors(html),
+		Source:          SourceBrowser,
+		FinalURLUnknown: rendered.finalURL == "",
 	}
 	if fetchURL != rawURL {
 		page.FetchedURL = fetchURL
@@ -445,14 +498,14 @@ func (s *Scraper) BrowserScrape(ctx context.Context, rawURL string) (*Page, stri
 
 // MaybeBrowserFetch re-fetches rawURL via the browser if html looks JS-rendered.
 // Returns the (possibly rendered) html and the fetch source actually used.
-func (s *Scraper) MaybeBrowserFetch(ctx context.Context, rawURL, html string) (string, string) {
+func (s *Scraper) MaybeBrowserFetch(ctx context.Context, rawURL, html string) (string, Source) {
 	html, source, _ := s.maybeBrowserFetch(ctx, rawURL, html)
 	return html, source
 }
 
 // maybeBrowserFetch is MaybeBrowserFetch that also returns the URL a browser
 // render ended on ("" when nothing was rendered).
-func (s *Scraper) maybeBrowserFetch(ctx context.Context, rawURL, html string) (string, string, string) {
+func (s *Scraper) maybeBrowserFetch(ctx context.Context, rawURL, html string) (string, Source, string) {
 	detection := s.detector.DetectJSShell(html)
 	if detection != "likely_shell" {
 		return html, SourceHTTP, ""
@@ -466,7 +519,7 @@ func (s *Scraper) maybeBrowserFetch(ctx context.Context, rawURL, html string) (s
 // returning SourceHTTP here would be a lie — the entry would round-trip as
 // "plain page" and never get retried once a browser is configured. The third
 // value is the URL the render ended on, "" when nothing was rendered.
-func (s *Scraper) browserFetchOrWarn(ctx context.Context, rawURL, html string) (string, string, string) {
+func (s *Scraper) browserFetchOrWarn(ctx context.Context, rawURL, html string) (string, Source, string) {
 	browser := s.getBrowser()
 	if browser != nil {
 		rendered, err := browserRender(ctx, browser, rawURL)
@@ -482,7 +535,7 @@ func (s *Scraper) browserFetchOrWarn(ctx context.Context, rawURL, html string) (
 
 // finalURL is where a page's content came from: the browser's landing URL
 // when the page was rendered, else the HTTP response URL.
-func finalURL(source, rendered, fetched string) string {
+func finalURL(source Source, rendered, fetched string) string {
 	if source == SourceBrowser && rendered != "" {
 		return rendered
 	}
@@ -530,19 +583,11 @@ func fetchVerified(ctx context.Context, browser BrowserConn, fetchURL string) (r
 	return rendered, nil
 }
 
-// CacheStaleForBrowser reports whether a cache entry with the given source
-// should be bypassed because rendering via the browser would do better.
-// True when the cached entry is a known unrendered JS shell, or when it
-// predates source tracking and a browser is now available (one-time migration
-// for pre-source caches where the entry might be unrendered shell garbage).
-func CacheStaleForBrowser(source string, hasBrowser bool) bool {
-	if source == SourceHTTPShell {
-		return true
-	}
-	if source == "" && hasBrowser {
-		return true
-	}
-	return false
+// ServeFromCache reports whether a cached page with this source may be
+// served by this scraper: Source.ServeFromCache under the scraper's browser
+// configuration (BrowserConfigured, never whether a launch succeeded).
+func (s *Scraper) ServeFromCache(source Source) bool {
+	return source.ServeFromCache(s.BrowserConfigured())
 }
 
 // ContentHash returns the first 16 hex chars of the sha256 of s.

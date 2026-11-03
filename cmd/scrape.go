@@ -255,7 +255,7 @@ type indexedResult struct {
 	idx     int
 	page    *scrape.Page
 	rawHTML string
-	source  string
+	source  scrape.Source
 	err     error
 }
 
@@ -366,7 +366,7 @@ func classifyScrapeFailure(err error) error {
 
 // scrapeOneURL handles a single URL within scrapeMultiple, applying selector,
 // raw, and llms.txt detection the same way scrapeSingle does.
-func scrapeOneURL(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, tw *tagWriter, rawURL string, raw bool, selector string, noLLMSTxt, forceBrowser bool) (*scrape.Page, string, string, error) {
+func scrapeOneURL(ctx context.Context, s *scrape.Scraper, pc *cache.Cache, tw *tagWriter, rawURL string, raw bool, selector string, noLLMSTxt, forceBrowser bool) (*scrape.Page, string, scrape.Source, error) {
 	if selector != "" {
 		page, err := scrapeURLWithSelector(ctx, s, rawURL, selector, forceBrowser)
 		tw.record(s, rawURL, page)
@@ -417,16 +417,16 @@ func scrapeWithSelector(ctx context.Context, s *scrape.Scraper, tw *tagWriter, r
 // rawJSON is the --raw --json output shape. Plain --json must not include
 // raw_html; only the --raw path emits this.
 type rawJSON struct {
-	URL        string `json:"url"`
-	FetchedURL string `json:"fetched_url,omitempty"`
-	Title      string `json:"title"`
-	Source     string `json:"source"`
-	RawHTML    string `json:"raw_html"`
+	URL        string        `json:"url"`
+	FetchedURL string        `json:"fetched_url,omitempty"`
+	Title      string        `json:"title"`
+	Source     scrape.Source `json:"source"`
+	RawHTML    string        `json:"raw_html"`
 }
 
 // rawResultJSON builds the JSON object for one --raw result, truncating the
 // HTML to maxChars Unicode code points when maxChars > 0.
-func rawResultJSON(page *scrape.Page, rawHTML, source string, maxChars int) rawJSON {
+func rawResultJSON(page *scrape.Page, rawHTML string, source scrape.Source, maxChars int) rawJSON {
 	return rawJSON{
 		URL:        page.URL,
 		FetchedURL: page.FetchedURL,
@@ -439,7 +439,7 @@ func rawResultJSON(page *scrape.Page, rawHTML, source string, maxChars int) rawJ
 // emitRaw writes a single --raw result to w. Plain output is bare HTML with
 // no --- front matter so it pipes cleanly into pup/htmlq/a file. JSON output
 // is {url, fetched_url, title, source, raw_html}.
-func emitRaw(w io.Writer, page *scrape.Page, rawHTML, source string, asJSON bool, maxChars int) error {
+func emitRaw(w io.Writer, page *scrape.Page, rawHTML string, source scrape.Source, asJSON bool, maxChars int) error {
 	if asJSON {
 		return json.NewEncoder(w).Encode(rawResultJSON(page, rawHTML, source, maxChars))
 	}

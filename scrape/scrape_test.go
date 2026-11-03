@@ -70,11 +70,11 @@ func captureStderr(t *testing.T, run func()) string {
 // Each returns the source it reports and a marker of the content it got.
 var escalationPaths = []struct {
 	name string
-	run  func(context.Context, *Scraper, string) (source, content string, err error)
+	run  func(context.Context, *Scraper, string) (source Source, content string, err error)
 }{
 	{
 		name: "Scrape",
-		run: func(ctx context.Context, s *Scraper, url string) (string, string, error) {
+		run: func(ctx context.Context, s *Scraper, url string) (Source, string, error) {
 			page, source, err := s.Scrape(ctx, url)
 			if err != nil {
 				return "", "", err
@@ -84,7 +84,7 @@ var escalationPaths = []struct {
 	},
 	{
 		name: "CachedScrape",
-		run: func(ctx context.Context, s *Scraper, url string) (string, string, error) {
+		run: func(ctx context.Context, s *Scraper, url string) (Source, string, error) {
 			pc := newMemCache()
 			page, err := s.CachedScrape(ctx, pc, url)
 			if err != nil {
@@ -96,7 +96,7 @@ var escalationPaths = []struct {
 	},
 	{
 		name: "ScrapeConditional",
-		run: func(ctx context.Context, s *Scraper, url string) (string, string, error) {
+		run: func(ctx context.Context, s *Scraper, url string) (Source, string, error) {
 			result, err := s.ScrapeConditional(ctx, url, "", "")
 			if err != nil {
 				return "", "", err
@@ -106,14 +106,14 @@ var escalationPaths = []struct {
 	},
 	{
 		name: "raw",
-		run: func(ctx context.Context, s *Scraper, url string) (string, string, error) {
+		run: func(ctx context.Context, s *Scraper, url string) (Source, string, error) {
 			_, html, source, err := s.ScrapeRaw(ctx, nil, url, false)
 			return source, html, err
 		},
 	},
 	{
 		name: "selector",
-		run: func(ctx context.Context, s *Scraper, url string) (string, string, error) {
+		run: func(ctx context.Context, s *Scraper, url string) (Source, string, error) {
 			page, err := s.ScrapeSelector(ctx, url, "main", false)
 			if err != nil {
 				return "", "", err
@@ -129,7 +129,8 @@ func TestForbiddenEscalatesToBrowser(t *testing.T) {
 			server := statusServer(t, http.StatusForbidden)
 			browser := &renderBrowser{}
 			s := NewWithBrowserConn(browser, nil)
-			var source, content string
+			var source Source
+			var content string
 			var err error
 			stderr := captureStderr(t, func() {
 				source, content, err = path.run(t.Context(), s, server.URL)
@@ -225,7 +226,7 @@ func TestForbiddenBrowserStatusOKEscalates(t *testing.T) {
 		browser := &statusBrowser{status: status}
 		s := NewWithBrowserConn(browser, nil)
 		var page *Page
-		var source string
+		var source Source
 		var err error
 		captureStderr(t, func() {
 			page, source, err = s.Scrape(t.Context(), server.URL)
@@ -303,27 +304,27 @@ func assertStatusError(t *testing.T, err error, status int, url string) {
 // memCache is a minimal in-memory PageCache.
 type memCache struct {
 	pages   map[string]*Page
-	sources map[string]string
+	sources map[string]Source
 	raw     map[string]string
 }
 
 func newMemCache() *memCache {
-	return &memCache{pages: map[string]*Page{}, sources: map[string]string{}, raw: map[string]string{}}
+	return &memCache{pages: map[string]*Page{}, sources: map[string]Source{}, raw: map[string]string{}}
 }
 
-func (c *memCache) Get(url string) (*Page, string) { return c.pages[url], c.sources[url] }
+func (c *memCache) Get(url string) (*Page, Source) { return c.pages[url], c.sources[url] }
 
-func (c *memCache) Put(url string, page *Page, source string) {
+func (c *memCache) Put(url string, page *Page, source Source) {
 	c.pages[url], c.sources[url] = page, source
 }
 
-func (c *memCache) GetRaw(url string) (string, string, *Page) {
+func (c *memCache) GetRaw(url string) (string, Source, *Page) {
 	if c.raw[url] == "" {
 		return "", "", nil
 	}
 	return c.raw[url], c.sources[url], c.pages[url]
 }
 
-func (c *memCache) PutRaw(url string, page *Page, source, rawHTML string) {
+func (c *memCache) PutRaw(url string, page *Page, source Source, rawHTML string) {
 	c.pages[url], c.sources[url], c.raw[url] = page, source, rawHTML
 }

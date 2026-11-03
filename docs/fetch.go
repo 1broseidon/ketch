@@ -45,6 +45,11 @@ type PageContent struct {
 	// plus a fragment can reach. nil when the fetcher cannot tell, as for
 	// a Markdown source; empty when the page has none.
 	Anchors []PageAnchor
+	// Shell is a page known to be an unrendered JS shell: no browser
+	// rendered it, so its text is whatever the server sent before scripts
+	// ran. Rendered is a page the browser rendered. Both false for a plain
+	// HTTP page and when the fetcher cannot tell.
+	Shell, Rendered bool
 }
 
 // PageAnchor is one fragment target on a page. Text is a heading's

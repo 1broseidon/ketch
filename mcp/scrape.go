@@ -39,9 +39,9 @@ type ScrapeInput struct {
 // and a per-URL error slot used by batch scrapes.
 type ScrapeResult struct {
 	scrape.Page
-	Source  string `json:"source,omitempty" jsonschema:"fetch path that produced the page (http, http_shell, browser); raw mode only"`
-	RawHTML string `json:"raw_html,omitempty" jsonschema:"raw page HTML; set when raw is true"`
-	Error   string `json:"error,omitempty" jsonschema:"per-URL failure (batch scrapes only); other fields are empty when set"`
+	Source  scrape.Source `json:"source,omitempty" jsonschema:"fetch path that produced the page (http, http_shell, browser); raw mode only"`
+	RawHTML string        `json:"raw_html,omitempty" jsonschema:"raw page HTML; set when raw is true"`
+	Error   string        `json:"error,omitempty" jsonschema:"per-URL failure (batch scrapes only); other fields are empty when set"`
 }
 
 // ScrapeOutput is the output schema for the "scrape" tool: one entry per
