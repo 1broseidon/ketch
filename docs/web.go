@@ -918,16 +918,19 @@ func (r webRoot) at(rel string) string { return r.u.String() + rel }
 // often list https for an http root); the host and path prefix may not. A
 // path with a dot segment is never in scope: /docs/%2e%2e/admin/ reads as
 // under /docs/ but a server resolves it to /admin/. resolve cleans links
-// before they get here.
+// before they get here. Nor is a post below the root (isPostPath: a blog,
+// news, a dated post), unless the root is itself in such a section.
 func (r webRoot) contains(u *url.URL) bool {
 	if !r.sameHost(u) || hasDotSegment(u) {
 		return false
 	}
-	if r.prefix == "/" {
-		return true
+	if r.prefix != "/" {
+		p := u.Path
+		if p != strings.TrimSuffix(r.prefix, "/") && !strings.HasPrefix(p, r.prefix) {
+			return false
+		}
 	}
-	p := u.Path
-	return p == strings.TrimSuffix(r.prefix, "/") || strings.HasPrefix(p, r.prefix)
+	return !isPostPath(pathBelow(r, u))
 }
 
 // sameHost reports a web URL on the root's host, "www." aside, whatever its

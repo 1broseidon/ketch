@@ -1,0 +1,1 @@
+<html><head><title>render API</title></head><body><h1>render API</h1><p>render(text, *, safe=True) returns the rendered HTML string.</p></body></html>

@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"unicode"
 
 	"golang.org/x/net/publicsuffix"
 )
@@ -312,11 +313,10 @@ func (w *Web) keylessEvidence(ctx context.Context, root webRoot, prof *siteProfi
 			identity = "llms.txt"
 		}
 	}
-	if oneShort(evs) && !hasEdge(evs, edgeMeta) {
-		// A README read with a request only for a root it would verify.
-		evs = append(evs, w.readmeEvidence(ctx, root, p, true)...)
+	evs, err := w.readmeEdge(ctx, root, prof, p, evs)
+	if err != nil {
+		return nil, err
 	}
-	evs = uniqueEvidence(evs)
 	if !keylessVerified(evs) {
 		n, _ := edges(evs)
 		return nil, rejectf("%s has %d of the %d independent edges to %s a keyless resolution needs (metadata naming it, a link to its repository or package, a shared domain)", root, n, minKeylessEdges, p.label())
@@ -325,6 +325,208 @@ func (w *Web) keylessEvidence(ctx context.Context, root webRoot, prof *siteProfi
 		return nil, rejectf("search hit %s does not identify itself as documentation (no llms.txt, no docs framework)", root)
 	}
 	return evs, nil
+}
+
+// readmeEdge completes evs with the README edge: npm's README, read with
+// a request only for a root one edge short it would verify, then the
+// condition the edge counts on (readmeCorroborates).
+func (w *Web) readmeEdge(ctx context.Context, root webRoot, prof *siteProfile, p *project, evs []evidence) ([]evidence, error) {
+	if oneShort(evs) && !hasEdge(evs, edgeMeta) {
+		evs = append(evs, w.readmeEvidence(ctx, root, p, true)...)
+	}
+	evs = uniqueEvidence(evs)
+	if !hasEvidence(evs, evPkgReadme) || !keylessVerified(evs) {
+		return evs, nil
+	}
+	return w.readmeCorroborates(ctx, root, prof, p, evs)
+}
+
+// readmeCorroborates applies the README edge's condition (readmeSiteCheck)
+// to a root it would verify: a README links to its dependencies', sponsors',
+// parent frameworks' and related tools' sites as well as its own, so the
+// link counts only for a site that is the package's by what the site
+// itself says, or by the owner's own domain (the DNS edge). Otherwise the
+// root keeps its other evidence, without the README's, and is refused
+// when that does not verify it: as another project's docs when the site
+// names another project, whatever else it links.
+func (w *Web) readmeCorroborates(ctx context.Context, root webRoot, prof *siteProfile, p *project, evs []evidence) ([]evidence, error) {
+	var llms llmsTxt
+	if _, names := readmeSiteCheck(root, prof, llmsTxt{}, p); !names {
+		llms = w.cachedLLMS(ctx, root)
+	}
+	why, ok := readmeSiteCheck(root, prof, llms, p)
+	other, named := strings.CutPrefix(why, otherProjectPrefix)
+	switch {
+	case ok:
+		return evs, nil
+	case !named && hasEvidence(evs, evRelatedDomain):
+		return evs, nil // on the owner's own domain, by two of its URLs
+	}
+	out := slices.DeleteFunc(slices.Clone(evs), func(e evidence) bool { return e.kind == evPkgReadme })
+	switch {
+	case keylessVerified(out):
+		return out, nil // verified without the README
+	case named:
+		return nil, rejectf("%s names another project (%s): the %s README's link to it is not its docs", root, other, p.label())
+	}
+	return nil, rejectf("%s: the %s README links to it, but the site %s", root, p.label(), why)
+}
+
+// otherProjectPrefix starts readmeSiteCheck's reason for a site that names
+// another project.
+const otherProjectPrefix = "names another project: "
+
+// readmeSiteCheck reports whether a site corroborates the README edge to
+// it: the site names the package or its repository (its title, site name
+// or llms.txt H1), or, naming no other project, links back to the
+// package's own repository or registry page from its root page or its
+// llms.txt. A site names another project when its title, site name,
+// llms.txt H1 or host is after a repository or registry package it links
+// that is not the package's (docs.gridiron.example, "Gridiron
+// Documentation", linking github.com/gridiron/gridiron): that project's
+// docs, whatever its ecosystem page lists. The reason is
+// otherProjectPrefix and the other project's name, or why the site does
+// not count.
+func readmeSiteCheck(root webRoot, prof *siteProfile, llms llmsTxt, p *project) (string, bool) {
+	if siteNamesPackage(p, prof.title, prof.meta["og:site_name"], llms.title) {
+		return "", true
+	}
+	if other := otherProjectNamed(root, prof, llms, p); other != "" {
+		return otherProjectPrefix + other, false
+	}
+	links := profileLinkURLs(prof)
+	links = append(links, llms.identity...)
+	if linksTo(prof, p) || slices.ContainsFunc(manifestRepoLinks(llms), p.isRepo) {
+		return "", true
+	}
+	if _, ok := linksPackage(links, p); ok {
+		return "", true
+	}
+	return "neither names " + p.label() + " nor links back to it", false
+}
+
+// siteNamesPackage reports a site name (a title, a site name, an llms.txt
+// H1) naming p: siteNamesEvidence's words, or a run of up to three words
+// that spells one of p's package or repository names without its
+// separators ("Gridiron Cache" names gridiron-cache, "Sparrow Forms"
+// @sparrow/forms).
+func siteNamesPackage(p *project, texts ...string) bool {
+	var pairs []string
+	for _, t := range texts {
+		pairs = append(pairs, "name", t)
+	}
+	if _, ok := siteNamesEvidence(p, pairs...); ok {
+		return true
+	}
+	want := map[string]bool{}
+	add := func(n string) {
+		if n = squashName(n); len(n) >= 3 {
+			want[n] = true
+		}
+	}
+	for _, pkg := range p.pkgs {
+		add(pkg.name)
+		add(pkg.name[strings.LastIndexByte(pkg.name, '/')+1:])
+	}
+	if !p.repo.isZero() {
+		add(p.repo.name)
+	}
+	for _, t := range texts {
+		toks := nameTokens(t)
+		for i := range toks {
+			run := ""
+			for j := i; j < len(toks) && j < i+3; j++ {
+				run += squashName(toks[j])
+				if want[run] {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// squashName is a name lower-cased without its separators and scope
+// marks: gridiron-cache, Gridiron_Cache and @gridiron/cache are all
+// gridironcache.
+func squashName(s string) string {
+	return strings.Map(func(r rune) rune {
+		switch r {
+		case '-', '_', '.', '@', '/', ' ':
+			return -1
+		}
+		return unicode.ToLower(r)
+	}, s)
+}
+
+// genericSiteWords are words in titles and host labels that name no
+// project: a site's own repository for its docs (org/docs) is not what a
+// "Docs" title names.
+var genericSiteWords = map[string]bool{
+	"docs": true, "doc": true, "documentation": true, "www": true, "api": true, "reference": true,
+	"guide": true, "guides": true, "learn": true, "manual": true, "home": true, "site": true,
+	"website": true, "web": true, "dev": true, "developer": true, "developers": true, "blog": true,
+	"help": true, "wiki": true, "the": true, "and": true, "for": true, "official": true,
+}
+
+// otherProjectNamed is the name of a project other than p a site names
+// itself after, "" for none: a word of its title, site name, llms.txt H1
+// or host (its labels below the public suffix) that is the name of a
+// repository or registry package the page or its llms.txt links, other
+// than p's.
+func otherProjectNamed(root webRoot, prof *siteProfile, llms llmsTxt, p *project) string {
+	self := siteSelfNames(root, prof, llms)
+	own := map[string]bool{}
+	for _, n := range p.names() {
+		own[n] = true
+	}
+	if !p.repo.isZero() {
+		own[strings.ToLower(p.repo.name)] = true
+	}
+	for _, k := range append(repoLinks(prof), manifestRepoLinks(llms)...) {
+		if name := strings.ToLower(k.name); !p.isRepo(k) && !own[name] && self[name] {
+			return name
+		}
+	}
+	for _, u := range append(profileLinkURLs(prof), llms.identity...) {
+		ref := registryPackageOf(u)
+		name := ref.name[strings.LastIndexByte(ref.name, '/')+1:]
+		if ref.eco != "" && !own[name] && self[name] && !isPackageOf(ref, p) {
+			return name
+		}
+	}
+	return ""
+}
+
+// siteSelfNames are the words a site calls itself by: its title's, site
+// name's and llms.txt H1's (single, and two run together), and its host's
+// labels below the public suffix, generic words (genericSiteWords) aside.
+func siteSelfNames(root webRoot, prof *siteProfile, llms llmsTxt) map[string]bool {
+	self := map[string]bool{}
+	for _, s := range []string{prof.title, prof.meta["og:site_name"], llms.title} {
+		toks := nameTokens(s)
+		for i, t := range toks {
+			self[t] = true
+			if i+1 < len(toks) {
+				self[t+toks[i+1]] = true
+			}
+		}
+	}
+	host := strings.ToLower(root.u.Hostname())
+	for _, l := range strings.Split(strings.TrimSuffix(host, "."+publicSuffixOf(host)), ".") {
+		self[l] = true
+	}
+	for w := range genericSiteWords {
+		delete(self, w)
+	}
+	return self
+}
+
+// isPackageOf reports ref as one of p's packages.
+func isPackageOf(ref pkgRef, p *project) bool {
+	return slices.ContainsFunc(p.pkgs, func(pkg pkgInfo) bool {
+		return pkg.eco == ref.eco && normalizeName(pkg.eco, pkg.name) == ref.name
+	})
 }
 
 // hasEdge reports evidence of edge class c.

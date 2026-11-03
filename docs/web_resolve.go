@@ -2269,6 +2269,9 @@ func (w *Web) verifyRoot(ctx context.Context, p *project, c rootCandidate) (webM
 	if root, err = adoptServed(root, prof.served, c.registry); err != nil {
 		return webMatch{}, err
 	}
+	// A home page's docs are its docs section, not the site with its blog
+	// and news.
+	root, prof, c.evidence = w.docsSection(ctx, root, prof, c)
 	if c.registry {
 		root, prof = w.latestMajor(ctx, root, prof)
 	}
@@ -3085,24 +3088,13 @@ func (r *resolution) assemble(projects []*project, matches []webMatch) []webMatc
 // links to the repository only at the address it moved from
 // (webMatch.oldRepo: jest's archive.jestjs.io, still linking facebook/jest,
 // beside jestjs.io/docs linking jestjs/jest) comes after the project's
-// other sites: it was left behind by the move.
+// other sites: it was left behind by the move. A root only the package's
+// README ties to it (readmeOnly) comes after every other root, registry-
+// hosted docs included: a README links other projects' sites too, and
+// the docs the metadata or the registry names are the package's own.
 func pickRoots(ms []webMatch) []webMatch {
 	ms = mergeRootEvidence(ms)
-	slices.SortStableFunc(ms, func(a, b webMatch) int {
-		if a.fromHit != b.fromHit {
-			if a.fromHit {
-				return 1
-			}
-			return -1
-		}
-		if a.oldRepo != b.oldRepo {
-			if a.oldRepo {
-				return 1
-			}
-			return -1
-		}
-		return cmp.Compare(b.trust, a.trust)
-	})
+	slices.SortStableFunc(ms, rootOrder)
 	site := slices.IndexFunc(ms, func(m webMatch) bool { return !m.registry })
 	if site >= 0 && !namedDirectly(ms[site].evidence) {
 		top := ms[site]
@@ -3115,8 +3107,12 @@ func pickRoots(ms []webMatch) []webMatch {
 		}
 	}
 	reg := slices.IndexFunc(ms, func(m webMatch) bool { return m.registry })
+	order := []int{site, reg}
+	if site >= 0 && reg >= 0 && readmeOnly(ms[site].evidence) {
+		order = []int{reg, site}
+	}
 	var out []webMatch
-	for _, i := range []int{site, reg} {
+	for _, i := range order {
 		if i >= 0 {
 			out = append(out, ms[i])
 		}
@@ -3139,6 +3135,33 @@ func indexOnlyProjects(matches []webMatch) map[string]bool {
 		}
 	}
 	return out
+}
+
+// rootOrder is pickRoots' order: README-only roots last, then search
+// hits, then roots left behind by a repository move, each by trust.
+func rootOrder(a, b webMatch) int {
+	after := func(aLast bool) int {
+		if aLast {
+			return 1
+		}
+		return -1
+	}
+	switch ra, rb := readmeOnly(a.evidence), readmeOnly(b.evidence); {
+	case ra != rb:
+		return after(ra)
+	case a.fromHit != b.fromHit:
+		return after(a.fromHit)
+	case a.oldRepo != b.oldRepo:
+		return after(a.oldRepo)
+	}
+	return cmp.Compare(b.trust, a.trust)
+}
+
+// readmeOnly reports evidence whose only metadata edge is the package's
+// README (evPkgReadme): no documentation URL, homepage, nav chain or
+// repository homepage names the root.
+func readmeOnly(evs []evidence) bool {
+	return hasEvidence(evs, evPkgReadme) && !namedDirectly(evs) && !hasEvidence(evs, evNavChain)
 }
 
 // namedDirectly reports evidence that the project's own metadata names the

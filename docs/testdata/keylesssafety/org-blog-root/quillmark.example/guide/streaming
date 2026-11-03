@@ -1,0 +1,2 @@
+<html><head><title>Streaming output</title></head><body><h1>Streaming output</h1><p>Call render_stream() to stream render output: it yields rendered HTML chunk by chunk as the input is parsed.</p><pre>for chunk in quillmark.render_stream(text):
+    sys.stdout.write(chunk)</pre></body></html>
