@@ -74,25 +74,25 @@ func runDocs(cmd *cobra.Command, args []string) error {
 	}
 	defer fetcher.Close()
 
-	var results []docs.Result
+	var o docs.Outcome
 	if selecting, ok := searcher.(docs.SelectingSearcher); ok {
-		var sel docs.Selection
-		results, sel, err = selecting.SearchSelect(cmd.Context(), query, limit)
-		backend = servedDocsBackend(backend, sel)
+		o = selecting.SearchSelect(cmd.Context(), query, limit)
 	} else {
-		results, err = searcher.Search(cmd.Context(), query, limit)
+		results, err := searcher.Search(cmd.Context(), query, limit)
+		o = docs.Answer(backend, results, err)
 	}
-	if err := fetcher.classify(err, "docs search failed"); err != nil {
+	backend = servedDocsBackend(backend, o)
+	if err := fetcher.classify(o.Err(), "docs search failed"); err != nil {
 		return err
 	}
 
-	tagResults(cmd, docsTaggable(results))
+	tagResults(cmd, docsTaggable(o.Results))
 
 	if asJSON {
-		return json.NewEncoder(os.Stdout).Encode(results)
+		return json.NewEncoder(os.Stdout).Encode(o.Results)
 	}
 
-	printDocsResults(query, backend, "", results, minimal)
+	printDocsResults(query, backend, "", o, minimal)
 	return nil
 }
 
@@ -108,23 +108,26 @@ func runDocsResolve(cmd *cobra.Command, query string, limit int, asJSON bool) er
 	if !ok {
 		return exitErrf(ExitValidation, "docs backend %q does not support library operations", backend)
 	}
-	var matches []docs.LibraryMatch
+	var o docs.Outcome
 	if selecting, ok := searcher.(docs.SelectingSearcher); ok {
-		var sel docs.Selection
-		matches, sel, err = selecting.ResolveSelect(cmd.Context(), query, limit)
-		servedDocsBackend(backend, sel)
+		o = selecting.ResolveSelect(cmd.Context(), query, limit)
 	} else {
-		matches, err = resolver.ResolveLibrary(cmd.Context(), query, limit)
+		matches, err := resolver.ResolveLibrary(cmd.Context(), query, limit)
+		if err == nil && len(matches) == 0 {
+			err = fmt.Errorf("library %q %w", query, docs.ErrNotFound)
+		}
+		o = docs.Resolved(backend, matches, err)
 	}
-	if err := fetcher.classify(err, "resolve failed"); err != nil {
+	servedDocsBackend(backend, o)
+	if err := fetcher.classify(o.Err(), "resolve failed"); err != nil {
 		return err
 	}
 
 	if asJSON {
-		return json.NewEncoder(os.Stdout).Encode(matches)
+		return json.NewEncoder(os.Stdout).Encode(o.Matches)
 	}
 
-	fmt.Print(formatLibraryMatches(matches))
+	fmt.Print(formatLibraryMatches(o.Matches))
 	return nil
 }
 
@@ -178,45 +181,46 @@ func runDocsWithLibrary(cmd *cobra.Command, query, library string, tokens, limit
 	if !ok {
 		return exitErrf(ExitValidation, "docs backend %q does not support library operations", backend)
 	}
-	var results []docs.Result
+	var o docs.Outcome
 	if selecting, ok := searcher.(docs.SelectingSearcher); ok {
-		var sel docs.Selection
-		results, sel, err = selecting.GetDocsSelect(cmd.Context(), library, query, tokens)
-		backend = servedDocsBackend(backend, sel)
+		o = selecting.GetDocsSelect(cmd.Context(), library, query, tokens)
 	} else {
-		results, err = resolver.GetDocs(cmd.Context(), library, query, tokens)
+		results, err := resolver.GetDocs(cmd.Context(), library, query, tokens)
+		o = docs.Answer(backend, results, err)
 	}
-	if err := fetcher.classify(err, "docs fetch failed"); err != nil {
+	backend = servedDocsBackend(backend, o)
+	if err := fetcher.classify(o.Err(), "docs fetch failed"); err != nil {
 		return err
 	}
-	results = docs.Truncate(results, limit)
+	o.Results = docs.Truncate(o.Results, limit)
 
-	tagResults(cmd, docsTaggable(results))
+	tagResults(cmd, docsTaggable(o.Results))
 
 	if asJSON {
-		return json.NewEncoder(os.Stdout).Encode(results)
+		return json.NewEncoder(os.Stdout).Encode(o.Results)
 	}
 
-	printDocsResults(query, backend, library, results, minimal)
+	printDocsResults(query, backend, library, o, minimal)
 	return nil
 }
 
-// servedDocsBackend reports an auto chain's selection: the provider that
-// answered replaces "auto" as the backend the output names (each result's
-// source says the same), and the one it fell through is warned about on
-// stderr, as search's auto does. With no answer it keeps backend and warns
-// nothing: the error names every failure.
-func servedDocsBackend(backend string, sel docs.Selection) string {
-	if sel.Backend == "" {
+// servedDocsBackend reports who answered: the backend that answered
+// replaces "auto" as the backend the output names (each result's source
+// says the same), and each backend it fell through is warned about on
+// stderr with its status and reason, as search's auto does. With no answer
+// it keeps backend and warns nothing: the error names every failure.
+func servedDocsBackend(backend string, o docs.Outcome) string {
+	if o.Backend == "" {
 		return backend
 	}
-	for _, f := range sel.Failures {
-		fmt.Fprintf(os.Stderr, "warn: %s: %v\n", f.Backend, f.Err)
+	for _, f := range o.Failures() {
+		fmt.Fprintf(os.Stderr, "warn: %s %s (%s): %s\n", f.Backend, f.Status, f.Reason, f.Error)
 	}
-	return sel.Backend
+	return o.Backend
 }
 
-func printDocsResults(query, backend, library string, results []docs.Result, minimal bool) {
+func printDocsResults(query, backend, library string, o docs.Outcome, minimal bool) {
+	results := o.Results
 	if minimal {
 		for _, r := range results {
 			snippet := firstLine(r.Snippet)
@@ -235,6 +239,9 @@ func printDocsResults(query, backend, library string, results []docs.Result, min
 		fmt.Printf("library: %s\n", results[0].Library)
 	} else if library != "" {
 		fmt.Printf("library: %s\n", library)
+	}
+	if o.Status == docs.Partial {
+		fmt.Printf("status: partial (%s)\n", o.Reason)
 	}
 	fmt.Printf("result_count: %d\n", len(results))
 	fmt.Println("---")

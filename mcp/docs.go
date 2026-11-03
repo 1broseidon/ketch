@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/1broseidon/ketch/docs"
@@ -28,25 +29,29 @@ type DocsInput struct {
 // objects match the CLI's `ketch docs --json` (which emits a bare array; MCP
 // structured content needs the object wrapper).
 //
-// Backend and Errors are set only by the auto backend: the provider that
-// answered ("web" or "context7") and the one it fell through, by provider,
-// as the search tool reports its auto chain. Any other backend leaves both
-// out, so its output is unchanged.
+// Status is where the call ended (answered or partial; a refused or failed
+// call is a tool error), Reason why a partial answer is partial, Backend the
+// provider that answered, and Attempts every provider tried, in order, with
+// its status and reason. Errors is the same failures by provider, kept for
+// callers that read it.
 type DocsOutput struct {
 	Warnings []string            `json:"warnings,omitempty"`
+	Status   docs.Status         `json:"status,omitempty"`
+	Reason   string              `json:"reason,omitempty"`
 	Results  []docs.Result       `json:"results,omitempty"`
 	Matches  []docs.LibraryMatch `json:"matches,omitempty"`
 	Backend  string              `json:"backend,omitempty"`
+	Attempts []docs.Attempt      `json:"attempts,omitempty"`
 	Errors   map[string]string   `json:"errors,omitempty"`
 }
 
-// withSelection records an auto call's selection on out.
-func (out DocsOutput) withSelection(sel docs.Selection) DocsOutput {
-	out.Backend = sel.Backend
-	if len(sel.Failures) > 0 {
-		out.Errors = make(map[string]string, len(sel.Failures))
-		for _, f := range sel.Failures {
-			out.Errors[f.Backend] = f.Err.Error()
+// fromOutcome renders an answered or partial outcome.
+func fromOutcome(o docs.Outcome) DocsOutput {
+	out := DocsOutput{Status: o.Status, Reason: o.Reason, Results: o.Results, Matches: o.Matches, Backend: o.Backend, Attempts: o.Attempts}
+	if failures := o.Failures(); len(failures) > 0 {
+		out.Errors = make(map[string]string, len(failures))
+		for _, f := range failures {
+			out.Errors[f.Backend] = f.Error
 		}
 	}
 	return out
@@ -107,19 +112,21 @@ func (s *Server) registerDocsTool() {
 			return nil, DocsOutput{}, backendErrf(err)
 		}
 
-		var results []docs.Result
-		var sel docs.Selection
+		var o docs.Outcome
 		if selecting, ok := searcher.(docs.SelectingSearcher); ok {
-			results, sel, err = selecting.SearchSelect(ctx, in.Query, limit)
+			o = selecting.SearchSelect(ctx, in.Query, limit)
 		} else {
-			results, err = searcher.Search(ctx, in.Query, limit)
+			results, err := searcher.Search(ctx, in.Query, limit)
+			o = docs.Answer(backend, results, err)
 		}
-		if err != nil {
+		if err := o.Err(); err != nil {
 			return nil, DocsOutput{}, upstreamErrf(err, "docs search failed")
 		}
 
-		s.recordResults(ctx, in.Tag, docsTagged(results))
-		return nil, DocsOutput{Results: results, Warnings: diagnostics.values()}.withSelection(sel), nil
+		s.recordResults(ctx, in.Tag, docsTagged(o.Results))
+		out := fromOutcome(o)
+		out.Warnings = diagnostics.values()
+		return nil, out, nil
 	})
 }
 
@@ -131,17 +138,22 @@ func (s *Server) docsResolve(ctx context.Context, backend, query string, limit i
 	if err != nil {
 		return nil, DocsOutput{}, err
 	}
-	var matches []docs.LibraryMatch
-	var sel docs.Selection
+	var o docs.Outcome
 	if selecting, ok := resolver.(docs.SelectingSearcher); ok {
-		matches, sel, err = selecting.ResolveSelect(ctx, query, limit)
+		o = selecting.ResolveSelect(ctx, query, limit)
 	} else {
-		matches, err = resolver.ResolveLibrary(ctx, query, limit)
+		matches, err := resolver.ResolveLibrary(ctx, query, limit)
+		if err == nil && len(matches) == 0 {
+			err = fmt.Errorf("library %q %w", query, docs.ErrNotFound)
+		}
+		o = docs.Resolved(backend, matches, err)
 	}
-	if err != nil {
+	if err := o.Err(); err != nil {
 		return nil, DocsOutput{}, upstreamErrf(err, "resolve failed")
 	}
-	return nil, DocsOutput{Matches: matches}.withSelection(sel), nil
+	out := fromOutcome(o)
+	out.Results = nil
+	return nil, out, nil
 }
 
 // docsForLibrary fetches docs for a known library ID, capped at limit
@@ -151,19 +163,19 @@ func (s *Server) docsForLibrary(ctx context.Context, backend, query, library str
 	if err != nil {
 		return nil, DocsOutput{}, err
 	}
-	var results []docs.Result
-	var sel docs.Selection
+	var o docs.Outcome
 	if selecting, ok := resolver.(docs.SelectingSearcher); ok {
-		results, sel, err = selecting.GetDocsSelect(ctx, library, query, tokens)
+		o = selecting.GetDocsSelect(ctx, library, query, tokens)
 	} else {
-		results, err = resolver.GetDocs(ctx, library, query, tokens)
+		results, err := resolver.GetDocs(ctx, library, query, tokens)
+		o = docs.Answer(backend, results, err)
 	}
-	if err != nil {
+	if err := o.Err(); err != nil {
 		return nil, DocsOutput{}, upstreamErrf(err, "docs fetch failed")
 	}
-	results = docs.Truncate(results, limit)
-	s.recordResults(ctx, tag, docsTagged(results))
-	out := DocsOutput{Results: results}.withSelection(sel)
+	o.Results = docs.Truncate(o.Results, limit)
+	s.recordResults(ctx, tag, docsTagged(o.Results))
+	out := fromOutcome(o)
 	if d, ok := ctx.Value(tagDiagnosticsKey{}).(*tagDiagnostics); ok {
 		out.Warnings = d.values()
 	}

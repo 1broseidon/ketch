@@ -371,8 +371,10 @@ func mcpDocs(t *testing.T, args map[string]any) []docsResult {
 	if err := json.Unmarshal([]byte(output(r)), &payload); err != nil {
 		t.Fatalf("docs tool output %q: %v", output(r), err)
 	}
-	if keys := slices.Sorted(maps.Keys(payload)); !slices.Equal(keys, []string{"results"}) {
-		t.Errorf("docs tool output keys = %v, want [results]", keys)
+	// An answered call reports where it ended and who answered beside the
+	// results (docs.Outcome); nothing else.
+	if keys := slices.Sorted(maps.Keys(payload)); !slices.Equal(keys, []string{"attempts", "backend", "results", "status"}) {
+		t.Errorf("docs tool output keys = %v, want [attempts backend results status]", keys)
 	}
 	var raw []map[string]json.RawMessage
 	if err := json.Unmarshal(payload["results"], &raw); err != nil {

@@ -17,29 +17,15 @@ import (
 // pass.
 const AutoBackend = "auto"
 
-// BackendError is one provider's failure that the auto chain fell through.
-type BackendError struct {
-	Backend string
-	Err     error
-}
-
-// Selection says which provider answered an auto call ("web" or
-// "context7") and what failed before it.
-type Selection struct {
-	Backend  string
-	Failures []BackendError
-}
-
 // SelectingSearcher is a docs backend that dispatches to one of several
-// providers and reports which one answered. Only Auto implements it, so a
-// caller that finds it reports the provider; any other backend keeps its
-// output as it was.
+// providers and reports each provider's part in an Outcome. Only Auto
+// implements it.
 type SelectingSearcher interface {
 	Searcher
 	LibraryResolver
-	SearchSelect(ctx context.Context, query string, limit int) ([]Result, Selection, error)
-	GetDocsSelect(ctx context.Context, libraryID, query string, tokens int) ([]Result, Selection, error)
-	ResolveSelect(ctx context.Context, name string, limit int) ([]LibraryMatch, Selection, error)
+	SearchSelect(ctx context.Context, query string, limit int) Outcome
+	GetDocsSelect(ctx context.Context, libraryID, query string, tokens int) Outcome
+	ResolveSelect(ctx context.Context, name string, limit int) Outcome
 }
 
 // autoWeb is what Auto needs from the web backend.
@@ -74,64 +60,72 @@ func newAutoFromConfig(c *config.Config, deps Deps) *Auto {
 
 // Search answers a bare query; see SearchSelect.
 func (a *Auto) Search(ctx context.Context, query string, limit int) ([]Result, error) {
-	results, _, err := a.SearchSelect(ctx, query, limit)
-	return results, err
+	o := a.SearchSelect(ctx, query, limit)
+	return o.Results, o.Err()
 }
 
 // ResolveLibrary resolves a library name; see ResolveSelect.
 func (a *Auto) ResolveLibrary(ctx context.Context, name string, limit int) ([]LibraryMatch, error) {
-	matches, _, err := a.ResolveSelect(ctx, name, limit)
-	return matches, err
+	o := a.ResolveSelect(ctx, name, limit)
+	return o.Matches, o.Err()
 }
 
 // GetDocs fetches docs for a library; see GetDocsSelect.
 func (a *Auto) GetDocs(ctx context.Context, libraryID, query string, tokens int) ([]Result, error) {
-	results, _, err := a.GetDocsSelect(ctx, libraryID, query, tokens)
-	return results, err
+	o := a.GetDocsSelect(ctx, libraryID, query, tokens)
+	return o.Results, o.Err()
 }
 
+// The auto chain is one state machine for all three calls:
+//
+//	web ──answered──▶ done
+//	 │
+//	 └─refused/failed─▶ handoff? ──no──▶ web's outcome
+//	                       │
+//	                      yes─▶ context7 ──answered──▶ done (web's attempt kept)
+//	                               └─refused/failed─▶ web's outcome, both attempts kept
+//
+// Handoff is refused when the caller cancelled, or the request pins its
+// library (an ecosystem, a version or a docs URL), which Context7 cannot
+// honour. Context7's pick must pass accept: one of web's candidates when web
+// found the name ambiguous, else a library the query names. An empty web
+// answer is a refusal (ErrNoResults) like any other (decision-20). When
+// neither answers, the outcome is web's refusal or failure, whose message
+// is the more useful (it lists candidates, versions or what failed), and
+// Context7's attempt is reported beside it.
+
 // SearchSelect answers a bare query from web, else from Context7 with the
-// whole query, as `--backend context7` would, but only if the library
-// Context7 picks is one the query names (namedBy) or, when web found the
-// name ambiguous, one of web's candidates. A query naming its library with
-// an ecosystem prefix, a version or a docs URL stays web's.
-func (a *Auto) SearchSelect(ctx context.Context, query string, limit int) ([]Result, Selection, error) {
+// whole query, as `--backend context7` would.
+func (a *Auto) SearchSelect(ctx context.Context, query string, limit int) Outcome {
 	results, err := a.web.Search(ctx, query, limit)
-	if err == nil {
-		return results, Selection{Backend: "web"}, nil
+	web := attempt("web", len(results), err)
+	if web.Status == Answered || ctx.Err() != nil || queryPinsLibrary(query) {
+		return finish(web, results, nil, []Attempt{web})
 	}
-	if ctx.Err() != nil || queryPinsLibrary(query) {
-		return nil, Selection{}, err
-	}
-	accept := webCandidates(err)
+	accept := webCandidates(web.err)
 	if accept == nil {
 		accept = namedBy(query)
 	}
-	results, c7err := a.c7.search(ctx, query, limit, accept)
-	return autoSecond(ctx, results, err, c7err)
+	c7results, c7err := a.c7.search(ctx, query, limit, accept)
+	return autoSecond(ctx, web, attempt("context7", len(c7results), c7err), c7results, nil)
 }
 
 // GetDocsSelect fetches docs for a library. A Context7 ID (/owner/repo, as
 // an auto --resolve lists them) goes to Context7 directly. Anything else
 // goes to web first; when web refuses a bare name or an owner/repo,
 // Context7 resolves it (an owner/repo only to exactly that ID) and answers.
-func (a *Auto) GetDocsSelect(ctx context.Context, libraryID, query string, tokens int) ([]Result, Selection, error) {
+func (a *Auto) GetDocsSelect(ctx context.Context, libraryID, query string, tokens int) Outcome {
 	if isContext7ID(libraryID) {
 		results, err := a.c7.GetDocs(ctx, libraryID, query, tokens)
-		if err != nil {
-			return nil, Selection{}, err
-		}
-		return results, Selection{Backend: "context7"}, nil
+		return Answer("context7", results, err)
 	}
 	results, err := a.web.GetDocs(ctx, libraryID, query, tokens)
-	if err == nil {
-		return results, Selection{Backend: "web"}, nil
-	}
+	web := attempt("web", len(results), err)
 	name, exact, ok := context7Name(libraryID)
-	if ctx.Err() != nil || !ok {
-		return nil, Selection{}, err
+	if web.Status == Answered || ctx.Err() != nil || !ok {
+		return finish(web, results, nil, []Attempt{web})
 	}
-	accept := webCandidates(err)
+	accept := webCandidates(web.err)
 	if accept == nil {
 		accept = namedBy(name)
 	}
@@ -143,52 +137,53 @@ func (a *Auto) GetDocsSelect(ctx context.Context, libraryID, query string, token
 			return nil
 		}
 	}
-	results, c7err := a.c7.docsFor(ctx, name, query, tokens, accept)
-	return autoSecond(ctx, results, err, c7err)
+	c7results, c7err := a.c7.docsFor(ctx, name, query, tokens, accept)
+	return autoSecond(ctx, web, attempt("context7", len(c7results), c7err), c7results, nil)
 }
 
 // ResolveSelect lists web's matches for a name, else Context7's when web
 // finds none or fails. Context7's matches carry Context7 IDs, which
 // GetDocsSelect sends back to Context7.
-func (a *Auto) ResolveSelect(ctx context.Context, name string, limit int) ([]LibraryMatch, Selection, error) {
+func (a *Auto) ResolveSelect(ctx context.Context, name string, limit int) Outcome {
 	matches, err := a.web.ResolveLibrary(ctx, name, limit)
-	if err == nil && len(matches) > 0 {
-		return matches, Selection{Backend: "web"}, nil
-	}
-	if err == nil {
+	if err == nil && len(matches) == 0 {
 		err = fmt.Errorf("web: library %q %w", name, ErrNotFound)
 	}
+	web := attempt("web", len(matches), err)
 	c7name, exact, ok := context7Name(name)
-	if ctx.Err() != nil || !ok {
-		return nil, Selection{}, err
+	if web.Status == Answered || ctx.Err() != nil || !ok {
+		return finish(web, nil, matches, []Attempt{web})
 	}
 	c7matches, c7err := a.c7.ResolveLibrary(ctx, c7name, limit)
 	if c7err == nil && exact != "" {
 		c7matches = keepID(c7matches, exact)
 	}
 	if c7err == nil && len(c7matches) == 0 {
-		c7err = fmt.Errorf("context7: no library found for %q", c7name)
+		c7err = fmt.Errorf("context7: library %q %w", c7name, ErrNotFound)
 	}
-	return autoSecond(ctx, c7matches, err, c7err)
+	return autoSecond(ctx, web, attempt("context7", len(c7matches), c7err), nil, c7matches)
 }
 
 // autoSecond finishes a call Context7 took over from web: Context7's
-// answer with web's failure reported, or both failures.
-func autoSecond[T any](ctx context.Context, out []T, webErr, c7err error) ([]T, Selection, error) {
-	failures := []BackendError{{Backend: "web", Err: webErr}}
-	if c7err == nil {
-		return out, Selection{Backend: "context7", Failures: failures}, nil
+// answer with web's attempt kept, or web's outcome with both attempts. A
+// caller that cancelled during Context7 gets a cancelled outcome.
+func autoSecond(ctx context.Context, web, c7 Attempt, results []Result, matches []LibraryMatch) Outcome {
+	attempts := []Attempt{web, c7}
+	if c7.Status == Answered {
+		return finish(c7, results, matches, attempts)
 	}
 	if err := ctx.Err(); err != nil {
-		return nil, Selection{Failures: failures}, fmt.Errorf("docs auto cancelled after web failed: %w", err)
+		return finish(attempt("auto", 0, fmt.Errorf("docs auto cancelled after web did not answer: %w", err)), nil, nil, attempts)
 	}
-	return nil, Selection{Failures: append(failures, BackendError{Backend: "context7", Err: c7err})}, &autoError{web: webErr, c7: c7err}
+	final := web
+	final.err = &autoError{web: web.err, c7: c7.err}
+	return finish(final, nil, nil, attempts)
 }
 
 // autoError is web's refusal and Context7's failure after it. It wraps
 // web's error alone, so the call is classified as web's refusal was (an
 // ambiguous name stays a validation error naming its candidates, a missing
-// library not found); Context7's failure is in the message.
+// library not found); Context7's attempt is in the outcome and the message.
 type autoError struct {
 	web, c7 error
 }

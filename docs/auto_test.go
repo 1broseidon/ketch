@@ -89,19 +89,31 @@ func autoWith(t *testing.T, web *fakeAutoWeb, pick string) (*Auto, *c7Calls) {
 
 var webAnswer = []Result{{Library: "https://react.dev/", Title: "useState", URL: "https://react.dev/reference/react/useState", Source: "web"}}
 
-// Web answers first; Context7 is never asked when it does, and an empty
-// answer is still web's answer.
+// Web answers first; Context7 is never asked when it does.
 func TestAutoWebAnswerIsKept(t *testing.T) {
-	for _, results := range [][]Result{webAnswer, nil} {
-		web := &fakeAutoWeb{results: results}
-		a, calls := autoWith(t, web, "/facebook/react")
-		got, sel, err := a.SearchSelect(context.Background(), "react useState", 5)
-		if err != nil || sel.Backend != "web" || len(sel.Failures) != 0 || len(got) != len(results) {
-			t.Fatalf("web answered %d: got %v, %+v, %v", len(results), got, sel, err)
-		}
-		if c := calls.list(); len(c) != 0 {
-			t.Errorf("Context7 asked after web answered: %v", c)
-		}
+	web := &fakeAutoWeb{results: webAnswer}
+	a, calls := autoWith(t, web, "/facebook/react")
+	got, sel, err := splitR(a.SearchSelect(context.Background(), "react useState", 5))
+	if err != nil || sel.Backend != "web" || len(sel.Failures) != 0 || len(got) != len(webAnswer) {
+		t.Fatalf("got %v, %+v, %v", got, sel, err)
+	}
+	if c := calls.list(); len(c) != 0 {
+		t.Errorf("Context7 asked after web answered: %v", c)
+	}
+}
+
+// An empty web answer is a refusal (ErrNoResults, decision-20): Context7 is
+// asked under the same gate as for any refusal, and the outcome records web's
+// attempt as refused with reason no_results.
+func TestAutoEmptyWebAnswerIsARefusal(t *testing.T) {
+	web := &fakeAutoWeb{}
+	a, _ := autoWith(t, web, "/facebook/react")
+	o := a.SearchSelect(context.Background(), "react useState", 5)
+	if o.Status != Answered || o.Backend != "context7" || len(o.Attempts) != 2 {
+		t.Fatalf("outcome %+v", o)
+	}
+	if w := o.Attempts[0]; w.Backend != "web" || w.Status != Refused || w.Reason != "no_results" {
+		t.Errorf("web attempt %+v, want refused/no_results", w)
 	}
 }
 
@@ -116,7 +128,7 @@ func TestAutoFallsThroughOnRefusal(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			web := &fakeAutoWeb{err: webErr}
 			a, calls := autoWith(t, web, "/zz/zzlib")
-			got, sel, err := a.SearchSelect(context.Background(), "zzlib hooks", 5)
+			got, sel, err := splitR(a.SearchSelect(context.Background(), "zzlib hooks", 5))
 			if err != nil {
 				t.Fatalf("fallthrough: %v", err)
 			}
@@ -142,7 +154,7 @@ func TestAutoFallsThroughOnRefusal(t *testing.T) {
 func TestAutoAmbiguityNeedsAWebCandidate(t *testing.T) {
 	t.Run("pick is a candidate", func(t *testing.T) {
 		a, calls := autoWith(t, &fakeAutoWeb{err: widgetAmbiguity()}, "/pywidget/widget")
-		got, sel, err := a.SearchSelect(context.Background(), "widget configure themes", 5)
+		got, sel, err := splitR(a.SearchSelect(context.Background(), "widget configure themes", 5))
 		if err != nil || sel.Backend != "context7" || len(got) != 1 || got[0].Library != "/pywidget/widget" {
 			t.Fatalf("got %+v, %+v, %v; want Context7's /pywidget/widget", got, sel, err)
 		}
@@ -152,7 +164,7 @@ func TestAutoAmbiguityNeedsAWebCandidate(t *testing.T) {
 	})
 	t.Run("pick is another project", func(t *testing.T) {
 		a, calls := autoWith(t, &fakeAutoWeb{err: widgetAmbiguity()}, "/someone/widget")
-		_, sel, err := a.SearchSelect(context.Background(), "widget configure themes", 5)
+		_, sel, err := splitR(a.SearchSelect(context.Background(), "widget configure themes", 5))
 		var amb *AmbiguousLibraryError
 		if !errors.As(err, &amb) || !errors.Is(err, ErrLibraryRequired) {
 			t.Fatalf("err = %v, want the ambiguity error to stand", err)
@@ -176,7 +188,7 @@ func TestAutoKeepsPinnedAndCancelledCalls(t *testing.T) {
 	webErr := fmt.Errorf("web: %w", ErrNotFound)
 	for _, q := range []string{"npm:react hooks", "react@18 hooks", "https://react.dev/ hooks", "@tanstack/query caching", "github:facebook/react hooks"} {
 		a, calls := autoWith(t, &fakeAutoWeb{err: webErr}, "/facebook/react")
-		if _, _, err := a.SearchSelect(context.Background(), q, 5); !errors.Is(err, ErrNotFound) {
+		if _, _, err := splitR(a.SearchSelect(context.Background(), q, 5)); !errors.Is(err, ErrNotFound) {
 			t.Errorf("%q: err %v, want web's", q, err)
 		}
 		if c := calls.list(); len(c) != 0 {
@@ -187,7 +199,7 @@ func TestAutoKeepsPinnedAndCancelledCalls(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	a, calls := autoWith(t, &fakeAutoWeb{err: context.Canceled}, "/facebook/react")
-	if _, _, err := a.SearchSelect(ctx, "react hooks", 5); !errors.Is(err, context.Canceled) {
+	if _, _, err := splitR(a.SearchSelect(ctx, "react hooks", 5)); !errors.Is(err, context.Canceled) {
 		t.Errorf("cancelled: %v", err)
 	}
 	if c := calls.list(); len(c) != 0 {
@@ -207,7 +219,7 @@ func TestAutoBothFail(t *testing.T) {
 	})
 	c7.apiKey = ""
 	a := NewAuto(&fakeAutoWeb{err: webErr}, c7)
-	_, sel, err := a.SearchSelect(context.Background(), "zzlib hooks", 5)
+	_, sel, err := splitR(a.SearchSelect(context.Background(), "zzlib hooks", 5))
 	if !errors.Is(err, ErrLibraryRequired) {
 		t.Fatalf("err = %v, want web's validation refusal", err)
 	}
@@ -225,7 +237,7 @@ func TestAutoBothFail(t *testing.T) {
 func TestAutoGetDocsContext7ID(t *testing.T) {
 	a, calls := autoWith(t, &fakeAutoWeb{results: webAnswer}, "/x/y")
 	web := a.web.(*fakeAutoWeb)
-	got, sel, err := a.GetDocsSelect(context.Background(), "/reactjs/react.dev", "hooks", 4000)
+	got, sel, err := splitR(a.GetDocsSelect(context.Background(), "/reactjs/react.dev", "hooks", 4000))
 	if err != nil || sel.Backend != "context7" || len(web.calls) != 0 || len(got) != 1 || got[0].Library != "/reactjs/react.dev" {
 		t.Fatalf("Context7 ID: %+v %+v %v; web calls %v", got, sel, err, web.calls)
 	}
@@ -239,7 +251,7 @@ func TestAutoGetDocsPinnedStaysWeb(t *testing.T) {
 	webErr := fmt.Errorf("web: %w", ErrNotFound)
 	for _, lib := range []string{"https://react.dev/", "npm:react", "react@18", "pypi:requests"} {
 		a, calls := autoWith(t, &fakeAutoWeb{err: webErr}, "/facebook/react")
-		if _, _, err := a.GetDocsSelect(context.Background(), lib, "hooks", 4000); !errors.Is(err, ErrNotFound) {
+		if _, _, err := splitR(a.GetDocsSelect(context.Background(), lib, "hooks", 4000)); !errors.Is(err, ErrNotFound) {
 			t.Errorf("%s: err %v, want web's", lib, err)
 		}
 		if c := calls.list(); len(c) != 0 {
@@ -255,16 +267,16 @@ func TestAutoGetDocsFallsThrough(t *testing.T) {
 	webErr := fmt.Errorf("web: %w", ErrNotFound)
 
 	a, _ := autoWith(t, &fakeAutoWeb{err: webErr}, "/zz/zzlib")
-	if got, sel, err := a.GetDocsSelect(ctx, "zzlib", "hooks", 4000); err != nil || sel.Backend != "context7" || got[0].Library != "/zz/zzlib" {
+	if got, sel, err := splitR(a.GetDocsSelect(ctx, "zzlib", "hooks", 4000)); err != nil || sel.Backend != "context7" || got[0].Library != "/zz/zzlib" {
 		t.Errorf("bare name: %+v %+v %v", got, sel, err)
 	}
 
 	a, _ = autoWith(t, &fakeAutoWeb{err: webErr}, "/Facebook/React")
-	if _, sel, err := a.GetDocsSelect(ctx, "github:facebook/react", "hooks", 4000); err != nil || sel.Backend != "context7" {
+	if _, sel, err := splitR(a.GetDocsSelect(ctx, "github:facebook/react", "hooks", 4000)); err != nil || sel.Backend != "context7" {
 		t.Errorf("owner/repo, exact pick: %+v %v", sel, err)
 	}
 	a, calls := autoWith(t, &fakeAutoWeb{err: webErr}, "/react/react")
-	if _, _, err := a.GetDocsSelect(ctx, "facebook/react", "hooks", 4000); !errors.Is(err, ErrNotFound) || !strings.Contains(err.Error(), "not that repository") {
+	if _, _, err := splitR(a.GetDocsSelect(ctx, "facebook/react", "hooks", 4000)); !errors.Is(err, ErrNotFound) || !strings.Contains(err.Error(), "not that repository") {
 		t.Errorf("owner/repo, other pick: %v", err)
 	}
 	if c := calls.list(); len(c) != 1 {
@@ -273,7 +285,7 @@ func TestAutoGetDocsFallsThrough(t *testing.T) {
 
 	a, _ = autoWith(t, &fakeAutoWeb{err: widgetAmbiguity()}, "/someone/widget")
 	var amb *AmbiguousLibraryError
-	if _, _, err := a.GetDocsSelect(ctx, "widget", "themes", 4000); !errors.As(err, &amb) {
+	if _, _, err := splitR(a.GetDocsSelect(ctx, "widget", "themes", 4000)); !errors.As(err, &amb) {
 		t.Errorf("ambiguous name, foreign pick: %v, want the ambiguity", err)
 	}
 }
@@ -284,7 +296,7 @@ func TestAutoResolve(t *testing.T) {
 	ctx := context.Background()
 	webMatches := []LibraryMatch{{ID: "https://react.dev/", Title: "React"}}
 	a, calls := autoWith(t, &fakeAutoWeb{matches: webMatches}, "/facebook/react")
-	if got, sel, err := a.ResolveSelect(ctx, "react", 5); err != nil || sel.Backend != "web" || len(got) != 1 || len(calls.list()) != 0 {
+	if got, sel, err := splitM(a.ResolveSelect(ctx, "react", 5)); err != nil || sel.Backend != "web" || len(got) != 1 || len(calls.list()) != 0 {
 		t.Errorf("web matches: %+v %+v %v %v", got, sel, err, calls.list())
 	}
 	for name, web := range map[string]*fakeAutoWeb{
@@ -292,13 +304,13 @@ func TestAutoResolve(t *testing.T) {
 		"not found":  {err: fmt.Errorf("web: %w", ErrNotFound)},
 	} {
 		a, _ := autoWith(t, web, "/zz/zzlib")
-		got, sel, err := a.ResolveSelect(ctx, "zzlib", 5)
+		got, sel, err := splitM(a.ResolveSelect(ctx, "zzlib", 5))
 		if err != nil || sel.Backend != "context7" || len(got) != 1 || got[0].ID != "/zz/zzlib" {
 			t.Errorf("%s: %+v %+v %v", name, got, sel, err)
 		}
 	}
 	a, calls = autoWith(t, &fakeAutoWeb{err: fmt.Errorf("web: %w", ErrNotFound)}, "/x/y")
-	if _, _, err := a.ResolveSelect(ctx, "npm:zzlib", 5); !errors.Is(err, ErrNotFound) || len(calls.list()) != 0 {
+	if _, _, err := splitM(a.ResolveSelect(ctx, "npm:zzlib", 5)); !errors.Is(err, ErrNotFound) || len(calls.list()) != 0 {
 		t.Errorf("pinned resolve: %v, Context7 calls %v", err, calls.list())
 	}
 }
@@ -382,11 +394,45 @@ func TestAutoNamedBy(t *testing.T) {
 func TestAutoUnnamedPickRefused(t *testing.T) {
 	webErr := fmt.Errorf("%w: no library identified in %q", ErrLibraryRequired, "useState in react")
 	a, calls := autoWith(t, &fakeAutoWeb{err: webErr}, "/react-native-google-signin/docs")
-	_, sel, err := a.SearchSelect(context.Background(), "useState in react", 5)
+	_, sel, err := splitR(a.SearchSelect(context.Background(), "useState in react", 5))
 	if !errors.Is(err, ErrLibraryRequired) || !strings.Contains(err.Error(), "a library the query does not name") || sel.Backend != "" {
 		t.Fatalf("err = %v, sel %+v; want web's refusal standing", err, sel)
 	}
 	if c := calls.list(); len(c) != 1 {
 		t.Errorf("Context7 calls = %v, want the resolve alone", c)
 	}
+}
+
+// selection is an outcome read the way these tests were first written: who
+// answered and each backend that did not, with its error.
+type selection struct {
+	Backend  string
+	Failures []backendError
+}
+
+type backendError struct {
+	Backend string
+	Err     error
+}
+
+func selectionOf(o Outcome) selection {
+	sel := selection{Backend: o.Backend}
+	for _, f := range o.Failures() {
+		sel.Failures = append(sel.Failures, backendError{Backend: f.Backend, Err: f.err})
+	}
+	return sel
+}
+
+func splitR(o Outcome) ([]Result, selection, error) {
+	if o.Err() != nil {
+		return nil, selectionOf(o), o.Err()
+	}
+	return o.Results, selectionOf(o), nil
+}
+
+func splitM(o Outcome) ([]LibraryMatch, selection, error) {
+	if o.Err() != nil {
+		return nil, selectionOf(o), o.Err()
+	}
+	return o.Matches, selectionOf(o), nil
 }

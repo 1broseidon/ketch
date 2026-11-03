@@ -64,7 +64,7 @@ func TestDocsAutoAmbiguousSettledByWebCandidate(t *testing.T) {
 	if !strings.Contains(out, "backend: context7\n") || !strings.Contains(out, "library: /pywidget/widget\n") || !strings.Contains(out, "[Configure themes]") {
 		t.Errorf("auto output does not show Context7's answer:\n%s", out)
 	}
-	if !strings.Contains(stderr, "warn: web: ambiguous library") {
+	if !strings.Contains(stderr, "warn: web refused (ambiguous): ambiguous library") {
 		t.Errorf("stderr should warn about web's refusal, got %q", stderr)
 	}
 	reqs := context7Requests(ft)

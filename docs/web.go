@@ -17,6 +17,7 @@ import (
 	"github.com/1broseidon/ketch/health"
 	"github.com/1broseidon/ketch/httpx"
 	config "github.com/1broseidon/ketch/internal/configbase"
+	"github.com/1broseidon/ketch/internal/failure"
 	"github.com/1broseidon/ketch/search"
 )
 
@@ -658,20 +659,22 @@ func (w *Web) pageAnchors(ctx context.Context, root webRoot, raw string) []PageA
 	return page.Anchors
 }
 
-// callErr classifies a failed call. A cancelled caller is reported as such;
-// every timeout short of that (the operation timeout, the per-probe timeout,
-// the HTTP client's) is a plain upstream failure. A slow site is worth
-// retrying, not a cancellation, and an error that still wrapped
-// context.DeadlineExceeded would read as one: [cancelled] over MCP while the
-// CLI exits 4. So a fetch's own timeout keeps its text but loses its chain.
+// callErr classifies a failed call (internal/failure). A cancelled caller is
+// reported as such; every timeout short of that (the operation timeout, the
+// per-probe timeout, the HTTP client's) is an upstream timeout: a slow site
+// is worth retrying. A context cancelled inside the call, never by the
+// caller, is an upstream interruption; its chain is cut so it cannot read as
+// the caller cancelling.
 func (w *Web) callErr(parent, op context.Context, root webRoot, err error) error {
 	switch {
 	case parent.Err() != nil:
 		return fmt.Errorf("web: %w", parent.Err())
 	case op.Err() != nil:
-		return fmt.Errorf("web: %s did not answer within %s", root, w.opTimeout)
-	case errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled):
-		return errors.New(err.Error())
+		return failure.Wrap(failure.Upstream, "timeout", fmt.Errorf("web: %s did not answer within %s", root, w.opTimeout))
+	case errors.Is(err, context.DeadlineExceeded):
+		return failure.Wrap(failure.Upstream, "timeout", errors.New(err.Error()))
+	case errors.Is(err, context.Canceled):
+		return failure.Wrap(failure.Upstream, "interrupted", errors.New(err.Error()))
 	}
 	return err
 }
