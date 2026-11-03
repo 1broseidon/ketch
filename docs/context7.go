@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 
@@ -59,17 +60,25 @@ type context7SearchResponse struct {
 	Results []LibraryMatch `json:"results"`
 }
 
+// context7DocsResponse is the /api/v2/context JSON body. Context7 returns
+// its matches in two arrays by kind, but ranks them as one list: every
+// snippet in either array carries a "rank" (1 is the best match), unique
+// across both, so the arrays interleave (code 1, 2; info 3, 4; code 5).
 type context7DocsResponse struct {
 	CodeSnippets []context7CodeSnippet `json:"codeSnippets"`
 	InfoSnippets []context7InfoSnippet `json:"infoSnippets"`
 }
 
+// context7CodeSnippet is one code match: a title, a prose description of
+// what the code shows, and one or more code blocks (variants of the same
+// example, such as one per provider or language, or setup then use).
 type context7CodeSnippet struct {
 	CodeTitle       string              `json:"codeTitle"`
 	CodeDescription string              `json:"codeDescription"`
 	CodeLanguage    string              `json:"codeLanguage"`
 	CodeID          string              `json:"codeId"`
 	CodeList        []context7CodeEntry `json:"codeList"`
+	Rank            int                 `json:"rank"`
 }
 
 type context7CodeEntry struct {
@@ -77,10 +86,13 @@ type context7CodeEntry struct {
 	Code     string `json:"code"`
 }
 
+// context7InfoSnippet is one prose match: a section of a docs page, whose
+// content is already markdown.
 type context7InfoSnippet struct {
 	PageID     string `json:"pageId"`
 	Breadcrumb string `json:"breadcrumb"`
 	Content    string `json:"content"`
+	Rank       int    `json:"rank"`
 }
 
 // context7ErrorResponse is the body Context7 sends alongside some 4xx
@@ -203,34 +215,100 @@ func (c *Context7) GetDocs(ctx context.Context, libraryID, query string, tokens 
 		return nil, fmt.Errorf("failed to decode context7 docs response: %w", err)
 	}
 
-	var results []Result
+	return context7Results(libraryID, dr), nil
+}
 
+// context7Results turns a docs response into one Result per Context7
+// snippet, in Context7's own order. A code snippet's Snippet is markdown: its
+// description, then every code block in order, each fenced with its
+// language. An info snippet's Snippet is its content as sent.
+//
+// Order follows each snippet's rank across both arrays. A snippet without a
+// rank (an older or partial response) sorts after every ranked one, in the
+// order the response lists it: code snippets, then info snippets.
+func context7Results(libraryID string, dr context7DocsResponse) []Result {
+	type ranked struct {
+		rank   int
+		result Result
+	}
+	items := make([]ranked, 0, len(dr.CodeSnippets)+len(dr.InfoSnippets))
 	for _, cs := range dr.CodeSnippets {
-		snippet := ""
-		if len(cs.CodeList) > 0 {
-			snippet = cs.CodeList[0].Code
-		}
-		results = append(results, Result{
+		items = append(items, ranked{cs.Rank, Result{
 			Library: libraryID,
 			Title:   cs.CodeTitle,
-			Snippet: snippet,
+			Snippet: context7CodeMarkdown(cs),
 			URL:     cs.CodeID,
 			Source:  "context7",
-		})
+		}})
 	}
-
 	for _, is := range dr.InfoSnippets {
-		results = append(results, Result{
+		items = append(items, ranked{is.Rank, Result{
 			Library:    libraryID,
 			Title:      is.Breadcrumb,
 			Breadcrumb: is.Breadcrumb,
 			Snippet:    is.Content,
 			URL:        is.PageID,
 			Source:     "context7",
-		})
+		}})
 	}
+	sort.SliceStable(items, func(i, j int) bool {
+		a, b := items[i].rank, items[j].rank
+		if a <= 0 || b <= 0 {
+			return a > 0 && b <= 0 // ranked before unranked; unranked keep their order
+		}
+		return a < b
+	})
+	if len(items) == 0 {
+		return nil
+	}
+	results := make([]Result, len(items))
+	for i, it := range items {
+		results[i] = it.result
+	}
+	return results
+}
 
-	return results, nil
+// context7CodeMarkdown renders a code snippet as markdown: the description,
+// then each code block fenced with its language (the snippet's language
+// when the block names none). A fence is longer than any run of backticks
+// in its code, so an APIDOC block that itself contains ``` fences stays one
+// block.
+func context7CodeMarkdown(cs context7CodeSnippet) string {
+	var parts []string
+	if d := strings.TrimSpace(cs.CodeDescription); d != "" {
+		parts = append(parts, d)
+	}
+	for _, e := range cs.CodeList {
+		code := strings.TrimRight(e.Code, "\r\n")
+		if strings.TrimSpace(code) == "" {
+			continue
+		}
+		lang := strings.TrimSpace(e.Language)
+		if lang == "" {
+			lang = strings.TrimSpace(cs.CodeLanguage)
+		}
+		if f := strings.Fields(lang); len(f) > 0 {
+			lang = f[0]
+		}
+		fence := strings.Repeat("`", max(3, longestBacktickRun(code)+1))
+		parts = append(parts, fence+lang+"\n"+code+"\n"+fence)
+	}
+	return strings.Join(parts, "\n\n")
+}
+
+// longestBacktickRun is the length of the longest run of consecutive
+// backticks in s.
+func longestBacktickRun(s string) int {
+	longest, run := 0, 0
+	for _, r := range s {
+		if r != '`' {
+			run = 0
+			continue
+		}
+		run++
+		longest = max(longest, run)
+	}
+	return longest
 }
 
 // getDocsFollowing requests libraryID's docs, following a

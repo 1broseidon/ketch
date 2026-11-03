@@ -1,0 +1,38 @@
+[
+  {
+    "library": "/websites/chartjs",
+    "title": "Important Note",
+    "breadcrumb": "Important Note",
+    "snippet": "Detecting when the canvas size changes can not be done directly from the `canvas` element. Chart.js uses its parent container to update the canvas _render_ and _display_ sizes. However, this method requires the container to be **relatively positioned** and **dedicated to the chart canvas only**. Responsiveness can then be achieved by setting relative values for the container size ([example (opens new window)](https://codepen.io/chartjs/pen/YVWZbz)):\n\n```html\n<div class=\"chart-container\" style=\"position: relative; height:40vh; width:80vw\">\n    <canvas id=\"chart\"></canvas>\n</div>\n```\n\nThe chart can also be programmatically resized by modifying the container size:\n\n```javascript\nchart.canvas.parentNode.style.height = '128px';\nchart.canvas.parentNode.style.width = '128px';\n```\n\nNote that in order for the above code to correctly resize the chart height, the [`maintainAspectRatio`](https://www.chartjs.org/docs/latest/configuration/responsive.html#configuration-options) option must also be set to `false`.",
+    "url": "https://www.chartjs.org/docs/latest/configuration/responsive.html",
+    "source": "context7"
+  },
+  {
+    "library": "/websites/chartjs",
+    "title": "HTML container for responsive chart",
+    "snippet": "The container must be relatively positioned and dedicated to the chart canvas only. Set relative values for the container size to achieve responsiveness.\n\n```html\n<div class=\"chart-container\" style=\"position: relative; height:40vh; width:80vw\">\n    <canvas id=\"chart\"></canvas>\n</div>\n```",
+    "url": "https://www.chartjs.org/docs/latest/configuration/responsive.html",
+    "source": "context7"
+  },
+  {
+    "library": "/websites/chartjs",
+    "title": ".resize(width?, height?)",
+    "snippet": "Manually resizes the canvas element. Can be called with no parameters to fill its container, or with explicit dimensions for printing.\n\n````APIDOC\n## .resize(width?, height?)\n\n### Description\nUse this to manually resize the canvas element. This is run each time the canvas container is resized, but you can call this method manually if you change the size of the canvas nodes container element. You can call `.resize()` with no parameters to have the chart take the size of its container element, or you can pass explicit dimensions (e.g., for printing).\n\n### Method\nresize\n\n### Syntax\n`chart.resize(width?, height?)`\n\n### Parameters\n- **width** (number) - Optional - The new width of the canvas.\n- **height** (number) - Optional - The new height of the canvas.\n\n### Returns\n`this` for chainability\n\n### Example\n```javascript\n// Resizes & redraws to fill its container element\nmyLineChart.resize();\n// => returns 'this' for chainability\n// With an explicit size:\nmyLineChart.resize(width, height);\n```\n````",
+    "url": "https://www.chartjs.org/docs/latest/developers/api.html",
+    "source": "context7"
+  },
+  {
+    "library": "/websites/chartjs",
+    "title": ".resize() - Resize canvas element",
+    "snippet": "Manually resizes the canvas element. With no parameters, the chart takes the size of its container. With explicit dimensions, it resizes to the given width and height. Returns 'this' for chainability.\n\n```javascript\n// Resizes & redraws to fill its container element\nmyLineChart.resize();\n// => returns 'this' for chainability\n// With an explicit size:\nmyLineChart.resize(width, height);\n```",
+    "url": "https://www.chartjs.org/docs/latest/developers/api.html",
+    "source": "context7"
+  },
+  {
+    "library": "/websites/chartjs",
+    "title": "Programmatically resize chart by modifying container size",
+    "snippet": "Resize the chart by changing the parent container's height and width. Note that the maintainAspectRatio option must be set to false for the height to resize correctly.\n\n```javascript\nchart.canvas.parentNode.style.height = '128px';\nchart.canvas.parentNode.style.width = '128px';\n```",
+    "url": "https://www.chartjs.org/docs/latest/configuration/responsive.html",
+    "source": "context7"
+  }
+]
