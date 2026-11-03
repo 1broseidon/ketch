@@ -9,6 +9,8 @@ verbatim on the GitHub release. Versions follow
 
 ## [Unreleased]
 
+## [0.20.4] - 2026-11-03
+
 **Fixed** Context7 results losing much of what Context7 sent. With the Context7 backend, `ketch docs` (text and `--json`) and the MCP `docs` tool kept only the first code block of each code snippet, dropped the description Context7 writes for it, and listed every code snippet before every prose one, so Context7's best match could arrive fourth or fifth. Each Context7 snippet is now one result, in Context7's own ranking across both kinds: a code snippet's `snippet` is markdown, its description followed by every code block fenced with its language (a block that itself contains ``` fences gets a longer fence), and a prose snippet's is its text as before. The JSON fields are unchanged. `--limit` now keeps Context7's top-ranked snippets whichever kind they are, and `--minimal` shows the first line of the description rather than of the code. Replaying 58 saved Context7 answers through ketch, the top three results held the answer 18 times, as Context7's raw answers do, up from 8.
 
 ## [0.20.3] - 2026-11-03
