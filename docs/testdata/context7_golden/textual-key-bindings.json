@@ -1,0 +1,38 @@
+[
+  {
+    "library": "/websites/textual_textualize_io",
+    "title": "Bindings",
+    "breadcrumb": "Bindings",
+    "snippet": "Keys may be associated with actions for a given widget. This association is known as a key _binding_.\nTo create bindings, add a `BINDINGS` class variable to your app or widget. This should be a list of tuples of three strings. The first value is the key, the second is the action, the third value is a short human readable description.\nThe following example binds the keys `R`, `G`, and `B` to an action which adds a bar widget to the screen.\nbinding01.pybinding01.tcssOutput\nbinding01.py```\nfrom textual.app import App, ComposeResult\nfrom textual.color import Color\nfrom textual.widgets import Footer, Static\n\n\nclass Bar(Static):\n    pass\n\n\nclass BindingApp(App):\n    CSS_PATH = \"binding01.tcss\"\n    BINDINGS = [\n        (\"r\", \"add_bar('red')\", \"Add Red\"),\n        (\"g\", \"add_bar('green')\", \"Add Green\"),\n        (\"b\", \"add_bar('blue')\", \"Add Blue\"),\n    ]\n\n    def compose(self) -> ComposeResult:\n        yield Footer()\n\n    def action_add_bar(self, color: str) -> None:\n        bar = Bar(color)\n        bar.styles.background = Color.parse(color).with_alpha(0.5)\n        self.mount(bar)\n        self.call_after_refresh(self.screen.scroll_end, animate=False)\n\n\nif __name__ == \"__main__\":\n    app = BindingApp()\n    app.run()\n\n```\n\nbinding01.tcss```\nBar {\n    height: 5;\n    content-align: center middle;\n    text-style: bold;\n    margin: 1 2;\n    color: $text;\n}\n\n```\n\nNote how the footer displays bindings and makes them clickable.\nTip\nMultiple keys can be bound to a single action by comma-separating them. For example, `(\"r,t\", \"add_bar('red')\", \"Add Red\")` means both `R` and `T` are bound to `add_bar('red')`.\nWhen you press a key, Textual will first check for a matching binding in the `BINDINGS` list of the currently focused widget. If no match is found, it will search upwards through the DOM all the way up to the `App` looking for a match.",
+    "url": "https://textual.textualize.io/guide/input",
+    "source": "context7"
+  },
+  {
+    "library": "/websites/textual_textualize_io",
+    "title": "actions04.py: Binding keys to actions",
+    "snippet": "Complete Textual app that adds key bindings for R, G, and B keys to call the set_background action. In addition to clicking links, pressing these keys changes the background color. The BINDINGS list maps keys to action strings.\n\n```python\nfrom textual.app import App, ComposeResult\nfrom textual.widgets import Static\n\nTEXT = \"\"\"\n[b]Set your background[/b]\n[@click=app.set_background('red')]Red[/]\n[@click=app.set_background('green')]Green[/]\n[@click=app.set_background('blue')]Blue[/]\n\"\"\"\n\n\nclass ActionsApp(App):\n    BINDINGS = [\n        (\"r\", \"set_background('red')\", \"Red\"),\n        (\"g\", \"set_background('green')\", \"Green\"),\n        (\"b\", \"set_background('blue')\", \"Blue\"),\n    ]\n\n    def compose(self) -> ComposeResult:\n        yield Static(TEXT)\n\n    def action_set_background(self, color: str) -> None:\n        self.screen.styles.background = color\n\n\nif __name__ == \"__main__\":\n    app = ActionsApp()\n    app.run()\n```",
+    "url": "https://textual.textualize.io/guide/actions",
+    "source": "context7"
+  },
+  {
+    "library": "/websites/textual_textualize_io",
+    "title": "Define key bindings with BINDINGS class variable",
+    "snippet": "Binds keys R, G, and B to an action that adds a colored bar widget. The BINDINGS list contains tuples of key, action, and description. The action method receives the color string and mounts a new Bar widget.\n\n```python\nfrom textual.app import App, ComposeResult\nfrom textual.color import Color\nfrom textual.widgets import Footer, Static\n\n\nclass Bar(Static):\n    pass\n\n\nclass BindingApp(App):\n    CSS_PATH = \"binding01.tcss\"\n    BINDINGS = [\n        (\"r\", \"add_bar('red')\", \"Add Red\"),\n        (\"g\", \"add_bar('green')\", \"Add Green\"),\n        (\"b\", \"add_bar('blue')\", \"Add Blue\"),\n    ]\n\n    def compose(self) -> ComposeResult:\n        yield Footer()\n\n    def action_add_bar(self, color: str) -> None:\n        bar = Bar(color)\n        bar.styles.background = Color.parse(color).with_alpha(0.5)\n        self.mount(bar)\n        self.call_after_refresh(self.screen.scroll_end, animate=False)\n\n\nif __name__ == \"__main__\":\n    app = BindingApp()\n    app.run()\n```\n\n```css\nBar {\n    height: 5;\n    content-align: center middle;\n    text-style: bold;\n    margin: 1 2;\n    color: $text;\n}\n```",
+    "url": "https://textual.textualize.io/guide/input",
+    "source": "context7"
+  },
+  {
+    "library": "/websites/textual_textualize_io",
+    "title": "bind(keys, action, *, description=\"\", show=True, key_display=None)",
+    "snippet": "Binds a key or comma-separated list of keys to an action. Note: This method may be private or removed in a future version; see dynamic actions for a more flexible alternative.\n\n```APIDOC\n## bind(keys, action, *, description=\"\", show=True, key_display=None)\n\n### Description\nBind a key to an action. Warning: This method may be private or removed in a future version of Textual. See dynamic actions for a more flexible alternative to updating bindings.\n\n### Method\nbind\n\n### Parameters\n- **keys** (`str`) - Required - A comma separated list of keys, i.e.\n- **action** (`str`) - Required - Action to bind to.\n- **description** (`str`) - Optional - Short description of action. Default: `''`\n- **show** (`bool`) - Optional - Show key in UI. Default: `True`\n- **key_display** (`str | None`) - Optional - Replacement text for key, or None to use default. Default: `None`\n```",
+    "url": "https://textual.textualize.io/api/app",
+    "source": "context7"
+  },
+  {
+    "library": "/websites/textual_textualize_io",
+    "title": "BindingsMap.bind",
+    "snippet": "Binds keys to an action. Allows specifying a description, whether to show in the footer, a custom key display, and priority.\n\n```APIDOC\n## bind(keys, action, description=\"\", show=True, key_display=None, priority=False)\n\n### Description\nBinds keys to an action.\n\n### Parameters\n- **keys** (str) - Required - The keys to bind. Can be a comma-separated list of keys.\n- **action** (str) - Required - The action to bind the keys to.\n- **description** (str) - Optional - An optional description for the binding. Default: `''`.\n- **show** (bool) - Optional - A flag to say if the binding should appear in the footer. Default: `True`.\n- **key_display** (str | None) - Optional - Optional string to display in the footer for the key. Default: `None`.\n- **priority** (bool) - Optional - Is this a priority binding, checked form app down to focused widget? Default: `False`.\n```",
+    "url": "https://textual.textualize.io/api/binding",
+    "source": "context7"
+  }
+]
