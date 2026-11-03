@@ -3,16 +3,17 @@ package extract
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/1broseidon/ketch/internal/failure"
 
 	pdf "github.com/ledongthuc/pdf"
 )
 
 // ErrPDFNoText reports a valid PDF with no extractable text layer.
-var ErrPDFNoText = errors.New("PDF contains no extractable text")
+var ErrPDFNoText = failure.New(failure.Precondition, "pdf_no_text", "PDF contains no extractable text")
 
 // PDFExtractor converts PDF bytes into markdown-compatible text.
 type PDFExtractor interface {

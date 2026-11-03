@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/1broseidon/ketch/cache"
+	"github.com/1broseidon/ketch/internal/failure"
 	"github.com/1broseidon/ketch/scrape"
 	"github.com/spf13/cobra"
 )
@@ -132,7 +133,7 @@ func runTagAdd(cmd *cobra.Command, args []string) error {
 	for _, url := range args[1:] {
 		cached, err := index.TagURL(name, tagCacheKey(scraper, url), url)
 		if err != nil {
-			return exitErrf(ExitPrecondition, "save bookmark: %v", err)
+			return classified(err, failure.Precondition, "save bookmark: %w", err)
 		}
 		tagged = append(tagged, url)
 		if !cached {
@@ -162,7 +163,7 @@ func runTagShow(cmd *cobra.Command, args []string) error {
 	}
 	view, err := cache.NewTagIndex(tagTTL(), nil).ShowTag(args[0], limit)
 	if err != nil {
-		return exitErrf(ExitPrecondition, "read bookmarks: %v", err)
+		return classified(err, failure.Precondition, "read bookmarks: %w", err)
 	}
 	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
 	minimal, _ := cmd.Flags().GetBool("minimal")
@@ -205,7 +206,7 @@ func runTagShow(cmd *cobra.Command, args []string) error {
 func runTagList(cmd *cobra.Command, _ []string) error {
 	tags, err := cache.NewTagIndex(tagTTL(), nil).TagList()
 	if err != nil {
-		return exitErrf(ExitPrecondition, "list bookmarks: %v", err)
+		return classified(err, failure.Precondition, "list bookmarks: %w", err)
 	}
 	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
 	if asJSON {
@@ -242,7 +243,7 @@ func runTagRemove(cmd *cobra.Command, args []string) error {
 		removed, missing, err = index.RemoveTagged(name, args[1:])
 	}
 	if err != nil {
-		return exitErrf(ExitPrecondition, "remove bookmarks: %v", err)
+		return classified(err, failure.Precondition, "remove bookmarks: %w", err)
 	}
 	if removed == 0 {
 		return exitErrf(ExitNotFound, "nothing removed: %q holds no such entries", name)

@@ -1,15 +1,16 @@
 package docs
 
 import (
-	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/1broseidon/ketch/internal/failure"
 
 	config "github.com/1broseidon/ketch/internal/configbase"
 )
 
 // ErrUnknownBackend identifies an unknown docs provider; unavailable providers are preconditions.
-var ErrUnknownBackend = errors.New("unknown docs backend")
+var ErrUnknownBackend = failure.New(failure.Validation, "unknown_backend", "unknown docs backend")
 
 // NewFromConfig constructs a backend through its provider-owned descriptor,
 // or the auto chain (AutoBackend).

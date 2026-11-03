@@ -7,10 +7,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/1broseidon/ketch/internal/failure"
 )
 
 // ErrNoBrowser is returned when browser rendering is needed but not configured.
-var ErrNoBrowser = errors.New("no browser configured (set with: ketch config set browser chrome)")
+var ErrNoBrowser = failure.New(failure.Precondition, "no_browser", "no browser configured (set with: ketch config set browser chrome)")
 
 // BrowserConn represents a connection to a headless browser for JS rendering.
 type BrowserConn interface {

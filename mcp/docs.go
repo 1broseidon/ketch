@@ -104,7 +104,7 @@ func (s *Server) registerDocsTool() {
 
 		searcher, err := docs.NewFromConfig(s.cfg, backend, s.docsDeps(ctx))
 		if err != nil {
-			return nil, DocsOutput{}, backendErrf(err, docs.ErrUnknownBackend)
+			return nil, DocsOutput{}, backendErrf(err)
 		}
 
 		var results []docs.Result
@@ -177,7 +177,7 @@ func (s *Server) libraryResolver(ctx context.Context, backend string) (docs.Libr
 	}
 	searcher, err := docs.NewFromConfig(s.cfg, backend, s.docsDeps(ctx))
 	if err != nil {
-		return nil, backendErrf(err, docs.ErrUnknownBackend)
+		return nil, backendErrf(err)
 	}
 	resolver, ok := searcher.(docs.LibraryResolver)
 	if !ok {

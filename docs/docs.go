@@ -2,9 +2,10 @@ package docs
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/1broseidon/ketch/internal/failure"
 )
 
 // ErrNotFound reports a docs resource that is permanently absent upstream —
@@ -12,13 +13,13 @@ import (
 // this package (never by string matching at the surfaces) so both the CLI and
 // the MCP server classify it as not-found (exit 3 / [not_found]) rather than
 // a retryable upstream failure.
-var ErrNotFound = errors.New("not found")
+var ErrNotFound = failure.New(failure.NotFound, "not_found", "not found")
 
 // ErrLibraryRequired reports a docs request the backend cannot answer
 // without knowing which library's docs to search — for the web backend, a
 // docs URL passed as the library. Both surfaces classify it as a validation
 // error (CLI exit 2 / MCP [validation]): the caller fixes it by adding one.
-var ErrLibraryRequired = errors.New("library required")
+var ErrLibraryRequired = failure.New(failure.Validation, "library_required", "library required")
 
 // ErrAmbiguousLibrary reports a library name that more than one verified
 // project answers to, where exactly one is needed (a search, or docs for a
@@ -26,7 +27,7 @@ var ErrLibraryRequired = errors.New("library required")
 // ErrLibraryRequired: the caller fixes it by passing one of the candidates
 // as the library, so both surfaces classify it as a validation error (CLI
 // exit 2 / MCP [validation]) without a rule of their own.
-var ErrAmbiguousLibrary = errors.New("ambiguous library")
+var ErrAmbiguousLibrary = failure.New(failure.Validation, "ambiguous", "ambiguous library")
 
 // AmbiguousLibraryError is a library name that more than one project
 // answers to. It carries the candidates so a caller can list or pick one,

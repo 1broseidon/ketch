@@ -10,6 +10,7 @@ import (
 
 	"github.com/1broseidon/ketch/code"
 	"github.com/1broseidon/ketch/config"
+	"github.com/1broseidon/ketch/internal/failure"
 	"github.com/spf13/cobra"
 )
 
@@ -91,8 +92,7 @@ func codeSearchErr(err error, backend string) error {
 	case errors.Is(err, code.ErrRegexpUnsupported):
 		// Validation, not precondition: the request is wrong for this
 		// backend and no operator action or retry can make it succeed.
-		// Mirrors the MCP code tool's [validation] classification.
-		return exitErrf(ExitValidation, "backend %q does not support --regex (try -b %s)", backend, strings.Join(code.RegexpBackends(), " or -b "))
+		return classified(err, failure.Upstream, "backend %q does not support --regex (try -b %s)", backend, strings.Join(code.RegexpBackends(), " or -b "))
 	case errors.Is(err, code.ErrRepoNotFound):
 		err = fmt.Errorf("%w (try -b %s)", err, strings.Join(code.Alternatives(backend), " or -b "))
 	}
@@ -168,7 +168,7 @@ func printCodeResults(q code.Query, backend string, results []code.Result) {
 func newCodeSearcher(backend string) (code.Searcher, error) {
 	s, err := code.NewFromConfig(&cfg, backend)
 	if err != nil {
-		return nil, backendErr(err, code.ErrUnknownBackend)
+		return nil, backendErr(err)
 	}
 	return s, nil
 }

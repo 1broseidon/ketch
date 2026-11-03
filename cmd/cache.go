@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/1broseidon/ketch/cache"
+	"github.com/1broseidon/ketch/internal/failure"
 	"github.com/spf13/cobra"
 	bolterrors "go.etcd.io/bbolt/errors"
 )
@@ -139,7 +140,7 @@ func runCacheClear(cmd *cobra.Command, _ []string) error {
 	}
 	if err := c.Clear(); err != nil {
 		if errors.Is(err, bolterrors.ErrTimeout) {
-			return exitErrf(ExitPrecondition, "cache is busy in another process; try again: %w", err)
+			return classified(err, failure.Upstream, "cache is busy in another process; try again: %w", err)
 		}
 		return err
 	}

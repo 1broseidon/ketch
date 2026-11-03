@@ -9,6 +9,7 @@ import (
 
 	"github.com/1broseidon/ketch/code"
 	"github.com/1broseidon/ketch/internal/configbase"
+	"github.com/1broseidon/ketch/internal/failure"
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -64,7 +65,7 @@ func (s *Server) registerCodeTool() {
 
 		searcher, err := code.NewFromConfig(s.cfg, backend)
 		if err != nil {
-			return nil, CodeOutput{}, backendErrf(err, code.ErrUnknownBackend)
+			return nil, CodeOutput{}, backendErrf(err)
 		}
 
 		q := code.Query{
@@ -92,7 +93,7 @@ func (s *Server) registerCodeTool() {
 func codeSearchErrf(err error, backend string) error {
 	switch {
 	case errors.Is(err, code.ErrRegexpUnsupported):
-		return errf(kindValidation, "backend %q does not support regexp (try backend=%s)", backend, strings.Join(code.RegexpBackends(), " or backend="))
+		return classifiedf(err, failure.Upstream, "backend %q does not support regexp (try backend=%s)", backend, strings.Join(code.RegexpBackends(), " or backend="))
 	case errors.Is(err, code.ErrRepoNotFound):
 		err = fmt.Errorf("%w (try backend=%s)", err, strings.Join(code.Alternatives(backend), " or backend="))
 	}

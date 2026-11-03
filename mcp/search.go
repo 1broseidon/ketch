@@ -84,7 +84,7 @@ func (s *Server) runSearch(ctx context.Context, in SearchInput) (SearchOutput, e
 	}
 	searcher, err := search.NewFromConfig(s.cfg, backend, in.SearxngURL)
 	if err != nil {
-		return SearchOutput{}, backendErrf(err, search.ErrUnknownBackend)
+		return SearchOutput{}, backendErrf(err)
 	}
 	var results []search.Result
 	// The auto chain dispatches to one of several providers, so report which
@@ -140,7 +140,7 @@ func (s *Server) runMultiSearch(ctx context.Context, in SearchInput, limit int) 
 
 	m, err := search.NewMultiFromConfig(s.cfg, names, in.SearxngURL)
 	if err != nil {
-		return SearchOutput{}, backendErrf(err, search.ErrUnknownBackend)
+		return SearchOutput{}, backendErrf(err)
 	}
 
 	results, berrs, err := m.Search(ctx, in.Query, limit)
@@ -184,7 +184,7 @@ func (s *Server) runRandomSearch(ctx context.Context, in SearchInput, limit int)
 
 	randomSearch, err := search.NewRandomFromConfig(s.cfg, names, in.SearxngURL)
 	if err != nil {
-		return SearchOutput{}, backendErrf(err, search.ErrUnknownBackend)
+		return SearchOutput{}, backendErrf(err)
 	}
 	results, selected, failures, err := randomSearch.Search(ctx, in.Query, limit)
 	if err != nil {

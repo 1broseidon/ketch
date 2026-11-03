@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/1broseidon/ketch/docs"
+	"github.com/1broseidon/ketch/internal/failure/failuretest"
 )
 
 // An ambiguous library name is input the caller fixes by picking one
@@ -29,5 +30,19 @@ func TestUpstreamErrAmbiguousLibraryIsValidation(t *testing.T) {
 	}
 	if !errors.As(err, &amb) {
 		t.Error("the candidates must stay reachable with errors.As")
+	}
+}
+
+// The CLI's exit codes and the MCP prefixes come from one table
+// (internal/failure/failuretest); mcp's TestUpstreamErrfClassification walks
+// the same cases.
+func TestUpstreamErrParity(t *testing.T) {
+	for _, tc := range failuretest.Cases() {
+		t.Run(tc.Name, func(t *testing.T) {
+			var exitErr *ExitError
+			if err := upstreamErr(tc.Err, "x"); !errors.As(err, &exitErr) || exitErr.Code != tc.Kind.ExitCode() {
+				t.Errorf("upstreamErr = %v, want exit %d (%s)", err, tc.Kind.ExitCode(), tc.Kind)
+			}
+		})
 	}
 }

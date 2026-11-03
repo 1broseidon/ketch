@@ -52,10 +52,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/1broseidon/ketch/internal/failure"
 )
 
 // ErrUnrecorded is the replay error for a request the recorded world lacks.
-var ErrUnrecorded = errors.New("ketch bench replay: unrecorded request")
+var ErrUnrecorded = failure.New(failure.Upstream, "unrecorded", "ketch bench replay: unrecorded request")
 
 const (
 	envRecord = "KETCH_HTTP_RECORD"

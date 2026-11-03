@@ -11,6 +11,8 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/1broseidon/ketch/internal/failure"
+
 	"github.com/1broseidon/ketch/extract"
 	"github.com/1broseidon/ketch/scrape"
 )
@@ -21,7 +23,7 @@ import (
 // ErrTagsUnsupported is returned when the configured Store cannot hold tags.
 // Store has no enumeration by design (Get/Put/Stats/Clear/Close), so tags
 // need a capability the interface does not describe; BBoltStore has it.
-var ErrTagsUnsupported = errors.New("the configured cache backend does not support tags")
+var ErrTagsUnsupported = failure.New(failure.Precondition, "tags_unsupported", "the configured cache backend does not support tags")
 
 // ErrNotCached is no longer returned: a URL can be tagged whether or not its
 // body is cached. Kept so callers compiled against the old behaviour still
@@ -29,7 +31,7 @@ var ErrTagsUnsupported = errors.New("the configured cache backend does not suppo
 //
 // Deprecated: tagging an uncached URL succeeds and yields an entry with no
 // title or description until the page is fetched.
-var ErrNotCached = errors.New("page is not in the cache")
+var ErrNotCached = failure.New(failure.NotFound, "not_cached", "page is not in the cache")
 
 // descriptionMax bounds a derived description. Long enough to tell two pages
 // on the same site apart, short enough that a tag of fifty pages still reads

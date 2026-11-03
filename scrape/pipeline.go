@@ -2,13 +2,14 @@ package scrape
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 	"os"
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/1broseidon/ketch/internal/failure"
 
 	"github.com/1broseidon/ketch/config"
 	"github.com/1broseidon/ketch/cookies"
@@ -36,13 +37,13 @@ type PageCache interface {
 var (
 	// ErrBadSelector wraps selector-extraction failures (typically an invalid
 	// CSS selector) — a caller-input problem, not an upstream fault.
-	ErrBadSelector = errors.New("selector extraction failed")
+	ErrBadSelector = failure.New(failure.Validation, "bad_selector", "selector extraction failed")
 	// ErrSelectorNoMatch reports that the selector matched no elements.
-	ErrSelectorNoMatch = errors.New("no elements matched selector")
+	ErrSelectorNoMatch = failure.New(failure.NotFound, "no_match", "no elements matched selector")
 	// ErrPDFSelectorUnsupported reports that CSS selectors only apply to HTML.
-	ErrPDFSelectorUnsupported = errors.New("CSS selector extraction is not supported for PDF documents")
+	ErrPDFSelectorUnsupported = failure.New(failure.Validation, "pdf_selector_unsupported", "CSS selector extraction is not supported for PDF documents")
 	// ErrPDFRawUnsupported reports that returning PDF binary data is forbidden.
-	ErrPDFRawUnsupported = errors.New("raw output is not supported for PDF documents")
+	ErrPDFRawUnsupported = failure.New(failure.Validation, "pdf_raw_unsupported", "raw output is not supported for PDF documents")
 )
 
 // NewFromConfig builds a Scraper from cfg: compiled URL rewriter, optional

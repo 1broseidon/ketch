@@ -258,7 +258,7 @@ func newDocSearcher(cmd *cobra.Command, backend string) (docs.Searcher, *docsFet
 	fetcher := &docsFetcher{newScraper: func() (*scrape.Scraper, error) { return newDocsScraper(cmd) }}
 	s, err := docs.NewFromConfig(&cfg, backend, docs.Deps{Fetcher: fetcher})
 	if err != nil {
-		return nil, nil, backendErr(err, docs.ErrUnknownBackend)
+		return nil, nil, backendErr(err)
 	}
 	return s, fetcher, nil
 }
