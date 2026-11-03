@@ -252,9 +252,10 @@ $ ketch docs -b local --library fastapi "dependencies with yield"  # …then ans
 | --- | --- |
 | `--backend, -b` | `context7` (default), `local` (the local index), `web`, `auto` (local, then web, then Context7) |
 | `--library` | A library ID from `--resolve`, or for `web` any library spec (below), or for `local` an indexed library's name, spec or docs root; skips the resolve step |
-| `--tokens` | Token budget, default 4000 |
+| `--tokens` | Token budget, default 4000 (`local` snippets: about 1,200) |
 | `--resolve` | Resolve the query as a library name or spec instead of searching |
 | `--limit, -l` | Max results; with `--library`, only `--tokens` bounds them unless set |
+| `--sections` | `local`: the nearest sections grouped by page instead of code-first snippets |
 | `--minimal` | One result per line |
 | `--tag <name>` | Bookmark every result URL under a tag |
 
@@ -396,8 +397,11 @@ $ ketch model install                              # optional: bge-base (438 MB)
 $ ketch docs index https://docs.astro.build/en/    # a docs URL, taken as the root
 $ ketch docs index fastapi                         # or a name or spec, resolved like web resolves one
 $ ketch docs index django@5.2 --max-pages 800
+$ ketch docs index vue-router@3                    # another version, indexed beside the current one
 $ ketch docs -b local --library fastapi "how do I run code after the response is sent"
+$ ketch docs -b local --library vue-router@3 "router.push onComplete onAbort"
 $ ketch docs -b local "content collections schema in astro"   # a bare query names its library
+$ ketch docs -b local --sections --library fastapi "background tasks"   # grouped page sections
 $ ketch docs index --list
 $ ketch docs index --remove fastapi
 ```
@@ -410,30 +414,84 @@ exactly as `-b web` resolves one, so an ambiguous name exits **2** listing the
 candidates and a name nothing verifies exits **3**, and you pass the docs URL
 you mean instead. It then reads the site's own page lists (`llms.txt` and
 `llms-full.txt`, its sitemaps, its search index and nav links), keeps the
-pages under the root in its locale and version (translations and other
-releases' copies are left out), honours `robots.txt`, fetches up to
+pages under the root in its locale and version, honours `robots.txt`, fetches up to
 `--max-pages` pages (1,500 by default) `--concurrency` at a time (4) through
 the scrape pipeline and page cache, splits them into heading sections (never
-inside a code block), and embeds each section with the installed model; a long
+inside a code block), cuts each section into snippet units (below), and embeds
+each section and each unit with the installed model; a long
 section is embedded in several windows so none of it falls past the model's
 512-token window. Progress goes to stderr; the summary (pages, sections,
-vectors, time, index size) to stdout, or as JSON with `--json`. Running it
+snippets, vectors, time, index size) to stdout, or as JSON with `--json`.
+
+**One index is one version.** `name@version` (or `--version`) indexes that
+version's docs root, found from the site's own version list as `-b web` finds
+it (`vue-router@3` is `v3.router.vuejs.org`, `django@5.2` is `/en/5.2/`); with
+no version, the current docs. Only that version's tree is kept: other hosts
+and paths outside a versioned root never qualify, and below the root a tree
+the site's version list names as another version, a release or channel
+directory right below the root (Docusaurus's `/docs/2.x/` and `/docs/next/`,
+mike's `/1.0/`, `/latest/`), and a tree made mostly of copies of the current
+pages are left out (the summary counts them). Trees that are no version, such
+as a REST reference's `/api/v1/`, stay. The version is stored with the index,
+and several versions of a library sit side by side, each under its own docs
+root. `--library name@version` answers from that version alone; a version
+that is not indexed exits **3** with reason `not_indexed`, naming the versions
+that are. Without a version, the newest indexed one answers (the current docs
+before any release): `version:` in the output and each result's `version`
+say which, and a note names the others. A page in the indexed tree about a
+later major, such as a v3 page "Migrating to v4", is kept, labelled with that
+version, and ranks lower unless the question is about migrating or names that
+version. Running it
 again refreshes the library: pages come back through the page cache and only
 those whose content changed are sectioned and embedded again, and pages the
 site no longer lists are dropped. `--name` adds a name queries may call the
-library by (names are otherwise taken from the spec, its packages, its title
-and its docs host).
+library by. Otherwise a library answers only to its full identity: the name
+it was indexed by, its package names (with or without the ecosystem prefix
+and separators: `vue-router`, `npm:vue-router`, `vuerouter`), its
+repositories (`vuejs/router`), the last part of a scoped package or
+repository, and its docs host's distinctive label, never to one word of a
+longer name it goes by (`vue` or `router` do not name Vue Router, `query`
+does not name TanStack Query), and a host label yields to a library whose
+full name it is. With only Vue Router indexed, `--library vue` or "vue
+v-model on a custom component" is `not_indexed`, not Vue Router's docs.
 
-`-b local` answers with no network: it embeds the question, ranks the
-library's sections by cosine similarity, and returns about ten results, one
-per page, best page first. Each is the page's best section, under that
-section's anchor and breadcrumb, followed by the page's other near sections as
-`### heading` parts, all within `--tokens`; a long section cut to fit keeps
-the paragraphs and code that name the question's words, marked `[…]`. Every
-result's `source` is `local`. The answer is a set to choose from: read the
-results and use the one that answers. A library the index does not hold exits
+`-b local` answers with no network, as **code-first snippets**. At index time
+each section is cut into units: every fenced code block (consecutive blocks,
+such as a TypeScript and a JavaScript tab, together) with the one to three
+sentences just before it, and the prose no code block claims (a section with
+no code gives its first ~600 characters, cut at a sentence end). Units are
+the docs' own words, never rewritten; `…` marks a sentence cut short. A query
+ranks the units by cosine similarity (half the unit's own, half its section's
+best), nudged up by the share of the identifiers the question writes
+(`useEffect`, `res.json()`, `onComplete`) that a unit names and, the view
+being code first, for code (a single listing over 2,000 bytes is nudged down
+instead), and returns the best ones, never two near-duplicates, at most two
+from one section and three from one page, within about 1,200 tokens and 8
+snippets (`--tokens` and `--limit` change both). Each is printed as
+
+````
+### Page > Section > Subsection
+The sentence or two before the code.
+
+```ts
+the code, verbatim
+```
+
+source: https://site/page#anchor
+````
+
+and with `--json` (or over MCP) as a result whose `breadcrumb` is the heading
+path, `snippet` the explanation and code, and `url` the section's address.
+`--sections` (MCP `sections: true`) returns the earlier view instead: about
+ten results, one per page, best page first, each the page's best section
+followed by the page's other near sections as `### heading` parts, within
+`--tokens` (4,000 by default), a long section cut to fit keeping the
+paragraphs and code that name the question's words, marked `[…]`. Every
+result's `source` is `local`. A library the index does not hold exits
 **3** with reason `not_indexed`; nothing matched exits **3** with
-`no_results`.
+`no_results`. A library indexed by an older ketch (index format 1) is not
+read: the query fails with reason `index_outdated` (exit 5) until `ketch docs
+index <library>` rebuilds it, which it does on its own.
 
 The embedding model is optional. Without one (`ketch model install` was never
 run), `docs index` stores the text alone and `-b local` ranks it by keywords

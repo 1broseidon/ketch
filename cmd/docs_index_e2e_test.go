@@ -39,7 +39,8 @@ func TestDocsIndexFixtureSitesCLI(t *testing.T) {
 }
 
 // checkLocalTop asserts -b local answers fx's query with fx's section,
-// ranked by keywords and saying so.
+// ranked by keywords and saying so, as snippets by default and as grouped
+// sections with --sections.
 func checkLocalTop(t *testing.T, site *fixtureSite, fx docsFixture, library string) {
 	t.Helper()
 	code, out, stderr := cli(t, "--json", "docs", "-b", "local", "--library", library, fx.query)
@@ -55,6 +56,17 @@ func checkLocalTop(t *testing.T, site *fixtureSite, fx docsFixture, library stri
 	}
 	if !strings.Contains(stderr, "note: ranked by keywords: this library was indexed without an embedding model") {
 		t.Errorf("stderr should say the answer was ranked by keywords: %q", stderr)
+	}
+	// The text output renders snippets as Markdown; --sections keeps the
+	// grouped page view.
+	top := results[0]
+	code, out, stderr = cli(t, "docs", "-b", "local", "--library", library, fx.query)
+	if code != 0 || !strings.Contains(out, "### "+top.Breadcrumb+"\n\n") || !strings.Contains(out, "\n\nsource: "+top.URL+"\n") {
+		t.Errorf("snippet output (exit %d):\n%s%s", code, out, stderr)
+	}
+	code, out, _ = cli(t, "docs", "-b", "local", "--sections", "--library", library, fx.query)
+	if code != 0 || !strings.Contains(out, "---\n[") || !strings.Contains(out, "\n  source: ") {
+		t.Errorf("--sections output (exit %d):\n%s", code, out)
 	}
 }
 

@@ -156,31 +156,45 @@ func TestIndexBuildKeepsOneVariantPerPage(t *testing.T) {
 	if !slices.Contains(lib.Names, "example") {
 		t.Errorf("names %v should include the host's distinctive label", lib.Names)
 	}
-	windows := checkWindows(t, store)
-	if windows != lib.Vectors || int(emb.passages.Load()) != windows || r.Embedded != windows {
-		t.Errorf("windows: stored %d, library %d, embedded %d/%d", windows, lib.Vectors, emb.passages.Load(), r.Embedded)
+	windows, units := checkWindows(t, store)
+	if windows != lib.Vectors || units != lib.Units || units == 0 || int(emb.passages.Load()) != windows+units || r.Embedded != windows+units {
+		t.Errorf("windows: stored %d, library %d; units: stored %d, library %d; embedded %d/%d", windows, lib.Vectors, units, lib.Units, emb.passages.Load(), r.Embedded)
+	}
+}
+
+// The build records the index format and how many pages of other
+// versions it left out (the v1 tree's two).
+func TestIndexBuildCountsOtherVersions(t *testing.T) {
+	r := buildIndex(t, exampleSite(), newStore(t), nil)
+	if r.Library.OtherVersions != 2 || r.Library.Format != docsindex.FormatVersion || r.Library.Units == 0 {
+		t.Errorf("library = %+v", r.Library)
 	}
 }
 
 // checkWindows asserts every stored section has vectors, the long one
-// several, and returns how many there are.
-func checkWindows(t *testing.T, store *docsindex.Store) int {
+// several, and one vector per snippet unit, and returns how many windows
+// and units there are.
+func checkWindows(t *testing.T, store *docsindex.Store) (int, int) {
 	t.Helper()
 	secs, err := store.Sections(idxRoot, bowDims, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	windows := 0
+	windows, units := 0, 0
 	for _, s := range secs {
 		if len(s.Vectors) == 0 {
 			t.Errorf("section %q has no vectors", s.Heading)
 		}
+		if len(s.Units) == 0 || len(s.UnitVectors) != len(s.Units) {
+			t.Errorf("section %q has %d units and %d unit vectors", s.Heading, len(s.Units), len(s.UnitVectors))
+		}
 		windows += len(s.Vectors)
+		units += len(s.Units)
 		if s.Heading == "Writing middleware" && len(s.Vectors) < 2 {
 			t.Errorf("a %d-byte section must be embedded as several windows, got %d", len(s.Text), len(s.Vectors))
 		}
 	}
-	return windows
+	return windows, units
 }
 
 // Running a build again re-embeds only what changed: nothing when nothing
@@ -199,7 +213,7 @@ func TestIndexRefreshEmbedsOnlyChangedPages(t *testing.T) {
 	sm.body = strings.Replace(sm.body, "<url><loc>https://docs.example.test/docs/api/v2/users</loc></url>", "", 1)
 	f.raw["https://docs.example.test/sitemap.xml"] = sm
 	r = buildIndex(t, f, store, emb)
-	if r.Changed != 1 || r.Unchanged != 3 || r.Removed != 1 || r.Embedded != 2 {
+	if r.Changed != 1 || r.Unchanged != 3 || r.Removed != 1 || r.Embedded != 4 { // two windows, two units
 		t.Errorf("one page changed, one dropped: %+v", r)
 	}
 	if got := storedURLs(t, store); slices.Contains(got, "api/v2/users") {
@@ -221,7 +235,8 @@ func TestIndexModelChangeReembeds(t *testing.T) {
 		t.Errorf("a library embedded with another model = %s/%s %q", o.Status, o.Reason, o.Note)
 	}
 	r := buildIndex(t, f, store, other)
-	if r.Changed != 5 || int(other.passages.Load()) != first.Library.Vectors || r.Library.Model != "test/other" {
+	passages := first.Library.Vectors + first.Library.Units
+	if r.Changed != 5 || int(other.passages.Load()) != passages || r.Library.Model != "test/other" {
 		t.Errorf("model change re-run = %+v (%d embedded)", r, other.passages.Load())
 	}
 	calls := len(f.called())
@@ -230,7 +245,7 @@ func TestIndexModelChangeReembeds(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(f.called()) != calls || rr.Library.Model != "test/third" || rr.Embedded != first.Library.Vectors {
+	if len(f.called()) != calls || rr.Library.Model != "test/third" || rr.Embedded != passages || rr.Library.Vectors != first.Library.Vectors {
 		t.Errorf("reembed = %+v, %d fetches", rr, len(f.called())-calls)
 	}
 	if lib, _, _ := store.Library(idxRoot); lib.Model != "test/third" || lib.Vectors != first.Library.Vectors {
@@ -238,14 +253,16 @@ func TestIndexModelChangeReembeds(t *testing.T) {
 	}
 }
 
-// The local backend ranks a library's sections by cosine and returns one
-// result per page, best page first: its best section under that
-// section's address, the page's other near sections as parts after it.
+// With Sections, the local backend ranks a library's sections by cosine
+// and returns one result per page, best page first: its best section
+// under that section's address, the page's other near sections as parts
+// after it.
 func TestLocalRanksAndGroupsByPage(t *testing.T) {
 	f, store, emb := exampleSite(), newStore(t), &bowEmbedder{id: "test/bow"}
 	buildIndex(t, f, store, emb)
 	l := NewLocal(store, func() (embed.Embedder, error) { return emb, nil })
-	o := l.GetDocsSelect(context.Background(), "example", "add middleware to a route", 0)
+	ctx := WithLocalOptions(context.Background(), LocalOptions{Sections: true})
+	o := l.GetDocsSelect(ctx, "example", "add middleware to a route", 0)
 	if o.Status != Answered || o.Backend != "local" || o.Reason != "" || len(o.Results) == 0 {
 		t.Fatalf("outcome = %+v", o)
 	}
@@ -267,7 +284,7 @@ func TestLocalRanksAndGroupsByPage(t *testing.T) {
 	if total := snippetBytes(o.Results); total > webDefaultTokens*webCharsPerToken {
 		t.Errorf("%d snippet bytes exceed the budget", total)
 	}
-	small := l.GetDocsSelect(context.Background(), idxRoot, "add middleware to a route", 100)
+	small := l.GetDocsSelect(WithLocalOptions(context.Background(), LocalOptions{Sections: true, Tokens: 100}), idxRoot, "add middleware to a route", 0)
 	if total := snippetBytes(small.Results); total > 100*webCharsPerToken+len(small.Results)*webMinTrimBytes {
 		t.Errorf("a 100-token budget returned %d bytes", total)
 	}
@@ -391,9 +408,10 @@ func TestFairShares(t *testing.T) {
 }
 
 // One variant per page: a page's other-locale and other-release copies go,
-// and a whole old-release tree with them; but a page whose last segment
-// only looks like a version (a tutorial's step 2, an upgrade guide to v5)
-// is a page of its own.
+// and a whole old-release tree with them, a release channel's landing page
+// right below the root too (stable/); but a page whose last segment only
+// looks like a version (a tutorial's step 2, an upgrade guide to v5) is a
+// page of its own.
 func TestKeepOneVariant(t *testing.T) {
 	root, _ := parseWebRoot("https://docs.example.test/en/")
 	var links []webLink
@@ -406,17 +424,20 @@ func TestKeepOneVariant(t *testing.T) {
 		links = append(links, webLink{url: u})
 	}
 	var got []string
-	for _, l := range keepOneVariant(links, root) {
+	kept, _ := keepOneVariant(links, root, nil)
+	for _, l := range kept {
 		got = append(got, strings.TrimPrefix(l.url.Path, "/en/"))
 	}
-	want := []string{"guides/routing/", "tutorial/1-setup/", "tutorial/1-setup/1/", "tutorial/1-setup/2/", "guides/upgrade-to/v4/", "guides/upgrade-to/v5/", "stable/"}
+	want := []string{"guides/routing/", "tutorial/1-setup/", "tutorial/1-setup/1/", "tutorial/1-setup/2/", "guides/upgrade-to/v4/", "guides/upgrade-to/v5/"}
 	if !slices.Equal(got, want) {
 		t.Errorf("kept %v\nwant %v", got, want)
 	}
 }
 
 // A library's names come from what it was indexed by and its docs host,
-// and --name aliases stay across builds that do not repeat them.
+// and --name aliases stay across builds that do not repeat them. The host
+// label "example" is one word of the alias "Example Kit", so it is no
+// longer a name of its own.
 func TestIndexNamesKeepAliases(t *testing.T) {
 	f, store := exampleSite(), newStore(t)
 	req := IndexRequest{Library: idxRoot, Names: []string{"Example Kit"}}
@@ -424,7 +445,7 @@ func TestIndexNamesKeepAliases(t *testing.T) {
 		t.Fatal(err)
 	}
 	r := buildIndex(t, f, store, nil)
-	if !slices.Contains(r.Library.Names, "examplekit") || !slices.Contains(r.Library.Names, "example") || !slices.Equal(r.Library.Aliases, []string{"Example Kit"}) {
+	if !slices.Contains(r.Library.Names, "examplekit") || slices.Contains(r.Library.Names, "example") || !slices.Equal(r.Library.Aliases, []string{"Example Kit"}) {
 		t.Errorf("names %v, aliases %v", r.Library.Names, r.Library.Aliases)
 	}
 	if lib, err := pickIndexed([]docsindex.Library{r.Library}, "example kit"); err != nil || lib.Root != idxRoot {

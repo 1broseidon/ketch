@@ -5,11 +5,13 @@
 // indexing run.
 //
 // Each indexed docs root is a library: its metadata in the libraries
-// bucket, and its pages, sections and section vectors in a bucket of its
-// own. Vectors are float16 (embed.AppendHalf), one or more per section
-// (a long section is embedded as several windows), and are only
-// comparable with vectors of the model recorded in the library's
-// metadata.
+// bucket, and its pages, sections, section vectors, snippet units and
+// unit vectors in a bucket of its own. One library is one version of one
+// library's docs (its root is that version's docs root), so several
+// versions sit side by side under their own keys. Vectors are float16
+// (embed.AppendHalf), one or more per section (a long section is embedded
+// as several windows) and one per unit, and are only comparable with
+// vectors of the model recorded in the library's metadata.
 package docsindex
 
 import (
@@ -27,8 +29,10 @@ import (
 )
 
 // FormatVersion is the index layout this code writes. A library written
-// in another format is rebuilt, never read (Library.Current).
-const FormatVersion = 1
+// in another format is rebuilt, never read (Library.Current): format 1
+// had no snippet units, no cross-version labels and looser version
+// scoping.
+const FormatVersion = 2
 
 // Library is one indexed docs root.
 type Library struct {
@@ -43,7 +47,12 @@ type Library struct {
 	Aliases []string `json:"aliases,omitempty"`
 	Title   string   `json:"title,omitempty"`
 	Root    string   `json:"root"`
-	Version string   `json:"version,omitempty"`
+	// Version is the version of the docs indexed: the label the request
+	// named, else the one the site serves as current (when it says), else
+	// "". Requested is the version the build was asked for ("" for the
+	// current docs).
+	Version   string `json:"version,omitempty"`
+	Requested string `json:"requested,omitempty"`
 	// Resolved says how the root was found: "docs_url" (given), or
 	// "resolved" (a name, through the web backend's resolution, with
 	// Evidence, Trust and Packages as it reported them).
@@ -61,13 +70,17 @@ type Library struct {
 	// many pages discovery listed (after collapsing versions and locales),
 	// Capped whether the page cap left some out, Failed how many could not
 	// be fetched, and Sources which discovery sources answered.
-	Pages      int      `json:"pages"`
-	Sections   int      `json:"sections"`
-	Vectors    int      `json:"vectors"`
-	Discovered int      `json:"discovered"`
-	Capped     bool     `json:"capped,omitempty"`
-	Failed     int      `json:"failed,omitempty"`
-	Sources    []string `json:"sources,omitempty"`
+	Pages      int `json:"pages"`
+	Sections   int `json:"sections"`
+	Vectors    int `json:"vectors"`
+	Units      int `json:"units,omitempty"`
+	Discovered int `json:"discovered"`
+	// OtherVersions is how many listed pages were left out as other
+	// versions' trees (or copies of their pages).
+	OtherVersions int      `json:"other_versions,omitempty"`
+	Capped        bool     `json:"capped,omitempty"`
+	Failed        int      `json:"failed,omitempty"`
+	Sources       []string `json:"sources,omitempty"`
 }
 
 // Current reports whether the library is in the format this code reads.
@@ -80,6 +93,7 @@ type Page struct {
 	Hash     string `json:"hash"` // of the page's title and Markdown, as fetched
 	Sections int    `json:"sections"`
 	Windows  int    `json:"windows,omitempty"` // vectors across its sections
+	Units    int    `json:"units,omitempty"`   // snippet units across its sections
 }
 
 // Section is one heading's worth of a page, as the web backend splits
@@ -91,9 +105,46 @@ type Section struct {
 	Heading string   `json:"heading"`
 	Crumbs  []string `json:"crumbs,omitempty"`
 	Text    string   `json:"text"`
-	// Vectors are the section's windows' embeddings, in order; none when
-	// the library has no model. Not part of the JSON record: stored apart.
-	Vectors [][]float32 `json:"-"`
+	// Units are the section's snippet units, in order: each a byte range
+	// of Text, so a snippet is always the docs' own words.
+	Units []Unit `json:"units,omitempty"`
+	// CrossVersion is the later major version a section documents though
+	// it sits in this version's tree (a migration guide to it): "" for
+	// most. Ranking demotes it for questions about the indexed version.
+	CrossVersion string `json:"cross_version,omitempty"`
+	// Vectors are the section's windows' embeddings, in order, and
+	// UnitVectors its units', one each; none when the library has no
+	// model. Not part of the JSON record: stored apart.
+	Vectors     [][]float32 `json:"-"`
+	UnitVectors [][]float32 `json:"-"`
+}
+
+// Unit kinds.
+const (
+	UnitCode  = "code"  // fenced code with the prose just before it
+	UnitProse = "prose" // prose no code block claimed
+)
+
+// Unit is one snippet a section offers: for a code unit, the sentences
+// just before a run of fenced code blocks (Explain, possibly empty) and
+// the code (Body); for a prose unit, a sentence-bounded stretch of prose
+// (Body). Ranges are [start, end) byte offsets into the section's Text.
+type Unit struct {
+	Kind    string `json:"kind"`
+	Explain [2]int `json:"explain,omitzero"`
+	Body    [2]int `json:"body"`
+}
+
+// Parts returns u's explanation and body as they appear in text ("" for a
+// range text does not hold, which a stored section never has).
+func (u Unit) Parts(text string) (explain, body string) {
+	cut := func(r [2]int) string {
+		if r[0] < 0 || r[1] > len(text) || r[0] >= r[1] {
+			return ""
+		}
+		return text[r[0]:r[1]]
+	}
+	return cut(u.Explain), cut(u.Body)
 }
 
 // PageData is a page with its sections, as written together.
@@ -158,6 +209,7 @@ var (
 	pagesBucket     = []byte("pages")
 	sectionsBucket  = []byte("sections")
 	vectorsBucket   = []byte("vectors")
+	unitVecsBucket  = []byte("unit-vectors")
 )
 
 // libBucket names a library's own bucket.
@@ -274,15 +326,15 @@ func (s *Store) PutPages(key string, pages []PageData) error {
 		return nil
 	}
 	return s.update(func(tx *bolt.Tx) error {
-		pb, sb, vb, err := libBuckets(tx, key)
+		bs, err := libBuckets(tx, key)
 		if err != nil {
 			return err
 		}
 		for _, pd := range pages {
-			if err := deletePage(pb, sb, vb, pd.Page.URL); err != nil {
+			if err := bs.deletePage(pd.Page.URL); err != nil {
 				return err
 			}
-			if err := putPage(pb, sb, vb, pd); err != nil {
+			if err := bs.putPage(pd); err != nil {
 				return err
 			}
 		}
@@ -296,12 +348,12 @@ func (s *Store) DeletePages(key string, urls []string) error {
 		return nil
 	}
 	return s.update(func(tx *bolt.Tx) error {
-		pb, sb, vb, err := libBuckets(tx, key)
+		bs, err := libBuckets(tx, key)
 		if err != nil {
 			return err
 		}
 		for _, u := range urls {
-			if err := deletePage(pb, sb, vb, u); err != nil {
+			if err := bs.deletePage(u); err != nil {
 				return err
 			}
 		}
@@ -309,28 +361,36 @@ func (s *Store) DeletePages(key string, urls []string) error {
 	})
 }
 
-// libBuckets returns (creating) a library's pages, sections and vectors.
-func libBuckets(tx *bolt.Tx, key string) (pb, sb, vb *bolt.Bucket, err error) {
-	lb, err := tx.CreateBucketIfNotExists(libBucket(key))
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	if pb, err = lb.CreateBucketIfNotExists(pagesBucket); err != nil {
-		return nil, nil, nil, err
-	}
-	if sb, err = lb.CreateBucketIfNotExists(sectionsBucket); err != nil {
-		return nil, nil, nil, err
-	}
-	vb, err = lb.CreateBucketIfNotExists(vectorsBucket)
-	return pb, sb, vb, err
+// buckets are a library's pages, sections, section vectors and unit
+// vectors.
+type buckets struct {
+	pages, sections, vectors, unitVecs *bolt.Bucket
 }
 
-func putPage(pb, sb, vb *bolt.Bucket, pd PageData) error {
+// libBuckets returns (creating) a library's buckets.
+func libBuckets(tx *bolt.Tx, key string) (buckets, error) {
+	lb, err := tx.CreateBucketIfNotExists(libBucket(key))
+	if err != nil {
+		return buckets{}, err
+	}
+	var bs buckets
+	for _, b := range []struct {
+		name []byte
+		into **bolt.Bucket
+	}{{pagesBucket, &bs.pages}, {sectionsBucket, &bs.sections}, {vectorsBucket, &bs.vectors}, {unitVecsBucket, &bs.unitVecs}} {
+		if *b.into, err = lb.CreateBucketIfNotExists(b.name); err != nil {
+			return buckets{}, err
+		}
+	}
+	return bs, nil
+}
+
+func (bs buckets) putPage(pd PageData) error {
 	v, err := json.Marshal(pd.Page)
 	if err != nil {
 		return err
 	}
-	if err := pb.Put([]byte(pd.Page.URL), v); err != nil {
+	if err := bs.pages.Put([]byte(pd.Page.URL), v); err != nil {
 		return err
 	}
 	for _, sec := range pd.Sections {
@@ -340,25 +400,34 @@ func putPage(pb, sb, vb *bolt.Bucket, pd PageData) error {
 		if err != nil {
 			return err
 		}
-		if err := sb.Put(k, v); err != nil {
+		if err := bs.sections.Put(k, v); err != nil {
 			return err
 		}
-		if len(sec.Vectors) > 0 {
-			if err := vb.Put(k, encodeVectors(sec.Vectors)); err != nil {
-				return err
-			}
+		if err := putVectors(bs.vectors, k, sec.Vectors); err != nil {
+			return err
+		}
+		if err := putVectors(bs.unitVecs, k, sec.UnitVectors); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
+// putVectors stores vecs at k, or deletes what k held when there are none.
+func putVectors(b *bolt.Bucket, k []byte, vecs [][]float32) error {
+	if len(vecs) == 0 {
+		return b.Delete(k)
+	}
+	return b.Put(k, encodeVectors(vecs))
+}
+
 // deletePage removes a page's record, sections and vectors.
-func deletePage(pb, sb, vb *bolt.Bucket, url string) error {
-	if err := pb.Delete([]byte(url)); err != nil {
+func (bs buckets) deletePage(url string) error {
+	if err := bs.pages.Delete([]byte(url)); err != nil {
 		return err
 	}
 	prefix := append([]byte(url), 0)
-	for _, b := range []*bolt.Bucket{sb, vb} {
+	for _, b := range []*bolt.Bucket{bs.sections, bs.vectors, bs.unitVecs} {
 		var keys [][]byte
 		c := b.Cursor()
 		for k, _ := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, _ = c.Next() {
@@ -374,8 +443,8 @@ func deletePage(pb, sb, vb *bolt.Bucket, url string) error {
 }
 
 // Sections returns every section of a library in page and section order,
-// with its vectors (of dims dimensions each) when withVectors is set and
-// the section has them.
+// with its window and unit vectors (of dims dimensions each) when
+// withVectors is set and the section has them.
 func (s *Store) Sections(key string, dims int, withVectors bool) ([]Section, error) {
 	var out []Section
 	err := s.view(func(tx *bolt.Tx) error {
@@ -383,14 +452,19 @@ func (s *Store) Sections(key string, dims int, withVectors bool) ([]Section, err
 		if lb == nil || lb.Bucket(sectionsBucket) == nil {
 			return nil
 		}
-		vb := lb.Bucket(vectorsBucket)
+		vb, ub := lb.Bucket(vectorsBucket), lb.Bucket(unitVecsBucket)
 		return lb.Bucket(sectionsBucket).ForEach(func(k, v []byte) error {
 			var sec Section
 			if err := json.Unmarshal(v, &sec); err != nil {
 				return err
 			}
-			if withVectors && vb != nil && dims > 0 {
-				sec.Vectors = decodeVectors(vb.Get(k), dims)
+			if withVectors && dims > 0 {
+				if vb != nil {
+					sec.Vectors = decodeVectors(vb.Get(k), dims)
+				}
+				if ub != nil {
+					sec.UnitVectors = decodeVectors(ub.Get(k), dims)
+				}
 			}
 			out = append(out, sec)
 			return nil
@@ -401,23 +475,20 @@ func (s *Store) Sections(key string, dims int, withVectors bool) ([]Section, err
 	return out, err
 }
 
-// PutVectors replaces the vectors of the given sections (keyed by page
-// URL and order), for re-embedding with another model.
+// PutVectors replaces the window and unit vectors of the given sections
+// (keyed by page URL and order), for re-embedding with another model.
 func (s *Store) PutVectors(key string, secs []Section) error {
 	return s.update(func(tx *bolt.Tx) error {
-		_, _, vb, err := libBuckets(tx, key)
+		bs, err := libBuckets(tx, key)
 		if err != nil {
 			return err
 		}
 		for _, sec := range secs {
 			k := sectionKey(sec.Page, sec.Order)
-			if len(sec.Vectors) == 0 {
-				if err := vb.Delete(k); err != nil {
-					return err
-				}
-				continue
+			if err := putVectors(bs.vectors, k, sec.Vectors); err != nil {
+				return err
 			}
-			if err := vb.Put(k, encodeVectors(sec.Vectors)); err != nil {
+			if err := putVectors(bs.unitVecs, k, sec.UnitVectors); err != nil {
 				return err
 			}
 		}

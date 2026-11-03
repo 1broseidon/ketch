@@ -241,7 +241,9 @@ func TestPrintDocsResultsShowsResolvedLibrary(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			out := captureStdout(t, func() { printDocsResults("middleware", "web", tc.library, docs.Outcome{Results: tc.results}, false) })
+			out := captureStdout(t, func() {
+				printDocsResults("middleware", "web", tc.library, docs.Outcome{Results: tc.results}, false, false)
+			})
 			if !strings.Contains(out, "\n"+tc.want) || strings.Count(out, "library: ") != 1 {
 				t.Errorf("frontmatter:\n%s\nwant one %q", out, tc.want)
 			}

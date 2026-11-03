@@ -21,6 +21,9 @@ type DocsInput struct {
 	Limit   int    `json:"limit,omitempty" jsonschema:"max number of results (default: the configured limit; with library set, unbounded unless given)"`
 	Tag     string `json:"tag,omitempty" jsonschema:"record each result under this tag, retrievable later with the tag tool; not with resolve"`
 	Resolve bool   `json:"resolve,omitempty" jsonschema:"resolve a library name to library IDs instead of searching docs"`
+	// Sections asks the local backend for its grouped page sections
+	// instead of code-first snippets.
+	Sections bool `json:"sections,omitempty" jsonschema:"local backend: return the nearest sections grouped by page instead of code-first snippets"`
 }
 
 // DocsOutput is the output schema for the "docs" tool. Results is populated
@@ -66,7 +69,7 @@ func (s *Server) registerDocsTool() {
 		Description: "Search library documentation using " + strings.Join(docs.ProviderNames(), ", ") + ". Supports resolving a library name to a " + strings.Join(docs.LibraryProviderNames(), ", ") + " library ID (resolve), and fetching docs directly from a known library ID (library)." +
 			docs.WithLibraryHelp(" A library is a library ID from resolve") + ". Resolve a name once and pass the returned ID as library on later calls: a name is resolved again on every call." +
 			" Context7 needs no key: without one it runs on Context7's anonymous quota (about 200 requests a month per IP; a spent quota is an [upstream] error naming when it resets), and a key lifts it." +
-			" Backend local answers offline from the docs the operator indexed (ketch docs index), about ten page results each with its best section and the page's other near sections; pick among them." +
+			" Backend local answers offline from the docs the operator indexed (ketch docs index): code-first snippets, verbatim, each a heading path (title, breadcrumb), the sentences just before a code block and the code, or a stretch of prose, about 1,200 tokens unless tokens is set; sections returns about ten page results instead, each a page's best section with its other near sections. A library indexed at several versions answers from the newest (each result's version says which) unless library names one as name@version." +
 			" Backend auto asks the local index first when it holds the library, then web, and asks Context7 only when web identifies no library, finds several, or fails; Context7's pick must be a library the query names, and for an ambiguous name one of web's candidates. It reports the provider that answered in backend (each result's source says the same) and what it fell through in errors." +
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
@@ -90,6 +93,9 @@ func (s *Server) registerDocsTool() {
 		if tokens <= 0 {
 			tokens = 4000
 		}
+		// The local backend takes the budget and limit only when given, and
+		// its own defaults otherwise.
+		ctx = docs.WithLocalOptions(ctx, docs.LocalOptions{Sections: in.Sections, Tokens: max(in.Tokens, 0), Limit: max(in.Limit, 0)})
 
 		if in.Resolve {
 			// Library matches carry IDs, not URLs: there is nothing to
@@ -227,7 +233,7 @@ func docsInputSchema() *jsonschema.Schema {
 		"query":   docs.WithLibraryHelp("the docs search query (without library, the library is picked from it), or the library to resolve when resolve is true"),
 		"backend": "docs backend (default: the configured backend); " + implemented,
 		"library": docs.WithLibraryHelp(libNames + " library ID to fetch docs from directly, skipping the resolve step; requires the " + libIDs + " backend"),
-		"tokens":  libNames + " token budget when library is set (default 4000)",
+		"tokens":  libNames + " token budget when library is set (default 4000; local's code-first snippets default to about 1200, with or without library)",
 		"resolve": docs.WithLibraryHelp("resolve the query as a library name to " + libNames + " library IDs instead of searching docs"),
 	})
 }

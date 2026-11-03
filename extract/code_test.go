@@ -58,6 +58,8 @@ finally:
 		{"JavaScript inline tokens", `<pre><code class="language-javascript"><span class="comment">// literal markup</span>
 const s = <span class="string">"&lt;div&gt;&amp;&lt;/div&gt;"</span>;</code></pre>`, "// literal markup\nconst s = \"<div>&</div>\";"},
 		{"JSON block lines", `<pre class="language-json"><div>{</div><div>  "valid": true,</div><div>  "count": 2</div><div>}</div></pre>`, "```json\n{\n  \"valid\": true,\n  \"count\": 2\n}\n```"},
+		{"hover popups inside a line", `<pre class="shiki twoslash"><code><span class="line"><span><div class="v-popper twoslash-hover"><span>app</span><div class="v-popper__popper" aria-hidden="true"><pre><code>const app: Hono</code></pre></div></div></span><span>.</span><span><div class="v-popper twoslash-hover"><span>get</span></div></span><span>('/', (c) =&gt; c.text('hi'))</span></span>
+<span class="line"><span>export default app</span></span></code></pre>`, "app.get('/', (c) => c.text('hi'))\nexport default app"},
 		{"Shell paragraphs", `<pre class="language-sh"><p>set -eu</p><p>printf '%s\n' "$value"</p></pre>`, "```sh\nset -eu\nprintf '%s\\n' \"$value\"\n```"},
 	}
 	for _, tc := range cases {

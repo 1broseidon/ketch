@@ -139,3 +139,65 @@ phase 1 returns the nearest sections.
   index's judgments; improvements there still pay off twice.
 - The MCP `docs` tool can query the local backend; building an index is
   CLI-only for now, since it runs for minutes.
+
+## Amendment 1 (2026-11-03): one version per index, code-first snippets
+
+A blinded two-judge comparison on 68 validation questions (ketch-embed
+`runs/fair-judge`, board task-30) put Context7 with version-pinned IDs ahead
+of the local results: top-5 "fully answers" 85% against 82–84%, "an agent
+could write correct code" 95% against 84–88%, and at an equal ~880-token
+budget 87% against 75–77%. The local index found the right material about as
+often; it lost on two things. Version-pinned answers mixed the asked version
+with others in 36–45% of cases, and how-to answers (57–73% against 83–87%)
+were long raw sections where Context7 gave a title, a sentence or two and
+the code.
+
+**Decision.**
+
+- **An index holds exactly one version.** `docs index name@version`
+  resolves that version's docs root with the web backend's version
+  discovery; with no version, the current docs, labelled with the package's
+  latest release when the site names none. Only the root's tree is kept:
+  other hosts and paths outside a versioned root never qualify, and below the
+  root a tree is dropped when the site's version list names it as another
+  version, when it is a release or channel directory right below the root
+  (`/docs/2.x/`, `/next/`, mike's `/1.0/`), or when it is mostly copies of
+  the current pages (the earlier rule). The key stays the docs root, so each
+  version (each its own root) sits beside the others; the metadata records
+  the version and the version asked for. `--library name@version` selects one
+  and refuses an unindexed version as `not_indexed`, naming those indexed;
+  no version answers from the newest (current docs first) and says which.
+  A section in the tree about a later major (its page or headings name a
+  migration or upgrade and a higher major, e.g. "Migrating to Vue Router 4"
+  in the v3 docs) is kept, labelled, and demoted by 0.05 cosine unless the
+  question is about migrating or names that version. The detection is
+  deliberately narrow: no number, or an earlier one, means no label.
+- **Snippets are the default answer.** At index time each section is cut
+  into units that are byte ranges of its text, so they stay verbatim: every
+  run of fenced code (tabs together) with the one to three sentences right
+  before it, and the prose no code claims (a section with no code: its first
+  ~600 characters, cut at a sentence). Each unit is embedded (heading path,
+  explanation, code, within the window) beside the section windows. A query
+  scores a unit as half its own cosine and half its section's best window,
+  plus up to 0.06 by the share of the identifiers the question writes that
+  the unit names, plus 0.03 for code (minus 0.03 for a single block over
+  2,000 bytes, a listing more often than an example), and returns the best
+  units within ~1,200 tokens and 8 snippets, never two near-duplicates, at
+  most two from one section and three from one page, each rendered as
+  `### heading path`, explanation, code, `source: url#anchor`. The grouped
+  section view stays behind `--sections` (MCP `sections`).
+- **Index format 2.** Units, unit vectors and the cross-version label
+  change the stored schema. A format-1 library is never read: queries fail
+  with `index_outdated` naming the rebuild, `--reembed` refuses, and the next
+  `docs index` rebuilds it.
+
+**Consequences.** A build embeds roughly 2.3 to 2.6 times as many passages
+as before (hono: 819 windows and 1,093 units; astro: 5,009 and 6,488). On 12
+live how-to and version questions (hono, fastapi, astro, vue-router at two
+versions) answers ran 296–1,123 o200k tokens, 3–8 snippets each, with no
+cross-version URL either way between the two Vue Router indexes. The weights
+above were set by reading those answers, not fitted on an evaluation set. Nothing is rewritten, so where a
+page puts its explanation after the code, or the code under a list item the
+sectioning does not read as a fence, a unit carries less context than a
+curated snippet would. Measuring the change against the fair-judge packets
+is the next step.

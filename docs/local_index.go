@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	config "github.com/1broseidon/ketch/internal/configbase"
@@ -20,10 +21,14 @@ import (
 	"github.com/1broseidon/ketch/internal/failure"
 )
 
-// Building a local docs index (ADR-0007): resolve the docs root once,
-// enumerate its pages (local_plan.go), fetch them through the injected
-// Fetcher (the scrape pipeline and page cache), section them as the web
-// backend does, embed each section's windows and store the lot.
+// Building a local docs index (ADR-0007): resolve the docs root once (a
+// version's root when one is asked for), enumerate its pages
+// (local_plan.go), keeping that version's tree alone, fetch them through
+// the injected Fetcher (the scrape pipeline and page cache), section them
+// as the web backend does, cut each section into snippet units
+// (local_snippets.go), embed the sections' windows and the units, and
+// store the lot. A library's key is its docs root, so each version of a
+// library (each its own root) is indexed side by side.
 
 // IndexRequest asks for one library to be indexed.
 type IndexRequest struct {
@@ -57,7 +62,7 @@ type IndexReport struct {
 	Unchanged int     `json:"unchanged"`
 	Removed   int     `json:"removed"`
 	Failed    int     `json:"failed"`
-	Embedded  int     `json:"embedded"` // windows embedded by this run
+	Embedded  int     `json:"embedded"` // passages (section windows and snippet units) embedded by this run
 	Seconds   float64 `json:"seconds"`
 	Bytes     int64   `json:"index_bytes"` // the index file's size afterwards
 }
@@ -130,6 +135,7 @@ func (w *Web) index(ctx context.Context, store *docsindex.Store, req IndexReques
 		return IndexReport{}, err
 	}
 	say("docs root: %s%s (%s)", target.root, versionNote(target.version), target.resolved)
+	others := w.otherVersions(dctx, target)
 	site, err := w.enumerate(dctx, target.root)
 	if errors.Is(err, ErrNotFound) && target.resolved == "docs_url" && dctx.Err() == nil {
 		if moved, ok := w.indexRedirect(dctx, target.root); ok {
@@ -141,27 +147,27 @@ func (w *Web) index(ctx context.Context, store *docsindex.Store, req IndexReques
 	if err != nil {
 		return IndexReport{}, err
 	}
-	plan := w.plan(dctx, target.root, site, req.MaxPages)
-	say("pages: %d listed (%s); %d other versions' or locales' copies and %d disallowed by robots.txt left out; indexing %d%s",
-		plan.listed, strings.Join(site.sources, ", "), plan.variants, plan.disallowed, len(plan.links), capNote(plan.capped, req.MaxPages))
+	plan := w.plan(dctx, target.root, site, req.MaxPages, others)
+	say("pages: %d listed (%s); %d of other versions and %d of other locales left out, %d disallowed by robots.txt; indexing %d%s",
+		plan.listed, strings.Join(site.sources, ", "), plan.otherVersions, plan.variants-plan.otherVersions, plan.disallowed, len(plan.links), capNote(plan.capped, req.MaxPages))
 	pages, failed := w.fetchIndexPages(ctx, target.root, plan.links, say)
 	if len(pages) == 0 {
 		return IndexReport{}, fmt.Errorf("web: none of the %d pages under %s could be fetched: %w", len(plan.links), target.root, ErrNotFound)
 	}
-	b := &indexBuild{store: store, key: target.root.String(), emb: req.Embedder, say: say}
+	b := &indexBuild{store: store, key: target.root.String(), emb: req.Embedder, say: say, version: target.version, title: target.title}
 	report, err := b.write(ctx, pages, failed)
 	if err != nil {
 		return report, err
 	}
 	lib := docsindex.Library{
 		Key: b.key, Library: req.Library, Title: target.title, Root: target.root.String(), Version: target.version,
-		Resolved: target.resolved, Evidence: target.evidence, Trust: target.trust, Packages: target.packages,
+		Requested: target.spec.version, Resolved: target.resolved, Evidence: target.evidence, Trust: target.trust, Packages: target.packages,
 		Model: b.model, Dims: b.dims, Format: docsindex.FormatVersion, Built: time.Now().UTC(),
-		Pages: report.Library.Pages, Sections: report.Library.Sections, Vectors: report.Library.Vectors,
-		Discovered: plan.listed - plan.variants, Capped: plan.capped, Failed: len(failed), Sources: site.sources,
+		Pages: report.Library.Pages, Sections: report.Library.Sections, Vectors: report.Library.Vectors, Units: report.Library.Units,
+		Discovered: plan.listed - plan.variants, OtherVersions: plan.otherVersions, Capped: plan.capped, Failed: len(failed), Sources: site.sources,
 	}
 	lib.Aliases = mergeNames(b.prev.Aliases, req.Names)
-	lib.Names = indexNames(lib.Aliases, target)
+	lib.Names = IndexedNames(lib)
 	if err := store.PutLibrary(lib); err != nil {
 		return report, err
 	}
@@ -194,12 +200,22 @@ func (w *Web) indexTarget(ctx context.Context, req IndexRequest) (indexTarget, e
 		}
 		spec.version = req.Version
 	}
-	m, err := w.resolveOne(ctx, spec, false)
+	// A build resolves afresh, past the resolution cache: it is a one-off
+	// whose judgment lasts, and a cached pick lacks the package's releases.
+	m, _, err := w.resolveOnce(ctx, spec, false, false, false)
 	if err != nil {
 		return indexTarget{}, err
 	}
 	lm := m.libraryMatch()
-	return indexTarget{root: m.root, version: m.version, title: m.title, resolved: "resolved", evidence: lm.Evidence, trust: m.trust, packages: m.packages, spec: spec}, nil
+	t := indexTarget{root: m.root, version: m.version, title: m.title, resolved: "resolved", evidence: lm.Evidence, trust: m.trust, packages: m.packages, spec: spec}
+	if latest := latestRelease(m.proj); spec.version == "" && !isNumericLabel(m.version) && latest != "" && !m.registry {
+		// The current docs document the latest release when the site names
+		// none (as -b web assumes for a version asked of them), so
+		// name@major finds them beside an older version's index.
+		t.version = latest
+		t.evidence = append(t.evidence, fmt.Sprintf("the current docs name no release; taken as %s, the package's latest", latest))
+	}
+	return t, nil
 }
 
 // indexRedirect is where a docs URL with no pages of its own leads: a
@@ -210,6 +226,43 @@ func (w *Web) indexRedirect(ctx context.Context, root webRoot) (webRoot, bool) {
 	}
 	moved, _, ok := w.movedRoot(ctx, root, nil)
 	return moved, ok
+}
+
+// otherVersions are the labels of the versions the site publishes other
+// than the one indexed (lower case, as normLabel compares them): a tree
+// below the root named by one of them is another version's docs, however
+// few of its pages the indexed tree shares (keepOneVariant). The site's
+// own version list (siteVersions) says which they are; none when it
+// publishes none.
+func (w *Web) otherVersions(ctx context.Context, t indexTarget) map[string]bool {
+	prof, err := w.cachedProfile(ctx, t.root.u)
+	if err != nil {
+		prof = nil
+	}
+	return otherVersionLabels(w.siteVersions(ctx, t.root, prof), t.root, t.version)
+}
+
+// otherVersionLabels are the labels of vs's versions other than the one
+// at root or labelled version, normalized.
+func otherVersionLabels(vs versionSet, root webRoot, version string) map[string]bool {
+	own := map[string]bool{normLabel(rootVersionLabel(root)): true, normLabel(version): true}
+	out := map[string]bool{}
+	for _, v := range vs.versions {
+		labels := versionLabels(v)
+		mine := v.root != "" && sameRootURL(v.root, root)
+		for _, l := range labels {
+			mine = mine || l != "" && own[normLabel(l)]
+		}
+		if mine {
+			continue
+		}
+		for _, l := range labels {
+			if l = normLabel(l); l != "" && !own[l] {
+				out[l] = true
+			}
+		}
+	}
+	return out
 }
 
 // fetchIndexPages fetches the planned pages, w.concurrency at a time, each
@@ -275,6 +328,9 @@ type indexBuild struct {
 	key   string
 	emb   embed.Embedder
 	say   func(string, ...any)
+	// version and title are the indexed version's label and the library's
+	// title, which label cross-version sections (crossVersion).
+	version, title string
 
 	prev        docsindex.Library // the library as stored before, if it was
 	model       string
@@ -295,14 +351,13 @@ func (b *indexBuild) write(ctx context.Context, pages []webPage, failed []string
 	if report.Embedded, err = b.embed(ctx, todo); err != nil {
 		return report, err
 	}
-	for start := 0; start < len(todo); start += indexWriteBatch {
-		if err := b.store.PutPages(b.key, todo[start:min(start+indexWriteBatch, len(todo))]); err != nil {
-			return report, err
-		}
+	if err := putPageBatches(b.store, b.key, todo); err != nil {
+		return report, err
 	}
 	for _, pd := range todo {
 		report.Library.Sections += pd.Page.Sections
 		report.Library.Vectors += pd.Page.Windows
+		report.Library.Units += pd.Page.Units
 	}
 	gone := b.unlisted(pages, failed, stored, &report)
 	if err := b.store.DeletePages(b.key, gone); err != nil {
@@ -310,7 +365,7 @@ func (b *indexBuild) write(ctx context.Context, pages []webPage, failed []string
 	}
 	report.Removed, report.Failed = len(gone), len(failed)
 	report.Library.Pages = len(pages) + len(failed) - countMissing(failed, stored)
-	b.say("stored %d pages: %d new, %d changed, %d unchanged, %d removed; %d windows embedded", len(pages), report.New, report.Changed, report.Unchanged, report.Removed, report.Embedded)
+	b.say("stored %d pages: %d new, %d changed, %d unchanged, %d removed; %d passages embedded", len(pages), report.New, report.Changed, report.Unchanged, report.Removed, report.Embedded)
 	return report, nil
 }
 
@@ -366,13 +421,14 @@ func (b *indexBuild) diff(pages []webPage, stored map[string]docsindex.Page, rep
 			report.Unchanged++
 			report.Library.Sections += old.Sections
 			report.Library.Vectors += old.Windows
+			report.Library.Units += old.Units
 			continue
 		case had:
 			report.Changed++
 		default:
 			report.New++
 		}
-		todo = append(todo, pageData(p, hash, byPage[i]))
+		todo = append(todo, b.pageData(p, hash, byPage[i]))
 	}
 	return todo
 }
@@ -395,6 +451,7 @@ func (b *indexBuild) unlisted(pages []webPage, failed []string, stored map[strin
 		case kept[u]:
 			report.Library.Sections += p.Sections
 			report.Library.Vectors += p.Windows
+			report.Library.Units += p.Units
 		default:
 			gone = append(gone, u)
 		}
@@ -415,38 +472,57 @@ func countMissing(failed []string, stored map[string]docsindex.Page) int {
 	return n
 }
 
-// pageData is a page's record and sections, ready to embed and store.
-func pageData(p webPage, hash string, secs []webSection) docsindex.PageData {
+// pageData is a page's record and sections, with their snippet units and
+// cross-version labels, ready to embed and store. A page whose title or
+// path names a migration to a later major labels every section; a page
+// that does not, the sections whose own headings do.
+func (b *indexBuild) pageData(p webPage, hash string, secs []webSection) docsindex.PageData {
 	pd := docsindex.PageData{Page: docsindex.Page{URL: p.URL, Title: p.Title, Hash: hash, Sections: len(secs)}}
+	pageTexts := []string{p.Title, pathWords(p.URL, b.key)}
 	for i, s := range secs {
+		units := extractUnits(s.text)
+		pd.Page.Units += len(units)
 		pd.Sections = append(pd.Sections, docsindex.Section{
 			Page: p.URL, Order: i, Anchor: s.anchor, Heading: s.heading, Crumbs: s.crumbs, Text: s.text,
+			Units: units, CrossVersion: crossVersion(b.version, b.title, append(slices.Clone(pageTexts), s.crumbs...)),
 		})
 	}
 	return pd
 }
 
-// embed embeds every window of the pages' sections, in batches with
-// progress, and records each page's window count.
+// embed embeds every window of the pages' sections and every snippet
+// unit, in batches with progress, and records each page's window count.
+// It returns how many windows and units it embedded.
 func (b *indexBuild) embed(ctx context.Context, pages []docsindex.PageData) (int, error) {
 	if b.emb == nil {
 		return 0, nil
 	}
-	type ref struct{ page, sec int }
+	type ref struct {
+		page, sec int
+		unit      bool
+	}
 	var texts []string
 	var refs []ref
+	units := 0
 	for i := range pages {
 		for j, s := range pages[i].Sections {
+			pages[i].Sections[j].Vectors, pages[i].Sections[j].UnitVectors = nil, nil
 			for _, t := range sectionWindows(s.Crumbs, s.Text) {
 				texts = append(texts, t)
-				refs = append(refs, ref{i, j})
+				refs = append(refs, ref{page: i, sec: j})
+			}
+			for _, u := range s.Units {
+				texts = append(texts, unitPassage(s.Crumbs, s.Text, u))
+				refs = append(refs, ref{page: i, sec: j, unit: true})
+				units++
 			}
 		}
+		pages[i].Page.Windows = 0
 	}
 	if len(texts) == 0 {
 		return 0, nil
 	}
-	b.say("embedding %d windows of %d sections with %s", len(texts), countSections(pages), b.model)
+	b.say("embedding %d windows and %d snippet units of %d sections with %s", len(texts)-units, units, countSections(pages), b.model)
 	start, last := time.Now(), time.Now()
 	for s := 0; s < len(texts); s += indexEmbedBatch {
 		vecs, err := b.emb.EmbedPassages(ctx, texts[s:min(s+indexEmbedBatch, len(texts))])
@@ -456,13 +532,17 @@ func (b *indexBuild) embed(ctx context.Context, pages []docsindex.PageData) (int
 		for k, v := range vecs {
 			r := refs[s+k]
 			sec := &pages[r.page].Sections[r.sec]
+			if r.unit {
+				sec.UnitVectors = append(sec.UnitVectors, v)
+				continue
+			}
 			sec.Vectors = append(sec.Vectors, v)
 			pages[r.page].Page.Windows++
 		}
 		if time.Since(last) > 15*time.Second {
 			last = time.Now()
 			done := min(s+indexEmbedBatch, len(texts))
-			b.say("embedded %d of %d windows (%.0f/s)", done, len(texts), float64(done)/time.Since(start).Seconds())
+			b.say("embedded %d of %d passages (%.0f/s)", done, len(texts), float64(done)/time.Since(start).Seconds())
 		}
 	}
 	return len(texts), nil
@@ -553,43 +633,80 @@ func mergeNames(a, b []string) []string {
 	return out
 }
 
-// indexNames are the names a query may call the library by, as
-// comparison keys (libraryKey): the aliases asked for (--name, kept
-// across builds), the name it was indexed by and its packages' names, its
-// title, and its docs host's distinctive labels (fastapi in
-// fastapi.tiangolo.com, hono in hono.dev).
-func indexNames(aliases []string, t indexTarget) []string {
-	var raw []string
-	raw = append(raw, aliases...)
-	if t.spec.name != "" {
-		raw = append(raw, t.spec.name)
-	}
-	for _, p := range t.packages {
-		name := p
-		if _, after, ok := strings.Cut(p, ":"); ok {
-			name = after
+// libraryNames are the names a query may call an indexed library by, as
+// comparison keys (libraryKey), worked out from its stored metadata so a
+// library indexed by an older build answers to the same names. Primary
+// names are its full identity: the --name aliases, the name it was indexed
+// by, its package names (with or without the ecosystem prefix and
+// separators: vue-router, vuerouter) and repositories (vuejs/router).
+// Secondary names are the last part of a scoped package or repository
+// (starlight in @astrojs/starlight, hono in honojs/hono) and its docs
+// host's distinctive labels (fastapi in fastapi.tiangolo.com). A secondary
+// name that is one word of a longer name the library goes by (router and
+// vue for Vue Router, query for TanStack Query, rest for Django REST
+// framework) is never a name: it names something else, often another
+// library.
+func libraryNames(l docsindex.Library) (primary, secondary []string) {
+	var full []string // the identities, as written
+	full = append(full, l.Aliases...)
+	if !isHTTPURL(l.Library) {
+		if spec, err := parseLibSpec(strings.TrimSpace(l.Library)); err == nil && spec.name != "" {
+			full = append(full, spec.name)
 		}
-		raw = append(raw, name)
 	}
-	if title, _, _ := strings.Cut(cleanPageTitle(t.title), " - "); title != "" && len(title) <= 40 {
-		raw = append(raw, title) // "FastAPI - FastAPI" is FastAPI
+	for _, p := range l.Packages {
+		if _, after, ok := strings.Cut(p, ":"); ok {
+			p = after
+		}
+		full = append(full, p)
 	}
-	raw = append(raw, hostNames(t.root.u)...)
+	words := map[string]bool{} // the words of every multi-word name
+	addWords := func(name string) {
+		if parts := nameWords(name); len(parts) > 1 {
+			for _, w := range parts {
+				words[libraryKey(w)] = true
+			}
+		}
+	}
+	title, _, _ := strings.Cut(cleanPageTitle(l.Title), " - ") // "FastAPI - FastAPI" is FastAPI
+	addWords(title)
 	seen := map[string]bool{}
-	var out []string
-	add := func(k string) {
+	add := func(into *[]string, k string) {
 		if len(k) >= 2 && !genericNames[k] && !seen[k] {
 			seen[k] = true
-			out = append(out, k)
+			*into = append(*into, k)
 		}
 	}
-	for _, r := range raw {
-		add(libraryKey(r))
-		if i := strings.LastIndexAny(r, "/"); i >= 0 { // @scope/pkg, owner/repo, a module path
-			add(libraryKey(r[i+1:]))
+	var tails []string
+	for _, n := range full {
+		add(&primary, libraryKey(n))
+		tail := n
+		if i := strings.LastIndex(n, "/"); i >= 0 { // @scope/pkg, owner/repo, a module path
+			tail = n[i+1:]
+			tails = append(tails, tail)
+		}
+		addWords(tail)
+	}
+	root, _ := parseWebRoot(l.Root)
+	for _, n := range append(tails, hostNames(root.u)...) {
+		if k := libraryKey(n); !words[k] {
+			add(&secondary, k)
 		}
 	}
-	return out
+	return primary, secondary
+}
+
+// IndexedNames are the names a query may call an indexed library by
+// (libraryNames), full names first, as comparison keys.
+func IndexedNames(l docsindex.Library) []string {
+	primary, secondary := libraryNames(l)
+	return append(primary, secondary...)
+}
+
+// nameWords splits a name into its words at separators (TanStack Query,
+// vue-router, my_lib, @scope/pkg); a camel-case word stays one (TanStack).
+func nameWords(name string) []string {
+	return strings.FieldsFunc(name, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) })
 }
 
 // hostWords are host labels that name no library.
@@ -609,8 +726,8 @@ func hostNames(u *url.URL) []string {
 	labels := strings.Split(scopeHost(u), ".")
 	var out []string
 	for _, l := range labels[:max(len(labels)-1, 0)] {
-		if !hostWords[l] {
-			out = append(out, l)
+		if _, version := segmentLabel(l); !hostWords[l] && !version {
+			out = append(out, l) // v3 in v3.router.vuejs.org names a version, not the library
 		}
 	}
 	return out
@@ -625,25 +742,14 @@ func Reembed(ctx context.Context, store *docsindex.Store, key string, emb embed.
 	if err != nil || !found {
 		return IndexReport{}, errors.Join(err, fmt.Errorf("docs index: %s %w", key, ErrNotIndexed))
 	}
+	if !lib.Current() {
+		return IndexReport{}, outdatedErr(lib)
+	}
 	secs, err := store.Sections(key, 0, false)
 	if err != nil {
 		return IndexReport{}, err
 	}
-	pages := map[string]*docsindex.PageData{}
-	var order []string
-	for _, s := range secs {
-		pd := pages[s.Page]
-		if pd == nil {
-			pd = &docsindex.PageData{Page: docsindex.Page{URL: s.Page}}
-			pages[s.Page] = pd
-			order = append(order, s.Page)
-		}
-		pd.Sections = append(pd.Sections, s)
-	}
-	list := make([]docsindex.PageData, 0, len(order))
-	for _, u := range order {
-		list = append(list, *pages[u])
-	}
+	list := sectionPages(secs)
 	b := &indexBuild{store: store, key: key, emb: emb, say: progressf(progress), model: emb.ID(), dims: emb.Dim()}
 	n, err := b.embed(ctx, list)
 	if err != nil {
@@ -660,16 +766,44 @@ func Reembed(ctx context.Context, store *docsindex.Store, key string, emb embed.
 			updated = append(updated, docsindex.PageData{Page: p, Sections: pd.Sections})
 		}
 	}
-	for start := 0; start < len(updated); start += indexWriteBatch {
-		if err := store.PutPages(key, updated[start:min(start+indexWriteBatch, len(updated))]); err != nil {
-			return IndexReport{}, err
-		}
+	if err := putPageBatches(store, key, updated); err != nil {
+		return IndexReport{}, err
 	}
-	lib.Model, lib.Dims, lib.Vectors, lib.Built = b.model, b.dims, n, time.Now().UTC()
+	windows := 0
+	for _, pd := range updated {
+		windows += pd.Page.Windows
+	}
+	lib.Model, lib.Dims, lib.Vectors, lib.Built = b.model, b.dims, windows, time.Now().UTC()
 	if err := store.PutLibrary(lib); err != nil {
 		return IndexReport{}, err
 	}
 	return IndexReport{Library: lib, Embedded: n, Unchanged: len(list), Seconds: time.Since(start).Seconds(), Bytes: store.Size()}, nil
+}
+
+// sectionPages groups stored sections (in page order) into their pages.
+func sectionPages(secs []docsindex.Section) []docsindex.PageData {
+	var out []docsindex.PageData
+	at := map[string]int{}
+	for _, s := range secs {
+		i, ok := at[s.Page]
+		if !ok {
+			i = len(out)
+			at[s.Page] = i
+			out = append(out, docsindex.PageData{Page: docsindex.Page{URL: s.Page}})
+		}
+		out[i].Sections = append(out[i].Sections, s)
+	}
+	return out
+}
+
+// putPageBatches writes pages indexWriteBatch to a transaction.
+func putPageBatches(store *docsindex.Store, key string, pages []docsindex.PageData) error {
+	for start := 0; start < len(pages); start += indexWriteBatch {
+		if err := store.PutPages(key, pages[start:min(start+indexWriteBatch, len(pages))]); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // progressf writes progress lines to w (nowhere when nil).
