@@ -1,0 +1,10 @@
+{
+ "headers": {
+  "Content-Type": "application/json",
+  "context7-quota-tier": "anonymous",
+  "ratelimit-limit": "200",
+  "ratelimit-reset": "1796083200",
+  "ratelimit-remaining": "193"
+ },
+ "status": 301
+}

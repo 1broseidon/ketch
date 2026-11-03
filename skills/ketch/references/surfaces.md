@@ -49,7 +49,7 @@ In pi, the package's tools are the MCP tools under a `ketch_` prefix — `ketch_
 
 ## docs
 
-- Backend: `context7` — curated, version-aware snippets; free key via `ketch config set context7_api_key <key>`. A `local` backend is planned but unimplemented; selecting it is `[precondition]` / exit 5.
+- Backend: `context7` — curated, version-aware snippets; works without a key on Context7's anonymous quota (~200 requests a month per IP, two per bare search); a free key lifts the cap (`ketch config set context7_api_key <key>`). A spent quota is `[upstream]` and names the reset time. A `local` backend is planned but unimplemented; selecting it is `[precondition]` / exit 5.
 - Two-step usage: `resolve` → vet → `library`.
   - Resolve row shape: `/org/repo  Name  (snippets: N, trust: X)`.
   - **Resolve never returns empty.** A garbage query returns confident fuzzy matches, some with trust 8–10. Trust scores the source, not the match — vet that the *name* is the library you meant before fetching by ID.
@@ -139,7 +139,7 @@ page-cache file and leaves bookmarks alone.
 | --- | --- | --- | --- |
 | search | **auto (default)**, ddg, searxng (self-hosted), exa, firecrawl, keenable, parallel, youcom | brave, tavily, tinyfish, serpbase, serply | `ketch config set brave_api_key <key>` / `tavily_api_key` / `tinyfish_api_key` / `serpbase_api_key` / `serply_api_key` (optional `firecrawl_api_key` / `parallel_api_key` / `youcom_api_key` lift the hosted caps) |
 | code | grepapp, sourcegraph | github | `gh auth login` / `$GITHUB_TOKEN` / `ketch config set github_token <tok>` |
-| docs | — | context7 (free key) | `ketch config set context7_api_key <key>` |
+| docs | context7 (keyless, ~200/month) | context7 with a key | `ketch config set context7_api_key <key>` (optional) |
 
 Search needs no key at all on the default `auto` backend. Naming a keyed backend explicitly without its key fails with `[precondition]` / exit 5 and an error message that names the fix (brave's includes the signup URL and the exact `config set` command).
 

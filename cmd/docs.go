@@ -14,7 +14,7 @@ import (
 var docsCmd = &cobra.Command{
 	Use:   "docs <query>",
 	Short: "Search library documentation",
-	Long:  `Search library documentation using ` + strings.Join(docs.ProviderNames(), ", ") + ` (default: the configured backend). Supports direct library ID lookup and library name resolution. A local FTS5 backend is planned but not yet implemented.`,
+	Long:  `Search library documentation using ` + strings.Join(docs.ProviderNames(), ", ") + ` (default: the configured backend). Supports direct library ID lookup and library name resolution. Context7 needs no key: without one it uses Context7's anonymous quota (about 200 requests a month per IP), and a key lifts it. A local FTS5 backend is planned but not yet implemented.`,
 	Args:  exitArgs(cobra.MinimumNArgs(1)),
 	RunE:  runDocs,
 }

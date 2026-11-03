@@ -686,8 +686,15 @@ come from the instance itself, so the backend's own advice follows the hint.
 #### Code and docs — grepapp, sourcegraph, github, context7
 
 Grep and Sourcegraph need nothing. GitHub uses `gh auth login`,
-`$GITHUB_TOKEN`, or `ketch config set github_token <tok>`. Context7 takes a
-free key via `ketch config set context7_api_key <key>`.
+`$GITHUB_TOKEN`, or `ketch config set github_token <tok>`. Context7 needs no
+key: without one it runs on Context7's anonymous quota, about 200 requests a
+month per IP address, shared by everything on that address. A bare docs
+search spends two (resolve, then fetch). A free key lifts the cap:
+`ketch config set context7_api_key <key>`. When the quota is spent, docs
+calls exit 4 (`[upstream]`) and say when it resets; ketch then stops asking
+Context7 until the reset, in later processes too, for up to a day.
+`ketch doctor` reports the requests left as of the last response without
+spending one.
 
 ## Configuration
 

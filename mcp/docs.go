@@ -37,6 +37,7 @@ func (s *Server) registerDocsTool() {
 		Name:        "docs",
 		InputSchema: docsInputSchema(),
 		Description: "Search library documentation using " + strings.Join(docs.ProviderNames(), ", ") + ". Supports resolving a library name to a " + strings.Join(docs.LibraryProviderNames(), ", ") + " library ID, and fetching docs directly from a known library ID." +
+			" Context7 needs no key: without one it runs on Context7's anonymous quota (about 200 requests a month per IP; a spent quota is an [upstream] error naming when it resets), and a key lifts it." +
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in DocsInput) (*mcpsdk.CallToolResult, DocsOutput, error) {
