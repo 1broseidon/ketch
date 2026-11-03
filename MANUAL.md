@@ -250,9 +250,17 @@ $ ketch docs --resolve "next.js"     # name → Context7 IDs
 | `--resolve` | Resolve a library name instead of searching |
 | `--tag <name>` | Bookmark every result URL under a tag |
 
+No key is needed. Without one, Context7 runs on its anonymous quota: about
+200 requests a month per IP, and a bare query spends two (resolve, then
+fetch). A spent quota exits 4 and says when it resets; a free key lifts the
+cap (see [Configuration](#code-and-docs)).
+`ketch doctor` shows how many requests are left without spending one.
+
 `docs` is a two-step: resolve the name, *vet the matches*, then fetch by ID.
 Resolve never returns empty. A bad name still returns confident fuzzy matches,
-so check the name, not just the trust score.
+so check the name, not just the trust score. A bare query is resolved as a
+whole: `ketch docs "react useEffect cleanup"` can pick a library named for
+"cleanup". Name the library with `--library` to get its docs.
 
 #### scrape — URL(s) → clean markdown
 
