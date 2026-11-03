@@ -19,6 +19,7 @@ var trustPoints = map[evidenceKind]float64{
 	evPkgHomepage:   3,
 	evRepoHomepage:  3,
 	evNavChain:      2,
+	evPkgReadme:     2,
 	evRegistryDocs:  5,
 	evRelatedDomain: 1,
 	evLinksRepo:     2,
@@ -36,6 +37,7 @@ var trustPoints = map[evidenceKind]float64{
 // (V1, V2 and V3); evRelatedDomain verifies only beside evLinksRepo (V4).
 var verifyingKinds = map[evidenceKind]bool{
 	evPkgDocs: true, evPkgHomepage: true, evRepoHomepage: true, evNavChain: true, evRegistryDocs: true,
+	evPkgReadme: true, // keyless only, and only beside a second edge (keylessEvidence)
 }
 
 // score sums evs by trustPoints, counting equal entries once, clamped to
@@ -107,6 +109,7 @@ var edgeOf = map[evidenceKind]edgeClass{
 	evPkgDocs:       edgeMeta,
 	evPkgHomepage:   edgeMeta,
 	evNavChain:      edgeMeta,
+	evPkgReadme:     edgeMeta,
 	evRepoHomepage:  edgeGitHub,
 	evLinksRepo:     edgeSiteLink,
 	evLinksPackage:  edgeSiteLink,

@@ -175,7 +175,12 @@ func TestPkgClientPyPI(t *testing.T) {
 			docsURL: "https://pythonhosted.org/Clap/"}},
 	}
 	for _, tt := range tests {
-		if got := mustLookupPkg(t, c, ecoPyPI, tt.name); got != tt.want {
+		got := mustLookupPkg(t, c, ecoPyPI, tt.name)
+		if tt.name == "Django" && got.moreURLs != "https://code.djangoproject.com/\nhttps://www.djangoproject.com/fundraising/" {
+			t.Errorf("pypi Django: other project URLs %q", got.moreURLs)
+		}
+		got.moreURLs = "" // the project_urls no role takes (checked above)
+		if got != tt.want {
 			t.Errorf("pypi %s\n got %+v\nwant %+v", tt.name, got, tt.want)
 		}
 	}

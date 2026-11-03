@@ -15,7 +15,7 @@ import (
 // shipped before tool pruning (v0.14.0); the docs backend list in it is
 // derived from the docs registry and is expected to grow, everything else is
 // held fixed.
-const allFiveInstructions = `ketch provides five read-only research tools: search (web search), code (grep public OSS repos for real-world usage), docs (curated library/API documentation via Context7, Web), scrape (fetch URLs as clean markdown), and crawl (bounded same-host multi-page crawl).
+const allFiveInstructions = `ketch provides five read-only research tools: search (web search), code (grep public OSS repos for real-world usage), docs (curated library/API documentation via Context7, Local index, Web), scrape (fetch URLs as clean markdown), and crawl (bounded same-host multi-page crawl).
 Prefer search for the open web, code for code examples, docs for library references, scrape when you already have the URL, and crawl only when one page is not enough.
 Backend defaults and API keys come from the operator's ketch config; omit the backend argument to use them (on the CLI, ` + "`ketch config`" + ` shows the effective settings).
 Tool errors start with a stable prefix: [validation] and [not_found] mean fix your input (retrying unchanged will not help); [upstream] is a backend/network failure where retrying may help; [precondition] means the operator must configure something (e.g. an API key or browser); [cancelled] means the call was cancelled or timed out.

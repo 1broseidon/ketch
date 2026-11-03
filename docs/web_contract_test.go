@@ -97,7 +97,7 @@ var (
 
 // Every evidence kind has a row in the points table.
 func TestEvidenceKindsHavePoints(t *testing.T) {
-	kinds := []evidenceKind{evPkgDocs, evPkgHomepage, evRepoHomepage, evNavChain, evRegistryDocs, evRelatedDomain,
+	kinds := []evidenceKind{evPkgDocs, evPkgHomepage, evRepoHomepage, evNavChain, evPkgReadme, evRegistryDocs, evRelatedDomain,
 		evLinksRepo, evLinksOwner, evLinksPackage, evRepoAgrees, evSiteNames, evRTDRepo, evArchived, evDeprecated, evNote}
 	for _, k := range kinds {
 		if _, ok := trustPoints[k]; !ok {

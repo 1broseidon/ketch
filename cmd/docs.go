@@ -21,7 +21,7 @@ var docsCmd = &cobra.Command{
 	Use:   "docs <query>",
 	Short: "Search library documentation",
 	Long: `Search library documentation using ` + strings.Join(docs.ProviderNames(), ", ") + ` (default: the configured backend). Supports direct library ID lookup and library name resolution. ` +
-		docs.WithLibraryHelp("A library is a library ID from --resolve") + `. Resolve a name once and pass the ID it returns as --library: a name is resolved again on every call. Context7 needs no key: without one it uses Context7's anonymous quota (about 200 requests a month per IP), and a key lifts it. The auto backend tries web first and asks Context7 only when web identifies no library, finds several, or fails; Context7's pick must be a library the query names, and for an ambiguous name one of web's candidates. Output names the provider that answered. A local FTS5 backend is planned but not yet implemented.`,
+		docs.WithLibraryHelp("A library is a library ID from --resolve") + `. Resolve a name once and pass the ID it returns as --library: a name is resolved again on every call. Context7 needs no key: without one it uses Context7's anonymous quota (about 200 requests a month per IP), and a key lifts it. The local backend answers offline from libraries indexed with ketch docs index: about ten page results, each a page's best section with its other near sections. The auto backend asks the local index first when it holds the library, then tries web, and asks Context7 only when web identifies no library, finds several, or fails; Context7's pick must be a library the query names, and for an ambiguous name one of web's candidates. Output names the provider that answered.`,
 	Args: exitArgs(cobra.MinimumNArgs(1)),
 	RunE: runDocs,
 }
@@ -89,6 +89,7 @@ func runDocs(cmd *cobra.Command, args []string) error {
 	tagResults(cmd, docsTaggable(o.Results))
 
 	if asJSON {
+		noteOnStderr(o)
 		return json.NewEncoder(os.Stdout).Encode(o.Results)
 	}
 
@@ -197,6 +198,7 @@ func runDocsWithLibrary(cmd *cobra.Command, query, library string, tokens, limit
 	tagResults(cmd, docsTaggable(o.Results))
 
 	if asJSON {
+		noteOnStderr(o)
 		return json.NewEncoder(os.Stdout).Encode(o.Results)
 	}
 
@@ -219,9 +221,18 @@ func servedDocsBackend(backend string, o docs.Outcome) string {
 	return o.Backend
 }
 
+// noteOnStderr says an answer's note (the local index ranked by keywords)
+// where --json and --minimal output, which carry results only, cannot.
+func noteOnStderr(o docs.Outcome) {
+	if o.Note != "" {
+		fmt.Fprintf(os.Stderr, "note: %s\n", o.Note)
+	}
+}
+
 func printDocsResults(query, backend, library string, o docs.Outcome, minimal bool) {
 	results := o.Results
 	if minimal {
+		noteOnStderr(o)
 		for _, r := range results {
 			snippet := firstLine(r.Snippet)
 			fmt.Printf("%s\t%s\t%s\n", r.URL, minimalField(r.Library), minimalField(snippet))
@@ -242,6 +253,9 @@ func printDocsResults(query, backend, library string, o docs.Outcome, minimal bo
 	}
 	if o.Status == docs.Partial {
 		fmt.Printf("status: partial (%s)\n", o.Reason)
+	}
+	if o.Note != "" {
+		fmt.Printf("note: %s\n", o.Note)
 	}
 	fmt.Printf("result_count: %d\n", len(results))
 	fmt.Println("---")

@@ -11,15 +11,17 @@ import (
 )
 
 // AutoBackend is the docs backend that chains the providers, as search's
-// auto does: web first (keyless, no quota), then Context7 (keyless on its
+// auto does: the local index first (no network) when it holds the
+// library, then web (keyless, no quota), then Context7 (keyless on its
 // anonymous quota, or keyed). It is not a provider: it owns no endpoint or
 // settings, and it is never the default until decision-10's accuracy gates
 // pass.
 const AutoBackend = "auto"
 
-// SelectingSearcher is a docs backend that dispatches to one of several
-// providers and reports each provider's part in an Outcome. Only Auto
-// implements it.
+// SelectingSearcher is a docs backend that reports each call as an
+// Outcome: Auto, which dispatches to several providers and reports each
+// one's part, and Local, whose answers can carry a reason (it ranked by
+// keywords).
 type SelectingSearcher interface {
 	Searcher
 	LibraryResolver
@@ -34,7 +36,16 @@ type autoWeb interface {
 	LibraryResolver
 }
 
-// Auto chains the web backend and Context7. Web answers first; Context7 is
+// autoLocal is what Auto needs from the local index backend.
+type autoLocal interface {
+	SearchSelect(ctx context.Context, query string, limit int) Outcome
+	GetDocsSelect(ctx context.Context, libraryID, query string, tokens int) Outcome
+}
+
+// Auto chains the local index, the web backend and Context7. The local
+// index answers first when it holds the library (ADR-0007); otherwise, or
+// when it finds nothing there, the chain below runs as it did without it.
+// Web answers next; Context7 is
 // asked only when web refuses — it identified no library, the library it
 // named was not found, it found several, or a source failed — never to
 // replace an answer web gave (an empty one included), and never when the
@@ -45,17 +56,25 @@ type autoWeb interface {
 // is never handed to Context7, whose matches carry neither, and a docs URL
 // is web's alone.
 type Auto struct {
-	web autoWeb
-	c7  *Context7
+	local autoLocal // nil: no local index in the chain
+	web   autoWeb
+	c7    *Context7
 }
 
 // NewAuto chains web and Context7.
 func NewAuto(web autoWeb, c7 *Context7) *Auto { return &Auto{web: web, c7: c7} }
 
-// newAutoFromConfig builds the chain from c: the web backend with its name
-// resolution sources, and Context7 with c's key or none.
+// WithLocal puts a local index backend first in the chain.
+func (a *Auto) WithLocal(l autoLocal) *Auto {
+	a.local = l
+	return a
+}
+
+// newAutoFromConfig builds the chain from c: the local index, the web
+// backend with its name resolution sources, and Context7 with c's key or
+// none.
 func newAutoFromConfig(c *config.Config, deps Deps) *Auto {
-	return NewAuto(newWebFromConfig(c, deps), NewContext7(c.String("context7_api_key")))
+	return NewAuto(newWebFromConfig(c, deps), NewContext7(c.String("context7_api_key"))).WithLocal(newLocalFromConfig(c))
 }
 
 // Search answers a bare query; see SearchSelect.
@@ -78,12 +97,24 @@ func (a *Auto) GetDocs(ctx context.Context, libraryID, query string, tokens int)
 
 // The auto chain is one state machine for all three calls:
 //
-//	web ──answered──▶ done
+//	local ──answered──▶ done
+//	 │  (search and docs only; resolve starts at web)
+//	 ├─not_indexed─▶ web, no local attempt recorded
+//	 └─refused/failed─▶ web, the local attempt kept
+//
+//	web ──answered──▶ done (any local attempt kept)
 //	 │
 //	 └─refused/failed─▶ handoff? ──no──▶ web's outcome
 //	                       │
-//	                      yes─▶ context7 ──answered──▶ done (web's attempt kept)
-//	                               └─refused/failed─▶ web's outcome, both attempts kept
+//	                      yes─▶ context7 ──answered──▶ done (earlier attempts kept)
+//	                               └─refused/failed─▶ web's outcome, every attempt kept
+//
+// The local index answers only for a library it holds (by its docs root,
+// a name or spec it was indexed under, or the library a bare query names
+// first); a library it does not hold is not an attempt at all, so a call
+// for an unindexed library reads exactly as it did without the index.
+// A local refusal (nothing matched) or failure (the index unreadable)
+// hands the call to web like any other.
 //
 // Handoff is refused when the caller cancelled, or the request pins its
 // library (an ecosystem, a version or a docs URL), which Context7 cannot
@@ -97,17 +128,38 @@ func (a *Auto) GetDocs(ctx context.Context, libraryID, query string, tokens int)
 // SearchSelect answers a bare query from web, else from Context7 with the
 // whole query, as `--backend context7` would.
 func (a *Auto) SearchSelect(ctx context.Context, query string, limit int) Outcome {
+	var local []Attempt
+	if a.local != nil {
+		o, done := localFirst(ctx, a.local.SearchSelect(ctx, query, limit))
+		if done {
+			return o
+		}
+		local = o.Attempts
+	}
 	results, err := a.web.Search(ctx, query, limit)
 	web := attempt("web", len(results), err)
 	if web.Status == Answered || ctx.Err() != nil || queryPinsLibrary(query) {
-		return finish(web, results, nil, []Attempt{web})
+		return finish(web, results, nil, append(local, web))
 	}
 	accept := webCandidates(web.err)
 	if accept == nil {
 		accept = namedBy(query)
 	}
 	c7results, c7err := a.c7.search(ctx, query, limit, accept)
-	return autoSecond(ctx, web, attempt("context7", len(c7results), c7err), c7results, nil)
+	return autoSecond(ctx, local, web, attempt("context7", len(c7results), c7err), c7results, nil)
+}
+
+// localFirst reads the local index's outcome as the chain's first step:
+// done with it when it answered or the caller cancelled; else the attempts
+// to keep (none for a library the index does not hold) as o.Attempts.
+func localFirst(ctx context.Context, o Outcome) (Outcome, bool) {
+	if o.Status == Answered || o.Status == Partial || ctx.Err() != nil {
+		return o, true
+	}
+	if o.Reason == "not_indexed" {
+		o.Attempts = nil
+	}
+	return o, false
 }
 
 // GetDocsSelect fetches docs for a library. A Context7 ID (/owner/repo, as
@@ -119,11 +171,19 @@ func (a *Auto) GetDocsSelect(ctx context.Context, libraryID, query string, token
 		results, err := a.c7.GetDocs(ctx, libraryID, query, tokens)
 		return Answer("context7", results, err)
 	}
+	var local []Attempt
+	if a.local != nil {
+		o, done := localFirst(ctx, a.local.GetDocsSelect(ctx, libraryID, query, tokens))
+		if done {
+			return o
+		}
+		local = o.Attempts
+	}
 	results, err := a.web.GetDocs(ctx, libraryID, query, tokens)
 	web := attempt("web", len(results), err)
 	name, exact, ok := context7Name(libraryID)
 	if web.Status == Answered || ctx.Err() != nil || !ok {
-		return finish(web, results, nil, []Attempt{web})
+		return finish(web, results, nil, append(local, web))
 	}
 	accept := webCandidates(web.err)
 	if accept == nil {
@@ -138,7 +198,7 @@ func (a *Auto) GetDocsSelect(ctx context.Context, libraryID, query string, token
 		}
 	}
 	c7results, c7err := a.c7.docsFor(ctx, name, query, tokens, accept)
-	return autoSecond(ctx, web, attempt("context7", len(c7results), c7err), c7results, nil)
+	return autoSecond(ctx, local, web, attempt("context7", len(c7results), c7err), c7results, nil)
 }
 
 // ResolveSelect lists web's matches for a name, else Context7's when web
@@ -161,14 +221,15 @@ func (a *Auto) ResolveSelect(ctx context.Context, name string, limit int) Outcom
 	if c7err == nil && len(c7matches) == 0 {
 		c7err = fmt.Errorf("context7: library %q %w", c7name, ErrNotFound)
 	}
-	return autoSecond(ctx, web, attempt("context7", len(c7matches), c7err), nil, c7matches)
+	return autoSecond(ctx, nil, web, attempt("context7", len(c7matches), c7err), nil, c7matches)
 }
 
 // autoSecond finishes a call Context7 took over from web: Context7's
-// answer with web's attempt kept, or web's outcome with both attempts. A
-// caller that cancelled during Context7 gets a cancelled outcome.
-func autoSecond(ctx context.Context, web, c7 Attempt, results []Result, matches []LibraryMatch) Outcome {
-	attempts := []Attempt{web, c7}
+// answer with the earlier attempts kept (local's, if any, and web's), or
+// web's outcome with every attempt. A caller that cancelled during
+// Context7 gets a cancelled outcome.
+func autoSecond(ctx context.Context, local []Attempt, web, c7 Attempt, results []Result, matches []LibraryMatch) Outcome {
+	attempts := append(append(local, web), c7)
 	if c7.Status == Answered {
 		return finish(c7, results, matches, attempts)
 	}

@@ -138,7 +138,7 @@ func ecoSearchWord(eco ecosystem) string {
 // (projectsFromHitsKeyless). Each root counts for the first project it
 // verifies for; most verify for none.
 func (r *resolution) keylessHits(ctx context.Context, projects []*project, results []search.Result) ([]webMatch, []*project) {
-	cands := hitRoots(results)
+	cands := hitRoots(results, searchName(r.spec))
 	extra := r.projectsFromHitsKeyless(ctx, results, cands, projects)
 	targets := append(append([]*project{}, projects...), extra...)
 	if len(targets) > webMaxProjects+len(extra) {
@@ -327,8 +327,9 @@ func (r *resolution) readTieBreak(ctx context.Context, matches []webMatch) {
 			add(m.proj) // a hit's project under another name is no rival (rivals)
 		}
 	}
+	weighRivalOnly := len(indexOnlyProjects(matches)) > 0
 	for _, p := range r.log.considered() {
-		if p.exact && len(p.pkgs) > 0 {
+		if tieBreakRival(p, weighRivalOnly) {
 			add(p)
 		}
 	}
@@ -341,6 +342,13 @@ func (r *resolution) readTieBreak(ctx context.Context, matches []webMatch) {
 			r.log.failFor(p, p.popErr)
 		}
 	}
+}
+
+// tieBreakRival reports a considered project readTieBreak weighs: a
+// package of exactly the name; one weighed as a rival only (deprecated)
+// only when some pick's docs only a package index hosts (rivalOf).
+func tieBreakRival(p *project, rivalOnlyToo bool) bool {
+	return p.exact && len(p.pkgs) > 0 && (!p.rivalOnly || rivalOnlyToo)
 }
 
 // keylessRivals checks a keyless pick against the packages of exactly the
@@ -460,6 +468,8 @@ func rivalOf(p *project, m webMatch, matched map[string]bool, hint []ecosystem) 
 	switch {
 	case !p.exact || len(p.pkgs) == 0 || matched[p.key] || p == m.proj || ownedBy(p, m.proj):
 		return false
+	case p.rivalOnly && !m.indexOnly:
+		return false // a deprecated namesake does not stand in a docs site's way (registryProjects)
 	case !p.repo.isZero() && m.proj.isRepo(p.repo):
 		return false // another registry's package of the pick's own repository
 	case len(hint) > 0 && hinted(m.proj, hint) && !hinted(p, hint) && (!p.popKnown || !outweighsBy(p.pop, int64(m.stars))):

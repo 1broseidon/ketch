@@ -9,6 +9,7 @@ package docs
 import (
 	"context"
 	"net/url"
+	"strings"
 
 	"github.com/1broseidon/ketch/search"
 )
@@ -104,8 +105,26 @@ type pkgInfo struct {
 	// https://docs.rs/<crate>/latest/<ident>/, https://pkg.go.dev/<module>;
 	// "" for registries that host none.
 	registryDocs string
-	deprecated   bool
-	downloads    int64 // recent downloads where the registry reports them (crates); 0 when unknown
+	// readme is the README the registry publishes with the package (PyPI's
+	// description), as written: the owner's own words, whose links give
+	// the evidence edge readmeEvidence reads. "" when the registry sends
+	// none with its metadata (npm's is read lazily instead).
+	readme string
+	// moreURLs are the other URLs the metadata publishes (PyPI's
+	// project_urls beyond the roles above: Download, Tracker, Funding), one
+	// per line, sorted: owner-published, so each can witness that a root
+	// is on the owner's domain (relatedHostEvidence). "" for none.
+	moreURLs   string
+	deprecated bool
+	downloads  int64 // recent downloads where the registry reports them (crates); 0 when unknown
+}
+
+// otherURLs are moreURLs, one per entry.
+func (p pkgInfo) otherURLs() []string {
+	if p.moreURLs == "" {
+		return nil
+	}
+	return strings.Split(p.moreURLs, "\n")
 }
 
 // spec is the package as a library spec: "pypi:click".
@@ -272,6 +291,7 @@ const (
 	evPkgHomepage   evidenceKind = "pkg-homepage"   // the package homepage is the root's site (V1)
 	evRepoHomepage  evidenceKind = "repo-homepage"  // the repository homepage is the root's site (V1)
 	evNavChain      evidenceKind = "nav-chain"      // the root is a homepage's docs link or docs. host (V2)
+	evPkgReadme     evidenceKind = "pkg-readme"     // the package's published README links to the root (keyless)
 	evRegistryDocs  evidenceKind = "registry-docs"  // registry-hosted docs for the exact package (V3)
 	evRelatedDomain evidenceKind = "related-domain" // same registrable domain, or <owner>.github.io (V4, needs evLinksRepo)
 	evLinksRepo     evidenceKind = "links-repo"     // the root links to the canonical repo or an alias

@@ -20,6 +20,7 @@ see [`../DESIGN.md`](../DESIGN.md).
 | [0004](./0004-tagged-cache-corpus.md) | Tags over the page cache instead of a local docs corpus | Accepted |
 | [0005](./0005-structural-extraction.md) | Structural content selection instead of readability scoring | Accepted |
 | [0006](./0006-page-cache-per-operation-handles.md) | Open the page cache per operation | Accepted |
+| [0007](./0007-local-docs-index.md) | A local docs index, built once per library and queried offline | Proposed |
 
 ## Writing a new ADR
 

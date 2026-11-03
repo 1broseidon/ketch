@@ -1,5 +1,6 @@
 // Package doctor runs cheap live health checks against every ketch surface:
-// search/code/docs backends, the configured browser, and the page cache.
+// search/code/docs backends, the configured browser, the embedding model
+// and the page cache.
 // Probes are read-only — they never write cache entries or mutate config —
 // and each is bounded by a per-probe timeout so a full run stays fast.
 package doctor
@@ -17,6 +18,7 @@ import (
 	"github.com/1broseidon/ketch/docs"
 	"github.com/1broseidon/ketch/health"
 	"github.com/1broseidon/ketch/httpx"
+	"github.com/1broseidon/ketch/internal/embed"
 	"github.com/1broseidon/ketch/search"
 )
 
@@ -225,6 +227,9 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 	}
 	return append(specs,
 		spec{0, "browser", browserBackendName(cfg.Browser), cfg.Browser != "", func(context.Context) (Status, string) { return checkBrowser(cfg.Browser) }},
+		// The embedding model is optional (indexed docs fall back to keyword
+		// ranking without one); a model_path the operator set must be one.
+		spec{0, "model", modelBackendName(cfg), cfg.String("model_path") != "", func(context.Context) (Status, string) { return checkModel(cfg.String("model_path")) }},
 		spec{0, "cookies", "jar", cfg.CookieFile != "", func(context.Context) (Status, string) { return checkCookieFile(cfg.CookieFile) }},
 		spec{0, "cache", "bbolt", true, func(context.Context) (Status, string) { return checkCache() }},
 		// Tags is informational, never required: the index is a best-effort,
@@ -232,6 +237,15 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 		// workflow that never runs `ketch tag` must not have its exit code
 		// gated by a bookmark file it never touches.
 		spec{0, "tags", "bbolt", false, func(context.Context) (Status, string) { return checkTags() }})
+}
+
+// modelBackendName labels the model check's backend column: the model
+// ketch would load, or "none".
+func modelBackendName(cfg *config.Config) string {
+	if m, err := embed.Locate(cfg.String("model_path")); err == nil {
+		return m.ID
+	}
+	return "none"
 }
 
 // browserBackendName labels the browser check's backend column.

@@ -583,20 +583,33 @@ func (a variantPref) better(b variantPref) bool {
 // version segments among its first variantDepth removed (a locale only
 // leading), and how much the variant is wanted.
 func variantKey(u *url.URL, root webRoot, rootLabel string) (string, variantPref) {
+	key, _, p := variantParts(u, root, rootLabel)
+	return key, p
+}
+
+// variantParts is variantKey that also returns the locale and version
+// segments it set aside, lower case, in path order: the variant tree the
+// page belongs to (es, v2, en/5x), empty for the unmarked tree.
+func variantParts(u *url.URL, root webRoot, rootLabel string) (string, []string, variantPref) {
 	segs := pathSegments(strings.TrimPrefix(u.Path, root.prefix))
 	p := variantPref{class: 1}
-	// The last segment names the page, unless the path ends in a slash
-	// (/stable/, a version's landing page).
+	// The last segment names the page, unless the path ends in a slash and
+	// every segment before it was set aside too (/stable/, /en/5x/: a
+	// version's landing page). /tutorial/1-setup/2/ and
+	// /guides/upgrade-to/v5/ are pages of their own.
 	last := len(segs) - 1
-	if strings.HasSuffix(u.Path, "/") {
-		last = len(segs)
-	}
+	slash := strings.HasSuffix(u.Path, "/")
 	removed := 0
 	kept := segs[:0:0]
+	var tree []string
 	for i, seg := range segs {
+		if slash && i == len(segs)-1 && removed == i {
+			last = len(segs)
+		}
 		if removed < 2 && i < variantDepth && i < last {
 			if label, ok := variantLabel(seg); ok {
 				p.class, p.release, p.label = versionClass(label, rootLabel)
+				tree = append(tree, label)
 				removed++
 				continue
 			}
@@ -604,13 +617,14 @@ func variantKey(u *url.URL, root webRoot, rootLabel string) (string, variantPref
 				if !strings.EqualFold(seg[:2], "en") {
 					p.locale = 1
 				}
+				tree = append(tree, strings.ToLower(seg))
 				removed++
 				continue
 			}
 		}
 		kept = append(kept, seg)
 	}
-	return strings.Join(kept, "/"), p
+	return strings.Join(kept, "/"), tree, p
 }
 
 // variantLabel reports a path segment that names a version: one of
@@ -1074,6 +1088,11 @@ func dedupe(ranked []scoredSection) []scoredSection {
 	return out
 }
 
+// partHeading opens a section's part of its page's result: a page's
+// other sections join its result under their own headings (the local
+// index's page results).
+func partHeading(title string) string { return "\n\n### " + title + "\n\n" }
+
 // webRelevanceRatio is how far below the top section's score a section
 // may fall and still be returned (relevant).
 const webRelevanceRatio = 0.3
@@ -1153,6 +1172,107 @@ func budgetSections(library string, ranked []scoredSection, tokens int) ([]Resul
 }
 
 const truncatedMarker = "\n[truncated]"
+
+// elidedMarker stands where trimForQuery left blocks out.
+const elidedMarker = "[…]"
+
+// trimForQuery cuts s to at most n bytes, like trimSnippet, but by whole
+// blocks (paragraphs, list runs, fenced code) rather than a prefix: the
+// lead block first, then the blocks that name the most query terms, each
+// whole, as many as fit, in their order in s, with elidedMarker where
+// blocks were left out. A long reference section puts its example last,
+// and a prefix cut kept the parameter table and dropped the code the
+// question asked about. Without terms, or when no block beyond the lead
+// names one, or when the lead itself does not fit, it is trimSnippet.
+func trimForQuery(s string, n int, terms []string) string {
+	blocks := textBlocks(s)
+	if len(terms) == 0 || len(blocks) < 2 || len(blocks[0])+len(truncatedMarker) > n {
+		return trimSnippet(s, n)
+	}
+	keep := map[int]bool{0: true}
+	for _, i := range blocksByTerms(blocks[1:], terms) {
+		keep[i+1] = true
+		if len(joinKept(blocks, keep))+len(truncatedMarker) > n {
+			delete(keep, i+1)
+		}
+	}
+	if len(keep) == 1 {
+		return trimSnippet(s, n) // no block naming the query fits: the prefix says more
+	}
+	return joinKept(blocks, keep) + truncatedMarker
+}
+
+// blocksByTerms returns the indices of the blocks that name any of terms,
+// those naming the most first, ties in block order.
+func blocksByTerms(blocks, terms []string) []int {
+	count := make([]int, len(blocks))
+	var out []int
+	for i, b := range blocks {
+		toks := map[string]bool{}
+		for _, t := range textTokens(b) {
+			toks[t] = true
+		}
+		for _, t := range terms {
+			if toks[t] {
+				count[i]++
+			}
+		}
+		if count[i] > 0 {
+			out = append(out, i)
+		}
+	}
+	sort.SliceStable(out, func(a, b int) bool { return count[out[a]] > count[out[b]] })
+	return out
+}
+
+// joinKept joins the kept blocks in their order, elidedMarker standing
+// where blocks were left out.
+func joinKept(blocks []string, keep map[int]bool) string {
+	var b strings.Builder
+	last := -1
+	for i, block := range blocks {
+		if !keep[i] {
+			continue
+		}
+		if last >= 0 {
+			b.WriteString("\n\n")
+			if i > last+1 {
+				b.WriteString(elidedMarker + "\n\n")
+			}
+		}
+		b.WriteString(block)
+		last = i
+	}
+	if last < len(blocks)-1 {
+		b.WriteString("\n\n" + elidedMarker)
+	}
+	return b.String()
+}
+
+// textBlocks splits Markdown at blank lines outside fenced code, so a
+// code block, blank lines and all, is one block.
+func textBlocks(s string) []string {
+	var blocks []string
+	var cur []string
+	var fence fenceState
+	flush := func() {
+		if t := strings.Trim(strings.Join(cur, "\n"), "\n"); strings.TrimSpace(t) != "" {
+			blocks = append(blocks, t)
+		}
+		cur = cur[:0]
+	}
+	for _, line := range strings.Split(s, "\n") {
+		inFence := fence.n > 0
+		opens := fence.step(line)
+		if !inFence && !opens && strings.TrimSpace(line) == "" {
+			flush()
+			continue
+		}
+		cur = append(cur, line)
+	}
+	flush()
+	return blocks
+}
 
 // trimSnippet cuts s to at most n bytes including the "[truncated]" marker,
 // preferring a line or word boundary and closing a code fence the cut left

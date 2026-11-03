@@ -63,6 +63,7 @@
   ],
   "available_doc_backends": [
     "context7",
+    "local",
     "web",
     "auto"
   ],
@@ -72,5 +73,6 @@
   "parallel_api_keys_count": 0,
   "degoog_url": "",
   "serply_api_key_set": false,
-  "serply_api_keys_count": 0
+  "serply_api_keys_count": 0,
+  "model_path": ""
 }

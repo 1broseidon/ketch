@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -34,20 +35,19 @@ func asExitError(t *testing.T, err error) *ExitError {
 	return exitErr
 }
 
-// The unimplemented local docs backend must fail with a nonzero exit
-// (precondition, 5) — never print an error and exit 0.
-func TestDocsLocalBackendExitsPrecondition(t *testing.T) {
+// The local docs backend refuses a library its index does not hold with
+// a nonzero exit (not found, 3) that says how to index it, never an error
+// and exit 0.
+func TestDocsLocalBackendRefusesNotIndexed(t *testing.T) {
 	setDocsBackend(t, "local")
+	t.Setenv("KETCH_DOCS_INDEX_PATH", filepath.Join(t.TempDir(), "docs-index.db"))
 
 	exitErr := asExitError(t, runDocs(docsCmd, []string{"test"}))
-	if exitErr.Code != ExitPrecondition {
-		t.Errorf("exit code = %d, want %d (precondition)", exitErr.Code, ExitPrecondition)
+	if exitErr.Code != ExitNotFound {
+		t.Errorf("exit code = %d, want %d (not found)", exitErr.Code, ExitNotFound)
 	}
-	if exitErr.Code == 0 {
-		t.Error("exit code must be nonzero")
-	}
-	if !strings.Contains(exitErr.Error(), "not yet implemented") {
-		t.Errorf("error should say the backend is not implemented, got: %v", exitErr)
+	if !strings.Contains(exitErr.Error(), "ketch docs index") {
+		t.Errorf("error should say how to index the library, got: %v", exitErr)
 	}
 }
 

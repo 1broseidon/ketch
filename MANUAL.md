@@ -243,13 +243,15 @@ $ ketch docs --resolve "next.js"                          # name → Context7 ID
 $ ketch docs -b web --resolve click                       # name → its docs site, no key
 $ ketch docs -b web --library django@5.2 "middleware"     # one version's docs
 $ ketch docs -b web "how do I set retries in requests"    # library named in the query
-$ ketch docs -b auto "how do I set retries in requests"   # web first, then Context7
+$ ketch docs -b auto "how do I set retries in requests"   # local index, then web, then Context7
+$ ketch docs index fastapi                                # index a library once…
+$ ketch docs -b local --library fastapi "dependencies with yield"  # …then answer offline
 ```
 
 | Flag | Meaning |
 | --- | --- |
-| `--backend, -b` | `context7` (default), `web`, `auto` (web, then Context7) |
-| `--library` | A library ID from `--resolve`, or for `web` any library spec (below); skips the resolve step |
+| `--backend, -b` | `context7` (default), `local` (the local index), `web`, `auto` (local, then web, then Context7) |
+| `--library` | A library ID from `--resolve`, or for `web` any library spec (below), or for `local` an indexed library's name, spec or docs root; skips the resolve step |
 | `--tokens` | Token budget, default 4000 |
 | `--resolve` | Resolve the query as a library name or spec instead of searching |
 | `--limit, -l` | Max results; with `--library`, only `--tokens` bounds them unless set |
@@ -358,7 +360,12 @@ With Context7, `docs` is a two-step: resolve the name, *vet the matches*, then
 fetch by ID. Its resolve never returns empty. A bad name still returns
 confident fuzzy matches, so check the name, not just the trust score.
 
-**`auto` chains the two, like `search`'s auto.** It asks `web` first, which has
+**`auto` chains them, like `search`'s auto.** When the local index holds the
+library (by its docs root, a name or spec it was indexed under, or the library
+a bare query names), `auto` answers from it first, with no network at all; a
+library the index does not hold is not even an attempt, and when the index
+holds it but nothing matched, the chain carries on as below with the local
+attempt reported. Next it asks `web`, which has
 no quota, and asks Context7 only when `web` refuses: it identified no library,
 the one named does not exist, a source failed, or the name is ambiguous. It
 never replaces an answer `web` gave, an empty one included. An ambiguous name
@@ -381,6 +388,61 @@ the error is `web`'s, with its exit code, followed by Context7's. `auto` runs
 only when you select it: an explicit `-b web` or `-b context7` never chains.
 It is not the default yet; the default stays Context7 until keyless `web`
 passes its accuracy gates.
+
+##### The local index — index once, answer offline
+
+```console
+$ ketch model install                              # optional: bge-base (438 MB) for semantic ranking
+$ ketch docs index https://docs.astro.build/en/    # a docs URL, taken as the root
+$ ketch docs index fastapi                         # or a name or spec, resolved like web resolves one
+$ ketch docs index django@5.2 --max-pages 800
+$ ketch docs -b local --library fastapi "how do I run code after the response is sent"
+$ ketch docs -b local "content collections schema in astro"   # a bare query names its library
+$ ketch docs index --list
+$ ketch docs index --remove fastapi
+```
+
+`docs index` does the slow, judgment-heavy part of a docs query once per
+library and version, and stores the result in `docs-index.db` in ketch's cache
+directory (separate from the page cache and the bookmarks; `KETCH_DOCS_INDEX_PATH`
+overrides it). A docs URL is taken as the root; a name or spec is resolved
+exactly as `-b web` resolves one, so an ambiguous name exits **2** listing the
+candidates and a name nothing verifies exits **3**, and you pass the docs URL
+you mean instead. It then reads the site's own page lists (`llms.txt` and
+`llms-full.txt`, its sitemaps, its search index and nav links), keeps the
+pages under the root in its locale and version (translations and other
+releases' copies are left out), honours `robots.txt`, fetches up to
+`--max-pages` pages (1,500 by default) `--concurrency` at a time (4) through
+the scrape pipeline and page cache, splits them into heading sections (never
+inside a code block), and embeds each section with the installed model; a long
+section is embedded in several windows so none of it falls past the model's
+512-token window. Progress goes to stderr; the summary (pages, sections,
+vectors, time, index size) to stdout, or as JSON with `--json`. Running it
+again refreshes the library: pages come back through the page cache and only
+those whose content changed are sectioned and embedded again, and pages the
+site no longer lists are dropped. `--name` adds a name queries may call the
+library by (names are otherwise taken from the spec, its packages, its title
+and its docs host).
+
+`-b local` answers with no network: it embeds the question, ranks the
+library's sections by cosine similarity, and returns about ten results, one
+per page, best page first. Each is the page's best section, under that
+section's anchor and breadcrumb, followed by the page's other near sections as
+`### heading` parts, all within `--tokens`; a long section cut to fit keeps
+the paragraphs and code that name the question's words, marked `[…]`. Every
+result's `source` is `local`. The answer is a set to choose from: read the
+results and use the one that answers. A library the index does not hold exits
+**3** with reason `not_indexed`; nothing matched exits **3** with
+`no_results`.
+
+The embedding model is optional. Without one (`ketch model install` was never
+run), `docs index` stores the text alone and `-b local` ranks it by keywords
+(the same ranking `web` uses), printing `note: ranked by keywords: …` (on
+stderr with `--json`; the MCP `docs` tool's `reason` is `keyword_ranking` and
+its `note` says why). The same happens for a library indexed with a different
+model: vectors are only compared with vectors of the model that made them.
+`ketch docs index --reembed <library>` re-embeds a library's stored sections
+with the current model, without the network.
 
 #### scrape — URL(s) → clean markdown
 
@@ -524,6 +586,23 @@ returns the original XML response, not its rendered XML viewer or stylesheet
 output. A failed retry retains the original 403; sitemap fetches are not
 added to the page cache.
 
+#### model — The embedding model for the local docs index
+
+```console
+$ ketch model install            # bge-base-en-v1.5, 438 MB, into ketch's cache dir
+$ ketch model install --small    # bge-small-en-v1.5, 133 MB
+$ ketch model status
+```
+
+The local docs index ranks sections with an embedding model that runs inside
+ketch on the CPU, in pure Go: nothing else to install. `install` downloads the
+model's files from Hugging Face at a pinned revision, checks each against its
+pinned size and SHA-256, and prints where it went; re-running it finishes an
+interrupted download. With both installed, bge-base is used. `model_path`
+points ketch at another model directory instead (a BERT-family sentence
+transformer as published on Hugging Face). Indexes built before a model change
+keep working, ranked by keywords, until `ketch docs index --reembed`.
+
 #### config — Show, init, set, path
 
 ```console
@@ -568,7 +647,8 @@ $ ketch doctor
 ```
 
 Concurrent read-only probes against every backend, plus the browser, the
-cache, and an informational `tags` row for the bookmark index that never
+embedding model (`ok`, or `skipped` when none is installed; never the network),
+the cache, and an informational `tags` row for the bookmark index that never
 affects the exit code.
 Each comes back `ok`, `no_key`, `unreachable`, `misconfigured`, or `skipped`.
 Context7 without a key is `ok` and `keyless`, and doctor sends it nothing: it
@@ -821,7 +901,7 @@ misconfigured and names the origin and its header names, so an expired or
 mistyped token is not mistaken for a backend problem. A 401 or 403 can also
 come from the instance itself, so the backend's own advice follows the hint.
 
-#### Code and docs — grepapp, sourcegraph, github, context7, web
+#### Code and docs — grepapp, sourcegraph, github, context7, local, web
 
 Grep and Sourcegraph need nothing. GitHub uses `gh auth login`,
 `$GITHUB_TOKEN`, or `ketch config set github_token <tok>`. Context7 works
@@ -832,7 +912,8 @@ Context7 response and when they renew (without spending one), and a free key via
 needs nothing either; resolving a library name asks GitHub about its
 repository, and the same GitHub token lifts the 60-requests-an-hour limit an
 unauthenticated install gets. Rate-limited, `web` still answers from the
-registries, and says so in the match's evidence.
+registries, and says so in the match's evidence. The `local` docs backend needs
+no key or network: it answers from the libraries `ketch docs index` indexed.
 
 ## Configuration
 
@@ -901,6 +982,7 @@ $ ketch browser status
 - `search_order` — the `auto` chain, exactly: backend IDs tried in this order; unset keeps the default (see Backends)
 - `external_pdf_to_md_converter_command` — external PDF-to-Markdown converter; must contain exactly one `{input}` placeholder. Once set it is authoritative, with no silent fallback
 - `http_headers` — headers for self-hosted SearXNG, Firecrawl, Degoog, and Sourcegraph instances, keyed by origin (see Self-hosted under Backends); values are secrets
+- `model_path` — an embedding model directory for the local docs index; unset, ketch uses the one `ketch model install` downloaded
 
 ## Exit status
 

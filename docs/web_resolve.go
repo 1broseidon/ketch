@@ -80,6 +80,9 @@ type project struct {
 	pop      int64
 	popKnown bool
 	popErr   error
+	// rivalOnly marks a project weighed against a pick but never verified
+	// itself: deprecated npm packages of the name (registryProjects).
+	rivalOnly bool
 }
 
 // label names the project in reasons: its first package ("pypi click"),
@@ -260,10 +263,14 @@ type webMatch struct {
 	// limit, an outage), as opposed to a project with nothing to count.
 	starsUnread bool
 
-	registry bool         // registry-hosted docs
-	fromHit  bool         // a web search hit's root, which no metadata named
-	proj     *project     // nil for a docs URL the caller passed
-	prof     *siteProfile // the root's profile
+	registry bool // registry-hosted docs
+	fromHit  bool // a web search hit's root, which no metadata named
+	// oldRepo marks a root that links to its repository only at an address
+	// the repository has since moved from (withMovedRepos): docs left
+	// behind when the project moved, such as an archive of old majors.
+	oldRepo bool
+	proj    *project     // nil for a docs URL the caller passed
+	prof    *siteProfile // the root's profile
 }
 
 // resolveLog collects, across one resolution, why candidates were dropped
@@ -357,7 +364,14 @@ func (l *resolveLog) upstreamErr(msg string, timedOut bool) *upstreamError {
 
 // failFor records err as a failure for p: its homepage, its own package
 // or a docs root did not answer.
+//
+// A project weighed as a rival only (project.rivalOnly) is never the
+// library meant: its count not answering hides no library, and
+// keylessRivals decides what it means for the pick.
 func (l *resolveLog) failFor(p *project, err error) {
+	if p.rivalOnly {
+		return
+	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.missed = append(l.missed, missedSource{project: p.key, proj: p, err: err})
@@ -556,7 +570,44 @@ func logFetch(log *resolveLog, p *project, what string, err error) {
 type profileMemo struct {
 	mu    sync.Mutex
 	calls map[string]*profileCall
-	llms  map[string]*llmsCall // cachedLLMS
+	llms  map[string]*llmsCall  // cachedLLMS
+	links map[string]*linksCall // memoLinks
+}
+
+// linksCall is one memoLinks read.
+type linksCall struct {
+	done  chan struct{}
+	links []string
+}
+
+// memoLinks is read(), what u says (a README's links, where a repository
+// moved), read once per resolution per URL: every root a project verifies
+// may ask.
+func (w *Web) memoLinks(ctx context.Context, u *url.URL, read func() []string) []string {
+	memo, _ := ctx.Value(profileMemoKey{}).(*profileMemo)
+	if memo == nil {
+		return read()
+	}
+	key := u.String()
+	memo.mu.Lock()
+	if memo.links == nil {
+		memo.links = map[string]*linksCall{}
+	}
+	if c, ok := memo.links[key]; ok {
+		memo.mu.Unlock()
+		select {
+		case <-c.done:
+			return c.links
+		case <-ctx.Done():
+			return nil
+		}
+	}
+	c := &linksCall{done: make(chan struct{})}
+	memo.links[key] = c
+	memo.mu.Unlock()
+	c.links = read()
+	close(c.done)
+	return c.links
 }
 
 type profileCall struct {
@@ -1222,15 +1273,24 @@ func repoPackageNames(eco ecosystem, repo string) []string {
 }
 
 // registryProjects looks spec up in the registries it allows and groups
-// what they have by repository. Deprecated npm packages are dropped unless
-// the spec named npm.
+// what they have by repository. Deprecated npm packages are not verified
+// unless the spec named npm: their docs are not what the name means now.
+// They are still considered (resolveLog.consider) as the rivals they are:
+// a deprecated package of exactly the name, still in wide use, shows that
+// the name means something popular (npm's angular, AngularJS, half a
+// million downloads a week), so keylessRivals weighs it against a pick
+// whose only docs a package index hosts, and a namesake it outweighs
+// (docs.rs's angular, a handful) is refused, not answered. A pick with a
+// docs site of its own is not weighed against it: the site is the
+// evidence that the name means it now, and the deprecated package is what
+// it meant before.
 func (w *Web) registryProjects(ctx context.Context, spec libSpec, log *resolveLog) []*project {
 	if w.pkgs == nil || spec.eco == ecoGitHub {
 		return nil
 	}
 	actx, cancel := context.WithTimeout(ctx, apiCallTimeout)
 	defer cancel()
-	var pkgs []pkgInfo
+	var pkgs, deprecated []pkgInfo
 	for _, l := range w.lookupRegistries(actx, spec) {
 		label := string(l.eco) + " " + l.name
 		switch {
@@ -1241,11 +1301,17 @@ func (w *Web) registryProjects(ctx context.Context, spec libSpec, log *resolveLo
 		case l.info.deprecated && l.eco == ecoNPM && spec.eco == ecoAny:
 			log.knowName()
 			log.reject("%s: deprecated", label)
+			deprecated = append(deprecated, l.info)
 		default:
 			log.knowName()
 			pkgs = append(pkgs, l.info)
 		}
 	}
+	rivals := groupPackages(spec, deprecated)
+	for _, p := range rivals {
+		p.rivalOnly = true
+	}
+	log.consider(rivals...)
 	return groupPackages(spec, pkgs)
 }
 
@@ -1989,6 +2055,9 @@ func (w *Web) candidateRoots(ctx context.Context, p *project, log *resolveLog) [
 	if !listed {
 		log.reject("%s: lists no docs URL or homepage", p.label())
 	}
+	if w.gh() == nil && !slices.ContainsFunc(set.list, func(c *rootCandidate) bool { return !indexHosted(c.url) }) {
+		readmeCandidates(p, set)
+	}
 	out := set.sorted()
 	if len(out) > 0 {
 		log.offer(p.key, slices.ContainsFunc(out, func(c rootCandidate) bool { return !indexHosted(c.url) }))
@@ -2204,12 +2273,16 @@ func (w *Web) verifyRoot(ctx context.Context, p *project, c rootCandidate) (webM
 		root, prof = w.latestMajor(ctx, root, prof)
 	}
 	keyless := w.gh() == nil
-	evs, err := rootEvidence(root, prof, p, c, keyless)
+	ep := p // the project as the evidence sees it
+	if keyless {
+		ep = w.withMovedRepos(ctx, root, prof, p, c)
+	}
+	evs, err := rootEvidence(root, prof, ep, c, keyless)
 	if err != nil {
 		return webMatch{}, err
 	}
 	if keyless {
-		if evs, err = w.keylessEvidence(ctx, root, prof, p, c, evs); err != nil {
+		if evs, err = w.keylessEvidence(ctx, root, prof, ep, c, evs); err != nil {
 			return webMatch{}, err
 		}
 	}
@@ -2220,7 +2293,7 @@ func (w *Web) verifyRoot(ctx context.Context, p *project, c rootCandidate) (webM
 	return webMatch{
 		root: root, title: siteTitle(prof, root), description: prof.description, trust: trust, evidence: evs,
 		packages: p.specs(), project: p.key, stars: p.stars(), starsUnread: p.weightUnread(),
-		registry: c.registry, fromHit: c.search, proj: p, prof: prof,
+		registry: c.registry, fromHit: c.search, oldRepo: ep != p, proj: p, prof: prof,
 	}, nil
 }
 
@@ -2392,14 +2465,24 @@ func docsRootOf(u *url.URL) *url.URL {
 	return u
 }
 
-// searchRootOf is the root a web search hit stands for: a docs. host's
-// root, a /docs/ prefix, a GitHub Pages project, else the host root.
-func searchRootOf(u *url.URL) *url.URL {
+// searchRootFor is the root a web search hit for the library name stands
+// for: a docs. host's root, a /docs/ prefix, a GitHub Pages project, else
+// the host root. Below a /docs/ prefix, a segment that is the name (one of
+// nameSet's variants)
+// is that library's tree on a host documenting several
+// (huggingface.co/docs/transformers/ beside /docs/diffusers/), and the hit
+// stands for it, not for every library under /docs/.
+func searchRootFor(u *url.URL, name string) *url.URL {
 	switch {
 	case strings.HasPrefix(strings.ToLower(u.Hostname()), "docs."):
 		return &url.URL{Scheme: u.Scheme, Host: u.Host, Path: "/"}
 	case docsSegment(u.Path) != "":
-		return &url.URL{Scheme: u.Scheme, Host: u.Host, Path: "/" + docsSegment(u.Path) + "/"}
+		seg := docsSegment(u.Path)
+		segs := pathSegments(u.Path)
+		if name != "" && len(segs) >= 2 && nameSet(name)[strings.ToLower(segs[1])] {
+			return &url.URL{Scheme: u.Scheme, Host: u.Host, Path: "/" + seg + "/" + segs[1] + "/"}
+		}
+		return &url.URL{Scheme: u.Scheme, Host: u.Host, Path: "/" + seg + "/"}
 	}
 	return hostRootFor(u)
 }
@@ -2902,7 +2985,7 @@ func (w *Web) lastResortSearch(ctx context.Context, name string) []rootCandidate
 		return nil
 	}
 	results, _ := w.searchHits(ctx, name+" documentation")
-	return hitRoots(results)
+	return hitRoots(results, name)
 }
 
 // searchHits asks the site searcher for query within its own sub-budget;
@@ -2916,17 +2999,17 @@ func (w *Web) searchHits(ctx context.Context, query string) ([]search.Result, er
 	return w.sites.Search(sctx, query, webSearchHits)
 }
 
-// hitRoots turns search hits into candidate roots (searchRootOf), at most
-// webMaxSearchRoots, skipping code forges, registries and other non-docs
-// hosts.
-func hitRoots(results []search.Result) []rootCandidate {
+// hitRoots turns search hits for the library name into candidate roots
+// (searchRootFor), at most webMaxSearchRoots, skipping code forges,
+// registries and other non-docs hosts.
+func hitRoots(results []search.Result, name string) []rootCandidate {
 	set := &candidateSet{}
 	for _, res := range results {
 		u, err := url.Parse(strings.TrimSpace(res.URL))
 		if err != nil || !isPublicWebURL(u) || isNonDocsHost(u.Hostname()) || isRegistryHost(u) {
 			continue
 		}
-		set.add(searchRootOf(u), false, true, nil)
+		set.add(searchRootFor(u, name), false, true, nil)
 		if len(set.list) == webMaxSearchRoots {
 			break
 		}
@@ -2988,7 +3071,21 @@ func (r *resolution) assemble(projects []*project, matches []webMatch) []webMatc
 // A root the project's own metadata led to comes before one only a web
 // search found: the search finds docs the registries do not name, it does
 // not overrule the docs they do (svelte.dev's /docs/ over the svelte.dev
-// a hit stands for).
+// a hit stands for). Among those, a root the metadata names itself (a
+// documentation URL, a homepage that is the docs) comes before a separate
+// one it reaches only through a homepage's links (namedDirectly): a
+// homepage is the front door of everything its owner publishes, previous
+// majors and sister projects included (psycopg.org links psycopg2's /docs/
+// as well as psycopg 3's /psycopg3/docs/, which psycopg's Documentation
+// URL names), while a documentation URL is this package's own. Evidence a
+// search hit added to the other root does not lift it past the one the
+// metadata names. One root inside the other is the same docs at two
+// scopes (docs.pola.rs, and the API reference below it that its
+// Documentation URL names): trust decides, as for the rest. A root that
+// links to the repository only at the address it moved from
+// (webMatch.oldRepo: jest's archive.jestjs.io, still linking facebook/jest,
+// beside jestjs.io/docs linking jestjs/jest) comes after the project's
+// other sites: it was left behind by the move.
 func pickRoots(ms []webMatch) []webMatch {
 	ms = mergeRootEvidence(ms)
 	slices.SortStableFunc(ms, func(a, b webMatch) int {
@@ -2998,9 +3095,25 @@ func pickRoots(ms []webMatch) []webMatch {
 			}
 			return -1
 		}
+		if a.oldRepo != b.oldRepo {
+			if a.oldRepo {
+				return 1
+			}
+			return -1
+		}
 		return cmp.Compare(b.trust, a.trust)
 	})
 	site := slices.IndexFunc(ms, func(m webMatch) bool { return !m.registry })
+	if site >= 0 && !namedDirectly(ms[site].evidence) {
+		top := ms[site]
+		named := slices.IndexFunc(ms, func(m webMatch) bool {
+			return !m.registry && m.fromHit == top.fromHit && m.oldRepo == top.oldRepo && namedDirectly(m.evidence) &&
+				!top.root.contains(m.root.u) && !m.root.contains(top.root.u)
+		})
+		if named >= 0 {
+			site = named
+		}
+	}
 	reg := slices.IndexFunc(ms, func(m webMatch) bool { return m.registry })
 	var out []webMatch
 	for _, i := range []int{site, reg} {
@@ -3010,6 +3123,30 @@ func pickRoots(ms []webMatch) []webMatch {
 	}
 	out[0].primary = true
 	return out
+}
+
+// indexOnlyProjects are the keys of the projects among matches whose
+// every verified root a package index hosts (webMatch.indexOnly).
+func indexOnlyProjects(matches []webMatch) map[string]bool {
+	site := map[string]bool{}
+	for _, m := range matches {
+		site[m.project] = site[m.project] || !indexHosted(m.root.u)
+	}
+	out := map[string]bool{}
+	for k, s := range site {
+		if !s {
+			out[k] = true
+		}
+	}
+	return out
+}
+
+// namedDirectly reports evidence that the project's own metadata names the
+// root itself: a documentation URL, a homepage that is the docs, the
+// repository's homepage. A nav chain (a homepage linking to the root) is
+// not.
+func namedDirectly(evs []evidence) bool {
+	return hasEvidence(evs, evPkgDocs) || hasEvidence(evs, evPkgHomepage) || hasEvidence(evs, evRepoHomepage)
 }
 
 // mergeRootEvidence joins one project's matches that verification moved to

@@ -91,7 +91,7 @@ func NewWeb(f Fetcher) *Web {
 		f = newWebHTTPFetcher()
 	}
 	return &Web{
-		fetcher:        f,
+		fetcher:        callFetcher{f},
 		resolveTimeout: webResolveTimeout,
 		opTimeout:      webOpTimeout,
 		probeTimeout:   webProbeTimeout,
@@ -153,6 +153,7 @@ func (f siteSearchFunc) Search(ctx context.Context, query string, limit int) ([]
 // with no resolution sources (NewWeb) takes no bare queries at all. limit
 // caps the results when positive; the token budget is the default.
 func (w *Web) Search(ctx context.Context, query string, limit int) ([]Result, error) {
+	ctx = withFetchMemo(ctx)
 	if !w.resolvesNames() {
 		return nil, fmt.Errorf("%w: the web backend searches one docs site; pass its URL with --library (CLI) or library (MCP), e.g. --library https://docs.astro.build", ErrLibraryRequired)
 	}
@@ -408,6 +409,7 @@ func vetoes(err error, s querySplit, readings int) bool {
 // library its docs site and its registry-hosted docs, each with trust,
 // evidence, versions and the package specs to pass as the library.
 func (w *Web) ResolveLibrary(ctx context.Context, name string, limit int) ([]LibraryMatch, error) {
+	ctx = withFetchMemo(ctx)
 	spec, err := w.parseLibrary(name)
 	if err != nil {
 		return nil, err
@@ -445,6 +447,7 @@ func (w *Web) ResolveLibrary(ctx context.Context, name string, limit int) ([]Lib
 // match no query term are not returned, so a query the site does not cover
 // yields an empty result rather than an error.
 func (w *Web) GetDocs(ctx context.Context, libraryID, query string, tokens int) ([]Result, error) {
+	ctx = withFetchMemo(ctx)
 	spec, err := w.parseLibrary(libraryID)
 	if err != nil {
 		return nil, err

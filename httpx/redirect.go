@@ -46,6 +46,11 @@ func WithoutRedirectCheck(ctx context.Context) context.Context {
 	return context.WithValue(ctx, redirectCheckKey{}, (func(*url.URL) error)(nil))
 }
 
+// HasRedirectCheck reports whether a request made with ctx has its
+// redirects checked (WithRedirectCheck): a response fetched without a
+// check is not one a checked request may reuse.
+func HasRedirectCheck(ctx context.Context) bool { return redirectCheck(ctx) != nil }
+
 func redirectCheck(ctx context.Context) func(*url.URL) error {
 	check, _ := ctx.Value(redirectCheckKey{}).(func(*url.URL) error)
 	return check

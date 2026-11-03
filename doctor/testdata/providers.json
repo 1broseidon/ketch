@@ -111,6 +111,13 @@
   },
   {
     "surface": "docs",
+    "backend": "local",
+    "status": "skipped",
+    "detail": "nothing indexed (ketch docs index \u003clibrary|docs-url\u003e)",
+    "latency_ms": 0
+  },
+  {
+    "surface": "docs",
     "backend": "web",
     "status": "ok",
     "detail": "keyless; reads the docs site passed as the library",

@@ -1,6 +1,6 @@
 # ADR 0004: Tags as durable bookmarks for agent workflows
 
-**Status:** Accepted · **Date:** 2026-09-18 · Cache-clear reclamation superseded by [0006](./0006-page-cache-per-operation-handles.md)
+**Status:** Accepted · **Date:** 2026-09-18 · Cache-clear reclamation superseded by [0006](./0006-page-cache-per-operation-handles.md) · Its rejection of a local docs corpus is superseded by [0007](./0007-local-docs-index.md) (Proposed)
 
 ## Context
 

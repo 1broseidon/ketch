@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -164,5 +165,30 @@ func TestWebDedupeRepeatedSections(t *testing.T) {
 	got := dedupe([]scoredSection{a, b, c})
 	if len(got) != 2 || got[0].pageURL != a.pageURL || got[1].heading != "pub fn required" {
 		t.Errorf("dedupe = %+v", got)
+	}
+}
+
+// A section cut to fit keeps its lead and its blocks that name the query,
+// whole and in order, rather than its first bytes: a reference entry's
+// example comes after its parameter list.
+func TestWebTrimForQueryKeepsMatchingBlocks(t *testing.T) {
+	params := strings.Repeat("A parameter that has nothing to do with it, described at length.\n", 6)
+	text := "Display a gauge widget.\n\n" + params + "\n" + params + "\n**Example**\n\n" + fence + "py\ng = gauge(\"Load\", maximum=100)\n\n" + "g.render()\n" + fence + "\n\nBuilt with the docs tool."
+	terms := queryTerms("gauge maximum")
+	got := trimForQuery(text, 400, terms)
+	if len(got) > 400 || !strings.HasSuffix(got, truncatedMarker) {
+		t.Fatalf("trimmed to %d bytes, want <= 400 and marked:\n%s", len(got), got)
+	}
+	if !strings.HasPrefix(got, "Display a gauge widget.") || !strings.Contains(got, "g = gauge(\"Load\", maximum=100)\n\ng.render()\n"+fence) {
+		t.Errorf("want the lead and the whole example:\n%s", got)
+	}
+	if strings.Contains(got, "nothing to do with it") || !strings.Contains(got, elidedMarker) {
+		t.Errorf("want the unmatched blocks left out, marked:\n%s", got)
+	}
+	if got := trimForQuery(text, 400, nil); got != trimSnippet(text, 400) {
+		t.Errorf("without terms it is a prefix cut:\n%s", got)
+	}
+	if got := trimForQuery(text, 40, terms); got != trimSnippet(text, 40) {
+		t.Errorf("a room too small for the lead is a prefix cut:\n%s", got)
 	}
 }

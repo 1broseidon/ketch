@@ -48,7 +48,10 @@ type Outcome struct {
 	Results  []Result       `json:"results"`
 	Matches  []LibraryMatch `json:"matches,omitempty"`
 	Attempts []Attempt      `json:"attempts,omitempty"`
-	err      error
+	// Note explains an answered outcome's reason in words (the local index
+	// ranked by keywords, and why); empty otherwise.
+	Note string `json:"note,omitempty"`
+	err  error
 }
 
 // Err is the error behind a refused or failed outcome, classified by

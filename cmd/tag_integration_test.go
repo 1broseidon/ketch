@@ -34,6 +34,9 @@ func TestMain(m *testing.M) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+	// No test reads the user's local docs index: the auto docs chain asks
+	// it first.
+	_ = os.Setenv("KETCH_DOCS_INDEX_PATH", filepath.Join(dir, "docs-index.db"))
 	binary = filepath.Join(dir, "ketch")
 	if runtime.GOOS == "windows" {
 		binary += ".exe"

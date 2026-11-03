@@ -69,18 +69,25 @@ func (w *Web) discover(ctx context.Context, root webRoot) (webSite, error) {
 	if w.discoverSitemap(ctx, root, &site) {
 		return site, nil
 	}
+	return site, w.discoverRootLinks(ctx, root, &site)
+}
+
+// discoverRootLinks is discovery's last resort (step 3 of discover): the
+// root page's links, with the Sphinx build's pages and a hub's sections'
+// sidebars, and the search index the root page names.
+func (w *Web) discoverRootLinks(ctx context.Context, root webRoot, site *webSite) error {
 	site.tried = append(site.tried, "links on "+root.String())
 	info, err := w.rootPage(ctx, root)
 	if err != nil {
-		return site, rootPageFailure(ctx, root, &site, err)
+		return rootPageFailure(ctx, root, site, err)
 	}
 	links := w.withSphinxLinks(ctx, root, info, &site.tried)
 	if len(links) == 1 && info.page != nil && strings.TrimSpace(info.page.Markdown) == "" {
-		return site, nil // an empty root page with no links: nothing to search
+		return nil // an empty root page with no links: nothing to search
 	}
 	site.links = w.withHubLinks(ctx, root, links, &site.tried)
 	site.index = w.searchIndex(ctx, root, info.indexLocs, &site.tried)
-	return site, nil
+	return nil
 }
 
 // discoverSitemap reads the site's sitemaps, when its host is worth

@@ -10,6 +10,7 @@ import (
 
 	"github.com/1broseidon/ketch/cache"
 	"github.com/1broseidon/ketch/cookies"
+	"github.com/1broseidon/ketch/internal/embed"
 	"github.com/1broseidon/ketch/scrape"
 	bolterrors "go.etcd.io/bbolt/errors"
 )
@@ -51,6 +52,21 @@ func cookiePermsLoose(path string) bool {
 	}
 	info, err := os.Stat(cookies.ExpandPath(path))
 	return err == nil && info.Mode().Perm()&0o044 != 0
+}
+
+// checkModel reports the embedding model the local docs index ranks with,
+// without loading it or touching the network: installed (by its files'
+// sizes), not installed (a clean skip: keyword ranking is the floor), or a
+// model_path that is not a model directory.
+func checkModel(modelPath string) (Status, string) {
+	m, err := embed.Locate(modelPath)
+	switch {
+	case errors.Is(err, embed.ErrNotInstalled):
+		return StatusSkipped, "not installed (optional; indexed docs rank by keywords until: ketch model install)"
+	case err != nil:
+		return StatusMisconfigured, err.Error()
+	}
+	return StatusOK, m.Dir
 }
 
 // checkCache verifies the cache directory is writable and reports entry

@@ -11,6 +11,7 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/1broseidon/ketch/httpx"
 )
@@ -258,4 +259,147 @@ func cleanPageTitle(title string) string {
 		}
 	}
 	return title
+}
+
+// callFetcher is the backend's Fetcher: the injected one, with the
+// fetches of one call (a Search, GetDocs or ResolveLibrary; withFetchMemo)
+// shared. Identification, version discovery and page discovery read many
+// of the same files (a root page, its llms.txt, a 10 MB pkg.go.dev page)
+// at different stages, and each read was a request: about one in seven of
+// a call's requests repeated one it had made already, and a discovery file
+// that never answers within its timeout (a 5 MB llms.txt generated on
+// demand) cost that timeout every time it was asked for. Outside a call
+// (no memo in the context) every fetch goes through.
+type callFetcher struct{ inner Fetcher }
+
+// fetchMemoKey is the context key of a call's fetchMemo.
+type fetchMemoKey struct{}
+
+// fetchMemo holds one call's fetches by URL, raw and page apart.
+type fetchMemo struct {
+	mu   sync.Mutex
+	raw  map[string]*memoFetch[RawContent]
+	page map[string]*memoFetch[PageContent]
+}
+
+// memoFetch is one fetch, in flight until done is closed. budget is the
+// time the fetch had (until its context's deadline; 0 for none).
+type memoFetch[T any] struct {
+	done   chan struct{}
+	val    T
+	err    error
+	budget time.Duration
+}
+
+// withFetchMemo returns ctx with a fetch memo for one call, unless it
+// already carries one.
+func withFetchMemo(ctx context.Context) context.Context {
+	if _, ok := ctx.Value(fetchMemoKey{}).(*fetchMemo); ok {
+		return ctx
+	}
+	return context.WithValue(ctx, fetchMemoKey{}, &fetchMemo{raw: map[string]*memoFetch[RawContent]{}, page: map[string]*memoFetch[PageContent]{}})
+}
+
+func (f callFetcher) FetchRaw(ctx context.Context, url string) (RawContent, error) {
+	memo, _ := ctx.Value(fetchMemoKey{}).(*fetchMemo)
+	if memo == nil {
+		return f.inner.FetchRaw(ctx, url)
+	}
+	return memoized(ctx, &memo.mu, memo.raw, memoKey(ctx, url), url, f.inner.FetchRaw)
+}
+
+func (f callFetcher) FetchPage(ctx context.Context, url string) (PageContent, error) {
+	memo, _ := ctx.Value(fetchMemoKey{}).(*fetchMemo)
+	if memo == nil {
+		return f.inner.FetchPage(ctx, url)
+	}
+	return memoized(ctx, &memo.mu, memo.page, memoKey(ctx, url), url, f.inner.FetchPage)
+}
+
+// GetResolution and PutResolution pass the injected fetcher's resolution
+// cache through (ResolutionCache), when it has one.
+func (f callFetcher) GetResolution(key string) (string, bool) {
+	if rc, ok := f.inner.(ResolutionCache); ok {
+		return rc.GetResolution(key)
+	}
+	return "", false
+}
+
+func (f callFetcher) PutResolution(key, value string) {
+	if rc, ok := f.inner.(ResolutionCache); ok {
+		rc.PutResolution(key, value)
+	}
+}
+
+// memoized fetches url once per call: a caller asking for a URL another
+// caller is fetching waits for that fetch and shares its answer. A fetch
+// the caller's own context ended is not an answer about the URL: it is
+// forgotten when cancelled, and when its deadline ran out it answers
+// only a caller with no more time than it had (the same probe timeout
+// gets the same timeout; a caller with longer to wait asks again).
+func memoized[T any](ctx context.Context, mu *sync.Mutex, calls map[string]*memoFetch[T], key, url string, fetch func(context.Context, string) (T, error)) (T, error) {
+	for {
+		mu.Lock()
+		c, ok := calls[key]
+		if !ok {
+			c = &memoFetch[T]{done: make(chan struct{}), budget: budgetOf(ctx)}
+			calls[key] = c
+			mu.Unlock()
+			c.val, c.err = fetch(ctx, url)
+			close(c.done)
+			return c.val, c.err
+		}
+		mu.Unlock()
+		select {
+		case <-c.done:
+		case <-ctx.Done():
+			var zero T
+			return zero, ctx.Err()
+		}
+		if reusable(c.err, c.budget, budgetOf(ctx)) {
+			return c.val, c.err
+		}
+		if ctx.Err() != nil {
+			var zero T
+			return zero, ctx.Err()
+		}
+		mu.Lock()
+		if calls[key] == c {
+			delete(calls, key) // ended by its own context: ask again
+		}
+		mu.Unlock()
+	}
+}
+
+// reusable reports whether a fetch that ended with err, having had budget
+// to run, answers a caller with budget left to wait: any answer from the
+// server does, a cancellation never does, and a timeout does unless the
+// caller can wait at least twice as long as the fetch could (one cut
+// short by a nearly spent outer deadline is asked again by a caller with
+// a probe's full timeout; two probes under one timeout are one probe).
+func reusable(err error, had, left time.Duration) bool {
+	switch {
+	case errors.Is(err, context.Canceled):
+		return false
+	case errors.Is(err, context.DeadlineExceeded):
+		return had > 0 && left > 0 && left < 2*had
+	}
+	return true
+}
+
+// memoKey keys a fetch by its URL and by whether its redirects are
+// checked (publicHops): an unchecked fetch never answers a checked one.
+func memoKey(ctx context.Context, url string) string {
+	if httpx.HasRedirectCheck(ctx) {
+		return "checked\x00" + url
+	}
+	return url
+}
+
+// budgetOf is the time left until ctx's deadline; 0 when it has none.
+func budgetOf(ctx context.Context) time.Duration {
+	if d, ok := ctx.Deadline(); ok {
+		return max(time.Until(d), time.Nanosecond)
+	}
+	return 0
 }

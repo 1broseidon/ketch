@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -707,6 +708,7 @@ type pypiInfo struct {
 	HomePage    string            `json:"home_page"`
 	DocsURL     string            `json:"docs_url"`
 	ProjectURLs map[string]string `json:"project_urls"`
+	Description string            `json:"description"` // the README (long_description)
 }
 
 // pypiLabels are the PEP 753 normalized project_urls labels for each URL
@@ -740,6 +742,8 @@ func (c *pkgClient) lookupPyPI(ctx context.Context, name string) (pkgInfo, error
 		docsURL:  firstNonEmpty(urls["documentation"], metaText(info.DocsURL)),
 		repoURL:  urls["source"],
 		pageURL:  urls["changelog"],
+		readme:   info.Description,
+		moreURLs: otherProjectURLs(info.ProjectURLs, urls),
 	}
 	if p.name == "" {
 		p.name = name
@@ -773,6 +777,23 @@ func decodePyPIInfo(r io.Reader) (pypiInfo, error) {
 		}
 	}
 	return pypiInfo{}, errors.New(`no "info" object`)
+}
+
+// otherProjectURLs are the project_urls values no role took, sorted and
+// newline-joined (pkgInfo.moreURLs).
+func otherProjectURLs(m, roles map[string]string) string {
+	taken := map[string]bool{}
+	for _, v := range roles {
+		taken[v] = true
+	}
+	var out []string
+	for _, v := range m {
+		if v = metaText(v); v != "" && !taken[v] && !strings.ContainsAny(v, "\n") && !slices.Contains(out, v) {
+			out = append(out, v)
+		}
+	}
+	sort.Strings(out)
+	return strings.Join(out, "\n")
 }
 
 // pypiProjectURLs maps project_urls to roles (pypiLabels' keys) by their

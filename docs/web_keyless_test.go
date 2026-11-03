@@ -536,7 +536,16 @@ func TestKeylessStrictMiss(t *testing.T) {
 // they read recorded fixtures, not crates.io (TestTurnsSpacing checks it).
 func TestMain(m *testing.M) {
 	cratesGap = 0
-	os.Exit(m.Run())
+	// No test reads the user's local docs index: the auto chain asks it
+	// first. Tests of the index set their own.
+	dir, err := os.MkdirTemp("", "ketch-docs-tests-")
+	if err != nil {
+		panic(err)
+	}
+	_ = os.Setenv("KETCH_DOCS_INDEX_PATH", filepath.Join(dir, "docs-index.db"))
+	code := m.Run()
+	_ = os.RemoveAll(dir)
+	os.Exit(code)
 }
 
 // turns spaces the starts of requests by its gap and lets a cancelled

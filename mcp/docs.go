@@ -30,14 +30,16 @@ type DocsInput struct {
 // structured content needs the object wrapper).
 //
 // Status is where the call ended (answered or partial; a refused or failed
-// call is a tool error), Reason why a partial answer is partial, Backend the
-// provider that answered, and Attempts every provider tried, in order, with
+// call is a tool error), Reason why a partial answer is partial (or, for
+// the local index, why it ranked by keywords, with Note saying it in
+// words), Backend the provider that answered, and Attempts every provider tried, in order, with
 // its status and reason. Errors is the same failures by provider, kept for
 // callers that read it.
 type DocsOutput struct {
 	Warnings []string            `json:"warnings,omitempty"`
 	Status   docs.Status         `json:"status,omitempty"`
 	Reason   string              `json:"reason,omitempty"`
+	Note     string              `json:"note,omitempty"`
 	Results  []docs.Result       `json:"results,omitempty"`
 	Matches  []docs.LibraryMatch `json:"matches,omitempty"`
 	Backend  string              `json:"backend,omitempty"`
@@ -47,7 +49,7 @@ type DocsOutput struct {
 
 // fromOutcome renders an answered or partial outcome.
 func fromOutcome(o docs.Outcome) DocsOutput {
-	out := DocsOutput{Status: o.Status, Reason: o.Reason, Results: o.Results, Matches: o.Matches, Backend: o.Backend, Attempts: o.Attempts}
+	out := DocsOutput{Status: o.Status, Reason: o.Reason, Note: o.Note, Results: o.Results, Matches: o.Matches, Backend: o.Backend, Attempts: o.Attempts}
 	if failures := o.Failures(); len(failures) > 0 {
 		out.Errors = make(map[string]string, len(failures))
 		for _, f := range failures {
@@ -64,7 +66,8 @@ func (s *Server) registerDocsTool() {
 		Description: "Search library documentation using " + strings.Join(docs.ProviderNames(), ", ") + ". Supports resolving a library name to a " + strings.Join(docs.LibraryProviderNames(), ", ") + " library ID (resolve), and fetching docs directly from a known library ID (library)." +
 			docs.WithLibraryHelp(" A library is a library ID from resolve") + ". Resolve a name once and pass the returned ID as library on later calls: a name is resolved again on every call." +
 			" Context7 needs no key: without one it runs on Context7's anonymous quota (about 200 requests a month per IP; a spent quota is an [upstream] error naming when it resets), and a key lifts it." +
-			" Backend auto tries web first and asks Context7 only when web identifies no library, finds several, or fails; Context7's pick must be a library the query names, and for an ambiguous name one of web's candidates. It reports the provider that answered in backend (each result's source says the same) and what it fell through in errors." +
+			" Backend local answers offline from the docs the operator indexed (ketch docs index), about ten page results each with its best section and the page's other near sections; pick among them." +
+			" Backend auto asks the local index first when it holds the library, then web, and asks Context7 only when web identifies no library, finds several, or fails; Context7's pick must be a library the query names, and for an ambiguous name one of web's candidates. It reports the provider that answered in backend (each result's source says the same) and what it fell through in errors." +
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in DocsInput) (*mcpsdk.CallToolResult, DocsOutput, error) {
