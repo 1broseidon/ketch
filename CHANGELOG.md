@@ -9,6 +9,8 @@ verbatim on the GitHub release. Versions follow
 
 ## [Unreleased]
 
+## [0.20.3] - 2026-11-03
+
 **Context7 works without a key.** With no `context7_api_key`, `ketch docs` and the MCP `docs` tool now call Context7 on its anonymous quota instead of refusing: about 200 requests a month per IP address, shared by everything on that address, renewing at the start of the month. A bare docs search spends two requests (resolve, then fetch), so that is small; a free key lifts the cap exactly as before (`ketch config set context7_api_key <key>`), and keyed requests are unchanged. When the quota is spent, Context7's 429 (or an error with `ratelimit-remaining: 0`) exits 4 (`[upstream]`) with a message naming when the quota resets and the `config set` command, and once a response has said the quota is spent, ketch stops asking until the reset rather than spending a request to be told again, in later ketch processes too, for up to a day (the anonymous quota belongs to an IP address, which can change). The last quota Context7 reported is kept in a small file in ketch's cache directory (`context7-quota.json`, keys stored only as a hash). A library Context7 has moved (`/facebook/react` now answers with a `library_redirected` pointing to `/react/react`) is followed once, and the results carry the new ID. `ketch doctor` reports keyless Context7 as `ok` and `keyless`, from that file and without sending Context7 anything: the requests left as of the last response and when they reset, or `quota not yet seen`, so running doctor never spends the quota; a spent keyless quota is `no_key`. For Go importers: `docs.RateLimitError`.
 
 ## [0.20.2] - 2026-10-30
