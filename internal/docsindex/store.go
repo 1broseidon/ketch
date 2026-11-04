@@ -91,7 +91,21 @@ type Library struct {
 	// page's title, "Vue Router", "Beautiful Soup"): a name the library
 	// answers to.
 	SiteName string `json:"site_name,omitempty"`
+	// Asked are the questions the search-first backend answered from this
+	// library, newest last, each with its query vector (float16): a
+	// question asked again, or in other words, is answered from here
+	// without searching.
+	Asked []Asked `json:"asked,omitempty"`
 }
+
+// Asked is one question answered from a library.
+type Asked struct {
+	Question string `json:"q"`
+	Vector   []byte `json:"v,omitempty"` // float16, the library's Dims
+}
+
+// MaxAsked caps the questions a library remembers.
+const MaxAsked = 200
 
 // Current reports whether the library is in the format this code reads.
 func (l Library) Current() bool { return l.Format == FormatVersion }

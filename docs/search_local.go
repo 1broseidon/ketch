@@ -40,8 +40,19 @@ func (s *SearchFirst) fromIndex(ctx context.Context, req sfRequest, tr *sfTrace)
 	if req.library != "" {
 		cands = MatchIndexed(libs, req.library)
 	}
-	lib, cos, ok := s.closest(ctx, cands, req.query)
-	tr.localCos, tr.local = cos, lib.Root
+	qv := s.queryVector(ctx, req.query)
+	if lib, cos, ok := askedBefore(cands, qv); ok {
+		tr.askedCos, tr.local = cos, lib.Root
+		if cos >= sfAskedFloor {
+			o := s.local.answer(ctx, lib, req.query, req.opts)
+			return o, o.Status == Answered || o.Status == Partial
+		}
+	}
+	lib, cos, ok := s.closest(ctx, cands, qv)
+	tr.localCos = cos
+	if tr.local == "" {
+		tr.local = lib.Root
+	}
 	if !ok || cos < s.localFloor {
 		return Outcome{}, false
 	}
@@ -59,28 +70,85 @@ func (s *SearchFirst) named(full []docsindex.Library, req sfRequest) []docsindex
 	return found
 }
 
-// closest is the library holding the stored section closest to the
-// question, and that section's cosine; ok is false without a usable
-// model or vectors.
-func (s *SearchFirst) closest(ctx context.Context, libs []docsindex.Library, query string) (docsindex.Library, float64, bool) {
-	if s.local.model == nil || len(libs) == 0 {
-		return docsindex.Library{}, 0, false
+// sfAskedFloor is the cosine between two questions above which they are
+// one question in other words (a repeat is 1).
+const sfAskedFloor = 0.92
+
+// queryVector embeds the question with the installed model; nil without
+// one.
+func (s *SearchFirst) queryVector(ctx context.Context, query string) []float32 {
+	emb := s.model()
+	if emb == nil {
+		return nil
+	}
+	qv, err := emb.EmbedQuery(ctx, query)
+	if err != nil {
+		return nil
+	}
+	return qv
+}
+
+// model is the installed embedding model, nil without one.
+func (s *SearchFirst) model() embed.Embedder {
+	if s.local.model == nil {
+		return nil
 	}
 	emb, err := s.local.model()
-	if err != nil || emb == nil {
+	if err != nil {
+		return nil
+	}
+	return emb
+}
+
+// askedBefore is the library a question closest to qv was answered from,
+// and the two questions' cosine.
+func askedBefore(libs []docsindex.Library, qv []float32) (docsindex.Library, float64, bool) {
+	var best docsindex.Library
+	bestCos, found := float32(0), false
+	for _, l := range libs {
+		for _, a := range l.Asked {
+			v := embed.FromHalf(nil, a.Vector)
+			if len(v) != len(qv) || len(v) == 0 {
+				continue
+			}
+			if c := embed.Dot(v, qv); !found || c > bestCos {
+				best, bestCos, found = l, c, true
+			}
+		}
+	}
+	return best, float64(bestCos), found
+}
+
+// remember records the question as answered from the library (its last
+// MaxAsked questions).
+func (s *SearchFirst) remember(lib docsindex.Library, query string, qv []float32) {
+	if s.local.store == nil || len(qv) == 0 || len(qv) != lib.Dims {
+		return
+	}
+	stored, found, err := s.local.store.Library(lib.Key)
+	if err != nil || !found {
+		return
+	}
+	stored.Asked = append(stored.Asked, docsindex.Asked{Question: query, Vector: embed.AppendHalf(nil, qv)})
+	if n := len(stored.Asked); n > docsindex.MaxAsked {
+		stored.Asked = stored.Asked[n-docsindex.MaxAsked:]
+	}
+	_ = s.local.store.PutLibrary(stored)
+}
+
+// closest is the library holding the stored section closest to the
+// question (qv), and that section's cosine; ok is false without a
+// usable model or vectors.
+func (s *SearchFirst) closest(_ context.Context, libs []docsindex.Library, qv []float32) (docsindex.Library, float64, bool) {
+	emb := s.model()
+	if emb == nil || len(libs) == 0 || len(qv) == 0 {
 		return docsindex.Library{}, 0, false
 	}
-	var qv []float32
 	var best docsindex.Library
 	bestCos, found := float32(0), false
 	for _, l := range libs {
 		if !l.Current() || l.Model != emb.ID() || l.Vectors == 0 {
 			continue
-		}
-		if qv == nil {
-			if qv, err = emb.EmbedQuery(ctx, query); err != nil {
-				return docsindex.Library{}, 0, false
-			}
 		}
 		secs, err := s.local.store.Sections(l.Key, l.Dims, true)
 		if err != nil {
@@ -122,7 +190,7 @@ func partialLibrary(o Outcome, lib docsindex.Library) Outcome {
 // is set: for measuring, never part of the answer.
 type sfTrace struct {
 	path, local, site, cands                                  string
-	localCos, answerCos                                       float64
+	localCos, answerCos, askedCos                             float64
 	hits, docsHits, siteHits, sites, planned, fetched, failed int
 	stored                                                    sfStored
 }
@@ -131,8 +199,8 @@ func (t *sfTrace) write(w io.Writer, req sfRequest, d time.Duration) {
 	if w == nil {
 		return
 	}
-	_, _ = fmt.Fprintf(w, "trace: search-first path=%s local=%s local_cos=%.4f answer_cos=%.4f hits=%d docs_hits=%d site=%s site_hits=%d sites=%d planned=%d fetched=%d failed=%d new=%d changed=%d unchanged=%d embedded=%d embed_ms=%d ms=%d library=%q cands=%q\n",
-		t.path, t.local, t.localCos, t.answerCos, t.hits, t.docsHits, t.site, t.siteHits, t.sites, t.planned, t.fetched, t.failed,
+	_, _ = fmt.Fprintf(w, "trace: search-first path=%s local=%s local_cos=%.4f asked_cos=%.4f answer_cos=%.4f hits=%d docs_hits=%d site=%s site_hits=%d sites=%d planned=%d fetched=%d failed=%d new=%d changed=%d unchanged=%d embedded=%d embed_ms=%d ms=%d library=%q cands=%q\n",
+		t.path, t.local, t.localCos, t.askedCos, t.answerCos, t.hits, t.docsHits, t.site, t.siteHits, t.sites, t.planned, t.fetched, t.failed,
 		t.stored.newPages, t.stored.changed, t.stored.unchanged, t.stored.embedded, t.stored.embedTime.Milliseconds(), d.Milliseconds(), req.library, t.cands)
 }
 

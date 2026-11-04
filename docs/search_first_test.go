@@ -90,6 +90,28 @@ func checkSearchLibrary(t *testing.T, store *docsindex.Store) {
 	}
 }
 
+// A question asked in other words than one answered before is answered
+// from the same library when the two questions are close, without
+// searching; one about something else searches.
+func TestSearchFirstRemembersQuestions(t *testing.T) {
+	s, store, searches, _ := searchFirstOver(t, exampleSite(), exampleHits())
+	s.localFloor = 2 // sections alone never answer here
+	if o := s.SearchSelect(context.Background(), "add middleware to a route", 0); o.Status != Partial {
+		t.Fatalf("first answer = %s (%v)", o.Status, o.Err())
+	}
+	lib, _, _ := store.Library(idxRoot)
+	if len(lib.Asked) != 1 || lib.Asked[0].Question != "add middleware to a route" {
+		t.Fatalf("asked = %+v, want the question remembered", lib.Asked)
+	}
+	before := searches.Load()
+	if o := s.SearchSelect(context.Background(), "Add middleware to a route?", 0); o.Backend != "local" || searches.Load() != before {
+		t.Errorf("the question again: backend %q, %d searches; want the local index", o.Backend, searches.Load()-before)
+	}
+	if s.SearchSelect(context.Background(), "fetch handler runtime", 0); searches.Load() == before {
+		t.Error("another question was answered without searching")
+	}
+}
+
 // Hits that are never docs (forges, Q&A, posts) are no site: refused as
 // no_docs_found. An empty search is the search failing, not the web
 // lacking docs.
