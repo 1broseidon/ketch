@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -97,6 +98,10 @@ func newSearchFirstFromConfig(c *config.Config, deps Deps) *SearchFirst {
 	s := NewSearchFirst(newWebFromConfig(c, deps), newLocalFromConfig(c))
 	if os.Getenv("KETCH_DOCS_TRACE") != "" {
 		s.trace = os.Stderr
+	}
+	// For calibrating the floor on dev sets; not a setting.
+	if f, err := strconv.ParseFloat(os.Getenv("KETCH_DOCS_LOCAL_FLOOR"), 64); err == nil {
+		s.localFloor = f
 	}
 	return s
 }
@@ -241,7 +246,10 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 		tr.site, tr.siteHits = site.root.String(), len(site.hits)
 	}
 	tr.sites++
-	links := s.plan(cctx, site, prof, req.query)
+	links, disallowed := s.plan(cctx, site, prof, req.query)
+	if len(links) == 0 && disallowed > 0 {
+		return Answer(SearchBackend, nil, fmt.Errorf("search: %s's robots.txt disallows the %d pages found: %w", site.root, disallowed, errDisallowed))
+	}
 	pages, failed := s.fetch(cctx, site.root, links)
 	tr.planned, tr.fetched, tr.failed = tr.planned+len(links), tr.fetched+len(pages), tr.failed+failed
 	if len(pages) == 0 {
@@ -338,6 +346,10 @@ func (s *SearchFirst) searchHits(ctx context.Context, req sfRequest) ([]sfHit, s
 	}
 	return hits, prefs, nil
 }
+
+// errDisallowed is a site whose robots.txt keeps ketch from every page
+// found: a refusal, the same next time.
+var errDisallowed = failure.New(failure.NotFound, "disallowed", "robots.txt disallows the pages")
 
 // errSearchEmpty is web searches that all answered with no results.
 var errSearchEmpty = failure.New(failure.Upstream, "search_empty", "the web search returned no results")

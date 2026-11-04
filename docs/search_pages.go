@@ -16,15 +16,22 @@ import (
 // releases' copies of a page left out.
 
 // plan lists the pages to read, hits first.
-func (s *SearchFirst) plan(ctx context.Context, site sfSite, prof *siteProfile, query string) []webLink {
+// It reports how many pages robots.txt kept it from.
+func (s *SearchFirst) plan(ctx context.Context, site sfSite, prof *siteProfile, query string) ([]webLink, int) {
 	root := site.root
 	robots := s.web.robots(ctx, root)
 	rootLabel := rootVersionLabel(root)
 	var out []webLink
 	seen := map[string]bool{}
+	disallowed := 0
 	add := func(l webLink) bool {
 		k := displayKey(l.url)
-		if seen[k] || !root.contains(l.url) || !robots.allowed(l.url) || !isResultLink(l.url) {
+		if seen[k] || !root.contains(l.url) || !isResultLink(l.url) {
+			return false
+		}
+		if !robots.allowed(l.url) {
+			seen[k] = true
+			disallowed++
 			return false
 		}
 		if _, pref := variantKey(l.url, root, rootLabel); pref.class > 2 && rootLabel == "" {
@@ -55,7 +62,7 @@ func (s *SearchFirst) plan(ctx context.Context, site sfSite, prof *siteProfile, 
 			add(near[i])
 		}
 	}
-	return inHand(out, disc.pages)
+	return inHand(out, disc.pages), disallowed
 }
 
 // profileLinks are a page profile's links into root, as candidates.
