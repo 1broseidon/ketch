@@ -2,6 +2,8 @@ package docs
 
 import (
 	"fmt"
+	"math"
+	"net/url"
 	"regexp"
 	"sort"
 	"strings"
@@ -134,34 +136,95 @@ func ftsMatch(terms, idents []string) string {
 	return strings.Join(parts, " OR ")
 }
 
+const (
+	// ftsCandidates is how many full-text hits the boosts reorder.
+	ftsCandidates = 200
+	// ftsReferencePrior and ftsGuidePrior weigh a section by where its
+	// page sits in the site (planTier): an API reference leaf below a
+	// guide, which answers how-to questions keywords alone cannot tell
+	// apart from the entries that merely name the same words.
+	ftsReferencePrior = 0.6
+	ftsGuidePrior     = 1.2
+	// ftsTitleBoost is the most a section gains from its page's title
+	// naming the question's terms (titleCoverage).
+	ftsTitleBoost = 0.5
+	// ftsPageBoost is the most a section gains from its page's other
+	// sections matching too: the sum of the page's candidate scores,
+	// relative to the best page's. A page about the question answers
+	// it more often than a stray section elsewhere that names its words.
+	ftsPageBoost = 1.0
+)
+
 // ftsWeights are bm25's column weights (FTSColumns: heading, crumbs,
 // ident, body): a term in a section's heading counts three times one in
 // its body, as the web backend's BM25F counts it.
 var ftsWeights = []float64{3, 1, 1, 1}
 
-// ftsCandidates is how many full-text hits the boosts reorder.
-const ftsCandidates = 200
+// rankQuery is a question as the keyword ranking reads it.
+type rankQuery struct {
+	query     string
+	terms     []string // queryTerms, question filler out
+	idents    []string // queryIdents
+	identKeys []string // queryIdentKeys
+	howTo     bool
+}
+
+func newRankQuery(query string) rankQuery {
+	return rankQuery{query: query, terms: withoutFiller(queryTerms(query)), idents: queryIdents(query), identKeys: queryIdentKeys(query), howTo: isHowTo(query)}
+}
+
+// questionFiller are words questions are phrased with that say nothing
+// of their topic ("how do I get X to work", "what do I need to use"),
+// normalized as queryTerms normalizes them. They are dropped from the
+// keyword query (unless nothing else is left), where every section that
+// says "use" would otherwise match.
+var questionFiller = func() map[string]bool {
+	m := map[string]bool{}
+	for _, w := range []string{"need", "want", "use", "using", "used", "get", "getting", "make", "making",
+		"possible", "able", "actually", "instead", "exactly", "happen", "happens", "work", "works", "working", "just",
+		"here", "something", "anything", "thing", "things", "one", "ones", "like", "really", "still", "even",
+		"correct", "correctly", "right", "proper", "properly", "best", "good", "ways"} {
+		for _, t := range tokenize(w) {
+			m[normTerm(t)] = true
+		}
+	}
+	return m
+}()
+
+func withoutFiller(terms []string) []string {
+	var out []string
+	for _, t := range terms {
+		if !questionFiller[t] {
+			out = append(out, t)
+		}
+	}
+	if len(out) == 0 {
+		return terms
+	}
+	return out
+}
 
 // keywordRank ranks a library's sections for the query by the full-text
 // table: the candidates' sections (every section of the pages they are
 // on, so families are whole), and their ranking as indices into them,
 // best first, scores relative to the best; with cut, the relevant ones
-// only (within webRelevanceRatio of the best). A section about a later version than indexed is left out
-// unless the question asks about it.
+// only (within webRelevanceRatio of the best). A section about a later
+// version than indexed is left out unless the question asks about it.
 func (l *Local) keywordRank(lib docsindex.Library, query string, cut bool) ([]docsindex.Section, []rankedSection, error) {
-	hits, err := l.ftsHits(lib, query)
+	q := newRankQuery(query)
+	hits, err := l.ftsHits(lib, q)
 	if err != nil || len(hits) == 0 {
 		return nil, nil, err
 	}
-	var pages []string
 	cands, err := l.store.SectionsByID(hitIDs(hits))
 	if err != nil {
 		return nil, nil, err
 	}
-	pageSet := map[string]bool{}
+	var pages []string
+	seen := map[string]bool{}
 	for _, c := range cands {
-		if !pageSet[c.Page] {
-			pageSet[c.Page] = true
+		if !seen[c.Page] {
+			seen[c.Page] = true
 			pages = append(pages, c.Page)
 		}
 	}
@@ -169,7 +232,7 @@ func (l *Local) keywordRank(lib docsindex.Library, query string, cut bool) ([]do
 	if err != nil {
 		return nil, nil, err
 	}
-	ranked := rerankHits(secs, hits, query)
+	ranked := rerankHits(lib, secs, hits, q)
 	if cut {
 		ranked = relevantRanked(ranked)
 	}
@@ -178,15 +241,14 @@ func (l *Local) keywordRank(lib docsindex.Library, query string, cut bool) ([]do
 
 // ftsHits are the full-text table's best sections for the query; the
 // table is rebuilt first when another normalization made it.
-func (l *Local) ftsHits(lib docsindex.Library, query string) ([]docsindex.Hit, error) {
-	terms := queryTerms(query)
-	if len(terms) == 0 {
+func (l *Local) ftsHits(lib docsindex.Library, q rankQuery) ([]docsindex.Hit, error) {
+	if len(q.terms) == 0 {
 		return nil, nil
 	}
 	if _, err := l.store.EnsureFTS(lib.Key); err != nil {
 		return nil, fmt.Errorf("local: rebuilding the full-text index: %w", err)
 	}
-	return l.store.Search(lib.Key, ftsMatch(terms, queryIdentKeys(query)), ftsWeights, ftsCandidates)
+	return l.store.Search(lib.Key, ftsMatch(q.terms, q.identKeys), ftsWeights, ftsCandidates)
 }
 
 func hitIDs(hits []docsindex.Hit) []int64 {
@@ -197,17 +259,18 @@ func hitIDs(hits []docsindex.Hit) []int64 {
 	return ids
 }
 
-// rerankHits orders the full-text hits (sections of secs by ID) by their
-// bm25 score times sectionBoost, as the web backend orders BM25 scores,
-// dropping a section that matched by its breadcrumb alone and one about a
-// later version unless the question asks about it.
-func rerankHits(secs []docsindex.Section, hits []docsindex.Hit, query string) []rankedSection {
-	terms := queryTerms(query)
-	idents, howTo := queryIdents(query), isHowTo(query)
+// rerankHits orders the full-text hits (sections of secs by ID): bm25
+// times the web ranker's boosts (sectionBoost), its page's place in the
+// site (sitePrior), its page title naming the question, and its page's
+// other matches (pageBoosts). A section that matched by its breadcrumb
+// alone, or about a later version unless the question asks about it, is
+// left out. Scores are relative to the best.
+func rerankHits(lib docsindex.Library, secs []docsindex.Section, hits []docsindex.Hit, q rankQuery) []rankedSection {
 	at := make(map[int64]int, len(secs))
 	for i, s := range secs {
 		at[s.ID] = i
 	}
+	root, rootErr := parseWebRoot(lib.Root)
 	var out []rankedSection
 	for _, h := range hits {
 		i, ok := at[h.ID]
@@ -215,16 +278,23 @@ func rerankHits(secs []docsindex.Section, hits []docsindex.Hit, query string) []
 			continue
 		}
 		s := secs[i]
-		if s.CrossVersion != "" && !asksAbout(query, s.CrossVersion) {
+		if s.CrossVersion != "" && !asksAbout(q.query, s.CrossVersion) {
 			continue
 		}
-		matched, own, seq := termMatches(s, terms)
+		matched, own, seq := termMatches(s, q.terms)
 		if !own {
 			continue
 		}
-		score := h.Score * sectionBoost(webSectionOf(s, i), terms, idents, howTo, matched, seq)
+		score := h.Score * sectionBoost(webSectionOf(s, i), q.terms, q.idents, q.howTo, matched, seq)
+		if rootErr == nil {
+			score *= sitePrior(s.Page, root)
+		}
+		if len(s.Crumbs) > 0 {
+			score *= 1 + ftsTitleBoost*titleCoverage(s.Crumbs[0], q.terms)
+		}
 		out = append(out, rankedSection{sec: i, score: score})
 	}
+	pageBoosts(secs, out)
 	sort.SliceStable(out, func(a, b int) bool { return out[a].score > out[b].score })
 	if len(out) > 0 && out[0].score > 0 {
 		best := out[0].score
@@ -233,6 +303,41 @@ func rerankHits(secs []docsindex.Section, hits []docsindex.Hit, query string) []
 		}
 	}
 	return out
+}
+
+// sitePrior is a section's weight by its page's tier (planTier).
+func sitePrior(page string, root webRoot) float64 {
+	u, err := url.Parse(page)
+	if err != nil {
+		return 1
+	}
+	switch planTier(u, root, nil) {
+	case tierReference:
+		return ftsReferencePrior
+	case tierGuide:
+		return ftsGuidePrior
+	}
+	return 1
+}
+
+// pageBoosts raises each ranked section by its page's share of the
+// matches: the sum of its page's scores over the best page's sum, times
+// ftsPageBoost.
+func pageBoosts(secs []docsindex.Section, ranked []rankedSection) {
+	sum := map[string]float64{}
+	for _, r := range ranked {
+		sum[secs[r.sec].Page] += r.score
+	}
+	top := 0.0
+	for _, v := range sum {
+		top = math.Max(top, v)
+	}
+	if top <= 0 {
+		return
+	}
+	for i, r := range ranked {
+		ranked[i].score *= 1 + ftsPageBoost*sum[secs[r.sec].Page]/top
+	}
 }
 
 // relevantRanked keeps the ranked sections within webRelevanceRatio of

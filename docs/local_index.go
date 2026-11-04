@@ -1003,8 +1003,12 @@ func sectionPages(secs []docsindex.Section) []docsindex.PageData {
 	return out
 }
 
-// putPageBatches writes pages indexWriteBatch to a transaction.
+// putPageBatches writes pages indexWriteBatch to a transaction, in URL
+// order: pages fetched concurrently arrive in any order, and the order
+// they are stored in breaks ties in the keyword ranking.
 func putPageBatches(store *docsindex.Store, key string, pages []docsindex.PageData) error {
+	pages = slices.Clone(pages)
+	slices.SortFunc(pages, func(a, b docsindex.PageData) int { return strings.Compare(a.Page.URL, b.Page.URL) })
 	for start := 0; start < len(pages); start += indexWriteBatch {
 		if err := store.PutPages(key, pages[start:min(start+indexWriteBatch, len(pages))]); err != nil {
 			return err

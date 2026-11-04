@@ -389,8 +389,6 @@ func (s *Store) dsn(write bool) string {
 	if write {
 		q.Add("_pragma", "journal_mode(WAL)")
 		q.Set("_txlock", "immediate")
-	} else {
-		q.Set("mode", "ro")
 	}
 	return "file:" + filepath.ToSlash(s.path) + "?" + q.Encode()
 }
@@ -928,7 +926,7 @@ func (s *Store) Search(key, match string, weights []float64, limit int) ([]Hit, 
 			ws[i] = fmt.Sprintf("%g", w)
 		}
 		t := ftsTable(id)
-		rows, err := db.Query(fmt.Sprintf(`SELECT rowid, -bm25(%s, %s) AS score FROM %s WHERE %s MATCH ? ORDER BY score DESC LIMIT ?`,
+		rows, err := db.Query(fmt.Sprintf(`SELECT rowid, -bm25(%s, %s) AS score FROM %s WHERE %s MATCH ? ORDER BY score DESC, rowid LIMIT ?`,
 			t, strings.Join(ws, ", "), t, t), match, limit)
 		if err != nil {
 			return err

@@ -177,3 +177,33 @@ func TestFamiliesCollapseAddressesAndReferenceLeaves(t *testing.T) {
 		t.Errorf("families = %v, want %v", got, want)
 	}
 }
+
+// The keyword ranking puts a guide ahead of an API reference leaf that
+// names the same words, and question filler ("how do I use") matches
+// nothing on its own.
+func TestKeywordRankPriors(t *testing.T) {
+	store := OpenIndex(filepath.Join(t.TempDir(), "docs-index.db"))
+	const root = "https://y.test/docs/"
+	pages := []docsindex.PageData{
+		{Page: docsindex.Page{URL: root + "api/core/router/guard", Hash: "a"}, Sections: []docsindex.Section{{Order: 0, Heading: "guard", Crumbs: []string{"guard"}, Text: "Route guard: a function a route runs before navigation."}}},
+		{Page: docsindex.Page{URL: root + "guide/route-guards", Hash: "b"}, Sections: []docsindex.Section{{Order: 0, Heading: "Route guards", Crumbs: []string{"Route guards"}, Text: "Add a route guard to run a function before navigation."}}},
+		{Page: docsindex.Page{URL: root + "guide/install", Hash: "c"}, Sections: []docsindex.Section{{Order: 0, Heading: "Install", Crumbs: []string{"Install"}, Text: "Use the installer you want."}}},
+	}
+	if err := store.PutPages(root, pages); err != nil {
+		t.Fatal(err)
+	}
+	lib := docsindex.Library{Key: root, Root: root, Format: docsindex.FormatVersion}
+	if err := store.PutLibrary(lib); err != nil {
+		t.Fatal(err)
+	}
+	l := NewLocal(store, nil)
+	secs, ranked, err := l.keywordRank(lib, "how do I use a route guard", true)
+	if err != nil || len(ranked) == 0 || secs[ranked[0].sec].Page != root+"guide/route-guards" {
+		t.Fatalf("ranked = %+v %v", ranked, err)
+	}
+	for _, r := range ranked {
+		if secs[r.sec].Page == root+"guide/install" {
+			t.Errorf("a section naming only the question's filler ranked: %+v", ranked)
+		}
+	}
+}

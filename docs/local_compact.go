@@ -1,7 +1,9 @@
 package docs
 
 import (
+	"maps"
 	"math"
+	"slices"
 	"sort"
 	"strings"
 
@@ -290,8 +292,10 @@ func weighTerms(cands []*compactFamily, terms, idents []string) {
 	for _, c := range cands {
 		for i := range c.pieces {
 			p := &c.pieces[i]
-			for t, m := range p.terms {
-				p.score += m * weight[t]
+			// In term order: a float sum in map order differs in its last
+			// bits from run to run, and ties between pieces are common.
+			for _, t := range slices.Sorted(maps.Keys(p.terms)) {
+				p.score += p.terms[t] * weight[t]
 			}
 			if p.opens && len(p.terms) > 0 {
 				p.score += localFirstWeight
