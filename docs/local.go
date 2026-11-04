@@ -232,12 +232,13 @@ func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string,
 		if limit <= 0 {
 			limit = localMaxResults
 		}
-		results = familyResults(lib, secs, families(secs, fuseRanks(secs, qv, query), limit, lib.Root), query, opts.Tokens)
+		results = familyResults(lib, secs, families(secs, fuseRanks(secs, qv, query), limit, lib.Root), query, opts.Tokens, opts.Hint)
 	}
 	if len(results) == 0 {
 		return Answer("local", nil, fmt.Errorf("local: nothing in the index of %s matched: %w", lib.Root, ErrNoResults))
 	}
 	showUnder(results, lib)
+	pointToSections(results, opts)
 	o := Answer("local", results, nil)
 	if note != "" {
 		o.Reason, o.Note = ReasonKeywordRanking, note
@@ -249,12 +250,22 @@ func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string,
 // showUnder shows a re-rooted current release's results at the
 // unversioned addresses its pages name canonical (Library.DisplayRoot).
 func showUnder(results []Result, lib docsindex.Library) {
-	if lib.DisplayRoot == "" {
-		return
-	}
 	for i, r := range results {
-		if rest, ok := strings.CutPrefix(r.URL, lib.Root); ok {
-			results[i].URL = lib.DisplayRoot + rest
+		results[i].URL = shownURL(lib, r.URL)
+	}
+}
+
+// pointToSections gives every result the reference to its section (its
+// shown URL), and, for a compact answer over MCP, ends each result that was
+// cut with the pointer to its full section: the surface has no other place
+// to show it. A CLI renders its pointer (RenderResult).
+func pointToSections(results []Result, opts LocalOptions) {
+	for i, r := range results {
+		results[i].Section = r.URL
+		if opts.Tokens > 0 && !opts.Snippets && opts.Hint == HintMCP {
+			if h := SectionHint(results[i], HintMCP); h != "" {
+				results[i].Snippet += "\n\n" + h
+			}
 		}
 	}
 }

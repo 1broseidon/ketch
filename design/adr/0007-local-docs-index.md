@@ -387,3 +387,92 @@ The estimate on the after answers at 880: a result off by 4.2% on average
 same for 56 of the 63 cases; the other seven differ only by the fixes
 above. The weights were set on these 63 cases, which is the risk this
 amendment carries; the judge round at top 5 and 880 tokens decides.
+
+## Amendment 4 (2026-11-04): follow-up fetch, so a compact answer can point at the rest
+
+Round 5 put the compact answer at four or five results in 880 tokens, and
+the loss that remained was a how-to question whose one code example the
+compaction cut away (Mantine `useForm`'s `validate` rules, Angular's
+`computed(() => ...)`, Transformers' `add_generation_prompt=True`). The text
+is in the index, so reading it costs no network and no quota; what was
+missing was a way to ask for it and a pointer telling the agent to.
+
+**Decision.**
+
+- **`--section <url#anchor>` (MCP `section`) returns one section in full.**
+  The reference is the `source` a result already carries (`Result.URL`, now
+  also `Result.Section`). No query, no ranking, no model, no network: one
+  prefix scan of the page's keys (`Store.PageSections`), tens of
+  milliseconds at the largest indexes (8 to 10 ms for the whole process in
+  the demo below). The library is optional: the URL names it (a root, or the
+  unversioned address a re-rooted release is shown under), and the page's
+  sections decide which of several versions holds it; `--library` names it
+  explicitly. An anchor on a second-level heading returns its family (the
+  heading's text and the subsections under it, as the ranking groups
+  them), a deeper anchor that section and what is under it, a page's lead
+  itself, and a URL with no anchor the page's sections in order. `x` and
+  `x/`, `x.html` are one page. A page or anchor the index lacks is the
+  existing `not_found` failure (`ErrSectionNotFound`, exit 3, MCP
+  `[not_found]`, a refused Outcome whose message lists the page's anchors);
+  a library it lacks stays `not_indexed`; a reference that is no URL is a
+  validation error (`invalid_section`, exit 2); `--section` with another
+  backend is exit 2. There is no new error path.
+- **A cap, cut at a block boundary.** `--tokens` (MCP `tokens`) caps the
+  result, default 4,000 (a long guide section, well under a page). Text is
+  cut between blocks (paragraphs, lists, a code block whole), never inside a
+  code block, planned 1/32 under the cap as compact answers are, and ends
+  with `[…] cut at N tokens;` and where to read on: the first section of
+  the unit not shown whole, as a command that fetches it, or, when the cut
+  is inside the first, how large the section is and to raise the cap. A
+  single block larger than the cap is cut with its fence closed.
+- **The pointer.** In a compact answer (`--tokens` set, text output; MCP
+  `tokens` set) every result that ends in `[…]` ends with one line after
+  its `source:` line, `full section: ketch docs -b local --section <ref>`;
+  over MCP, appended to the result's `snippet` because that is all an agent
+  reads there, `full section: docs(backend="local", section="<ref>")`. A
+  result shown whole has none; `--json`, `--minimal` and the default view
+  have none. The command carries the reference and `-b local`, not
+  `--library`: the URL is enough, so each pointer is about 20 to 30 tokens
+  rather than 30 to 40, and a pointer an agent copies verbatim works.
+  `Result.Section` (the reference to pass) is on every local result and
+  `Result.Truncated` on a result that left text out, in every view, so JSON
+  consumers build their own.
+- **The budget counts the pointer.** A result that will be cut reserves its
+  pointer's cost with the heading path and source line, and a result needs
+  `localMinShare` tokens beyond that to be shown: the budget buys a little
+  fewer, fuller results rather than thin ones. The estimator undercounts a
+  pointer's URL and flags by up to a quarter (o200k splits slugs finely), so
+  the pointer is charged a quarter more.
+
+**Measurement** (67 of the 68 round-3 questions answered by a copy of the
+round-5 index, `--tokens 880`, real o200k counts of the rendered text):
+
+| | results | tokens mean/max | pointers |
+|---|---|---|---|
+| before (no pointers) | 4.51 | 791 / 877 | 0 |
+| after | 3.93 | 787 / 876 | 2.73 |
+| after, the pointer not reserved in `localMinShare` | 4.46 | 786 / 878 | 3.36 |
+
+None is over 880. The pointer costs 0.6 results on average (39 of 67
+answers show one fewer); amendment 3 measured that going from five results
+to four at 880 costs about three facts of 97, and the larger shares of the
+results that remain buy some of it back, but whether a fuller four beats a
+thinner fifth with a pointer is for the judge round. The three lost cases,
+by their planned roots (rendered answer and follow-up, o200k tokens):
+
+| case | answer | cut results | the pointer to the missing example | follow-up |
+|---|---|---|---|---|
+| angular-computed-signal | 774 | 3 | `guide/signals#computed-signals` | 582, holds `computed(() => count() * 2)` |
+| transformers-apply-chat-template | 782 | 3 | `chat_templating` (a page's lead has no anchor: the page) | 2,622, holds `tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True` |
+| mantine-form-validation-rules | 737 | 3 | `form/validation/#validate-fields-on-change` | 1,002, **does not** hold the rules example |
+
+Mantine's missing example is in a section the answer did not rank at all
+(`#validation-with-rules-object`, the page's first); the pointer leads to the
+section that did rank. Reading the page (`--section https://mantine.dev/form/validation/`,
+the anchor dropped) finds it in the first 1,200 tokens (707 by o200k).
+
+**Not done.** A pointer to the page for every cut result (a page is 2,000
+to 3,500 tokens); a pointer to the result's whole family when the best
+section is a subsection (the follow-up would then hold the H2's own text, at
+the price of more tokens); a "next" pointer on the section a result did not
+show; inferring the library from the query for a bare `--section`.

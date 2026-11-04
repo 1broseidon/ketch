@@ -246,16 +246,18 @@ $ ketch docs -b web "how do I set retries in requests"    # library named in the
 $ ketch docs -b auto "how do I set retries in requests"   # local index, then web, then Context7
 $ ketch docs index fastapi                                # index a library once…
 $ ketch docs -b local --library fastapi "dependencies with yield"  # …then answer offline
+$ ketch docs -b local --section https://fastapi.tiangolo.com/tutorial/dependencies/#what-is-dependency-injection  # read a result in full
 ```
 
 | Flag | Meaning |
 | --- | --- |
 | `--backend, -b` | `context7` (default), `local` (the local index), `web`, `auto` (local, then web, then Context7) |
 | `--library` | A library ID from `--resolve`, or for `web` any library spec (below), or for `local` an indexed library's name, spec or docs root; skips the resolve step |
-| `--tokens` | Token budget, default 4000 (`local`: about 1,800 for sections, 1,200 for snippets; set, `local` fits its sections to it, compactly) |
+| `--tokens` | Token budget, default 4000 (`local`: about 1,800 for sections, 1,200 for snippets; set, `local` fits its sections to it, compactly; with `--section`, the cap of the section returned) |
 | `--resolve` | Resolve the query as a library name or spec instead of searching |
 | `--limit, -l` | Max results; with `--library`, only `--tokens` bounds them unless set |
 | `--snippets` | `local`: code-first snippets (a code block with the sentences before it) instead of whole sections |
+| `--section <url#anchor>` | `local`: return one section in full, from the index, given as the `source` a result carries; no query needed (below) |
 | `--minimal` | One result per line |
 | `--tag <name>` | Bookmark every result URL under a tag |
 
@@ -546,8 +548,44 @@ source: https://site/page#anchor
 ````
 
 and with `--json` (or over MCP) as a result whose `breadcrumb` is the heading
-path, `snippet` the text, `url` the address of its best-ranked section and
-`anchors` the anchors of every section it shows (`""` for a page's lead).
+path, `snippet` the text, `url` the address of its best-ranked section,
+`section` the same address as the reference `--section` takes, `truncated`
+(`true` when the result leaves text of its section out) and `anchors` the
+anchors of every section it shows (`""` for a page's lead).
+
+**Reading the rest of a cut result: `--section`.** A compact answer can trim
+away the one example a how-to question needs. The full section is in the
+index, so reading it costs no network and no quota: in a compact answer
+shown as text (`--tokens` set, not `--json` or `--minimal`), every result
+that ends in `[…]` ends with a pointer after its `source:` line,
+
+````
+source: https://site/page#anchor
+full section: ketch docs -b local --section https://site/page#anchor
+````
+
+and a result shown whole has none. `--section` takes that `url#anchor` (the
+`source`, or `--json`'s `section`, which every local result carries, and
+`truncated: true` marks a result that was cut) and returns the section as a
+result of its own: its heading path, its text with every code block intact,
+and `source:`, with no ranking, no embedding model and no network, in tens of
+milliseconds. `--library` is optional (the URL names the indexed library; give
+it, as a root or `name@version`, to be explicit). An anchor on a second-level
+heading returns the whole family, that heading's text and the subsections under
+it; on a deeper one, that section and what is under it; a URL with no anchor,
+the page's sections in order. `--tokens` caps the answer (default 4000); a
+longer section is cut at a block boundary, never inside a code block, and ends
+with `[…] cut at 4000 tokens; next section: ketch docs -b local --section …`
+naming the first section it did not show whole, or, when the cut falls in the
+first, how large the section is and to raise `--tokens`. An unknown page or
+anchor exits **3** with reason `not_found` (the message lists the page's
+anchors), a malformed reference **2**, and `--section` with another backend
+**2**. Over MCP the `docs` tool takes `section` the same way, `query` is not
+required with it, and a compact answer's cut results end with the equivalent
+call, `full section: docs(backend="local", section="https://site/page#anchor")`,
+at the end of their `snippet`. The pointer is counted in the budget, so a
+compact answer stays within it, at the cost of a result or a little text
+(about 25 tokens per cut result).
 
 `--snippets` (MCP `snippets: true`) returns **code-first snippets** instead.
 At index time each section is cut into units: every fenced code block

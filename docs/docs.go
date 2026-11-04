@@ -88,6 +88,13 @@ type Result struct {
 	// leave it empty.
 	Anchors []string `json:"anchors,omitempty"`
 	Source  string   `json:"source"` // "context7" | "web" | "local"
+	// Section is the local index's reference to this result's section,
+	// url#anchor as the result's URL carries it: what a follow-up fetch of
+	// the whole section takes (ketch docs --section, the docs tool's
+	// section). Truncated is set when the result leaves text of its
+	// section out ("[…]"). Other backends leave both empty.
+	Section   string `json:"section,omitempty"`
+	Truncated bool   `json:"truncated,omitempty"`
 }
 
 // Searcher is the interface for docs backends.

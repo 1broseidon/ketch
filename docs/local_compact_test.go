@@ -69,7 +69,7 @@ func TestCompactResults(t *testing.T) {
 	secs := compactSections()
 	ranked := []rankedSection{{sec: 1, score: 0.9}, {sec: 0, score: 0.5}}
 	fams := families(secs, ranked, 5, "https://x.test/")
-	results := familyResults(docsindex.Library{Root: "https://x.test/"}, secs, fams, "default form action POST", 300)
+	results := familyResults(docsindex.Library{Root: "https://x.test/"}, secs, fams, "default form action POST", 300, HintNone)
 	if len(results) != 1 {
 		t.Fatalf("results = %d", len(results))
 	}
@@ -87,7 +87,7 @@ func TestCompactResults(t *testing.T) {
 		t.Errorf("estimate %d over the budget", got)
 	}
 	// A generous budget shows the family whole, as the default does.
-	whole := familyResults(docsindex.Library{Root: "https://x.test/"}, secs, fams, "default form action POST", 100000)
+	whole := familyResults(docsindex.Library{Root: "https://x.test/"}, secs, fams, "default form action POST", 100000, HintNone)
 	if !strings.Contains(whole[0].Snippet, "noise") || strings.HasSuffix(whole[0].Snippet, elidedMarker) {
 		t.Errorf("whole family cut:\n%.300s", whole[0].Snippet)
 	}

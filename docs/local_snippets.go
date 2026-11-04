@@ -37,6 +37,11 @@ type LocalOptions struct {
 	Tokens int
 	// Limit caps the results (0: the view's default).
 	Limit int
+	// Hint is how a surface that shows the answer as text points to the
+	// full section of a result cut short (SectionHint); HintNone leaves
+	// the pointer out and its tokens uncounted. It applies to compact
+	// answers (Tokens set) and to the cut notice of a section fetch.
+	Hint HintStyle
 }
 
 type localOptionsKey struct{}

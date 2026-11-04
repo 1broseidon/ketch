@@ -94,19 +94,22 @@ type compactFamily struct {
 	// each part's heading line costs (0 for the title's section).
 	overheadCost int
 	partHeadings []int
-	used         int   // tokens chosen so far, overhead included
-	pending      []int // pieces wanted first when more budget comes (a code block that did not fit)
+	// hintCost is what the pointer to the full section costs when the
+	// result is cut (0 when the surface shows none).
+	hintCost int
+	used     int   // tokens chosen so far, overhead included
+	pending  []int // pieces wanted first when more budget comes (a code block that did not fit)
 }
 
 // compactResults renders the families within tokens (estimated o200k
 // tokens of the rendered results): rank-weighted shares, a family whole
 // when it fits its share, else its compact form; at most len(fams).
-func compactResults(lib docsindex.Library, secs []docsindex.Section, fams []*family, query string, tokens int) []Result {
+func compactResults(lib docsindex.Library, secs []docsindex.Section, fams []*family, query string, tokens int, hint HintStyle) []Result {
 	terms := queryTerms(query)
 	idents := queryIdents(query)
 	cands := make([]*compactFamily, len(fams))
 	for i, f := range fams {
-		cands[i] = newCompactFamily(lib, secs, f, terms)
+		cands[i] = newCompactFamily(lib, secs, f, terms, hint)
 	}
 	weighTerms(cands, terms, idents)
 	// The estimate runs a few percent either side of o200k's count;
@@ -137,7 +140,7 @@ func compactResults(lib docsindex.Library, secs []docsindex.Section, fams []*fam
 	for _, c := range cands {
 		out = append(out, c.result(lib, secs))
 	}
-	return fitTokens(out, cands, lib, secs, tokens)
+	return fitTokens(out, cands, lib, secs, tokens, hint)
 }
 
 // rankWeight is the share weight of the result at rank r (0 the first).
@@ -146,11 +149,11 @@ func rankWeight(r int) float64 { return 1 / (1 + float64(r)/localShareDecay) }
 // fitTokens drops pieces from the last results until the rendered results'
 // estimate is within tokens (the per-piece sums run a little under the
 // joined text's), and results left with no piece.
-func fitTokens(out []Result, cands []*compactFamily, lib docsindex.Library, secs []docsindex.Section, tokens int) []Result {
+func fitTokens(out []Result, cands []*compactFamily, lib docsindex.Library, secs []docsindex.Section, tokens int, hint HintStyle) []Result {
 	total := func() int {
 		t := 0
 		for _, r := range out {
-			t += estimateTokens(RenderSnippet(r))
+			t += estimateTokens(RenderSnippet(r)) + hintTokens(SectionHint(withSection(lib, r), hint))
 		}
 		return t
 	}
@@ -176,7 +179,7 @@ func fitTokens(out []Result, cands []*compactFamily, lib docsindex.Library, secs
 // (familyParts: its best section, the H2's own text and its other ranked
 // sections, in page order) into pieces; the first sentence among them
 // leads.
-func newCompactFamily(lib docsindex.Library, secs []docsindex.Section, f *family, terms []string) *compactFamily {
+func newCompactFamily(lib docsindex.Library, secs []docsindex.Section, f *family, terms []string, hint HintStyle) *compactFamily {
 	c := &compactFamily{fam: f, chosen: map[int]bool{}}
 	c.whole = familyResult(lib, secs, f, math.MaxInt/4, terms)
 	c.wholeCost = estimateTokens(RenderSnippet(c.whole))
@@ -186,6 +189,11 @@ func newCompactFamily(lib docsindex.Library, secs []docsindex.Section, f *family
 	if len(c.crumbs) > 2 {
 		c.crumbs = c.crumbs[:2]
 		c.title = c.crumbs[1]
+	}
+	if hint != HintNone {
+		cut := withSection(lib, c.whole)
+		cut.Truncated = true
+		c.hintCost = hintTokens(SectionHint(cut, hint))
 	}
 	c.overheadCost = c.overhead()
 	c.partHeadings = make([]int, len(c.parts))
@@ -301,7 +309,7 @@ func compactShares(cands []*compactFamily, tokens int) (int, []int) {
 		shares := weightedShares(cands[:n], tokens)
 		ok := true
 		for i, sh := range shares {
-			ok = ok && sh >= min(localMinShare, cands[i].wholeCost)
+			ok = ok && sh >= min(localMinShare+cands[i].hintCost, cands[i].wholeCost)
 		}
 		if ok {
 			return n, shares
@@ -350,7 +358,7 @@ func weightedShares(cands []*compactFamily, tokens int) []int {
 func (c *compactFamily) overhead() int {
 	r := c.whole
 	r.Snippet = elidedMarker
-	return estimateTokens(RenderSnippet(r))
+	return estimateTokens(RenderSnippet(r)) + c.hintCost
 }
 
 // core chooses the result's first sentence and one code block, whole,
@@ -579,13 +587,33 @@ func (c *compactFamily) result(lib docsindex.Library, secs []docsindex.Section) 
 		b.WriteString(p.text)
 		prev = i
 	}
-	if len(c.chosen) < len(c.pieces) || len(c.parts) < len(c.fam.members) {
+	cut := len(c.chosen) < len(c.pieces) || len(c.parts) < len(c.fam.members)
+	if cut {
 		b.WriteString("\n\n" + elidedMarker)
 	}
 	return Result{
 		Library: lib.Root, Version: lib.Version, Title: c.title, Breadcrumb: strings.Join(c.crumbs, " > "),
-		Snippet: b.String(), URL: webSectionOf(secs[c.fam.best], 0).URL(), Anchors: anchors, Source: "local",
+		Snippet: b.String(), URL: webSectionOf(secs[c.fam.best], 0).URL(), Anchors: anchors, Source: "local", Truncated: cut,
 	}
+}
+
+// hintTokens is what a pointer line (SectionHint) costs, with its line
+// break: "" for none. A pointer is a long URL and a command line, which
+// the estimate undercounts by up to a quarter (o200k splits slugs and
+// flags finely), so it is charged a quarter more.
+func hintTokens(hint string) int {
+	if hint == "" {
+		return 0
+	}
+	return estimateTokens(hint)*5/4 + 1
+}
+
+// withSection is r with its section reference set, as the results are
+// shown (under lib's display root), so the pointer to it can be counted
+// before the results are final.
+func withSection(lib docsindex.Library, r Result) Result {
+	r.Section = shownURL(lib, r.URL)
+	return r
 }
 
 // textPieces cuts a section's text into pieces, in order: each fenced code

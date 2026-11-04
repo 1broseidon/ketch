@@ -485,6 +485,31 @@ func (s *Store) Sections(key string, dims int, withVectors bool) ([]Section, err
 	return out, err
 }
 
+// PageSections returns the sections of one page of a library, in order,
+// without vectors: a prefix scan over the page's keys, so reading one
+// section of a large index costs a cursor seek, not a pass over the
+// library. It returns none for a page the library does not hold.
+func (s *Store) PageSections(key, page string) ([]Section, error) {
+	var out []Section
+	err := s.view(func(tx *bolt.Tx) error {
+		lb := tx.Bucket(libBucket(key))
+		if lb == nil || lb.Bucket(sectionsBucket) == nil {
+			return nil
+		}
+		prefix := append([]byte(page), 0)
+		c := lb.Bucket(sectionsBucket).Cursor()
+		for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
+			var sec Section
+			if err := json.Unmarshal(v, &sec); err != nil {
+				return err
+			}
+			out = append(out, sec)
+		}
+		return nil
+	})
+	return out, err
+}
+
 // PutVectors replaces the window and unit vectors of the given sections
 // (keyed by page URL and order), for re-embedding with another model.
 func (s *Store) PutVectors(key string, secs []Section) error {

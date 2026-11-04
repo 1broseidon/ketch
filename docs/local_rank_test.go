@@ -41,7 +41,7 @@ func TestFamiliesGroupUnderTheirH2(t *testing.T) {
 	if fams[0].best != 2 || !slices.Equal(fams[0].members, []int{1, 2, 3}) {
 		t.Errorf("first family = %+v", fams[0])
 	}
-	results := familyResults(docsindex.Library{Root: "https://x.test/"}, secs, fams, "default action form post", 0)
+	results := familyResults(docsindex.Library{Root: "https://x.test/"}, secs, fams, "default action form post", 0, HintNone)
 	top := results[0]
 	if top.Title != "Actions" || top.Breadcrumb != "Forms > Actions" || top.URL != "https://x.test/forms#actions-default" ||
 		!slices.Equal(top.Anchors, []string{"actions", "actions-default", "actions-named"}) {

@@ -21,8 +21,8 @@ var docsCmd = &cobra.Command{
 	Use:   "docs <query>",
 	Short: "Search library documentation",
 	Long: `Search library documentation using ` + strings.Join(docs.ProviderNames(), ", ") + ` (default: the configured backend). Supports direct library ID lookup and library name resolution. ` +
-		docs.WithLibraryHelp("A library is a library ID from --resolve") + `. Resolve a name once and pass the ID it returns as --library: a name is resolved again on every call. Context7 needs no key: without one it uses Context7's anonymous quota (about 200 requests a month per IP), and a key lifts it. The local backend answers offline from libraries indexed with ketch docs index: the five nearest sections, verbatim with their code, each a section with the parts of it that matched, trimmed to its lead, its first code block and the blocks naming the query, about 1,800 tokens in all; with --tokens, fitted to that many tokens (as an LLM counts them) compactly, each result its heading path, its first sentence, the code block naming the question whole and the sentences naming it best, the first result taking the largest share; --snippets returns code-first snippets instead, each a heading path, the sentences just before a code block and the code (or a stretch of prose), about 1,200 tokens. A library indexed at several versions answers from the newest unless --library names one (name@version). The auto backend asks the local index first when it holds the library, then tries web, and asks Context7 only when web identifies no library, finds several, or fails; Context7's pick must be a library the query names, and for an ambiguous name one of web's candidates. Output names the provider that answered.`,
-	Args: exitArgs(cobra.MinimumNArgs(1)),
+		docs.WithLibraryHelp("A library is a library ID from --resolve") + `. Resolve a name once and pass the ID it returns as --library: a name is resolved again on every call. Context7 needs no key: without one it uses Context7's anonymous quota (about 200 requests a month per IP), and a key lifts it. The local backend answers offline from libraries indexed with ketch docs index: the five nearest sections, verbatim with their code, each a section with the parts of it that matched, trimmed to its lead, its first code block and the blocks naming the query, about 1,800 tokens in all; with --tokens, fitted to that many tokens (as an LLM counts them) compactly, each result its heading path, its first sentence, the code block naming the question whole and the sentences naming it best, the first result taking the largest share; --snippets returns code-first snippets instead, each a heading path, the sentences just before a code block and the code (or a stretch of prose), about 1,200 tokens. A compact answer ends each result it cut short with "full section: ketch docs -b local --section <url#anchor>": --section returns that one section in full from the index (no ranking, no model, no network): the section and the subsections under it (an H2 is its whole family), or a page's sections in order for a URL with no anchor, cut at a block boundary within --tokens (default 4000) with "[…]" and where to read on; a section the index lacks exits 3 (not_found). A library indexed at several versions answers from the newest unless --library names one (name@version). The auto backend asks the local index first when it holds the library, then tries web, and asks Context7 only when web identifies no library, finds several, or fails; Context7's pick must be a library the query names, and for an ambiguous name one of web's candidates. Output names the provider that answered.`,
+	Args: exitArgs(docsArgs),
 	RunE: runDocs,
 }
 
@@ -30,13 +30,22 @@ func init() {
 	rootCmd.AddCommand(docsCmd)
 	docsCmd.Flags().StringP("backend", "b", cfg.DocsBackend, "docs backend: "+strings.Join(config.AvailableDocBackends(), ", "))
 	docsCmd.Flags().String("library", "", docs.WithLibraryHelp(strings.Join(docs.LibraryProviderNames(), ", ")+" library ID, skipping the resolve step"))
-	docsCmd.Flags().Int("tokens", 4000, strings.Join(docs.LibraryProviderNames(), ", ")+" token budget")
+	docsCmd.Flags().Int("tokens", 4000, strings.Join(docs.LibraryProviderNames(), ", ")+" token budget (local: set, fits its sections to it compactly; with --section, the cap of the section returned)")
 	docsCmd.Flags().IntP("limit", "l", cfg.Limit, "max number of results")
 	docsCmd.Flags().Bool("resolve", false, docs.WithLibraryHelp("resolve the query as a library name to "+strings.Join(docs.LibraryProviderNames(), ", ")+" library IDs instead of searching"))
 	docsCmd.Flags().String("tag", "", "record each result under this tag (see `ketch tag`)")
 	docsCmd.PreRunE = validateTagFlag
 	docsCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/library/snippet)")
 	docsCmd.Flags().Bool("snippets", false, "local: code-first snippets (a code block with the sentences before it) instead of whole sections")
+	docsCmd.Flags().String("section", "", "local: return one section in full, given as the url#anchor a result's source carries (a page URL alone returns its sections in order; no query, no ranking); --tokens caps it (default 4000)")
+}
+
+// docsArgs wants a query, unless --section names what to fetch.
+func docsArgs(cmd *cobra.Command, args []string) error {
+	if section, _ := cmd.Flags().GetString("section"); section != "" {
+		return nil
+	}
+	return cobra.MinimumNArgs(1)(cmd, args)
 }
 
 func runDocs(cmd *cobra.Command, args []string) error {
@@ -48,7 +57,20 @@ func runDocs(cmd *cobra.Command, args []string) error {
 	resolve, _ := cmd.Flags().GetBool("resolve")
 	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
 	minimal, _ := cmd.Flags().GetBool("minimal")
-	cmd.SetContext(withLocalDocsOptions(cmd, tokens, limit))
+	// A compact answer's text output points to the full section of what it
+	// cut; --json and --minimal carry results only.
+	hint := docs.HintNone
+	if cmd.Flags().Changed("tokens") && !asJSON && !minimal {
+		hint = docs.HintCLI
+	}
+	cmd.SetContext(withLocalDocsOptions(cmd, tokens, limit, hint))
+
+	if section, _ := cmd.Flags().GetString("section"); section != "" {
+		if resolve {
+			return exitErrf(ExitValidation, "--section cannot be combined with --resolve")
+		}
+		return runDocsSection(cmd, section, library, tokens, asJSON, minimal)
+	}
 
 	if resolve {
 		// Library matches carry IDs, not URLs: there is nothing to bookmark,
@@ -67,7 +89,7 @@ func runDocs(cmd *cobra.Command, args []string) error {
 		if !cmd.Flags().Changed("limit") {
 			limit = 0 // the token budget is the only bound unless --limit is explicit
 		}
-		return runDocsWithLibrary(cmd, query, library, tokens, limit, asJSON, minimal)
+		return runDocsWithLibrary(cmd, query, library, tokens, limit, asJSON, minimal, hint)
 	}
 
 	searcher, fetcher, err := newDocSearcher(cmd, backend)
@@ -95,15 +117,49 @@ func runDocs(cmd *cobra.Command, args []string) error {
 		return json.NewEncoder(os.Stdout).Encode(o.Results)
 	}
 
-	printDocsResults(query, backend, "", o, minimal)
+	printDocsResults(query, backend, "", o, minimal, hint)
+	return nil
+}
+
+// runDocsSection returns one section of the local index in full: the
+// follow-up to a compact answer that cut it short. The section is the
+// url#anchor a result's source carries; --library names the indexed
+// library, or the URL does. It reads the index only: no network, no
+// ranking, no model. A section the index lacks is not_found (exit 3).
+func runDocsSection(cmd *cobra.Command, section, library string, tokens int, asJSON, minimal bool) error {
+	backend, _ := cmd.Flags().GetString("backend")
+	if cmd.Flags().Changed("backend") && backend != "local" && backend != "auto" {
+		return exitErrf(ExitValidation, "--section requires the local backend (got %q)", backend)
+	}
+	searcher, fetcher, err := newDocSearcher(cmd, "local")
+	if err != nil {
+		return err
+	}
+	defer fetcher.Close()
+	sections, ok := searcher.(docs.SectionFetcher)
+	if !ok {
+		return exitErrf(ExitValidation, "docs backend %q does not support --section", "local")
+	}
+	o := sections.SectionSelect(cmd.Context(), library, section, tokens)
+	backend = servedDocsBackend("local", o)
+	if err := fetcher.classify(o.Err(), "section fetch failed"); err != nil {
+		return err
+	}
+	tagResults(cmd, docsTaggable(o.Results))
+	if asJSON {
+		noteOnStderr(o)
+		return json.NewEncoder(os.Stdout).Encode(o.Results)
+	}
+	printDocsResults("", backend, library, o, minimal, docs.HintNone)
 	return nil
 }
 
 // withLocalDocsOptions carries the local backend's view and the budget and
 // limit the caller chose (not the flags' defaults, which are other
-// backends'), so -b local, alone or in auto, picks its own defaults.
-func withLocalDocsOptions(cmd *cobra.Command, tokens, limit int) context.Context {
-	var o docs.LocalOptions
+// backends'), so -b local, alone or in auto, picks its own defaults, and
+// how its compact answer points to the full section of a result it cut.
+func withLocalDocsOptions(cmd *cobra.Command, tokens, limit int, hint docs.HintStyle) context.Context {
+	o := docs.LocalOptions{Hint: hint}
 	o.Snippets, _ = cmd.Flags().GetBool("snippets")
 	if cmd.Flags().Changed("tokens") {
 		o.Tokens = tokens
@@ -192,7 +248,7 @@ func formatLibraryMatches(matches []docs.LibraryMatch) string {
 
 // runDocsWithLibrary fetches docs for a known library ID. tokens bounds what
 // the provider returns; a positive limit additionally caps the result count.
-func runDocsWithLibrary(cmd *cobra.Command, query, library string, tokens, limit int, asJSON bool, minimal bool) error {
+func runDocsWithLibrary(cmd *cobra.Command, query, library string, tokens, limit int, asJSON, minimal bool, hint docs.HintStyle) error {
 	backend, _ := cmd.Flags().GetString("backend")
 	searcher, fetcher, err := newDocSearcher(cmd, backend)
 	if err != nil {
@@ -223,7 +279,7 @@ func runDocsWithLibrary(cmd *cobra.Command, query, library string, tokens, limit
 		return json.NewEncoder(os.Stdout).Encode(o.Results)
 	}
 
-	printDocsResults(query, backend, library, o, minimal)
+	printDocsResults(query, backend, library, o, minimal, hint)
 	return nil
 }
 
@@ -253,7 +309,7 @@ func noteOnStderr(o docs.Outcome) {
 // printDocsResults prints the results: the local backend's (sections, or
 // snippets when asked) as Markdown blocks, any other results as labelled
 // blocks.
-func printDocsResults(query, backend, library string, o docs.Outcome, minimal bool) {
+func printDocsResults(query, backend, library string, o docs.Outcome, minimal bool, hint docs.HintStyle) {
 	results := o.Results
 	if minimal {
 		noteOnStderr(o)
@@ -271,7 +327,7 @@ func printDocsResults(query, backend, library string, o docs.Outcome, minimal bo
 		// Local results read as Markdown: heading path, the section's (or
 		// snippet's) text with its code, source.
 		for _, r := range results {
-			fmt.Println(docs.RenderSnippet(r))
+			fmt.Println(docs.RenderResult(r, hint))
 		}
 		return
 	}
@@ -292,7 +348,9 @@ func printDocsResults(query, backend, library string, o docs.Outcome, minimal bo
 func printDocsHeader(query, backend, library string, o docs.Outcome) {
 	results := o.Results
 	fmt.Println("---")
-	fmt.Printf("query: %s\n", query)
+	if query != "" {
+		fmt.Printf("query: %s\n", query)
+	}
 	fmt.Printf("backend: %s\n", backend)
 	// The results' library is the ID the backend answered from: the one a
 	// name or spec passed as --library resolved to, or the one a bare query

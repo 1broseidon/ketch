@@ -138,3 +138,22 @@ func TestStoreOpensPerOperation(t *testing.T) {
 	}
 	_ = db.Close()
 }
+
+// PageSections reads one page's sections in order, and none for a page the
+// library lacks or one whose URL only starts like a stored page's.
+func TestStorePageSections(t *testing.T) {
+	s := Open(filepath.Join(t.TempDir(), "docs-index.db"))
+	seed(t, s)
+	secs, err := s.PageSections(testKey, testKey+"b")
+	if err != nil || len(secs) != 2 || secs[0].Heading != "B" || secs[1].Anchor != "two" || secs[1].Vectors != nil {
+		t.Fatalf("page b = %+v %v", secs, err)
+	}
+	for _, page := range []string{testKey + "c", testKey, testKey + "b/x"} {
+		if secs, err := s.PageSections(testKey, page); err != nil || len(secs) != 0 {
+			t.Errorf("%s = %+v %v", page, secs, err)
+		}
+	}
+	if secs, err := s.PageSections("https://nope.test/", testKey+"b"); err != nil || len(secs) != 0 {
+		t.Errorf("unknown library = %+v %v", secs, err)
+	}
+}

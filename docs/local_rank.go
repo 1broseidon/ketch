@@ -226,9 +226,9 @@ func familyContent(secs []docsindex.Section, f *family) string {
 // none over localResultTokens: a family that fits is shown whole, else
 // its own section and its best-ranked ones (at most localFamilyParts), in
 // page order, each trimmed to its share by trimSection.
-func familyResults(lib docsindex.Library, secs []docsindex.Section, fams []*family, query string, tokens int) []Result {
+func familyResults(lib docsindex.Library, secs []docsindex.Section, fams []*family, query string, tokens int, hint HintStyle) []Result {
 	if tokens > 0 {
-		return compactResults(lib, secs, fams, query, tokens)
+		return compactResults(lib, secs, fams, query, tokens, hint)
 	}
 	tokens = localTokens
 	budget := tokens * webCharsPerToken
@@ -267,11 +267,13 @@ func familyResult(lib docsindex.Library, secs []docsindex.Section, f *family, sh
 	}
 	var b strings.Builder
 	var anchors []string
+	cut := len(shown) < len(f.members)
 	for i, m := range shown {
 		s := secs[m]
 		text := s.Text
 		if len(text) > parts[i] {
 			text = trimSection(text, parts[i], terms)
+			cut = true
 		}
 		if b.Len() > 0 || s.Heading != title {
 			if b.Len() > 0 {
@@ -284,7 +286,7 @@ func familyResult(lib docsindex.Library, secs []docsindex.Section, f *family, sh
 	}
 	return Result{
 		Library: lib.Root, Version: lib.Version, Title: title, Breadcrumb: strings.Join(crumbs, " > "),
-		Snippet: b.String(), URL: webSectionOf(secs[f.best], 0).URL(), Anchors: anchors, Source: "local",
+		Snippet: b.String(), URL: webSectionOf(secs[f.best], 0).URL(), Anchors: anchors, Source: "local", Truncated: cut,
 	}
 }
 
