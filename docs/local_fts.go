@@ -296,15 +296,7 @@ func rerankHits(lib docsindex.Library, secs []docsindex.Section, hits []docsinde
 		if rootErr == nil {
 			score *= sitePrior(s.Page, root)
 		}
-		if len(s.Crumbs) > 0 {
-			score *= 1 + ftsTitleBoost*titleCoverage(s.Crumbs[0], q.terms)
-		}
-		if legacy[s.Page] {
-			score *= ftsLegacyPrior
-		}
-		if q.trouble && troubleSection(s) {
-			score *= ftsTroubleBoost
-		}
+		score *= pagePriors(s, q, legacy)
 		out = append(out, rankedSection{sec: i, score: score})
 	}
 	pageBoosts(secs, out)
@@ -316,6 +308,23 @@ func rerankHits(lib docsindex.Library, secs []docsindex.Section, hits []docsinde
 		}
 	}
 	return out
+}
+
+// pagePriors is a section's weight by its page: its title naming the
+// question, a legacy edition (legacyPages), a troubleshooting section for
+// a question about a failure.
+func pagePriors(s docsindex.Section, q rankQuery, legacy legacyPages) float64 {
+	w := 1.0
+	if len(s.Crumbs) > 0 {
+		w *= 1 + ftsTitleBoost*titleCoverage(s.Crumbs[0], q.terms)
+	}
+	if legacy[s.Page] {
+		w *= ftsLegacyPrior
+	}
+	if q.trouble && troubleSection(s) {
+		w *= ftsTroubleBoost
+	}
+	return w
 }
 
 // sitePrior is a section's weight by its page's tier (planTier).
@@ -451,36 +460,20 @@ func newLegacyPages(secs []docsindex.Section, terms []string) legacyPages {
 	editions := map[string]int{}     // page → its edition number
 	keys := map[string]string{}
 	out := legacyPages{}
-	seen := map[string]bool{}
 	for _, s := range secs {
-		if seen[s.Page] {
+		if _, seen := keys[s.Page]; seen {
 			continue
 		}
-		seen[s.Page] = true
 		u, err := url.Parse(s.Page)
 		if err != nil {
+			keys[s.Page] = ""
 			continue
 		}
-		segs := pathSegments(u.Path)
-		words := tokenize(strings.Join(segs, " "))
-		if len(s.Crumbs) > 0 {
-			words = append(words, tokenize(s.Crumbs[0])...)
+		if markedLegacy(u, s.Crumbs, asked) {
+			out[s.Page] = true
 		}
-		for _, w := range words {
-			if (legacyWords[w] || variantWords[w]) && !asked[normTerm(w)] {
-				out[s.Page] = true
-			}
-		}
-		if len(segs) == 0 {
-			continue
-		}
-		last := strings.ToLower(segs[len(segs)-1])
-		base, n := strings.TrimSuffix(last, path.Ext(last)), 0
-		if m := legacyVersionRe.FindStringSubmatch(last); m != nil && !asked["v"+m[2]] {
-			base = m[1]
-			n, _ = strconv.Atoi(m[2])
-		}
-		k := u.Host + "/" + strings.Join(segs[:len(segs)-1], "/") + "/" + base
+		k, n := pageEdition(u, asked)
+		keys[s.Page], editions[s.Page] = k, n
 		f := families[k]
 		if f == nil {
 			f = &family{}
@@ -488,7 +481,6 @@ func newLegacyPages(secs []docsindex.Section, terms []string) legacyPages {
 		}
 		f.plain = f.plain || n == 0
 		f.top = max(f.top, n)
-		editions[s.Page], keys[s.Page] = n, k
 	}
 	for page, n := range editions {
 		if f := families[keys[page]]; n > 0 && (f.plain || f.top > n) {
@@ -496,6 +488,40 @@ func newLegacyPages(secs []docsindex.Section, terms []string) legacyPages {
 		}
 	}
 	return out
+}
+
+// markedLegacy reports a page whose path or title (crumbs[0]) says it is
+// legacy, deprecated, archived or another variant the question does not
+// ask about.
+func markedLegacy(u *url.URL, crumbs []string, asked map[string]bool) bool {
+	words := tokenize(strings.Join(pathSegments(u.Path), " "))
+	if len(crumbs) > 0 {
+		words = append(words, tokenize(crumbs[0])...)
+	}
+	for _, w := range words {
+		if (legacyWords[w] || variantWords[w]) && !asked[normTerm(w)] {
+			return true
+		}
+	}
+	return false
+}
+
+// pageEdition is a page's family (host, directory and last segment
+// without its edition) and its edition number: 1 for adminapi-v1, 0 for
+// adminapi or a page whose edition the question asks about.
+func pageEdition(u *url.URL, asked map[string]bool) (string, int) {
+	segs := pathSegments(u.Path)
+	last := ""
+	if len(segs) > 0 {
+		last = strings.ToLower(segs[len(segs)-1])
+		segs = segs[:len(segs)-1]
+	}
+	base, n := strings.TrimSuffix(last, path.Ext(last)), 0
+	if m := legacyVersionRe.FindStringSubmatch(last); m != nil && !asked["v"+m[2]] {
+		base = m[1]
+		n, _ = strconv.Atoi(m[2])
+	}
+	return u.Host + "/" + strings.Join(segs, "/") + "/" + base, n
 }
 
 // troubleWords are words a question describing a failure uses.

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -474,14 +475,7 @@ func lastPart(name string) string {
 // the request gives is the site, whatever the hits say.
 func (s *SearchFirst) chooseSite(ctx context.Context, sites []sfSite, req sfRequest, prefs sitePrefs) (sfSite, *siteProfile, []sfSite, error) {
 	if isHTTPURL(req.library) && len(prefs.roots) > 0 {
-		site := sfSite{key: prefs.roots[0].String(), root: prefs.roots[0], docs: true}
-		for _, c := range sites {
-			for _, h := range c.hits {
-				if site.root.contains(h.u) {
-					site.hits = append(site.hits, h)
-				}
-			}
-		}
+		site := givenSite(prefs.roots[0], sites)
 		return site, s.hitProfile(ctx, site), nil, nil
 	}
 	for tries := 0; tries < 3; tries++ {
@@ -494,11 +488,7 @@ func (s *SearchFirst) chooseSite(ctx context.Context, sites []sfSite, req sfRequ
 		if prof == nil && len(site.alts) > 0 && !site.retry {
 			// Its top hit unreadable (a JS shell no browser renders, a
 			// failed fetch): the domain's next tree first, this one last.
-			rest := site.alts
-			site.alts = nil
-			next := rest[0]
-			next.alts, next.retry = append(append([]sfSite{}, rest[1:]...), site), true
-			sites = append([]sfSite{next}, sites...)
+			sites = append([]sfSite{lastTree(site)}, sites...)
 			continue
 		}
 		site, sites = servedSite(site, prof, sites)
@@ -507,6 +497,22 @@ func (s *SearchFirst) chooseSite(ctx context.Context, sites []sfSite, req sfRequ
 		}
 	}
 	return sfSite{}, nil, nil, fmt.Errorf("search: %w", ErrNoDocsFound)
+}
+
+// givenSite is the docs root a request gives as the site, with the hits
+// under it from every site's trees.
+func givenSite(root webRoot, sites []sfSite) sfSite {
+	site := sfSite{key: root.String(), root: root, docs: true}
+	for _, c := range sites {
+		for _, t := range append([]sfSite{c}, c.alts...) {
+			for _, h := range t.hits {
+				if root.contains(h.u) {
+					site.hits = append(site.hits, h)
+				}
+			}
+		}
+	}
+	return site
 }
 
 // servedSite is the site where its top hit is served from, when that is
@@ -527,23 +533,42 @@ func servedSite(site sfSite, prof *siteProfile, sites []sfSite) (sfSite, []sfSit
 			hits = append(hits, h)
 		}
 	}
+	moved, docs, rest := sitesUnder(root, top.u, sites)
+	site.root, site.hits, site.key = root, append(hits, moved...), siteKey(prof.served, root)
+	site.docs = site.docs || docs
+	return site, rest
+}
+
+// sitesUnder takes from sites every one whose hits all sit under root
+// (but top): their hits, whether any had a docs signal, and the sites
+// left.
+func sitesUnder(root webRoot, top *url.URL, sites []sfSite) ([]sfHit, bool, []sfSite) {
+	var hits []sfHit
 	var rest []sfSite
+	docs := false
 	for _, o := range sites {
-		var moved []sfHit
+		under := len(o.alts) == 0 && len(o.hits) > 0
 		for _, h := range o.hits {
-			if root.contains(h.u) && linkKey(h.u) != linkKey(top.u) {
-				moved = append(moved, h)
-			}
+			under = under && root.contains(h.u) && linkKey(h.u) != linkKey(top)
 		}
-		if len(moved) > 0 && len(moved) == len(o.hits) && len(o.alts) == 0 {
-			hits = append(hits, moved...)
-			site.docs = site.docs || o.docs
+		if under {
+			hits = append(hits, o.hits...)
+			docs = docs || o.docs
 			continue
 		}
 		rest = append(rest, o)
 	}
-	site.root, site.hits, site.key = root, hits, siteKey(prof.served, root)
-	return site, rest
+	return hits, docs, rest
+}
+
+// lastTree is a site's next docs tree, with the site itself as its last
+// alternative.
+func lastTree(site sfSite) sfSite {
+	rest := site.alts
+	site.alts = nil
+	next := rest[0]
+	next.alts, next.retry = append(append([]sfSite{}, rest[1:]...), site), true
+	return next
 }
 
 // hitProfile is the site's top hit's page profile, nil when it cannot be

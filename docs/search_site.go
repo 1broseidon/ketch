@@ -495,24 +495,37 @@ func chooseSites(hits []sfHit, prefs sitePrefs) []sfSite {
 		})
 		var alts []sfSite
 		for _, t := range ts {
-			s := sfSite{key: k, root: t.root, hits: t.hits, score: scores[k]}
-			s.docs = slices.ContainsFunc(t.hits, func(h sfHit) bool { return h.docs })
-			s.named = slices.ContainsFunc(t.hits, func(h sfHit) bool { return prefs.preferred(h.u) || named(h.u, prefs.words) })
-			alts = append(alts, s)
+			alts = append(alts, treeSite(k, t.root, t.hits, scores[k], prefs))
 		}
-		if main, ok := mainTree(alts[0], prefs.words); ok && !slices.ContainsFunc(alts, func(s sfSite) bool { return s.root.String() == main.root.String() }) {
-			alts = append([]sfSite{main}, alts...) // a variant's hits only: its main docs first
-		}
-		s := alts[0]
-		s.alts = alts[1:]
-		s.owner = ownsDomain(k, prefs.words)
-		s.spec = onDomains(s.root.u.Hostname(), specDomains)
-		s.named = s.named || s.owner
-		s.docs = s.docs || s.spec // a spec is the protocol's docs
-		out = append(out, s)
+		out = append(out, domainSite(alts, prefs))
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].score > out[j].score })
 	return ownerFirst(out)
+}
+
+// treeSite is one docs tree of a domain (key) as a site.
+func treeSite(key string, root webRoot, hits []sfHit, score float64, prefs sitePrefs) sfSite {
+	s := sfSite{key: key, root: root, hits: hits, score: score}
+	s.docs = slices.ContainsFunc(hits, func(h sfHit) bool { return h.docs })
+	s.named = slices.ContainsFunc(hits, func(h sfHit) bool { return prefs.preferred(h.u) || named(h.u, prefs.words) })
+	return s
+}
+
+// domainSite is a domain's best tree as its site, the others its
+// alternatives, a variant's main docs (mainTree) first when its hits
+// hold none; the question names the domain (owner), or it is a
+// standards body's (spec, which is the protocol's docs).
+func domainSite(trees []sfSite, prefs sitePrefs) sfSite {
+	if main, ok := mainTree(trees[0], prefs.words); ok && !slices.ContainsFunc(trees, func(s sfSite) bool { return s.root.String() == main.root.String() }) {
+		trees = append([]sfSite{main}, trees...)
+	}
+	s := trees[0]
+	s.alts = trees[1:]
+	s.owner = ownsDomain(s.key, prefs.words)
+	s.spec = onDomains(s.root.u.Hostname(), specDomains)
+	s.named = s.named || s.owner
+	s.docs = s.docs || s.spec
+	return s
 }
 
 // sfOwnerShare is the share of the leading site's weight a site the
