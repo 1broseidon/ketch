@@ -41,7 +41,7 @@ func (s *SearchFirst) fromIndex(ctx context.Context, req sfRequest, tr *sfTrace)
 		cands = MatchIndexed(libs, req.library)
 	}
 	qv := s.queryVector(ctx, req.query)
-	if lib, cos, ok := askedBefore(cands, qv); ok {
+	if lib, cos, ok := askedBefore(libs, req.library, qv); ok {
 		tr.askedCos, tr.local = cos, lib.Root
 		if cos >= sfAskedFloor {
 			o := s.local.answer(ctx, lib, req.query, req.opts)
@@ -100,13 +100,17 @@ func (s *SearchFirst) model() embed.Embedder {
 	return emb
 }
 
-// askedBefore is the library a question closest to qv was answered from,
-// and the two questions' cosine.
-func askedBefore(libs []docsindex.Library, qv []float32) (docsindex.Library, float64, bool) {
+// askedBefore is the library a question closest to qv was answered
+// from, among those asked of the same library value (none for a bare
+// question), and the two questions' cosine.
+func askedBefore(libs []docsindex.Library, library string, qv []float32) (docsindex.Library, float64, bool) {
 	var best docsindex.Library
 	bestCos, found := float32(0), false
 	for _, l := range libs {
 		for _, a := range l.Asked {
+			if a.Library != library {
+				continue
+			}
 			v := embed.FromHalf(nil, a.Vector)
 			if len(v) != len(qv) || len(v) == 0 {
 				continue
@@ -121,7 +125,7 @@ func askedBefore(libs []docsindex.Library, qv []float32) (docsindex.Library, flo
 
 // remember records the question as answered from the library (its last
 // MaxAsked questions).
-func (s *SearchFirst) remember(lib docsindex.Library, query string, qv []float32) {
+func (s *SearchFirst) remember(lib docsindex.Library, library, query string, qv []float32) {
 	if s.local.store == nil || len(qv) == 0 || len(qv) != lib.Dims {
 		return
 	}
@@ -129,7 +133,7 @@ func (s *SearchFirst) remember(lib docsindex.Library, query string, qv []float32
 	if err != nil || !found {
 		return
 	}
-	stored.Asked = append(stored.Asked, docsindex.Asked{Question: query, Vector: embed.AppendHalf(nil, qv)})
+	stored.Asked = append(stored.Asked, docsindex.Asked{Question: query, Library: library, Vector: embed.AppendHalf(nil, qv)})
 	if n := len(stored.Asked); n > docsindex.MaxAsked {
 		stored.Asked = stored.Asked[n-docsindex.MaxAsked:]
 	}

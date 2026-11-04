@@ -101,7 +101,8 @@ type Library struct {
 // Asked is one question answered from a library.
 type Asked struct {
 	Question string `json:"q"`
-	Vector   []byte `json:"v,omitempty"` // float16, the library's Dims
+	Library  string `json:"lib,omitempty"` // the library the request named, as given
+	Vector   []byte `json:"v,omitempty"`   // float16, the library's Dims
 }
 
 // MaxAsked caps the questions a library remembers.

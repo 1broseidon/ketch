@@ -280,7 +280,7 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 	_, tr.answerCos, _ = s.closest(ctx, []docsindex.Library{lib}, qv)
 	o := s.local.rank(ctx, lib, req.query, req.opts)
 	if o.Status == Answered {
-		s.remember(lib, req.query, qv)
+		s.remember(lib, req.library, req.query, qv)
 	}
 	return searchAnswered(o, lib, len(pages), st)
 }

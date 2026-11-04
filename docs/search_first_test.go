@@ -111,6 +111,16 @@ func TestSearchFirstRemembersQuestions(t *testing.T) {
 	if s.SearchSelect(context.Background(), "fetch handler runtime", 0); searches.Load() == before {
 		t.Error("another question was answered without searching")
 	}
+	// Remembered with the library the request named: the same words about
+	// a named library are another request until asked of it once.
+	before = searches.Load()
+	if s.GetDocsSelect(context.Background(), idxRoot, "add middleware to a route", 0); searches.Load() == before {
+		t.Error("a question asked bare answered the request naming a library from memory")
+	}
+	before = searches.Load()
+	if o := s.GetDocsSelect(context.Background(), idxRoot, "add middleware to a route", 0); searches.Load() != before || o.Backend != "local" {
+		t.Errorf("asked again of the same library: backend %q, %d searches; want the local index", o.Backend, searches.Load()-before)
+	}
 }
 
 // Hits that are never docs (forges, Q&A, posts) are no site: refused as
