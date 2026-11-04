@@ -23,6 +23,8 @@ verbatim on the GitHub release. Versions follow
 
 **Fixed** code highlighted with hover popups (Shiki's twoslash, as VitePress sites such as hono.dev and router.vuejs.org use) coming out one token per line: a block element inside a line's inline markup no longer breaks the line, so `app.notFound((c) => …)` reads as written, in `ketch scrape`, `-b web` and the local index alike.
 
+**Fixed** code samples in tabs going missing: a page that hides every tab but the first until a script shows it (an inline `display: none` or a `hidden` attribute, as AWS's XML/JSON lifecycle examples do) lost the hidden tabs' code. A hidden block holding code the page shows nowhere else is now kept, a hidden copy of visible code is still dropped, and an ARIA tab's label (npm, yarn; Python, Go) is written as a bold line above the code it shows instead of the labels running together above unlabelled blocks, in `ketch scrape`, `ketch extract`, `-b web` and the local index alike.
+
 **Fixed** the version and locale collapse treating a page's last path segment as a version when the URL ends in a slash: `/tutorial/1-setup/2/` and `/guides/upgrade-to/v5/` are pages of their own, not copies of `/tutorial/1-setup/` and `/guides/upgrade-to/`. Only a landing page whose every segment is a locale or version (`/stable/`, `/en/5x/`) is one.
 
 A web docs call no longer fetches the same URL twice: the files and pages one call reads at several stages (a root page, its `llms.txt`, a large registry page) are fetched once and shared within the call, and a discovery file that timed out is not waited on again under the same timeout.

@@ -662,3 +662,135 @@ general set to hybrid ranking, all paraphrases; they equal or beat it at
 the top (section@1 38 against 37) and within 880 tokens (43 answers against
 42). The weights were set on these dev sets, which is this amendment's
 risk; the sealed holdouts decide.
+
+## Amendment 6 (2026-11-04): search-first site picking, hidden code, legacy and troubleshooting priors, stricter memory
+
+A hands-on bench (an agent asking eight questions through `-b search` with
+a fresh index) found two classes of failure. Site picking: a question about
+Duo's Admin API was answered from third-party "integrate Duo with X" pages
+although six of ten hits were on duo.com, because help.duo.com and
+duo.com/docs were one site whose help tree (JS shells, no browser) was read
+first and gave nothing, and the next candidate was another domain; GitHub
+Actions came from the enterprise-server@3.22 copy of the docs; PKCE from a
+vendor rather than RFC 7636; `python requests ... backoff` was refused
+`ambiguous_site`. Dropped code: AWS's JSON lifecycle examples were missing.
+The rule stays: simple general rules, no model, no CGO, no site names in
+code (category lists such as nonDocsDomains are fine).
+
+**Decision.**
+
+- **The site a question owns goes first.** A domain whose first label (or
+  that label without its language word) is a word of the question owns it:
+  duo.com for "duo", requests.readthedocs.io for "requests",
+  python-poetry.org for "poetry". When one is among the candidates with at
+  least a quarter of the leader's weight (sfOwnerShare), it goes first
+  (ownerFirst); when the question owns none, a standards body's site does
+  (specDomains: rfc-editor.org, ietf.org, w3.org, whatwg.org, openid.net,
+  ecma-international.org, tc39.es, unicode.org, oasis-open.org, iso.org),
+  and a spec site counts as docs. An owner or spec site is never an
+  `ambiguous_site` refusal.
+- **A domain's docs trees are candidates in turn.** Each tree (host and
+  docs path) of a domain is kept, best first, as the site's alternatives;
+  a tree that gives nothing (no page readable, robots-closed, nothing
+  matching) is followed by the domain's next tree before another domain
+  (sfMaxSites 2 domains, sfMaxReads 4 trees in all, within the 45 s
+  budget). A tree whose top hit cannot be read is tried last. An unrendered
+  JS shell with fewer than 50 words is no page (unreadShell), so a help
+  centre of shells reads as nothing instead of as "Loading". The hit pages
+  of the tree are still read first (plan).
+- **The main docs over a variant.** treeBetter ranks a tree whose path
+  marks an edition, deployment or age (variantSegment: enterprise, legacy,
+  archive(d), deprecated, obsolete, old, previous, self-hosted,
+  self-managed, on-prem, govcloud, or a name pinned to a release such as
+  enterprise-server@3.22) below the main docs unless the question names
+  the word; when a domain's hits are all in a variant, its main docs'
+  copies of them (the variant segment removed) are tried first, and the
+  variant is the alternative (mainTree).
+- **A top hit served from another domain** (terraform.io redirecting to
+  developer.hashicorp.com) takes along the hits of the candidates whose
+  hits all sit under the served tree.
+- **Hidden code is content when the page shows it nowhere else** (extract).
+  A hidden block (display:none, `hidden`, aria-hidden) holding a code block
+  whose text no other code block on the page has is kept: tabbed samples
+  (AWS's `<awsdocs-tabs>` XML/JSON pairs in `<dl style="display: none">`,
+  one language of several). An ARIA tab's label is moved onto its panel as
+  a bold line and the strip of labels dropped. A copy button's empty line
+  before the code is trimmed. On the scrape bench's 500 pages no check
+  changes and 16 pages' text does (tab labels, hidden code, blank lines).
+- **Ranking priors** (keyword ranker): a legacy page the question does not
+  ask about weighs 0.6: its path or title says legacy, deprecated,
+  archived or a variant word, or its last path segment is a numbered
+  edition (adminapi-v1) beside the unnumbered page or a higher edition
+  among the candidates. A question describing a failure (error, fails,
+  keeps, crash, not working, ...) weighs sections whose path or headings
+  say troubleshooting, debugging, errors or problems 1.2. Sections under a
+  docs platform's boilerplate heading (agent instructions, querying this
+  documentation, was this page helpful, edit this page, cookie notices)
+  are dropped when pages are sectioned and skipped when ranked. The
+  phrase boost's token sequence leaves identifiers' parts out, so one
+  identifier whose parts spell the question (adminapi_read_log) is not
+  the question's words side by side.
+- **Question memory is stricter.** A remembered question answers a new one
+  only when their terms after filler are the same set (sfAskedOverlap 1),
+  and only answers from the first site read are remembered (any of its
+  docs trees; never a fallback domain's).
+
+**Measurement** (dev sets only). Library set: 63 gold cases,
+`scripts/local_retrieval.py` over a copy of amendment 5's index (the
+extraction change does not reach a built index). General set: 60 dev
+questions and 6 negatives replayed with `scripts/search_first_eval.py`.
+Because the site changes read pages an older recording lacks, two live
+cold runs were recorded back to back (the baseline binary, then the new
+one, keyless auto chain, 6 s pacing) and merged: the new run's exchanges
+(its search results) plus the baseline run's for every request the new
+run did not make. Both binaries replay that union on the same search
+results. Rows are cumulative.
+
+| library set | page@5 | section@1/3/5 | answer@5 | answer in 880 | facts in 880 |
+|---|---|---|---|---|---|
+| amendment 5 | 60 | 38/48/51 | 46 | 43 | 68 |
+| + this amendment | 60 | 38/48/52 | 46 | 43 | 68 |
+
+| general set, union recording | site | page@5 | section@1/3/5 | answer@5 | refused | negatives refused |
+|---|---|---|---|---|---|---|
+| amendment 5 | 48 | 35 | 16/27/30 | 17 | 8 (6 ambiguous_site) | 1 |
+| + hidden code | 48 | 36 | 16/27/31 | 18 | 8 | 1 |
+| + site picking | 52 | 40 | 17/28/32 | 18 | 3 (2 ambiguous_site) | 0 |
+| + ranking priors | 52 | 40 | 18/28/32 | 18 | 3 | 0 |
+
+On amendment 5's own recording (cold7) the new binary gives site 54
+against 51, page@5 36 against 35, section@1/5 17/30 against 16/29, answer@5
+19 against 19; its four refusals there are pages the old recording never
+fetched. The negative no longer refused (a GitHub Actions option that does
+not exist) was refused only because its sites tied. Live, the two cold runs
+measured site 52/47, page@5 40/31, section@5 32/23, answer@5 18/17 (new/
+old), on search results that differed between them.
+
+Cost: cold CPU p50/p95 0.31/1.18 s on the union replay (0.30/1.18 before),
+live 0.44/1.33 s (0.41/1.17); live wall time p50/p95 2.1/5.6 s, all
+network. A repeated question (each case asked again over its cold run's
+index): 62 of 66 answered from the index with the same results (the
+other four are three refusals and one answer from a fallback domain, not
+remembered by design; amendment 5's rule answered 61); the 66 distinct
+questions over one shared index never answered from memory.
+
+Tried and not used: identifier-part matches counting half toward a
+section's coverage (library section@1 -2, answer in 880 -1; at two or more
+such terms only, -1/-1); a boost for a section whose second-level heading
+is made of the question's words, not its page title's ("Logs" for "read
+logs from the duo api": library section@1 -3 to -4 at 1.5 and 2, general
+answer@5 +1 to +2; 1.2 and 1.3 do not move the Duo case); a heading-path
+coverage boost (no effect on the Duo case, library mixed).
+
+**Consequences.** The Duo question is answered from duo.com/docs, with the
+legacy v1 pages behind the current ones; the Admin API's Logs family is
+still tenth on the whole duo.com/docs index (Integrations, whose
+permission list says "read Logs information", stays first). The GitHub
+YAML was never lost by extraction: the examples are H3 sections under the
+`paths` H2, and a compact answer leaves them behind its `full section:`
+pointer. Owner and spec preferences can pick a third-party site that is
+named like the product (k8s.info for "k8s") as the vote did before them,
+and a spec site's landing page (rfc-editor.org/info/rfc7636) rather than
+the RFC text when that is the hit. Several bench misses are the search
+results themselves (no kubernetes.io or requests docs page among the hits
+when the providers throttle).
