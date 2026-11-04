@@ -196,6 +196,13 @@ func TestChooseSitesPreferences(t *testing.T) {
 	if got := sites[0].root.String(); got != "https://docs.lib.test/v2/" {
 		t.Errorf("version 2 asked: root %s, want the v2 tree", got)
 	}
+	old := docsHits(fuseHits([][]search.Result{{
+		hit("https://lib.test/v3/guide/x", "X - Lib docs"), hit("https://lib.test/v3/guide/y", "Y - Lib docs"),
+		hit("https://lib.test/docs/v6/guide/x", "X - Lib docs"),
+	}}))
+	if got := chooseSites(old, sitePrefs{})[0].root.String(); got != "https://lib.test/docs/v6/" {
+		t.Errorf("no version asked: root %s, want the newer release's tree", got)
+	}
 	sites = chooseSites(hits, sitePrefs{names: []string{"other"}})
 	if sites[0].key != "other.test" {
 		t.Errorf("a library named other: site %s, want other.test", sites[0].key)

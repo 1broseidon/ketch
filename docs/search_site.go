@@ -512,6 +512,10 @@ func treeBetter(a, b float64, ra, rb webRoot, version string) bool {
 		}
 	} else if na, nb := releaseRank(ra), releaseRank(rb); na != nb {
 		return na < nb // no version asked: the current docs, then a release's, then development docs
+	} else if na == 1 {
+		if c := compareRelease(rootRelease(ra), rootRelease(rb)); c != 0 {
+			return c > 0 // two releases: the newer
+		}
 	}
 	if a != b {
 		return a > b
@@ -645,4 +649,16 @@ func otherLocale(r webRoot) bool {
 		}
 	}
 	return false
+}
+
+// rootRelease is the release numbers a root's version label names (v3 is
+// [3], /docs/15/ [15]); nil for none.
+func rootRelease(r webRoot) []int {
+	label := rootVersionLabel(r)
+	if label == "" {
+		label, _, _ = strings.Cut(scopeHost(r.u), ".")
+		label = strings.ReplaceAll(label, "-", ".")
+	}
+	n, _ := releaseNumbers(normLabel(label))
+	return n
 }
