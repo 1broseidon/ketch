@@ -57,12 +57,7 @@ func runDocs(cmd *cobra.Command, args []string) error {
 	resolve, _ := cmd.Flags().GetBool("resolve")
 	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
 	minimal, _ := cmd.Flags().GetBool("minimal")
-	// A compact answer's text output points to the full section of what it
-	// cut; --json and --minimal carry results only.
-	hint := docs.HintNone
-	if (cmd.Flags().Changed("tokens") || backend == docs.SearchBackend) && !asJSON && !minimal {
-		hint = docs.HintCLI // search-first answers are compact by default
-	}
+	hint := docsHint(cmd, backend, asJSON || minimal)
 	cmd.SetContext(withLocalDocsOptions(cmd, tokens, limit, hint))
 
 	if section, _ := cmd.Flags().GetString("section"); section != "" {
@@ -119,6 +114,16 @@ func runDocs(cmd *cobra.Command, args []string) error {
 
 	printDocsResults(query, backend, "", o, minimal, hint)
 	return nil
+}
+
+// docsHint is how a text answer points to the full section of a result
+// it cut: a compact answer (--tokens set, or search-first, compact by
+// default) in text output; --json and --minimal carry results only.
+func docsHint(cmd *cobra.Command, backend string, bare bool) docs.HintStyle {
+	if (cmd.Flags().Changed("tokens") || backend == docs.SearchBackend) && !bare {
+		return docs.HintCLI
+	}
+	return docs.HintNone
 }
 
 // runDocsSection returns one section of the local index in full: the
