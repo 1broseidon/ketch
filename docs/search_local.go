@@ -15,7 +15,8 @@ import (
 // searching: the request names a library indexed in full (by
 // `docs index`, not by search), as -b local would answer; or the same
 // question (its terms, sfAskedOverlap) was answered before from a
-// library; or, under hybrid ranking only, a stored section is close to
+// library, the first site its search read (an answer from a fallback
+// site is not remembered); or, under hybrid ranking only, a stored section is close to
 // the question (its best window's cosine at least localFloor), from the
 // library holding it. A library a search built holds only the pages
 // earlier questions read, so naming it is not enough: its sections must
@@ -88,10 +89,12 @@ func (s *SearchFirst) named(full []docsindex.Library, req sfRequest) []docsindex
 const sfAskedFloor = 0.92
 
 // sfAskedOverlap is the share of their terms (normalized as the ranking
-// normalizes them: no stopwords, inflections folded) two questions must
-// have in common to be one: "how do I configure X" and "configuring X"
-// are one, a question about another part of the same site is not.
-const sfAskedOverlap = 0.8
+// normalizes them: no stopwords or question filler, inflections folded)
+// two questions must have in common to be one: all of them. "how do I
+// configure X" and "configuring X" are one; a follow-up that asks
+// something more specific (one more term) is not, nor is a question
+// about another part of the same site.
+const sfAskedOverlap = 1.0
 
 // queryVector embeds the question with the installed model; nil without
 // one.
@@ -126,7 +129,7 @@ func (s *SearchFirst) model() embed.Embedder {
 func askedBefore(libs []docsindex.Library, library, query string, qv []float32) (docsindex.Library, float64, bool) {
 	var best docsindex.Library
 	bestSim, found := 0.0, false
-	terms := queryTerms(query)
+	terms := withoutFiller(queryTerms(query))
 	for _, l := range libs {
 		for _, a := range l.Asked {
 			if a.Library != library {
@@ -140,7 +143,7 @@ func askedBefore(libs []docsindex.Library, library, query string, qv []float32) 
 				}
 				sim = float64(embed.Dot(v, qv))
 			} else {
-				sim = termOverlap(terms, queryTerms(a.Question))
+				sim = termOverlap(terms, withoutFiller(queryTerms(a.Question)))
 			}
 			if !found || sim > bestSim {
 				best, bestSim, found = l, sim, true
