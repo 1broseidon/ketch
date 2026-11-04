@@ -147,8 +147,7 @@ func embedSome(ctx context.Context, emb embed.Embedder, store *docsindex.Store, 
 	var texts []string
 	var owner []int // the section each text is a window of
 	var chosen []int
-	for _, r := range rankSections(webSections(sub), query) {
-		i := bare[r.page]
+	for _, i := range embedOrder(sub, bare, query) {
 		win := sectionWindows(secs[i].Crumbs, secs[i].Text)
 		win = win[:min(len(win), sfSectionWindows)]
 		if len(texts)+len(win) > budget {
@@ -178,6 +177,25 @@ func embedSome(ctx context.Context, emb embed.Embedder, store *docsindex.Store, 
 		put = append(put, secs[i])
 	}
 	return len(chosen), store.PutVectors(key, put)
+}
+
+// embedOrder is the order sections without vectors (sub, at indices
+// bare) are embedded in: those the query's words rank, best first, then
+// the rest in page order, so a question none of whose words a section
+// names still has its pages' sections ranked by meaning.
+func embedOrder(sub []docsindex.Section, bare []int, query string) []int {
+	var out []int
+	ranked := map[int]bool{}
+	for _, r := range rankSections(webSections(sub), query) {
+		out = append(out, bare[r.page])
+		ranked[r.page] = true
+	}
+	for k, i := range bare {
+		if !ranked[k] {
+			out = append(out, i)
+		}
+	}
+	return out
 }
 
 // withCounts is the library with its stored totals: pages, sections,

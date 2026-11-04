@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/url"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -268,5 +269,49 @@ func TestPickSiteNamesCandidates(t *testing.T) {
 	_, err := pickSite(chooseSites(hits, sitePrefs{}))
 	if !errors.Is(err, ErrAmbiguousSite) || !strings.Contains(err.Error(), "https://docs.one.test/") {
 		t.Errorf("err = %v, want ambiguous_site naming the sites", err)
+	}
+}
+
+func TestQuestionWords(t *testing.T) {
+	got := questionWords("how do I use redux toolkit createSlice in python")
+	for _, want := range []string{"redux", "toolkit", "reduxtoolkit", "createslice"} {
+		if !slices.Contains(got, want) {
+			t.Errorf("questionWords = %q, want %q among them", got, want)
+		}
+	}
+	if slices.Contains(got, "python") || slices.Contains(got, "how") {
+		t.Errorf("questionWords = %q: language names and stopwords name no site", got)
+	}
+}
+
+func TestSiteChoiceRules(t *testing.T) {
+	for host, want := range map[string]bool{
+		"add-streaming.lib-py.pages.dev": true, "deploy-preview-12--lib.netlify.app": true,
+		"lib.pages.dev": false, "docs.lib.test": false,
+	} {
+		if got := isPreviewHost(host); got != want {
+			t.Errorf("isPreviewHost(%s) = %v, want %v", host, got, want)
+		}
+	}
+	for root, want := range map[string]int{
+		"https://lib.test/docs/": 0, "https://lib.test/en/stable/": 0, "https://lib.test/docs/15/": 1,
+		"https://v1-32.docs.lib.test/": 1, "https://lib.test/devdocs/": 2, "https://lib.test/en/main/": 2,
+	} {
+		r, _ := parseWebRoot(root)
+		if got := releaseRank(r); got != want {
+			t.Errorf("releaseRank(%s) = %d, want %d", root, got, want)
+		}
+	}
+}
+
+// A top hit served from elsewhere (its docs moved, or sit under a release
+// directory) moves the site to where it is served.
+func TestServedSite(t *testing.T) {
+	old, _ := url.Parse("https://docs.lib.test/en/guide/tools")
+	served, _ := url.Parse("https://docs.lib.test/v1.2/en/guide/tools")
+	root, _ := parseWebRoot("https://docs.lib.test/en/")
+	site := servedSite(sfSite{root: root, hits: []sfHit{{u: old}}}, &siteProfile{served: served})
+	if site.root.String() != "https://docs.lib.test/v1.2/" || site.hits[0].u.String() != served.String() {
+		t.Errorf("servedSite = %s with top hit %s, want the served page's tree", site.root, site.hits[0].u)
 	}
 }

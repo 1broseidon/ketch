@@ -173,6 +173,24 @@ var thirdPartyDomains = []string{
 	"geeksforgeeks.org", "w3schools.com", "tutorialspoint.com", "javatpoint.com",
 	"deepwiki.com", "context7.com", "devdocs.io", "runebook.dev", "w3cubdocs.com", "jsdocs.io", "tessl.io",
 	"snyk.io", "socket.dev", "npmtrends.com", "bundlephobia.com", "unpkg.com", "jsdelivr.com", "cdnjs.com",
+	"jsr.io", "mintlify.wiki",
+}
+
+// previewHosts are deployment platforms whose branch previews
+// (branch.project.pages.dev, deploy-preview-12--site.netlify.app) copy a
+// site's docs at some unreleased commit.
+var previewHosts = []string{"pages.dev", "netlify.app", "vercel.app"}
+
+// isPreviewHost reports a deployment platform's branch preview: two or
+// more labels before the platform's domain, or one joined by "--".
+func isPreviewHost(host string) bool {
+	host = strings.TrimSuffix(strings.ToLower(host), ".")
+	for _, d := range previewHosts {
+		if rest, ok := strings.CutSuffix(host, "."+d); ok {
+			return strings.Contains(rest, ".") || strings.Contains(rest, "--")
+		}
+	}
+	return false
 }
 
 // notDocsHostLabels are first host labels of sites that hold
@@ -200,7 +218,7 @@ var notDocsSegments = map[string]bool{
 func notDocsHit(u *url.URL) bool {
 	host := strings.ToLower(u.Hostname())
 	first, _, _ := strings.Cut(strings.TrimPrefix(host, "www."), ".")
-	if isNonDocsHost(host) && !docsHostLabels[first] || onDomains(host, thirdPartyDomains) {
+	if isNonDocsHost(host) && !docsHostLabels[first] || onDomains(host, thirdPartyDomains) || isPreviewHost(host) {
 		return true // a forge's own docs host (docs.github.com) is docs
 	}
 	if notDocsHostLabels[first] {
@@ -358,19 +376,30 @@ type sitePrefs struct {
 // words name.
 const sfWordBoost = 2.0
 
-// questionWords are a question's words as comparison keys, stopwords,
-// generic docs words and words under three letters left out.
+// questionWords are a question's words, and each two adjacent ones run
+// together, as comparison keys; stopwords, language names, generic docs
+// words and words under three letters left out.
 func questionWords(query string) []string {
 	var out []string
+	add := func(k string) {
+		if len(k) >= 3 && !genericNames[k] && !languageWords[k] && !isDigits(k) && !slices.Contains(out, k) {
+			out = append(out, k)
+		}
+	}
+	prev := ""
 	for _, f := range strings.FieldsFunc(strings.ToLower(query), func(r rune) bool {
 		return !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '.' && r != '-' && r != '_'
 	}) {
 		f = strings.Trim(f, ".-_")
-		k := libraryKey(f)
-		if len(k) < 3 || webStopwords[f] || genericNames[k] || isDigits(k) || slices.Contains(out, k) {
+		if webStopwords[f] {
+			prev = ""
 			continue
 		}
-		out = append(out, k)
+		add(libraryKey(f))
+		if prev != "" {
+			add(libraryKey(prev + f)) // two words a name runs together: redux toolkit, vue router
+		}
+		prev = f
 	}
 	return out
 }
@@ -478,8 +507,8 @@ func treeBetter(a, b float64, ra, rb webRoot, version string) bool {
 		if va != vb {
 			return va
 		}
-	} else if na, nb := numberedRoot(ra), numberedRoot(rb); na != nb {
-		return !na // no version asked: the current docs over a numbered release's
+	} else if na, nb := releaseRank(ra), releaseRank(rb); na != nb {
+		return na < nb // no version asked: the current docs, then a release's, then development docs
 	}
 	if a != b {
 		return a > b
@@ -580,4 +609,19 @@ func strongDocs(u *url.URL) bool {
 		}
 	}
 	return false
+}
+
+// releaseRank orders docs trees when no version is asked for: 0 the
+// current docs (no version, or latest, stable, current), 1 a numbered
+// release's, 2 development docs (dev, devdocs, main, next, nightly).
+func releaseRank(r webRoot) int {
+	for _, seg := range pathSegments(r.prefix) {
+		if versionAliasClass[strings.ToLower(seg)] == "dev" {
+			return 2
+		}
+	}
+	if numberedRoot(r) {
+		return 1
+	}
+	return 0
 }

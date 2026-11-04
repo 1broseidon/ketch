@@ -244,8 +244,8 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 			}
 			return s.failed(ctx, cctx, err)
 		}
-		if o = s.readSite(ctx, cctx, site, prof, req, tr); o.Status == Partial || cctx.Err() != nil || len(sites) == 0 {
-			return o
+		if o = s.readSite(ctx, cctx, site, prof, req, tr); o.Status == Partial || o.Reason == reasonDisallowed || cctx.Err() != nil || len(sites) == 0 {
+			return o // a site that closes its docs to robots is still the site
 		}
 	}
 	return o
@@ -367,7 +367,9 @@ func (s *SearchFirst) searchHits(ctx context.Context, req sfRequest) ([]sfHit, s
 
 // errDisallowed is a site whose robots.txt keeps ketch from every page
 // found: a refusal, the same next time.
-var errDisallowed = failure.New(failure.NotFound, "disallowed", "robots.txt disallows the pages")
+var errDisallowed = failure.New(failure.NotFound, reasonDisallowed, "robots.txt disallows the pages")
+
+const reasonDisallowed = "disallowed"
 
 // errSearchEmpty is web searches that all answered with no results.
 var errSearchEmpty = failure.New(failure.Upstream, "search_empty", "the web search returned no results")
@@ -465,11 +467,32 @@ func (s *SearchFirst) chooseSite(ctx context.Context, sites []sfSite, req sfRequ
 		}
 		sites = sites[1:]
 		prof := s.hitProfile(ctx, site)
-		if site.docs || prof != nil && prof.served != nil && looksLikeDocs(prof.served, prof) {
+		site = servedSite(site, prof)
+		if site.docs || site.named || prof != nil && prof.served != nil && looksLikeDocs(prof.served, prof) {
 			return site, prof, sites, nil
 		}
 	}
 	return sfSite{}, nil, nil, fmt.Errorf("search: %w", ErrNoDocsFound)
+}
+
+// servedSite is the site where its top hit is served from, when that is
+// outside its root (a docs host that moved, docs.x.com/en/ redirecting to
+// /v1.2/en/): the served page's tree, its hits the top hit as served.
+func servedSite(site sfSite, prof *siteProfile) sfSite {
+	if prof == nil || prof.served == nil || len(site.hits) == 0 || site.root.contains(prof.served) || !isPublicWebURL(prof.served) {
+		return site
+	}
+	root := docsTree(prof.served)
+	top := site.hits[0]
+	top.u = prof.served
+	hits := []sfHit{top}
+	for _, h := range site.hits[1:] {
+		if root.contains(h.u) {
+			hits = append(hits, h)
+		}
+	}
+	site.root, site.hits, site.key = root, hits, siteKey(prof.served, root)
+	return site
 }
 
 // hitProfile is the site's top hit's page profile, nil when it cannot be
