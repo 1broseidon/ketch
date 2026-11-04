@@ -3,6 +3,7 @@ package docs
 import (
 	"context"
 	"errors"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -197,5 +198,24 @@ func TestSearchFirstMemoryNeedsTheSameTerms(t *testing.T) {
 	// Four of five terms in common (0.8) was once the same question.
 	if s.SearchSelect(context.Background(), "add logger middleware to a route group", 0); searches.Load() == before {
 		t.Error("a more specific follow-up was answered from memory")
+	}
+}
+
+// A top hit served from another domain takes that domain's hits along.
+func TestServedSiteTakesTheServedDomainsHits(t *testing.T) {
+	hits := docsHits(fuseHits([][]search.Result{{
+		hit("https://tool.test/docs/import/usage.html", "Import - Tool docs"),
+		hit("https://developer.corp.test/tool/cli/import/usage", "Import - Tool docs"),
+		hit("https://developer.corp.test/tool/cli/state", "State - Tool docs"),
+		hit("https://developer.corp.test/validated/tool/import", "Import - Tool docs"),
+	}}))
+	sites := chooseSites(hits, sitePrefs{words: questionWords("tool import existing resource")})
+	if sites[0].key != "tool.test" {
+		t.Fatalf("site %s, want tool.test, which the question owns", sites[0].key)
+	}
+	served, _ := url.Parse("https://developer.corp.test/tool/cli/import/usage")
+	site, rest := servedSite(sites[0], &siteProfile{served: served}, sites[1:])
+	if site.key != "corp.test" || len(site.hits) != 3 || len(rest) != 0 {
+		t.Errorf("served site %s with %d hits, %d sites left; want corp.test with every hit", site.key, len(site.hits), len(rest))
 	}
 }

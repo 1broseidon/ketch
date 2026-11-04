@@ -538,24 +538,30 @@ func servedSite(site sfSite, prof *siteProfile, sites []sfSite) (sfSite, []sfSit
 	return site, rest
 }
 
-// sitesUnder takes from sites every one whose hits all sit under root
-// (but top): their hits, whether any had a docs signal, and the sites
-// left.
+// sitesUnder takes from sites every one whose best tree's hits all sit
+// under root: the hits under root of all its trees (but top, which the
+// site has), whether any had a docs signal, and the sites left.
 func sitesUnder(root webRoot, top *url.URL, sites []sfSite) ([]sfHit, bool, []sfSite) {
 	var hits []sfHit
 	var rest []sfSite
 	docs := false
 	for _, o := range sites {
-		under := len(o.alts) == 0 && len(o.hits) > 0
+		under := len(o.hits) > 0
 		for _, h := range o.hits {
-			under = under && root.contains(h.u) && linkKey(h.u) != linkKey(top)
+			under = under && root.contains(h.u)
 		}
-		if under {
-			hits = append(hits, o.hits...)
-			docs = docs || o.docs
+		if !under {
+			rest = append(rest, o)
 			continue
 		}
-		rest = append(rest, o)
+		for _, t := range append([]sfSite{o}, o.alts...) {
+			for _, h := range t.hits {
+				if root.contains(h.u) && linkKey(h.u) != linkKey(top) {
+					hits = append(hits, h)
+				}
+			}
+		}
+		docs = docs || o.docs
 	}
 	return hits, docs, rest
 }
