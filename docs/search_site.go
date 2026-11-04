@@ -229,7 +229,7 @@ func docsSignal(u *url.URL, title string) bool {
 // docsTree is the docs tree a page sits in: its path up to its first
 // version segment, or its locale and a docs segment (siteRootOf); else up
 // to a docs segment among its first four directories
-// (/psycopg3/docs/basic/x is /psycopg3/docs/); a GitHub or GitLab Pages
+// (/psycopg3/docs/basic/x is /psycopg3/docs/), or its leading locale; a GitHub or GitLab Pages
 // project's directory; else the host's root.
 func docsTree(u *url.URL) webRoot {
 	base := siteRootOf(u)
@@ -244,6 +244,9 @@ func docsTree(u *url.URL) webRoot {
 				base = &url.URL{Scheme: u.Scheme, Host: u.Host, Path: segmentsPath(segs[:i+1])}
 				break
 			}
+		}
+		if (base.Path == "" || base.Path == "/") && dirs > 0 && localeSegRe.MatchString(segs[0]) {
+			base = &url.URL{Scheme: u.Scheme, Host: u.Host, Path: segmentsPath(segs[:1])} // /en/: the locale's docs
 		}
 	}
 	if base.Path == "" || base.Path == "/" {

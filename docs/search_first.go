@@ -13,6 +13,7 @@ import (
 	"github.com/1broseidon/ketch/health"
 	config "github.com/1broseidon/ketch/internal/configbase"
 	"github.com/1broseidon/ketch/internal/docsindex"
+	"github.com/1broseidon/ketch/internal/failure"
 	"github.com/1broseidon/ketch/search"
 )
 
@@ -292,14 +293,25 @@ func (s *SearchFirst) searchHits(ctx context.Context, req sfRequest) ([]sfHit, s
 	wg.Go(func() { prefs = s.prefs(ctx, req) })
 	wg.Wait()
 	var firstErr error
+	answered := false
 	for i := range queries {
-		if errs[i] == nil {
-			return fuseHits(lists), prefs, nil
-		}
+		answered = answered || errs[i] == nil
 		firstErr = firstNonNil(firstErr, errs[i])
 	}
-	return nil, prefs, fmt.Errorf("search: web search failed: %w", firstErr)
+	hits := fuseHits(lists)
+	switch {
+	case !answered:
+		return nil, prefs, fmt.Errorf("search: web search failed: %w", firstErr)
+	case len(hits) == 0:
+		// Every search answered with nothing: for a question in words, the
+		// search providers are throttling, not the web lacking a page.
+		return nil, prefs, fmt.Errorf("search: %w", errSearchEmpty)
+	}
+	return hits, prefs, nil
 }
+
+// errSearchEmpty is web searches that all answered with no results.
+var errSearchEmpty = failure.New(failure.Upstream, "search_empty", "the web search returned no results")
 
 func firstNonNil(a, b error) error {
 	if a != nil {
