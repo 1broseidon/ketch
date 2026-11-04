@@ -252,10 +252,10 @@ $ ketch docs -b local --library fastapi "dependencies with yield"  # …then ans
 | --- | --- |
 | `--backend, -b` | `context7` (default), `local` (the local index), `web`, `auto` (local, then web, then Context7) |
 | `--library` | A library ID from `--resolve`, or for `web` any library spec (below), or for `local` an indexed library's name, spec or docs root; skips the resolve step |
-| `--tokens` | Token budget, default 4000 (`local` snippets: about 1,200) |
+| `--tokens` | Token budget, default 4000 (`local`: about 1,800 for sections, 1,200 for snippets) |
 | `--resolve` | Resolve the query as a library name or spec instead of searching |
 | `--limit, -l` | Max results; with `--library`, only `--tokens` bounds them unless set |
-| `--sections` | `local`: the nearest sections grouped by page instead of code-first snippets |
+| `--snippets` | `local`: code-first snippets (a code block with the sentences before it) instead of whole sections |
 | `--minimal` | One result per line |
 | `--tag <name>` | Bookmark every result URL under a tag |
 
@@ -401,7 +401,8 @@ $ ketch docs index vue-router@3                    # another version, indexed be
 $ ketch docs -b local --library fastapi "how do I run code after the response is sent"
 $ ketch docs -b local --library vue-router@3 "router.push onComplete onAbort"
 $ ketch docs -b local "content collections schema in astro"   # a bare query names its library
-$ ketch docs -b local --sections --library fastapi "background tasks"   # grouped page sections
+$ ketch docs -b local --snippets --library fastapi "background tasks"   # code-first snippets
+$ ketch docs index --dry-run numpy                 # the pages a build would index, in order
 $ ketch docs index --list
 $ ketch docs index --remove fastapi
 ```
@@ -418,10 +419,37 @@ pages under the root in its locale and version, honours `robots.txt`, fetches up
 `--max-pages` pages (1,500 by default) `--concurrency` at a time (4) through
 the scrape pipeline and page cache, splits them into heading sections (never
 inside a code block), cuts each section into snippet units (below), and embeds
-each section and each unit with the installed model; a long
-section is embedded in several windows so none of it falls past the model's
-512-token window. Progress goes to stderr; the summary (pages, sections,
-snippets, vectors, time, index size) to stdout, or as JSON with `--json`.
+each section with the installed model; a long section is embedded in several
+windows so none of it falls past the model's 512-token window. Progress goes
+to stderr; the summary (pages, sections, snippets, vectors, time, index size)
+to stdout, or as JSON with `--json`.
+
+**Which pages, when there are more than `--max-pages`.** The pages `llms.txt`
+lists come first, in its order, then guides (paths such as `guide/`,
+`tutorial/`, `user/`, `concepts/`, `getting-started/`), then everything else
+(examples and galleries included), and last API reference leaves (a generated
+reference such as Sphinx's `generated/` or Matplotlib's `_as_gen/`, TypeDoc's
+`classes/`, pages two levels below `api/` or `reference/`) and release notes,
+changelogs and blog posts; within a group, top-level directories take turns.
+Nothing is left out for its group, only by the cap. One page listed as `x` and
+`x.html` is one page, an `llms.txt` text mirror under `/llms/` is left out when
+the rendered pages are listed, and after fetching a page whose text is
+another's (the same page at a second address, or a missing page a site
+answers with its home page) is dropped. `--dry-run` plans the build and prints
+the pages it would index, in order, each with its group (`curated`, `guide`,
+`other`, `reference`), without fetching a page or writing the index.
+
+**Where the docs are.** A docs root that stands for a release (its page
+redirects, refreshes or names as canonical the same path at a numbered
+release: duckdb.org's `/docs/stable/` is `/docs/2.0/`) is indexed at that
+release. An unversioned root whose page lists sit almost wholly in release
+directories right below it, or whose `llms.txt` lists mostly one of them
+(`docs.crewai.com` and `/v1.15.35/`; Hugging Face's `/docs/transformers/` and
+`/v5.22.1/`), is indexed at the release `llms.txt` lists, else the newest;
+when that release's pages name the unversioned address as canonical, results
+show the unversioned address. A version's own host whose page lists are an app
+shell (`v18.angular.dev` serves its home page for `sitemap.xml`) is given the
+current host's paths to try. The summary says when any of this happened.
 
 **One index is one version.** `name@version` (or `--version`) indexes that
 version's docs root, found from the site's own version list as `-b web` finds
@@ -448,45 +476,67 @@ site no longer lists are dropped. `--name` adds a name queries may call the
 library by. Otherwise a library answers only to its full identity: the name
 it was indexed by, its package names (with or without the ecosystem prefix
 and separators: `vue-router`, `npm:vue-router`, `vuerouter`), its
-repositories (`vuejs/router`), the last part of a scoped package or
-repository, and its docs host's distinctive label, never to one word of a
+repositories (`vuejs/router`), its docs site's own name (from `og:site_name`
+or its home page's title: Vue Router, Beautiful Soup, SvelteKit), the last
+part of a scoped package or repository, its docs host's distinctive label
+and its root's distinctive path segment (`bs4`), never to one word of a
 longer name it goes by (`vue` or `router` do not name Vue Router, `query`
 does not name TanStack Query), and a host label yields to a library whose
 full name it is. With only Vue Router indexed, `--library vue` or "vue
-v-model on a custom component" is `not_indexed`, not Vue Router's docs.
+v-model on a custom component" is `not_indexed`, not Vue Router's docs. A name
+without a version answers from the current docs of exactly that project, even
+when only an older version's index was built by that name: with `angular@18`
+and `https://angular.dev/` indexed, `--library angular` answers from
+angular.dev, and `--library svelte` from Svelte's docs, never SvelteKit's.
 
-`-b local` answers with no network, as **code-first snippets**. At index time
-each section is cut into units: every fenced code block (consecutive blocks,
-such as a TypeScript and a JavaScript tab, together) with the one to three
-sentences just before it, and the prose no code block claims (a section with
-no code gives its first ~600 characters, cut at a sentence end). Units are
-the docs' own words, never rewritten; `…` marks a sentence cut short. A query
-ranks the units by cosine similarity (half the unit's own, half its section's
-best), nudged up by the share of the identifiers the question writes
-(`useEffect`, `res.json()`, `onComplete`) that a unit names and, the view
-being code first, for code (a single listing over 2,000 bytes is nudged down
-instead), and returns the best ones, never two near-duplicates, at most two
-from one section and three from one page, within about 1,200 tokens and 8
-snippets (`--tokens` and `--limit` change both). Each is printed as
+`-b local` answers with no network, as **whole sections**. A question is
+ranked against every section of the library twice, by cosine similarity (each
+section's best window) and by keywords (BM25 over the section's heading, which
+counts three times its text, its breadcrumb and its text), and the two
+rankings are fused (reciprocal rank fusion). Sections are then grouped under
+their second-level heading: a section that ranks brings the H2 it sits under,
+and one result shows that H2's own text and the subsections of it that
+ranked. The best five such results are returned (`--limit` changes it), never
+two copies of one page, at most two from one page while other pages rank
+next, within about 1,800 tokens and none over about 600 (`--tokens` changes
+the budget). A section that fits is shown whole; a longer one keeps its lead
+paragraphs, its first code block (cut, its fence closed, when even that does
+not fit) and the blocks that name the question's words, `[…]` marking what
+was left out. Text is the docs' own, code blocks inline. Each is printed as
 
 ````
-### Page > Section > Subsection
-The sentence or two before the code.
+### Page > Section
+The section's text, its code inline.
 
 ```ts
 the code, verbatim
 ```
 
+#### A subsection that ranked
+
+Its text.
+
 source: https://site/page#anchor
 ````
 
 and with `--json` (or over MCP) as a result whose `breadcrumb` is the heading
-path, `snippet` the explanation and code, and `url` the section's address.
-`--sections` (MCP `sections: true`) returns the earlier view instead: about
-ten results, one per page, best page first, each the page's best section
-followed by the page's other near sections as `### heading` parts, within
-`--tokens` (4,000 by default), a long section cut to fit keeping the
-paragraphs and code that name the question's words, marked `[…]`. Every
+path, `snippet` the text, `url` the address of its best-ranked section and
+`anchors` the anchors of every section it shows (`""` for a page's lead).
+
+`--snippets` (MCP `snippets: true`) returns **code-first snippets** instead.
+At index time each section is cut into units: every fenced code block
+(consecutive blocks, such as a TypeScript and a JavaScript tab, together) with
+the one to three sentences just before it, and the prose no code block claims
+(a section with no code gives its first ~600 characters, cut at a sentence
+end). Units are the docs' own words, never rewritten; `…` marks a sentence cut
+short. A query ranks the units by their section's cosine and the share of the
+question's words they name, nudged up by the share of the identifiers the
+question writes (`useEffect`, `res.json()`, `onComplete`) that a unit names
+and for code (a single listing over 2,000 bytes is nudged down instead), and
+returns the best ones, never two near-duplicates, at most two from one section
+and three from one page, within about 1,200 tokens and 8 snippets (`--tokens`
+and `--limit` change both), each printed as `### heading path`, the
+explanation, the code and `source: url#anchor`. Every
 result's `source` is `local`. A library the index does not hold exits
 **3** with reason `not_indexed`; nothing matched exits **3** with
 `no_results`. A library indexed by an older ketch (index format 1) is not

@@ -1,0 +1,365 @@
+package docs
+
+import (
+	"slices"
+	"sort"
+	"strings"
+
+	"github.com/1broseidon/ketch/internal/docsindex"
+)
+
+// Section answers: the local index's default view (ADR-0007, amendment 2).
+// Sections are ranked by fusing two rankings with reciprocal rank fusion:
+// cosine (each section's best window against the question) and BM25 over
+// the section's heading, breadcrumb and text (rankSections, the heading
+// counting three times its body). Ranked sections are then grouped into
+// families: a section and the others under the same second-level heading
+// of its page (an H2 with its H3s; a page's lead section is a family of
+// its own). Each family is one result, carrying the family's own text and
+// the sections of it that ranked, verbatim, code blocks inline, trimmed to
+// a share of the budget that keeps each section's lead prose and first
+// code block. Two families with the same heading and text (a page served
+// at two addresses) are one.
+//
+// The weights are few on purpose. On 63 gold-labelled dev questions over
+// frozen indexes, ranking sections instead of snippet units, families and
+// the keyword fusion each moved the gold section into the top five more
+// often; a page-level aggregate, a penalty for thin API stubs or reference
+// paths and a prior for a page's first sections did not.
+
+const (
+	// localRRFK is reciprocal rank fusion's constant: a section's fused
+	// score is the sum of 1/(localRRFK+rank) over the rankings it is in.
+	localRRFK = 60
+	// localMaxResults is how many family results are returned without a
+	// limit: what an agent reads, and where the measurements were taken.
+	localMaxResults = 5
+	// localTokens is the section view's default budget and
+	// localResultTokens one result's most, at about webCharsPerToken bytes
+	// a token.
+	localTokens       = 1800
+	localResultTokens = 600
+	// localRankedDepth is how deep in the fused ranking a section must sit
+	// for its family to show it beyond the family's own text.
+	localRankedDepth = 40
+	// localFamilyParts is the most sections one result shows when its
+	// family does not fit whole.
+	localFamilyParts = 3
+	// localFamiliesPerPage is how many families of one page the results
+	// hold before families of other pages go first.
+	localFamiliesPerPage = 2
+	// localLeadBytes bounds the lead prose a trimmed section keeps before
+	// its first code block.
+	localLeadBytes = 600
+)
+
+// rankedSection is a section (an index into the library's sections) and
+// its fused score.
+type rankedSection struct {
+	sec   int
+	score float64
+}
+
+// fuseRanks ranks secs for the query: by reciprocal rank fusion of cosine
+// (when qv is set) and BM25, or by BM25 alone (scores relative to the
+// best, the relevant ones only) without a vector. A section about a later
+// version than indexed is demoted in the cosine ranking and left out of
+// the keyword one unless the question asks about it.
+func fuseRanks(secs []docsindex.Section, qv []float32, query string) []rankedSection {
+	keyword := rankSections(webSections(secs), query)
+	if qv == nil {
+		keyword = relevant(keyword)
+		var out []rankedSection
+		for _, k := range keyword {
+			if k.score > 0 {
+				out = append(out, rankedSection{sec: k.page, score: k.score / keyword[0].score})
+			}
+		}
+		return out
+	}
+	score := map[int]float64{}
+	for r, d := range denseRank(secs, qv, query) {
+		score[d.page] += 1 / float64(localRRFK+r+1)
+	}
+	r := 0
+	for _, k := range keyword {
+		s := secs[k.page]
+		if s.CrossVersion != "" && !asksAbout(query, s.CrossVersion) {
+			continue
+		}
+		r++
+		score[k.page] += 1 / float64(localRRFK+r)
+	}
+	out := make([]rankedSection, 0, len(score))
+	for i, sc := range score {
+		out = append(out, rankedSection{sec: i, score: sc})
+	}
+	sort.Slice(out, func(a, b int) bool {
+		if out[a].score != out[b].score {
+			return out[a].score > out[b].score
+		}
+		return out[a].sec < out[b].sec
+	})
+	return out
+}
+
+// family is the sections of one page under one second-level heading.
+type family struct {
+	key     string
+	page    string
+	members []int           // every section of the family, in page order
+	ranked  map[int]float64 // the members that ranked, by score
+	best    int             // the best-ranked member
+}
+
+// familyKey is the family a section belongs to: its page and the second
+// entry of its breadcrumb (the H2 it sits under, or is), or its page alone
+// for the page's lead.
+func familyKey(s docsindex.Section) string {
+	if len(s.Crumbs) >= 2 {
+		return s.Page + "\x00" + s.Crumbs[1]
+	}
+	return s.Page + "\x00"
+}
+
+// families groups the ranked sections into families, best first: at most
+// limit of them, at most localFamiliesPerPage of one page while other pages' rank
+// next, and never two with the same heading and text (copies of a page).
+func families(secs []docsindex.Section, ranked []rankedSection, limit int) []*family {
+	all := map[string][]int{}
+	for i, s := range secs {
+		k := familyKey(s)
+		all[k] = append(all[k], i)
+	}
+	var order []*family
+	byKey := map[string]*family{}
+	for r, rs := range ranked {
+		k := familyKey(secs[rs.sec])
+		f, ok := byKey[k]
+		if !ok {
+			members := all[k]
+			sort.SliceStable(members, func(a, b int) bool { return secs[members[a]].Order < secs[members[b]].Order })
+			f = &family{key: k, page: secs[rs.sec].Page, members: members, ranked: map[int]float64{}, best: rs.sec}
+			byKey[k] = f
+			order = append(order, f)
+		}
+		if r < localRankedDepth || rs.sec == f.best {
+			f.ranked[rs.sec] = rs.score
+		}
+	}
+	var out, deferred []*family
+	seen := map[string]bool{}
+	perPage := map[string]int{}
+	for _, f := range order {
+		ck := familyContent(secs, f)
+		if seen[ck] {
+			continue
+		}
+		seen[ck] = true
+		if perPage[f.page] >= localFamiliesPerPage {
+			deferred = append(deferred, f)
+			continue
+		}
+		perPage[f.page]++
+		out = append(out, f)
+		if len(out) >= limit {
+			return out
+		}
+	}
+	out = append(out, deferred...)
+	return out[:min(limit, len(out))]
+}
+
+// familyContent identifies a family by its first section's heading and
+// the start of its text, so copies of a page at two addresses are one.
+func familyContent(secs []docsindex.Section, f *family) string {
+	s := secs[f.members[0]]
+	text := strings.Join(strings.Fields(s.Text), " ")
+	if len(text) > 300 {
+		text = text[:300]
+	}
+	return s.Heading + "\x00" + text
+}
+
+// familyResults renders the families within the token budget (about
+// webCharsPerToken bytes a token), shared max-min fairly among them and
+// none over localResultTokens: a family that fits is shown whole, else
+// its own section and its best-ranked ones (at most localFamilyParts), in
+// page order, each trimmed to its share by trimSection.
+func familyResults(lib docsindex.Library, secs []docsindex.Section, fams []*family, query string, tokens int) []Result {
+	if tokens <= 0 {
+		tokens = localTokens
+	}
+	budget := tokens * webCharsPerToken
+	maxResult := localResultTokens * webCharsPerToken
+	sizes := make([]int, len(fams))
+	for i, f := range fams {
+		for _, m := range f.members {
+			sizes[i] += len(secs[m].Text)
+		}
+		sizes[i] = min(sizes[i], maxResult)
+	}
+	shares := fairShares(sizes, budget)
+	terms := queryTerms(query)
+	out := make([]Result, 0, len(fams))
+	for i, f := range fams {
+		out = append(out, familyResult(lib, secs, f, min(shares[i], maxResult), terms))
+	}
+	return out
+}
+
+// familyResult is one family as a result within share bytes, under the
+// address of its best-ranked section and the title of the family.
+func familyResult(lib docsindex.Library, secs []docsindex.Section, f *family, share int, terms []string) Result {
+	shown := familyParts(secs, f, share)
+	sizes := make([]int, len(shown))
+	for i, m := range shown {
+		sizes[i] = len(secs[m].Text)
+	}
+	parts := fairShares(sizes, share)
+	head := secs[f.members[0]]
+	title := head.Heading
+	crumbs := head.Crumbs
+	if len(crumbs) > 2 {
+		crumbs = crumbs[:2]
+		title = crumbs[1]
+	}
+	var b strings.Builder
+	var anchors []string
+	for i, m := range shown {
+		s := secs[m]
+		text := s.Text
+		if len(text) > parts[i] {
+			text = trimSection(text, parts[i], terms)
+		}
+		if b.Len() > 0 || s.Heading != title {
+			if b.Len() > 0 {
+				b.WriteString("\n\n")
+			}
+			b.WriteString("#### " + s.Heading + "\n\n")
+		}
+		b.WriteString(text)
+		anchors = append(anchors, s.Anchor)
+	}
+	return Result{
+		Library: lib.Root, Version: lib.Version, Title: title, Breadcrumb: strings.Join(crumbs, " > "),
+		Snippet: b.String(), URL: webSectionOf(secs[f.best], 0).URL(), Anchors: anchors, Source: "local",
+	}
+}
+
+// familyParts are the sections a family result shows, in page order: all
+// of them when they fit share, else its own section (the first, when it
+// is the family's heading) and its best-ranked members, at most
+// localFamilyParts in all.
+func familyParts(secs []docsindex.Section, f *family, share int) []int {
+	total := 0
+	for _, m := range f.members {
+		total += len(secs[m].Text)
+	}
+	if total <= share {
+		return f.members
+	}
+	pick := map[int]bool{f.best: true}
+	first := f.members[0]
+	if len(secs[first].Crumbs) <= 2 && strings.TrimSpace(secs[first].Text) != "" {
+		pick[first] = true // the H2's own text, or the page's lead
+	}
+	byScore := make([]int, 0, len(f.ranked))
+	for m := range f.ranked {
+		byScore = append(byScore, m)
+	}
+	sort.Slice(byScore, func(a, b int) bool {
+		if f.ranked[byScore[a]] != f.ranked[byScore[b]] {
+			return f.ranked[byScore[a]] > f.ranked[byScore[b]]
+		}
+		return byScore[a] < byScore[b]
+	})
+	for _, m := range byScore {
+		if len(pick) >= localFamilyParts {
+			break
+		}
+		pick[m] = true
+	}
+	var out []int
+	for _, m := range f.members {
+		if pick[m] {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
+// trimSection cuts a section's text to about n bytes by whole blocks: its
+// lead prose (the paragraphs before its first code block, up to
+// localLeadBytes, the first always), its first code block (cut, fence
+// closed, when it does not fit whole), then the blocks that name the most
+// query terms, in their order, with elidedMarker where blocks were left
+// out. A lead that does not fit alone is cut as trimSnippet cuts.
+func trimSection(s string, n int, terms []string) string {
+	if len(s) <= n {
+		return s
+	}
+	blocks := textBlocks(s)
+	keep := map[int]bool{}
+	fits := func() bool { return len(joinKept(blocks, keep)) <= n }
+	keepLead(blocks, keep, fits)
+	if len(keep) == 0 {
+		return trimSnippet(s, n)
+	}
+	keepFirstCode(blocks, keep, n)
+	for _, i := range blocksByTerms(blocks, terms) {
+		if keep[i] {
+			continue
+		}
+		keep[i] = true
+		if !fits() {
+			delete(keep, i)
+		}
+	}
+	return joinKept(blocks, keep)
+}
+
+// keepLead keeps the prose blocks before the first code block, up to
+// localLeadBytes (the first always, when it fits).
+func keepLead(blocks []string, keep map[int]bool, fits func() bool) {
+	lead := 0
+	for i, b := range blocks {
+		if isCodeBlock(b) || i > 0 && lead+len(b) > localLeadBytes {
+			return
+		}
+		keep[i] = true
+		if !fits() {
+			delete(keep, i)
+			return
+		}
+		lead += len(b)
+	}
+}
+
+// keepFirstCode keeps the first code block, cut to what is left of n
+// (its fence closed) when it does not fit whole.
+func keepFirstCode(blocks []string, keep map[int]bool, n int) {
+	i := slices.IndexFunc(blocks, isCodeBlock)
+	if i < 0 {
+		return
+	}
+	keep[i] = true
+	if len(joinKept(blocks, keep)) <= n {
+		return
+	}
+	delete(keep, i)
+	room := n - len(joinKept(blocks, keep)) - len("\n\n"+elidedMarker+"\n\n")
+	if room < webMinTrimBytes {
+		return
+	}
+	if cut := trimSnippet(blocks[i], room); cut != "" {
+		blocks[i] = cut
+		keep[i] = true
+	}
+}
+
+// isCodeBlock reports a block (textBlocks) that is fenced code.
+func isCodeBlock(b string) bool {
+	var f fenceState
+	return f.step(lineOf(b))
+}

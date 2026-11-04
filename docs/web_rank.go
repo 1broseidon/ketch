@@ -6,9 +6,11 @@ import (
 	"net/url"
 	"path"
 	"regexp"
+	"runtime"
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 	"unicode"
 	"unicode/utf8"
 )
@@ -975,41 +977,76 @@ type sectionCorpus struct {
 
 func newSectionCorpus(sections []webSection, terms []string) sectionCorpus {
 	c := sectionCorpus{tf: make([]map[string]float64, len(sections)), seq: make([][]string, len(sections)), own: make([]bool, len(sections)), length: make([]float64, len(sections)), df: map[string]int{}}
+	// Only the query's terms are counted: nothing else is ever looked up,
+	// and a local index ranks thousands of sections per question, which
+	// are tokenized in parallel past corpusParallel of them.
+	want := map[string]bool{}
+	for _, t := range terms {
+		want[t] = true
+	}
+	workers := 1
+	if len(sections) > corpusParallel {
+		workers = runtime.GOMAXPROCS(0)
+	}
+	var wg sync.WaitGroup
+	for w := range workers {
+		wg.Go(func() {
+			for i := w; i < len(sections); i += workers {
+				c.add(i, sections[i], want)
+			}
+		})
+	}
+	wg.Wait()
 	total := 0.0
-	for i, s := range sections {
-		tf := map[string]float64{}
-		body := textTokens(s.text)
-		for _, t := range body {
-			tf[t]++
-		}
-		heading := headingTokens(s.heading)
-		for _, t := range heading {
-			tf[t] += headingWeight
-		}
-		c.own[i] = slices.ContainsFunc(terms, func(t string) bool { return tf[t] > 0 })
-		crumbs := 0
-		for _, crumb := range s.crumbs[:max(len(s.crumbs)-1, 0)] {
-			for _, t := range rankTokens(crumb) {
-				tf[t] += crumbWeight
-				crumbs++
-			}
-		}
-		// The length that normalizes a term's weight is the weighted
-		// pseudo-document's (BM25F): heading and breadcrumbs count too, so
-		// a two-line section does not outrank its page on the page title's
-		// words alone.
-		c.tf[i] = tf
-		c.seq[i] = append(rankTokens(s.heading), rankTokens(s.text)...)
-		c.length[i] = float64(len(body)) + headingWeight*float64(len(heading)) + crumbWeight*float64(crumbs)
+	for i := range sections {
 		total += c.length[i]
-		for _, t := range terms {
-			if tf[t] > 0 {
-				c.df[t]++
-			}
+		for t := range c.tf[i] {
+			c.df[t]++
 		}
 	}
 	c.avg = math.Max(total/float64(max(len(sections), 1)), 1)
 	return c
+}
+
+// corpusParallel is how many sections a corpus tokenizes on one goroutine.
+const corpusParallel = 1000
+
+// add tokenizes section i: its query-term frequencies (heading-weighted),
+// its token sequence for phrases, whether it names a term itself, and its
+// weighted length.
+func (c sectionCorpus) add(i int, s webSection, want map[string]bool) {
+	tf := map[string]float64{}
+	plain := rankTokens(s.text)
+	n := len(plain)
+	body := appendCamelWords(plain, s.text) // textTokens, its first n tokens rankTokens'
+	for _, t := range body {
+		if want[t] {
+			tf[t]++
+		}
+	}
+	heading := headingTokens(s.heading)
+	for _, t := range heading {
+		if want[t] {
+			tf[t] += headingWeight
+		}
+	}
+	c.own[i] = len(tf) > 0
+	crumbs := 0
+	for _, crumb := range s.crumbs[:max(len(s.crumbs)-1, 0)] {
+		for _, t := range rankTokens(crumb) {
+			if want[t] {
+				tf[t] += crumbWeight
+			}
+			crumbs++
+		}
+	}
+	// The length that normalizes a term's weight is the weighted
+	// pseudo-document's (BM25F): heading and breadcrumbs count too, so a
+	// two-line section does not outrank its page on the page title's words
+	// alone.
+	c.tf[i] = tf
+	c.seq[i] = append(rankTokens(s.heading), body[:n]...)
+	c.length[i] = float64(len(body)) + headingWeight*float64(len(heading)) + crumbWeight*float64(crumbs)
 }
 
 // bm25 scores section i and counts the query terms it contains.
@@ -1087,11 +1124,6 @@ func dedupe(ranked []scoredSection) []scoredSection {
 	}
 	return out
 }
-
-// partHeading opens a section's part of its page's result: a page's
-// other sections join its result under their own headings (the local
-// index's page results).
-func partHeading(title string) string { return "\n\n### " + title + "\n\n" }
 
 // webRelevanceRatio is how far below the top section's score a section
 // may fall and still be returned (relevant).

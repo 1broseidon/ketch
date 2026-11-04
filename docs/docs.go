@@ -83,7 +83,11 @@ type Result struct {
 	Breadcrumb string `json:"breadcrumb,omitempty"`
 	Snippet    string `json:"snippet"`
 	URL        string `json:"url"`
-	Source     string `json:"source"` // "context7" | "web"
+	// Anchors are the local index's section anchors whose text the snippet
+	// holds, in page order ("" for a page's lead section); other backends
+	// leave it empty.
+	Anchors []string `json:"anchors,omitempty"`
+	Source  string   `json:"source"` // "context7" | "web" | "local"
 }
 
 // Searcher is the interface for docs backends.

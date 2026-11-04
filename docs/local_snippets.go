@@ -13,7 +13,8 @@ import (
 	"github.com/1broseidon/ketch/internal/embed"
 )
 
-// Snippets: the local index's default answer (ADR-0007, amended). Each
+// Snippets: the local index's code-first view (ADR-0007, amendment 1;
+// LocalOptions.Snippets since amendment 2 made sections the default). Each
 // section is cut, at index time, into units an agent can use as they are:
 // every run of fenced code with the sentences just before it, and the
 // prose no code claimed. Units are byte ranges of the section's text, so a
@@ -26,12 +27,12 @@ import (
 // carried in the context (WithLocalOptions) because the Searcher methods
 // take only a token budget.
 type LocalOptions struct {
-	// Sections asks for the grouped page sections (one result per page,
-	// its nearest section with the page's other near sections as parts)
-	// instead of code-first snippets.
-	Sections bool
+	// Snippets asks for code-first snippet units (each code block with
+	// the sentences before it, or a stretch of prose) instead of section
+	// families.
+	Snippets bool
 	// Tokens is the budget the caller chose; 0 leaves the view's default
-	// (localSnippetTokens for snippets, webDefaultTokens for sections),
+	// (localTokens for sections, localSnippetTokens for snippets),
 	// whatever token value the call passes.
 	Tokens int
 	// Limit caps the results (0: the view's default).
@@ -451,21 +452,6 @@ func midSentenceEnd(text string, i int) bool {
 	return !strings.ContainsRune(".!?:)", last)
 }
 
-// unitPassage is what a unit's vector embeds: the heading path, then the
-// explanation and the body, at most indexWindowChars of them.
-func unitPassage(crumbs []string, text string, u docsindex.Unit) string {
-	explain, body := u.Parts(text)
-	s := explain
-	if s != "" {
-		s += "\n"
-	}
-	s += body
-	if len(s) > indexWindowChars {
-		s = s[:wordBefore(s, indexWindowChars)]
-	}
-	return strings.Join(crumbs, " > ") + "\n" + s
-}
-
 // Cross-version content: a page in one version's tree about a later major
 // (a v3 page "Migrating to v4"). It is kept, labelled, and demoted for
 // questions that do not ask about it.
@@ -575,8 +561,10 @@ type scoredUnit struct {
 
 // rankUnits scores every unit of secs for the query: with vectors, half
 // its own cosine and half its section's best window's (the section-level
-// match the retrieval measurements validated, sharpened by the unit's);
-// without, its section's keyword score (rank, relative to the best) and
+// match the retrieval measurements validated, sharpened by the unit's),
+// or, for a unit indexed without a vector of its own, its section's
+// cosine and the share of query terms it names; without vectors, its
+// section's keyword score (rank, relative to the best) and
 // the share of query terms it names. A unit gets a small boost by the
 // share of the identifiers the query writes that it names (identBoost), a
 // code unit localCodeBonus (a listing longer than unitMaxCode
@@ -588,7 +576,7 @@ func rankUnits(secs []docsindex.Section, qv []float32, keyword []scoredSection, 
 	secScore, has := sectionScores(secs, qv, keyword)
 	var out []scoredUnit
 	for i, s := range secs {
-		if !has[i] || qv != nil && len(s.UnitVectors) != len(s.Units) {
+		if !has[i] {
 			continue
 		}
 		for j := range s.Units {
@@ -634,8 +622,7 @@ type unitQuery struct {
 	qv            []float32
 }
 
-// score is unit j of s's score, given its section's; ok is false for a
-// unit without a usable vector.
+// score is unit j of s's score, given its section's.
 func (q unitQuery) score(s docsindex.Section, j int, secScore float64) (float64, bool) {
 	u := s.Units[j]
 	explain, body := u.Parts(s.Text)
@@ -643,8 +630,10 @@ func (q unitQuery) score(s docsindex.Section, j int, secScore float64) (float64,
 	switch {
 	case q.qv == nil:
 		score = secScore + 0.1*termShare(explain+"\n"+body, q.terms)
-	case len(s.UnitVectors[j]) != len(q.qv):
-		return 0, false
+	case len(s.UnitVectors) != len(s.Units) || len(s.UnitVectors[j]) != len(q.qv):
+		// Units are not embedded (since amendment 2): the section's cosine,
+		// told apart by the share of the question's terms the unit names.
+		score = secScore + 0.05*termShare(explain+"\n"+body, q.terms)
 	default:
 		score = 0.5*float64(embed.Dot(s.UnitVectors[j], q.qv)) + 0.5*secScore
 	}

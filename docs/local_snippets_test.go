@@ -302,15 +302,16 @@ func TestRankUnitsDemotesCrossVersion(t *testing.T) {
 	}
 }
 
-// The default answer is code-first snippets: each one unit, under its
+// With Snippets, the answer is code-first snippets: each one unit, under its
 // section's heading path and address, its explanation then its code,
 // verbatim; within the budget and limit; rendered as "### path",
 // snippet, "source: url".
-func TestLocalSnippetsDefault(t *testing.T) {
+func TestLocalSnippets(t *testing.T) {
 	f, store, emb := exampleSite(), newStore(t), &bowEmbedder{id: "test/bow"}
 	buildIndex(t, f, store, emb)
 	l := NewLocal(store, func() (embed.Embedder, error) { return emb, nil })
-	o := l.GetDocsSelect(context.Background(), "example", "add middleware to a route", 0)
+	snippets := WithLocalOptions(context.Background(), LocalOptions{Snippets: true})
+	o := l.GetDocsSelect(snippets, "example", "add middleware to a route", 0)
 	if o.Status != Answered || len(o.Results) == 0 || len(o.Results) > localMaxSnippets {
 		t.Fatalf("outcome = %+v", o)
 	}
@@ -337,12 +338,12 @@ func TestLocalSnippetsDefault(t *testing.T) {
 	if total > localSnippetTokens {
 		t.Errorf("%d tokens over the default budget", total)
 	}
-	ctx := WithLocalOptions(context.Background(), LocalOptions{Tokens: 40, Limit: 2})
+	ctx := WithLocalOptions(context.Background(), LocalOptions{Snippets: true, Tokens: 40, Limit: 2})
 	small := l.GetDocsSelect(ctx, "example", "add middleware to a route", 4000)
 	if len(small.Results) != 1 {
 		t.Errorf("a 40-token budget returned %d snippets", len(small.Results))
 	}
-	two := l.GetDocsSelect(WithLocalOptions(context.Background(), LocalOptions{Limit: 2}), "example", "middleware", 0)
+	two := l.GetDocsSelect(WithLocalOptions(context.Background(), LocalOptions{Snippets: true, Limit: 2}), "example", "middleware", 0)
 	if len(two.Results) > 2 {
 		t.Errorf("limit 2 returned %d", len(two.Results))
 	}
@@ -477,7 +478,7 @@ func TestPlanKeepsOneVersion(t *testing.T) {
 				u, _ := url.Parse(raw)
 				site.links = append(site.links, webLink{url: u})
 			}
-			kept, versions := keepOneVariant(uniquePages(candidateLinks(site, root)), root, c.others)
+			kept, versions, _ := keepOneVariant(uniquePages(candidateLinks(site, root)), root, c.others)
 			var got []string
 			for _, l := range kept {
 				got = append(got, l.url.String())

@@ -81,6 +81,16 @@ type Library struct {
 	Capped        bool     `json:"capped,omitempty"`
 	Failed        int      `json:"failed,omitempty"`
 	Sources       []string `json:"sources,omitempty"`
+	// DisplayRoot is the unversioned root the current release's pages are
+	// shown under, when the build indexed them at a release root whose
+	// pages name the unversioned address canonical ("" otherwise). Seeds
+	// is how many indexed pages a page seeder named.
+	DisplayRoot string `json:"display_root,omitempty"`
+	Seeds       int    `json:"seeds,omitempty"`
+	// SiteName is the docs site's own name (og:site_name or its root
+	// page's title, "Vue Router", "Beautiful Soup"): a name the library
+	// answers to.
+	SiteName string `json:"site_name,omitempty"`
 }
 
 // Current reports whether the library is in the format this code reads.

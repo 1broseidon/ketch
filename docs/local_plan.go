@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"net/url"
 	"regexp"
 	"slices"
@@ -18,19 +19,74 @@ import (
 // pages), then the root page's links only when neither listed any, and
 // the pages the site's search index names. The pages kept are those a
 // result could be: in scope, not an asset or a source listing, in the
-// indexed version's tree alone and one copy per page across locales,
-// allowed by robots.txt, at most a cap of them in discovery order.
+// indexed version's tree alone and one copy per page across locales (and
+// across a page's .html twin or llms.txt text mirror), allowed by
+// robots.txt, at most a cap of them in priority order (planTier: the
+// pages llms.txt or a page seeder names, then guides, then the rest, API
+// reference leaves and release notes last).
+
+// PageSeeder names pages the web points to for a library, best first: a
+// web search's hits for what the library's docs teach. A build indexes the
+// seeded pages under its root first (after the robots, version and locale
+// checks every page passes). Seeds must come from library-level questions
+// (the library's guides, tutorials, examples), never from an evaluation's.
+type PageSeeder interface {
+	Seeds(ctx context.Context, lib SeedLibrary) ([]SeedPage, error)
+}
+
+// SeedLibrary is the library a seeder is asked about.
+type SeedLibrary struct {
+	Name, Title, Root, Version string
+	Packages                   []string
+}
+
+// SeedPage is a page a seeder names, with its weight (0 to 1) and where it
+// came from (a search provider's name).
+type SeedPage struct {
+	URL    string
+	Weight float64
+	Source string
+}
+
+// seedPages asks the seeder for the target's pages; none without a seeder
+// or when it fails (seeds only order a build, so a failure says so and the
+// build goes on).
+func (w *Web) seedPages(ctx context.Context, t indexTarget, seeder PageSeeder, say func(string, ...any)) []webLink {
+	if seeder == nil {
+		return nil
+	}
+	name := t.spec.name
+	if name == "" {
+		name = t.title
+	}
+	got, err := seeder.Seeds(ctx, SeedLibrary{Name: name, Title: t.title, Root: t.root.String(), Version: t.version, Packages: t.packages})
+	if err != nil {
+		say("page seeds: %v (indexing without them)", err)
+		return nil
+	}
+	var out []webLink
+	for _, sp := range got {
+		if u, err := url.Parse(sp.URL); err == nil && u.Host != "" {
+			out = append(out, webLink{url: u})
+		}
+	}
+	return out
+}
 
 // indexSite is what discovery found for an index.
 type indexSite struct {
 	site    webSite
 	sources []string // which discovery sources listed pages
+	// curated are the pages llms.txt (or llms-full.txt) listed, by
+	// displayKey: a site's own pick, indexed first.
+	curated map[string]bool
 }
 
 // enumerate discovers every page of root it can, cheapest source first.
 func (w *Web) enumerate(ctx context.Context, root webRoot) (indexSite, error) {
 	var s indexSite
 	if w.discoverLLMS(ctx, root, &s.site) {
+		s.curated = curatedKeys(s.site)
 		s.sources = append(s.sources, "llms.txt")
 		if len(s.site.pages) > 0 {
 			s.sources = append(s.sources, "llms-full.txt")
@@ -65,14 +121,25 @@ type indexPlan struct {
 	// capped whether the cap left some out.
 	listed, variants, otherVersions, disallowed int
 	capped                                      bool
+	// tiers counts the pages kept by planTier; seeds the seeded pages kept.
+	tiers [planTiers]int
+	seeds int
+	// curated are the pages llms.txt and the seeder named, by displayKey.
+	curated map[string]bool
+	// dropped counts the pages left out in each top-level version tree
+	// below the root (versionTrees), for re-rooting a root whose pages all
+	// sit in versioned trees.
+	dropped map[string]int
 }
 
 // plan picks the pages to index from what discovery found; others are
-// the labels of the site's other versions (otherVersions).
-func (w *Web) plan(ctx context.Context, root webRoot, s indexSite, maxPages int, others map[string]bool) indexPlan {
-	links := uniquePages(candidateLinks(s.site, root))
+// the labels of the site's other versions (otherVersions) and seeds pages
+// a page seeder named, which lead the plan.
+func (w *Web) plan(ctx context.Context, root webRoot, s indexSite, maxPages int, others map[string]bool, seeds []webLink) indexPlan {
+	links := uniquePages(append(seedLinks(seeds, root), candidateLinks(s.site, root)...))
+	links = dropMirrors(links, root)
 	p := indexPlan{listed: len(links)}
-	links, p.otherVersions = keepOneVariant(links, root, others)
+	links, p.otherVersions, p.dropped = keepOneVariant(links, root, others)
 	p.variants = p.listed - len(links)
 	rules := w.robots(ctx, root)
 	kept := links[:0:0]
@@ -82,11 +149,168 @@ func (w *Web) plan(ctx context.Context, root webRoot, s indexSite, maxPages int,
 		}
 	}
 	p.disallowed = len(links) - len(kept)
+	curated := maps.Clone(s.curated)
+	if curated == nil {
+		curated = map[string]bool{}
+	}
+	for _, l := range seeds {
+		curated[displayKey(l.url)] = true
+	}
+	p.curated = curated
+	kept = prioritize(kept, root, curated)
 	if maxPages > 0 && len(kept) > maxPages {
 		kept, p.capped = kept[:maxPages], true
 	}
+	seeded := map[string]bool{}
+	for _, l := range seeds {
+		seeded[displayKey(l.url)] = true
+	}
+	for _, l := range kept {
+		p.tiers[planTier(l.url, root, curated)]++
+		if seeded[displayKey(l.url)] {
+			p.seeds++
+		}
+	}
 	p.links = kept
 	return p
+}
+
+// seedLinks are the seeded pages under root, as links.
+func seedLinks(seeds []webLink, root webRoot) []webLink {
+	var out []webLink
+	for _, l := range seeds {
+		if l.url != nil && root.contains(l.url) && isResultLink(l.url) && isPageURL(l.url) {
+			out = append(out, l)
+		}
+	}
+	return out
+}
+
+// curatedKeys are the pages llms.txt and llms-full.txt listed.
+func curatedKeys(site webSite) map[string]bool {
+	out := map[string]bool{}
+	for _, l := range site.links {
+		if l.url != nil {
+			out[displayKey(l.url)] = true
+		}
+	}
+	for _, p := range site.pages {
+		if u, err := url.Parse(p.URL); err == nil {
+			out[displayKey(u)] = true
+		}
+	}
+	return out
+}
+
+// Plan tiers, first indexed first.
+const (
+	tierCurated   = iota // the root, pages llms.txt or a seeder names
+	tierGuide            // guides, tutorials, concepts, user docs
+	tierOther            // the rest, examples and galleries included
+	tierReference        // API reference leaves, release notes, changelogs, blog posts
+	planTiers
+)
+
+// guideSegs are path segments that name a docs site's guides.
+var guideSegs = map[string]bool{
+	"guide": true, "guides": true, "tutorial": true, "tutorials": true, "user": true, "users": true,
+	"user-guide": true, "userguide": true, "user_guide": true, "usage": true, "learn": true, "concepts": true,
+	"getting-started": true, "get-started": true, "getting_started": true, "quickstart": true, "start": true,
+	"howto": true, "how-to": true, "howtos": true, "topics": true, "essentials": true, "basics": true,
+	"intro": true, "introduction": true, "overview": true, "fundamentals": true, "core-concepts": true,
+}
+
+// referenceSegs are path segments of generated API reference leaves and
+// of release notes.
+var referenceSegs = map[string]bool{
+	"_as_gen": true, "generated": true, "autoapi": true, "_autosummary": true, "_modules": true,
+	"classes": true, "interfaces": true, "functions": true, "type-aliases": true, "variables": true, "enums": true,
+	"changelog": true, "changelogs": true, "changes": true, "release-notes": true, "releases": true, "news": true,
+	"whatsnew": true, "whats-new": true, "history": true, "prev_api_changes": true, "next_api_changes": true, "blog": true,
+}
+
+// planTier classes a page for the cap: curated pages (and the root) first,
+// then guides, then the rest, then API reference leaves (a generated
+// reference tree, TypeDoc's classes/functions, or two levels and more
+// below an api or reference directory) and release notes.
+func planTier(u *url.URL, root webRoot, curated map[string]bool) int {
+	if curated[displayKey(u)] || linkKey(u) == linkKey(root.u) {
+		return tierCurated
+	}
+	segs := pathSegments(strings.ToLower(strings.TrimPrefix(u.Path, root.prefix)))
+	for i, seg := range segs {
+		base := strings.TrimSuffix(strings.TrimSuffix(seg, ".html"), ".md")
+		if referenceSegs[base] || (seg == "api" || seg == "reference") && len(segs)-i > 2 {
+			return tierReference
+		}
+	}
+	for _, seg := range segs {
+		if guideSegs[strings.TrimSuffix(seg, ".html")] {
+			return tierGuide
+		}
+	}
+	return tierOther
+}
+
+// prioritize orders links by planTier, keeping discovery order within a
+// tier except that its top-level directories take turns, so one large
+// directory does not fill the cap alone.
+func prioritize(links []webLink, root webRoot, curated map[string]bool) []webLink {
+	var tiers [planTiers][]webLink
+	for _, l := range links {
+		t := planTier(l.url, root, curated)
+		tiers[t] = append(tiers[t], l)
+	}
+	out := make([]webLink, 0, len(links))
+	for t, ls := range tiers {
+		if t == tierCurated {
+			out = append(out, ls...)
+			continue
+		}
+		out = append(out, roundRobin(ls, root)...)
+	}
+	return out
+}
+
+// roundRobin interleaves links by their first path segment below root,
+// directories in the order they first appear.
+func roundRobin(links []webLink, root webRoot) []webLink {
+	var dirs []string
+	byDir := map[string][]webLink{}
+	for _, l := range links {
+		segs := pathSegments(strings.TrimPrefix(l.url.Path, root.prefix))
+		d := ""
+		if len(segs) > 1 {
+			d = segs[0]
+		}
+		if _, ok := byDir[d]; !ok {
+			dirs = append(dirs, d)
+		}
+		byDir[d] = append(byDir[d], l)
+	}
+	out := make([]webLink, 0, len(links))
+	for i := 0; len(out) < len(links); i++ {
+		for _, d := range dirs {
+			if i < len(byDir[d]) {
+				out = append(out, byDir[d][i])
+			}
+		}
+	}
+	return out
+}
+
+// dropMirrors leaves out a site's llms.txt text mirrors (pages under an
+// llms directory right below the root, mantine.dev/llms/…) when it lists
+// rendered pages too: the same docs a second time.
+func dropMirrors(links []webLink, root webRoot) []webLink {
+	mirror := func(l webLink) bool {
+		segs := pathSegments(strings.TrimPrefix(l.url.Path, root.prefix))
+		return len(segs) > 1 && strings.EqualFold(segs[0], "llms")
+	}
+	if !slices.ContainsFunc(links, func(l webLink) bool { return !mirror(l) }) {
+		return links
+	}
+	return slices.DeleteFunc(links, mirror)
 }
 
 // candidateLinks lists every page discovery named, pages in hand first:
@@ -115,14 +339,14 @@ func candidateLinks(site webSite, root webRoot) []webLink {
 	return out
 }
 
-// uniquePages keeps one link per displayed page (x and x.md are one), the
-// first listed, except that llms-full.txt's chunks of one page are joined
-// into one page in hand.
+// uniquePages keeps one link per displayed page (x, x.md and x.html are
+// one), the first listed, except that llms-full.txt's chunks of one page
+// are joined into one page in hand.
 func uniquePages(links []webLink) []webLink {
 	at := map[string]int{}
 	var out []webLink
 	for _, l := range links {
-		k := displayKey(l.url)
+		k := strings.Replace(displayKey(l.url), ".html?", "?", 1)
 		i, seen := at[k]
 		switch {
 		case !seen:
@@ -167,9 +391,10 @@ func uniquePages(links []webLink) []webLink {
 //
 // A tree with few counterparts that is none of these is not a variant at
 // all (an /api/v1/ path in a REST reference, release notes under
-// /releases/4.2/) and stays. It returns the links kept and how many were
-// dropped as other versions'.
-func keepOneVariant(links []webLink, root webRoot, others map[string]bool) ([]webLink, int) {
+// /releases/4.2/) and stays. It returns the links kept, how many were
+// dropped as other versions', and how many of those each version tree
+// held (by its first version segment as written).
+func keepOneVariant(links []webLink, root webRoot, others map[string]bool) ([]webLink, int, map[string]int) {
 	cands := variantCands(links, root)
 	best := map[string]int{}  // key -> index of its preferred variant
 	trees := map[string]int{} // key -> how many trees hold it
@@ -193,6 +418,7 @@ func keepOneVariant(links []webLink, root webRoot, others map[string]bool) ([]we
 	preferred := preferredTree(cands)
 	var out []webLink
 	otherVersions := 0
+	dropped := map[string]int{}
 	for i, c := range cands {
 		var drop bool
 		switch {
@@ -208,9 +434,10 @@ func keepOneVariant(links []webLink, root webRoot, others map[string]bool) ([]we
 			out = append(out, c.link)
 		case len(c.labels) > 0:
 			otherVersions++
+			dropped[c.labels[0]]++
 		}
 	}
-	return out, otherVersions
+	return out, otherVersions, dropped
 }
 
 // variantCand is a link as keepOneVariant weighs it.

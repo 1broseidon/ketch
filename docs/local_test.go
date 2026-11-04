@@ -157,7 +157,7 @@ func TestIndexBuildKeepsOneVariantPerPage(t *testing.T) {
 		t.Errorf("names %v should include the host's distinctive label", lib.Names)
 	}
 	windows, units := checkWindows(t, store)
-	if windows != lib.Vectors || units != lib.Units || units == 0 || int(emb.passages.Load()) != windows+units || r.Embedded != windows+units {
+	if windows != lib.Vectors || units != lib.Units || units == 0 || int(emb.passages.Load()) != windows || r.Embedded != windows {
 		t.Errorf("windows: stored %d, library %d; units: stored %d, library %d; embedded %d/%d", windows, lib.Vectors, units, lib.Units, emb.passages.Load(), r.Embedded)
 	}
 }
@@ -172,8 +172,8 @@ func TestIndexBuildCountsOtherVersions(t *testing.T) {
 }
 
 // checkWindows asserts every stored section has vectors, the long one
-// several, and one vector per snippet unit, and returns how many windows
-// and units there are.
+// several, and snippet units, which are not embedded, and returns how many
+// windows and units there are.
 func checkWindows(t *testing.T, store *docsindex.Store) (int, int) {
 	t.Helper()
 	secs, err := store.Sections(idxRoot, bowDims, true)
@@ -185,7 +185,7 @@ func checkWindows(t *testing.T, store *docsindex.Store) (int, int) {
 		if len(s.Vectors) == 0 {
 			t.Errorf("section %q has no vectors", s.Heading)
 		}
-		if len(s.Units) == 0 || len(s.UnitVectors) != len(s.Units) {
+		if len(s.Units) == 0 || len(s.UnitVectors) != 0 {
 			t.Errorf("section %q has %d units and %d unit vectors", s.Heading, len(s.Units), len(s.UnitVectors))
 		}
 		windows += len(s.Vectors)
@@ -213,7 +213,7 @@ func TestIndexRefreshEmbedsOnlyChangedPages(t *testing.T) {
 	sm.body = strings.Replace(sm.body, "<url><loc>https://docs.example.test/docs/api/v2/users</loc></url>", "", 1)
 	f.raw["https://docs.example.test/sitemap.xml"] = sm
 	r = buildIndex(t, f, store, emb)
-	if r.Changed != 1 || r.Unchanged != 3 || r.Removed != 1 || r.Embedded != 4 { // two windows, two units
+	if r.Changed != 1 || r.Unchanged != 3 || r.Removed != 1 || r.Embedded != 2 { // two windows
 		t.Errorf("one page changed, one dropped: %+v", r)
 	}
 	if got := storedURLs(t, store); slices.Contains(got, "api/v2/users") {
@@ -235,7 +235,7 @@ func TestIndexModelChangeReembeds(t *testing.T) {
 		t.Errorf("a library embedded with another model = %s/%s %q", o.Status, o.Reason, o.Note)
 	}
 	r := buildIndex(t, f, store, other)
-	passages := first.Library.Vectors + first.Library.Units
+	passages := first.Library.Vectors
 	if r.Changed != 5 || int(other.passages.Load()) != passages || r.Library.Model != "test/other" {
 		t.Errorf("model change re-run = %+v (%d embedded)", r, other.passages.Load())
 	}
@@ -253,40 +253,55 @@ func TestIndexModelChangeReembeds(t *testing.T) {
 	}
 }
 
-// With Sections, the local backend ranks a library's sections by cosine
-// and returns one result per page, best page first: its best section
-// under that section's address, the page's other near sections as parts
-// after it.
-func TestLocalRanksAndGroupsByPage(t *testing.T) {
+// By default the local backend ranks a library's sections (cosine fused
+// with BM25) and returns one result per family, best first: the section
+// that matched under its address and heading path, its code inline, and
+// the anchors of what it shows.
+func TestLocalSectionResults(t *testing.T) {
 	f, store, emb := exampleSite(), newStore(t), &bowEmbedder{id: "test/bow"}
 	buildIndex(t, f, store, emb)
 	l := NewLocal(store, func() (embed.Embedder, error) { return emb, nil })
-	ctx := WithLocalOptions(context.Background(), LocalOptions{Sections: true})
-	o := l.GetDocsSelect(ctx, "example", "add middleware to a route", 0)
-	if o.Status != Answered || o.Backend != "local" || o.Reason != "" || len(o.Results) == 0 {
+	o := l.GetDocsSelect(context.Background(), "example", "add middleware to a route", 0)
+	if o.Status != Answered || o.Backend != "local" || o.Reason != "" || len(o.Results) == 0 || len(o.Results) > localMaxResults {
 		t.Fatalf("outcome = %+v", o)
 	}
-	top := o.Results[0]
-	if top.URL != idxRoot+"guide/middleware#add-middleware-to-a-route" || top.Source != "local" || top.Library != idxRoot || top.Breadcrumb != "Middleware > Add middleware to a route" {
-		t.Errorf("top result = %+v", top)
-	}
-	if !strings.Contains(top.Snippet, "app.use('/admin/*', auth())") || !strings.Contains(top.Snippet, "\n### ") {
-		t.Errorf("top snippet should carry the section's code and the page's other sections as parts:\n%s", top.Snippet)
-	}
+	checkTopSection(t, o.Results[0])
 	seen := map[string]bool{}
 	for _, r := range o.Results {
-		page, _, _ := strings.Cut(r.URL, "#")
-		if seen[page] {
-			t.Errorf("page %s returned twice", page)
+		if seen[r.URL] {
+			t.Errorf("%s returned twice", r.URL)
 		}
-		seen[page] = true
+		seen[r.URL] = true
 	}
-	if total := snippetBytes(o.Results); total > webDefaultTokens*webCharsPerToken {
+	if total := snippetBytes(o.Results); total > localTokens*webCharsPerToken {
 		t.Errorf("%d snippet bytes exceed the budget", total)
 	}
-	small := l.GetDocsSelect(WithLocalOptions(context.Background(), LocalOptions{Sections: true, Tokens: 100}), idxRoot, "add middleware to a route", 0)
+}
+
+func checkTopSection(t *testing.T, top Result) {
+	t.Helper()
+	if top.URL != idxRoot+"guide/middleware#add-middleware-to-a-route" || top.Source != "local" || top.Library != idxRoot ||
+		top.Breadcrumb != "Middleware > Add middleware to a route" || top.Title != "Add middleware to a route" ||
+		!slices.Equal(top.Anchors, []string{"add-middleware-to-a-route"}) {
+		t.Errorf("top result = %+v", top)
+	}
+	if !strings.Contains(top.Snippet, "app.use('/admin/*', auth())") || strings.Contains(top.Snippet, "#### ") {
+		t.Errorf("top snippet should be the section whole, its code inline:\n%s", top.Snippet)
+	}
+}
+
+// A small budget trims every section result; a limit caps them.
+func TestLocalSectionBudget(t *testing.T) {
+	f, store, emb := exampleSite(), newStore(t), &bowEmbedder{id: "test/bow"}
+	buildIndex(t, f, store, emb)
+	l := NewLocal(store, func() (embed.Embedder, error) { return emb, nil })
+	small := l.GetDocsSelect(WithLocalOptions(context.Background(), LocalOptions{Tokens: 100}), idxRoot, "writing middleware", 0)
 	if total := snippetBytes(small.Results); total > 100*webCharsPerToken+len(small.Results)*webMinTrimBytes {
 		t.Errorf("a 100-token budget returned %d bytes", total)
+	}
+	one := l.GetDocsSelect(WithLocalOptions(context.Background(), LocalOptions{Limit: 1}), idxRoot, "add middleware to a route", 0)
+	if len(one.Results) != 1 {
+		t.Errorf("limit 1 = %d results", len(one.Results))
 	}
 }
 
@@ -424,7 +439,7 @@ func TestKeepOneVariant(t *testing.T) {
 		links = append(links, webLink{url: u})
 	}
 	var got []string
-	kept, _ := keepOneVariant(links, root, nil)
+	kept, _, _ := keepOneVariant(links, root, nil)
 	for _, l := range kept {
 		got = append(got, strings.TrimPrefix(l.url.Path, "/en/"))
 	}

@@ -201,3 +201,92 @@ page puts its explanation after the code, or the code under a list item the
 sectioning does not read as a fence, a unit carries less context than a
 curated snippet would. Measuring the change against the fair-judge packets
 is the next step.
+
+## Amendment 2 (2026-11-03): whole sections again, ranked by section, fused with keywords; coverage and names
+
+The fair-judge round 3 (68 cases, blinded) put the code-first snippets of
+amendment 1 at 66% top-5 "fully answers", against 86% for the earlier
+section output and 85% for Context7. Version purity worked (no version
+conflicts, from 45%). A retrieval check over the 63 gold-labelled dev cases
+showed why the snippets lost: ranking small units let an API stub with code
+outrank the prose that states the rule, and one section came back split or
+twice. It also showed what the index missed: pages a 1,500-page cap left out
+(NumPy's and Matplotlib's user guides behind thousands of generated
+reference pages), roots that were not where the docs are (DuckDB's
+`/docs/stable/`, CrewAI's and Hugging Face's release directories, an Angular
+version host that serves its app shell for `sitemap.xml`), and names that
+picked an older version's index (`angular`, `vue`) or a sibling (`svelte`).
+
+**Decision.**
+
+- **Sections are the default answer again, ranked at section level.** Each
+  section is scored by its best window's cosine and, separately, by BM25F
+  over its heading (three times its text), breadcrumb and text; the two
+  rankings are fused by reciprocal rank fusion (k = 60). Ranked sections are
+  grouped into families, a section with the others under the same H2 of its
+  page, and each of the best five families is one result: the H2's own text
+  and the subsections of it that ranked, verbatim with their code, within
+  about 1,800 tokens and 600 per result. A section that does not fit keeps
+  its lead prose, its first code block (cut, fence closed) and the blocks
+  that name the question. Two families with the same heading and text (a
+  page at two addresses) are one, and a page gives at most two families
+  while other pages rank next. Results carry `anchors`, the sections they
+  show. Code-first snippets stay behind `--snippets` (MCP `snippets`); the
+  page-grouped view is retired. Units are still cut at index time but no
+  longer embedded (about 2.3-2.6 times fewer passages per build): the
+  snippet view scores a unit by its section's cosine and the share of the
+  question's words it names. No index format change.
+- **Fewer knobs than were tried.** On the 63 cases, section-level ranking,
+  families and the keyword fusion each moved the gold section into the top
+  five more often; a page-level aggregate, a penalty for thin API stubs or
+  reference paths, and a prior for a page's first sections each moved it by
+  one case or less, and are not used.
+- **Coverage.** Under the page cap, pages are taken in priority order: the
+  pages llms.txt lists (and a page seeder names, below), then guides, then
+  the rest (examples and galleries included), then generated API reference
+  leaves and release notes; directories take turns within a tier. `x` and
+  `x.html` are one page, `/llms/` text mirrors are dropped beside rendered
+  pages, and a fetched page whose text is another's is dropped (a missing
+  page served as the home page among them). A root that stands for a
+  numbered release (redirect, meta refresh or canonical) is indexed at that
+  release; an unversioned root whose pages or llms.txt sit in one release
+  directory is indexed there, and shown under the unversioned addresses
+  when the release's pages name them canonical (never for an older
+  release). A version host whose lists are an app shell probes the current
+  host's paths. `docs index --dry-run` prints the plan.
+- **Names.** A build records the docs site's own name (og:site_name or the
+  root page's title) and the registry packages its root links to under
+  that name; both are names the library answers to, as are its root's
+  distinctive path segments (secondary). A name that matches any index of
+  a project brings in that project's other versions (same host without a
+  version label, same path without version segments), so `angular` with
+  `angular@18` and angular.dev indexed answers from angular.dev.
+- **Seeds.** `IndexRequest.Seeder` (a `PageSeeder`) names pages the web
+  points to for a library; they enter the plan first. Nothing implements
+  it yet: the provider is chosen by a separate search scorecard, and seeds
+  must come from library-level questions, never an evaluation's.
+
+**Measurement** (ketch-embed `scripts/local_retrieval.py`, 63 cases, the
+library given as its docs root; "fair" counts a page's lead section for its
+H1's anchor, the anchors a result shows, and, for unpinned cases, a page
+under another release segment):
+
+| | page@5 fair (strict) | section@5 fair (strict) | answer@5 | tokens, top 5 |
+|---|---|---|---|---|
+| snippets (amendment 1), round-3 index | 51 (48) | 40 (36) | 28 | 670 |
+| section families, round-3 index | 55 (52) | 51 (38) | 44 | 1,576 |
+| section families, 6 sites rebuilt | 59 (57) | 54 (41) | 46 | 1,593 |
+
+answer@5 counts the case's required quotes in the five results' text. The
+rebuilt sites were NumPy and Matplotlib (user guides and gallery under the
+cap), Angular (guides before API leaves), angular.dev v18 (its current host's
+paths), CrewAI (`/v1.15.35/`, English only) and Transformers (unversioned
+addresses); 62 of the 63 gold pages are now in their library's plan (the
+63rd is Chart.js 3, which robots.txt keeps out). Ranking costs one BM25 pass
+per question over the library's sections, counting only the question's
+terms and tokenizing on every CPU: 40 to 170 ms on the largest indexes
+(angular.dev's 10,115 sections, the 3,220 long API sections of
+v18.angular.dev), against 320 ms on one CPU before; a whole CLI query ran
+in 251 ms at the median and 612 ms at p95.
+
+The judge round that decides the default is the next step.

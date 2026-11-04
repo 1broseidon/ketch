@@ -2,7 +2,9 @@ package docs
 
 import (
 	"context"
+	"errors"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/1broseidon/ketch/internal/docsindex"
@@ -142,5 +144,62 @@ func TestLocalRefusesComponentWord(t *testing.T) {
 	}
 	if o := l.GetDocsSelect(ctx, "vue-router", "router.push", 0); o.Status != Answered {
 		t.Errorf("--library vue-router = %s/%s", o.Status, o.Reason)
+	}
+}
+
+// A docs site's own name comes from og:site_name or its root page's title.
+func TestSiteName(t *testing.T) {
+	for title, want := range map[string]string{
+		"Beautiful Soup Documentation — Beautiful Soup 4.14.3 documentation": "Beautiful Soup",
+		"HTTPX": "HTTPX",
+		"Instructor - Multi-Language Library for Structured LLM Outputs | Python, TypeScript, Go, Ruby - Instructor": "Instructor",
+		"Vue Router | The official Router for Vue.js":                                                                "Vue Router",
+		"Chart.js | Chart.js":           "Chart.js",
+		"Introduction • SvelteKit Docs": "SvelteKit",
+		"Home • Angular":                "Angular",
+		"Celery - Distributed Task Queue — Celery 5.6.3 documentation": "Celery",
+		"psycopg 3.3.8 documentation":                                  "psycopg",
+		"A very long page title about something with many words":       "",
+	} {
+		if got := siteName(title, ""); got != want {
+			t.Errorf("siteName(%q) = %q, want %q", title, got, want)
+		}
+	}
+	if got := siteName("Home", "Textual Documentation"); got != "Textual" {
+		t.Errorf("og:site_name = %q", got)
+	}
+}
+
+// An unversioned name answers from the current docs of exactly that
+// project: never an older version's index built by the name (angular@18,
+// vue@2), never a sibling on the same host (SvelteKit for svelte); a
+// library indexed from its docs URL answers to its site's name, its
+// packages and its root's distinctive path segment.
+func TestUnversionedNamePicksCurrentProject(t *testing.T) {
+	lib := func(root, library, site string, pkgs ...string) docsindex.Library {
+		return docsindex.Library{Key: root, Root: root, Library: library, SiteName: site, Packages: pkgs, Format: docsindex.FormatVersion}
+	}
+	ng, ng18 := lib("https://angular.dev/", "https://angular.dev/", ""), lib("https://v18.angular.dev/", "angular@18", "Angular", "github:angular/angular")
+	ng18.Version, ng18.Requested = "v18", "18"
+	vue, vue2 := lib("https://vuejs.org/", "https://vuejs.org/", ""), lib("https://v2.vuejs.org/", "vue@2", "Vue.js", "npm:vue")
+	vue2.Version, vue2.Requested = "v2", "2"
+	kit, svelte := lib("https://svelte.dev/docs/kit/", "https://svelte.dev/docs/kit", "SvelteKit"), lib("https://svelte.dev/docs/svelte/", "https://svelte.dev/docs/svelte", "Svelte")
+	bs4 := lib("https://www.crummy.com/software/BeautifulSoup/bs4/doc/", "https://www.crummy.com/software/BeautifulSoup/bs4/doc/", "Beautiful Soup")
+	httpx := lib("https://www.python-httpx.org/", "https://www.python-httpx.org/", "HTTPX", "pypi:httpx")
+	chart := lib("https://www.chartjs.org/docs/latest/", "https://www.chartjs.org/docs/latest/", "Chart.js", "npm:chart.js")
+	chart.Version = "latest"
+	libs := []docsindex.Library{ng18, ng, vue2, vue, kit, svelte, bs4, httpx, chart}
+	for value, want := range map[string]string{
+		"angular": ng.Key, "angular@18": ng18.Key, "vue": vue.Key, "vue@2": vue2.Key,
+		"svelte": svelte.Key, "sveltekit": kit.Key, "bs4": bs4.Key, "beautiful soup": bs4.Key,
+		"httpx": httpx.Key, "pypi:httpx": httpx.Key, "chart.js": chart.Key,
+	} {
+		got, _, err := pickVersion(libs, value)
+		if err != nil || got.Key != want {
+			t.Errorf("%q = %s (%v), want %s", value, got.Key, err, want)
+		}
+	}
+	if _, _, err := pickVersion(libs, "chart.js@3"); !errors.Is(err, ErrNotIndexed) || !strings.Contains(err.Error(), "latest") {
+		t.Errorf("chart.js@3 = %v", err)
 	}
 }

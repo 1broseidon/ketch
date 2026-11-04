@@ -26,9 +26,9 @@ import (
 // (local_plan.go), keeping that version's tree alone, fetch them through
 // the injected Fetcher (the scrape pipeline and page cache), section them
 // as the web backend does, cut each section into snippet units
-// (local_snippets.go), embed the sections' windows and the units, and
-// store the lot. A library's key is its docs root, so each version of a
-// library (each its own root) is indexed side by side.
+// (local_snippets.go), embed the sections' windows, and store the lot. A
+// library's key is its docs root, so each version of a library (each its
+// own root) is indexed side by side.
 
 // IndexRequest asks for one library to be indexed.
 type IndexRequest struct {
@@ -47,6 +47,12 @@ type IndexRequest struct {
 	// Embedder embeds the sections; nil indexes text alone, which the
 	// local backend ranks by keywords.
 	Embedder embed.Embedder
+	// Seeder names pages the web points to for the library, indexed first;
+	// nil for none.
+	Seeder PageSeeder
+	// DryRun plans the build and stops before fetching any page: the
+	// report's Planned lists the pages in the order they would be indexed.
+	DryRun bool
 	// Progress receives progress lines; nil for none.
 	Progress io.Writer
 }
@@ -62,10 +68,23 @@ type IndexReport struct {
 	Unchanged int     `json:"unchanged"`
 	Removed   int     `json:"removed"`
 	Failed    int     `json:"failed"`
-	Embedded  int     `json:"embedded"` // passages (section windows and snippet units) embedded by this run
+	Embedded  int     `json:"embedded"` // section windows embedded by this run
 	Seconds   float64 `json:"seconds"`
 	Bytes     int64   `json:"index_bytes"` // the index file's size afterwards
+	// Planned is a dry run's plan: the docs root and the pages, in order,
+	// each with its tier (curated, guide, other, reference).
+	Root    string        `json:"root,omitempty"`
+	Planned []PlannedPage `json:"planned,omitempty"`
 }
+
+// PlannedPage is a page a build would index.
+type PlannedPage struct {
+	URL  string `json:"url"`
+	Tier string `json:"tier"`
+}
+
+// tierNames name the plan tiers.
+var tierNames = [planTiers]string{"curated", "guide", "other", "reference"}
 
 const (
 	// IndexDefaultMaxPages bounds a build: a large reference site has tens
@@ -122,6 +141,107 @@ type indexTarget struct {
 	trust    float64
 	packages []string
 	spec     libSpec // the name as given; zero for a docs URL
+	// display is the unversioned root a re-rooted current release's
+	// results are shown under ("" for the root itself).
+	display string
+}
+
+// planIndex discovers the target's pages and plans the build, moving the
+// root first to the release an alias stands for, and after planning to
+// the release tree an unversioned root's pages all sit in; a version's
+// own host with almost no pages listed borrows its current host's list.
+func (w *Web) planIndex(ctx context.Context, target *indexTarget, req IndexRequest, say func(string, ...any)) (indexSite, indexPlan, error) {
+	if moved, ok := w.aliasRoot(ctx, target.root); ok {
+		say("docs root %s stands for %s", target.root, moved)
+		w.moveRoot(target, moved)
+	}
+	seeds := w.seedPages(ctx, *target, req.Seeder, say)
+	site, plan, err := w.discoverPlan(ctx, target, req.MaxPages, seeds, say)
+	if err != nil {
+		return site, plan, err
+	}
+	links := uniquePages(candidateLinks(site.site, target.root))
+	if moved, byList, ok := rerootTree(target.root, links, plan, site.curated); ok {
+		site, plan = w.reroot(ctx, target, moved, byList, site, plan, req.MaxPages, seeds, say)
+	}
+	if sib, ok := siblingHost(target.root); ok && len(plan.links) < siblingThin {
+		if other, err := w.enumerate(ctx, sib); err == nil {
+			borrowed := atHost(uniquePages(candidateLinks(other.site, sib)), target.root.u.Host)
+			say("pages: %d listed on %s; probing %d paths of %s", plan.listed, target.root, len(borrowed), sib)
+			site.site.links = append(site.site.links, borrowed...)
+			site.sources = append(site.sources, "paths of "+sib.String())
+			plan = w.plan(ctx, target.root, site, req.MaxPages, w.otherVersions(ctx, *target), seeds)
+		}
+	}
+	say("pages: %d listed (%s); %d of other versions and %d of other locales left out, %d disallowed by robots.txt; indexing %d%s (%s)",
+		plan.listed, strings.Join(site.sources, ", "), plan.otherVersions, plan.variants-plan.otherVersions, plan.disallowed, len(plan.links), capNote(plan.capped, req.MaxPages), tierNote(plan.tiers))
+	return site, plan, nil
+}
+
+// reroot plans the build at the release tree rerootTree found, keeping
+// the root as it was when a move the plan's thinness chose finds no more
+// pages there than were kept, and shows a current release's pages under
+// the unversioned addresses they name canonical.
+func (w *Web) reroot(ctx context.Context, target *indexTarget, moved webRoot, byList bool, site indexSite, plan indexPlan, maxPages int, seeds []webLink, say func(string, ...any)) (indexSite, indexPlan) {
+	before := *target
+	w.moveRoot(target, moved)
+	s2, p2, err := w.discoverPlan(ctx, target, maxPages, seeds, say)
+	if err != nil || !byList && len(p2.links) <= len(plan.links) {
+		*target = before
+		return site, plan
+	}
+	say("pages: %d listed, %d kept: the docs sit in %s", plan.listed, len(plan.links), moved)
+	if len(p2.links) > 0 && target.spec.version == "" {
+		target.display = w.displayRootFor(ctx, before.root, target.root, p2.links[min(1, len(p2.links)-1)].url)
+	}
+	return s2, p2
+}
+
+// discoverPlan enumerates the target's root (following a docs URL that
+// redirects to a version root or a new home when it lists nothing) and
+// plans the build.
+func (w *Web) discoverPlan(ctx context.Context, target *indexTarget, maxPages int, seeds []webLink, say func(string, ...any)) (indexSite, indexPlan, error) {
+	site, err := w.enumerate(ctx, target.root)
+	if errors.Is(err, ErrNotFound) && target.resolved == "docs_url" && ctx.Err() == nil {
+		if moved, ok := w.indexRedirect(ctx, target.root); ok {
+			target.root = moved
+			say("docs root redirects to %s", moved)
+			site, err = w.enumerate(ctx, target.root)
+		}
+	}
+	if err != nil {
+		return site, indexPlan{}, err
+	}
+	return site, w.plan(ctx, target.root, site, maxPages, w.otherVersions(ctx, *target), seeds), nil
+}
+
+// moveRoot points the target at another root of the same docs, labelled
+// with that root's version.
+func (w *Web) moveRoot(target *indexTarget, to webRoot) {
+	target.evidence = append(target.evidence, fmt.Sprintf("%s holds the docs %s stands for", to, target.root))
+	target.root = to
+	if l, _ := rootVersion(to); l != "" {
+		target.version = l
+	}
+}
+
+// dryRunReport is a dry run's report: the root and the planned pages.
+func dryRunReport(target indexTarget, site indexSite, plan indexPlan) IndexReport {
+	r := IndexReport{Root: target.root.String()}
+	for _, l := range plan.links {
+		r.Planned = append(r.Planned, PlannedPage{URL: displayURL(l.url), Tier: tierNames[planTier(l.url, target.root, plan.curated)]})
+	}
+	r.Library = docsindex.Library{Root: target.root.String(), Version: target.version, Discovered: plan.listed - plan.variants, OtherVersions: plan.otherVersions, Capped: plan.capped, Sources: site.sources, DisplayRoot: target.display}
+	return r
+}
+
+// tierNote counts the planned pages by tier.
+func tierNote(t [planTiers]int) string {
+	var parts []string
+	for i, n := range t {
+		parts = append(parts, fmt.Sprintf("%d %s", n, tierNames[i]))
+	}
+	return strings.Join(parts, ", ")
 }
 
 func (w *Web) index(ctx context.Context, store *docsindex.Store, req IndexRequest) (IndexReport, error) {
@@ -135,24 +255,27 @@ func (w *Web) index(ctx context.Context, store *docsindex.Store, req IndexReques
 		return IndexReport{}, err
 	}
 	say("docs root: %s%s (%s)", target.root, versionNote(target.version), target.resolved)
-	others := w.otherVersions(dctx, target)
-	site, err := w.enumerate(dctx, target.root)
-	if errors.Is(err, ErrNotFound) && target.resolved == "docs_url" && dctx.Err() == nil {
-		if moved, ok := w.indexRedirect(dctx, target.root); ok {
-			target.root = moved
-			say("docs root redirects to %s", moved)
-			site, err = w.enumerate(dctx, target.root)
-		}
-	}
+	site, plan, err := w.planIndex(dctx, &target, req, say)
 	if err != nil {
 		return IndexReport{}, err
 	}
-	plan := w.plan(dctx, target.root, site, req.MaxPages, others)
-	say("pages: %d listed (%s); %d of other versions and %d of other locales left out, %d disallowed by robots.txt; indexing %d%s",
-		plan.listed, strings.Join(site.sources, ", "), plan.otherVersions, plan.variants-plan.otherVersions, plan.disallowed, len(plan.links), capNote(plan.capped, req.MaxPages))
+	if req.DryRun {
+		return dryRunReport(target, site, plan), nil
+	}
 	pages, failed := w.fetchIndexPages(ctx, target.root, plan.links, say)
+	pages, copies := uniqueContent(pages)
+	if copies > 0 {
+		say("%d pages left out as copies of others (the same text at another address, or a missing page served as the home page)", copies)
+	}
 	if len(pages) == 0 {
 		return IndexReport{}, fmt.Errorf("web: none of the %d pages under %s could be fetched: %w", len(plan.links), target.root, ErrNotFound)
+	}
+	siteName, sitePkgs := w.siteIdentityNames(dctx, target.root)
+	if target.title == "" {
+		target.title = siteName
+	}
+	if len(target.packages) == 0 {
+		target.packages = sitePkgs
 	}
 	b := &indexBuild{store: store, key: target.root.String(), emb: req.Embedder, say: say, version: target.version, title: target.title}
 	report, err := b.write(ctx, pages, failed)
@@ -165,6 +288,7 @@ func (w *Web) index(ctx context.Context, store *docsindex.Store, req IndexReques
 		Model: b.model, Dims: b.dims, Format: docsindex.FormatVersion, Built: time.Now().UTC(),
 		Pages: report.Library.Pages, Sections: report.Library.Sections, Vectors: report.Library.Vectors, Units: report.Library.Units,
 		Discovered: plan.listed - plan.variants, OtherVersions: plan.otherVersions, Capped: plan.capped, Failed: len(failed), Sources: site.sources,
+		DisplayRoot: target.display, Seeds: plan.seeds, SiteName: siteName,
 	}
 	lib.Aliases = mergeNames(b.prev.Aliases, req.Names)
 	lib.Names = IndexedNames(lib)
@@ -365,7 +489,7 @@ func (b *indexBuild) write(ctx context.Context, pages []webPage, failed []string
 	}
 	report.Removed, report.Failed = len(gone), len(failed)
 	report.Library.Pages = len(pages) + len(failed) - countMissing(failed, stored)
-	b.say("stored %d pages: %d new, %d changed, %d unchanged, %d removed; %d passages embedded", len(pages), report.New, report.Changed, report.Unchanged, report.Removed, report.Embedded)
+	b.say("stored %d pages: %d new, %d changed, %d unchanged, %d removed; %d windows embedded", len(pages), report.New, report.Changed, report.Unchanged, report.Removed, report.Embedded)
 	return report, nil
 }
 
@@ -490,20 +614,17 @@ func (b *indexBuild) pageData(p webPage, hash string, secs []webSection) docsind
 	return pd
 }
 
-// embed embeds every window of the pages' sections and every snippet
-// unit, in batches with progress, and records each page's window count.
-// It returns how many windows and units it embedded.
+// embed embeds every window of the pages' sections, in batches with
+// progress, and records each page's window count. Snippet units are not
+// embedded (ADR-0007, amendment 2: the snippet view scores a unit by its
+// section's windows). It returns how many windows it embedded.
 func (b *indexBuild) embed(ctx context.Context, pages []docsindex.PageData) (int, error) {
 	if b.emb == nil {
 		return 0, nil
 	}
-	type ref struct {
-		page, sec int
-		unit      bool
-	}
+	type ref struct{ page, sec int }
 	var texts []string
 	var refs []ref
-	units := 0
 	for i := range pages {
 		for j, s := range pages[i].Sections {
 			pages[i].Sections[j].Vectors, pages[i].Sections[j].UnitVectors = nil, nil
@@ -511,18 +632,13 @@ func (b *indexBuild) embed(ctx context.Context, pages []docsindex.PageData) (int
 				texts = append(texts, t)
 				refs = append(refs, ref{page: i, sec: j})
 			}
-			for _, u := range s.Units {
-				texts = append(texts, unitPassage(s.Crumbs, s.Text, u))
-				refs = append(refs, ref{page: i, sec: j, unit: true})
-				units++
-			}
 		}
 		pages[i].Page.Windows = 0
 	}
 	if len(texts) == 0 {
 		return 0, nil
 	}
-	b.say("embedding %d windows and %d snippet units of %d sections with %s", len(texts)-units, units, countSections(pages), b.model)
+	b.say("embedding %d windows of %d sections with %s", len(texts), countSections(pages), b.model)
 	start, last := time.Now(), time.Now()
 	for s := 0; s < len(texts); s += indexEmbedBatch {
 		vecs, err := b.emb.EmbedPassages(ctx, texts[s:min(s+indexEmbedBatch, len(texts))])
@@ -531,18 +647,13 @@ func (b *indexBuild) embed(ctx context.Context, pages []docsindex.PageData) (int
 		}
 		for k, v := range vecs {
 			r := refs[s+k]
-			sec := &pages[r.page].Sections[r.sec]
-			if r.unit {
-				sec.UnitVectors = append(sec.UnitVectors, v)
-				continue
-			}
-			sec.Vectors = append(sec.Vectors, v)
+			pages[r.page].Sections[r.sec].Vectors = append(pages[r.page].Sections[r.sec].Vectors, v)
 			pages[r.page].Page.Windows++
 		}
 		if time.Since(last) > 15*time.Second {
 			last = time.Now()
 			done := min(s+indexEmbedBatch, len(texts))
-			b.say("embedded %d of %d passages (%.0f/s)", done, len(texts), float64(done)/time.Since(start).Seconds())
+			b.say("embedded %d of %d windows (%.0f/s)", done, len(texts), float64(done)/time.Since(start).Seconds())
 		}
 	}
 	return len(texts), nil
@@ -637,29 +748,18 @@ func mergeNames(a, b []string) []string {
 // comparison keys (libraryKey), worked out from its stored metadata so a
 // library indexed by an older build answers to the same names. Primary
 // names are its full identity: the --name aliases, the name it was indexed
-// by, its package names (with or without the ecosystem prefix and
-// separators: vue-router, vuerouter) and repositories (vuejs/router).
-// Secondary names are the last part of a scoped package or repository
-// (starlight in @astrojs/starlight, hono in honojs/hono) and its docs
-// host's distinctive labels (fastapi in fastapi.tiangolo.com). A secondary
-// name that is one word of a longer name the library goes by (router and
-// vue for Vue Router, query for TanStack Query, rest for Django REST
-// framework) is never a name: it names something else, often another
-// library.
+// by, its docs site's own name (Vue Router, Beautiful Soup), its package
+// names (with or without the ecosystem prefix and separators: vue-router,
+// vuerouter) and repositories (vuejs/router). Secondary names are the last
+// part of a scoped package or repository (starlight in @astrojs/starlight,
+// hono in honojs/hono), its docs host's distinctive labels (fastapi in
+// fastapi.tiangolo.com) and its root's path segments (bs4 in
+// /software/BeautifulSoup/bs4/doc/). A secondary name that is one word of
+// a longer name the library goes by (router and vue for Vue Router, query
+// for TanStack Query, rest for Django REST framework) is never a name: it
+// names something else, often another library.
 func libraryNames(l docsindex.Library) (primary, secondary []string) {
-	var full []string // the identities, as written
-	full = append(full, l.Aliases...)
-	if !isHTTPURL(l.Library) {
-		if spec, err := parseLibSpec(strings.TrimSpace(l.Library)); err == nil && spec.name != "" {
-			full = append(full, spec.name)
-		}
-	}
-	for _, p := range l.Packages {
-		if _, after, ok := strings.Cut(p, ":"); ok {
-			p = after
-		}
-		full = append(full, p)
-	}
+	full := fullNames(l)
 	words := map[string]bool{} // the words of every multi-word name
 	addWords := func(name string) {
 		if parts := nameWords(name); len(parts) > 1 {
@@ -670,6 +770,7 @@ func libraryNames(l docsindex.Library) (primary, secondary []string) {
 	}
 	title, _, _ := strings.Cut(cleanPageTitle(l.Title), " - ") // "FastAPI - FastAPI" is FastAPI
 	addWords(title)
+	addWords(l.SiteName)
 	seen := map[string]bool{}
 	add := func(into *[]string, k string) {
 		if len(k) >= 2 && !genericNames[k] && !seen[k] {
@@ -688,12 +789,60 @@ func libraryNames(l docsindex.Library) (primary, secondary []string) {
 		addWords(tail)
 	}
 	root, _ := parseWebRoot(l.Root)
-	for _, n := range append(tails, hostNames(root.u)...) {
+	for _, n := range append(append(tails, hostNames(root.u)...), pathNames(root)...) {
 		if k := libraryKey(n); !words[k] {
 			add(&secondary, k)
 		}
 	}
 	return primary, secondary
+}
+
+// fullNames are a library's identities as written: its aliases, the name
+// it was indexed by, its site's name and its packages (no ecosystem).
+func fullNames(l docsindex.Library) []string {
+	full := slices.Clone(l.Aliases)
+	if !isHTTPURL(l.Library) {
+		if spec, err := parseLibSpec(strings.TrimSpace(l.Library)); err == nil && spec.name != "" {
+			full = append(full, spec.name)
+		}
+	}
+	if l.SiteName != "" {
+		full = append(full, l.SiteName)
+	}
+	for _, p := range l.Packages {
+		if _, after, ok := strings.Cut(p, ":"); ok {
+			p = after
+		}
+		full = append(full, p)
+	}
+	return full
+}
+
+// pathNoise are root path segments that name no library: docs
+// directories, locales, versions, languages.
+var pathNoise = map[string]bool{
+	"docs": true, "doc": true, "documentation": true, "software": true, "en": true, "stable": true, "latest": true,
+	"current": true, "oss": true, "python": true, "py": true, "js": true, "javascript": true, "typescript": true,
+	"ts": true, "go": true, "golang": true, "rust": true, "java": true, "ruby": true, "php": true, "dotnet": true,
+	"reference": true, "api": true, "guide": true, "manual": true, "html": true, "index": true, "home": true,
+}
+
+// pathNames are a root's path segments that may name its library (bs4 in
+// /software/BeautifulSoup/bs4/doc/): all but docs directories, locales,
+// versions and language names.
+func pathNames(root webRoot) []string {
+	if root.u == nil {
+		return nil
+	}
+	var out []string
+	for _, seg := range pathSegments(root.prefix) {
+		ls := strings.ToLower(seg)
+		if _, version := segmentLabel(ls); pathNoise[ls] || version || localeRe.MatchString(ls) {
+			continue
+		}
+		out = append(out, seg)
+	}
+	return out
 }
 
 // IndexedNames are the names a query may call an indexed library by

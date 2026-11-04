@@ -23,7 +23,9 @@ The library is a docs URL, taken as the docs root, or a library name or spec (na
 
 One index holds one version of a library's docs. name@version (or --version) indexes that version's docs root, found with the site's own version list; with no version, the current docs. Either way only that version's tree is kept: other versions' trees below the root (/docs/2.x/, mike's version directories, a release channel such as /next/, or any tree the site's version list names) and their copies of pages are left out, as are other hosts (v3.router.vuejs.org beside router.vuejs.org) and paths outside a versioned root. Several versions of a library can be indexed side by side, each under its own docs root; a query names one with --library name@version, and without a version answers from the newest. A page in the indexed tree about a later major (a migration guide to it) is kept but labelled, and ranks lower unless the question asks about migrating.
 
-ketch reads the site's own page lists (llms.txt and llms-full.txt, its sitemaps, its search index and nav links), keeps the pages under the docs root in its locale and version, honours robots.txt, fetches up to --max-pages pages --concurrency at a time through the page cache, splits them into heading sections (never inside code blocks), cuts each section into snippet units (each fenced code block with the sentences just before it, and the prose no code claims), and embeds the sections and the units with the model ketch model install downloaded. Without a model the text is indexed alone and ranked by keywords.
+ketch reads the site's own page lists (llms.txt and llms-full.txt, its sitemaps, its search index and nav links), keeps the pages under the docs root in its locale and version, honours robots.txt, fetches up to --max-pages pages --concurrency at a time through the page cache (llms.txt's pages first, then guides, then the rest, API reference leaves and release notes last), drops pages whose text is another page's, splits them into heading sections (never inside code blocks), cuts each section into snippet units (each fenced code block with the sentences just before it, and the prose no code claims), and embeds the sections with the model ketch model install downloaded. Without a model the text is indexed alone and ranked by keywords. --dry-run prints the pages a build would index, in order, without fetching them.
+
+A root that stands for a release (its page redirects or points as canonical to a numbered release's root, as duckdb.org/docs/stable/ does to /docs/2.0/) is indexed at that release, and so is an unversioned root whose pages or llms.txt sit in release directories right below it (the release llms.txt lists, else the newest; results show the unversioned addresses when the release's pages name them canonical). A version's own host whose page lists are an app shell is given its current host's paths to try.
 
 Running it again refreshes the library: pages are fetched again (through the page cache) and only the ones whose content changed are sectioned and embedded again. --reembed re-embeds the stored text with the current model, without the network.`,
 	Args: exitArgs(cobra.MaximumNArgs(1)),
@@ -41,6 +43,7 @@ func init() {
 	f.Bool("remove", false, "remove the named library from the index")
 	f.Bool("reembed", false, "re-embed the named library's stored sections with the current model, without the network")
 	f.Bool("no-model", false, "index text only, ranked by keywords, even with a model installed")
+	f.Bool("dry-run", false, "plan the build and print the pages it would index, in order, with their tier; fetch no page and write nothing")
 }
 
 func runDocsIndex(cmd *cobra.Command, args []string) error {
@@ -83,14 +86,15 @@ func runDocsIndexBuild(cmd *cobra.Command, store *docsindex.Store, library strin
 	req.MaxPages, _ = cmd.Flags().GetInt("max-pages")
 	req.Concurrency, _ = cmd.Flags().GetInt("concurrency")
 	req.Names, _ = cmd.Flags().GetStringSlice("name")
-	if noModel, _ := cmd.Flags().GetBool("no-model"); !noModel {
+	req.DryRun, _ = cmd.Flags().GetBool("dry-run")
+	if noModel, _ := cmd.Flags().GetBool("no-model"); !noModel && !req.DryRun {
 		emb, err := indexEmbedder()
 		if err != nil {
 			return err
 		}
 		req.Embedder = emb
 	}
-	if req.Embedder == nil {
+	if req.Embedder == nil && !req.DryRun {
 		fmt.Fprintln(os.Stderr, "note: indexing text only (no embedding model): queries rank by keywords until ketch model install and ketch docs index --reembed")
 	}
 	fetcher := &docsFetcher{newScraper: func() (*scrape.Scraper, error) { return newDocsScraper(cmd) }}
@@ -99,7 +103,27 @@ func runDocsIndexBuild(cmd *cobra.Command, store *docsindex.Store, library strin
 	if err := fetcher.classify(err, "docs index failed"); err != nil {
 		return err
 	}
+	if req.DryRun {
+		return printIndexPlan(report, asJSON)
+	}
 	return printIndexReport(report, asJSON)
+}
+
+// printIndexPlan prints a dry run: the docs root, then each planned page
+// with its tier.
+func printIndexPlan(r docs.IndexReport, asJSON bool) error {
+	if asJSON {
+		return json.NewEncoder(os.Stdout).Encode(r)
+	}
+	root := r.Root
+	if r.Library.Version != "" {
+		root += " (version " + r.Library.Version + ")"
+	}
+	fmt.Printf("root: %s\nplanned: %d pages\n", root, len(r.Planned))
+	for _, p := range r.Planned {
+		fmt.Printf("%-9s %s\n", p.Tier, p.URL)
+	}
+	return nil
 }
 
 // indexEmbedder opens the model to index with: none when none is installed
@@ -226,7 +250,7 @@ func printIndexReport(r docs.IndexReport, asJSON bool) error {
 		return json.NewEncoder(os.Stdout).Encode(r)
 	}
 	fmt.Println(indexLine(r.Library))
-	fmt.Printf("  this run: %d new, %d changed, %d unchanged, %d removed, %d failed pages; %d passages embedded; %.0fs; index %s\n",
+	fmt.Printf("  this run: %d new, %d changed, %d unchanged, %d removed, %d failed pages; %d windows embedded; %.0fs; index %s\n",
 		r.New, r.Changed, r.Unchanged, r.Removed, r.Failed, r.Embedded, r.Seconds, formatBytes(r.Bytes))
 	return nil
 }

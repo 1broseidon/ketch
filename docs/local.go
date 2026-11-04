@@ -18,13 +18,13 @@ import (
 )
 
 // The local docs backend answers from the local index (ADR-0007), with no
-// network: it embeds the question and ranks the library's snippet units
-// (local_snippets.go) by cosine, brute force (a library is thousands of
-// sections), returning the best few, code first, within about 1,200
-// tokens. LocalOptions.Sections asks instead for the nearest sections
-// grouped by page: about ten page results, each its best section with the
-// page's other near sections as parts. Without a usable model it ranks
-// with the web backend's BM25 and says so in the outcome.
+// network: it embeds the question, ranks the library's sections by
+// cosine fused with BM25 (brute force: a library is thousands of
+// sections), groups them into families (a section with the others under
+// its H2) and returns the best five, verbatim and trimmed to about 1,800
+// tokens (local_rank.go). LocalOptions.Snippets asks instead for
+// code-first snippet units (local_snippets.go). Without a usable model it
+// ranks with the web backend's BM25 alone and says so in the outcome.
 //
 // An index holds one version of a library; several versions are indexed
 // side by side. A library value with a version (name@3) answers from that
@@ -51,20 +51,6 @@ func outdatedErr(lib docsindex.Library) error {
 // backend ranked by keywords: no embedding model installed, or the index
 // was built with another one or with none. Outcome.Note says which.
 const ReasonKeywordRanking = "keyword_ranking"
-
-const (
-	// localTopSections is how many of the nearest sections are grouped
-	// into page results as their parts; a page's best section may rank
-	// lower, down to localPageSections, so that a library whose nearest
-	// sections crowd into a few pages (a reference page, release notes)
-	// still offers about localMaxPages pages.
-	localTopSections  = 30
-	localPageSections = 2 * localTopSections
-	// localMaxPages is how many page results are returned at most: enough
-	// that the answer is among them (89% at ten on full sites with
-	// bge-base), few enough for an agent to read.
-	localMaxPages = 10
-)
 
 // Local answers from the local docs index.
 type Local struct {
@@ -217,9 +203,8 @@ func (l *Local) libraries() ([]docsindex.Library, error) {
 	return libs, nil
 }
 
-// answer ranks lib's snippet units for query and renders the best within
-// opts' budget, or, with opts.Sections, groups its nearest sections into
-// page results.
+// answer ranks lib's sections for query and renders the best families
+// within opts' budget, or, with opts.Snippets, its best snippet units.
 func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string, opts LocalOptions) Outcome {
 	if !lib.Current() {
 		return Answer("local", nil, outdatedErr(lib))
@@ -236,18 +221,23 @@ func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string,
 		}
 	}
 	var results []Result
-	if opts.Sections {
-		results = l.sectionAnswer(lib, secs, qv, query, opts.Tokens)
-	} else {
+	if opts.Snippets {
 		var keyword []scoredSection
 		if qv == nil {
 			keyword = relevant(rankSections(webSections(secs), query))
 		}
 		results = snippetResults(lib, secs, rankUnits(secs, qv, keyword, query), qv != nil, opts.Tokens, opts.Limit)
+	} else {
+		limit := opts.Limit
+		if limit <= 0 {
+			limit = localMaxResults
+		}
+		results = familyResults(lib, secs, families(secs, fuseRanks(secs, qv, query), limit), query, opts.Tokens)
 	}
 	if len(results) == 0 {
 		return Answer("local", nil, fmt.Errorf("local: nothing in the index of %s matched: %w", lib.Root, ErrNoResults))
 	}
+	showUnder(results, lib)
 	o := Answer("local", results, nil)
 	if note != "" {
 		o.Reason, o.Note = ReasonKeywordRanking, note
@@ -256,20 +246,17 @@ func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string,
 	return o
 }
 
-// sectionAnswer is the grouped page view: the nearest sections, by
-// cosine (or BM25 without a vector), grouped into page results.
-func (l *Local) sectionAnswer(lib docsindex.Library, secs []docsindex.Section, qv []float32, query string, tokens int) []Result {
-	var ranked []scoredSection
-	if qv != nil {
-		ranked = denseRank(secs, qv, query)
-	} else {
-		ranked = relevant(rankSections(webSections(secs), query))
+// showUnder shows a re-rooted current release's results at the
+// unversioned addresses its pages name canonical (Library.DisplayRoot).
+func showUnder(results []Result, lib docsindex.Library) {
+	if lib.DisplayRoot == "" {
+		return
 	}
-	ranked = dedupe(ranked)
-	if len(ranked) > localPageSections {
-		ranked = ranked[:localPageSections]
+	for i, r := range results {
+		if rest, ok := strings.CutPrefix(r.URL, lib.Root); ok {
+			results[i].URL = lib.DisplayRoot + rest
+		}
 	}
-	return pageResults(lib, ranked, query, tokens)
 }
 
 // usableModel is the embedder that can rank lib's vectors, or nil and why
@@ -335,72 +322,6 @@ func webSections(secs []docsindex.Section) []webSection {
 // anchor was settled when it was indexed, so ranking never re-slugs it.
 func webSectionOf(s docsindex.Section, i int) webSection {
 	return webSection{page: i, order: s.Order, pageURL: s.Page, heading: s.Heading, crumbs: s.Crumbs, anchor: s.Anchor, source: anchorFixed, text: s.Text, links: s.Text}
-}
-
-// pageResults groups ranked sections by page, pages in the order of their
-// best section, at most localMaxPages (their best sections among the
-// nearest localPageSections, their other parts among the nearest
-// localTopSections): each page is one result, its best
-// section first under that section's title and address, and its other
-// ranked sections after it as "### heading" parts, best first (as round
-// 3's byPage grouped the web backend's sections). The token budget (about
-// webCharsPerToken bytes a token) is shared fairly among the pages' best
-// sections first, so every page gets room to say what it is, and what is
-// left goes to the other parts in rank order. A section cut to fit keeps
-// its blocks that name the query (trimForQuery).
-func pageResults(lib docsindex.Library, ranked []scoredSection, query string, tokens int) []Result {
-	if tokens <= 0 {
-		tokens = webDefaultTokens
-	}
-	budget := tokens * webCharsPerToken
-	maxPages := min(localMaxPages, max(1, budget/(2*webMinTrimBytes)))
-	var order []string
-	lead := map[string]int{} // page -> index in ranked of its best section
-	for i, s := range ranked {
-		if _, ok := lead[s.pageURL]; !ok && len(order) < maxPages {
-			lead[s.pageURL] = i
-			order = append(order, s.pageURL)
-		}
-	}
-	terms := queryTerms(query)
-	sizes := make([]int, len(order))
-	for i, p := range order {
-		sizes[i] = len(ranked[lead[p]].text)
-	}
-	shares := fairShares(sizes, budget)
-	results := make([]Result, len(order))
-	at := map[string]int{}
-	remaining := budget
-	for i, p := range order {
-		s := ranked[lead[p]]
-		snippet := s.text
-		if len(snippet) > shares[i] {
-			snippet = trimForQuery(snippet, shares[i], terms)
-		}
-		remaining -= len(snippet)
-		at[p] = i
-		results[i] = Result{Library: lib.Root, Version: lib.Version, Title: s.heading, Breadcrumb: strings.Join(s.crumbs, " > "), Snippet: snippet, URL: s.URL(), Source: "local"}
-	}
-	for i, s := range ranked[:min(len(ranked), localTopSections)] {
-		j, kept := at[s.pageURL]
-		if !kept || lead[s.pageURL] == i {
-			continue
-		}
-		head := partHeading(s.heading)
-		room := min(remaining-len(head), budget/4)
-		text := s.text
-		if len(text) > room {
-			if room < webMinTrimBytes {
-				continue
-			}
-			if text = trimForQuery(text, room, terms); text == "" {
-				continue
-			}
-		}
-		results[j].Snippet += head + text
-		remaining -= len(head) + len(text)
-	}
-	return results
 }
 
 // fairShares splits budget among items of the given sizes max-min fairly:
@@ -553,7 +474,7 @@ func versionRank(l docsindex.Library) int {
 	switch {
 	case versionAliasClass[v] == "dev":
 		return 2
-	case v == "" || versionAliasClass[v] == "current" || v == labelCurrent:
+	case v == "" || versionAliasClass[v] == "current" || v == labelCurrent || l.DisplayRoot != "":
 		return 0
 	case l.Requested == "" && rootVersionLabel(webRootOf(l.Root)) == "":
 		return 0 // the docs a site serves as current, labelled with their release
@@ -633,7 +554,54 @@ func matchSpec(libs []docsindex.Library, spec libSpec) []docsindex.Library {
 		// answers only when no indexed library goes by it in full.
 		out = bySecondary
 	}
+	return withProject(libs, out, spec.version)
+}
+
+// withProject adds to found every indexed library of the same project's
+// docs at another version (projectRoot: v18.angular.dev beside
+// angular.dev, /docs/1.4/ beside /docs/2.0/), so a name that one version's
+// index was built by finds the current docs too and newestOf chooses; with
+// a version asked for, only libraries at that version.
+func withProject(libs, found []docsindex.Library, version string) []docsindex.Library {
+	if len(found) == 0 {
+		return found
+	}
+	projects := map[string]bool{}
+	have := map[string]bool{}
+	for _, l := range found {
+		projects[projectRoot(l)] = true
+		have[l.Key] = true
+	}
+	out := found
+	for _, l := range libs {
+		if !have[l.Key] && projects[projectRoot(l)] && (version == "" || versionNames(version, l.Version)) {
+			out = append(out, l)
+		}
+	}
 	return out
+}
+
+// projectRoot is a library's docs root with its version set aside: the
+// host without a version label (v2.vuejs.org is vuejs.org) and the path
+// without version segments (duckdb.org/docs/1.4/ is duckdb.org/docs/).
+func projectRoot(l docsindex.Library) string {
+	r, err := parseWebRoot(l.Root)
+	if err != nil {
+		return l.Root
+	}
+	host := scopeHost(r.u)
+	if first, rest, ok := strings.Cut(host, "."); ok && strings.Contains(rest, ".") {
+		if label, ok := variantLabel(first); ok && strings.ContainsAny(label, "0123456789") {
+			host = rest
+		}
+	}
+	var segs []string
+	for _, seg := range pathSegments(r.prefix) {
+		if _, version := segmentLabel(seg); !version {
+			segs = append(segs, strings.ToLower(seg))
+		}
+	}
+	return host + "/" + strings.Join(segs, "/")
 }
 
 // anyNamed reports whether any of names is a key in keys.

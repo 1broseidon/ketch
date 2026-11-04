@@ -21,7 +21,7 @@ var docsCmd = &cobra.Command{
 	Use:   "docs <query>",
 	Short: "Search library documentation",
 	Long: `Search library documentation using ` + strings.Join(docs.ProviderNames(), ", ") + ` (default: the configured backend). Supports direct library ID lookup and library name resolution. ` +
-		docs.WithLibraryHelp("A library is a library ID from --resolve") + `. Resolve a name once and pass the ID it returns as --library: a name is resolved again on every call. Context7 needs no key: without one it uses Context7's anonymous quota (about 200 requests a month per IP), and a key lifts it. The local backend answers offline from libraries indexed with ketch docs index: code-first snippets, each a heading path, the sentences just before a code block and the code (or a stretch of prose), verbatim from the docs, about 1,200 tokens in all unless --tokens says otherwise; --sections returns about ten page results instead, each a page's best section with its other near sections. A library indexed at several versions answers from the newest unless --library names one (name@version). The auto backend asks the local index first when it holds the library, then tries web, and asks Context7 only when web identifies no library, finds several, or fails; Context7's pick must be a library the query names, and for an ambiguous name one of web's candidates. Output names the provider that answered.`,
+		docs.WithLibraryHelp("A library is a library ID from --resolve") + `. Resolve a name once and pass the ID it returns as --library: a name is resolved again on every call. Context7 needs no key: without one it uses Context7's anonymous quota (about 200 requests a month per IP), and a key lifts it. The local backend answers offline from libraries indexed with ketch docs index: the five nearest sections, verbatim with their code, each a section with the parts of it that matched, trimmed to its lead, its first code block and the blocks naming the query, about 1,800 tokens in all unless --tokens says otherwise; --snippets returns code-first snippets instead, each a heading path, the sentences just before a code block and the code (or a stretch of prose), about 1,200 tokens. A library indexed at several versions answers from the newest unless --library names one (name@version). The auto backend asks the local index first when it holds the library, then tries web, and asks Context7 only when web identifies no library, finds several, or fails; Context7's pick must be a library the query names, and for an ambiguous name one of web's candidates. Output names the provider that answered.`,
 	Args: exitArgs(cobra.MinimumNArgs(1)),
 	RunE: runDocs,
 }
@@ -36,7 +36,7 @@ func init() {
 	docsCmd.Flags().String("tag", "", "record each result under this tag (see `ketch tag`)")
 	docsCmd.PreRunE = validateTagFlag
 	docsCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/library/snippet)")
-	docsCmd.Flags().Bool("sections", false, "local: the nearest sections grouped by page instead of code-first snippets")
+	docsCmd.Flags().Bool("snippets", false, "local: code-first snippets (a code block with the sentences before it) instead of whole sections")
 }
 
 func runDocs(cmd *cobra.Command, args []string) error {
@@ -95,8 +95,7 @@ func runDocs(cmd *cobra.Command, args []string) error {
 		return json.NewEncoder(os.Stdout).Encode(o.Results)
 	}
 
-	sections, _ := cmd.Flags().GetBool("sections")
-	printDocsResults(query, backend, "", o, minimal, sections)
+	printDocsResults(query, backend, "", o, minimal)
 	return nil
 }
 
@@ -105,7 +104,7 @@ func runDocs(cmd *cobra.Command, args []string) error {
 // backends'), so -b local, alone or in auto, picks its own defaults.
 func withLocalDocsOptions(cmd *cobra.Command, tokens, limit int) context.Context {
 	var o docs.LocalOptions
-	o.Sections, _ = cmd.Flags().GetBool("sections")
+	o.Snippets, _ = cmd.Flags().GetBool("snippets")
 	if cmd.Flags().Changed("tokens") {
 		o.Tokens = tokens
 	}
@@ -224,8 +223,7 @@ func runDocsWithLibrary(cmd *cobra.Command, query, library string, tokens, limit
 		return json.NewEncoder(os.Stdout).Encode(o.Results)
 	}
 
-	sections, _ := cmd.Flags().GetBool("sections")
-	printDocsResults(query, backend, library, o, minimal, sections)
+	printDocsResults(query, backend, library, o, minimal)
 	return nil
 }
 
@@ -252,10 +250,10 @@ func noteOnStderr(o docs.Outcome) {
 	}
 }
 
-// printDocsResults prints the results: local snippets as Markdown blocks
-// unless sections asked for the grouped page view, any other results as
-// labelled blocks.
-func printDocsResults(query, backend, library string, o docs.Outcome, minimal, sections bool) {
+// printDocsResults prints the results: the local backend's (sections, or
+// snippets when asked) as Markdown blocks, any other results as labelled
+// blocks.
+func printDocsResults(query, backend, library string, o docs.Outcome, minimal bool) {
 	results := o.Results
 	if minimal {
 		noteOnStderr(o)
@@ -269,9 +267,9 @@ func printDocsResults(query, backend, library string, o docs.Outcome, minimal, s
 	printDocsHeader(query, backend, library, o)
 	fmt.Printf("result_count: %d\n", len(results))
 	fmt.Println("---")
-	if backend == "local" && !sections {
-		// Local snippets read as Markdown: heading path, explanation,
-		// code, source.
+	if backend == "local" {
+		// Local results read as Markdown: heading path, the section's (or
+		// snippet's) text with its code, source.
 		for _, r := range results {
 			fmt.Println(docs.RenderSnippet(r))
 		}

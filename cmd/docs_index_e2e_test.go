@@ -39,34 +39,37 @@ func TestDocsIndexFixtureSitesCLI(t *testing.T) {
 }
 
 // checkLocalTop asserts -b local answers fx's query with fx's section,
-// ranked by keywords and saying so, as snippets by default and as grouped
-// sections with --sections.
+// ranked by keywords and saying so, as sections by default and as
+// code-first snippets with --snippets.
 func checkLocalTop(t *testing.T, site *fixtureSite, fx docsFixture, library string) {
 	t.Helper()
 	code, out, stderr := cli(t, "--json", "docs", "-b", "local", "--library", library, fx.query)
 	if code != 0 {
 		t.Fatalf("docs -b local exited %d: %s", code, stderr)
 	}
-	var results []docsResult
+	var results []struct {
+		docsResult
+		Anchors []string `json:"anchors"`
+	}
 	if err := json.Unmarshal([]byte(out), &results); err != nil || len(results) == 0 {
 		t.Fatalf("results %q: %v", out, err)
 	}
-	if top := results[0]; top.URL != site.URL+fx.page+"#"+fx.anchor || top.Source != "local" || top.Library != library {
-		t.Errorf("top result = %+v, want %s#%s from local", top, fx.page, fx.anchor)
+	if top := results[0]; !strings.HasPrefix(top.URL, site.URL+fx.page) || !slices.Contains(top.Anchors, fx.anchor) || top.Source != "local" || top.Library != library {
+		t.Errorf("top result = %+v, want the section %s#%s from local", top, fx.page, fx.anchor)
 	}
 	if !strings.Contains(stderr, "note: ranked by keywords: this library was indexed without an embedding model") {
 		t.Errorf("stderr should say the answer was ranked by keywords: %q", stderr)
 	}
-	// The text output renders snippets as Markdown; --sections keeps the
-	// grouped page view.
+	// The text output renders results as Markdown, sections and snippets
+	// alike.
 	top := results[0]
 	code, out, stderr = cli(t, "docs", "-b", "local", "--library", library, fx.query)
 	if code != 0 || !strings.Contains(out, "### "+top.Breadcrumb+"\n\n") || !strings.Contains(out, "\n\nsource: "+top.URL+"\n") {
-		t.Errorf("snippet output (exit %d):\n%s%s", code, out, stderr)
+		t.Errorf("section output (exit %d):\n%s%s", code, out, stderr)
 	}
-	code, out, _ = cli(t, "docs", "-b", "local", "--sections", "--library", library, fx.query)
-	if code != 0 || !strings.Contains(out, "---\n[") || !strings.Contains(out, "\n  source: ") {
-		t.Errorf("--sections output (exit %d):\n%s", code, out)
+	code, out, _ = cli(t, "docs", "-b", "local", "--snippets", "--library", library, fx.query)
+	if code != 0 || !strings.Contains(out, "\n\nsource: "+site.URL+fx.page) {
+		t.Errorf("--snippets output (exit %d):\n%s", code, out)
 	}
 }
 
