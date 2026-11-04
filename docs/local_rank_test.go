@@ -1,6 +1,7 @@
 package docs
 
 import (
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -73,8 +74,8 @@ func TestFamiliesPerPage(t *testing.T) {
 	}
 }
 
-// Fusion puts a section the keywords name exactly ahead of one only near
-// by cosine, and leaves a later version's section out of the keyword
+// Fusion puts a section the keywords rank first ahead of one only near
+// by cosine, and demotes a later version's section in the cosine
 // ranking unless the question asks about it.
 func TestFuseRanks(t *testing.T) {
 	near, far := []float32{1, 0}, []float32{0.8, 0.6}
@@ -83,16 +84,49 @@ func TestFuseRanks(t *testing.T) {
 		{Page: "https://x.test/b", Heading: "Retries", Crumbs: []string{"Retries"}, Text: "Set max_retries to retry failed requests.", Vectors: [][]float32{far}},
 		{Page: "https://x.test/c", Heading: "Retries in v5", Crumbs: []string{"Migrating to v5", "Retries in v5"}, Text: "Retry failed requests with max_retries.", CrossVersion: "5", Vectors: [][]float32{far}},
 	}
-	got := fuseRanks(secs, []float32{1, 0}, "retry failed requests max_retries")
+	got := fuseRanks(secs, []float32{1, 0}, []int{1}, "retry failed requests max_retries")
 	if got[0].sec != 1 {
 		t.Errorf("fused order = %+v", got)
 	}
 	if got[len(got)-1].sec != 2 {
 		t.Errorf("the later version's section should rank last: %+v", got)
 	}
-	kw := fuseRanks(secs, nil, "retry failed requests max_retries")
-	if len(kw) == 0 || kw[0].sec != 1 && kw[0].sec != 2 || kw[0].score != 1 {
-		t.Errorf("keyword-only order = %+v", kw)
+}
+
+// The keyword ranking over the full-text table puts the section naming
+// the question's identifier first, leaves a later version's section out
+// unless asked, and finds an identifier by its words.
+func TestKeywordRank(t *testing.T) {
+	store := OpenIndex(filepath.Join(t.TempDir(), "docs-index.db"))
+	const root = "https://x.test/"
+	pages := []docsindex.PageData{
+		{Page: docsindex.Page{URL: root + "a", Hash: "a"}, Sections: []docsindex.Section{{Order: 0, Heading: "Overview", Crumbs: []string{"Overview"}, Text: "General words about the library and requests."}}},
+		{Page: docsindex.Page{URL: root + "b", Hash: "b"}, Sections: []docsindex.Section{{Order: 0, Heading: "Retries", Crumbs: []string{"Retries"}, Text: "Set `max_retries` to retry failed requests."}}},
+		{Page: docsindex.Page{URL: root + "c", Hash: "c"}, Sections: []docsindex.Section{{Order: 0, Heading: "Retries in v5", Crumbs: []string{"Migrating to v5", "Retries in v5"}, Text: "Retry failed requests with max_retries.", CrossVersion: "5"}}},
+		{Page: docsindex.Page{URL: root + "d", Hash: "d"}, Sections: []docsindex.Section{{Order: 0, Heading: "Forms", Crumbs: []string{"Forms"}, Text: "Call `form.validateField('name')` to check one field."}}},
+	}
+	if err := store.PutPages(root, pages); err != nil {
+		t.Fatal(err)
+	}
+	lib := docsindex.Library{Key: root, Root: root, Format: docsindex.FormatVersion}
+	if err := store.PutLibrary(lib); err != nil {
+		t.Fatal(err)
+	}
+	l := NewLocal(store, nil)
+	secs, ranked, err := l.keywordRank(lib, "retry failed requests max_retries", true)
+	if err != nil || len(ranked) == 0 || secs[ranked[0].sec].Page != root+"b" || ranked[0].score != 1 {
+		t.Fatalf("ranked = %+v %v", ranked, err)
+	}
+	for _, r := range ranked {
+		if secs[r.sec].Page == root+"c" {
+			t.Errorf("the later version's section ranked: %+v", ranked)
+		}
+	}
+	for _, q := range []string{"validateField", "validate field", "form.validateField"} {
+		secs, ranked, err := l.keywordRank(lib, q, true)
+		if err != nil || len(ranked) == 0 || secs[ranked[0].sec].Page != root+"d" {
+			t.Errorf("%q: ranked = %+v %v", q, ranked, err)
+		}
 	}
 }
 

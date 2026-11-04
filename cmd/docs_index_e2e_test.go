@@ -11,9 +11,9 @@ import (
 // The local docs index end to end, through the built binary, the real
 // scrape pipeline and page cache: each fixture site is indexed with docs
 // index, then answered offline by -b local with the section the web
-// backend finds for the same query. The isolated home has no embedding
-// model, so the text is indexed alone and ranked by keywords, and the
-// answer says so.
+// backend finds for the same query. Hybrid ranking is off by default,
+// so the text is indexed alone, no model runs, and the answer is ranked
+// by keywords over the full-text table without a note saying so.
 func TestDocsIndexFixtureSitesCLI(t *testing.T) {
 	for _, name := range slices.Sorted(maps.Keys(docsFixtures)) {
 		fx := docsFixtures[name]
@@ -23,7 +23,7 @@ func TestDocsIndexFixtureSitesCLI(t *testing.T) {
 			library := site.URL + fx.root
 
 			code, out, stderr := cli(t, "docs", "index", library)
-			if code != 0 || !strings.Contains(out, library) || !strings.Contains(stderr, "indexing text only") {
+			if code != 0 || !strings.Contains(out, library) || strings.Contains(stderr, "embed") || strings.Contains(out, "vectors") {
 				t.Fatalf("docs index exited %d\nstdout: %s\nstderr: %s", code, out, stderr)
 			}
 			checkIndexScope(t, site, fx)
@@ -40,7 +40,7 @@ func TestDocsIndexFixtureSitesCLI(t *testing.T) {
 }
 
 // checkLocalTop asserts -b local answers fx's query with fx's section,
-// ranked by keywords and saying so, as sections by default and as
+// ranked by keywords (the default, unremarked), as sections by default and as
 // code-first snippets with --snippets.
 func checkLocalTop(t *testing.T, site *fixtureSite, fx docsFixture, library string) {
 	t.Helper()
@@ -58,8 +58,8 @@ func checkLocalTop(t *testing.T, site *fixtureSite, fx docsFixture, library stri
 	if top := results[0]; !strings.HasPrefix(top.URL, site.URL+fx.page) || !slices.Contains(top.Anchors, fx.anchor) || top.Source != "local" || top.Library != library {
 		t.Errorf("top result = %+v, want the section %s#%s from local", top, fx.page, fx.anchor)
 	}
-	if !strings.Contains(stderr, "note: ranked by keywords: this library was indexed without an embedding model") {
-		t.Errorf("stderr should say the answer was ranked by keywords: %q", stderr)
+	if strings.Contains(stderr, "ranked by keywords") {
+		t.Errorf("keyword ranking is the default, not a note: %q", stderr)
 	}
 	// The text output renders results as Markdown, sections and snippets
 	// alike.

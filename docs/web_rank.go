@@ -766,27 +766,38 @@ func rankSections(sections []webSection, query string) []scoredSection {
 		if matched == 0 || !c.own[i] {
 			continue // matched by its breadcrumbs alone: every section of the page would be
 		}
-		score *= 0.5 + 0.5*float64(matched)/float64(len(terms))
-		// A section, or a page, titled exactly the query is about it; BM25
-		// alone favours short pages that merely mention every term.
-		switch {
-		case exactTerms(s.heading, terms):
-			score *= 2
-		case len(s.crumbs) > 0 && exactTerms(s.crumbs[0], terms):
-			score *= 1.25
-		}
-		if s.anchor == "" && len(s.crumbs) == 1 {
-			// A page's lead says what the page is about: the closer its
-			// title to the query, the likelier the lead is the answer.
-			score *= 1 + webLeadBoost*titleCoverage(s.heading, terms)
-		}
-		score *= 1 + entryMatch(s.heading, terms, idents, howTo)
-		score *= 1 + webCodeBoost*codeCoverage(s.text, terms)
-		score *= 1 + webPhraseBoost*c.phrases(i, terms)
+		score *= sectionBoost(s, terms, idents, howTo, matched, c.seq[i])
 		out = append(out, scoredSection{webSection: s, score: score})
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].score > out[j].score })
 	return out
+}
+
+// sectionBoost is what multiplies a section's keyword score beyond BM25:
+// the share of the query's terms it names (matched of them), a heading or
+// page title that is exactly the query, a page lead whose title covers
+// it, an API entry the query names, the query's terms in its code, and
+// the query's words side by side in it (seq: its heading then body
+// tokens, rankTokens).
+func sectionBoost(s webSection, terms, idents []string, howTo bool, matched int, seq []string) float64 {
+	b := 0.5 + 0.5*float64(matched)/float64(len(terms))
+	// A section, or a page, titled exactly the query is about it; BM25
+	// alone favours short pages that merely mention every term.
+	switch {
+	case exactTerms(s.heading, terms):
+		b *= 2
+	case len(s.crumbs) > 0 && exactTerms(s.crumbs[0], terms):
+		b *= 1.25
+	}
+	if s.anchor == "" && len(s.crumbs) == 1 {
+		// A page's lead says what the page is about: the closer its
+		// title to the query, the likelier the lead is the answer.
+		b *= 1 + webLeadBoost*titleCoverage(s.heading, terms)
+	}
+	b *= 1 + entryMatch(s.heading, terms, idents, howTo)
+	b *= 1 + webCodeBoost*codeCoverage(s.text, terms)
+	b *= 1 + webPhraseBoost*phraseShare(seq, terms)
+	return b
 }
 
 // entryMatch is the boost for a section headed by the API entry a query
@@ -863,16 +874,16 @@ func isHowTo(query string) bool {
 // every pair of consecutive query terms appears together in it.
 const webPhraseBoost = 0.25
 
-// phrases is the share of consecutive query-term pairs ("share state",
-// "url prefix") that section i's heading or body has within two words of
+// phraseShare is the share of consecutive query-term pairs ("share state",
+// "url prefix") that a section's heading or body (seq) has within two words of
 // each other, in order: terms that occur together are about one thing,
 // where scattered occurrences may not be.
-func (c sectionCorpus) phrases(i int, terms []string) float64 {
+func phraseShare(seq, terms []string) float64 {
 	if len(terms) < 2 {
 		return 0
 	}
 	pos := map[string][]int{}
-	for j, t := range c.seq[i] {
+	for j, t := range seq {
 		pos[t] = append(pos[t], j)
 	}
 	n := 0

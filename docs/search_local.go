@@ -13,11 +13,13 @@ import (
 
 // When the local index answers a search-first question without
 // searching: the request names a library indexed in full (by
-// `docs index`, not by search), as -b local would answer; or a stored
-// section is close to the question (its best window's cosine at least
-// localFloor), from the library holding it. A library a search built
-// holds only the pages earlier questions read, so naming it is not
-// enough: its sections must answer.
+// `docs index`, not by search), as -b local would answer; or the same
+// question (its terms, sfAskedOverlap) was answered before from a
+// library; or, under hybrid ranking only, a stored section is close to
+// the question (its best window's cosine at least localFloor), from the
+// library holding it. A library a search built holds only the pages
+// earlier questions read, so naming it is not enough: its sections must
+// answer, and keywords alone cannot say that they do.
 
 // fromIndex answers from the local index when it covers the request.
 func (s *SearchFirst) fromIndex(ctx context.Context, req sfRequest, tr *sfTrace) (Outcome, bool) {
@@ -41,12 +43,8 @@ func (s *SearchFirst) fromIndex(ctx context.Context, req sfRequest, tr *sfTrace)
 		cands = MatchIndexed(libs, req.library)
 	}
 	qv := s.queryVector(ctx, req.query)
-	if lib, cos, ok := askedBefore(libs, req.library, qv); ok {
-		tr.askedCos, tr.local = cos, lib.Root
-		if cos >= sfAskedFloor {
-			o := s.local.answer(ctx, lib, req.query, req.opts)
-			return o, o.Status == Answered || o.Status == Partial
-		}
+	if o, ok := s.fromAsked(ctx, libs, req, qv, tr); ok {
+		return o, true
 	}
 	lib, cos, ok := s.closest(ctx, cands, qv)
 	tr.localCos = cos
@@ -54,6 +52,21 @@ func (s *SearchFirst) fromIndex(ctx context.Context, req sfRequest, tr *sfTrace)
 		tr.local = lib.Root
 	}
 	if !ok || cos < s.localFloor {
+		return Outcome{}, false
+	}
+	o := s.local.answer(ctx, lib, req.query, req.opts)
+	return o, o.Status == Answered || o.Status == Partial
+}
+
+// fromAsked answers from the library the same question was answered
+// from before (askedBefore), when it was.
+func (s *SearchFirst) fromAsked(ctx context.Context, libs []docsindex.Library, req sfRequest, qv []float32, tr *sfTrace) (Outcome, bool) {
+	lib, sim, ok := askedBefore(libs, req.library, req.query, qv)
+	if !ok {
+		return Outcome{}, false
+	}
+	tr.askedCos, tr.local = sim, lib.Root
+	if qv == nil && sim < sfAskedOverlap || qv != nil && sim < sfAskedFloor {
 		return Outcome{}, false
 	}
 	o := s.local.answer(ctx, lib, req.query, req.opts)
@@ -71,8 +84,14 @@ func (s *SearchFirst) named(full []docsindex.Library, req sfRequest) []docsindex
 }
 
 // sfAskedFloor is the cosine between two questions above which they are
-// one question in other words (a repeat is 1).
+// one question in other words (a repeat is 1): hybrid ranking only.
 const sfAskedFloor = 0.92
+
+// sfAskedOverlap is the share of their terms (normalized as the ranking
+// normalizes them: no stopwords, inflections folded) two questions must
+// have in common to be one: "how do I configure X" and "configuring X"
+// are one, a question about another part of the same site is not.
+const sfAskedOverlap = 0.8
 
 // queryVector embeds the question with the installed model; nil without
 // one.
@@ -100,40 +119,78 @@ func (s *SearchFirst) model() embed.Embedder {
 	return emb
 }
 
-// askedBefore is the library a question closest to qv was answered
-// from, among those asked of the same library value (none for a bare
-// question), and the two questions' cosine.
-func askedBefore(libs []docsindex.Library, library string, qv []float32) (docsindex.Library, float64, bool) {
+// askedBefore is the library the question closest to this one was
+// answered from, among those asked of the same library value (none for
+// a bare question), and how close: with a query vector the two
+// questions' cosine, else the overlap of their terms (termOverlap).
+func askedBefore(libs []docsindex.Library, library, query string, qv []float32) (docsindex.Library, float64, bool) {
 	var best docsindex.Library
-	bestCos, found := float32(0), false
+	bestSim, found := 0.0, false
+	terms := queryTerms(query)
 	for _, l := range libs {
 		for _, a := range l.Asked {
 			if a.Library != library {
 				continue
 			}
-			v := embed.FromHalf(nil, a.Vector)
-			if len(v) != len(qv) || len(v) == 0 {
-				continue
+			var sim float64
+			if qv != nil {
+				v := embed.FromHalf(nil, a.Vector)
+				if len(v) != len(qv) || len(v) == 0 {
+					continue
+				}
+				sim = float64(embed.Dot(v, qv))
+			} else {
+				sim = termOverlap(terms, queryTerms(a.Question))
 			}
-			if c := embed.Dot(v, qv); !found || c > bestCos {
-				best, bestCos, found = l, c, true
+			if !found || sim > bestSim {
+				best, bestSim, found = l, sim, true
 			}
 		}
 	}
-	return best, float64(bestCos), found
+	return best, bestSim, found
+}
+
+// termOverlap is the Jaccard overlap of two term lists.
+func termOverlap(a, b []string) float64 {
+	if len(a) == 0 || len(b) == 0 {
+		return 0
+	}
+	set := map[string]bool{}
+	for _, t := range a {
+		set[t] = true
+	}
+	both := 0
+	union := len(set)
+	seen := map[string]bool{}
+	for _, t := range b {
+		if seen[t] {
+			continue
+		}
+		seen[t] = true
+		if set[t] {
+			both++
+		} else {
+			union++
+		}
+	}
+	return float64(both) / float64(union)
 }
 
 // remember records the question as answered from the library (its last
-// MaxAsked questions).
+// MaxAsked questions), with its vector under hybrid ranking.
 func (s *SearchFirst) remember(lib docsindex.Library, library, query string, qv []float32) {
-	if s.local.store == nil || len(qv) == 0 || len(qv) != lib.Dims {
+	if s.local.store == nil {
 		return
 	}
 	stored, found, err := s.local.store.Library(lib.Key)
 	if err != nil || !found {
 		return
 	}
-	stored.Asked = append(stored.Asked, docsindex.Asked{Question: query, Library: library, Vector: embed.AppendHalf(nil, qv)})
+	a := docsindex.Asked{Question: query, Library: library}
+	if len(qv) > 0 && len(qv) == lib.Dims {
+		a.Vector = embed.AppendHalf(nil, qv)
+	}
+	stored.Asked = append(stored.Asked, a)
 	if n := len(stored.Asked); n > docsindex.MaxAsked {
 		stored.Asked = stored.Asked[n-docsindex.MaxAsked:]
 	}

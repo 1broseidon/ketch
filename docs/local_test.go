@@ -132,7 +132,7 @@ func storedURLs(t *testing.T, store *docsindex.Store) []string {
 }
 
 func newStore(t *testing.T) *docsindex.Store {
-	return docsindex.Open(filepath.Join(t.TempDir(), "docs-index.db"))
+	return OpenIndex(filepath.Join(t.TempDir(), "docs-index.db"))
 }
 
 // A build indexes the root's pages in its locale and version: other

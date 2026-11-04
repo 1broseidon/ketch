@@ -22,7 +22,7 @@ const secRoot = "https://docs.example.test/docs/"
 // big for a small budget.
 func sectionLocal(t *testing.T, display string) *Local {
 	t.Helper()
-	store := docsindex.Open(filepath.Join(t.TempDir(), "docs-index.db"))
+	store := OpenIndex(filepath.Join(t.TempDir(), "docs-index.db"))
 	filler := strings.Repeat("Unrelated prose about the history of the project and its many contributors. ", 30)
 	code := func(s string) string { return "```js\n" + s + "\n```" }
 	var long []string

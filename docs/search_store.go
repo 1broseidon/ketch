@@ -15,10 +15,10 @@ import (
 // root (an indexed library, or one a search built), or a new library at
 // that root, marked as built by search (Resolved "search": the local
 // backend answers from it as partial). Nothing is removed: a library
-// built by search only grows. Embedding is budgeted per question: the
-// sections without vectors that the question's words rank first get
-// their first windows embedded (sfEmbedWindows in all), so the cost of a
-// cold question stays in seconds, and every later question that ranks
+// built by search only grows. Nothing is embedded unless hybrid ranking
+// is on; then embedding is budgeted per question: the sections without
+// vectors that the question's words rank first get their first windows
+// embedded (sfEmbedWindows in all), and every later question that ranks
 // other sections embeds those.
 
 // resolvedBySearch is a library's Resolved when the search-first backend
@@ -45,18 +45,18 @@ func (s *SearchFirst) keep(ctx context.Context, site sfSite, prof *siteProfile, 
 	if err != nil {
 		return lib, st, err
 	}
-	b := &indexBuild{store: store, key: lib.Key, version: lib.Version, title: lib.Title}
+	b := &indexBuild{store: store, key: lib.Key, version: lib.Version, title: lib.Title, source: resolvedBySearch}
 	var report IndexReport
 	todo := b.diff(pages, stored, &report)
 	st.newPages, st.changed, st.unchanged = report.New, report.Changed, report.Unchanged
 	if err := putPageBatches(store, lib.Key, todo); err != nil {
 		return lib, st, err
 	}
-	secs, err := store.Sections(lib.Key, lib.Dims, true)
-	if err != nil {
-		return lib, st, err
-	}
+	var secs []docsindex.Section
 	if emb != nil {
+		if secs, err = store.Sections(lib.Key, lib.Dims, true); err != nil {
+			return lib, st, err
+		}
 		start := time.Now()
 		if st.embedded, err = embedSome(ctx, emb, store, lib.Key, secs, query, s.embedWindows); err != nil {
 			return lib, st, err
@@ -199,16 +199,20 @@ func embedOrder(sub []docsindex.Section, bare []int, query string) []int {
 }
 
 // withCounts is the library with its stored totals: pages, sections,
-// vectors, units.
+// vectors, units; the vectors counted from secs (every section, read
+// with its vectors) when there are any, the rest from the pages' counts.
 func withCounts(store *docsindex.Store, lib docsindex.Library, secs []docsindex.Section) (docsindex.Library, error) {
 	pages, err := store.Pages(lib.Key)
 	if err != nil {
 		return lib, err
 	}
-	lib.Pages, lib.Sections, lib.Vectors, lib.Units = len(pages), len(secs), 0, 0
+	lib.Pages, lib.Sections, lib.Vectors, lib.Units = len(pages), 0, 0, 0
+	for _, p := range pages {
+		lib.Sections += p.Sections
+		lib.Units += p.Units
+	}
 	for _, s := range secs {
 		lib.Vectors += len(s.Vectors)
-		lib.Units += len(s.Units)
 	}
 	lib.Built = time.Now().UTC()
 	if lib.Resolved == resolvedBySearch {

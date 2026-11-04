@@ -464,6 +464,8 @@ type indexBuild struct {
 	// version and title are the indexed version's label and the library's
 	// title, which label cross-version sections (crossVersion).
 	version, title string
+	// source is how the pages came in: "index" (a build) or "search".
+	source string
 
 	prev        docsindex.Library // the library as stored before, if it was
 	model       string
@@ -498,7 +500,11 @@ func (b *indexBuild) write(ctx context.Context, pages []webPage, failed []string
 	}
 	report.Removed, report.Failed = len(gone), len(failed)
 	report.Library.Pages = len(pages) + len(failed) - countMissing(failed, stored)
-	b.say("stored %d pages: %d new, %d changed, %d unchanged, %d removed; %d windows embedded", len(pages), report.New, report.Changed, report.Unchanged, report.Removed, report.Embedded)
+	embedded := ""
+	if b.emb != nil {
+		embedded = fmt.Sprintf("; %d windows embedded", report.Embedded)
+	}
+	b.say("stored %d pages: %d new, %d changed, %d unchanged, %d removed%s", len(pages), report.New, report.Changed, report.Unchanged, report.Removed, embedded)
 	return report, nil
 }
 
@@ -610,7 +616,11 @@ func countMissing(failed []string, stored map[string]docsindex.Page) int {
 // path names a migration to a later major labels every section; a page
 // that does not, the sections whose own headings do.
 func (b *indexBuild) pageData(p webPage, hash string, secs []webSection) docsindex.PageData {
-	pd := docsindex.PageData{Page: docsindex.Page{URL: p.URL, Title: p.Title, Hash: hash, Sections: len(secs)}}
+	source := b.source
+	if source == "" {
+		source = "index"
+	}
+	pd := docsindex.PageData{Page: docsindex.Page{URL: p.URL, Title: p.Title, Hash: hash, Sections: len(secs), Version: b.version, Fetched: time.Now().UTC(), Source: source}}
 	pageTexts := []string{p.Title, pathWords(p.URL, b.key)}
 	for i, s := range secs {
 		units := extractUnits(s.text)

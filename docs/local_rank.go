@@ -61,35 +61,18 @@ type rankedSection struct {
 	score float64
 }
 
-// fuseRanks ranks secs for the query: by reciprocal rank fusion of cosine
-// (when qv is set) and BM25, or by BM25 alone (scores relative to the
-// best, the relevant ones only) without a vector. A section about a later
-// version than indexed is demoted in the cosine ranking and left out of
-// the keyword one unless the question asks about it.
-func fuseRanks(secs []docsindex.Section, qv []float32, query string) []rankedSection {
-	keyword := rankSections(webSections(secs), query)
-	if qv == nil {
-		keyword = relevant(keyword)
-		var out []rankedSection
-		for _, k := range keyword {
-			if k.score > 0 {
-				out = append(out, rankedSection{sec: k.page, score: k.score / keyword[0].score})
-			}
-		}
-		return out
-	}
+// fuseRanks ranks secs for the query by reciprocal rank fusion of
+// cosine (qv) and the keyword ranking (keyword: indices into secs, best
+// first, from the full-text table). A section about a later version than
+// indexed is demoted in the cosine ranking (the keyword one already
+// leaves it out unless the question asks about it).
+func fuseRanks(secs []docsindex.Section, qv []float32, keyword []int, query string) []rankedSection {
 	score := map[int]float64{}
 	for r, d := range denseRank(secs, qv, query) {
 		score[d.page] += 1 / float64(localRRFK+r+1)
 	}
-	r := 0
-	for _, k := range keyword {
-		s := secs[k.page]
-		if s.CrossVersion != "" && !asksAbout(query, s.CrossVersion) {
-			continue
-		}
-		r++
-		score[k.page] += 1 / float64(localRRFK+r)
+	for r, i := range keyword {
+		score[i] += 1 / float64(localRRFK+r+1)
 	}
 	out := make([]rankedSection, 0, len(score))
 	for i, sc := range score {

@@ -130,7 +130,7 @@ func TestWebPhraseAdjacency(t *testing.T) {
 	}
 	terms := queryTerms("share state")
 	c := newSectionCorpus(sections, terms)
-	if a, b := c.phrases(0, terms), c.phrases(1, terms); a != 1 || b != 0 {
+	if a, b := phraseShare(c.seq[0], terms), phraseShare(c.seq[1], terms); a != 1 || b != 0 {
 		t.Errorf("phrases = %v, %v; want 1 for the adjacent pair, 0 for the scattered one", a, b)
 	}
 }

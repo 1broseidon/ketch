@@ -1,13 +1,15 @@
 package docsindex
 
 import (
+	"database/sql"
+	"errors"
+	"os"
 	"path/filepath"
 	"slices"
 	"testing"
 	"time"
 
 	"github.com/1broseidon/ketch/internal/embed"
-	bolt "go.etcd.io/bbolt"
 )
 
 func unit(dims int, hot int) []float32 {
@@ -132,11 +134,102 @@ func TestStoreOpensPerOperation(t *testing.T) {
 	if err := s.PutLibrary(Library{Key: "k", Format: FormatVersion}); err != nil {
 		t.Fatal(err)
 	}
-	db, err := bolt.Open(path, 0o600, &bolt.Options{Timeout: 100 * time.Millisecond})
+	db, err := sql.Open("sqlite", "file:"+path+"?_pragma=busy_timeout(0)")
 	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if _, err := db.Exec("BEGIN EXCLUSIVE; COMMIT"); err != nil {
 		t.Fatalf("the file stayed locked after the write: %v", err)
 	}
-	_ = db.Close()
+}
+
+// A file that is not SQLite (an earlier ketch's bbolt index) is refused
+// with ErrNotSQLite, never overwritten.
+func TestStoreRefusesOtherFiles(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "docs-index.db")
+	if err := os.WriteFile(path, []byte("\x00\x00\x00\x00bolt-ish page header, not sqlite"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	s := Open(path)
+	if _, err := s.Libraries(); !errors.Is(err, ErrNotSQLite) {
+		t.Errorf("Libraries = %v", err)
+	}
+	if err := s.PutLibrary(Library{Key: "k", Format: FormatVersion}); !errors.Is(err, ErrNotSQLite) {
+		t.Errorf("PutLibrary = %v", err)
+	}
+}
+
+// A note names an earlier ketch's bbolt index beside the default file.
+func TestLegacyNote(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, DefaultFile)
+	if n := LegacyNote(path); n != "" {
+		t.Errorf("no legacy file: %q", n)
+	}
+	if err := os.WriteFile(filepath.Join(dir, LegacyFile), []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if n := LegacyNote(path); n == "" {
+		t.Error("legacy file not noted")
+	}
+	if n := LegacyNote(filepath.Join(dir, "other.sqlite")); n != "" {
+		t.Errorf("a path set by the operator is not the default: %q", n)
+	}
+}
+
+type upperTokens struct{ v string }
+
+func (u upperTokens) Version() string { return u.v }
+func (u upperTokens) Row(s Section) [4]string {
+	return [4]string{s.Heading, "", "ident" + s.Heading, s.Text}
+}
+
+// Full-text search finds sections by the tokenizer's rows, in every
+// column.
+func TestStoreSearchAndRebuild(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "docs-index.db")
+	s := Open(path, upperTokens{"v1"})
+	seed(t, s)
+	hits, err := s.Search(testKey, "intro OR second", []float64{1, 1, 1, 1}, 10)
+	if err != nil || len(hits) != 2 {
+		t.Fatalf("Search = %+v %v", hits, err)
+	}
+	hits, err = s.Search(testKey, "identtwo", []float64{1, 1, 1, 1}, 10)
+	if err != nil || len(hits) != 1 {
+		t.Fatalf("ident column = %+v %v", hits, err)
+	}
+	secs, err := s.SectionsByID([]int64{hits[0].ID})
+	if err != nil || len(secs) != 1 || secs[0].Anchor != "two" {
+		t.Fatalf("SectionsByID = %+v %v", secs, err)
+	}
+}
+
+// A tokenizer change rebuilds a library's full-text rows from its stored
+// sections, once.
+func TestStoreFTSRebuild(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "docs-index.db")
+	s := Open(path, upperTokens{"v1"})
+	seed(t, s)
+	if ok, err := s.FTSCurrent(testKey); err != nil || !ok {
+		t.Fatalf("FTSCurrent = %v %v", ok, err)
+	}
+	s2 := Open(path, upperTokens{"v2"})
+	if ok, _ := s2.FTSCurrent(testKey); ok {
+		t.Fatal("another tokenizer's rows read as current")
+	}
+	if rebuilt, err := s2.EnsureFTS(testKey); err != nil || !rebuilt {
+		t.Fatalf("EnsureFTS = %v %v", rebuilt, err)
+	}
+	if rebuilt, _ := s2.EnsureFTS(testKey); rebuilt {
+		t.Error("rebuilt twice")
+	}
+	if hits, _ := s2.Search(testKey, "identb", []float64{1, 1, 1, 1}, 10); len(hits) != 1 {
+		t.Errorf("after rebuild = %+v", hits)
+	}
+	if secs, _ := s2.SectionsOfPages(testKey, []string{testKey + "b", testKey + "a"}); len(secs) != 3 || secs[0].Page != testKey+"a" {
+		t.Errorf("SectionsOfPages = %+v", secs)
+	}
 }
 
 // PageSections reads one page's sections in order, and none for a page the
