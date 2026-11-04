@@ -26,7 +26,8 @@ func normalizeCodeBlocks(rawHTML string) string {
 		if language := codeLanguage(pre); language != "" {
 			code.Attr = []html.Attribute{{Key: "class", Val: language}}
 		}
-		code.AppendChild(&html.Node{Type: html.TextNode, Data: text.String()})
+		// A copy button's container before the code is an empty line.
+		code.AppendChild(&html.Node{Type: html.TextNode, Data: strings.TrimLeft(text.String(), "\n")})
 		pre.Empty()
 		pre.Nodes[0].AppendChild(code)
 	})
