@@ -85,7 +85,7 @@ func (e *Extractor) Extract(pageURL, html string) (*Result, error) {
 	if err == nil {
 		var buf bytes.Buffer
 		if renderErr := article.RenderHTML(&buf); renderErr == nil {
-			markdown, convErr := markdownConverter.ConvertString(buf.String())
+			markdown, convErr := toMarkdown(buf.String())
 			markdown = strings.TrimSpace(markdown)
 			if convErr == nil && markdown != "" {
 				if raw, ok := rawTableFallback(baseURL, html, buf.String()); ok {
@@ -209,7 +209,7 @@ func maxCols(t *goquery.Selection) int {
 func extractRaw(baseURL, html string) (*Result, error) {
 	title := Title(html)
 
-	markdown, err := markdownConverter.ConvertString(normalizeCodeBlocks(html), converter.WithDomain(baseURL))
+	markdown, err := toMarkdown(normalizeCodeBlocks(html), converter.WithDomain(baseURL))
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +273,7 @@ func ExtractSelectorWithURL(pageURL, rawHTML, selector string) (string, error) {
 	}
 
 	html := normalizeCodeBlocks(stripDataURIs(strings.Join(parts, "\n\n")))
-	markdown, err := markdownConverter.ConvertString(html)
+	markdown, err := toMarkdown(html)
 	if err != nil {
 		return "", err
 	}

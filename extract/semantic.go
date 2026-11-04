@@ -89,7 +89,7 @@ func semanticExtract(rawHTML, baseURL string, mode Mode) (*Result, bool) {
 		return nil, false
 	}
 	// The document was normalized before parsing; the root is a subtree of it.
-	markdown, err := markdownConverter.ConvertString(outer, converter.WithDomain(baseURL))
+	markdown, err := toMarkdown(outer, converter.WithDomain(baseURL))
 	if err != nil {
 		return nil, false
 	}
