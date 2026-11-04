@@ -122,5 +122,12 @@
     "status": "ok",
     "detail": "keyless; reads the docs site passed as the library",
     "latency_ms": 0
+  },
+  {
+    "surface": "docs",
+    "backend": "search",
+    "status": "ok",
+    "detail": "keyless: web search, then the docs site it finds, kept in the local index",
+    "latency_ms": 0
   }
 ]
