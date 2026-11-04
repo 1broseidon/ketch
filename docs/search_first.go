@@ -235,7 +235,6 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 	sites := chooseSites(docs, prefs)
 	tr.cands = siteList(sites)
 	var o Outcome
-	domains := 0
 	for range sfMaxReads {
 		var site sfSite
 		var prof *siteProfile
@@ -247,7 +246,7 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 			return s.failed(ctx, cctx, err)
 		}
 		if !site.retry {
-			domains++
+			tr.domains++
 		}
 		o = s.readSite(ctx, cctx, site, prof, req, tr)
 		if o.Status == Partial || cctx.Err() != nil {
@@ -262,7 +261,7 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 			sites = append([]sfSite{next}, sites...)
 			continue
 		}
-		if o.Reason == reasonDisallowed || len(sites) == 0 || domains >= sfMaxSites {
+		if o.Reason == reasonDisallowed || len(sites) == 0 || tr.domains >= sfMaxSites {
 			return o // a site that closes its docs to robots is still the site
 		}
 	}
@@ -301,10 +300,10 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 	qv := s.queryVector(ctx, req.query)
 	_, tr.answerCos, _ = s.closest(ctx, []docsindex.Library{lib}, qv)
 	o := s.local.rank(ctx, lib, req.query, req.opts)
-	if o.Status == Answered && tr.sites == 1 {
-		// Only the first site read is remembered: a fallback's answer, read
-		// because the site the hits agreed on gave nothing, is a guess the
-		// next search may do better than.
+	if o.Status == Answered && tr.domains == 1 {
+		// Only the first site read is remembered (any of its docs trees): a
+		// fallback site's answer, read because the one the hits agreed on
+		// gave nothing, is a guess the next search may do better than.
 		s.remember(lib, req.library, req.query, qv)
 	}
 	return searchAnswered(o, lib, len(pages), st)

@@ -256,6 +256,7 @@ type sfTrace struct {
 	path, local, site, cands                                  string
 	localCos, answerCos, askedCos                             float64
 	hits, docsHits, siteHits, sites, planned, fetched, failed int
+	domains                                                   int // the sites (domains) read; sites counts docs trees
 	stored                                                    sfStored
 }
 

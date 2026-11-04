@@ -180,3 +180,22 @@ func TestSearchFirstTriesTheDomainsNextTree(t *testing.T) {
 		t.Fatalf("outcome %s (%v), results %+v; want the example.test docs tree", o.Status, o.Err(), o.Results)
 	}
 }
+
+// A remembered question answers only the same question: a more specific
+// follow-up (one more term) is searched.
+func TestSearchFirstMemoryNeedsTheSameTerms(t *testing.T) {
+	s, _, searches, _ := searchFirstOver(t, exampleSite(), exampleHits())
+	s.localFloor = 2
+	s.local.model = nil // keywords only: questions compared by their terms
+	if o := s.SearchSelect(context.Background(), "add logger middleware to a route", 0); o.Status != Partial {
+		t.Fatalf("first answer = %s (%v)", o.Status, o.Err())
+	}
+	before := searches.Load()
+	if s.SearchSelect(context.Background(), "how do I add logger middleware to a route?", 0); searches.Load() != before {
+		t.Error("the same terms in other filler searched again")
+	}
+	// Four of five terms in common (0.8) was once the same question.
+	if s.SearchSelect(context.Background(), "add logger middleware to a route group", 0); searches.Load() == before {
+		t.Error("a more specific follow-up was answered from memory")
+	}
+}
