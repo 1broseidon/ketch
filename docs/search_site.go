@@ -498,10 +498,13 @@ func chooseSites(hits []sfHit, prefs sitePrefs) []sfSite {
 }
 
 // treeBetter reports whether a tree (score a, root ra) is a better root
-// for its site than another (b, rb): the one whose root names the version
+// for its site than another (b, rb): not a translation, then the one whose root names the version
 // asked for (with none asked, one that names no numbered release), else
 // the one with more weight, else the shorter root.
 func treeBetter(a, b float64, ra, rb webRoot, version string) bool {
+	if la, lb := otherLocale(ra), otherLocale(rb); la != lb {
+		return lb // English or unmarked docs over a translation
+	}
 	if version != "" {
 		va, vb := rootNamesVersion(ra, version), rootNamesVersion(rb, version)
 		if va != vb {
@@ -624,4 +627,22 @@ func releaseRank(r webRoot) int {
 		return 1
 	}
 	return 0
+}
+
+// otherLocale reports a root in a locale other than English: a leading
+// locale path segment (/zh-cn/docs/) or host label (fr.lib.test).
+func otherLocale(r webRoot) bool {
+	labels := pathSegments(r.prefix)
+	if len(labels) > 0 {
+		labels = labels[:1]
+	}
+	if first, _, ok := strings.Cut(scopeHost(r.u), "."); ok && strings.Count(scopeHost(r.u), ".") > 1 {
+		labels = append(labels, first)
+	}
+	for _, l := range labels {
+		if localeSegRe.MatchString(l) && !strings.HasPrefix(strings.ToLower(l), "en") && !docsHostLabels[strings.ToLower(l)] {
+			return true
+		}
+	}
+	return false
 }

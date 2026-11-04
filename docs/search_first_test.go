@@ -293,6 +293,15 @@ func TestSiteChoiceRules(t *testing.T) {
 			t.Errorf("isPreviewHost(%s) = %v, want %v", host, got, want)
 		}
 	}
+	for root, want := range map[string]bool{
+		"https://lib.test/zh-cn/docs/": true, "https://fr.docs.lib.test/": true, "https://lib.test/en/": false,
+		"https://lib.test/docs/": false, "https://api.lib.test/": false, "https://lib.test/": false,
+	} {
+		r, _ := parseWebRoot(root)
+		if got := otherLocale(r); got != want {
+			t.Errorf("otherLocale(%s) = %v, want %v", root, got, want)
+		}
+	}
 	for root, want := range map[string]int{
 		"https://lib.test/docs/": 0, "https://lib.test/en/stable/": 0, "https://lib.test/docs/15/": 1,
 		"https://v1-32.docs.lib.test/": 1, "https://lib.test/devdocs/": 2, "https://lib.test/en/main/": 2,
