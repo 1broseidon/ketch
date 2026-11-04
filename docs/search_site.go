@@ -285,6 +285,9 @@ func docsSignal(u *url.URL, title string) bool {
 // project's directory; else the host's root.
 func docsTree(u *url.URL) webRoot {
 	base := siteRootOf(u)
+	if d := docsDirOver(u, base); d != "" {
+		base = &url.URL{Scheme: u.Scheme, Host: u.Host, Path: d}
+	}
 	if base.Path == "" || base.Path == "/" {
 		segs := pathSegments(u.Path)
 		dirs := len(segs)
@@ -309,6 +312,23 @@ func docsTree(u *url.URL) webRoot {
 		r, _ = parseWebRoot(u.Scheme + "://" + u.Host + "/")
 	}
 	return r
+}
+
+// docsDirOver is the docs directory (docs, doc, documentation, manual)
+// leading to a version segment that sits further down than right below
+// it: /docs/guides/x/main/ is a guide's variant in the /docs/ tree, not a
+// version root; /docs/3.9.1/ is one. "" when there is none.
+func docsDirOver(u *url.URL, base *url.URL) string {
+	segs, below := pathSegments(u.Path), pathSegments(base.Path)
+	for i, seg := range below {
+		if docsSegments[strings.ToLower(seg)] {
+			if len(below) > i+2 {
+				return segmentsPath(segs[:i+1])
+			}
+			return ""
+		}
+	}
+	return ""
 }
 
 // siteKey groups hits into sites: the registrable domain, or, for docs a

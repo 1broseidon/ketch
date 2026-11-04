@@ -188,6 +188,8 @@ func TestDocsTree(t *testing.T) {
 		"https://owner.github.io/project/guide/intro":              "https://owner.github.io/project/",
 		"https://docs.lib.test/en/actions/writing-workflows/x":     "https://docs.lib.test/en/",
 		"https://docs.rs/serde/latest/serde/de/trait.Visitor.html": "https://docs.rs/serde/latest/",
+		"https://developer.lib.test/docs/guides/claims/main/":      "https://developer.lib.test/docs/",
+		"https://www.lib.test/docs/3.9.1/configuration/tooltip":    "https://www.lib.test/docs/3.9.1/",
 	}
 	for in, want := range cases {
 		u, _ := url.Parse(in)
