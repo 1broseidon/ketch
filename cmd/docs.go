@@ -60,8 +60,8 @@ func runDocs(cmd *cobra.Command, args []string) error {
 	// A compact answer's text output points to the full section of what it
 	// cut; --json and --minimal carry results only.
 	hint := docs.HintNone
-	if cmd.Flags().Changed("tokens") && !asJSON && !minimal {
-		hint = docs.HintCLI
+	if (cmd.Flags().Changed("tokens") || backend == docs.SearchBackend) && !asJSON && !minimal {
+		hint = docs.HintCLI // search-first answers are compact by default
 	}
 	cmd.SetContext(withLocalDocsOptions(cmd, tokens, limit, hint))
 

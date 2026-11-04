@@ -138,7 +138,7 @@ func (s *SearchFirst) SearchSelect(ctx context.Context, query string, limit int)
 	if opts.Limit <= 0 {
 		opts.Limit = limit
 	}
-	req := sfRequest{query: query, opts: opts}
+	req := sfRequest{query: query, opts: compactByDefault(opts)}
 	if spec, ok := pinnedSpec(query); ok {
 		req.spec = spec
 	}
@@ -155,7 +155,7 @@ func (s *SearchFirst) GetDocsSelect(ctx context.Context, library, query string, 
 	if !ok {
 		opts.Tokens = tokens
 	}
-	req := sfRequest{query: query, library: strings.TrimSpace(library), opts: opts}
+	req := sfRequest{query: query, library: strings.TrimSpace(library), opts: compactByDefault(opts)}
 	if req.library != "" && !isHTTPURL(req.library) {
 		spec, err := parseLibSpec(req.library)
 		if err != nil {
@@ -164,6 +164,22 @@ func (s *SearchFirst) GetDocsSelect(ctx context.Context, library, query string, 
 		req.spec = spec
 	}
 	return s.answer(ctx, req)
+}
+
+// sfDefaultTokens is a search-first answer's budget when the caller sets
+// none, fitted compactly (local_compact.go). Docs found by search are
+// long reference and guide pages whose answer sits deep in a section: on
+// the general dev set the compact view at 1,800 tokens held the
+// required facts in 19 of 60 answers, the whole-section view in 10, at
+// the same ~1,550 tokens returned.
+const sfDefaultTokens = 1800
+
+// compactByDefault gives a request without a budget the compact one.
+func compactByDefault(o LocalOptions) LocalOptions {
+	if o.Tokens <= 0 && !o.Snippets {
+		o.Tokens = sfDefaultTokens
+	}
+	return o
 }
 
 // sfRequest is one question and what it names.
