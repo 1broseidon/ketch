@@ -61,15 +61,8 @@ func TestSearchFirstAnswersFromTheSite(t *testing.T) {
 	if !strings.Contains(o.Note, "ketch docs index "+idxRoot) {
 		t.Errorf("note = %q, want the command that indexes the whole site", o.Note)
 	}
-	for _, c := range f.called() {
-		if strings.Contains(c, "/private/") || strings.Contains(c, "/es/") || strings.Contains(c, "/v1/") || strings.Contains(c, "github.com") {
-			t.Errorf("fetched %s: robots.txt, other locales and releases, and non-docs hits are never read", c)
-		}
-	}
-	lib, found, err := store.Library(idxRoot)
-	if err != nil || !found || lib.Resolved != resolvedBySearch || lib.Pages == 0 || lib.Vectors == 0 {
-		t.Fatalf("stored library = %+v (found %v, %v), want one built by search with pages and vectors", lib, found, err)
-	}
+	checkNeverRead(t, f)
+	checkSearchLibrary(t, store)
 	before := searches.Load()
 	again := s.SearchSelect(context.Background(), "add middleware to a route", 0)
 	if searches.Load() != before {
@@ -77,6 +70,23 @@ func TestSearchFirstAnswersFromTheSite(t *testing.T) {
 	}
 	if again.Status != Partial || again.Backend != "local" || len(again.Results) == 0 {
 		t.Errorf("again = %s from %q with %d results, want a partial local answer", again.Status, again.Backend, len(again.Results))
+	}
+}
+
+func checkNeverRead(t *testing.T, f *fakeFetcher) {
+	t.Helper()
+	for _, c := range f.called() {
+		if strings.Contains(c, "/private/") || strings.Contains(c, "/es/") || strings.Contains(c, "/v1/") || strings.Contains(c, "github.com") {
+			t.Errorf("fetched %s: robots.txt, other locales and releases, and non-docs hits are never read", c)
+		}
+	}
+}
+
+func checkSearchLibrary(t *testing.T, store *docsindex.Store) {
+	t.Helper()
+	lib, found, err := store.Library(idxRoot)
+	if err != nil || !found || lib.Resolved != resolvedBySearch || lib.Pages == 0 || lib.Vectors == 0 {
+		t.Fatalf("stored library = %+v (found %v, %v), want one built by search with pages and vectors", lib, found, err)
 	}
 }
 

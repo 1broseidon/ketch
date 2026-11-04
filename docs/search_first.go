@@ -210,16 +210,38 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 	}
 	docs := docsHits(hits)
 	tr.docsHits = len(docs)
-	site, prof, err := s.chooseSite(cctx, chooseSites(docs, prefs), req, prefs)
-	if err != nil {
-		return s.failed(ctx, cctx, err)
+	sites := chooseSites(docs, prefs)
+	var o Outcome
+	for range sfMaxSites {
+		var site sfSite
+		var prof *siteProfile
+		site, prof, sites, err = s.chooseSite(cctx, sites, req, prefs)
+		if err != nil {
+			if o.Status != "" {
+				return o // the site read before says more than the rest's refusal
+			}
+			return s.failed(ctx, cctx, err)
+		}
+		if o = s.readSite(ctx, cctx, site, prof, req, tr); o.Status == Partial || cctx.Err() != nil || len(sites) == 0 {
+			return o
+		}
 	}
+	return o
+}
+
+// sfMaxSites is how many sites one question reads: the next is read
+// when the first gave nothing (its pages unreadable, a JS shell no
+// browser rendered, or nothing on them matched).
+const sfMaxSites = 2
+
+// readSite reads one site's pages, keeps them, and answers from them.
+func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *siteProfile, req sfRequest, tr *sfTrace) Outcome {
 	tr.site, tr.siteHits = site.root.String(), len(site.hits)
 	links := s.plan(cctx, site, prof, req.query)
 	pages, failed := s.fetch(cctx, site.root, links)
-	tr.planned, tr.fetched, tr.failed = len(links), len(pages), failed
+	tr.planned, tr.fetched, tr.failed = tr.planned+len(links), tr.fetched+len(pages), tr.failed+failed
 	if len(pages) == 0 {
-		return s.failed(ctx, cctx, fmt.Errorf("search: none of the %d pages of %s could be fetched: %w", len(links), site.root, ErrNotFound))
+		return s.failed(ctx, cctx, fmt.Errorf("search: none of the %d pages of %s could be read: %w", len(links), site.root, ErrNotFound))
 	}
 	lib, st, err := s.keep(ctx, site, prof, pages, req.query)
 	tr.stored = st
@@ -387,7 +409,7 @@ func lastPart(name string) string {
 // lists the siblings): a site with no docs signal in its hits must look
 // like docs there (looksLikeDocs), or the next site is tried. A docs URL
 // the request gives is the site, whatever the hits say.
-func (s *SearchFirst) chooseSite(ctx context.Context, sites []sfSite, req sfRequest, prefs sitePrefs) (sfSite, *siteProfile, error) {
+func (s *SearchFirst) chooseSite(ctx context.Context, sites []sfSite, req sfRequest, prefs sitePrefs) (sfSite, *siteProfile, []sfSite, error) {
 	if isHTTPURL(req.library) && len(prefs.roots) > 0 {
 		site := sfSite{key: prefs.roots[0].String(), root: prefs.roots[0], docs: true}
 		for _, c := range sites {
@@ -397,20 +419,20 @@ func (s *SearchFirst) chooseSite(ctx context.Context, sites []sfSite, req sfRequ
 				}
 			}
 		}
-		return site, s.hitProfile(ctx, site), nil
+		return site, s.hitProfile(ctx, site), nil, nil
 	}
 	for tries := 0; tries < 3; tries++ {
 		site, err := pickSite(sites)
 		if err != nil {
-			return sfSite{}, nil, err
-		}
-		prof := s.hitProfile(ctx, site)
-		if site.docs || prof != nil && prof.served != nil && looksLikeDocs(prof.served, prof) {
-			return site, prof, nil
+			return sfSite{}, nil, nil, err
 		}
 		sites = sites[1:]
+		prof := s.hitProfile(ctx, site)
+		if site.docs || prof != nil && prof.served != nil && looksLikeDocs(prof.served, prof) {
+			return site, prof, sites, nil
+		}
 	}
-	return sfSite{}, nil, fmt.Errorf("search: %w", ErrNoDocsFound)
+	return sfSite{}, nil, nil, fmt.Errorf("search: %w", ErrNoDocsFound)
 }
 
 // hitProfile is the site's top hit's page profile, nil when it cannot be
