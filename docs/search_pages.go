@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"path"
+	"strings"
 	"sync"
 	"time"
 )
@@ -151,7 +152,7 @@ func (s *SearchFirst) fetch(ctx context.Context, root webRoot, links []webLink) 
 	seen := map[string]bool{}
 	for _, p := range pages {
 		switch {
-		case p == nil:
+		case p == nil || unreadShell(p):
 			failed++
 		case !seen[p.URL]:
 			seen[p.URL] = true
@@ -160,6 +161,17 @@ func (s *SearchFirst) fetch(ctx context.Context, root webRoot, links []webLink) 
 	}
 	out, _ = uniqueContent(out)
 	return out, failed
+}
+
+// sfShellWords is how many words an unrendered JS shell's text must have
+// to be read as a page: below it the text is the shell's placeholder
+// ("Loading"), not the page.
+const sfShellWords = 50
+
+// unreadShell reports a page that is an unrendered JS shell with next to
+// no text: no page at all to a reader without a browser.
+func unreadShell(p *webPage) bool {
+	return p.shell && len(strings.Fields(p.Markdown)) < sfShellWords
 }
 
 // sfStored is what one search-first call added to the index.

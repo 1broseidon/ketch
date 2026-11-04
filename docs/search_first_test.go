@@ -336,7 +336,7 @@ func TestServedSite(t *testing.T) {
 	old, _ := url.Parse("https://docs.lib.test/en/guide/tools")
 	served, _ := url.Parse("https://docs.lib.test/v1.2/en/guide/tools")
 	root, _ := parseWebRoot("https://docs.lib.test/en/")
-	site := servedSite(sfSite{root: root, hits: []sfHit{{u: old}}}, &siteProfile{served: served})
+	site, _ := servedSite(sfSite{root: root, hits: []sfHit{{u: old}}}, &siteProfile{served: served}, nil)
 	if site.root.String() != "https://docs.lib.test/v1.2/" || site.hits[0].u.String() != served.String() {
 		t.Errorf("servedSite = %s with top hit %s, want the served page's tree", site.root, site.hits[0].u)
 	}

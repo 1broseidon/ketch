@@ -234,7 +234,8 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 	sites := chooseSites(docs, prefs)
 	tr.cands = siteList(sites)
 	var o Outcome
-	for range sfMaxSites {
+	domains := 0
+	for range sfMaxReads {
 		var site sfSite
 		var prof *siteProfile
 		site, prof, sites, err = s.chooseSite(cctx, sites, req, prefs)
@@ -244,17 +245,37 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 			}
 			return s.failed(ctx, cctx, err)
 		}
-		if o = s.readSite(ctx, cctx, site, prof, req, tr); o.Status == Partial || o.Reason == reasonDisallowed || cctx.Err() != nil || len(sites) == 0 {
+		if !site.retry {
+			domains++
+		}
+		o = s.readSite(ctx, cctx, site, prof, req, tr)
+		if o.Status == Partial || cctx.Err() != nil {
+			return o
+		}
+		if len(site.alts) > 0 {
+			// Nothing readable in this docs tree (JS shells no browser
+			// rendered, robots-closed, nothing matching): the domain's next
+			// tree before another domain.
+			next := site.alts[0]
+			next.alts, next.retry = site.alts[1:], true
+			sites = append([]sfSite{next}, sites...)
+			continue
+		}
+		if o.Reason == reasonDisallowed || len(sites) == 0 || domains >= sfMaxSites {
 			return o // a site that closes its docs to robots is still the site
 		}
 	}
 	return o
 }
 
-// sfMaxSites is how many sites one question reads: the next is read
-// when the first gave nothing (its pages unreadable, a JS shell no
-// browser rendered, or nothing on them matched).
-const sfMaxSites = 2
+// sfMaxSites is how many sites (domains) one question reads: the next is
+// read when the first gave nothing (its pages unreadable, a JS shell no
+// browser rendered, or nothing on them matched). sfMaxReads bounds the
+// docs trees read in all, a site's other trees included.
+const (
+	sfMaxSites = 2
+	sfMaxReads = 4
+)
 
 // readSite reads one site's pages, keeps them, and answers from them.
 func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *siteProfile, req sfRequest, tr *sfTrace) Outcome {
@@ -279,7 +300,10 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 	qv := s.queryVector(ctx, req.query)
 	_, tr.answerCos, _ = s.closest(ctx, []docsindex.Library{lib}, qv)
 	o := s.local.rank(ctx, lib, req.query, req.opts)
-	if o.Status == Answered {
+	if o.Status == Answered && tr.sites == 1 {
+		// Only the first site read is remembered: a fallback's answer, read
+		// because the site the hits agreed on gave nothing, is a guess the
+		// next search may do better than.
 		s.remember(lib, req.library, req.query, qv)
 	}
 	return searchAnswered(o, lib, len(pages), st)
@@ -467,7 +491,17 @@ func (s *SearchFirst) chooseSite(ctx context.Context, sites []sfSite, req sfRequ
 		}
 		sites = sites[1:]
 		prof := s.hitProfile(ctx, site)
-		site = servedSite(site, prof)
+		if prof == nil && len(site.alts) > 0 && !site.retry {
+			// Its top hit unreadable (a JS shell no browser renders, a
+			// failed fetch): the domain's next tree first, this one last.
+			rest := site.alts
+			site.alts = nil
+			next := rest[0]
+			next.alts, next.retry = append(append([]sfSite{}, rest[1:]...), site), true
+			sites = append([]sfSite{next}, sites...)
+			continue
+		}
+		site, sites = servedSite(site, prof, sites)
 		if site.docs || site.named || prof != nil && prof.served != nil && looksLikeDocs(prof.served, prof) {
 			return site, prof, sites, nil
 		}
@@ -477,10 +511,12 @@ func (s *SearchFirst) chooseSite(ctx context.Context, sites []sfSite, req sfRequ
 
 // servedSite is the site where its top hit is served from, when that is
 // outside its root (a docs host that moved, docs.x.com/en/ redirecting to
-// /v1.2/en/): the served page's tree, its hits the top hit as served.
-func servedSite(site sfSite, prof *siteProfile) sfSite {
+// /v1.2/en/): the served page's tree, its hits the top hit as served and
+// the hits there of every other site (removed from sites), which are the
+// same docs found under their new address.
+func servedSite(site sfSite, prof *siteProfile, sites []sfSite) (sfSite, []sfSite) {
 	if prof == nil || prof.served == nil || len(site.hits) == 0 || site.root.contains(prof.served) || !isPublicWebURL(prof.served) {
-		return site
+		return site, sites
 	}
 	root := docsTree(prof.served)
 	top := site.hits[0]
@@ -491,8 +527,23 @@ func servedSite(site sfSite, prof *siteProfile) sfSite {
 			hits = append(hits, h)
 		}
 	}
+	var rest []sfSite
+	for _, o := range sites {
+		var moved []sfHit
+		for _, h := range o.hits {
+			if root.contains(h.u) && linkKey(h.u) != linkKey(top.u) {
+				moved = append(moved, h)
+			}
+		}
+		if len(moved) > 0 && len(moved) == len(o.hits) && len(o.alts) == 0 {
+			hits = append(hits, moved...)
+			site.docs = site.docs || o.docs
+			continue
+		}
+		rest = append(rest, o)
+	}
 	site.root, site.hits, site.key = root, hits, siteKey(prof.served, root)
-	return site
+	return site, rest
 }
 
 // hitProfile is the site's top hit's page profile, nil when it cannot be

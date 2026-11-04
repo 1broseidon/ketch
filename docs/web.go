@@ -1076,6 +1076,9 @@ type webPage struct {
 	// page.md, llms-full.txt) rather than the page at URL, whose targets
 	// citeChecked may still read.
 	markdown bool
+	// shell marks a page known to be an unrendered JS shell (no browser
+	// rendered it): its text is what the server sent before scripts ran.
+	shell bool
 }
 
 // webLink is a candidate page found during discovery.

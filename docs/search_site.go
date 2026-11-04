@@ -63,10 +63,14 @@ type sfHit struct {
 type sfSite struct {
 	key   string
 	root  webRoot
-	hits  []sfHit // under root, best first
-	score float64 // all the domain's hits
-	docs  bool    // some hit under root has a docs signal
-	named bool    // the request names its host or docs directory
+	hits  []sfHit  // under root, best first
+	score float64  // all the domain's hits
+	docs  bool     // some hit under root has a docs signal
+	named bool     // the request names its host or docs directory
+	owner bool     // the question names its domain (ownsDomain)
+	spec  bool     // a standards body's site (specDomains)
+	alts  []sfSite // the domain's other docs trees, best first
+	retry bool     // an alternative tree of a site read before
 }
 
 // fuseHits merges search result lists into one ranking of pages, each
@@ -442,15 +446,18 @@ func (p sitePrefs) preferred(u *url.URL) bool {
 
 // chooseSites groups the docs hits into sites, best first; each site's
 // root is the docs tree most of its weight sits under (the version the
-// request asks for first, when hits name it). Preferred hits weigh
-// sfBoost times as much.
+// request asks for first, when hits name it), and its other trees are
+// the alternatives read when that one gives nothing (alts). Preferred hits
+// weigh sfBoost times as much. A site the question names by its domain
+// (owner), or else a standards body's (spec), goes first when its weight
+// is a fair share of the leader's (ownerFirst).
 func chooseSites(hits []sfHit, prefs sitePrefs) []sfSite {
 	type tree struct {
 		root  webRoot
 		hits  []sfHit
 		score float64
 	}
-	trees := map[string]map[string]*tree{}
+	trees := map[string][]*tree{}
 	var order []string
 	scores := map[string]float64{}
 	for _, h := range hits {
@@ -468,42 +475,198 @@ func chooseSites(hits []sfHit, prefs sitePrefs) []sfSite {
 		}
 		k := siteKey(h.u, t)
 		if trees[k] == nil {
-			trees[k] = map[string]*tree{}
 			order = append(order, k)
 		}
-		tr := trees[k][t.String()]
-		if tr == nil {
-			tr = &tree{root: t}
-			trees[k][t.String()] = tr
+		i := slices.IndexFunc(trees[k], func(x *tree) bool { return x.root.String() == t.String() })
+		if i < 0 {
+			trees[k] = append(trees[k], &tree{root: t})
+			i = len(trees[k]) - 1
 		}
+		tr := trees[k][i]
 		tr.hits = append(tr.hits, h)
 		tr.score += h.weight
 		scores[k] += h.weight
 	}
 	var out []sfSite
 	for _, k := range order {
-		var best *tree
-		for _, t := range trees[k] {
-			if best == nil || treeBetter(t.score, best.score, t.root, best.root, prefs.version) {
-				best = t
-			}
+		ts := trees[k]
+		sort.SliceStable(ts, func(i, j int) bool {
+			return treeBetter(ts[i].score, ts[j].score, ts[i].root, ts[j].root, prefs.version, prefs.words)
+		})
+		var alts []sfSite
+		for _, t := range ts {
+			s := sfSite{key: k, root: t.root, hits: t.hits, score: scores[k]}
+			s.docs = slices.ContainsFunc(t.hits, func(h sfHit) bool { return h.docs })
+			s.named = slices.ContainsFunc(t.hits, func(h sfHit) bool { return prefs.preferred(h.u) || named(h.u, prefs.words) })
+			alts = append(alts, s)
 		}
-		s := sfSite{key: k, root: best.root, hits: best.hits, score: scores[k]}
-		s.docs = slices.ContainsFunc(best.hits, func(h sfHit) bool { return h.docs })
-		s.named = slices.ContainsFunc(best.hits, func(h sfHit) bool { return prefs.preferred(h.u) || named(h.u, prefs.words) })
+		if main, ok := mainTree(alts[0], prefs.words); ok && !slices.ContainsFunc(alts, func(s sfSite) bool { return s.root.String() == main.root.String() }) {
+			alts = append([]sfSite{main}, alts...) // a variant's hits only: its main docs first
+		}
+		s := alts[0]
+		s.alts = alts[1:]
+		s.owner = ownsDomain(k, prefs.words)
+		s.spec = onDomains(s.root.u.Hostname(), specDomains)
+		s.named = s.named || s.owner
+		s.docs = s.docs || s.spec // a spec is the protocol's docs
 		out = append(out, s)
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].score > out[j].score })
-	return out
+	return ownerFirst(out)
+}
+
+// sfOwnerShare is the share of the leading site's weight a site the
+// question names by its domain (or a standards body's site) needs to go
+// first: a page about a product on another site loses to the product's
+// own docs when both are found, but not to a single stray link.
+const sfOwnerShare = 0.25
+
+// ownerFirst moves to the front the best site the question names by its
+// domain (duo.com for a question about duo), when its weight is at least
+// sfOwnerShare of the leader's; when the question names none of the
+// sites, a standards body's site (the RFC a vendor implements) the same
+// way.
+func ownerFirst(sites []sfSite) []sfSite {
+	if len(sites) < 2 {
+		return sites
+	}
+	pick := func(ok func(sfSite) bool) bool {
+		for i, s := range sites {
+			if !ok(s) {
+				continue
+			}
+			if i > 0 && s.score >= sfOwnerShare*sites[0].score {
+				s := sites[i]
+				copy(sites[1:i+1], sites[:i])
+				sites[0] = s
+			}
+			return true
+		}
+		return false
+	}
+	if !pick(func(s sfSite) bool { return s.owner }) {
+		pick(func(s sfSite) bool { return s.spec })
+	}
+	return sites
+}
+
+// ownsDomain reports a site key (a registrable domain, or a hosted
+// project's docs tree) whose first label one of the question's words is,
+// whole or without the language word it joins: duo.com for "duo",
+// requests.readthedocs.io for "requests", python-poetry.org for "poetry".
+func ownsDomain(key string, words []string) bool {
+	host := key
+	if u, err := url.Parse(key); err == nil && u.Host != "" {
+		host = u.Hostname()
+	}
+	first, _, _ := strings.Cut(strings.TrimPrefix(strings.ToLower(host), "www."), ".")
+	for _, l := range []string{first, withoutLanguageWord(first)} {
+		if k := libraryKey(l); len(k) >= 3 && slices.Contains(words, k) {
+			return true
+		}
+	}
+	return false
+}
+
+// specDomains are the sites of standards bodies, which publish the
+// protocols and formats vendors' docs implement: for a question about the
+// protocol itself the spec is the docs.
+var specDomains = []string{
+	"rfc-editor.org", "ietf.org", "w3.org", "whatwg.org", "openid.net", "ecma-international.org", "tc39.es",
+	"unicode.org", "oasis-open.org", "iso.org",
+}
+
+// variantWords are path words that mark a copy of a site's docs for one
+// edition, deployment or age (an enterprise server's, a self-managed
+// install's, an archived release's) beside its main docs.
+var variantWords = map[string]bool{
+	"enterprise": true, "legacy": true, "archive": true, "archived": true, "archives": true, "deprecated": true,
+	"obsolete": true, "old": true, "previous": true, "selfhosted": true, "selfmanaged": true, "onprem": true,
+	"onpremise": true, "onpremises": true, "govcloud": true,
+}
+
+// variantSegment is the index of the first segment of a docs root's path
+// that marks a variant of the main docs (variantWords, run together
+// across hyphens: self-hosted; or an edition pinned to a release:
+// enterprise-server@3.22), unless the question's words ask for it; -1
+// for none.
+func variantSegment(r webRoot, words []string) int {
+	for i, seg := range pathSegments(r.prefix) {
+		low := strings.ToLower(seg)
+		name, _, pinned := strings.Cut(low, "@")
+		parts := strings.FieldsFunc(name, func(c rune) bool { return c == '-' || c == '_' || c == '.' })
+		marked := pinned && len(parts) > 0
+		for j, p := range parts {
+			if variantWords[p] || j > 0 && variantWords[parts[j-1]+p] {
+				marked = true
+			}
+		}
+		if !marked {
+			continue
+		}
+		asked := false
+		for _, p := range parts {
+			asked = asked || slices.Contains(words, libraryKey(p))
+		}
+		if !asked {
+			return i
+		}
+	}
+	return -1
+}
+
+// mainTree is, for a variant tree (variantSegment), the main docs tree it
+// copies: the root and its hits without the variant's segment
+// (docs.x.com/en/enterprise-server@3.22/actions/ is docs.x.com/en/actions/).
+func mainTree(s sfSite, words []string) (sfSite, bool) {
+	i := variantSegment(s.root, words)
+	if i < 0 {
+		return sfSite{}, false
+	}
+	segs := pathSegments(s.root.prefix)
+	strip := func(u *url.URL) *url.URL {
+		p := pathSegments(u.Path)
+		if len(p) <= i || !strings.EqualFold(p[i], segs[i]) {
+			return nil
+		}
+		c := *u
+		c.Path = "/" + strings.Join(append(append([]string{}, p[:i]...), p[i+1:]...), "/")
+		if strings.HasSuffix(u.Path, "/") && c.Path != "/" {
+			c.Path += "/"
+		}
+		c.RawPath = ""
+		return &c
+	}
+	ru := strip(s.root.u)
+	if ru == nil {
+		return sfSite{}, false
+	}
+	root, err := parseWebRoot(ru.String())
+	if err != nil {
+		return sfSite{}, false
+	}
+	m := s
+	m.root, m.hits, m.alts = root, nil, nil
+	for _, h := range s.hits {
+		if u := strip(h.u); u != nil {
+			h.u = u
+			m.hits = append(m.hits, h)
+		}
+	}
+	return m, len(m.hits) > 0
 }
 
 // treeBetter reports whether a tree (score a, root ra) is a better root
-// for its site than another (b, rb): not a translation, then the one whose root names the version
+// for its site than another (b, rb): not a translation, not a variant the
+// question does not ask for (variantSegment), then the one whose root names the version
 // asked for (with none asked, one that names no numbered release), else
 // the one with more weight, else the shorter root.
-func treeBetter(a, b float64, ra, rb webRoot, version string) bool {
+func treeBetter(a, b float64, ra, rb webRoot, version string, words []string) bool {
 	if la, lb := otherLocale(ra), otherLocale(rb); la != lb {
 		return lb // English or unmarked docs over a translation
+	}
+	if va, vb := variantSegment(ra, words) >= 0, variantSegment(rb, words) >= 0; va != vb {
+		return vb // the main docs over an enterprise, legacy or archived copy
 	}
 	if version != "" {
 		va, vb := rootNamesVersion(ra, version), rootNamesVersion(rb, version)
@@ -542,12 +705,17 @@ func rootNamesVersion(r webRoot, version string) bool {
 // pickSite is the site the hits agree on, or why there is none: no docs
 // hit at all (ErrNoDocsFound), or a lead over the next site too small to
 // mean anything (ErrAmbiguousSite, naming the candidates), unless the
-// question names exactly one of the leading sites (onlyNamed).
+// site is another tree of a site read before, the question names its
+// domain, it is the spec (ownerFirst put those first), or the question
+// names exactly one of the leading sites (onlyNamed).
 func pickSite(sites []sfSite) (sfSite, error) {
 	if len(sites) == 0 {
 		return sfSite{}, fmt.Errorf("search: %w", ErrNoDocsFound)
 	}
 	top := sites[0]
+	if top.retry || top.owner || top.spec {
+		return top, nil // another tree of the site read before; a site the question names; the spec
+	}
 	if len(sites) > 1 && len(top.hits) < 2 && top.score < sfLead*sites[1].score {
 		if i, ok := onlyNamed(sites); ok {
 			return sites[i], nil

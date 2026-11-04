@@ -184,7 +184,7 @@ func (w *Web) fetchOne(ctx context.Context, root webRoot, link webLink) (*webPag
 	var from *url.URL
 	title, md := "", ""
 	var anchors []PageAnchor
-	fromRaw := false
+	fromRaw, shell := false, false
 	if isMarkdownURL(link.url) {
 		raw, err := w.fetcher.FetchRaw(ctx, u)
 		if err == nil {
@@ -205,7 +205,7 @@ func (w *Web) fetchOne(ctx context.Context, root webRoot, link webLink) (*webPag
 		if err != nil {
 			return nil, err
 		}
-		title, md, anchors = page.Title, page.Markdown, page.Anchors
+		title, md, anchors, shell = page.Title, page.Markdown, page.Anchors, page.Shell
 	}
 	md = capText(md, w.maxPageBytes)
 	fmTitle, md := stripFrontmatter(md)
@@ -215,6 +215,7 @@ func (w *Web) fetchOne(ctx context.Context, root webRoot, link webLink) (*webPag
 		Markdown: md,
 		Anchors:  anchors,
 		markdown: fromRaw,
+		shell:    shell,
 	}, nil
 }
 
