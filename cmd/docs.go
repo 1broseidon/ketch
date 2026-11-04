@@ -323,7 +323,7 @@ func printDocsResults(query, backend, library string, o docs.Outcome, minimal bo
 	printDocsHeader(query, backend, library, o)
 	fmt.Printf("result_count: %d\n", len(results))
 	fmt.Println("---")
-	if backend == "local" {
+	if backend == "local" || backend == docs.SearchBackend {
 		// Local results read as Markdown: heading path, the section's (or
 		// snippet's) text with its code, source.
 		for _, r := range results {
@@ -360,7 +360,7 @@ func printDocsHeader(query, backend, library string, o docs.Outcome) {
 	} else if library != "" {
 		fmt.Printf("library: %s\n", library)
 	}
-	if backend == "local" && len(results) > 0 && results[0].Version != "" {
+	if (backend == "local" || backend == docs.SearchBackend) && len(results) > 0 && results[0].Version != "" {
 		fmt.Printf("version: %s\n", results[0].Version)
 	}
 	if o.Status == docs.Partial {

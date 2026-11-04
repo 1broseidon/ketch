@@ -204,8 +204,14 @@ func (l *Local) libraries() ([]docsindex.Library, error) {
 }
 
 // answer ranks lib's sections for query and renders the best families
-// within opts' budget, or, with opts.Snippets, its best snippet units.
+// within opts' budget, or, with opts.Snippets, its best snippet units; an
+// answer from a library a search built is partial (partialLibrary).
 func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string, opts LocalOptions) Outcome {
+	return partialLibrary(l.rank(ctx, lib, query, opts), lib)
+}
+
+// rank is answer without the partial mark.
+func (l *Local) rank(ctx context.Context, lib docsindex.Library, query string, opts LocalOptions) Outcome {
 	if !lib.Current() {
 		return Answer("local", nil, outdatedErr(lib))
 	}

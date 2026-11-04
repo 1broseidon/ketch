@@ -47,6 +47,7 @@ var providers = []Provider{
 	context7Provider(),
 	localProvider(),
 	webProvider(),
+	searchFirstProvider(),
 }
 
 // Providers returns the descriptors in their stable presentation order.
