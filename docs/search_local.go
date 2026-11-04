@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/1broseidon/ketch/internal/docsindex"
@@ -120,17 +121,30 @@ func partialLibrary(o Outcome, lib docsindex.Library) Outcome {
 // sfTrace is one search-first call's path, written when KETCH_DOCS_TRACE
 // is set: for measuring, never part of the answer.
 type sfTrace struct {
-	path, local, site                                  string
-	localCos, answerCos                                float64
-	hits, docsHits, siteHits, planned, fetched, failed int
-	stored                                             sfStored
+	path, local, site, cands                                  string
+	localCos, answerCos                                       float64
+	hits, docsHits, siteHits, sites, planned, fetched, failed int
+	stored                                                    sfStored
 }
 
 func (t *sfTrace) write(w io.Writer, req sfRequest, d time.Duration) {
 	if w == nil {
 		return
 	}
-	_, _ = fmt.Fprintf(w, "trace: search-first path=%s local=%s local_cos=%.4f answer_cos=%.4f hits=%d docs_hits=%d site=%s site_hits=%d planned=%d fetched=%d failed=%d new=%d changed=%d unchanged=%d embedded=%d embed_ms=%d ms=%d library=%q\n",
-		t.path, t.local, t.localCos, t.answerCos, t.hits, t.docsHits, t.site, t.siteHits, t.planned, t.fetched, t.failed,
-		t.stored.newPages, t.stored.changed, t.stored.unchanged, t.stored.embedded, t.stored.embedTime.Milliseconds(), d.Milliseconds(), req.library)
+	_, _ = fmt.Fprintf(w, "trace: search-first path=%s local=%s local_cos=%.4f answer_cos=%.4f hits=%d docs_hits=%d site=%s site_hits=%d sites=%d planned=%d fetched=%d failed=%d new=%d changed=%d unchanged=%d embedded=%d embed_ms=%d ms=%d library=%q cands=%q\n",
+		t.path, t.local, t.localCos, t.answerCos, t.hits, t.docsHits, t.site, t.siteHits, t.sites, t.planned, t.fetched, t.failed,
+		t.stored.newPages, t.stored.changed, t.stored.unchanged, t.stored.embedded, t.stored.embedTime.Milliseconds(), d.Milliseconds(), req.library, t.cands)
+}
+
+// siteList names the leading sites with their weight, for the trace.
+func siteList(sites []sfSite) string {
+	var parts []string
+	for _, s := range sites[:min(len(sites), 6)] {
+		mark := ""
+		if s.named {
+			mark = "*"
+		}
+		parts = append(parts, fmt.Sprintf("%s%s:%d:%.3f", mark, s.root, len(s.hits), s.score))
+	}
+	return strings.Join(parts, " ")
 }

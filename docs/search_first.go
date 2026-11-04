@@ -211,6 +211,7 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 	docs := docsHits(hits)
 	tr.docsHits = len(docs)
 	sites := chooseSites(docs, prefs)
+	tr.cands = siteList(sites)
 	var o Outcome
 	for range sfMaxSites {
 		var site sfSite
@@ -236,7 +237,10 @@ const sfMaxSites = 2
 
 // readSite reads one site's pages, keeps them, and answers from them.
 func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *siteProfile, req sfRequest, tr *sfTrace) Outcome {
-	tr.site, tr.siteHits = site.root.String(), len(site.hits)
+	if tr.site == "" {
+		tr.site, tr.siteHits = site.root.String(), len(site.hits)
+	}
+	tr.sites++
 	links := s.plan(cctx, site, prof, req.query)
 	pages, failed := s.fetch(cctx, site.root, links)
 	tr.planned, tr.fetched, tr.failed = tr.planned+len(links), tr.fetched+len(pages), tr.failed+failed
@@ -323,7 +327,7 @@ func (s *SearchFirst) searchHits(ctx context.Context, req sfRequest) ([]sfHit, s
 		answered = answered || errs[i] == nil
 		firstErr = firstNonNil(firstErr, errs[i])
 	}
-	hits := fuseHits(lists)
+	hits := fuseWeighted(append(lists, citedLists(lists)...), []float64{1, 1, sfCitedWeight, sfCitedWeight})
 	switch {
 	case !answered:
 		return nil, prefs, fmt.Errorf("search: web search failed: %w", firstErr)
@@ -373,7 +377,7 @@ func searchQueries(req sfRequest) []string {
 // resolution finds within sfResolveTimeout (a pinned spec only: a bare
 // name's registries are a guess the hits outvote anyway).
 func (s *SearchFirst) prefs(ctx context.Context, req sfRequest) sitePrefs {
-	var p sitePrefs
+	p := sitePrefs{words: questionWords(req.query)}
 	if isHTTPURL(req.library) {
 		if r, err := parseWebRoot(req.library); err == nil {
 			p.roots = append(p.roots, r)

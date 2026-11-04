@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -65,14 +66,25 @@ type sfSite struct {
 	hits  []sfHit // under root, best first
 	score float64 // all the domain's hits
 	docs  bool    // some hit under root has a docs signal
+	named bool    // the request names its host or docs directory
 }
 
 // fuseHits merges search result lists into one ranking of pages, each
 // weighed by its rank in every list it is in, best first.
 func fuseHits(lists [][]search.Result) []sfHit {
+	return fuseWeighted(lists, nil)
+}
+
+// fuseWeighted is fuseHits with each list's weights scaled (1 when scale
+// is nil or short).
+func fuseWeighted(lists [][]search.Result, scale []float64) []sfHit {
 	var out []sfHit
 	at := map[string]int{}
-	for _, list := range lists {
+	for li, list := range lists {
+		sc := 1.0
+		if li < len(scale) {
+			sc = scale[li]
+		}
 		for r, res := range list {
 			u, err := url.Parse(strings.TrimSpace(res.URL))
 			if err != nil || !isPublicWebURL(u) {
@@ -80,7 +92,7 @@ func fuseHits(lists [][]search.Result) []sfHit {
 			}
 			u.Fragment, u.RawFragment = "", ""
 			k := linkKey(u)
-			w := 1 / (sfRankK + float64(r))
+			w := sc / (sfRankK + float64(r))
 			if i, ok := at[k]; ok {
 				out[i].weight += w
 				out[i].title = firstNonEmpty(out[i].title, res.Title)
@@ -92,6 +104,45 @@ func fuseHits(lists [][]search.Result) []sfHit {
 		}
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].weight > out[j].weight })
+	return out
+}
+
+// sfCitedWeight is what a page a hit's text links to weighs, against
+// the hit itself: third-party answers cite the docs they paraphrase
+// (nginx.org's directive reference in a hosting company's 413 guide).
+const sfCitedWeight = 0.5
+
+// sfMaxCited caps the links one hit's text contributes.
+const sfMaxCited = 4
+
+// citedRe matches an absolute http(s) URL in a result's text.
+var citedRe = regexp.MustCompile(`https?://[^\s<>"'()\[\]{}|\\^` + "`" + `]+`)
+
+// citedLists are, for each search list, the pages its results' text
+// (description and excerpts) links to, ranked as the citing result: a
+// search that returns third-party pages about a thing often cites the
+// thing's own docs.
+func citedLists(lists [][]search.Result) [][]search.Result {
+	var out [][]search.Result
+	for _, list := range lists {
+		cited := make([]search.Result, 0, len(list))
+		for _, r := range list {
+			own, _ := url.Parse(r.URL)
+			n := 0
+			for _, raw := range citedRe.FindAllString(r.Description+"\n"+r.Content, -1) {
+				raw = strings.TrimRight(raw, ".,;:!?*_")
+				u, err := url.Parse(raw)
+				if err != nil || own != nil && registrableDomain(u.Hostname()) == registrableDomain(own.Hostname()) {
+					continue // a page's links to its own site add nothing to its vote
+				}
+				cited = append(cited, search.Result{URL: raw})
+				if n++; n == sfMaxCited {
+					break
+				}
+			}
+		}
+		out = append(out, cited)
+	}
 	return out
 }
 
@@ -129,6 +180,7 @@ var thirdPartyDomains = []string{
 var notDocsHostLabels = map[string]bool{
 	"forum": true, "forums": true, "community": true, "discuss": true, "discourse": true, "answers": true,
 	"blog": true, "blogs": true, "news": true, "status": true, "careers": true, "jobs": true, "shop": true, "store": true,
+	"mailman": true, "lists": true, "groups": true, "chat": true,
 }
 
 // notDocsSegments are path segments under which a site keeps
@@ -147,10 +199,10 @@ var notDocsSegments = map[string]bool{
 // Discourse topic (/t/slug/123), or a file that is no page.
 func notDocsHit(u *url.URL) bool {
 	host := strings.ToLower(u.Hostname())
-	if isNonDocsHost(host) || onDomains(host, thirdPartyDomains) {
-		return true
-	}
 	first, _, _ := strings.Cut(strings.TrimPrefix(host, "www."), ".")
+	if isNonDocsHost(host) && !docsHostLabels[first] || onDomains(host, thirdPartyDomains) {
+		return true // a forge's own docs host (docs.github.com) is docs
+	}
 	if notDocsHostLabels[first] {
 		return true
 	}
@@ -270,11 +322,62 @@ func siteKey(u *url.URL, tree webRoot) string {
 
 // sitePrefs are what a request prefers: docs roots (a docs URL given, or
 // what the library it names resolves to) and library names a site's host
-// may carry; and the version it asks for.
+// may carry; and the version it asks for. words are the question's own
+// words: a site whose host or docs directory one of them names (nginx
+// in nginx.org, lambda in docs.aws.amazon.com/lambda/) is more likely
+// the thing's own docs than a page that discusses it, which wins a
+// search on the question's other words.
 type sitePrefs struct {
 	roots   []webRoot
 	names   []string // comparison keys (libraryKey)
+	words   []string // comparison keys of the question's words
 	version string
+}
+
+// sfWordBoost multiplies the weight of a hit on a site the question's
+// words name.
+const sfWordBoost = 2.0
+
+// questionWords are a question's words as comparison keys, stopwords,
+// generic docs words and words under three letters left out.
+func questionWords(query string) []string {
+	var out []string
+	for _, f := range strings.FieldsFunc(strings.ToLower(query), func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '.' && r != '-' && r != '_'
+	}) {
+		f = strings.Trim(f, ".-_")
+		k := libraryKey(f)
+		if len(k) < 3 || webStopwords[f] || genericNames[k] || isDigits(k) || slices.Contains(out, k) {
+			continue
+		}
+		out = append(out, k)
+	}
+	return out
+}
+
+// named reports a hit whose host labels one of keys names, or, on a docs
+// host or below a docs directory (strongDocs), one of its leading
+// directories: /software/systemd/man/, docs.aws.amazon.com/lambda/, but
+// not a tutorial site's /guides/nginx/.
+func named(u *url.URL, keys []string) bool {
+	if len(keys) == 0 {
+		return false
+	}
+	for _, label := range hostNames(u) {
+		if slices.Contains(keys, libraryKey(label)) {
+			return true
+		}
+	}
+	if !strongDocs(u) {
+		return false // a guide's directory on a site about something else is no name
+	}
+	segs := pathSegments(u.Path)
+	for i := 0; i < min(len(segs)-1, 3); i++ {
+		if slices.Contains(keys, libraryKey(segs[i])) {
+			return true
+		}
+	}
+	return false
 }
 
 // preferred reports a hit the request prefers: under one of its roots,
@@ -285,15 +388,7 @@ func (p sitePrefs) preferred(u *url.URL) bool {
 			return true
 		}
 	}
-	if len(p.names) == 0 {
-		return false
-	}
-	for _, label := range hostNames(u) {
-		if slices.Contains(p.names, libraryKey(label)) {
-			return true
-		}
-	}
-	return false
+	return named(u, p.names)
 }
 
 // chooseSites groups the docs hits into sites, best first; each site's
@@ -310,8 +405,11 @@ func chooseSites(hits []sfHit, prefs sitePrefs) []sfSite {
 	var order []string
 	scores := map[string]float64{}
 	for _, h := range hits {
-		if prefs.preferred(h.u) {
+		switch {
+		case prefs.preferred(h.u):
 			h.weight *= sfBoost
+		case named(h.u, prefs.words):
+			h.weight *= sfWordBoost
 		}
 		t := docsTree(h.u)
 		for _, r := range prefs.roots {
@@ -343,6 +441,7 @@ func chooseSites(hits []sfHit, prefs sitePrefs) []sfSite {
 		}
 		s := sfSite{key: k, root: best.root, hits: best.hits, score: scores[k]}
 		s.docs = slices.ContainsFunc(best.hits, func(h sfHit) bool { return h.docs })
+		s.named = slices.ContainsFunc(best.hits, func(h sfHit) bool { return prefs.preferred(h.u) || named(h.u, prefs.words) })
 		out = append(out, s)
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].score > out[j].score })
@@ -351,13 +450,16 @@ func chooseSites(hits []sfHit, prefs sitePrefs) []sfSite {
 
 // treeBetter reports whether a tree (score a, root ra) is a better root
 // for its site than another (b, rb): the one whose root names the version
-// asked for, else the one with more weight, else the shorter root.
+// asked for (with none asked, one that names no numbered release), else
+// the one with more weight, else the shorter root.
 func treeBetter(a, b float64, ra, rb webRoot, version string) bool {
 	if version != "" {
 		va, vb := rootNamesVersion(ra, version), rootNamesVersion(rb, version)
 		if va != vb {
 			return va
 		}
+	} else if na, nb := numberedRoot(ra), numberedRoot(rb); na != nb {
+		return !na // no version asked: the current docs over a numbered release's
 	}
 	if a != b {
 		return a > b
@@ -383,13 +485,17 @@ func rootNamesVersion(r webRoot, version string) bool {
 
 // pickSite is the site the hits agree on, or why there is none: no docs
 // hit at all (ErrNoDocsFound), or a lead over the next site too small to
-// mean anything (ErrAmbiguousSite, naming the candidates).
+// mean anything (ErrAmbiguousSite, naming the candidates), unless the
+// question names exactly one of the leading sites (onlyNamed).
 func pickSite(sites []sfSite) (sfSite, error) {
 	if len(sites) == 0 {
 		return sfSite{}, fmt.Errorf("search: %w", ErrNoDocsFound)
 	}
 	top := sites[0]
 	if len(sites) > 1 && len(top.hits) < 2 && top.score < sfLead*sites[1].score {
+		if i, ok := onlyNamed(sites); ok {
+			return sites[i], nil
+		}
 		var names []string
 		for _, s := range sites[:min(len(sites), 4)] {
 			names = append(names, s.root.String())
@@ -397,4 +503,61 @@ func pickSite(sites []sfSite) (sfSite, error) {
 		return sfSite{}, fmt.Errorf("search: %w: %s; pass one as the library (--library <docs URL>)", ErrAmbiguousSite, strings.Join(names, ", "))
 	}
 	return top, nil
+}
+
+// hostReleaseRe matches a host label naming a numbered release: v1-32,
+// v3, 18.
+var hostReleaseRe = regexp.MustCompile(`^v?\d+(?:[.-]\d+)*$`)
+
+// numberedRoot reports a root in a numbered release's tree: a numbered
+// version segment (/docs/15/, /en/5.2/), or a host labelled with one
+// (v1-32.docs.kubernetes.io); latest, stable and current are not.
+func numberedRoot(r webRoot) bool {
+	if l := rootVersionLabel(r); l != "" && isNumericLabel(l) {
+		return true
+	}
+	first, _, _ := strings.Cut(scopeHost(r.u), ".")
+	return hostReleaseRe.MatchString(first)
+}
+
+// sfNamedDepth is how many of the leading sites onlyNamed looks among.
+const sfNamedDepth = 4
+
+// onlyNamed is the one site among the leading ones whose host or docs
+// directory the request names (its library, or a word of its question),
+// when exactly one is.
+func onlyNamed(sites []sfSite) (int, bool) {
+	found := -1
+	for i, s := range sites[:min(len(sites), sfNamedDepth)] {
+		if !s.named {
+			continue
+		}
+		if found >= 0 {
+			return 0, false
+		}
+		found = i
+	}
+	return found, found >= 0
+}
+
+// strongDocsSegments are path segments only docs trees have.
+var strongDocsSegments = map[string]bool{
+	"docs": true, "doc": true, "documentation": true, "manual": true, "man": true, "reference": true,
+	"api": true, "apidocs": true,
+}
+
+// strongDocs reports a page on a docs host or hosting service, or below
+// a docs directory.
+func strongDocs(u *url.URL) bool {
+	host := strings.TrimPrefix(strings.ToLower(u.Hostname()), "www.")
+	first, _, _ := strings.Cut(host, ".")
+	if docsHostLabels[first] || onDomains(host, docsHostSuffixes) {
+		return true
+	}
+	for _, seg := range pathSegments(u.Path) {
+		if strongDocsSegments[strings.ToLower(seg)] {
+			return true
+		}
+	}
+	return false
 }
