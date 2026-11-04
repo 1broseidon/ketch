@@ -626,7 +626,9 @@ func variantParts(u *url.URL, root webRoot, rootLabel string) (string, []string,
 		}
 		kept = append(kept, seg)
 	}
-	return strings.Join(kept, "/"), tree, p
+	// x.html is x: a sitemap's .html address of a page llms.txt names
+	// without it (router.vuejs.org/zh/guide/….html beside /guide/…).
+	return strings.TrimSuffix(strings.Join(kept, "/"), ".html"), tree, p
 }
 
 // variantLabel reports a path segment that names a version: one of

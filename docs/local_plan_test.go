@@ -3,6 +3,7 @@ package docs
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/url"
 	"slices"
 	"strings"
@@ -228,5 +229,47 @@ func TestIndexDryRunWithSeeds(t *testing.T) {
 	failing := fakeSeeder{err: errors.New("search down")}
 	if _, err := IndexLibrary(context.Background(), &config.Config{}, Deps{Fetcher: f}, store, IndexRequest{Library: idxRoot, DryRun: true, Seeder: failing}); err != nil {
 		t.Errorf("a failing seeder stopped the build: %v", err)
+	}
+}
+
+// A locale's copy of a page at x.html is a copy of the page llms.txt
+// names at x, and is left out with its locale.
+func TestPlanLocaleCopyAtHTMLAddress(t *testing.T) {
+	root, _ := parseWebRoot("https://r.test/")
+	links := uniquePages(linksOf(t, "https://r.test/guide/push", "https://r.test/guide/guards", "https://r.test/zh/guide/push.html", "https://r.test/zh/guide/guards.html"))
+	kept, _, _ := keepOneVariant(links, root, nil)
+	if got := urlsOf(kept); !slices.Equal(got, []string{"https://r.test/guide/push", "https://r.test/guide/guards"}) {
+		t.Errorf("kept %v", got)
+	}
+}
+
+// An unversioned root whose pages sit in two release trees below it is
+// indexed at the one its root page links to most, else the newest final
+// release; a REST reference's versions beside the guides, or one tree,
+// is no split.
+func TestSplitReleases(t *testing.T) {
+	pages := func(prefix string, n int) []string {
+		var out []string
+		for i := range n {
+			out = append(out, fmt.Sprintf("%spage-%d", prefix, i))
+		}
+		return out
+	}
+	root, _ := parseWebRoot("https://s.test/")
+	both := linksOf(t, append(append(pages("https://s.test/docs/v7/", 30), pages("https://s.test/docs/v6/", 20)...), "https://s.test/v5/", "https://s.test/")...)
+	home := []siteLink{{url: both[35].url}, {url: both[36].url}, {url: both[0].url}}
+	if got, ok := splitReleases(root, both, home); !ok || got.String() != "https://s.test/docs/v6/" {
+		t.Errorf("linked release = %v %v", got, ok)
+	}
+	if got, ok := splitReleases(root, both, nil); !ok || got.String() != "https://s.test/docs/v7/" {
+		t.Errorf("newest release = %v %v", got, ok)
+	}
+	rest := linksOf(t, append(append(pages("https://s.test/api/v1/", 12), pages("https://s.test/api/v2/", 12)...), pages("https://s.test/guides/", 40)...)...)
+	if got, ok := splitReleases(root, rest, nil); ok {
+		t.Errorf("REST versions split the docs at %v", got)
+	}
+	versioned, _ := parseWebRoot("https://s.test/docs/v6/")
+	if _, ok := splitReleases(versioned, both, nil); ok {
+		t.Error("a versioned root split")
 	}
 }

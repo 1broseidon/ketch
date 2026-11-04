@@ -290,3 +290,100 @@ v18.angular.dev), against 320 ms on one CPU before; a whole CLI query ran
 in 251 ms at the median and 612 ms at p95.
 
 The judge round that decides the default is the next step.
+
+## Amendment 3 (2026-11-04): compact answers within an explicit budget; addresses, releases and names
+
+The fair-judge round 4 (68 cases, blinded) put the whole-section answer level
+with Context7 at top 5 (87% against 88% "fully answers") and behind it at an
+880-token budget (77% against 86%; 9 wins, 42 ties, 17 losses; how-to
+questions worst). The ranking was not the cause: the gold section was in the
+top five for 54 of the 63 gold-labelled cases, and a cross-encoder reranker
+over the top 20 (ketch-embed `runs/rerank-exp`) moved it by a case or two.
+Size was: whole sections are large, so 2.7 to 3.3 of them fit in 880 o200k
+tokens where Context7 fits four or five snippets; and `--tokens 880` asked
+of the section view returned up to 1,113 tokens, because its budget was
+bytes divided by four, which undercounts code.
+
+**Decision.**
+
+- **An explicit budget is fitted compactly** (`--tokens`, MCP `tokens`; the
+  default, unset, is unchanged). Tokens are estimated as o200k counts them
+  (`estimateTokens`: an approximation of its pre-tokenizer with per-piece
+  weights fitted by least squares on 2,651 rendered local results, half the
+  libraries held out). Each of the ranked families gets a share of the
+  budget weighted by rank, 1/(1+r/1.5) (about 38, 23, 16, 13 and 10% for
+  five), water-filled so a family smaller than its share takes its size and
+  passes the rest on; a fifth result is shown only when its share is at
+  least 90 tokens. A family that fits its share is shown whole. One that
+  does not is cut into pieces (sentences, list items, each fenced code block
+  with its tab label, tables and quotes whole) of the sections familyParts
+  shows (subsections that did not rank are left out) and keeps, within its
+  share: its first sentence; the code block naming the question best
+  (a block within 75% of its score stands in when it does not fit; else the
+  first block), whole, with the sentence leading into it; up to three
+  sentences naming the question best; then the rest by score. A piece
+  scores the IDF, over all the candidates' pieces, of the query terms it
+  names (identifiers the query writes twice, prefix matches at half or a
+  quarter, letter-digit parts: `load_in_8bit` names 8 and bit), plus 0.5 for
+  a section's first sentence that names any. What the shares leave goes to
+  the cut results, best first. The answer is planned to 1/32 under the
+  budget and pieces are dropped from the last result until the estimate
+  fits. Code is never cut; "…" joins sentences of one paragraph that skip
+  some, and one "[…]" ends a result that leaves anything out.
+- **One page at two addresses is one result.** Families of `x` and
+  `x.html`, or of an `/llms/` mirror and the rendered page, with the same H2
+  are collapsed at query time (indexes built before the planner merged
+  them hold both: Vue, Vue Router, Mantine), and count as one page for the
+  two-families-a-page rule. An API reference leaf (planTier's reference
+  tier) gives one family while other pages rank next: its description and
+  its signature are not two answers.
+- **Builds.** A locale's `x.html` is a copy of the `x` llms.txt lists
+  (variantParts sets `.html` aside), so Vue Router's `/zh/` pages are left
+  out. An unversioned root whose plan holds two or more numbered release
+  trees within two levels of it (each at least 10 pages, together at least
+  two thirds of the plan) is re-rooted at the tree its home page links to
+  most, else the newest final release: sequelize.org is indexed at
+  `/docs/v6/`, which its home page links to, not v7's alpha docs mixed with
+  v6 and v4/v5 landing pages.
+- **Names.** Secondary names are two tiers: a library's own (its root's path
+  segments, a package's or repository's last part) before its host's
+  labels, so svelte.dev's `/docs/svelte/` is `svelte` and `/docs/kit/` is
+  not; a hyphenated host label also names the library without a language
+  word (python-httpx.org is `httpx`); and a name ending in one digit with
+  five letters before it that names nothing finds the library by the stem
+  (`beautifulsoup4`). These are worked out from stored metadata, so no
+  rebuild is needed.
+
+**Not done.** The default budget keeps whole sections: the compact view at
+an explicit 1,800 tokens was better within 1,800 (49 against 46 answers, 79
+against 75 facts, never over budget against up to 2,276 tokens) but worse
+when that output is packed into 880 tokens (35 against 40 answers), so it is
+not a clear win at both. A guide-over-reference prior for how-to questions
+was not added: the one-family rule for reference leaves fixed the case it
+was for (angular.dev's interceptors guide, from rank 7 to 5) at no cost on
+the other 62, and a reference-path penalty moved a case or less in
+amendment 2. Taking the best-scoring sentence before the code block, all of
+a family's sections rather than those that ranked, and a slower rank decay
+(five results at 880) each cost two or three facts of 97; five results at 880
+cost about three facts against four results. The snippet view's budget still uses
+its own estimate (SnippetTokens).
+
+**Measurement** (ketch-embed `scripts/local_retrieval.py`, 63 gold-labelled
+dev cases, the library given as its docs root; "in 880" is what fits in 880
+o200k tokens of the rendered results by the fair judge's packing rule;
+facts are the required-fact quotes, 97 over 63 cases; before is the round-4
+binary and index, after this change on a copy with sequelize rebuilt):
+
+| | gold@1/3/5 | gold in 880 | answer@5 | answer in 880 | facts in 880 | results in 880 | tokens returned mean/max | p50/p95 ms |
+|---|---|---|---|---|---|---|---|---|
+| before, default | 31/49/54 | 43 | 46 | 40 | 66 | 2.70 | 1,593/2,276 | 223/475 |
+| before, `--tokens 880` | 31/49/54 | 54 | 30 | 29 | 55 | 4.41 | 875/1,113 | 222/493 |
+| after, default | 31/49/55 | 44 | 46 | 40 | 67 | 2.71 | 1,595/2,276 | 221/480 |
+| after, `--tokens 880` | 31/49/55 | 55 | 39 | 39 | 66 | 4.41 | 795/877 | 221/472 |
+
+The estimate on the after answers at 880: a result off by 4.2% on average
+(95th percentile 9.7%, worst 15% under; bytes/4: 11.4%, 27.7%), an answer by
+3.6% (worst 7.7% under); none over 880 by o200k. The default output is the
+same for 56 of the 63 cases; the other seven differ only by the fixes
+above. The weights were set on these 63 cases, which is the risk this
+amendment carries; the judge round at top 5 and 880 tokens decides.

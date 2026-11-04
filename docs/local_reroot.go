@@ -25,6 +25,11 @@ import (
 //     indexed at the release llms.txt lists, else the newest; when that
 //     release's pages name the unversioned address as canonical, results
 //     show it;
+//   - an unversioned root whose pages sit in several numbered release
+//     trees within two levels of it (sequelize.org lists /docs/v6/… and
+//     /docs/v7/…, and /v5/ landing pages): indexed at the release the
+//     root page links to most (the site's default docs), else the newest
+//     final release, the others left out as other versions;
 //   - a version's own host whose lists are an app shell (v18.angular.dev
 //     serves its home page for sitemap.xml and llms.txt): the current
 //     host's pages are probed at the same paths.
@@ -32,6 +37,15 @@ import (
 // rerootShare is the share of the listed pages below which a plan is
 // taken to have missed where the docs are.
 const rerootShare = 10
+
+// releaseTreeMin is how many planned pages a release tree holds for
+// splitReleases to count it, and releaseTreeShare the share of the plan
+// (in percent) the release trees must hold together: a REST reference's
+// /api/v1/ and /api/v2/ beside the guides are not the docs' releases.
+const (
+	releaseTreeMin   = 10
+	releaseTreeShare = 67
+)
 
 // siblingThin is how few planned pages send a version host to its
 // current host's page list.
@@ -323,4 +337,88 @@ func (w *Web) siteIdentityNames(ctx context.Context, root webRoot) (string, []st
 		}
 	}
 	return name, pkgs
+}
+
+// splitReleases is the release tree an unversioned root's docs should be
+// indexed at when the plan holds pages of two or more numbered release
+// trees (each at least releaseTreeMin pages, together releaseTreeShare of
+// the plan) within two levels of the root: the one the root page links to
+// most, else the newest final release. ok is false otherwise.
+func splitReleases(root webRoot, links []webLink, rootLinks []siteLink) (webRoot, bool) {
+	if rootVersionLabel(root) != "" {
+		return webRoot{}, false
+	}
+	count := map[string]int{}
+	label := map[string]string{}
+	for _, l := range links {
+		if prefix, lab := releaseTreeOf(l.url, root); prefix != "" {
+			count[prefix]++
+			label[prefix] = lab
+		}
+	}
+	var trees []string
+	held := 0
+	for prefix, n := range count {
+		if n >= releaseTreeMin {
+			trees = append(trees, prefix)
+			held += n
+		}
+	}
+	if len(trees) < 2 || held*100 < len(links)*releaseTreeShare {
+		return webRoot{}, false
+	}
+	linked := linksByTree(root, rootLinks)
+	slices.SortFunc(trees, func(a, b string) int {
+		if linked[a] != linked[b] {
+			return linked[b] - linked[a]
+		}
+		na, preA := releaseNumbers(normLabel(label[a]))
+		nb, preB := releaseNumbers(normLabel(label[b]))
+		if preA != preB {
+			if preA {
+				return 1
+			}
+			return -1
+		}
+		if c := compareRelease(na, nb); c != 0 {
+			return -c
+		}
+		return strings.Compare(a, b)
+	})
+	r, err := parseWebRoot(root.origin() + root.prefix + trees[0] + "/")
+	return r, err == nil
+}
+
+// linksByTree counts the root page's links into each release tree.
+func linksByTree(root webRoot, links []siteLink) map[string]int {
+	out := map[string]int{}
+	for _, sl := range links {
+		if sl.url != nil && root.contains(sl.url) {
+			if prefix, _ := releaseTreeOf(sl.url, root); prefix != "" {
+				out[prefix]++
+			}
+		}
+	}
+	return out
+}
+
+// releaseTreeOf is the release tree u sits in within two levels of root
+// (after a locale): the path below the root up to a numbered version
+// segment (docs/v6, v5, 2.x) with a page below it, and that segment; ""
+// when there is none.
+func releaseTreeOf(u *url.URL, root webRoot) (string, string) {
+	segs := pathSegments(strings.TrimPrefix(u.Path, root.prefix))
+	skip := 0
+	if len(segs) > 1 && localeRe.MatchString(segs[0]) && !versionLabelRe.MatchString(segs[0]) {
+		skip = 1
+	}
+	for i := skip; i < min(skip+2, len(segs)-1); i++ {
+		if lab, ok := variantLabel(segs[i]); ok {
+			if nums, _ := releaseNumbers(normLabel(lab)); len(nums) > 0 {
+				return strings.Join(segs[:i+1], "/"), segs[i]
+			}
+			return "", ""
+		}
+	}
+	return "", ""
 }

@@ -252,7 +252,7 @@ $ ketch docs -b local --library fastapi "dependencies with yield"  # …then ans
 | --- | --- |
 | `--backend, -b` | `context7` (default), `local` (the local index), `web`, `auto` (local, then web, then Context7) |
 | `--library` | A library ID from `--resolve`, or for `web` any library spec (below), or for `local` an indexed library's name, spec or docs root; skips the resolve step |
-| `--tokens` | Token budget, default 4000 (`local`: about 1,800 for sections, 1,200 for snippets) |
+| `--tokens` | Token budget, default 4000 (`local`: about 1,800 for sections, 1,200 for snippets; set, `local` fits its sections to it, compactly) |
 | `--resolve` | Resolve the query as a library name or spec instead of searching |
 | `--limit, -l` | Max results; with `--library`, only `--tokens` bounds them unless set |
 | `--snippets` | `local`: code-first snippets (a code block with the sentences before it) instead of whole sections |
@@ -433,7 +433,8 @@ reference such as Sphinx's `generated/` or Matplotlib's `_as_gen/`, TypeDoc's
 changelogs and blog posts; within a group, top-level directories take turns.
 Nothing is left out for its group, only by the cap. One page listed as `x` and
 `x.html` is one page, an `llms.txt` text mirror under `/llms/` is left out when
-the rendered pages are listed, and after fetching a page whose text is
+the rendered pages are listed, a translation's `x.html` is a copy of the
+`x` that `llms.txt` lists (and is left out with its locale), and after fetching a page whose text is
 another's (the same page at a second address, or a missing page a site
 answers with its home page) is dropped. `--dry-run` plans the build and prints
 the pages it would index, in order, each with its group (`curated`, `guide`,
@@ -447,7 +448,11 @@ directories right below it, or whose `llms.txt` lists mostly one of them
 (`docs.crewai.com` and `/v1.15.35/`; Hugging Face's `/docs/transformers/` and
 `/v5.22.1/`), is indexed at the release `llms.txt` lists, else the newest;
 when that release's pages name the unversioned address as canonical, results
-show the unversioned address. A version's own host whose page lists are an app
+show the unversioned address. An unversioned root whose pages sit in two or
+more release directories within two levels of it (sequelize.org's
+`/docs/v6/` and `/docs/v7/`, with `/v5/` landing pages) is indexed at the one
+its home page links to most, the site's default docs (else the newest final
+release), and the others are left out as other versions. A version's own host whose page lists are an app
 shell (`v18.angular.dev` serves its home page for `sitemap.xml`) is given the
 current host's paths to try. The summary says when any of this happened.
 
@@ -478,11 +483,15 @@ it was indexed by, its package names (with or without the ecosystem prefix
 and separators: `vue-router`, `npm:vue-router`, `vuerouter`), its
 repositories (`vuejs/router`), its docs site's own name (from `og:site_name`
 or its home page's title: Vue Router, Beautiful Soup, SvelteKit), the last
-part of a scoped package or repository, its docs host's distinctive label
-and its root's distinctive path segment (`bs4`), never to one word of a
-longer name it goes by (`vue` or `router` do not name Vue Router, `query`
-does not name TanStack Query), and a host label yields to a library whose
-full name it is. With only Vue Router indexed, `--library vue` or "vue
+part of a scoped package or repository, its root's distinctive path segment
+(`bs4`) and its docs host's distinctive label, also without a language word
+it joins (`httpx` for python-httpx.org, `poetry` for python-poetry.org),
+never to one word of a longer name it goes by (`vue` or `router` do not name
+Vue Router, `query` does not name TanStack Query); a host label yields to a
+library whose full name or path segment it is (two projects documented on
+one host, svelte.dev's `/docs/svelte/` and `/docs/kit/`, are not versions of
+one library), and a package named for its major release finds docs named
+without the number (`beautifulsoup4` is Beautiful Soup's `/BeautifulSoup/`). With only Vue Router indexed, `--library vue` or "vue
 v-model on a custom component" is `not_indexed`, not Vue Router's docs. A name
 without a version answers from the current docs of exactly that project, even
 when only an older version's index was built by that name: with `angular@18`
@@ -497,12 +506,29 @@ rankings are fused (reciprocal rank fusion). Sections are then grouped under
 their second-level heading: a section that ranks brings the H2 it sits under,
 and one result shows that H2's own text and the subsections of it that
 ranked. The best five such results are returned (`--limit` changes it), never
-two copies of one page, at most two from one page while other pages rank
-next, within about 1,800 tokens and none over about 600 (`--tokens` changes
-the budget). A section that fits is shown whole; a longer one keeps its lead
+two copies of one page (nor one page at two addresses, `x` and `x.html` or an
+`/llms/` text mirror), at most two from one page while other pages rank next
+(one from an API reference page), within about 1,800 tokens and none over
+about 600. A section that fits is shown whole; a longer one keeps its lead
 paragraphs, its first code block (cut, its fence closed, when even that does
 not fit) and the blocks that name the question's words, `[…]` marking what
-was left out. Text is the docs' own, code blocks inline. Each is printed as
+was left out.
+
+**With `--tokens` (MCP `tokens`) the answer is fitted to that budget**,
+counted as an LLM's tokenizer counts them (o200k; ketch's estimate is within
+about 4% on a result), and rendered compactly so that four or five results
+fit even at an agent's 880 tokens: each result gets a share of the budget
+weighted by its rank (the first about 38% of it, the fifth about 10%; fewer
+results when the fifth's share would be under about 90 tokens), and a
+section family that does not fit its share keeps its heading path, its first
+sentence, the code block that names the question best (else its first),
+whole, with the sentence leading into it, the sentences that name the
+question best, then whatever else names it; subsections that did not rank
+are left out. Code is never cut; `…` joins sentences of one paragraph that
+skip some, and one `[…]` ends a result that leaves anything out. What a
+result leaves of its share goes to the others, best first. A generous
+budget shows whole sections as the default does. Text is the docs' own,
+code blocks inline. Each is printed as
 
 ````
 ### Page > Section

@@ -163,6 +163,15 @@ func (w *Web) planIndex(ctx context.Context, target *indexTarget, req IndexReque
 	links := uniquePages(candidateLinks(site.site, target.root))
 	if moved, byList, ok := rerootTree(target.root, links, plan, site.curated); ok {
 		site, plan = w.reroot(ctx, target, moved, byList, site, plan, req.MaxPages, seeds, say)
+	} else if target.spec.version == "" {
+		var rootLinks []siteLink
+		if prof, err := w.cachedProfile(ctx, target.root.u); err == nil && prof != nil {
+			rootLinks = prof.links
+		}
+		if moved, ok := splitReleases(target.root, plan.links, rootLinks); ok {
+			say("pages: %d planned in several releases' trees; indexing the default docs at %s", len(plan.links), moved)
+			site, plan = w.reroot(ctx, target, moved, true, site, plan, req.MaxPages, seeds, say)
+		}
 	}
 	if sib, ok := siblingHost(target.root); ok && len(plan.links) < siblingThin {
 		if other, err := w.enumerate(ctx, sib); err == nil {
@@ -759,6 +768,16 @@ func mergeNames(a, b []string) []string {
 // for TanStack Query, rest for Django REST framework) is never a name: it
 // names something else, often another library.
 func libraryNames(l docsindex.Library) (primary, secondary []string) {
+	primary, specific, host := libraryNameTiers(l)
+	return primary, append(specific, host...)
+}
+
+// libraryNameTiers are libraryNames with the secondary names in two
+// tiers: those of the library's own (the last part of a package or
+// repository, its root's path segments) before its host's labels, which
+// every library documented on the host shares (svelte.dev/docs/kit and
+// svelte.dev/docs/svelte; the latter alone is named svelte by its path).
+func libraryNameTiers(l docsindex.Library) (primary, specific, host []string) {
 	full := fullNames(l)
 	words := map[string]bool{} // the words of every multi-word name
 	addWords := func(name string) {
@@ -789,12 +808,17 @@ func libraryNames(l docsindex.Library) (primary, secondary []string) {
 		addWords(tail)
 	}
 	root, _ := parseWebRoot(l.Root)
-	for _, n := range append(append(tails, hostNames(root.u)...), pathNames(root)...) {
+	for _, n := range append(tails, pathNames(root)...) {
 		if k := libraryKey(n); !words[k] {
-			add(&secondary, k)
+			add(&specific, k)
 		}
 	}
-	return primary, secondary
+	for _, n := range hostNames(root.u) {
+		if k := libraryKey(n); !words[k] {
+			add(&host, k)
+		}
+	}
+	return primary, specific, host
 }
 
 // fullNames are a library's identities as written: its aliases, the name
@@ -867,7 +891,8 @@ var hostWords = map[string]bool{
 }
 
 // hostNames are a docs host's labels that may name its library: all but
-// the top-level domain and the words every docs host has.
+// the top-level domain and the words every docs host has, and a label
+// without the language word it joins (httpx for python-httpx).
 func hostNames(u *url.URL) []string {
 	if u == nil {
 		return nil
@@ -877,9 +902,32 @@ func hostNames(u *url.URL) []string {
 	for _, l := range labels[:max(len(labels)-1, 0)] {
 		if _, version := segmentLabel(l); !hostWords[l] && !version {
 			out = append(out, l) // v3 in v3.router.vuejs.org names a version, not the library
+			if rest := withoutLanguageWord(l); rest != "" {
+				out = append(out, rest) // httpx in python-httpx.org
+			}
 		}
 	}
 	return out
+}
+
+// withoutLanguageWord is a hyphenated host label without the language
+// words (languageWords) it joins to a library's name (python-httpx:
+// httpx, python-poetry: poetry), or "" when it has none or nothing else.
+func withoutLanguageWord(label string) string {
+	parts := strings.Split(label, "-")
+	if len(parts) < 2 {
+		return ""
+	}
+	var kept []string
+	for _, p := range parts {
+		if !languageWords[p] {
+			kept = append(kept, p)
+		}
+	}
+	if len(kept) == len(parts) || len(kept) == 0 {
+		return ""
+	}
+	return strings.Join(kept, "-")
 }
 
 // Reembed re-embeds a stored library's sections with emb, from their

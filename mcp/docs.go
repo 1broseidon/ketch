@@ -69,7 +69,7 @@ func (s *Server) registerDocsTool() {
 		Description: "Search library documentation using " + strings.Join(docs.ProviderNames(), ", ") + ". Supports resolving a library name to a " + strings.Join(docs.LibraryProviderNames(), ", ") + " library ID (resolve), and fetching docs directly from a known library ID (library)." +
 			docs.WithLibraryHelp(" A library is a library ID from resolve") + ". Resolve a name once and pass the returned ID as library on later calls: a name is resolved again on every call." +
 			" Context7 needs no key: without one it runs on Context7's anonymous quota (about 200 requests a month per IP; a spent quota is an [upstream] error naming when it resets), and a key lifts it." +
-			" Backend local answers offline from the docs the operator indexed (ketch docs index): the five nearest sections, verbatim with their code, each a section and the parts of it that matched (title, breadcrumb, anchors), trimmed to its lead, first code block and the blocks naming the query, about 1,800 tokens unless tokens is set; snippets returns code-first snippets instead, each the sentences just before a code block and the code, or a stretch of prose, about 1,200 tokens. A library indexed at several versions answers from the newest (each result's version says which) unless library names one as name@version." +
+			" Backend local answers offline from the docs the operator indexed (ketch docs index): the five nearest sections, verbatim with their code, each a section and the parts of it that matched (title, breadcrumb, anchors), trimmed to its lead, first code block and the blocks naming the query, about 1,800 tokens; with tokens set, fitted to that many tokens compactly (each result its heading path, first sentence, the code block naming the question whole and the sentences naming it best: four or five results at 880); snippets returns code-first snippets instead, each the sentences just before a code block and the code, or a stretch of prose, about 1,200 tokens. A library indexed at several versions answers from the newest (each result's version says which) unless library names one as name@version." +
 			" Backend auto asks the local index first when it holds the library, then web, and asks Context7 only when web identifies no library, finds several, or fails; Context7's pick must be a library the query names, and for an ambiguous name one of web's candidates. It reports the provider that answered in backend (each result's source says the same) and what it fell through in errors." +
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
@@ -233,7 +233,7 @@ func docsInputSchema() *jsonschema.Schema {
 		"query":   docs.WithLibraryHelp("the docs search query (without library, the library is picked from it), or the library to resolve when resolve is true"),
 		"backend": "docs backend (default: the configured backend); " + implemented,
 		"library": docs.WithLibraryHelp(libNames + " library ID to fetch docs from directly, skipping the resolve step; requires the " + libIDs + " backend"),
-		"tokens":  libNames + " token budget when library is set (default 4000; local's sections default to about 1800 and its snippets to about 1200, with or without library)",
+		"tokens":  libNames + " token budget when library is set (default 4000; local's sections default to about 1800 and its snippets to about 1200, with or without library; set, local fits its sections to it compactly)",
 		"resolve": docs.WithLibraryHelp("resolve the query as a library name to " + libNames + " library IDs instead of searching docs"),
 	})
 }

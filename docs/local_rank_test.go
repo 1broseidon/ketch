@@ -34,7 +34,7 @@ func familySections() []docsindex.Section {
 func TestFamiliesGroupUnderTheirH2(t *testing.T) {
 	secs := familySections()
 	ranked := []rankedSection{{sec: 2, score: 0.9}, {sec: 7, score: 0.89}, {sec: 4, score: 0.5}, {sec: 0, score: 0.4}}
-	fams := families(secs, ranked, 5)
+	fams := families(secs, ranked, 5, "")
 	if len(fams) != 3 {
 		t.Fatalf("families = %d, want 3 (the copy collapsed)", len(fams))
 	}
@@ -63,7 +63,7 @@ func TestFamiliesPerPage(t *testing.T) {
 		secs = append(secs, docsindex.Section{Page: "https://x.test/p", Order: i, Anchor: strings.ToLower(h), Heading: h, Crumbs: []string{"P", h}, Text: "text " + h})
 	}
 	secs = append(secs, docsindex.Section{Page: "https://x.test/q", Anchor: "d", Heading: "D", Crumbs: []string{"Q", "D"}, Text: "text D"})
-	fams := families(secs, []rankedSection{{0, 4}, {1, 3}, {2, 2}, {3, 1}}, 5)
+	fams := families(secs, []rankedSection{{0, 4}, {1, 3}, {2, 2}, {3, 1}}, 5, "")
 	var order []string
 	for _, f := range fams {
 		order = append(order, secs[f.best].Heading)
@@ -114,5 +114,32 @@ func TestTrimSection(t *testing.T) {
 	}
 	if trimSection("short", 100, nil) != "short" {
 		t.Error("a section that fits is whole")
+	}
+}
+
+// One page indexed at two addresses (x and x.html, or an llms/ text
+// mirror beside the rendered page, whose texts differ) gives one result
+// for an H2; an API reference leaf gives one family while other pages
+// rank next.
+func TestFamiliesCollapseAddressesAndReferenceLeaves(t *testing.T) {
+	mk := func(page, anchor, h2, text string) docsindex.Section {
+		return docsindex.Section{Page: page, Anchor: anchor, Heading: h2, Crumbs: []string{"Page", h2}, Text: text}
+	}
+	secs := []docsindex.Section{
+		mk("https://m.test/guide/params", "a", "Params", "A param is denoted by a colon."),
+		mk("https://m.test/guide/params.html", "a", "Params", "js\n\nA param is denoted by a colon."),
+		mk("https://m.test/llms/guide/params", "a", "Params", "Params: a colon."),
+		mk("https://m.test/api/core/router/push", "description", "Description", "Pushes a route."),
+		mk("https://m.test/api/core/router/push", "usage", "Usage", "router.push('/x')"),
+		mk("https://m.test/guide/nav", "push", "Push", "Navigate with router.push."),
+	}
+	ranked := []rankedSection{{0, 6}, {1, 5}, {2, 4}, {3, 3}, {4, 2}, {5, 1}}
+	var got []string
+	for _, f := range families(secs, ranked, 3, "https://m.test/") {
+		got = append(got, secs[f.best].Page+"#"+secs[f.best].Anchor)
+	}
+	want := []string{"https://m.test/guide/params#a", "https://m.test/api/core/router/push#description", "https://m.test/guide/nav#push"}
+	if !slices.Equal(got, want) {
+		t.Errorf("families = %v, want %v", got, want)
 	}
 }

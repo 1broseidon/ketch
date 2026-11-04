@@ -232,7 +232,7 @@ func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string,
 		if limit <= 0 {
 			limit = localMaxResults
 		}
-		results = familyResults(lib, secs, families(secs, fuseRanks(secs, qv, query), limit), query, opts.Tokens)
+		results = familyResults(lib, secs, families(secs, fuseRanks(secs, qv, query), limit, lib.Root), query, opts.Tokens)
 	}
 	if len(results) == 0 {
 		return Answer("local", nil, fmt.Errorf("local: nothing in the index of %s matched: %w", lib.Root, ErrNoResults))
@@ -536,25 +536,57 @@ func matchSpec(libs []docsindex.Library, spec libSpec) []docsindex.Library {
 		keys[libraryKey(spec.name[i+1:])] = true
 	}
 	delete(keys, "")
-	var bySecondary []docsindex.Library
+	out = matchNames(libs, spec, keys)
+	if len(out) == 0 {
+		// A package named for its major release (beautifulsoup4) goes by
+		// its name without the number on its docs (BeautifulSoup).
+		if stems := releaseStems(keys); len(stems) > 0 {
+			out = matchNames(libs, spec, stems)
+		}
+	}
+	return withProject(libs, out, spec.version)
+}
+
+// matchNames returns the libraries keys name: those whose full identity
+// it is (or whose package spec names), else those a name of their own
+// names (a repository's last part, a root path segment), else those their
+// host's label names. A secondary name answers only when no indexed
+// library goes by it more closely.
+func matchNames(libs []docsindex.Library, spec libSpec, keys map[string]bool) []docsindex.Library {
+	var tiers [3][]docsindex.Library
 	for _, l := range libs {
 		if spec.version != "" && !versionNames(spec.version, l.Version) {
 			continue
 		}
-		primary, secondary := libraryNames(l)
+		primary, specific, host := libraryNameTiers(l)
 		switch {
 		case anyNamed(primary, keys) || hasPackage(l.Packages, spec):
-			out = append(out, l)
-		case anyNamed(secondary, keys):
-			bySecondary = append(bySecondary, l)
+			tiers[0] = append(tiers[0], l)
+		case anyNamed(specific, keys):
+			tiers[1] = append(tiers[1], l)
+		case anyNamed(host, keys):
+			tiers[2] = append(tiers[2], l)
 		}
 	}
-	if len(out) == 0 {
-		// A secondary name (a host label, a repository's last part)
-		// answers only when no indexed library goes by it in full.
-		out = bySecondary
+	for _, t := range tiers {
+		if len(t) > 0 {
+			return t
+		}
 	}
-	return withProject(libs, out, spec.version)
+	return nil
+}
+
+// releaseStems are the keys that end in a major release number, without
+// it (beautifulsoup4: beautifulsoup), when at least five letters remain.
+func releaseStems(keys map[string]bool) map[string]bool {
+	out := map[string]bool{}
+	for k := range keys {
+		stem := strings.TrimRight(k, "0123456789")
+		if stem != k && len(k)-len(stem) == 1 && len(stem) >= 5 {
+			out[stem] = true
+		}
+	}
+	return out
 }
 
 // withProject adds to found every indexed library of the same project's

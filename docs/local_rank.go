@@ -1,6 +1,7 @@
 package docs
 
 import (
+	"net/url"
 	"slices"
 	"sort"
 	"strings"
@@ -123,9 +124,12 @@ func familyKey(s docsindex.Section) string {
 }
 
 // families groups the ranked sections into families, best first: at most
-// limit of them, at most localFamiliesPerPage of one page while other pages' rank
-// next, and never two with the same heading and text (copies of a page).
-func families(secs []docsindex.Section, ranked []rankedSection, limit int) []*family {
+// limit of them, at most familiesPerPage of one page while other pages'
+// rank next, and never two with the same heading and text, or the same H2 on
+// one page at two addresses (indexedPageKey: x and x.html, an llms/
+// mirror),
+// which an index built before its planner knew them as one may hold.
+func families(secs []docsindex.Section, ranked []rankedSection, limit int, root string) []*family {
 	all := map[string][]int{}
 	for i, s := range secs {
 		k := familyKey(s)
@@ -149,18 +153,20 @@ func families(secs []docsindex.Section, ranked []rankedSection, limit int) []*fa
 	}
 	var out, deferred []*family
 	seen := map[string]bool{}
+	r, rerr := parseWebRoot(root)
 	perPage := map[string]int{}
 	for _, f := range order {
-		ck := familyContent(secs, f)
-		if seen[ck] {
+		page := indexedPageKey(f.page, root)
+		ck, hk := familyContent(secs, f), page+"\x00"+familyHeading(secs, f)
+		if seen[ck] || seen[hk] {
 			continue
 		}
-		seen[ck] = true
-		if perPage[f.page] >= localFamiliesPerPage {
+		seen[ck], seen[hk] = true, true
+		if perPage[page] >= familiesPerPage(f.page, r, rerr == nil) {
 			deferred = append(deferred, f)
 			continue
 		}
-		perPage[f.page]++
+		perPage[page]++
 		out = append(out, f)
 		if len(out) >= limit {
 			return out
@@ -168,6 +174,40 @@ func families(secs []docsindex.Section, ranked []rankedSection, limit int) []*fa
 	}
 	out = append(out, deferred...)
 	return out[:min(limit, len(out))]
+}
+
+// indexedPageKey is pageKey (host without www., no trailing slash or
+// .html) with an index page and an llms directory right below the root
+// set aside too (mantine.dev/llms/core/modal is mantine.dev/core/modal/).
+func indexedPageKey(page, root string) string {
+	if root != "" {
+		if rest, ok := strings.CutPrefix(page, strings.TrimSuffix(root, "/")+"/llms/"); ok {
+			page = strings.TrimSuffix(root, "/") + "/" + rest
+		}
+	}
+	k := strings.TrimSuffix(strings.TrimSuffix(pageKey(page), ".md"), "/index")
+	return strings.ToLower(k)
+}
+
+// familyHeading is the heading a family stands under: its H2, or its
+// page's title for a page's lead.
+func familyHeading(secs []docsindex.Section, f *family) string {
+	c := secs[f.members[0]].Crumbs
+	if len(c) >= 2 {
+		return strings.ToLower(strings.TrimSpace(c[1]))
+	}
+	return "\x00lead"
+}
+
+// familiesPerPage is how many families of a page the results hold before
+// other pages' go first: localFamiliesPerPage, but one for an API
+// reference leaf (planTier), whose page is one entry: its description and
+// its signature are not two answers.
+func familiesPerPage(page string, root webRoot, rootOK bool) int {
+	if u, err := url.Parse(page); err == nil && rootOK && planTier(u, root, nil) == tierReference {
+		return 1
+	}
+	return localFamiliesPerPage
 }
 
 // familyContent identifies a family by its first section's heading and
@@ -187,9 +227,10 @@ func familyContent(secs []docsindex.Section, f *family) string {
 // its own section and its best-ranked ones (at most localFamilyParts), in
 // page order, each trimmed to its share by trimSection.
 func familyResults(lib docsindex.Library, secs []docsindex.Section, fams []*family, query string, tokens int) []Result {
-	if tokens <= 0 {
-		tokens = localTokens
+	if tokens > 0 {
+		return compactResults(lib, secs, fams, query, tokens)
 	}
+	tokens = localTokens
 	budget := tokens * webCharsPerToken
 	maxResult := localResultTokens * webCharsPerToken
 	sizes := make([]int, len(fams))

@@ -203,3 +203,33 @@ func TestUnversionedNamePicksCurrentProject(t *testing.T) {
 		t.Errorf("chart.js@3 = %v", err)
 	}
 }
+
+// Indexes built from a docs URL before builds recorded the site's name
+// carry only their roots: a name in a root's path beats one of its host
+// (svelte is svelte.dev/docs/svelte, not svelte.dev/docs/kit), a host
+// label without its language word names the library (httpx for
+// python-httpx.org, poetry for python-poetry.org), and a package named for
+// its major release finds the docs named without it (beautifulsoup4).
+func TestNamesFromRootsAlone(t *testing.T) {
+	lib := func(root string) docsindex.Library {
+		return docsindex.Library{Key: root, Root: root, Library: root, Format: docsindex.FormatVersion}
+	}
+	kit, svelte := lib("https://svelte.dev/docs/kit/"), lib("https://svelte.dev/docs/svelte/")
+	httpx, poetry := lib("https://www.python-httpx.org/"), lib("https://python-poetry.org/docs/")
+	bs4 := lib("https://www.crummy.com/software/BeautifulSoup/bs4/doc/")
+	libs := []docsindex.Library{kit, svelte, httpx, poetry, bs4}
+	for value, want := range map[string]string{
+		"svelte": svelte.Key, "kit": kit.Key, "httpx": httpx.Key, "python-httpx": httpx.Key, "poetry": poetry.Key,
+		"bs4": bs4.Key, "beautifulsoup4": bs4.Key, "beautifulsoup": bs4.Key,
+	} {
+		got, _, err := pickVersion(libs, value)
+		if err != nil || got.Key != want {
+			t.Errorf("%q = %s (%v), want %s", value, got.Key, err, want)
+		}
+	}
+	for _, value := range []string{"python", "web3", "soup4"} {
+		if got := MatchIndexed(libs, value); len(got) > 0 {
+			t.Errorf("%q named %s", value, got[0].Key)
+		}
+	}
+}
