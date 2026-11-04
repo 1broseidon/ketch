@@ -248,6 +248,9 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 	if err != nil {
 		return Answer(SearchBackend, nil, err)
 	}
+	if s.trace != nil {
+		_, tr.answerCos, _ = s.closest(ctx, []docsindex.Library{lib}, req.query)
+	}
 	o := s.local.rank(ctx, lib, req.query, req.opts)
 	return searchAnswered(o, lib, len(pages), st)
 }

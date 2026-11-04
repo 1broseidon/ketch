@@ -121,7 +121,7 @@ func partialLibrary(o Outcome, lib docsindex.Library) Outcome {
 // is set: for measuring, never part of the answer.
 type sfTrace struct {
 	path, local, site                                  string
-	localCos                                           float64
+	localCos, answerCos                                float64
 	hits, docsHits, siteHits, planned, fetched, failed int
 	stored                                             sfStored
 }
@@ -130,7 +130,7 @@ func (t *sfTrace) write(w io.Writer, req sfRequest, d time.Duration) {
 	if w == nil {
 		return
 	}
-	_, _ = fmt.Fprintf(w, "trace: search-first path=%s local=%s local_cos=%.4f hits=%d docs_hits=%d site=%s site_hits=%d planned=%d fetched=%d failed=%d new=%d changed=%d unchanged=%d embedded=%d embed_ms=%d ms=%d library=%q\n",
-		t.path, t.local, t.localCos, t.hits, t.docsHits, t.site, t.siteHits, t.planned, t.fetched, t.failed,
+	_, _ = fmt.Fprintf(w, "trace: search-first path=%s local=%s local_cos=%.4f answer_cos=%.4f hits=%d docs_hits=%d site=%s site_hits=%d planned=%d fetched=%d failed=%d new=%d changed=%d unchanged=%d embedded=%d embed_ms=%d ms=%d library=%q\n",
+		t.path, t.local, t.localCos, t.answerCos, t.hits, t.docsHits, t.site, t.siteHits, t.planned, t.fetched, t.failed,
 		t.stored.newPages, t.stored.changed, t.stored.unchanged, t.stored.embedded, t.stored.embedTime.Milliseconds(), d.Milliseconds(), req.library)
 }
