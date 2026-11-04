@@ -476,3 +476,189 @@ to 3,500 tokens); a pointer to the result's whole family when the best
 section is a subsection (the follow-up would then hold the H2's own text, at
 the price of more tokens); a "next" pointer on the section a result did not
 show; inferring the library from the query for a bare `--section`.
+
+## Amendment 5 (2026-11-04): SQLite FTS5 store, keyword-first, embedding optional and off
+
+Indexing a 735-page site (duo.com/docs, 19,357 section windows) pegged 16
+of 18 cores for 13 to 14 minutes: bge-base in pure Go embeds about 20 to 25
+windows a second. A cold search-first question cost about 8 s of wall
+time and 53 s of CPU, nearly all of it embedding the sections it had just
+read. Searching was already cheap; computing vectors was the cost. The rule
+for this amendment is that simpler and faster at the same or similar
+accuracy beats the model.
+
+**Decision.**
+
+- **One SQLite file, through a pure-Go driver.** The index moves from bbolt
+  to `docs-index.sqlite` (modernc.org/sqlite; `CGO_ENABLED=0` still builds
+  every release target). Tables: libraries (the metadata as JSON), pages
+  (URL, content hash, version, fetch time, source: a build or a search),
+  sections (page, order, anchor, heading, breadcrumb, H2 family, text,
+  snippet units, cross-version label), vectors (optional), and one FTS5
+  table per library, so term statistics are the library's own. The FTS5
+  table is contentless: its rows are made by the docs package's tokenizer
+  and not stored again. It is still opened per operation (ADR-0006), with
+  the write-ahead log so queries read while a build writes. Format 3; the
+  bbolt index never shipped and is not read: `docs index` and `doctor` name
+  an old `docs-index.db` beside the new file, and a non-SQLite file at
+  `KETCH_DOCS_INDEX_PATH` is refused (`ErrNotSQLite`). The page cache is
+  unchanged.
+- **Tokenization for prose and code.** Each section's row is its heading
+  (with the camel-case words of an API entry's name), its breadcrumb above
+  it, the parts of the identifiers it writes, and its body, every word
+  normalized by the ranking's own normalization (rankTokens: light stemming,
+  -ing/-ed/-ize/-ation folding), so the table and a question meet on the
+  same terms. The identifier column holds each code identifier's whole name
+  and its words: `useForm` is `useform`, `use`, `form`;
+  `client_max_body_size` is `clientmaxbodysize` (its words are body terms
+  already); `form.validateField` is `form`, `validatefield`, `validate`,
+  `field`; `add_generation_prompt=True` is `addgenerationprompt`. A query
+  adds the whole names of the identifiers it writes. The normalization is
+  versioned (`ftsVersion`): a library whose rows another version made has
+  them rebuilt from its stored sections on first use, without the network.
+- **Keyword ranking is the default and runs no model.** bm25 over the
+  table (heading 3, breadcrumb 1, identifiers 1, body 1) picks 200
+  candidates matching any of the question's terms, question filler left
+  out ("use", "need", "work", "actually", ...); they are ordered by bm25
+  times the web ranker's boosts (the share of the question's terms named,
+  a heading or page title that is the question, an API entry the question
+  names, the terms in code and side by side), times 0.6 for an API
+  reference leaf and 1.2 for a guide (planTier, where the page sits in the
+  site), times up to 1.5 for a page title naming the question's terms, and
+  times up to 2 for a page whose candidates' scores sum high (a page about
+  the question over a stray section elsewhere). Only the candidates' pages
+  are read, every section of them, so families and the existing rendering
+  (one result per H2, page dedupe, compact answers, pointers, `--section`)
+  are unchanged. Without hybrid ranking keyword ranking is not a fallback,
+  so it carries no `keyword_ranking` reason.
+- **Embedding is optional and off** (`docs_hybrid`, default false). With it
+  on and a model installed, builds embed every section, `-b local` fuses
+  cosine with the keyword ranking by reciprocal rank fusion, search-first
+  embeds its 96-window budget and checks stored sections' cosine before
+  searching, and `--reembed` works; a library without usable vectors is
+  ranked by keywords with reason `keyword_ranking`. Without it, no command
+  loads the model.
+- **Search-first remembers questions by their terms.** A question whose
+  normalized terms overlap a remembered one's by at least 0.8 (Jaccard), for
+  the same library value, is answered from the library that answered it,
+  with no search; hybrid keeps the query-vector cosine (0.92). The other
+  local check, a stored section within cosine 0.80 of the question, has no
+  keyword equivalent that can say a partly read site answers: without the
+  model, a new question about a search-built library is searched again.
+- **Determinism.** Pages are written in URL order and full-text ties break
+  by row id (pages fetched concurrently arrive in any order), and compact
+  answers sum a piece's term weights in term order (a float sum in map
+  order differed in its last bits between runs, flipping ties): the same
+  question now gives the same answer every run, which the measurements
+  below needed.
+
+**Driver.** Both pure-Go SQLites ship SQLite 3.54 with FTS5. modernc.org/sqlite
+compiles FTS5 in and adds 3.9 MB to the stripped binary;
+github.com/ncruces/go-sqlite3 (wasm2go) needs its FTS5 module registered per
+connection and adds 5.8 MB. On angular.dev's 10,115 sections both inserted
+in about 0.1 s and answered a 200-row bm25 query in under a millisecond
+(ncruces about a quarter faster: 0.65 against 0.85 ms). The difference is
+below anything a query spends elsewhere; the smaller binary and the
+simpler setup decide for modernc.
+
+**Measurement** (dev sets only. Library set: the 63 gold-labelled cases,
+`scripts/local_retrieval.py` with each case's planned root; the 44 round-5
+libraries rebuilt from a copy of the page cache, and the hybrid index the
+same store with round 5's vectors copied in for every section whose text
+is unchanged and the rest embedded. General set: the 60 dev questions plus 6
+negatives through `-b search`, `scripts/search_first_eval.py`, replaying the
+prototype's recorded cold runs, so every mode sees the same search results
+and pages; replay leaves the network out of wall times.)
+
+| library set, fair matcher | page@5 | section@1/3/5 | answer@5 | answer in 880 | facts in 880 | query p50/p95 |
+|---|---|---|---|---|---|---|
+| round 5 (bbolt, hybrid) | 60 | 31/49/55 | 46 | 40 | 67 | 221/480 ms |
+| FTS5, keywords only | 60 | 38/48/51 | 46 | 43 | 68 | 32/65 ms |
+| FTS5, hybrid | 60 | 37/51/55 | 47 | 42 | 70 | 202/348 ms |
+
+| general set, search-first, cold | site | page@5 | section@1/3/5 | answer@5 | wall p50/p95 | CPU p50/p95 | RSS p50 |
+|---|---|---|---|---|---|---|---|
+| prototype (bbolt, hybrid) | 51 | 36 | 15/27/31 | 19 | 4.54/6.27 s | 52.7/74.6 s | 1,168 MB |
+| FTS5, keywords only | 51 | 35 | 16/26/29 | 19 | 0.28/1.14 s | 0.31/1.42 s | 62 MB |
+| FTS5, hybrid | 51 | 37 | 18/28/30 | 23 | 4.75/8.10 s | 53.0/75.3 s | 1,183 MB |
+
+The prototype's live cold runs took 7.96 s at the median; the 3.4 s over
+its replay is network time every mode pays alike.
+
+| duo.com/docs (733 pages, 13,871 sections), `docs index` from the page cache | wall | CPU (user+sys) | peak RSS | index file |
+|---|---|---|---|---|
+| FTS5, keywords only | 14–19 s (waiting on a few live fetches) | 2.4 s | 188 MB | 28 MB |
+| FTS5, hybrid (19,357 windows embedded) | 779 s | 8,979 s | 1,635 MB | 67 MB |
+
+| a repeated search-first question (all 66, over the cold run's index) | answered locally | same results | wall p50/p95 |
+|---|---|---|---|
+| FTS5, keywords only (term-overlap memory) | 61/66 (the other 5 were refusals, not remembered) | 66/66 | 0.02/0.05 s |
+| FTS5, hybrid (query-vector memory) | 61/66 | 66/66 | 0.20/0.25 s |
+
+The term-overlap memory never fired falsely: the 66 distinct questions run
+in order over one shared index all went to search.
+
+The keyword ranker's steps, each measured on both sets (section@5 and
+answer@5, library / general):
+
+| step | library | general |
+|---|---|---|
+| bm25 + the web ranker's boosts (start) | 46, 43 | 28, 17 |
+| + guide 1.2 / reference leaf 0.6 | 49, 45 | 28, 17 |
+| + page title coverage | 49, 45 (section@1 27 → 32) | 28, 17 |
+| + page-level aggregate | 49, 45 (section@1 32 → 38) | 28, 19 |
+| + question filler dropped | 51, 46 | 28, 19 |
+| page aggregate at 1.0 instead of 0.6 (adopted) | 51, 46 | 29, 19 |
+
+Tried and not used (each within a case of the step before, or worse on one
+set): column weights (heading 1 or 5, breadcrumb 0.5 or 2, identifiers 0.5
+or 2: ±1); candidate depth 50 or 500 and the relevance cut (no change);
+the identifier column off (no change on these sets; kept for identifier
+queries, below); FTS5's Porter stemmer over the raw text instead of the
+ranking's normalization (library 50/44, general 28/19); prefix matching
+(-1/-1); NEAR phrase clauses (-0/-1 and fewer facts in 880); dropping the
+library's own name from the question (-1 section or answer); a length prior either
+way (-11 and -8 sections); a penalty for API entries the question does not
+name (-3); pseudo-relevance feedback (+1 section, -2 to -3 answers); family-
+instead of page-level aggregation (-3 at 0.6); llms.txt descriptions
+indexed with each page's lead section (no change) or every section (-1); a
+prior for the pages the web search ranked (general: section@1 +3 to +4,
+section@5 +0 to +1, answer@5 -1).
+
+The identifier column is kept although these sets do not move with it: no
+dev question writes an identifier whose words alone miss it. A unit test
+holds `validateField`, `validate field` and `form.validateField` to the same
+section.
+
+**Where keywords lose to hybrid.** Library set, gold section in the top 5
+with hybrid but not keywords: crewai-tools ("give an agent custom tools"),
+chartjs-tree-shaking ("reduce bundle size by importing only the components
+I use": the gold section says "tree-shaking"; keywords find the tree-shaking
+section of another page, and still answer), ai-sdk-usechat, poetry-18-
+dependencies ("declare dependencies": the gold section says "specifying"),
+poetry-install-without-group ("without dev group": the section is
+"installing group dependencies" with `--without`), textual-work-decorator
+("run a slow request in the background without freezing the UI": the
+section is about workers). Keywords win sveltekit-form-actions and
+instructor-stream-partial back. General set, answered by hybrid only:
+okta-rate-limit-429-reset, aws-iam-explicit-deny-overrides-allow ("deny
+overrides allow" against "explicit deny ... evaluation logic"),
+aws-s3-bucket-naming-rules, cloudflare-tunnel-create-locally-managed,
+kubernetes-liveness-vs-readiness-probe ("k8s"), postgresql-wal-level-
+logical-replication, tokio-mutexguard-not-send-across-await; by keywords
+only: aws-lambda-max-timeout-and-env-var-size, kubernetes-pod-disruption-
+budget, android-play-target-sdk-requirement-api-36. Most hybrid-only wins are
+paraphrases: the question and the section name the same thing in other
+words.
+
+**Consequences.** A build costs what fetching costs; the 44 round-5
+libraries (10,680 pages, 77,355 sections) rebuild from the page cache in
+about 2.5 minutes and 40 CPU-seconds, into 233 MB where round 5's bbolt index
+with vectors was 1.2 GB. A local query is 32 ms at the median, a cold
+search-first question 0.3 s of CPU, and nothing loads a 438 MB model. The
+binary grows 4.2 MB (23.7 to 27.8 MB stripped). Keywords alone lose four
+gold sections in the top five on the library set and four answers on the
+general set to hybrid ranking, all paraphrases; they equal or beat it at
+the top (section@1 38 against 37) and within 880 tokens (43 answers against
+42). The weights were set on these dev sets, which is this amendment's
+risk; the sealed holdouts decide.
