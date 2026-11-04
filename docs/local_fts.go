@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"math"
 	"net/url"
+	"path"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/1broseidon/ketch/internal/docsindex"
 )
@@ -167,10 +170,11 @@ type rankQuery struct {
 	idents    []string // queryIdents
 	identKeys []string // queryIdentKeys
 	howTo     bool
+	trouble   bool // troubleQuery
 }
 
 func newRankQuery(query string) rankQuery {
-	return rankQuery{query: query, terms: withoutFiller(queryTerms(query)), idents: queryIdents(query), identKeys: queryIdentKeys(query), howTo: isHowTo(query)}
+	return rankQuery{query: query, terms: withoutFiller(queryTerms(query)), idents: queryIdents(query), identKeys: queryIdentKeys(query), howTo: isHowTo(query), trouble: troubleQuery(query)}
 }
 
 // questionFiller are words questions are phrased with that say nothing
@@ -261,16 +265,19 @@ func hitIDs(hits []docsindex.Hit) []int64 {
 
 // rerankHits orders the full-text hits (sections of secs by ID): bm25
 // times the web ranker's boosts (sectionBoost), its page's place in the
-// site (sitePrior), its page title naming the question, and its page's
-// other matches (pageBoosts). A section that matched by its breadcrumb
-// alone, or about a later version unless the question asks about it, is
-// left out. Scores are relative to the best.
+// site (sitePrior), its page title naming the question, a legacy edition
+// of a page (legacyPages) down, a troubleshooting section up for a
+// question about a failure, and its page's other matches (pageBoosts). A
+// section that matched by its breadcrumb alone, about a later version
+// unless the question asks about it, or under a docs platform's
+// boilerplate heading, is left out. Scores are relative to the best.
 func rerankHits(lib docsindex.Library, secs []docsindex.Section, hits []docsindex.Hit, q rankQuery) []rankedSection {
 	at := make(map[int64]int, len(secs))
 	for i, s := range secs {
 		at[s.ID] = i
 	}
 	root, rootErr := parseWebRoot(lib.Root)
+	legacy := newLegacyPages(secs, q.terms)
 	var out []rankedSection
 	for _, h := range hits {
 		i, ok := at[h.ID]
@@ -278,7 +285,7 @@ func rerankHits(lib docsindex.Library, secs []docsindex.Section, hits []docsinde
 			continue
 		}
 		s := secs[i]
-		if s.CrossVersion != "" && !asksAbout(q.query, s.CrossVersion) {
+		if s.CrossVersion != "" && !asksAbout(q.query, s.CrossVersion) || boilerplateSection(s.Crumbs) {
 			continue
 		}
 		matched, own, seq := termMatches(s, q.terms)
@@ -291,6 +298,12 @@ func rerankHits(lib docsindex.Library, secs []docsindex.Section, hits []docsinde
 		}
 		if len(s.Crumbs) > 0 {
 			score *= 1 + ftsTitleBoost*titleCoverage(s.Crumbs[0], q.terms)
+		}
+		if legacy[s.Page] {
+			score *= ftsLegacyPrior
+		}
+		if q.trouble && troubleSection(s) {
+			score *= ftsTroubleBoost
 		}
 		out = append(out, rankedSection{sec: i, score: score})
 	}
@@ -353,8 +366,12 @@ func relevantRanked(ranked []rankedSection) []rankedSection {
 
 // termMatches counts the query terms a section names (heading, body with
 // its identifiers' words, or breadcrumb), whether it names any itself
-// (not by its breadcrumb alone), and its heading-then-body token sequence.
-func termMatches(s docsindex.Section, terms []string) (matched int, own bool, seq []string) {
+// (not by its breadcrumb alone), and its heading-then-prose token
+// sequence: the words of the identifiers it writes are left out of the
+// sequence, so one identifier whose parts spell the question
+// (adminapi_read_log for "read logs ... admin api") does not count as the
+// question's words side by side.
+func termMatches(s docsindex.Section, terms []string) (matched float64, own bool, seq []string) {
 	head := headingTokens(s.Heading)
 	body := rankTokens(s.Text)
 	set := map[string]bool{}
@@ -382,6 +399,138 @@ func termMatches(s docsindex.Section, terms []string) (matched int, own bool, se
 			matched++
 		}
 	}
-	seq = append(rankTokens(s.Heading), body...)
+	seq = append(rankTokens(s.Heading), rankTokens(withoutIdents(s.Text))...)
 	return matched, own, seq
+}
+
+// withoutIdents is text with the identifiers it writes as code
+// (isCodeIdent) blanked out: its prose.
+func withoutIdents(text string) string {
+	return identRe.ReplaceAllStringFunc(text, func(m string) string {
+		if isCodeIdent(m) {
+			return " "
+		}
+		return m
+	})
+}
+
+const (
+	// ftsLegacyPrior weighs a section of a legacy page (legacyPages) the
+	// question does not ask about: the current page answers first.
+	ftsLegacyPrior = 0.6
+	// ftsTroubleBoost weighs a troubleshooting section (troubleSection)
+	// for a question that describes a failure (troubleQuery).
+	ftsTroubleBoost = 1.2
+)
+
+// legacyWords are words that mark a page, by its path or its title, as
+// an older or other edition of one the site keeps current.
+var legacyWords = map[string]bool{"legacy": true, "deprecated": true, "archived": true, "archive": true, "obsolete": true}
+
+// legacyVersionRe matches a path segment naming a page's numbered
+// edition: adminapi-v1, auth_v2.
+var legacyVersionRe = regexp.MustCompile(`^(.+?)[-_]v(\d+)(?:\.\w+)?$`)
+
+// legacyPages are the pages among a ranking's candidates that are a
+// legacy edition the question does not ask about: their path or title
+// says legacy or deprecated (variantWords, legacyWords), or their last
+// path segment is a numbered edition (x-v1) of another candidate page
+// (x, or a higher x-vN in the same directory).
+type legacyPages map[string]bool
+
+func newLegacyPages(secs []docsindex.Section, terms []string) legacyPages {
+	asked := map[string]bool{}
+	for _, t := range terms {
+		asked[t] = true
+	}
+	type family struct {
+		plain bool // a page with no edition number
+		top   int  // the highest edition number
+	}
+	families := map[string]*family{} // host, directory and base name → its editions among the pages
+	editions := map[string]int{}     // page → its edition number
+	keys := map[string]string{}
+	out := legacyPages{}
+	seen := map[string]bool{}
+	for _, s := range secs {
+		if seen[s.Page] {
+			continue
+		}
+		seen[s.Page] = true
+		u, err := url.Parse(s.Page)
+		if err != nil {
+			continue
+		}
+		segs := pathSegments(u.Path)
+		words := tokenize(strings.Join(segs, " "))
+		if len(s.Crumbs) > 0 {
+			words = append(words, tokenize(s.Crumbs[0])...)
+		}
+		for _, w := range words {
+			if (legacyWords[w] || variantWords[w]) && !asked[normTerm(w)] {
+				out[s.Page] = true
+			}
+		}
+		if len(segs) == 0 {
+			continue
+		}
+		last := strings.ToLower(segs[len(segs)-1])
+		base, n := strings.TrimSuffix(last, path.Ext(last)), 0
+		if m := legacyVersionRe.FindStringSubmatch(last); m != nil && !asked["v"+m[2]] {
+			base = m[1]
+			n, _ = strconv.Atoi(m[2])
+		}
+		k := u.Host + "/" + strings.Join(segs[:len(segs)-1], "/") + "/" + base
+		f := families[k]
+		if f == nil {
+			f = &family{}
+			families[k] = f
+		}
+		f.plain = f.plain || n == 0
+		f.top = max(f.top, n)
+		editions[s.Page], keys[s.Page] = n, k
+	}
+	for page, n := range editions {
+		if f := families[keys[page]]; n > 0 && (f.plain || f.top > n) {
+			out[page] = true
+		}
+	}
+	return out
+}
+
+// troubleWords are words a question describing a failure uses.
+var troubleWords = map[string]bool{
+	"error": true, "errors": true, "fail": true, "fails": true, "failed": true, "failing": true, "failure": true,
+	"crash": true, "crashes": true, "crashing": true, "keeps": true, "broken": true, "stuck": true, "hang": true,
+	"hangs": true, "troubleshoot": true, "troubleshooting": true, "debug": true, "debugging": true, "exception": true,
+	"timeout": true, "refused": true, "denied": true,
+}
+
+// troubleQuery reports a question about something going wrong: a failure
+// word, or "not working", "doesn't work", "won't start".
+func troubleQuery(query string) bool {
+	low := strings.ToLower(query)
+	for _, p := range []string{"not working", "doesn't work", "does not work", "won't", "can't", "cannot", "isn't working"} {
+		if strings.Contains(low, p) {
+			return true
+		}
+	}
+	for _, w := range strings.FieldsFunc(low, func(r rune) bool { return !unicode.IsLetter(r) && r != '\'' }) {
+		if troubleWords[w] {
+			return true
+		}
+	}
+	return false
+}
+
+// troubleRe matches a path or heading that says it is about failures.
+var troubleRe = regexp.MustCompile(`(?i)troubleshoot|debug|\berrors?\b|\bproblems?\b|\bcommon[- ]issues\b|\bknown[- ]issues\b|\bdiagnos`)
+
+// troubleSection reports a section whose page path or headings say it
+// helps with failures: troubleshooting, debugging, errors.
+func troubleSection(s docsindex.Section) bool {
+	if u, err := url.Parse(s.Page); err == nil && troubleRe.MatchString(u.Path) {
+		return true
+	}
+	return troubleRe.MatchString(strings.Join(s.Crumbs, " ")) || troubleRe.MatchString(s.Heading)
 }

@@ -766,7 +766,7 @@ func rankSections(sections []webSection, query string) []scoredSection {
 		if matched == 0 || !c.own[i] {
 			continue // matched by its breadcrumbs alone: every section of the page would be
 		}
-		score *= sectionBoost(s, terms, idents, howTo, matched, c.seq[i])
+		score *= sectionBoost(s, terms, idents, howTo, float64(matched), c.seq[i])
 		out = append(out, scoredSection{webSection: s, score: score})
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].score > out[j].score })
@@ -779,8 +779,8 @@ func rankSections(sections []webSection, query string) []scoredSection {
 // it, an API entry the query names, the query's terms in its code, and
 // the query's words side by side in it (seq: its heading then body
 // tokens, rankTokens).
-func sectionBoost(s webSection, terms, idents []string, howTo bool, matched int, seq []string) float64 {
-	b := 0.5 + 0.5*float64(matched)/float64(len(terms))
+func sectionBoost(s webSection, terms, idents []string, howTo bool, matched float64, seq []string) float64 {
+	b := 0.5 + 0.5*matched/float64(len(terms))
 	// A section, or a page, titled exactly the query is about it; BM25
 	// alone favours short pages that merely mention every term.
 	switch {

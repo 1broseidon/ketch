@@ -905,6 +905,9 @@ func splitSections(p webPage, pageIndex int) []webSection {
 			sec.heading, sec.anchor, sec.source = b.h.text, b.anchor, b.source
 			sec.crumbs = append(sec.crumbs, blockCrumbs(blocks, i)...)
 		}
+		if boilerplateSection(sec.crumbs) {
+			continue
+		}
 		out = append(out, sec)
 	}
 	return out
@@ -1396,4 +1399,20 @@ func firstH1(md string) string {
 		}
 	}
 	return ""
+}
+
+// boilerplateHeadingRe matches the headings docs platforms put on every
+// page that are no part of it: instructions to AI agents, page-rating
+// and edit prompts, cookie notices.
+var boilerplateHeadingRe = regexp.MustCompile(`(?i)^\s*(?:agent instructions|instructions for (?:ai )?agents|querying this documentation|was this (?:page|article|doc|document|section|content) helpful\??|was this helpful\??|did this (?:page|article|doc) help(?: you)?\??|is this page helpful\??|rate this (?:page|article)|edit this page(?: on github)?|edit on github|suggest (?:an )?edits?|cookies?(?: notice| policy| preferences| settings| consent)?|we use cookies.*|manage cookies)\s*$`)
+
+// boilerplateSection reports a section under such a heading (its own or
+// one above it, below the page title).
+func boilerplateSection(crumbs []string) bool {
+	for _, c := range crumbs[min(1, len(crumbs)):] {
+		if boilerplateHeadingRe.MatchString(c) {
+			return true
+		}
+	}
+	return false
 }
