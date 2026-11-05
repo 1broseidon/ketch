@@ -175,6 +175,9 @@ func (s *SearchFirst) SearchSelect(ctx context.Context, query string, limit int)
 // site (searched within, its lists read when search finds nothing
 // there); a name or spec is a preference among the sites search finds.
 func (s *SearchFirst) GetDocsSelect(ctx context.Context, library, query string, tokens int) Outcome {
+	if isContext7ID(strings.TrimSpace(library)) {
+		return Answer(SearchBackend, nil, fmt.Errorf("search: %q is a Context7 library ID: ask Context7 with -b context7 (MCP backend \"context7\"), or give search a library name, spec or docs URL: %w", library, errContext7ID))
+	}
 	opts, ok := localOptionsFrom(ctx)
 	if !ok {
 		opts.Tokens = tokens
@@ -197,6 +200,29 @@ func (s *SearchFirst) GetDocsSelect(ctx context.Context, library, query string, 
 // required facts in 19 of 60 answers, the whole-section view in 10, at
 // the same ~1,550 tokens returned.
 const sfDefaultTokens = 1800
+
+// errContext7ID is a Context7 library ID given to search, which ketch
+// 0.20 sent to Context7 by default: the caller names the backend.
+var errContext7ID = failure.New(failure.Validation, "context7_id", "a Context7 library ID needs the context7 backend")
+
+// isContext7ID reports a Context7 library ID: /owner/repo, optionally with
+// a version segment. No web library has that shape (a docs URL has a
+// scheme, a spec no leading slash).
+func isContext7ID(s string) bool {
+	if !strings.HasPrefix(s, "/") || strings.HasPrefix(s, "//") {
+		return false
+	}
+	parts := strings.Split(strings.Trim(s, "/"), "/")
+	if len(parts) < 2 || len(parts) > 3 {
+		return false
+	}
+	for _, p := range parts {
+		if p == "" || strings.ContainsAny(p, " \t?#:") {
+			return false
+		}
+	}
+	return true
+}
 
 // compactByDefault gives a request without a budget the compact one.
 func compactByDefault(o LocalOptions) LocalOptions {

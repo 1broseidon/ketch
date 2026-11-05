@@ -305,3 +305,20 @@ func TestServedSite(t *testing.T) {
 		t.Errorf("servedSite = %s with top hit %s, want the served page's tree", site.root, site.hits[0].u)
 	}
 }
+
+// A Context7 library ID, which ketch 0.20 sent to Context7 by default, is
+// a validation error naming -b context7, before anything is searched.
+func TestSearchRefusesContext7ID(t *testing.T) {
+	s := NewSearchFirst(NewWeb(nil), NewLocal(nil))
+	for _, id := range []string{"/vercel/next.js", "/reactjs/react.dev", "/websites/react_dev/v18"} {
+		o := s.GetDocsSelect(context.Background(), id, "routing", 0)
+		if o.Status != Refused || o.Reason != "context7_id" || !strings.Contains(o.Err().Error(), "-b context7") {
+			t.Errorf("%s: %+v", id, o)
+		}
+	}
+	for _, spec := range []string{"vercel/next.js", "next", "https://nextjs.org/docs"} {
+		if isContext7ID(spec) {
+			t.Errorf("%s read as a Context7 ID", spec)
+		}
+	}
+}
