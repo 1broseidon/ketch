@@ -63,7 +63,7 @@ func buildServerInstructions(tools []string) string {
 	writeClauses(&b, tools, func(name string) string { return toolProse[name].guidance })
 	b.WriteString(".\n")
 	b.WriteString(`Backend defaults and API keys come from the operator's ketch config; omit the backend argument to use them (on the CLI, ` + "`ketch config`" + ` shows the effective settings).
-Tool errors start with a stable prefix: [validation] and [not_found] mean fix your input (retrying unchanged will not help); [upstream] is a backend/network failure where retrying may help; [precondition] means the operator must configure something (e.g. an API key or browser); [cancelled] means the call was cancelled or timed out.
+Tool errors start with a stable prefix: [validation] and [not_found] mean fix your input (retrying unchanged will not help); [upstream] is a backend/network failure or a timeout, where retrying may help; [precondition] means the operator must configure something (e.g. an API key or browser); [cancelled] means the call was cancelled.
 `)
 	writeSizeAdvice(&b, tools)
 	// The historic static text ended without a trailing newline.

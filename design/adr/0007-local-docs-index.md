@@ -1,6 +1,6 @@
 # ADR 0007: A local docs index, built once per library and queried offline
 
-**Status:** Proposed · **Date:** 2026-11-02 · Supersedes the local-corpus
+**Status:** Accepted (amendment 8, shipped in 0.21) · **Date:** 2026-11-02 · Supersedes the local-corpus
 rejection in [ADR-0004](./0004-tagged-cache-corpus.md) (tags themselves are
 unchanged)
 
@@ -870,3 +870,83 @@ pure Go and small; the cost was never the binary).
 `docs index`. Paraphrase questions whose words the docs do not use stay the
 known weakness (amendment 5 lists them); a fix for them has to be cheap
 enough to run by default, or it stays out.
+
+## Amendment 8 (2026-11-05): one docs backend that reads the docs, beside Context7
+
+By amendment 7 `ketch docs` had five backends: Context7 (the default), `web`
+(a keyless live read of one library's docs site), `local` (the index),
+`search` (search-first, a prototype) and `auto` (local, then web, then
+Context7). Search-first answers what the others answered and more: it uses
+the index when the index covers the question, finds a site for any question
+rather than only for a resolved package, and keeps what it reads. Five
+backends made five ways to ask the same thing, a fall-through chain with its
+own gates (decision-13) to keep correct, and a default that read none of the
+docs itself. 0.21 ships the decision below.
+
+**Decision.**
+
+- **`search` is the default docs backend**, and the only one besides
+  Context7. Its state machine is amendment 6's: the local index when a
+  library indexed in full (`ketch docs index`) is named by the request, or
+  the same question was answered before; else a web search (through the
+  search surface's providers), the site its docs hits agree on, up to 24
+  pages read and kept in the index, and the keyword ranker.
+- **The local index is part of search**, not a backend. An answer from a
+  library indexed in full renders as `-b local` did: whole sections (about
+  1,800 tokens), compact only with a budget, since that is what amendments 3
+  and 5 measured on the library set. An answer from pages search read is
+  compact by default, as amendment 6 measured on the general set. One
+  request's caller options decide which (`sfRequest.compact`).
+- **`web` and `auto` are gone as backends.** What `web` did that search
+  needs stays as internals: site profiles, discovery, fetch, sectioning, and
+  name@version resolution (search's preferences, `--resolve`, `docs index`).
+  What only `web` answering needed is deleted: reading a library out of a
+  bare query against the registries (readings, contests, vetoes, ecosystem
+  words), the per-call page picking and the in-memory BM25 section ranker,
+  live `GetDocs` over a site. `auto` (docs/auto.go) and its Context7 gates go
+  with it, as do MCP's `attempts` and `errors` fields, which only described
+  the chain. Context7 is unchanged from v0.20.5 (keyless quota, snippet
+  shaping): `-b context7`, or `docs_backend context7` as the default.
+- **`--section` belongs to search.** It reads the index whatever the
+  configured default is; only an explicit `-b context7` refuses it. The
+  pointer reads `full section: ketch docs --section <ref>` (MCP:
+  `docs(section="<ref>")`), and over MCP a cut result carries it in the
+  whole-section view too.
+- **Config.** `docs_backend` accepts `search` and `context7`. ketch 0.20's
+  `config set` accepted `local` (registered but hidden); a file or
+  `KETCH_DOCS_BACKEND` that says `local` is read as `search`, and `config set
+  docs_backend local` stores `search` with a note. `web` and `auto` never
+  shipped and are unknown backends whose error names the fix. A config file
+  that says `context7` keeps Context7: `ketch config init` and every
+  `config set` wrote the default (`context7`) into the file, so this
+  includes installs that never chose it; the release notes say how to switch.
+- **Doctor** has one `search` docs row (keyless; how many libraries the index
+  holds, without the network) and Context7's.
+
+**Measurement.** Both suites, against amendment 7's build (feat/docs-fts5 at
+3a2dcd7) on the same inputs:
+
+| suite | build | page@5 | section@1/3/5 | answer@5 | answer in 880 | facts in 880 | refused |
+|---|---|---|---|---|---|---|---|
+| library set (63, `-b local`) | amendment 7 | 60 | 38/48/52 | 46 | 43 | 68 | 1 |
+| library set (63, `-b search`) | this amendment | 60 | 38/48/52 | 46 | 43 | 68 | 1 |
+
+| general set (60 + 6 negatives, U-live replay) | site | page@5 | section@1/3/5 | answer@5 | refused | negatives refused |
+|---|---|---|---|---|---|---|
+| amendment 7 (`-b search`) | 52 | 40 | 18/28/32 | 18 | 3 | 0 |
+| this amendment (`-b search`) | 52 | 40 | 18/28/32 | 18 | 3 | 0 |
+
+Every case's results (URLs and text) are identical in both suites. The
+library set ran with the network closed (an empty replay), so the one case
+with no planned root (`--library -`) is refused offline as `-b local`
+refused it, rather than searched live. Three Context7 queries (keyless,
+`--library`, one request each) gave the same output shape as v0.20.5's
+binary; the one whose results differed differed in Context7's own ranking
+between the two calls (the recorded response's ranks match ketch's order).
+
+**Consequences.** Two backends to describe, test and measure, and a default
+that reads the docs. The code shrinks by about 2,200 lines (4,200 of tests);
+the binary barely moves (38.5 to 38.3 MB unstripped), since the web
+internals stay. A question about an indexed library at a version the index
+lacks is searched on the web instead of refused `not_indexed`. Paraphrase
+questions remain the keyword ranker's weakness (amendment 7).

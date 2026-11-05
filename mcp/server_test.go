@@ -18,7 +18,7 @@ import (
 const allFiveInstructions = `ketch provides five read-only research tools: search (web search), code (grep public OSS repos for real-world usage), docs (library/API documentation via Search, Context7), scrape (fetch URLs as clean markdown), and crawl (bounded same-host multi-page crawl).
 Prefer search for the open web, code for code examples, docs for library references, scrape when you already have the URL, and crawl only when one page is not enough.
 Backend defaults and API keys come from the operator's ketch config; omit the backend argument to use them (on the CLI, ` + "`ketch config`" + ` shows the effective settings).
-Tool errors start with a stable prefix: [validation] and [not_found] mean fix your input (retrying unchanged will not help); [upstream] is a backend/network failure where retrying may help; [precondition] means the operator must configure something (e.g. an API key or browser); [cancelled] means the call was cancelled or timed out.
+Tool errors start with a stable prefix: [validation] and [not_found] mean fix your input (retrying unchanged will not help); [upstream] is a backend/network failure or a timeout, where retrying may help; [precondition] means the operator must configure something (e.g. an API key or browser); [cancelled] means the call was cancelled.
 When scraping unknown or potentially large pages, set max_chars (and optionally trim) to bound the response size.`
 
 func TestBuildServerInstructionsAllFive(t *testing.T) {

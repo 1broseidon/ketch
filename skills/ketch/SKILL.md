@@ -140,7 +140,7 @@ file; test labs must set `KETCH_TAGS_PATH` as well as isolating the page cache.
 | --- | --- | --- |
 | `search`, limit 5 | `limit` | ~1.4 KB |
 | `code`, limit 3 | `limit` | ~0.7 KB |
-| `docs`, default budget | `tokens` (default 4000) | ~3.3 KB |
+| `docs`, default budget | `tokens` (search: ~1,800 unless set; context7: 4000) | ~7 KB search, ~3.3 KB context7; `tokens: 880` ~3.5 KB |
 | `scrape`, unknown page | `max_chars` 4000–8000 + `trim` | unguarded: up to ~100 KB (~25k tokens) |
 | `crawl` (MCP) | `max_pages` + per-page `max_chars` | 30 pages default, 100 cap, 3-min wall clock |
 | `tag show` / MCP `tag` show | `limit` (default 50; 0 all) | bounded source metadata; no page bodies |
@@ -154,16 +154,16 @@ file; test labs must set `KETCH_TAGS_PATH` as well as isolating the page cache.
 | 3 | `[not_found]` | Nothing matched | Change the query or selector; not an outage |
 | 4 | `[upstream]` | Backend or network failure | Explicit backend: rotate to another provider (`available_backends` in `ketch config`) or retry once. `auto` already fell through every usable provider: retry once, then report the outage |
 | 5 | `[precondition]` | Operator config missing | Stop researching; enter `ketch setup` |
-| 6 | `[cancelled]` | Cancelled or timed out | Rerun with smaller scope |
+| 6 | `[cancelled]` | Cancelled (a timeout is `[upstream]`) | Rerun with smaller scope |
 
-Situations → class: unknown backend, `regexp` on github → `[validation]`. Selector matched nothing, a `repo` the code backend does not have → `[not_found]` (for `repo`, change the backend). ddg rate limit (it rate-limits readily under fan-out), DNS failure, grepapp's intermittent 504 → `[upstream]`, rotate or retry once. A spent keyless Context7 quota (about 200 requests a month per IP) is `[upstream]` naming the reset — switch docs to `web` rather than retry. Missing API key, docs backend `local` (planned, unimplemented), `force_browser` with no browser configured → `[precondition]`. One asymmetry: a CLI `crawl` interrupted by SIGINT exits **0** with partial results, by design.
+Situations → class: unknown backend, `regexp` on github → `[validation]`. Selector matched nothing, a `repo` the code backend does not have → `[not_found]` (for `repo`, change the backend). ddg rate limit (it rate-limits readily under fan-out), DNS failure, grepapp's intermittent 504 → `[upstream]`, rotate or retry once. A spent keyless Context7 quota (about 200 requests a month per IP) is `[upstream]` naming the reset — drop `backend: context7` (search is keyless) rather than retry. A docs search whose hits hold no docs is `[not_found]` (`no_docs_found`); hits split between docs sites is `[validation]` (`ambiguous_site`: pass a docs URL as `library`); throttled search providers (`search_empty`) are `[upstream]`. Missing API key, a docs library indexed in an older format (`index_outdated`), `force_browser` with no browser configured → `[precondition]`. A timeout inside a backend is `[upstream]`; `[cancelled]` means only that the call was cancelled. One asymmetry: a CLI `crawl` interrupted by SIGINT exits **0** with partial results, by design.
 
 ## Gotchas
 
 Detail for each lives in `references/surfaces.md`.
 
 - Scraping a **bare domain** auto-probes `/llms.txt` and may silently return that instead of the homepage — the `title` field reveals the swap; `no_llms_txt` opts out.
-- `docs` is a two-step: `resolve` the name → **vet the matches** → fetch by `library` ID, and resolve once: a name is resolved again on every call. Context7's resolve never returns empty — garbage in gets confident fuzzy matches out, so check the name, not just the trust score. `web` (keyless, the library's own docs site) returns only verified matches with their evidence, and an ambiguous name is `[validation]` listing each candidate's ID — pass one as `library`. Context7 needs no key but its anonymous quota is small; `auto` asks `web` first and Context7 only when `web` refuses, and `source` says which answered.
+- `docs` (default backend `search`) answers from the library's own docs: ask the question, naming the library (or pass `library`: a name, `name@version`, or a docs URL). A result cut short ends with a `full section` pointer — pass its `url#anchor` as `section` (no query) to read the rest from the local index, offline, instead of re-asking with more `tokens`. Answers from pages search just read are `status: partial` with a note; `ketch docs index <library>` (operator, CLI) makes a library answer offline. `backend: context7` is the curated alternative: resolve the name → **vet the matches** → fetch by `library` ID; Context7's resolve never returns empty, so check the name, not just the trust score, and its keyless quota is small.
 - Batch scrape reports per-URL failures inside a successful call: `isError=false` with `results[].error` set. Check every entry.
 - `regexp` works on grepapp and sourcegraph only; github rejects it with a pointer to those backends.
 - Background crawls (`--background`, `status`, `stop`) are CLI-only; the MCP `crawl` is synchronous and capped.
@@ -180,8 +180,11 @@ Detail for each lives in `references/surfaces.md`.
 **BAD:** `[upstream] ddg rate limited` → retry the identical call three times.
 **GOOD:** Rotate — `backend: "brave"` (or another provider from `available_backends`; `auto` is a chain, not a rotation target) — retry once, and note the swap. When `auto` itself failed, it already tried every usable provider: retry once, then report the outage.
 
-**BAD:** Fetch docs from resolve's first match because its trust score is high, even though its name is not the library you asked about.
+**BAD:** Fetch Context7 docs from resolve's first match because its trust score is high, even though its name is not the library you asked about.
 **GOOD:** Vet name + snippet count + trust; if no match names the intended library, say so instead of fetching junk docs.
+
+**BAD:** Ask `docs` again with a bigger `tokens` because the result you need ends in `[…]`.
+**GOOD:** Follow its pointer: `docs {section: "<url#anchor>"}` returns that section in full from the local index, offline.
 
 ## Reference loading
 
