@@ -794,3 +794,79 @@ and a spec site's landing page (rfc-editor.org/info/rfc7636) rather than
 the RFC text when that is the hit. Several bench misses are the search
 results themselves (no kubernetes.io or requests docs page among the hits
 when the providers throttle).
+
+## Amendment 7 (2026-11-04): no model
+
+Amendment 5 made embedding optional and off (`docs_hybrid`). This amendment
+removes it. The measurements that decide it are amendment 5's, taken side by
+side on the same index, recordings and pages:
+
+- **Accuracy is a wash.** Library set: keywords alone 38/48/51 at
+  section@1/3/5, 46 answers in the top five and 43 within 880 tokens;
+  hybrid 37/51/55, 47 and 42. Keywords win at the top and within the
+  budget an agent reads; hybrid finds four more gold sections lower in the
+  top five, all paraphrases. General set (search-first, cold): section@5
+  29 against 30, answer@5 19 against 23, the hybrid-only wins again
+  paraphrases. Amendment 6 then moved keywords to section@5 52 without the
+  model.
+- **The cost is not.** A local query: 32 against 202 ms at the median. A cold
+  search-first question: 0.31 against 53.0 CPU-seconds at the median (about
+  1/170th), 62 against 1,183 MB resident. Indexing duo.com/docs: 2.4 against
+  8,979 CPU-seconds, 28 against 67 MB on disk. A repeated question: 0.02
+  against 0.20 s, answered locally as often (61/66) with term overlap as with
+  query-vector cosine.
+
+Off by default, the model still cost what an option costs: a dependency
+(github.com/rostamlabs/rembed), a 438 MB download with pinned hashes, a
+command, two flags and two config keys, a vector table, and a second ranking
+path through `-b local`, `docs index` and the search-first backend that every
+ranking change had to keep working and measuring. The rule amendment 5 set
+(simpler and faster at the same or similar accuracy beats the model) now
+applies to the option too.
+
+**Decision.** The local index has one ranking, keywords (amendment 5's, with
+amendment 6's priors). Removed:
+
+- `internal/embed` and the rembed dependency; `ketch model install` and
+  `ketch model status`; the `model_path` config key (`KETCH_MODEL_PATH`);
+  doctor's `model` row. Nothing is downloaded. Installed model files in
+  ketch's cache directory are left where they are; nothing reads them.
+- `docs_hybrid` and every path behind it: window embedding at build time,
+  `docs index --reembed` and `--no-model`, cosine ranking and its fusion with
+  keywords, the `keyword_ranking` reason (it only said that hybrid ranking
+  could not use its model), the vectors a search-first question embedded
+  (`sfEmbedWindows`), the query vector a remembered question kept, and the
+  search-first check that a stored section was within cosine 0.80 of the
+  question (`sfLocalFloor`, `KETCH_DOCS_LOCAL_FLOOR`). As amendment 5 said,
+  that check has no keyword equivalent: a new question about a library a
+  search built is searched again. Question memory stays, by terms
+  (amendment 6).
+- Snippet units and the `--snippets` view (MCP `snippets: true`, amendment
+  1): its ranking leaned on section cosine, and amendments 3 and 4 serve its
+  purpose (compact answers, four or five results at 880 tokens, and
+  `--section` for the rest). A build no longer cuts units; the summary no
+  longer counts them.
+- The `docs.FTS5Local` stub, which never answered.
+
+Kept: the SQLite FTS5 store and its tokenizer, the keyword ranker and its
+boosts and priors, families, compact rendering, `--section` and its
+pointers, search-first site picking and question memory, version purity,
+cross-version labels and coverage planning.
+
+**Index format.** Still 3: no layout a query reads changed. A new file has no
+vectors table and no units columns; a file an earlier format-3 build wrote
+keeps them, unread, and is read and written as it is (the store names its
+columns, and the old ones have defaults). Library metadata loses its model,
+dimensions and vector and unit counts; old records' fields are ignored.
+
+**Measurement.** Library set (63 gold cases, `scripts/local_retrieval.py`,
+dev cases only) over two copies of amendment 5's index, the build before
+this amendment and the build after: page@5 60, section@1/3/5 38/48/52,
+answer@5 46, answer in 880 43, facts in 880 68 for both, every case's
+results identical. The stripped binary goes from 27.9 to 27.3 MB (rembed is
+pure Go and small; the cost was never the binary).
+
+**Consequences.** One ranking to tune and measure, and no setup beyond
+`docs index`. Paraphrase questions whose words the docs do not use stay the
+known weakness (amendment 5 lists them); a fix for them has to be cheap
+enough to run by default, or it stays out.

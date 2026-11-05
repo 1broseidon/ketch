@@ -253,10 +253,9 @@ $ ketch docs -b local --section https://fastapi.tiangolo.com/tutorial/dependenci
 | --- | --- |
 | `--backend, -b` | `context7` (default), `local` (the local index), `web`, `auto` (local, then web, then Context7) |
 | `--library` | A library ID from `--resolve`, or for `web` any library spec (below), or for `local` an indexed library's name, spec or docs root; skips the resolve step |
-| `--tokens` | Token budget, default 4000 (`local`: about 1,800 for sections, 1,200 for snippets; set, `local` fits its sections to it, compactly; with `--section`, the cap of the section returned) |
+| `--tokens` | Token budget, default 4000 (`local`: about 1,800; set, `local` fits its sections to it, compactly; with `--section`, the cap of the section returned) |
 | `--resolve` | Resolve the query as a library name or spec instead of searching |
 | `--limit, -l` | Max results; with `--library`, only `--tokens` bounds them unless set |
-| `--snippets` | `local`: code-first snippets (a code block with the sentences before it) instead of whole sections |
 | `--section <url#anchor>` | `local`: return one section in full, from the index, given as the `source` a result carries; no query needed (below) |
 | `--minimal` | One result per line |
 | `--tag <name>` | Bookmark every result URL under a tag |
@@ -395,8 +394,6 @@ passes its accuracy gates.
 ##### The local index — index once, answer offline
 
 ```console
-$ ketch config set docs_hybrid true                # optional: hybrid ranking with an embedding model…
-$ ketch model install                              # …bge-base (438 MB); off by default, keywords alone
 $ ketch docs index https://docs.astro.build/en/    # a docs URL, taken as the root
 $ ketch docs index fastapi                         # or a name or spec, resolved like web resolves one
 $ ketch docs index django@5.2 --max-pages 800
@@ -404,7 +401,6 @@ $ ketch docs index vue-router@3                    # another version, indexed be
 $ ketch docs -b local --library fastapi "how do I run code after the response is sent"
 $ ketch docs -b local --library vue-router@3 "router.push onComplete onAbort"
 $ ketch docs -b local "content collections schema in astro"   # a bare query names its library
-$ ketch docs -b local --snippets --library fastapi "background tasks"   # code-first snippets
 $ ketch docs index --dry-run numpy                 # the pages a build would index, in order
 $ ketch docs index --list
 $ ketch docs index --remove fastapi
@@ -423,17 +419,14 @@ you mean instead. It then reads the site's own page lists (`llms.txt` and
 pages under the root in its locale and version, honours `robots.txt`, fetches up to
 `--max-pages` pages (1,500 by default) `--concurrency` at a time (4) through
 the scrape pipeline and page cache, splits them into heading sections (never
-inside a code block), cuts each section into snippet units (below), and
-indexes the sections for full-text search (SQLite FTS5): each section's
+inside a code block), and indexes the sections for full-text search (SQLite FTS5): each section's
 heading, its breadcrumb, the identifiers it names split into their parts
 (`useForm` is also `use` and `form`; `client_max_body_size` and
 `form.validateField` are also found by their whole name) and its text, every
 word normalized as queries are. No model runs, so a build costs what fetching
 the pages costs: a 735-page site indexes from the page cache in seconds and a
-couple of CPU-seconds. With hybrid ranking on (`docs_hybrid`, below) each
-section is also embedded; a long section in several windows so none of it
-falls past the model's 512-token window. Progress goes
-to stderr; the summary (pages, sections, snippets, time, index size)
+couple of CPU-seconds. Progress goes
+to stderr; the summary (pages, sections, time, index size)
 to stdout, or as JSON with `--json`.
 
 **Which pages, when there are more than `--max-pages`.** The pages `llms.txt`
@@ -488,7 +481,7 @@ later major, such as a v3 page "Migrating to v4", is kept, labelled with that
 version, and ranks lower unless the question is about migrating or names that
 version. Running it
 again refreshes the library: pages come back through the page cache and only
-those whose content changed are sectioned (and embedded) again, and pages the
+those whose content changed are sectioned again, and pages the
 site no longer lists are dropped. `--name` adds a name queries may call the
 library by. Otherwise a library answers only to its full identity: the name
 it was indexed by, its package names (with or without the ecosystem prefix
@@ -519,9 +512,8 @@ of the question's terms it names, a heading or page title that is the
 question, an API entry the question names, the terms in its code and side by
 side, a guide page ahead of an API reference leaf (by where the page sits in
 the site), and a page whose other sections match too ahead of a stray section
-elsewhere. With hybrid ranking on (`docs_hybrid`), the keyword ranking is
-fused (reciprocal rank fusion) with each section's cosine similarity to the
-question's embedding. Sections are then grouped under
+elsewhere. No model is involved (see **Why keywords** below). Sections are
+then grouped under
 their second-level heading: a section that ranks brings the H2 it sits under,
 and one result shows that H2's own text and the subsections of it that
 ranked. The best five such results are returned (`--limit` changes it), never
@@ -585,7 +577,7 @@ and a result shown whole has none. `--section` takes that `url#anchor` (the
 `source`, or `--json`'s `section`, which every local result carries, and
 `truncated: true` marks a result that was cut) and returns the section as a
 result of its own: its heading path, its text with every code block intact,
-and `source:`, with no ranking, no embedding model and no network, in tens of
+and `source:`, with no ranking and no network, in tens of
 milliseconds. `--library` is optional (the URL names the indexed library; give
 it, as a root or `name@version`, to be explicit). An anchor on a second-level
 heading returns the whole family, that heading's text and the subsections under
@@ -604,39 +596,21 @@ at the end of their `snippet`. The pointer is counted in the budget, so a
 compact answer stays within it, at the cost of a result or a little text
 (about 25 tokens per cut result).
 
-`--snippets` (MCP `snippets: true`) returns **code-first snippets** instead.
-At index time each section is cut into units: every fenced code block
-(consecutive blocks, such as a TypeScript and a JavaScript tab, together) with
-the one to three sentences just before it, and the prose no code block claims
-(a section with no code gives its first ~600 characters, cut at a sentence
-end). Units are the docs' own words, never rewritten; `…` marks a sentence cut
-short. A query ranks the units by their section's cosine and the share of the
-question's words they name, nudged up by the share of the identifiers the
-question writes (`useEffect`, `res.json()`, `onComplete`) that a unit names
-and for code (a single listing over 2,000 bytes is nudged down instead), and
-returns the best ones, never two near-duplicates, at most two from one section
-and three from one page, within about 1,200 tokens and 8 snippets (`--tokens`
-and `--limit` change both), each printed as `### heading path`, the
-explanation, the code and `source: url#anchor`. Every
-result's `source` is `local`. A library the index does not hold exits
+Every result's `source` is `local`. A library the index does not hold exits
 **3** with reason `not_indexed`; nothing matched exits **3** with
 `no_results`. A library indexed in an older index format is not
 read: the query fails with reason `index_outdated` (exit 5) until `ketch docs
 index <library>` rebuilds it, which it does on its own.
 
-**Embedding is optional and off.** `ketch config set docs_hybrid true` (with
-a model from `ketch model install`) turns on hybrid ranking: `docs index`
-then embeds every section, and `-b local` fuses cosine similarity with the
-keyword ranking. It costs far more than it buys: on 63 gold-labelled library
-questions keywords alone put the right section in the top five 51 times and
-answered 46, hybrid ranking 55 and 47, at 32 against 202 ms a query; and
-embedding a 735-page site took 13 minutes and 2.5 CPU-hours where keywords
-alone take seconds and 2.4 CPU-seconds. Without `docs_hybrid` no model is ever
-loaded. With it on, a library indexed without vectors (or with another
-model) is ranked by keywords and says so (`note: ranked by keywords: …`, on
-stderr with `--json`; the MCP `docs` tool's `reason` is `keyword_ranking`),
-until `ketch docs index --reembed <library>` embeds its stored sections with
-the current model, without the network.
+**Why keywords.** The local index ranks by keywords alone and never runs a
+model. An embedding model fused with the keyword ranking was measured side
+by side and left out: on 63 gold-labelled library questions keywords alone
+put the right section first 38 times (37 with the model), in the top five
+51 times (55), answered 46 (47), and answered within an 880-token budget 43
+times (42); a query took 32 ms instead of 202 ms, and indexing a 735-page
+site took seconds and 2.4 CPU-seconds instead of 13 minutes and 2.5
+CPU-hours at 1.6 GB of memory. The design and the
+measurements are in ADR-0007 (amendments 5 to 7).
 
 #### scrape — URL(s) → clean markdown
 
@@ -780,25 +754,6 @@ returns the original XML response, not its rendered XML viewer or stylesheet
 output. A failed retry retains the original 403; sitemap fetches are not
 added to the page cache.
 
-#### model — The embedding model for the local docs index
-
-```console
-$ ketch model install            # bge-base-en-v1.5, 438 MB, into ketch's cache dir
-$ ketch model install --small    # bge-small-en-v1.5, 133 MB
-$ ketch model status
-```
-
-The local docs index can fuse its keyword ranking with an embedding model
-that runs inside ketch on the CPU, in pure Go, when `docs_hybrid` is on (it
-is off by default: see the local index above). `install` downloads the
-model's files from Hugging Face at a pinned revision, checks each against its
-pinned size and SHA-256, and prints where it went; re-running it finishes an
-interrupted download. With both installed, bge-base is used. `model_path`
-points ketch at another model directory instead (a BERT-family sentence
-transformer as published on Hugging Face). Indexes built before a model change
-keep working, ranked by keywords, until `ketch docs index --reembed`.
-Without `docs_hybrid` the model is never loaded, installed or not.
-
 #### config — Show, init, set, path
 
 ```console
@@ -842,8 +797,8 @@ alone.
 $ ketch doctor
 ```
 
-Concurrent read-only probes against every backend, plus the browser, the
-embedding model (`ok`, or `skipped` when none is installed; never the network),
+Concurrent read-only probes against every backend (the `local` docs row
+says how many libraries are indexed, without the network), plus the browser,
 the cache, and an informational `tags` row for the bookmark index that never
 affects the exit code.
 Each comes back `ok`, `no_key`, `unreachable`, `misconfigured`, or `skipped`.
@@ -1178,8 +1133,6 @@ $ ketch browser status
 - `search_order` — the `auto` chain, exactly: backend IDs tried in this order; unset keeps the default (see Backends)
 - `external_pdf_to_md_converter_command` — external PDF-to-Markdown converter; must contain exactly one `{input}` placeholder. Once set it is authoritative, with no silent fallback
 - `http_headers` — headers for self-hosted SearXNG, Firecrawl, Degoog, and Sourcegraph instances, keyed by origin (see Self-hosted under Backends); values are secrets
-- `docs_hybrid` — `true` turns on hybrid ranking for the local docs index (embed sections at index time, fuse cosine with keywords at query time); unset or `false`, keywords alone and no model is ever loaded
-- `model_path` — an embedding model directory for hybrid ranking; unset, ketch uses the one `ketch model install` downloaded
 
 ## Exit status
 
