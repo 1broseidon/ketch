@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en">
+<head><title>Introduction | Fastify</title></head>
+<body>
+<nav>
+  <a href="/docs/v4.29.x/Guides/Getting-Started/">Getting Started</a>
+  <a href="/docs/v4.29.x/Reference/Plugins/">Plugins</a>
+</nav>
+<main><h1>Introduction</h1><p>Fastify v4 documentation.</p></main>
+</body>
+</html>

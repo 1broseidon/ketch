@@ -1,0 +1,19 @@
+{
+ "crate": {
+  "id": "click",
+  "name": "click",
+  "description": "A command-line REPL for Kubernetes that integrates into existing cli workflows",
+  "homepage": "https://github.com/databricks/click/wiki",
+  "documentation": null,
+  "repository": "https://github.com/databricks/click",
+  "max_stable_version": null,
+  "max_version": "0.0.0",
+  "newest_version": "0.0.0",
+  "default_version": "0.6.3",
+  "recent_downloads": 69,
+  "downloads": 26886
+ },
+ "versions": null,
+ "keywords": [],
+ "categories": []
+}

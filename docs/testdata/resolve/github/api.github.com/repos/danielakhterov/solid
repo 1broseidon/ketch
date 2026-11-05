@@ -1,0 +1,5 @@
+{
+ "message": "Moved Permanently",
+ "url": "{{ORIGIN}}/repositories/234884461",
+ "documentation_url": "https://docs.github.com/rest/guides/best-practices-for-using-the-rest-api#follow-redirects"
+}

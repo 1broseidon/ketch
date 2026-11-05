@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head><title>Getting Started with ESLint - ESLint - Pluggable JavaScript Linter</title></head>
+<body>
+<nav>
+  <a href="/team">Team</a>
+  <a href="/blog">Blog</a>
+  <a href="/docs/latest/use/getting-started">Getting Started</a>
+  <a href="/docs/latest/use/configure/ignore">Ignore Files</a>
+</nav>
+<div class="switcher switcher--versions">
+  <label class="switcher__label label--block" for="version-select"><span class="label__text">Version</span></label>
+  <select name="version selector" id="nav-version-select" class="c-custom-select switcher__select auto-switcher">
+    <option value="HEAD" data-url="/docs/head/" >HEAD</option>
+    <option value="10.14.0" data-url="/docs/latest/" selected>v10.14.0</option>
+    <option value="9.39.5" data-url="/docs/v9.x/" >v9.39.5</option>
+    <option value="8.57.1" data-url="/docs/v8.x/" >v8.57.1</option>
+    <option value="Previous Versions" data-url="https://eslint.org/version-support">Previous Versions</option>
+  </select>
+</div>
+<main><h1>Getting Started with ESLint</h1><p>ESLint is a tool for identifying and reporting on patterns found in ECMAScript/JavaScript code.</p></main>
+</body>
+</html>

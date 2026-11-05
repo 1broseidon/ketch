@@ -1,0 +1,199 @@
+<!doctype html>
+<html><head>
+<title>clap - Rust</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="rustdoc">
+<meta name="description" content="Command Line Argument Parser for Rust">
+<meta name="keywords" content="rust, rustlang, rust-lang, clap">
+<script src="/storage-20221023-1.66.0-nightly-7fcf850d7.js"></script>
+<script src="../crates-20221023-1.66.0-nightly-7fcf850d7.js"></script>
+<script src="/main-20221023-1.66.0-nightly-7fcf850d7.js"></script>
+<script src="../scrape-examples-20221023-1.66.0-nightly-7fcf850d7.js"></script>
+<script>
+        
+        {
+            "name": "clap",
+            "version": "3.2.23"
+        }
+    </script>
+<script src="/-/static/menu.js?0-0-0-cfd9f1bfe1f4df04f03b77f162d41067bd20ddff-2026-10-27"></script>
+<script src="/-/static/index.js?0-0-0-cfd9f1bfe1f4df04f03b77f162d41067bd20ddff-2026-10-27"></script>
+</head><body>
+<a href="/" aria-label="Docs.rs" class="pure-menu-heading pure-menu-link docsrs-logo">Docs.rs</a>
+<a href="#" title="A simple to use, efficient, and full-featured Command Line Argument Parser" class="pure-menu-link crate-name">clap-3.2.23</a>
+<a href="/crate/clap/3.2.23" title="See clap in docs.rs" class="pure-menu-link description">Docs.rs crate page</a>
+<a href="https://spdx.org/licenses/MIT" class="pure-menu-sublink">MIT</a>
+<a href="https://spdx.org/licenses/Apache-2.0" class="pure-menu-sublink">Apache-2.0</a>
+<a href="https://github.com/clap-rs/clap" class="pure-menu-link">Repository</a>
+<a href="https://crates.io/crates/clap" title="See clap in crates.io" class="pure-menu-link">crates.io</a>
+<a href="/crate/clap/3.2.23/source/" title="Browse source of clap-3.2.23" class="pure-menu-link">Source</a>
+<a href="https://crates.io/users/kbknapp" class="pure-menu-link">kbknapp</a>
+<a href="https://crates.io/teams/github:clap-rs:admins" class="pure-menu-link">github:clap-rs:admins</a>
+<a href="https://crates.io/teams/github:rust-cli:maintainers" class="pure-menu-link">github:rust-cli:maintainers</a>
+<a href="/atty/^0.2/" class="pure-menu-link">atty ^0.2 normal</a>
+<a href="/backtrace/^0.3/" class="pure-menu-link">backtrace ^0.3 normal</a>
+<a href="/bitflags/^1.2/" class="pure-menu-link">bitflags ^1.2 normal</a>
+<a href="/clap_derive/=3.2.18/" class="pure-menu-link">clap_derive =3.2.18 normal</a>
+<a href="/clap_lex/^0.2.2/" class="pure-menu-link">clap_lex ^0.2.2 normal</a>
+<a href="/indexmap/^1.0/" class="pure-menu-link">indexmap ^1.0 normal</a>
+<a href="/once_cell/^1.12.0/" class="pure-menu-link">once_cell ^1.12.0 normal</a>
+<a href="/regex/^1.0/" class="pure-menu-link">regex ^1.0 normal</a>
+<a href="/strsim/^0.10/" class="pure-menu-link">strsim ^0.10 normal</a>
+<a href="/termcolor/^1.1.1/" class="pure-menu-link">termcolor ^1.1.1 normal</a>
+<a href="/terminal_size/^0.2.1/" class="pure-menu-link">terminal_size ^0.2.1 normal</a>
+<a href="/textwrap/^0.16/" class="pure-menu-link">textwrap ^0.16 normal</a>
+<a href="/unicase/^2.6/" class="pure-menu-link">unicase ^2.6 normal</a>
+<a href="/yaml-rust/^0.4.1/" class="pure-menu-link">yaml-rust ^0.4.1 normal</a>
+<a href="/humantime/^2/" class="pure-menu-link">humantime ^2 dev</a>
+<a href="/regex/^1.0/" class="pure-menu-link">regex ^1.0 dev</a>
+<a href="/rustversion/^1/" class="pure-menu-link">rustversion ^1 dev</a>
+<a href="/shlex/^1.1.0/" class="pure-menu-link">shlex ^1.1.0 dev</a>
+<a href="/snapbox/^0.2.9/" class="pure-menu-link">snapbox ^0.2.9 dev</a>
+<a href="/static_assertions/^1.1.0/" class="pure-menu-link">static_assertions ^1.1.0 dev</a>
+<a href="/trybuild/^1.0.18/" class="pure-menu-link">trybuild ^1.0.18 dev</a>
+<a href="/trycmd/^0.13/" class="pure-menu-link">trycmd ^0.13 dev</a>
+<a href="/crate/clap/3.2.23" class="pure-menu-link">43.96% of the crate is documented</a>
+<a href="/crate/clap/latest/target-redirect/clap/" title="You are seeing an outdated version of the clap crate. Click here to go to the latest version." class="pure-menu-link warn">Go to latest version</a>
+<a href="#" aria-label="Platform" class="pure-menu-link">Platform</a>
+<a href="/crate/clap/3.2.23/target-redirect/i686-pc-windows-msvc/clap/" class="pure-menu-link">i686-pc-windows-msvc</a>
+<a href="/crate/clap/3.2.23/target-redirect/i686-unknown-linux-gnu/clap/" class="pure-menu-link">i686-unknown-linux-gnu</a>
+<a href="/crate/clap/3.2.23/target-redirect/x86_64-apple-darwin/clap/" class="pure-menu-link">x86_64-apple-darwin</a>
+<a href="/crate/clap/3.2.23/target-redirect/x86_64-pc-windows-msvc/clap/" class="pure-menu-link">x86_64-pc-windows-msvc</a>
+<a href="/crate/clap/3.2.23/target-redirect/clap/" class="pure-menu-link">x86_64-unknown-linux-gnu</a>
+<a href="/crate/clap/3.2.23/features" title="Browse available feature flags of clap-3.2.23" class="pure-menu-link">Feature flags</a>
+<a href="#" aria-label="docs.rs" class="pure-menu-link">docs.rs</a>
+<a href="/about" class="pure-menu-link">About docs.rs</a>
+<a href="/about/badges" class="pure-menu-link">Badges</a>
+<a href="/about/builds" class="pure-menu-link">Builds</a>
+<a href="/about/metadata" class="pure-menu-link">Metadata</a>
+<a href="/about/redirections" class="pure-menu-link">Shorthand URLs</a>
+<a href="/about/download" class="pure-menu-link">Download</a>
+<a href="/about/rustdoc-json" class="pure-menu-link">Rustdoc JSON</a>
+<a href="/releases/queue" class="pure-menu-link">Build queue</a>
+<a href="https://foundation.rust-lang.org/policies/privacy-policy/#docs.rs" class="pure-menu-link">Privacy policy</a>
+<a href="#" aria-label="Rust" class="pure-menu-link">Rust</a>
+<a href="https://www.rust-lang.org/" class="pure-menu-link">Rust website</a>
+<a href="https://doc.rust-lang.org/book/" class="pure-menu-link">The Book</a>
+<a href="https://doc.rust-lang.org/std/" class="pure-menu-link">Standard Library API Reference</a>
+<a href="https://doc.rust-lang.org/rust-by-example/" class="pure-menu-link">Rust by Example</a>
+<a href="https://doc.rust-lang.org/cargo/guide/" class="pure-menu-link">The Cargo Guide</a>
+<a href="https://doc.rust-lang.org/nightly/clippy" class="pure-menu-link">Clippy Documentation</a>
+<a href="../clap/index.html" class="sidebar-logo"></a>
+<a href="../clap/index.html" class="sidebar-logo"></a>
+<a href="#">Crate clap</a>
+<a href="all.html">All Items</a>
+<a href="#reexports">Re-exports</a>
+<a href="#modules">Modules</a>
+<a href="#macros">Macros</a>
+<a href="#structs">Structs</a>
+<a href="#enums">Enums</a>
+<a href="#traits">Traits</a>
+<a href="#types">Type Definitions</a>
+<a href="#derives">Derive Macros</a>
+<a href="../help.html">?</a>
+<a href="../settings.html" title="settings"></a>
+<a href="#" class="mod">clap</a>
+<a href="../src/clap/lib.rs.html#6-232" class="srclink">source</a>
+<a href="javascript:void(0)" title="collapse all docs">[−]</a>
+<a href="_derive/_tutorial/index.html" title="_derive::_tutorial">tutorial</a>
+<a href="_derive/index.html" title="_derive">reference</a>
+<a href="_tutorial/index.html" title="_tutorial">tutorial</a>
+<a href="index.html">reference</a>
+<a href="_derive/_cookbook/index.html" title="_cookbook">Cookbook</a>
+<a href="_faq/index.html" title="_faq">FAQ</a>
+<a href="https://github.com/clap-rs/clap/discussions">Discussions</a>
+<a href="#aspirations">Aspirations</a>
+<a href="https://github.com/clap-rs/clap/tree/master/clap_complete">shell completions</a>
+<a href="https://github.com/rust-cli/team/">WG-CLI</a>
+<a href="https://github.com/rust-cli/argparse-benchmarks-rs">argparse-benchmarks</a>
+<a href="#example">Example</a>
+<a href="_features/index.html" title="_features">feature flag reference</a>
+<a href="_derive/_tutorial/index.html" title="_derive::_tutorial">tutorial</a>
+<a href="_derive/index.html" title="_derive">reference</a>
+<a href="#related-projects">Related Projects</a>
+<a href="https://crates.io/crates/wild">wild</a>
+<a href="https://crates.io/crates/argfile">argfile</a>
+<a href="https://crates.io/crates/shadow-rs">shadow-rs</a>
+<a href="https://crates.io/crates/clap_mangen">clap_mangen</a>
+<a href="https://crates.io/crates/clap_complete">clap_complete</a>
+<a href="https://crates.io/crates/clap-verbosity-flag">clap-verbosity-flag</a>
+<a href="https://crates.io/crates/clap-cargo">clap-cargo</a>
+<a href="https://crates.io/crates/concolor-clap">concolor-clap</a>
+<a href="https://crates.io/crates/trycmd">trycmd</a>
+<a href="https://crates.io/crates/snapbox">snapbox</a>
+<a href="https://crates.io/crates/assert_cmd">assert_cmd</a>
+<a href="https://crates.io/crates/assert_fs">assert_fs</a>
+<a href="https://rust-cli.github.io/book/index.html">Command-line Apps for Rust</a>
+<a href="#reexports">Re-exports</a>
+<a href="error/struct.Error.html" title="struct clap::error::Error" class="struct">Error</a>
+<a href="error/type.Result.html" title="type clap::error::Result" class="type">Result</a>
+<a href="#modules">Modules</a>
+<a href="_cookbook/index.html" title="clap::_cookbook mod" class="mod">_cookbook</a>
+<a href="_derive/index.html" title="clap::_derive mod" class="mod">_derive</a>
+<a href="_faq/index.html" title="clap::_faq mod" class="mod">_faq</a>
+<a href="_features/index.html" title="clap::_features mod" class="mod">_features</a>
+<a href="_tutorial/index.html" title="clap::_tutorial mod" class="mod">_tutorial</a>
+<a href="builder/index.html" title="clap::builder mod" class="mod">builder</a>
+<a href="builder/type.Command.html" title="Command">Command</a>
+<a href="builder/struct.Arg.html" title="Arg">arguments</a>
+<a href="error/index.html" title="clap::error mod" class="mod">error</a>
+<a href="parser/index.html" title="clap::parser mod" class="mod">parser</a>
+<a href="builder/type.Command.html" title="crate::Command">Command</a>
+<a href="#macros">Macros</a>
+<a href="macro.app_from_crate.html" title="clap::app_from_crate macro" class="macro">app_from_crate</a>
+<a href="macro.command.html" title="crate::command">clap::command!</a>
+<a href="macro.arg.html" title="clap::arg macro" class="macro">arg</a>
+<a href="./struct.Arg.html">Arg</a>
+<a href="macro.command.html" title="clap::command macro" class="macro">command</a>
+<a href="macro.crate_authors.html" title="clap::crate_authors macro" class="macro">crate_authors</a>
+<a href="macro.crate_description.html" title="clap::crate_description macro" class="macro">crate_description</a>
+<a href="macro.crate_name.html" title="clap::crate_name macro" class="macro">crate_name</a>
+<a href="macro.crate_version.html" title="clap::crate_version macro" class="macro">crate_version</a>
+<a href="macro.value_parser.html" title="clap::value_parser macro" class="macro">value_parser</a>
+<a href="builder/struct.ValueParser.html" title="ValueParser">ValueParser</a>
+<a href="#structs">Structs</a>
+<a href="struct.App.html" title="clap::App struct" class="struct">App</a>
+<a href="builder/type.Command.html" title="Command">Command</a>
+<a href="struct.Arg.html" title="clap::Arg struct" class="struct">Arg</a>
+<a href="struct.ArgGroup.html" title="clap::ArgGroup struct" class="struct">ArgGroup</a>
+<a href="builder/struct.Arg.html">arguments</a>
+<a href="struct.ArgMatches.html" title="clap::ArgMatches struct" class="struct">ArgMatches</a>
+<a href="struct.Indices.html" title="clap::Indices struct" class="struct">Indices</a>
+<a href="parser/struct.ArgMatches.html#method.indices_of">ArgMatches::indices_of</a>
+<a href="struct.OsValues.html" title="clap::OsValues struct" class="struct">OsValues</a>
+<a href="parser/struct.ArgMatches.html#method.get_many" title="ArgMatches::get_many()">ArgMatches::get_many()</a>
+<a href="struct.PossibleValue.html" title="clap::PossibleValue struct" class="struct">PossibleValue</a>
+<a href="struct.Values.html" title="clap::Values struct" class="struct">Values</a>
+<a href="parser/struct.ArgMatches.html#method.get_many" title="ArgMatches::get_many()">ArgMatches::get_many()</a>
+<a href="#enums">Enums</a>
+<a href="enum.AppSettings.html" title="clap::AppSettings enum" class="enum">AppSettings</a>
+<a href="builder/type.Command.html">Command</a>
+<a href="enum.ArgAction.html" title="clap::ArgAction enum" class="enum">ArgAction</a>
+<a href="enum.ArgSettings.html" title="clap::ArgSettings enum" class="enum">ArgSettings</a>
+<a href="builder/struct.Arg.html#method.setting">Arg::setting</a>
+<a href="builder/struct.Arg.html#method.unset_setting">Arg::unset_setting</a>
+<a href="builder/struct.Arg.html#method.is_set">Arg::is_set</a>
+<a href="builder/struct.Arg.html">Arg</a>
+<a href="enum.ColorChoice.html" title="clap::ColorChoice enum" class="enum">ColorChoice</a>
+<a href="enum.ErrorKind.html" title="clap::ErrorKind enum" class="enum">ErrorKind</a>
+<a href="enum.RegexRef.html" title="clap::RegexRef enum" class="enum">RegexRef</a>
+<a href="enum.ValueHint.html" title="clap::ValueHint enum" class="enum">ValueHint</a>
+<a href="enum.ValueSource.html" title="clap::ValueSource enum" class="enum">ValueSource</a>
+<a href="#traits">Traits</a>
+<a href="trait.ArgEnum.html" title="clap::ArgEnum trait" class="trait">ArgEnum</a>
+<a href="trait.Args.html" title="clap::Args trait" class="trait">Args</a>
+<a href="trait.CommandFactory.html" title="clap::CommandFactory trait" class="trait">CommandFactory</a>
+<a href="builder/type.Command.html" title="Command">Command</a>
+<a href="trait.FromArgMatches.html" title="clap::FromArgMatches trait" class="trait">FromArgMatches</a>
+<a href="parser/struct.ArgMatches.html" title="ArgMatches">ArgMatches</a>
+<a href="trait.IntoApp.html" title="clap::IntoApp trait" class="trait">IntoApp</a>
+<a href="builder/type.Command.html" title="Command">Command</a>
+<a href="trait.Parser.html" title="clap::Parser trait" class="trait">Parser</a>
+<a href="trait.Subcommand.html" title="clap::Subcommand trait" class="trait">Subcommand</a>
+<a href="trait.ValueEnum.html" title="clap::ValueEnum trait" class="trait">ValueEnum</a>
+<a href="#types">Type Definitions</a>
+<a href="type.Command.html" title="clap::Command type" class="type">Command</a>
+<a href="#derives">Derive Macros</a>
+<a href="derive.ArgEnum.html" title="clap::ArgEnum derive" class="derive">ArgEnum</a>
+<a href="trait.ValueEnum.html" title="ValueEnum">ValueEnum</a>
+</body></html>

@@ -1,0 +1,12 @@
+{
+ "id": 130884470,
+ "name": "solid",
+ "full_name": "solidjs/solid",
+ "html_url": "https://github.com/solidjs/solid",
+ "description": "A declarative, efficient, and flexible JavaScript library for building user interfaces.",
+ "fork": false,
+ "homepage": "https://solidjs.com",
+ "language": "TypeScript",
+ "stargazers_count": 36183,
+ "archived": false
+}

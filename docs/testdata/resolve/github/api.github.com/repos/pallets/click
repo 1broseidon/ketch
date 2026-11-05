@@ -1,0 +1,12 @@
+{
+ "id": 19103692,
+ "name": "click",
+ "full_name": "pallets/click",
+ "html_url": "https://github.com/pallets/click",
+ "description": "Python composable command line interface toolkit",
+ "fork": false,
+ "homepage": "https://click.palletsprojects.com",
+ "language": "Python",
+ "stargazers_count": 17801,
+ "archived": false
+}

@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/1broseidon/ketch/code"
-	"github.com/1broseidon/ketch/docs"
+	"github.com/1broseidon/ketch/internal/failure"
 	"github.com/spf13/cobra"
 )
 
@@ -15,12 +13,14 @@ import (
 
 // Exit codes follow the table in references/cli-conventions.md and are
 // surfaced to scripts/agents via os.Exit in main.go.
-const (
-	ExitValidation   = 2 // bad flag, missing/invalid arg, unknown key, unparseable value
-	ExitNotFound     = 3 // resource (URL, crawl id, selector match) absent
-	ExitUpstream     = 4 // network/fetch/backend failure outside our control
-	ExitPrecondition = 5 // missing API key, already-exists, locked
-	ExitCancelled    = 6 // SIGINT/SIGTERM observed
+// The codes come from failure.Kind so the CLI and the MCP server cannot
+// disagree on a class.
+var (
+	ExitValidation   = failure.Validation.ExitCode()   // 2: bad flag, missing/invalid arg, unknown key, unparseable value
+	ExitNotFound     = failure.NotFound.ExitCode()     // 3: resource (URL, crawl id, selector match) absent
+	ExitUpstream     = failure.Upstream.ExitCode()     // 4: network/fetch/backend failure outside our control
+	ExitPrecondition = failure.Precondition.ExitCode() // 5: missing API key, already-exists, locked
+	ExitCancelled    = failure.Cancelled.ExitCode()    // 6: SIGINT/SIGTERM observed
 )
 
 // ExitError carries a numeric exit code alongside the wrapped error.
@@ -40,28 +40,27 @@ func exitErrf(code int, format string, args ...any) error {
 }
 
 // backendErr classifies a backend-constructor error (search/code/docs
-// NewFromConfig): errors wrapping the package's unknown-backend sentinel are
-// validation failures (exit 2); anything else (missing API key/token,
+// NewFromConfig) with failure.Classify: an unknown backend is validation
+// (exit 2, the sentinel says so); anything else (missing API key/token,
 // unimplemented backend) is a precondition failure (exit 5).
-func backendErr(err, unknown error) error {
-	if errors.Is(err, unknown) {
-		return &ExitError{Code: ExitValidation, Err: err}
-	}
-	return &ExitError{Code: ExitPrecondition, Err: err}
+func backendErr(err error) error {
+	return classified(err, failure.Precondition, "%w", err)
 }
 
-// upstreamErr classifies a failure from a live backend call: errors wrapping
-// docs.ErrNotFound or code.ErrRepoNotFound are permanently absent resources
-// (exit 3, not retryable); everything else is an upstream failure (exit 4).
-// The sentinels are detected in the docs and code packages themselves, so the
-// CLI and the MCP server (which applies the same rule in its upstreamErrf)
-// cannot diverge.
+// upstreamErr classifies a failure from a live backend call with
+// failure.Classify, the rule the MCP server applies too: the sentinels carry
+// their own kind (library required → 2, not found → 3, ...), a deadline is
+// an upstream timeout (4), cancellation is 6, and anything else is an
+// upstream failure (4).
 func upstreamErr(err error, format string, args ...any) error {
-	exit := ExitUpstream
-	if errors.Is(err, docs.ErrNotFound) || errors.Is(err, code.ErrRepoNotFound) {
-		exit = ExitNotFound
-	}
-	return &ExitError{Code: exit, Err: fmt.Errorf(format+": %w", append(args, err)...)}
+	return classified(err, failure.Upstream, format+": %w", append(args, err)...)
+}
+
+// classified formats an ExitError whose code is err's failure.Kind, or
+// fallback when err carries none.
+func classified(err error, fallback failure.Kind, format string, args ...any) error {
+	c := failure.Classify(err, fallback)
+	return &ExitError{Code: c.Kind.ExitCode(), Err: fmt.Errorf(format, args...)}
 }
 
 // exitArgs wraps a cobra arg validator so its rejection becomes exit 2 instead

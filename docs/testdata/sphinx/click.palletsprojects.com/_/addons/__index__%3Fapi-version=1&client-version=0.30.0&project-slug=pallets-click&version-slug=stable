@@ -1,0 +1,69 @@
+{
+  "api_version": "1",
+  "projects": {
+    "current": {
+      "id": 52635,
+      "name": "Click",
+      "slug": "pallets-click",
+      "language": {
+        "code": "en",
+        "name": "English"
+      },
+      "homepage": "https://palletsprojects.com/p/click/",
+      "repository": {
+        "url": "https://github.com/pallets/click",
+        "type": "git"
+      },
+      "default_version": "stable",
+      "default_branch": "main",
+      "urls": {
+        "documentation": "https://click.palletsprojects.com/en/stable/",
+        "home": "https://app.readthedocs.org/projects/pallets-click/",
+        "builds": "https://app.readthedocs.org/projects/pallets-click/builds/",
+        "versions": "https://app.readthedocs.org/projects/pallets-click/versions/",
+        "downloads": null
+      },
+      "versioning_scheme": "multiple_versions_with_translations",
+      "single_version": false
+    },
+    "translations": []
+  },
+  "versions": {
+    "current": {
+      "aliases": [],
+      "slug": "stable",
+      "verbose_name": "stable",
+      "identifier": "stable",
+      "built": true,
+      "active": true,
+      "hidden": false,
+      "type": "branch",
+      "urls": {
+        "documentation": "https://click.palletsprojects.com/en/stable/",
+        "vcs": "https://github.com/pallets/click/tree/stable/",
+        "dashboard": {
+          "edit": "https://app.readthedocs.org/projects/pallets-click/version/stable/edit/"
+        }
+      }
+    },
+    "active": [
+      {
+        "aliases": [],
+        "slug": "stable",
+        "verbose_name": "stable",
+        "identifier": "stable",
+        "built": true,
+        "active": true,
+        "hidden": false,
+        "type": "branch",
+        "urls": {
+          "documentation": "https://click.palletsprojects.com/en/stable/",
+          "vcs": "https://github.com/pallets/click/tree/stable/",
+          "dashboard": {
+            "edit": "https://app.readthedocs.org/projects/pallets-click/version/stable/edit/"
+          }
+        }
+      }
+    ]
+  }
+}

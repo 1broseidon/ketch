@@ -19,7 +19,9 @@ const DefaultTimeout = 30 * time.Second
 // to serve a typical crawl concurrency without re-handshaking.
 const DefaultMaxIdleConnsPerHost = 16
 
-// New returns an *http.Client with a tuned transport. Safe for concurrent use.
+// New returns an *http.Client with a tuned transport and the CheckRedirect
+// policy (a request context's WithRedirectCheck applies to every hop). Safe
+// for concurrent use.
 func New(timeout time.Duration, maxIdleConnsPerHost int) *http.Client {
 	t := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
@@ -34,7 +36,7 @@ func New(timeout time.Duration, maxIdleConnsPerHost int) *http.Client {
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 	}
-	return &http.Client{Transport: t, Timeout: timeout}
+	return &http.Client{Transport: benchTransport(t), Timeout: timeout, CheckRedirect: CheckRedirect}
 }
 
 var defaultClient = New(DefaultTimeout, DefaultMaxIdleConnsPerHost)

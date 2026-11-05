@@ -1,0 +1,624 @@
+package docs
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"slices"
+	"sort"
+	"strings"
+
+	"github.com/1broseidon/ketch/health"
+	config "github.com/1broseidon/ketch/internal/configbase"
+	"github.com/1broseidon/ketch/internal/docsindex"
+	"github.com/1broseidon/ketch/internal/failure"
+)
+
+// The local docs backend answers from the local index (ADR-0007), with no
+// network and no model: it ranks the library's sections by keywords over
+// its full-text table (local_fts.go), groups them into families (a
+// section with the others under its H2) and returns the best five,
+// verbatim and trimmed to about 1,800 tokens (local_rank.go), or fitted
+// compactly to a caller's budget (local_compact.go).
+//
+// An index holds one version of a library; several versions are indexed
+// side by side. A library value with a version (name@3) answers from that
+// version's index or is refused as not_indexed, naming the versions that
+// are; one without answers from the newest indexed version, which the
+// results' Version names.
+
+// ErrNotIndexed is a library the local docs index does not hold: a
+// refusal, so the auto chain moves on to the live backends, and the caller
+// can index it.
+var ErrNotIndexed = failure.New(failure.NotFound, "not_indexed", "library not indexed (ketch docs index <library|docs-url>)")
+
+// ErrIndexOutdated is a library indexed in an older index format, which
+// this ketch does not read: the operator rebuilds it.
+var ErrIndexOutdated = failure.New(failure.Precondition, "index_outdated", "library indexed in an older format; rebuild it with ketch docs index")
+
+// outdatedErr says which library to rebuild.
+func outdatedErr(lib docsindex.Library) error {
+	return fmt.Errorf("local: %s was indexed in format %d, which this ketch no longer reads (format %d); rebuild it with ketch docs index %s: %w",
+		lib.Root, lib.Format, docsindex.FormatVersion, lib.Root, ErrIndexOutdated)
+}
+
+// Local answers from the local docs index.
+type Local struct {
+	store *docsindex.Store // nil when there is no cache directory
+}
+
+// NewLocal returns the backend over store (OpenIndex).
+func NewLocal(store *docsindex.Store) *Local {
+	return &Local{store: store}
+}
+
+// newLocalFromConfig is the backend over the default index file. It does
+// no I/O.
+func newLocalFromConfig() *Local {
+	var store *docsindex.Store
+	if path, err := docsindex.DefaultPath(); err == nil {
+		store = OpenIndex(path)
+	}
+	return NewLocal(store)
+}
+
+// Search answers a bare query; see SearchSelect.
+func (l *Local) Search(ctx context.Context, query string, limit int) ([]Result, error) {
+	o := l.SearchSelect(ctx, query, limit)
+	return o.Results, o.Err()
+}
+
+// GetDocs answers for a named library; see GetDocsSelect.
+func (l *Local) GetDocs(ctx context.Context, libraryID, query string, tokens int) ([]Result, error) {
+	o := l.GetDocsSelect(ctx, libraryID, query, tokens)
+	return o.Results, o.Err()
+}
+
+// ResolveLibrary lists the indexed libraries a name matches; see
+// ResolveSelect.
+func (l *Local) ResolveLibrary(ctx context.Context, name string, limit int) ([]LibraryMatch, error) {
+	o := l.ResolveSelect(ctx, name, limit)
+	return o.Matches, o.Err()
+}
+
+// SearchSelect answers a bare query from the indexed library it names:
+// the first of the query's readings (splitLibraryQuery) that names an
+// indexed library, unless a firmer reading before it names a library the
+// index does not hold, which the live backends should answer.
+func (l *Local) SearchSelect(ctx context.Context, query string, limit int) Outcome {
+	libs, err := l.libraries()
+	if err != nil {
+		return Answer("local", nil, err)
+	}
+	found, ok := libraryInQuery(libs, query)
+	if !ok {
+		return Answer("local", nil, fmt.Errorf("local: the query names no indexed library: %w", ErrNotIndexed))
+	}
+	lib, note := newestOf(found)
+	opts, _ := localOptionsFrom(ctx)
+	if opts.Limit <= 0 {
+		opts.Limit = limit
+	}
+	o := l.answer(ctx, lib, query, opts)
+	o.Results = Truncate(o.Results, limit)
+	return withVersionNote(o, note)
+}
+
+// GetDocsSelect answers for a library given as its docs root URL (or a
+// page under it), its spec or a name it was indexed by.
+func (l *Local) GetDocsSelect(ctx context.Context, libraryID, query string, tokens int) Outcome {
+	libs, err := l.libraries()
+	if err != nil {
+		return Answer("local", nil, err)
+	}
+	lib, note, err := pickVersion(libs, libraryID)
+	if err != nil {
+		return Answer("local", nil, err)
+	}
+	opts, ok := localOptionsFrom(ctx)
+	if !ok {
+		opts.Tokens = tokens // a direct caller's budget is its choice
+	}
+	return withVersionNote(l.answer(ctx, lib, query, opts), note)
+}
+
+// withVersionNote adds a note naming the other indexed versions to an
+// answer from the newest.
+func withVersionNote(o Outcome, note string) Outcome {
+	if note == "" || (o.Status != Answered && o.Status != Partial) {
+		return o
+	}
+	if o.Note != "" {
+		o.Note += "; "
+	}
+	o.Note += note
+	return o
+}
+
+// ResolveSelect lists the indexed libraries name matches, each with its
+// root as the ID.
+func (l *Local) ResolveSelect(_ context.Context, name string, limit int) Outcome {
+	libs, err := l.libraries()
+	if err != nil {
+		return Resolved("local", nil, err)
+	}
+	var matches []LibraryMatch
+	for _, lib := range MatchIndexed(libs, name) {
+		matches = append(matches, indexedMatch(lib))
+	}
+	if len(matches) == 0 {
+		err = fmt.Errorf("local: %q %w", name, ErrNotIndexed)
+	}
+	if limit > 0 && len(matches) > limit {
+		matches = matches[:limit]
+	}
+	return Resolved("local", matches, err)
+}
+
+// indexedMatch is an indexed library as a resolve match.
+func indexedMatch(lib docsindex.Library) LibraryMatch {
+	about := fmt.Sprintf("indexed %s: %d pages, %d sections", lib.Built.Format("2006-01-02"), lib.Pages, lib.Sections)
+	if !lib.Current() {
+		about = fmt.Sprintf("indexed %s in format %d: rebuild with ketch docs index %s", lib.Built.Format("2006-01-02"), lib.Format, lib.Root)
+	}
+	return LibraryMatch{ID: lib.Root, Title: lib.Title, Version: lib.Version, Packages: lib.Packages, TrustScore: lib.Trust, Evidence: append([]string{about}, lib.Evidence...)}
+}
+
+// libraries lists the indexed libraries; none when the index file does not
+// exist (a stat, no open).
+func (l *Local) libraries() ([]docsindex.Library, error) {
+	if l.store == nil || !l.store.Exists() {
+		return nil, nil
+	}
+	libs, err := l.store.Libraries()
+	if err != nil {
+		return nil, fmt.Errorf("local: reading the docs index: %w", err)
+	}
+	return libs, nil
+}
+
+// answer ranks lib's sections for query and renders the best families
+// within opts' budget; an answer from a library a search built is partial
+// (partialLibrary).
+func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string, opts LocalOptions) Outcome {
+	return partialLibrary(l.rank(ctx, lib, query, opts), lib)
+}
+
+// rank is answer without the partial mark.
+func (l *Local) rank(ctx context.Context, lib docsindex.Library, query string, opts LocalOptions) Outcome {
+	if !lib.Current() {
+		return Answer("local", nil, outdatedErr(lib))
+	}
+	results, err := l.rankResults(lib, query, opts)
+	if err != nil {
+		return Answer("local", nil, fmt.Errorf("local: reading the docs index: %w", err))
+	}
+	if len(results) == 0 {
+		return Answer("local", nil, fmt.Errorf("local: nothing in the index of %s matched: %w", lib.Root, ErrNoResults))
+	}
+	showUnder(results, lib)
+	pointToSections(results, opts)
+	return Answer("local", results, nil)
+}
+
+// rankResults ranks lib's sections for the query by keywords over the
+// full-text table (only the candidates' pages are read) and renders them.
+func (l *Local) rankResults(lib docsindex.Library, query string, opts LocalOptions) ([]Result, error) {
+	limit := opts.Limit
+	if limit <= 0 {
+		limit = localMaxResults
+	}
+	secs, ranked, err := l.keywordRank(lib, query)
+	if err != nil {
+		return nil, err
+	}
+	return familyResults(lib, secs, families(secs, ranked, limit, lib.Root), query, opts.Tokens, opts.Hint), nil
+}
+
+// showUnder shows a re-rooted current release's results at the
+// unversioned addresses its pages name canonical (Library.DisplayRoot).
+func showUnder(results []Result, lib docsindex.Library) {
+	for i, r := range results {
+		results[i].URL = shownURL(lib, r.URL)
+	}
+}
+
+// pointToSections gives every result the reference to its section (its
+// shown URL), and, for a compact answer over MCP, ends each result that was
+// cut with the pointer to its full section: the surface has no other place
+// to show it. A CLI renders its pointer (RenderResult).
+func pointToSections(results []Result, opts LocalOptions) {
+	for i, r := range results {
+		results[i].Section = r.URL
+		if opts.Tokens > 0 && opts.Hint == HintMCP {
+			if h := SectionHint(results[i], HintMCP); h != "" {
+				results[i].Snippet += "\n\n" + h
+			}
+		}
+	}
+}
+
+// webSectionOf is a stored section as the web backend's section. Its
+// anchor was settled when it was indexed, so ranking never re-slugs it.
+func webSectionOf(s docsindex.Section, i int) webSection {
+	return webSection{page: i, order: s.Order, pageURL: s.Page, heading: s.Heading, crumbs: s.Crumbs, anchor: s.Anchor, source: anchorFixed, text: s.Text, links: s.Text}
+}
+
+// fairShares splits budget among items of the given sizes max-min fairly:
+// an item smaller than an equal share gets its size, and the rest is split
+// equally among the larger ones, never below webMinTrimBytes.
+func fairShares(sizes []int, budget int) []int {
+	idx := make([]int, len(sizes))
+	for i := range idx {
+		idx[i] = i
+	}
+	sort.SliceStable(idx, func(a, b int) bool { return sizes[idx[a]] < sizes[idx[b]] })
+	shares := make([]int, len(sizes))
+	left := budget
+	for k, i := range idx {
+		equal := left / (len(idx) - k)
+		shares[i] = max(min(sizes[i], equal), webMinTrimBytes)
+		left -= min(shares[i], left)
+	}
+	return shares
+}
+
+// libraryInQuery finds the indexed library a bare query names. Readings
+// are tried in the order splitLibraryQuery gives them; a reading that
+// names no indexed library ends the search when it is a firm one (not a
+// guess from joined words, not a common word), since that library is
+// better answered live than another one answered locally.
+func libraryInQuery(libs []docsindex.Library, query string) ([]docsindex.Library, bool) {
+	if len(libs) == 0 {
+		return nil, false
+	}
+	for _, s := range splitLibraryQuery(query) {
+		if found := matchSpec(libs, s.spec); len(found) > 0 {
+			return found, true
+		}
+		if !s.strict && !s.common {
+			return nil, false
+		}
+	}
+	return nil, false
+}
+
+// pickIndexed is the indexed library a library value names (the newest
+// version of several), or a not_indexed refusal.
+func pickIndexed(libs []docsindex.Library, value string) (docsindex.Library, error) {
+	lib, _, err := pickVersion(libs, value)
+	return lib, err
+}
+
+// pickVersion is the indexed library a library value names. A value with
+// a version names that version's index alone: when the library is indexed
+// only at other versions, the refusal (not_indexed) names them. A value
+// without one names the newest indexed version (newestOf), with a note
+// naming the others.
+func pickVersion(libs []docsindex.Library, value string) (docsindex.Library, string, error) {
+	found := MatchIndexed(libs, value)
+	if len(found) > 0 {
+		lib, note := newestOf(found)
+		return lib, note, nil
+	}
+	if name, version, ok := splitVersion(value); ok {
+		if others := MatchIndexed(libs, name); len(others) > 0 {
+			return docsindex.Library{}, "", fmt.Errorf("local: %s is not indexed at version %s; indexed versions: %s (ketch docs index %s@%s): %w",
+				name, version, strings.Join(versionList(others), ", "), name, version, ErrNotIndexed)
+		}
+	}
+	return docsindex.Library{}, "", fmt.Errorf("local: %q %w", value, ErrNotIndexed)
+}
+
+// splitVersion splits a library spec's version off (name@3 is name, 3).
+func splitVersion(value string) (name, version string, ok bool) {
+	if isHTTPURL(value) {
+		return "", "", false
+	}
+	spec, err := parseLibSpec(strings.TrimSpace(value))
+	if err != nil || spec.version == "" {
+		return "", "", false
+	}
+	name = spec.raw
+	if i := strings.LastIndex(spec.raw, "@"); i > 0 {
+		name = spec.raw[:i]
+	}
+	return name, spec.version, true
+}
+
+// versionList names the indexed libraries' versions, newest first, an
+// unlabelled one as "current".
+func versionList(libs []docsindex.Library) []string {
+	libs = slices.Clone(libs)
+	sort.SliceStable(libs, func(i, j int) bool { return newer(libs[i], libs[j]) })
+	var out []string
+	for _, l := range libs {
+		v := l.Version
+		if v == "" {
+			v = labelCurrent
+		}
+		if !slices.Contains(out, v) {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+// newestOf picks the newest of the indexed libraries a value names, and
+// when there are several, a note naming the others and a Version that
+// says which this is ("current" for the unlabelled current docs).
+func newestOf(found []docsindex.Library) (docsindex.Library, string) {
+	best := found[0]
+	for _, l := range found[1:] {
+		if newer(l, best) {
+			best = l
+		}
+	}
+	if len(found) == 1 {
+		return best, ""
+	}
+	if best.Version == "" {
+		best.Version = labelCurrent
+	}
+	var rest []docsindex.Library
+	for _, l := range found {
+		if l.Key != best.Key {
+			rest = append(rest, l)
+		}
+	}
+	return best, fmt.Sprintf("answered from version %s, the newest indexed; also indexed: %s (name@version picks one)", best.Version, strings.Join(versionList(rest), ", "))
+}
+
+// newer reports whether a is a newer version of the docs than b: the
+// current docs (indexed without a version, at a root naming none, or
+// labelled latest, stable or current) before any release, releases by
+// number, development docs (next, main) last, and among equals the most
+// recently built.
+func newer(a, b docsindex.Library) bool {
+	ca, cb := versionRank(a), versionRank(b)
+	if ca != cb {
+		return ca < cb
+	}
+	na, _ := releaseNumbers(normLabel(a.Version))
+	nb, _ := releaseNumbers(normLabel(b.Version))
+	if c := compareRelease(na, nb); c != 0 {
+		return c > 0
+	}
+	return a.Built.After(b.Built)
+}
+
+// versionRank classes an indexed library's version for newer: 0 the
+// current docs, 1 a release, 2 development docs.
+func versionRank(l docsindex.Library) int {
+	v := normLabel(l.Version)
+	switch {
+	case versionAliasClass[v] == "dev":
+		return 2
+	case v == "" || versionAliasClass[v] == "current" || v == labelCurrent || l.DisplayRoot != "":
+		return 0
+	case l.Requested == "" && rootVersionLabel(webRootOf(l.Root)) == "":
+		return 0 // the docs a site serves as current, labelled with their release
+	}
+	return 1
+}
+
+// webRootOf parses a stored root (the zero root for one that does not
+// parse).
+func webRootOf(raw string) webRoot {
+	r, _ := parseWebRoot(raw)
+	return r
+}
+
+// MatchIndexed returns the indexed libraries a library value names: a
+// docs URL at or under an indexed root (or an indexed root under it), a
+// root key, or a name or spec one was indexed by ([eco:]name[@version];
+// with a version, only libraries indexed at a version it names).
+func MatchIndexed(libs []docsindex.Library, value string) []docsindex.Library {
+	value = strings.TrimSpace(value)
+	for _, l := range libs {
+		if l.Key == value || l.Root == value {
+			return []docsindex.Library{l}
+		}
+	}
+	if isHTTPURL(value) {
+		return matchSpec(libs, libSpec{raw: value, url: value})
+	}
+	spec, err := parseLibSpec(value)
+	if err != nil {
+		// Not a spec ("tanstack query"): a name it was indexed by, read
+		// as a comparison key.
+		spec = libSpec{raw: value, name: value}
+	}
+	return matchSpec(libs, spec)
+}
+
+// matchSpec returns the libraries spec names: by a docs URL at or under
+// their root, or by a name (libraryNames), libraries whose full identity
+// it is before those it names only by a secondary name. The names come
+// from each library's metadata, never from the Names a build stored.
+func matchSpec(libs []docsindex.Library, spec libSpec) []docsindex.Library {
+	var out []docsindex.Library
+	if spec.url != "" {
+		u, err := parseWebRoot(spec.url)
+		if err != nil {
+			return nil
+		}
+		for _, l := range libs {
+			r, err := parseWebRoot(l.Root)
+			if err == nil && (r.contains(u.u) || u.contains(r.u)) {
+				out = append(out, l)
+			}
+		}
+		return out
+	}
+	keys := map[string]bool{libraryKey(spec.name): true}
+	if i := strings.LastIndex(spec.name, "/"); i >= 0 {
+		keys[libraryKey(spec.name[i+1:])] = true
+	}
+	delete(keys, "")
+	out = matchNames(libs, spec, keys)
+	if len(out) == 0 {
+		// A package named for its major release (beautifulsoup4) goes by
+		// its name without the number on its docs (BeautifulSoup).
+		if stems := releaseStems(keys); len(stems) > 0 {
+			out = matchNames(libs, spec, stems)
+		}
+	}
+	return withProject(libs, out, spec.version)
+}
+
+// matchNames returns the libraries keys name: those whose full identity
+// it is (or whose package spec names), else those a name of their own
+// names (a repository's last part, a root path segment), else those their
+// host's label names. A secondary name answers only when no indexed
+// library goes by it more closely.
+func matchNames(libs []docsindex.Library, spec libSpec, keys map[string]bool) []docsindex.Library {
+	var tiers [3][]docsindex.Library
+	for _, l := range libs {
+		if spec.version != "" && !versionNames(spec.version, l.Version) {
+			continue
+		}
+		primary, specific, host := libraryNameTiers(l)
+		switch {
+		case anyNamed(primary, keys) || hasPackage(l.Packages, spec):
+			tiers[0] = append(tiers[0], l)
+		case anyNamed(specific, keys):
+			tiers[1] = append(tiers[1], l)
+		case anyNamed(host, keys):
+			tiers[2] = append(tiers[2], l)
+		}
+	}
+	for _, t := range tiers {
+		if len(t) > 0 {
+			return t
+		}
+	}
+	return nil
+}
+
+// releaseStems are the keys that end in a major release number, without
+// it (beautifulsoup4: beautifulsoup), when at least five letters remain.
+func releaseStems(keys map[string]bool) map[string]bool {
+	out := map[string]bool{}
+	for k := range keys {
+		stem := strings.TrimRight(k, "0123456789")
+		if stem != k && len(k)-len(stem) == 1 && len(stem) >= 5 {
+			out[stem] = true
+		}
+	}
+	return out
+}
+
+// withProject adds to found every indexed library of the same project's
+// docs at another version (projectRoot: v18.angular.dev beside
+// angular.dev, /docs/1.4/ beside /docs/2.0/), so a name that one version's
+// index was built by finds the current docs too and newestOf chooses; with
+// a version asked for, only libraries at that version.
+func withProject(libs, found []docsindex.Library, version string) []docsindex.Library {
+	if len(found) == 0 {
+		return found
+	}
+	projects := map[string]bool{}
+	have := map[string]bool{}
+	for _, l := range found {
+		projects[projectRoot(l)] = true
+		have[l.Key] = true
+	}
+	out := found
+	for _, l := range libs {
+		if !have[l.Key] && projects[projectRoot(l)] && (version == "" || versionNames(version, l.Version)) {
+			out = append(out, l)
+		}
+	}
+	return out
+}
+
+// projectRoot is a library's docs root with its version set aside: the
+// host without a version label (v2.vuejs.org is vuejs.org) and the path
+// without version segments (duckdb.org/docs/1.4/ is duckdb.org/docs/).
+func projectRoot(l docsindex.Library) string {
+	r, err := parseWebRoot(l.Root)
+	if err != nil {
+		return l.Root
+	}
+	host := scopeHost(r.u)
+	if first, rest, ok := strings.Cut(host, "."); ok && strings.Contains(rest, ".") {
+		if label, ok := variantLabel(first); ok && strings.ContainsAny(label, "0123456789") {
+			host = rest
+		}
+	}
+	var segs []string
+	for _, seg := range pathSegments(r.prefix) {
+		if _, version := segmentLabel(seg); !version {
+			segs = append(segs, strings.ToLower(seg))
+		}
+	}
+	return host + "/" + strings.Join(segs, "/")
+}
+
+// anyNamed reports whether any of names is a key in keys.
+func anyNamed(names []string, keys map[string]bool) bool {
+	for _, n := range names {
+		if keys[n] {
+			return true
+		}
+	}
+	return false
+}
+
+// hasPackage reports a package spec of the library's (pypi:click) that
+// spec names exactly, versions aside.
+func hasPackage(pkgs []string, spec libSpec) bool {
+	want, _, _ := strings.Cut(spec.raw, "@")
+	if spec.eco == ecoAny || want == "" {
+		return false
+	}
+	for _, p := range pkgs {
+		if have, _, _ := strings.Cut(p, "@"); strings.EqualFold(have, want) {
+			return true
+		}
+	}
+	return false
+}
+
+// versionNames reports whether a requested version names an indexed one:
+// the same label, or a prefix of its release (5 names 5.2).
+func versionNames(want, have string) bool {
+	if have == "" {
+		return false
+	}
+	want, have = strings.TrimPrefix(strings.ToLower(want), "v"), strings.TrimPrefix(strings.ToLower(have), "v")
+	return want == have || strings.HasPrefix(have, want+".")
+}
+
+// probeLocal reports what the index holds, without the network.
+func probeLocal(_ context.Context, _ *http.Client, _ *config.Config) (health.Status, string) {
+	path, err := docsindex.DefaultPath()
+	if err != nil {
+		return health.StatusMisconfigured, err.Error()
+	}
+	store := OpenIndex(path)
+	legacy := ""
+	if note := docsindex.LegacyNote(path); note != "" {
+		legacy = "; " + note
+	}
+	if !store.Exists() {
+		return health.StatusSkipped, "nothing indexed (ketch docs index <library|docs-url>)" + legacy
+	}
+	libs, err := store.Libraries()
+	if err != nil {
+		return health.StatusMisconfigured, fmt.Sprintf("cannot read %s: %v", path, err)
+	}
+	return health.StatusOK, fmt.Sprintf("%d libraries indexed in %s%s", len(libs), path, legacy)
+}
+
+func localProvider() Provider {
+	return Provider{
+		ID:          "local",
+		Name:        "Local index",
+		LibraryHelp: "an indexed library's name or docs root URL (ketch docs index --list)",
+		Usable:      func(*config.Config) bool { return true },
+		New:         func(*config.Config, Deps) (Searcher, error) { return newLocalFromConfig(), nil },
+		Probe:       probeLocal,
+	}
+}

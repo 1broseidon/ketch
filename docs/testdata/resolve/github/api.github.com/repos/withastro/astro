@@ -1,0 +1,12 @@
+{
+ "id": 348060227,
+ "name": "astro",
+ "full_name": "withastro/astro",
+ "html_url": "https://github.com/withastro/astro",
+ "description": "The web framework for content-driven websites.",
+ "fork": false,
+ "homepage": "https://astro.build",
+ "language": "TypeScript",
+ "stargazers_count": 63496,
+ "archived": false
+}

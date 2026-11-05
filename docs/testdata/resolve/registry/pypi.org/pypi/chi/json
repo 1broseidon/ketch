@@ -1,0 +1,12 @@
+{
+ "info": {
+  "name": "chi",
+  "version": "0.2",
+  "summary": "",
+  "home_page": "https://github.com/rmst/chi",
+  "docs_url": null,
+  "project_urls": {
+   "Homepage": "https://github.com/rmst/chi"
+  }
+ }
+}

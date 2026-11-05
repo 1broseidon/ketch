@@ -1,0 +1,55 @@
+<!doctype html>
+<html><head>
+<title>gin - Rust</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="rustdoc">
+<meta name="description" content="API documentation for the Rust `gin` crate.">
+<meta name="rustdoc-vars">
+<script src="/-/rustdoc.static/storage-41dd4d93.js"></script>
+<script src="../crates-20260910-1.100.0-nightly-67eda617e.js"></script>
+<script src="/-/rustdoc.static/main-1814ead3.js"></script>
+<script>
+        
+        {
+            "name": "gin",
+            "version": "0.0.0"
+        }
+    </script>
+<script src="/-/static/menu.js?0-0-0-cfd9f1bfe1f4df04f03b77f162d41067bd20ddff-2026-10-27"></script>
+<script src="/-/static/index.js?0-0-0-cfd9f1bfe1f4df04f03b77f162d41067bd20ddff-2026-10-27"></script>
+</head><body>
+<a href="/" aria-label="Docs.rs" class="pure-menu-heading pure-menu-link docsrs-logo">Docs.rs</a>
+<a href="#" title="Reserved contact me if you need it!" class="pure-menu-link crate-name">gin-0.0.0</a>
+<a href="/gin/0.0.0/gin/" title="Get a link to this specific version" class="pure-menu-link description">Permalink</a>
+<a href="/crate/gin/latest" title="See gin in docs.rs" class="pure-menu-link description">Docs.rs crate page</a>
+<a href="https://spdx.org/licenses/MIT" class="pure-menu-sublink">MIT</a>
+<a href="https://crates.io/crates/gin" title="See gin in crates.io" class="pure-menu-link">crates.io</a>
+<a href="/crate/gin/latest/source/" title="Browse source of gin-0.0.0" class="pure-menu-link">Source</a>
+<a href="https://crates.io/users/LucioFranco" class="pure-menu-link">LucioFranco</a>
+<a href="/crate/gin/latest" class="pure-menu-link">0% of the crate is documented</a>
+<a href="#" aria-label="Platform" class="pure-menu-link">Platform</a>
+<a href="/crate/gin/latest/target-redirect/gin/" class="pure-menu-link">x86_64-unknown-linux-gnu</a>
+<a href="/crate/gin/latest/features" title="Browse available feature flags of gin-0.0.0" class="pure-menu-link">Feature flags</a>
+<a href="#" aria-label="docs.rs" class="pure-menu-link">docs.rs</a>
+<a href="/about" class="pure-menu-link">About docs.rs</a>
+<a href="/about/badges" class="pure-menu-link">Badges</a>
+<a href="/about/builds" class="pure-menu-link">Builds</a>
+<a href="/about/metadata" class="pure-menu-link">Metadata</a>
+<a href="/about/redirections" class="pure-menu-link">Shorthand URLs</a>
+<a href="/about/download" class="pure-menu-link">Download</a>
+<a href="/about/rustdoc-json" class="pure-menu-link">Rustdoc JSON</a>
+<a href="/releases/queue" class="pure-menu-link">Build queue</a>
+<a href="https://foundation.rust-lang.org/policies/privacy-policy/#docs.rs" class="pure-menu-link">Privacy policy</a>
+<a href="#" aria-label="Rust" class="pure-menu-link">Rust</a>
+<a href="https://www.rust-lang.org/" class="pure-menu-link">Rust website</a>
+<a href="https://doc.rust-lang.org/book/" class="pure-menu-link">The Book</a>
+<a href="https://doc.rust-lang.org/std/" class="pure-menu-link">Standard Library API Reference</a>
+<a href="https://doc.rust-lang.org/rust-by-example/" class="pure-menu-link">Rust by Example</a>
+<a href="https://doc.rust-lang.org/cargo/guide/" class="pure-menu-link">The Cargo Guide</a>
+<a href="https://doc.rust-lang.org/nightly/clippy" class="pure-menu-link">Clippy Documentation</a>
+<a href="#main-content" class="skip-main-content">Skip to main content</a>
+<a href="#">Crate gin</a>
+<a href="../gin/index.html">gin</a>
+<a href="all.html">All Items</a>
+<a href="../src/gin/lib.rs.html#1-7" class="src">Source</a>
+</body></html>

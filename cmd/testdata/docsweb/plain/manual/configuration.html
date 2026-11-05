@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Configuration</title></head>
+<body>
+<p><a href="index.html">Back to the manual</a></p>
+<h1>Configuration</h1>
+<p>Widget reads widget.toml from the working directory at startup. Every key has a default, so an empty file is a valid configuration.</p>
+<h2 id="listen-address">Listen address</h2>
+<p>The listen key sets the host and port Widget binds, for example listen = "127.0.0.1:8080".</p>
+<h2 id="environment-variables">Environment variables</h2>
+<p>Every key in widget.toml can be overridden with an environment variable: upper-case the key and prefix it with WIDGET_, so WIDGET_LISTEN overrides listen. Environment variables win over the file.</p>
+<pre><code>WIDGET_LISTEN=0.0.0.0:9000 widget serve
+</code></pre>
+<h2 id="logging">Logging</h2>
+<p>Set log_level to debug, info, warn or error. Logs go to standard error.</p>
+</body>
+</html>

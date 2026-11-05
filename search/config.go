@@ -1,17 +1,18 @@
 package search
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/1broseidon/ketch/internal/failure"
 
 	"github.com/1broseidon/ketch/httpx"
 	config "github.com/1broseidon/ketch/internal/configbase"
 )
 
 // ErrUnknownBackend identifies an unknown provider; missing prerequisites do not wrap it.
-var ErrUnknownBackend = errors.New("unknown search backend")
+var ErrUnknownBackend = failure.New(failure.Validation, "unknown_backend", "unknown search backend")
 
 // instanceClient returns base with the operator's http_headers applied. The
 // providers that talk to an operator-run instance (SearXNG, Firecrawl, Degoog)

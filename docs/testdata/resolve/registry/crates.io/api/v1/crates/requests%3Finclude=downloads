@@ -1,0 +1,19 @@
+{
+ "crate": {
+  "id": "requests",
+  "name": "requests",
+  "description": "Rust HTTP client API styled after awesome Python requests - [WORK IN PROGRESS]",
+  "homepage": "https://gitlab.com/imp/requests-rs",
+  "documentation": "https://docs.rs/requests",
+  "repository": "https://gitlab.com/imp/requests-rs.git",
+  "max_stable_version": null,
+  "max_version": "0.0.0",
+  "newest_version": "0.0.0",
+  "default_version": "0.0.30",
+  "recent_downloads": 521,
+  "downloads": 199883
+ },
+ "versions": null,
+ "keywords": [],
+ "categories": []
+}

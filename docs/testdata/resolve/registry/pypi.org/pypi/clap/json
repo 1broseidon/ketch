@@ -1,0 +1,39 @@
+{
+ "info": {
+  "name": "Clap",
+  "version": "0.7",
+  "summary": "Command Line Applications for Python",
+  "home_page": "UNKNOWN",
+  "docs_url": "https://pythonhosted.org/Clap/",
+  "project_urls": {
+   "Download": "UNKNOWN",
+   "Homepage": "UNKNOWN"
+  }
+ },
+ "last_serial": 783945,
+ "releases": {
+  "0.7": [
+   {
+    "filename": "Clap-0.7.tar.gz",
+    "packagetype": "sdist",
+    "python_version": "source",
+    "size": 13310,
+    "upload_time_iso_8601": "2010-06-01T00:15:04.014462Z",
+    "url": "https://files.pythonhosted.org/packages/e1/92/b0e9eceb8be9cdfa11a6641b202b838ee233306716b0d6d24c4dc3464996/Clap-0.7.tar.gz",
+    "yanked": false
+   }
+  ]
+ },
+ "urls": [
+  {
+   "filename": "Clap-0.7.tar.gz",
+   "packagetype": "sdist",
+   "python_version": "source",
+   "size": 13310,
+   "upload_time_iso_8601": "2010-06-01T00:15:04.014462Z",
+   "url": "https://files.pythonhosted.org/packages/e1/92/b0e9eceb8be9cdfa11a6641b202b838ee233306716b0d6d24c4dc3464996/Clap-0.7.tar.gz",
+   "yanked": false
+  }
+ ],
+ "vulnerabilities": []
+}

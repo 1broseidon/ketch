@@ -1,0 +1,212 @@
+<!doctype html>
+<html><head>
+<title>tokio - Rust</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="rustdoc">
+<meta name="description" content="A runtime for writing reliable network applications without compromising speed.">
+<meta name="rustdoc-vars">
+<script src="/-/rustdoc.static/storage-41dd4d93.js"></script>
+<script src="../crates-20261020-1.101.0-nightly-19833af72.js"></script>
+<script src="/-/rustdoc.static/main-1814ead3.js"></script>
+<script>
+        
+        {
+            "name": "tokio",
+            "version": "1.54.1"
+        }
+    </script>
+<script src="/-/static/menu.js?0-0-0-cf3269774c51a008146afe83721a0b835401562a-2026-10-21"></script>
+<script src="/-/static/index.js?0-0-0-cf3269774c51a008146afe83721a0b835401562a-2026-10-21"></script>
+</head><body>
+<a href="/" aria-label="Docs.rs" class="pure-menu-heading pure-menu-link docsrs-logo">Docs.rs</a>
+<a href="#" title="An event-driven, non-blocking I/O platform for writing asynchronous I/O
+backed applications.
+" class="pure-menu-link crate-name">tokio-1.54.1</a>
+<a href="/tokio/1.54.1/tokio/" title="Get a link to this specific version" class="pure-menu-link description">Permalink</a>
+<a href="/crate/tokio/latest" title="See tokio in docs.rs" class="pure-menu-link description">Docs.rs crate page</a>
+<a href="https://spdx.org/licenses/MIT" class="pure-menu-sublink">MIT</a>
+<a href="https://tokio.rs" class="pure-menu-link">Homepage</a>
+<a href="https://github.com/tokio-rs/tokio" class="pure-menu-link">Repository</a>
+<a href="https://crates.io/crates/tokio" title="See tokio in crates.io" class="pure-menu-link">crates.io</a>
+<a href="/crate/tokio/latest/source/" title="Browse source of tokio-1.54.1" class="pure-menu-link">Source</a>
+<a href="https://crates.io/users/carllerche" class="pure-menu-link">carllerche</a>
+<a href="https://crates.io/users/Darksonn" class="pure-menu-link">Darksonn</a>
+<a href="https://crates.io/teams/github:tokio-rs:core" class="pure-menu-link">github:tokio-rs:core</a>
+<a href="/bytes/^1.2.1/" class="pure-menu-link">bytes ^1.2.1 normal optional</a>
+<a href="/mio/^1.2.0/" class="pure-menu-link">mio ^1.2.0 normal optional</a>
+<a href="/parking_lot/^0.12.0/" class="pure-menu-link">parking_lot ^0.12.0 normal optional</a>
+<a href="/pin-project-lite/^0.2.11/" class="pure-menu-link">pin-project-lite ^0.2.11 normal</a>
+<a href="/tokio-macros/~2.7.0/" class="pure-menu-link">tokio-macros ~2.7.0 normal optional</a>
+<a href="/async-stream/^0.3/" class="pure-menu-link">async-stream ^0.3 dev</a>
+<a href="/futures/^0.3.0/" class="pure-menu-link">futures ^0.3.0 dev</a>
+<a href="/futures-concurrency/^7.6.3/" class="pure-menu-link">futures-concurrency ^7.6.3 dev</a>
+<a href="/futures-test/^0.3.31/" class="pure-menu-link">futures-test ^0.3.31 dev</a>
+<a href="/mockall/^0.13.0/" class="pure-menu-link">mockall ^0.13.0 dev</a>
+<a href="/tokio-stream/^0.1/" class="pure-menu-link">tokio-stream ^0.1 dev</a>
+<a href="/tokio-test/^0.4.0/" class="pure-menu-link">tokio-test ^0.4.0 dev</a>
+<a href="/wasm-bindgen-test/^0.3.0/" class="pure-menu-link">wasm-bindgen-test ^0.3.0 dev</a>
+<a href="/tracing-mock/=0.1.0-beta.1/" class="pure-menu-link">tracing-mock =0.1.0-beta.1 dev</a>
+<a href="/backtrace/^0.3.58/" class="pure-menu-link">backtrace ^0.3.58 normal optional</a>
+<a href="/io-uring/^0.7.11/" class="pure-menu-link">io-uring ^0.7.11 normal optional</a>
+<a href="/libc/^0.2.168/" class="pure-menu-link">libc ^0.2.168 normal optional</a>
+<a href="/mio/^1.2.0/" class="pure-menu-link">mio ^1.2.0 normal optional</a>
+<a href="/slab/^0.4.9/" class="pure-menu-link">slab ^0.4.9 normal optional</a>
+<a href="/backtrace/^0.3.58/" class="pure-menu-link">backtrace ^0.3.58 dev</a>
+<a href="/nix/^0.31.0/" class="pure-menu-link">nix ^0.31.0 dev</a>
+<a href="/tempfile/^3.1.0/" class="pure-menu-link">tempfile ^3.1.0 dev</a>
+<a href="/socket2/^0.6.3/" class="pure-menu-link">socket2 ^0.6.3 normal optional</a>
+<a href="/loom/^0.7/" class="pure-menu-link">loom ^0.7 dev</a>
+<a href="/rand/^0.9/" class="pure-menu-link">rand ^0.9 dev</a>
+<a href="/proptest/^1/" class="pure-menu-link">proptest ^1 dev</a>
+<a href="/socket2/^0.6.0/" class="pure-menu-link">socket2 ^0.6.0 dev</a>
+<a href="/mio-aio/^2/" class="pure-menu-link">mio-aio ^2 dev</a>
+<a href="/libc/^0.2.168/" class="pure-menu-link">libc ^0.2.168 normal optional</a>
+<a href="/tracing/^0.1.29/" class="pure-menu-link">tracing ^0.1.29 normal optional</a>
+<a href="/libc/^0.2.168/" class="pure-menu-link">libc ^0.2.168 normal optional</a>
+<a href="/signal-hook-registry/^1.1.1/" class="pure-menu-link">signal-hook-registry ^1.1.1 normal optional</a>
+<a href="/libc/^0.2.168/" class="pure-menu-link">libc ^0.2.168 dev</a>
+<a href="/windows-sys/^0.61/" class="pure-menu-link">windows-sys ^0.61 normal optional</a>
+<a href="/windows-sys/^0.61/" class="pure-menu-link">windows-sys ^0.61 dev</a>
+<a href="/crate/tokio/latest" class="pure-menu-link">100% of the crate is documented</a>
+<a href="#" aria-label="Platform" class="pure-menu-link">Platform</a>
+<a href="/crate/tokio/latest/target-redirect/tokio/" class="pure-menu-link">x86_64-unknown-linux-gnu</a>
+<a href="/crate/tokio/latest/features" title="Browse available feature flags of tokio-1.54.1" class="pure-menu-link">Feature flags</a>
+<a href="#" aria-label="docs.rs" class="pure-menu-link">docs.rs</a>
+<a href="/about" class="pure-menu-link">About docs.rs</a>
+<a href="/about/badges" class="pure-menu-link">Badges</a>
+<a href="/about/builds" class="pure-menu-link">Builds</a>
+<a href="/about/metadata" class="pure-menu-link">Metadata</a>
+<a href="/about/redirections" class="pure-menu-link">Shorthand URLs</a>
+<a href="/about/download" class="pure-menu-link">Download</a>
+<a href="/about/rustdoc-json" class="pure-menu-link">Rustdoc JSON</a>
+<a href="/releases/queue" class="pure-menu-link">Build queue</a>
+<a href="https://foundation.rust-lang.org/policies/privacy-policy/#docs.rs" class="pure-menu-link">Privacy policy</a>
+<a href="#" aria-label="Rust" class="pure-menu-link">Rust</a>
+<a href="https://www.rust-lang.org/" class="pure-menu-link">Rust website</a>
+<a href="https://doc.rust-lang.org/book/" class="pure-menu-link">The Book</a>
+<a href="https://doc.rust-lang.org/std/" class="pure-menu-link">Standard Library API Reference</a>
+<a href="https://doc.rust-lang.org/rust-by-example/" class="pure-menu-link">Rust by Example</a>
+<a href="https://doc.rust-lang.org/cargo/guide/" class="pure-menu-link">The Cargo Guide</a>
+<a href="https://doc.rust-lang.org/nightly/clippy" class="pure-menu-link">Clippy Documentation</a>
+<a href="#main-content" class="skip-main-content">Skip to main content</a>
+<a href="#">Crate tokio</a>
+<a href="../tokio/index.html">tokio</a>
+<a href="all.html">All Items</a>
+<a href="#">Sections</a>
+<a href="#a-tour-of-tokio" title="A Tour of Tokio">A Tour of Tokio</a>
+<a href="#authoring-applications" title="Authoring applications">Authoring applications</a>
+<a href="#authoring-libraries" title="Authoring libraries">Authoring libraries</a>
+<a href="#working-with-tasks" title="Working With Tasks">Working With Tasks</a>
+<a href="#cpu-bound-tasks-and-blocking-code" title="CPU-bound tasks and blocking code">CPU-bound tasks and blocking code</a>
+<a href="#asynchronous-io" title="Asynchronous IO">Asynchronous IO</a>
+<a href="#examples" title="Examples">Examples</a>
+<a href="#feature-flags" title="Feature flags">Feature flags</a>
+<a href="#unstable-features" title="Unstable features">Unstable features</a>
+<a href="#supported-platforms" title="Supported platforms">Supported platforms</a>
+<a href="#wasm-support" title="`WASM` support">WASM support</a>
+<a href="#reexports">Crate Items</a>
+<a href="#reexports" title="Re-exports">Re-exports</a>
+<a href="#modules" title="Modules">Modules</a>
+<a href="#macros" title="Macros">Macros</a>
+<a href="#attributes" title="Attribute Macros">Attribute Macros</a>
+<a href="../src/tokio/lib.rs.html#1-754" class="src">Source</a>
+<a href="#working-with-tasks">working with asynchronous tasks</a>
+<a href="sync/index.html" title="mod tokio::sync">synchronization primitives and channels</a>
+<a href="time/index.html" title="mod tokio::time">timeouts, sleeps, and intervals</a>
+<a href="#asynchronous-io">performing asynchronous I/O</a>
+<a href="net/index.html" title="mod tokio::net">TCP and UDP</a>
+<a href="fs/index.html" title="mod tokio::fs">filesystem</a>
+<a href="process/index.html" title="mod tokio::process">process</a>
+<a href="signal/index.html" title="mod tokio::signal">signal</a>
+<a href="runtime/index.html" title="mod tokio::runtime">runtime</a>
+<a href="https://tokio.rs/tokio/tutorial">website</a>
+<a href="#a-tour-of-tokio" class="doc-anchor">§</a>
+<a href="#authoring-applications" class="doc-anchor">§</a>
+<a href="#example" class="doc-anchor">§</a>
+<a href="#authoring-libraries" class="doc-anchor">§</a>
+<a href="#example-1" class="doc-anchor">§</a>
+<a href="#working-with-tasks" class="doc-anchor">§</a>
+<a href="#working-with-tasks">tasks</a>
+<a href="task/index.html" title="mod tokio::task">tokio::task</a>
+<a href="task/fn.spawn.html" title="fn tokio::task::spawn">spawn</a>
+<a href="task/struct.JoinHandle.html" title="struct tokio::task::JoinHandle">JoinHandle</a>
+<a href="task/index.html#blocking-and-yielding">running blocking operations</a>
+<a href="task/index.html" title="mod tokio::task">tokio::task</a>
+<a href="sync/index.html" title="mod tokio::sync">tokio::sync</a>
+<a href="sync/oneshot/index.html" title="mod tokio::sync::oneshot">oneshot</a>
+<a href="sync/mpsc/index.html" title="mod tokio::sync::mpsc">mpsc</a>
+<a href="sync/watch/index.html" title="mod tokio::sync::watch">watch</a>
+<a href="sync/broadcast/index.html" title="mod tokio::sync::broadcast">broadcast</a>
+<a href="sync/struct.Mutex.html" title="struct tokio::sync::Mutex">Mutex</a>
+<a href="sync/struct.Barrier.html" title="struct tokio::sync::Barrier">Barrier</a>
+<a href="time/index.html" title="mod tokio::time">tokio::time</a>
+<a href="time/fn.timeout.html" title="fn tokio::time::timeout">timeouts</a>
+<a href="time/fn.sleep.html" title="fn tokio::time::sleep">sleeping</a>
+<a href="time/fn.interval.html" title="fn tokio::time::interval">repeating an operation at an interval</a>
+<a href="attr.main.html">#[tokio::main]</a>
+<a href="runtime/index.html" title="mod tokio::runtime">tokio::runtime</a>
+<a href="runtime/index.html#current-thread-scheduler">single-threaded scheduler</a>
+<a href="runtime/index.html#multi-thread-scheduler">multi-thread scheduler</a>
+<a href="runtime/index.html#runtime-scheduler">runtime module documentation</a>
+<a href="#cpu-bound-tasks-and-blocking-code" class="doc-anchor">§</a>
+<a href="runtime/struct.Builder.html#method.thread_keep_alive" title="method tokio::runtime::Builder::thread_keep_alive">thread_keep_alive</a>
+<a href="runtime/struct.Builder.html" title="struct tokio::runtime::Builder">Builder</a>
+<a href="task/fn.spawn_blocking.html" title="fn tokio::task::spawn_blocking">spawn_blocking</a>
+<a href="https://docs.rs/rayon">rayon</a>
+<a href="sync/oneshot/index.html" title="mod tokio::sync::oneshot">oneshot</a>
+<a href="#asynchronous-io" class="doc-anchor">§</a>
+<a href="io/index.html" title="mod tokio::io">tokio::io</a>
+<a href="io/trait.AsyncRead.html" title="trait tokio::io::AsyncRead">AsyncRead</a>
+<a href="io/trait.AsyncWrite.html" title="trait tokio::io::AsyncWrite">AsyncWrite</a>
+<a href="io/trait.AsyncBufRead.html" title="trait tokio::io::AsyncBufRead">AsyncBufRead</a>
+<a href="https://doc.rust-lang.org/nightly/std/io/index.html" title="mod std::io">std::io</a>
+<a href="net/index.html" title="mod tokio::net">tokio::net</a>
+<a href="net/tcp/index.html" title="mod tokio::net::tcp">TCP</a>
+<a href="net/struct.UdpSocket.html" title="struct tokio::net::UdpSocket">UDP</a>
+<a href="net/unix/index.html" title="mod tokio::net::unix">Unix Domain Sockets</a>
+<a href="fs/index.html" title="mod tokio::fs">tokio::fs</a>
+<a href="https://doc.rust-lang.org/nightly/std/fs/index.html" title="mod std::fs">std::fs</a>
+<a href="signal/index.html" title="mod tokio::signal">tokio::signal</a>
+<a href="process/index.html" title="mod tokio::process">tokio::process</a>
+<a href="#examples" class="doc-anchor">§</a>
+<a href="#feature-flags" class="doc-anchor">§</a>
+<a href="https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section">feature flags</a>
+<a href="https://docs.rs/parking_lot/0.12.5/x86_64-unknown-linux-gnu/parking_lot/index.html" title="mod parking_lot">parking_lot</a>
+<a href="https://docs.rs/parking_lot/0.12.5/x86_64-unknown-linux-gnu/parking_lot/index.html" title="mod parking_lot">parking_lot</a>
+<a href="#unstable-features" class="doc-anchor">§</a>
+<a href="https://internals.rust-lang.org/t/feature-request-unstable-opt-in-non-transitive-crate-features/16193#why-not-a-crate-feature-2">does not yet directly support such opt-ins</a>
+<a href="#supported-platforms" class="doc-anchor">§</a>
+<a href="https://crates.io/crates/mio#platforms">in mio’s documentation</a>
+<a href="#wasm-support" class="doc-anchor">§</a>
+<a href="#wasi-support" class="doc-anchor">§</a>
+<a href="#emscripten-support" class="doc-anchor">§</a>
+<a href="#reexports" class="anchor">§</a>
+<a href="task/fn.spawn.html" title="fn tokio::task::spawn" class="fn">spawn</a>
+<a href="#modules" class="anchor">§</a>
+<a href="doc/index.html" title="mod tokio::doc" class="mod">doc</a>
+<a href="fs/index.html" title="mod tokio::fs" class="mod">fs</a>
+<a href="io/index.html" title="mod tokio::io" class="mod">io</a>
+<a href="net/index.html" title="mod tokio::net" class="mod">net</a>
+<a href="process/index.html" title="mod tokio::process" class="mod">process</a>
+<a href="runtime/index.html" title="mod tokio::runtime" class="mod">runtime</a>
+<a href="signal/index.html" title="mod tokio::signal" class="mod">signal</a>
+<a href="stream/index.html" title="mod tokio::stream" class="mod">stream</a>
+<a href="https://docs.rs/tokio-stream">tokio-stream</a>
+<a href="sync/index.html" title="mod tokio::sync" class="mod">sync</a>
+<a href="task/index.html" title="mod tokio::task" class="mod">task</a>
+<a href="time/index.html" title="mod tokio::time" class="mod">time</a>
+<a href="#macros" class="anchor">§</a>
+<a href="macro.join.html" title="macro tokio::join" class="macro">join</a>
+<a href="macro.pin.html" title="macro tokio::pin" class="macro">pin</a>
+<a href="macro.select.html" title="macro tokio::select" class="macro">select</a>
+<a href="macro.task_local.html" title="macro tokio::task_local" class="macro">task_local</a>
+<a href="task/struct.LocalKey.html" title="struct tokio::task::LocalKey">tokio::task::LocalKey</a>
+<a href="macro.try_join.html" title="macro tokio::try_join" class="macro">try_join</a>
+<a href="#attributes" class="anchor">§</a>
+<a href="attr.main.html" title="attr tokio::main" class="attr">main</a>
+<a href="../tokio/runtime/struct.Runtime.html">Runtime</a>
+<a href="../tokio/runtime/struct.Builder.html">Builder</a>
+<a href="attr.test.html" title="attr tokio::test" class="attr">test</a>
+<a href="../tokio/runtime/struct.Runtime.html">Runtime</a>
+<a href="../tokio/runtime/struct.Builder.html">Builder</a>
+</body></html>

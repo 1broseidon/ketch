@@ -1,0 +1,231 @@
+<!doctype html>
+<html><head>
+<title>axum - Rust</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="rustdoc">
+<meta name="description" content="axum is an HTTP routing and request-handling library that focuses on ergonomics and modularity.">
+<meta name="rustdoc-vars">
+<script src="/-/rustdoc.static/storage-41dd4d93.js"></script>
+<script src="../crates-20260921-1.100.0-nightly-1303417c4.js"></script>
+<script src="/-/rustdoc.static/main-1814ead3.js"></script>
+<script>
+        
+        {
+            "name": "axum",
+            "version": "0.8.9"
+        }
+    </script>
+<script src="/-/static/menu.js?0-0-0-435e529e59073c986fa6c2051a1da284fa8b4d8c-2026-10-12"></script>
+<script src="/-/static/index.js?0-0-0-435e529e59073c986fa6c2051a1da284fa8b4d8c-2026-10-12"></script>
+</head><body>
+<a href="/" aria-label="Docs.rs" class="pure-menu-heading pure-menu-link docsrs-logo">Docs.rs</a>
+<a href="#" title="HTTP routing and request handling library that focuses on ergonomics and modularity" class="pure-menu-link crate-name">axum-0.8.9</a>
+<a href="/axum/0.8.9/axum/" title="Get a link to this specific version" class="pure-menu-link description">Permalink</a>
+<a href="/crate/axum/latest" title="See axum in docs.rs" class="pure-menu-link description">Docs.rs crate page</a>
+<a href="https://spdx.org/licenses/MIT" class="pure-menu-sublink">MIT</a>
+<a href="https://github.com/tokio-rs/axum" class="pure-menu-link">Homepage</a>
+<a href="https://github.com/tokio-rs/axum" class="pure-menu-link">Repository</a>
+<a href="https://crates.io/crates/axum" title="See axum in crates.io" class="pure-menu-link">crates.io</a>
+<a href="/crate/axum/latest/source/" title="Browse source of axum-0.8.9" class="pure-menu-link">Source</a>
+<a href="https://crates.io/users/carllerche" class="pure-menu-link">carllerche</a>
+<a href="https://crates.io/users/davidpdrsn" class="pure-menu-link">davidpdrsn</a>
+<a href="https://crates.io/teams/github:tokio-rs:core" class="pure-menu-link">github:tokio-rs:core</a>
+<a href="https://crates.io/teams/github:tokio-rs:axum-release" class="pure-menu-link">github:tokio-rs:axum-release</a>
+<a href="/axum-core/^0.5.5/" class="pure-menu-link">axum-core ^0.5.5 normal</a>
+<a href="/axum-macros/^0.5.1/" class="pure-menu-link">axum-macros ^0.5.1 normal optional</a>
+<a href="/base64/^0.22.1/" class="pure-menu-link">base64 ^0.22.1 normal optional</a>
+<a href="/bytes/^1.0/" class="pure-menu-link">bytes ^1.0 normal</a>
+<a href="/form_urlencoded/^1.1.0/" class="pure-menu-link">form_urlencoded ^1.1.0 normal optional</a>
+<a href="/futures-util/^0.3/" class="pure-menu-link">futures-util ^0.3 normal</a>
+<a href="/http/^1.0.0/" class="pure-menu-link">http ^1.0.0 normal</a>
+<a href="/http-body/^1.0.0/" class="pure-menu-link">http-body ^1.0.0 normal</a>
+<a href="/http-body-util/^0.1.0/" class="pure-menu-link">http-body-util ^0.1.0 normal</a>
+<a href="/hyper/^1.1.0/" class="pure-menu-link">hyper ^1.1.0 normal optional</a>
+<a href="/hyper-util/^0.1.3/" class="pure-menu-link">hyper-util ^0.1.3 normal optional</a>
+<a href="/itoa/^1.0.5/" class="pure-menu-link">itoa ^1.0.5 normal</a>
+<a href="/matchit/=0.8.4/" class="pure-menu-link">matchit =0.8.4 normal</a>
+<a href="/memchr/^2.4.1/" class="pure-menu-link">memchr ^2.4.1 normal</a>
+<a href="/mime/^0.3.16/" class="pure-menu-link">mime ^0.3.16 normal</a>
+<a href="/multer/^3.0.0/" class="pure-menu-link">multer ^3.0.0 normal optional</a>
+<a href="/percent-encoding/^2.1/" class="pure-menu-link">percent-encoding ^2.1 normal</a>
+<a href="/pin-project-lite/^0.2.7/" class="pure-menu-link">pin-project-lite ^0.2.7 normal</a>
+<a href="/reqwest/^0.12/" class="pure-menu-link">reqwest ^0.12 normal optional</a>
+<a href="/serde/^1.0.211/" class="pure-menu-link">serde ^1.0.211 normal optional</a>
+<a href="/serde_core/^1.0.221/" class="pure-menu-link">serde_core ^1.0.221 normal</a>
+<a href="/serde_json/^1.0/" class="pure-menu-link">serde_json ^1.0 normal optional</a>
+<a href="/serde_path_to_error/^0.1.8/" class="pure-menu-link">serde_path_to_error ^0.1.8 normal optional</a>
+<a href="/serde_urlencoded/^0.7/" class="pure-menu-link">serde_urlencoded ^0.7 normal optional</a>
+<a href="/sha1/^0.10/" class="pure-menu-link">sha1 ^0.10 normal optional</a>
+<a href="/sync_wrapper/^1.0.0/" class="pure-menu-link">sync_wrapper ^1.0.0 normal</a>
+<a href="/tokio/^1.44/" class="pure-menu-link">tokio ^1.44 normal optional</a>
+<a href="/tokio-tungstenite/^0.29.0/" class="pure-menu-link">tokio-tungstenite ^0.29.0 normal optional</a>
+<a href="/tower/^0.5.2/" class="pure-menu-link">tower ^0.5.2 normal</a>
+<a href="/tower-http/^0.6.8/" class="pure-menu-link">tower-http ^0.6.8 normal optional</a>
+<a href="/tower-layer/^0.3.2/" class="pure-menu-link">tower-layer ^0.3.2 normal</a>
+<a href="/tower-service/^0.3/" class="pure-menu-link">tower-service ^0.3 normal</a>
+<a href="/tracing/^0.1/" class="pure-menu-link">tracing ^0.1 normal optional</a>
+<a href="/anyhow/^1.0/" class="pure-menu-link">anyhow ^1.0 dev</a>
+<a href="/hyper/^1.1.0/" class="pure-menu-link">hyper ^1.1.0 dev</a>
+<a href="/quickcheck/^1.0/" class="pure-menu-link">quickcheck ^1.0 dev</a>
+<a href="/quickcheck_macros/^1.0/" class="pure-menu-link">quickcheck_macros ^1.0 dev</a>
+<a href="/reqwest/^0.12/" class="pure-menu-link">reqwest ^0.12 dev</a>
+<a href="/serde/^1.0.221/" class="pure-menu-link">serde ^1.0.221 dev</a>
+<a href="/serde_json/^1.0/" class="pure-menu-link">serde_json ^1.0 dev</a>
+<a href="/time/^0.3/" class="pure-menu-link">time ^0.3 dev</a>
+<a href="/tokio/^1.44.2/" class="pure-menu-link">tokio ^1.44.2 dev</a>
+<a href="/tokio-stream/^0.1/" class="pure-menu-link">tokio-stream ^0.1 dev</a>
+<a href="/tokio-tungstenite/^0.29.0/" class="pure-menu-link">tokio-tungstenite ^0.29.0 dev</a>
+<a href="/tower/^0.5.2/" class="pure-menu-link">tower ^0.5.2 dev</a>
+<a href="/tower-http/^0.6.8/" class="pure-menu-link">tower-http ^0.6.8 dev</a>
+<a href="/tracing/^0.1/" class="pure-menu-link">tracing ^0.1 dev</a>
+<a href="/tracing-subscriber/^0.3/" class="pure-menu-link">tracing-subscriber ^0.3 dev</a>
+<a href="/uuid/^1.0/" class="pure-menu-link">uuid ^1.0 dev</a>
+<a href="/crate/axum/latest" class="pure-menu-link">100% of the crate is documented</a>
+<a href="#" aria-label="Platform" class="pure-menu-link">Platform</a>
+<a href="/crate/axum/latest/target-redirect/axum/" class="pure-menu-link">x86_64-unknown-linux-gnu</a>
+<a href="/crate/axum/latest/features" title="Browse available feature flags of axum-0.8.9" class="pure-menu-link">Feature flags</a>
+<a href="#" aria-label="docs.rs" class="pure-menu-link">docs.rs</a>
+<a href="/about" class="pure-menu-link">About docs.rs</a>
+<a href="/about/badges" class="pure-menu-link">Badges</a>
+<a href="/about/builds" class="pure-menu-link">Builds</a>
+<a href="/about/metadata" class="pure-menu-link">Metadata</a>
+<a href="/about/redirections" class="pure-menu-link">Shorthand URLs</a>
+<a href="/about/download" class="pure-menu-link">Download</a>
+<a href="/about/rustdoc-json" class="pure-menu-link">Rustdoc JSON</a>
+<a href="/releases/queue" class="pure-menu-link">Build queue</a>
+<a href="https://foundation.rust-lang.org/policies/privacy-policy/#docs.rs" class="pure-menu-link">Privacy policy</a>
+<a href="#" aria-label="Rust" class="pure-menu-link">Rust</a>
+<a href="https://www.rust-lang.org/" class="pure-menu-link">Rust website</a>
+<a href="https://doc.rust-lang.org/book/" class="pure-menu-link">The Book</a>
+<a href="https://doc.rust-lang.org/std/" class="pure-menu-link">Standard Library API Reference</a>
+<a href="https://doc.rust-lang.org/rust-by-example/" class="pure-menu-link">Rust by Example</a>
+<a href="https://doc.rust-lang.org/cargo/guide/" class="pure-menu-link">The Cargo Guide</a>
+<a href="https://doc.rust-lang.org/nightly/clippy" class="pure-menu-link">Clippy Documentation</a>
+<a href="#main-content" class="skip-main-content">Skip to main content</a>
+<a href="#">Crate axum</a>
+<a href="../axum/index.html">axum</a>
+<a href="all.html">All Items</a>
+<a href="#">Sections</a>
+<a href="#high-level-features" title="High-level features">High-level features</a>
+<a href="#compatibility" title="Compatibility">Compatibility</a>
+<a href="#example" title="Example">Example</a>
+<a href="#routing" title="Routing">Routing</a>
+<a href="#handlers" title="Handlers">Handlers</a>
+<a href="#extractors" title="Extractors">Extractors</a>
+<a href="#responses" title="Responses">Responses</a>
+<a href="#error-handling" title="Error handling">Error handling</a>
+<a href="#middleware" title="Middleware">Middleware</a>
+<a href="#sharing-state-with-handlers" title="Sharing state with handlers">Sharing state with handlers</a>
+<a href="#using-the-state-extractor" title="Using the `State` extractor">Using the State extractor</a>
+<a href="#using-request-extensions" title="Using request extensions">Using request extensions</a>
+<a href="#using-closure-captures" title="Using closure captures">Using closure captures</a>
+<a href="#using-task-local-variables" title="Using task-local variables">Using task-local variables</a>
+<a href="#building-integrations-for-axum" title="Building integrations for axum">Building integrations for axum</a>
+<a href="#required-dependencies" title="Required dependencies">Required dependencies</a>
+<a href="#examples" title="Examples">Examples</a>
+<a href="#feature-flags" title="Feature flags">Feature flags</a>
+<a href="#reexports">Crate Items</a>
+<a href="#reexports" title="Re-exports">Re-exports</a>
+<a href="#modules" title="Modules">Modules</a>
+<a href="#structs" title="Structs">Structs</a>
+<a href="#traits" title="Traits">Traits</a>
+<a href="#functions" title="Functions">Functions</a>
+<a href="#types" title="Type Aliases">Type Aliases</a>
+<a href="#attributes" title="Attribute Macros">Attribute Macros</a>
+<a href="../src/axum/lib.rs.html#1-535" class="src">Source</a>
+<a href="#high-level-features" class="doc-anchor">§</a>
+<a href="https://crates.io/crates/tower">tower</a>
+<a href="https://crates.io/crates/tower-http">tower-http</a>
+<a href="https://docs.rs/tower-service/0.3.3/x86_64-unknown-linux-gnu/tower_service/trait.Service.html" title="trait tower_service::Service">tower::Service</a>
+<a href="http://crates.io/crates/hyper">hyper</a>
+<a href="http://crates.io/crates/tonic">tonic</a>
+<a href="#compatibility" class="doc-anchor">§</a>
+<a href="https://docs.rs/tokio/1.47.1/x86_64-unknown-linux-gnu/tokio/index.html" title="mod tokio">tokio</a>
+<a href="https://docs.rs/hyper/1.7.0/x86_64-unknown-linux-gnu/hyper/index.html" title="mod hyper">hyper</a>
+<a href="#example" class="doc-anchor">§</a>
+<a href="#routing" class="doc-anchor">§</a>
+<a href="struct.Router.html" title="struct axum::Router">Router</a>
+<a href="struct.Router.html" title="struct axum::Router">Router</a>
+<a href="#handlers" class="doc-anchor">§</a>
+<a href="extract/index.html" title="mod axum::extract">“extractors”</a>
+<a href="response/index.html" title="mod axum::response">into a response</a>
+<a href="handler/index.html" title="mod axum::handler">handler</a>
+<a href="#extractors" class="doc-anchor">§</a>
+<a href="extract/trait.FromRequest.html" title="trait axum::extract::FromRequest">FromRequest</a>
+<a href="extract/trait.FromRequestParts.html" title="trait axum::extract::FromRequestParts">FromRequestParts</a>
+<a href="extract/index.html" title="mod axum::extract">extract</a>
+<a href="#responses" class="doc-anchor">§</a>
+<a href="response/trait.IntoResponse.html" title="trait axum::response::IntoResponse">IntoResponse</a>
+<a href="response/index.html" title="mod axum::response">response</a>
+<a href="#error-handling" class="doc-anchor">§</a>
+<a href="error_handling/index.html" title="mod axum::error_handling">error_handling</a>
+<a href="#middleware" class="doc-anchor">§</a>
+<a href="middleware/index.html" title="mod axum::middleware">middleware</a>
+<a href="#sharing-state-with-handlers" class="doc-anchor">§</a>
+<a href="extract/struct.State.html" title="struct axum::extract::State">State</a>
+<a href="#using-the-state-extractor" class="doc-anchor">§</a>
+<a href="extract/struct.State.html" title="struct axum::extract::State">State</a>
+<a href="#substates-with-fromref" class="doc-anchor">§</a>
+<a href="extract/trait.FromRef.html" title="trait axum::extract::FromRef">FromRef</a>
+<a href="#the-routers-type-parameter" class="doc-anchor">§</a>
+<a href="struct.Router.html#method.with_state" title="method axum::Router::with_state">.with_state(s)</a>
+<a href="fn.serve.html" title="fn axum::serve">serve()</a>
+<a href="struct.Router.html#method.with_state" title="method axum::Router::with_state">Router::with_state</a>
+<a href="extract/struct.State.html" title="struct axum::extract::State">State</a>
+<a href="extract/struct.State.html" title="struct axum::extract::State">State</a>
+<a href="#using-request-extensions" class="doc-anchor">§</a>
+<a href="struct.Extension.html" title="struct axum::Extension">Extension</a>
+<a href="#using-closure-captures" class="doc-anchor">§</a>
+<a href="#using-task-local-variables" class="doc-anchor">§</a>
+<a href="https://docs.rs/tokio/1/tokio/macro.task_local.html">tokio’s task_local macro</a>
+<a href="https://github.com/smol-rs/async-executor/issues/139">this GitHub issue</a>
+<a href="#building-integrations-for-axum" class="doc-anchor">§</a>
+<a href="extract/trait.FromRequest.html" title="trait axum::extract::FromRequest">FromRequest</a>
+<a href="extract/trait.FromRequestParts.html" title="trait axum::extract::FromRequestParts">FromRequestParts</a>
+<a href="response/trait.IntoResponse.html" title="trait axum::response::IntoResponse">IntoResponse</a>
+<a href="http://crates.io/crates/axum-core">axum-core</a>
+<a href="http://crates.io/crates/axum-core">axum-core</a>
+<a href="#required-dependencies" class="doc-anchor">§</a>
+<a href="#examples" class="doc-anchor">§</a>
+<a href="https://github.com/tokio-rs/axum/tree/main/examples">a number of examples</a>
+<a href="#feature-flags" class="doc-anchor">§</a>
+<a href="https://doc.rust-lang.org/cargo/reference/features.html#the-features-section">feature flags</a>
+<a href="struct.Json.html" title="struct axum::Json">Json</a>
+<a href="extract/struct.MatchedPath.html" title="struct axum::extract::MatchedPath">MatchedPath</a>
+<a href="extract/struct.Multipart.html" title="struct axum::extract::Multipart">Multipart</a>
+<a href="extract/struct.OriginalUri.html" title="struct axum::extract::OriginalUri">OriginalUri</a>
+<a href="extract/ws/index.html" title="mod axum::extract::ws">extract::ws</a>
+<a href="#reexports" class="anchor">§</a>
+<a href="https://docs.rs/http/1.3.1/x86_64-unknown-linux-gnu/http/index.html" title="mod http" class="mod">http</a>
+<a href="#modules" class="anchor">§</a>
+<a href="body/index.html" title="mod axum::body" class="mod">body</a>
+<a href="error_handling/index.html" title="mod axum::error_handling" class="mod">error_handling</a>
+<a href="extract/index.html" title="mod axum::extract" class="mod">extract</a>
+<a href="handler/index.html" title="mod axum::handler" class="mod">handler</a>
+<a href="middleware/index.html" title="mod axum::middleware" class="mod">middleware</a>
+<a href="response/index.html" title="mod axum::response" class="mod">response</a>
+<a href="routing/index.html" title="mod axum::routing" class="mod">routing</a>
+<a href="https://docs.rs/tower-service/0.3.3/x86_64-unknown-linux-gnu/tower_service/trait.Service.html" title="trait tower_service::Service">Service</a>
+<a href="serve/index.html" title="mod axum::serve" class="mod">serve</a>
+<a href="test_helpers/index.html" title="mod axum::test_helpers" class="mod">test_helpers</a>
+<a href="#structs" class="anchor">§</a>
+<a href="struct.Error.html" title="struct axum::Error" class="struct">Error</a>
+<a href="struct.Extension.html" title="struct axum::Extension" class="struct">Extension</a>
+<a href="struct.Form.html" title="struct axum::Form" class="struct">Form</a>
+<a href="struct.Json.html" title="struct axum::Json" class="struct">Json</a>
+<a href="struct.Router.html" title="struct axum::Router" class="struct">Router</a>
+<a href="#traits" class="anchor">§</a>
+<a href="trait.RequestExt.html" title="trait axum::RequestExt" class="trait">RequestExt</a>
+<a href="extract/type.Request.html" title="type axum::extract::Request">Request</a>
+<a href="trait.RequestPartsExt.html" title="trait axum::RequestPartsExt" class="trait">RequestPartsExt</a>
+<a href="https://docs.rs/http/1.3.1/x86_64-unknown-linux-gnu/http/request/struct.Parts.html" title="struct http::request::Parts">Parts</a>
+<a href="trait.ServiceExt.html" title="trait axum::ServiceExt" class="trait">ServiceExt</a>
+<a href="https://docs.rs/tower-service/0.3.3/x86_64-unknown-linux-gnu/tower_service/trait.Service.html" title="trait tower_service::Service">Service</a>
+<a href="#functions" class="anchor">§</a>
+<a href="fn.serve.html" title="fn axum::serve" class="fn">serve</a>
+<a href="#types" class="anchor">§</a>
+<a href="type.BoxError.html" title="type axum::BoxError" class="type">BoxError</a>
+<a href="#attributes" class="anchor">§</a>
+<a href="attr.debug_handler.html" title="attr axum::debug_handler" class="attr">debug_handler</a>
+<a href="attr.debug_middleware.html" title="attr axum::debug_middleware" class="attr">debug_middleware</a>
+</body></html>

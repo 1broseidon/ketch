@@ -1,0 +1,1580 @@
+
+<!DOCTYPE html>
+<html lang="en" data-layout="" data-local="" data-version="prod-frontend-00275-2gh">
+ <head>
+ <meta charset="utf-8">
+ <meta http-equiv="X-UA-Compatible" content="IE=edge">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <meta name="description" content="Go is an open source programming language that makes it easy to build simple, reliable, and efficient software.">
+ <meta name="robots" content="noindex">
+ <meta class="js-gtmID" data-gtmid="GTM-W8MVQXG">
+ <link rel="shortcut icon" href="/static/shared/icon/favicon.ico">
+ <link href="/static/frontend/frontend.min.css?version=prod-frontend-00275-2gh" rel="stylesheet">
+ <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="Go Packages">
+ <title>httpx - Search Results - Go Packages</title>
+ <link href="/static/frontend/search/search.min.css?version=prod-frontend-00275-2gh" rel="stylesheet">
+ </head>
+ <body>
+ <section class="go-SurveyBanner js-surveyBanner" role="region" aria-label="2026 Go Developer Survey" data-survey-id="go-survey-2026">
+ <img class="go-SurveyBanner-gopher" src="/static/shared/survey/gopher-announcement.png" width="108" height="80" alt="" aria-hidden="true">
+ <img class="go-SurveyBanner-bullhornMobile" src="/static/shared/survey/bullhorn-mobile.svg" width="22" height="23" alt="" aria-hidden="true">
+ <img class="go-SurveyBanner-bullhornDesktop" src="/static/shared/survey/bullhorn-desktop.svg" width="28" height="28" alt="" aria-hidden="true">
+ <div class="go-SurveyBanner-content">
+ <span class="go-SurveyBanner-lead">Help us shape the future of Go!</span>
+ <a class="go-SurveyBanner-link js-surveyBannerLink" href="https://blink.qualtrics.com/jfe/form/SV_ba8fa1ZcSQQdTRs?s=p" target="_blank" rel="noopener"><span class="go-SurveyBanner-linkPrefix">Take the </span>2026 Go Developer Survey</a>
+ </div>
+ <button class="go-SurveyBanner-close js-surveyBannerClose" type="button" aria-label="Minimize the survey banner">
+ <img class="go-SurveyBanner-minimizeIcon" src="/static/shared/survey/minimize.svg" width="20" height="20" alt="" aria-hidden="true">
+ </button>
+ </section>
+ <header class="go-Header js-siteHeader">
+ <div class="go-Header-inner go-Header-inner--dark">
+ <nav class="go-Header-nav">
+ <a href="https://go.dev/" class="js-headerLogo" data-gtmc="nav link"
+ data-test-id="go-header-logo-link" role="heading" aria-level="1">
+ <img class="go-Header-logo" src="/static/shared/logo/go-white.svg" alt="Go">
+ </a>
+ <div class="skip-navigation-wrapper">
+ <a class="skip-to-content-link" aria-label="Skip to main content" href="#main-content"> Skip to Main Content </a>
+ </div>
+ <div class="go-Header-rightContent">
+<div class="go-SearchForm js-searchForm">
+ <form
+ class="go-InputGroup go-ShortcutKey go-SearchForm-form"
+ action="/search"
+ data-shortcut="/"
+ data-shortcut-alt="search"
+ data-gtmc="search form"
+ aria-label="Search for a package"
+ role="search"
+ >
+ <input name="q" class="go-Input js-searchFocus" aria-label="Search for a package" type="search"
+ autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"
+ placeholder="Search packages or symbols"
+ value="httpx" />
+ <input name="m" value="package" hidden>
+ <button class="go-Button go-Button--inverted" aria-label="Submit search">
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/search_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </form>
+ <button class="go-SearchForm-expandSearch js-expandSearch" data-gtmc="nav button"
+ aria-label="Open search" data-test-id="expand-search">
+ <img class="go-Icon go-Icon--inverted" height="24" width="24"
+ src="/static/shared/icon/search_gm_grey_24dp.svg" alt="">
+ </button>
+</div>
+ <ul class="go-Header-menu">
+ <li class="go-Header-menuItem">
+ <a class="js-desktop-menu-hover" href="#" data-gtmc="nav link">
+ Why Go
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_drop_down_gm_grey_24dp.svg" alt="submenu dropdown icon">
+ </a>
+ <ul class="go-Header-submenu go-Header-submenu--why js-desktop-submenu-hover" aria-label="submenu">
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/solutions/case-studies">
+ <span>Case Studies</span>
+ </a>
+ </div>
+ <p>Common problems companies solve with Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/solutions/use-cases">
+ <span>Use Cases</span>
+ </a>
+ </div>
+ <p>Stories about how and why companies use Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/security/">
+ <span>Security</span>
+ </a>
+ </div>
+ <p>How Go can help keep you secure by default</p>
+ </li>
+ </ul>
+ </li>
+ <li class="go-Header-menuItem">
+ <a href="https://go.dev/learn/" data-gtmc="nav link">Learn</a>
+ </li>
+ <li class="go-Header-menuItem">
+ <a class="js-desktop-menu-hover" href="#" data-gtmc="nav link">
+ Docs
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_drop_down_gm_grey_24dp.svg" alt="submenu dropdown icon">
+ </a>
+ <ul class="go-Header-submenu go-Header-submenu--docs js-desktop-submenu-hover" aria-label="submenu">
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/doc/effective_go">
+ <span>Effective Go</span>
+ </a>
+ </div>
+ <p>Tips for writing clear, performant, and idiomatic Go code</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/doc/">
+ <span>Go User Manual</span>
+ </a>
+ </div>
+ <p>A complete introduction to building software with Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://pkg.go.dev/std">
+ <span>Standard library</span>
+ </a>
+ </div>
+ <p>Reference documentation for Go's standard library</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/doc/devel/release">
+ <span>Release Notes</span>
+ </a>
+ </div>
+ <p>Learn what's new in each Go release</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="/api">
+ <span>API</span>
+ </a>
+ </div>
+ <p>Reference documentation for the pkg.go.dev API</p>
+ </li>
+ </ul>
+ </li>
+ <li class="go-Header-menuItem go-Header-menuItem--active">
+ <a href="/" data-gtmc="nav link">Packages</a>
+ </li>
+ <li class="go-Header-menuItem">
+ <a class="js-desktop-menu-hover" href="#" data-gtmc="nav link">
+ Community
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_drop_down_gm_grey_24dp.svg" alt="submenu dropdown icon">
+ </a>
+ <ul class="go-Header-submenu go-Header-submenu--community js-desktop-submenu-hover" aria-label="submenu">
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/talks/">
+ <span>Recorded Talks</span>
+ </a>
+ </div>
+ <p>Videos from prior events</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://www.meetup.com/pro/go">
+ <span>Meetups</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </div>
+ <p>Meet other local Go developers</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://github.com/golang/go/wiki/Conferences">
+ <span>Conferences</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </div>
+ <p>Learn and network with Go developers from around the world</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/blog">
+ <span>Go blog</span>
+ </a>
+ </div>
+ <p>The Go project's official blog.</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/help">
+ <span>Go project</span>
+ </a>
+ </div>
+ <p>Get help and stay informed from Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ Get connected
+ </div>
+ <p></p>
+ <div class="go-Header-socialIcons">
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with google-groups (Opens in new window)"
+ title="Get connected with google-groups (Opens in new window)"
+ href="https://groups.google.com/g/golang-nuts">
+ <img src="/static/shared/logo/social/google-groups.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with github (Opens in new window)"
+ title="Get connected with github (Opens in new window)"
+ href="https://github.com/golang">
+ <img src="/static/shared/logo/social/github.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with twitter (Opens in new window)"
+ title="Get connected with twitter (Opens in new window)"
+ href="https://twitter.com/golang">
+ <img src="/static/shared/logo/social/twitter.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with reddit (Opens in new window)"
+ title="Get connected with reddit (Opens in new window)"
+ href="https://www.reddit.com/r/golang/">
+ <img src="/static/shared/logo/social/reddit.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with slack (Opens in new window)"
+ title="Get connected with slack (Opens in new window)"
+ href="https://invite.slack.golangbridge.org/">
+ <img src="/static/shared/logo/social/slack.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with stack-overflow (Opens in new window)"
+ title=""
+ href="https://stackoverflow.com/collectives/go">
+ <img src="/static/shared/logo/social/stack-overflow.svg" />
+ </a>
+ </div>
+ </li>
+ </ul>
+ </li>
+ </ul>
+ <button class="go-Header-navOpen js-headerMenuButton go-Header-navOpen--white" data-gtmc="nav button" aria-label="Open navigation">
+ </button>
+ </div>
+ </nav>
+ </div>
+ </header>
+ <aside class="go-NavigationDrawer js-header">
+ <nav class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="https://go.dev/">
+ <img class="go-NavigationDrawer-logo" src="/static/shared/logo/go-blue.svg" alt="Go.">
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem js-mobile-subnav-trigger go-NavigationDrawer-hasSubnav">
+ <a href="#">
+ <span>Why Go</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_next_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ <div class="go-NavigationDrawer go-NavigationDrawer-submenuItem">
+ <div class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="#">
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_before_gm_grey_24dp.svg" alt="">
+ </i>
+ Why Go
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/solutions/case-studies">
+ Case Studies
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/solutions/use-cases">
+ Use Cases
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/security/">
+ Security
+ </a>
+ </li>
+ </ul>
+ </div>
+ </div>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/learn/">Learn</a>
+ </li>
+ <li class="go-NavigationDrawer-listItem js-mobile-subnav-trigger go-NavigationDrawer-hasSubnav">
+ <a href="#">
+ <span>Docs</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_next_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ <div class="go-NavigationDrawer go-NavigationDrawer-submenuItem">
+ <div class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="#"><i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_before_gm_grey_24dp.svg" alt="">
+ </i>
+ Docs
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/doc/effective_go">
+ Effective Go
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/doc/">
+ Go User Manual
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://pkg.go.dev/std">
+ Standard library
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/doc/devel/release">
+ Release Notes
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="/api">
+ API
+ </a>
+ </li>
+ </ul>
+ </div>
+ </div>
+ </li>
+ <li class="go-NavigationDrawer-listItem go-NavigationDrawer-listItem--active">
+ <a href="/">Packages</a>
+ </li>
+ <li class="go-NavigationDrawer-listItem js-mobile-subnav-trigger go-NavigationDrawer-hasSubnav">
+ <a href="#">
+ <span>Community</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_next_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ <div class="go-NavigationDrawer go-NavigationDrawer-submenuItem">
+ <div class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="#">
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_before_gm_grey_24dp.svg" alt="">
+ </i>
+ Community
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/talks/">
+ Recorded Talks
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://www.meetup.com/pro/go">
+ Meetups
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://github.com/golang/go/wiki/Conferences">
+ Conferences
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/blog">
+ Go blog
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/help">
+ Go project
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <div>Get connected</div>
+ <div class="go-Header-socialIcons">
+ <a class="go-Header-socialIcon" href="https://groups.google.com/g/golang-nuts"><img src="/static/shared/logo/social/google-groups.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://github.com/golang"><img src="/static/shared/logo/social/github.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://twitter.com/golang"><img src="/static/shared/logo/social/twitter.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://www.reddit.com/r/golang/"><img src="/static/shared/logo/social/reddit.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://invite.slack.golangbridge.org/"><img src="/static/shared/logo/social/slack.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://stackoverflow.com/collectives/go"><img src="/static/shared/logo/social/stack-overflow.svg" /></a>
+ </div>
+ </li>
+ </ul>
+ </div>
+ </div>
+ </li>
+ </ul>
+ </nav>
+ </aside>
+ <div class="go-NavigationDrawer-scrim js-scrim" role="presentation"></div>
+ <main class="go-Container" id="main-content">
+ <header class="SearchResults-header js-searchHeader">
+ <div class="SearchResults-headerContent">
+ <a class="SearchResults-headerLogo" href="https://go.dev/" aria-hidden="true" tabindex="-1" data-gtmc="header link"
+ aria-label="Link to Go Homepage">
+ <img height="78" width="207" src="/static/shared/logo/go-blue.svg" alt="Go">
+ </a>
+ <form
+ class="go-InputGroup go-ShortcutKey SearchResults-search"
+ action="/search"
+ data-shortcut="/"
+ data-shortcut-alt="search"
+ data-gtmc="search form"
+ aria-label="Search for a package"
+ role="search"
+ >
+ <input name="q" class="go-Input js-searchFocus" aria-label="Search for a package" type="search"
+ autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"
+ placeholder="Search packages or symbols" value="httpx" />
+ <input name="m" value="package" hidden>
+ <button class="go-Button go-Button--inverted" aria-label="Submit search">
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/search_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </form>
+ </div>
+ </header>
+ <div class="SearchResults-tabs">
+ <nav class="go-TabNav">
+ <ul>
+ <li aria-current="page">
+ <a href="/search?limit=25&amp;m=package&amp;q=httpx">Packages</a>
+ </li>
+ <li >
+ <a href="/search?limit=25&amp;m=symbol&amp;q=httpx">Symbols</a>
+ </li>
+ </ul>
+ </nav>
+ </div>
+ <div class="go-Content SearchResults">
+ <div class="SearchResults-summary" role="heading" aria-level="1">
+ Showing <strong>25</strong> modules with matching packages. <a href="/search-help">Search help</a>
+ </div>
+ <div>
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/zeromicro/go-zero/rest/httpx" data-gtmc="search result" data-gtmv="0"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/zeromicro/go-zero/rest/httpx"
+ data-rank="0"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/zeromicro/go-zero/rest/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/zeromicro/go-zero/rest/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>573</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v1.10.3</strong> published on <span data-test-id="snippet-published"><strong>Jul 31, 2026</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/zeromicro/go-zero/rest/httpx?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/projectdiscovery/httpx/common/httpx" data-gtmc="search result" data-gtmv="1"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/projectdiscovery/httpx/common/httpx"
+ data-rank="1"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/projectdiscovery/httpx/common/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package httpx containst the httpx common functionality
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/projectdiscovery/httpx/common/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>55</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v1.12.0</strong> published on <span data-test-id="snippet-published"><strong>Sep 8, 2026</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/projectdiscovery/httpx/common/httpx?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ <div class="SearchSnippet-sub go-textSubtle">
+ <strong>Other packages in module github.com/projectdiscovery/httpx:</strong>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/projectdiscovery/httpx/runner"
+ data-gtmc="search result same module">
+ runner
+ </a>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/projectdiscovery/httpx/common/fileutil"
+ data-gtmc="search result same module">
+ common/fileutil
+ </a>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/projectdiscovery/httpx/common/stringz"
+ data-gtmc="search result same module">
+ common/stringz
+ </a>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/projectdiscovery/httpx/common/httputilz"
+ data-gtmc="search result same module">
+ common/httputilz
+ </a>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/projectdiscovery/httpx/common/customheader"
+ data-gtmc="search result same module">
+ common/customheader
+ </a>
+ <a href="github.com/projectdiscovery/httpx#section-directories" class="go-Chip go-Chip--subtle"
+ data-gtmc="search result more packages">
+ +6 more
+ </a>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/remind101/pkg/httpx" data-gtmc="search result" data-gtmv="2"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/remind101/pkg/httpx"
+ data-rank="2"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/remind101/pkg/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ package httpx provides an extra layer of convenience over package http.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/remind101/pkg/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>31</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.0-...-f8c2bf4</strong> published on <span data-test-id="snippet-published"><strong>Oct 10, 2025</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/remind101/pkg/httpx?tab=licenses" aria-label="Go to Licenses">
+ BSD-2-Clause
+ </a>
+ </span>
+ </div>
+ <div class="SearchSnippet-sub go-textSubtle">
+ <strong>Other packages in module github.com/remind101/pkg:</strong>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/remind101/pkg/httpx/middleware"
+ data-gtmc="search result same module">
+ httpx/middleware
+ </a>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/kamalyes/go-toolbox/pkg/httpx" data-gtmc="search result" data-gtmv="3"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/kamalyes/go-toolbox/pkg/httpx"
+ data-rank="3"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/kamalyes/go-toolbox/pkg/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ * @Author: kamalyes 501893067@qq.com * @Date: 2024-11-28 18:55:55 * @LastEditors: kamalyes 501893067@qq.com * @LastEditTime: 2025-08-20 16:33:01 * @FilePath: \go-toolbox\pkg\httpx\client.go * @Description: HTTP 客户端实现 * * Copyright (c) 2024 by kamalyes, All Rights Reserved.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/kamalyes/go-toolbox/pkg/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>19</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.19.2</strong> published on <span data-test-id="snippet-published"><strong>-27 hours ago</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/kamalyes/go-toolbox/pkg/httpx?tab=licenses" aria-label="Go to Licenses">
+ Apache-2.0
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/ory/x/httpx" data-gtmc="search result" data-gtmv="4"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/ory/x/httpx"
+ data-rank="4"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/ory/x/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/ory/x/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>44</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.729</strong> published on <span data-test-id="snippet-published"><strong>Jul 7, 2025</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/ory/x/httpx?tab=licenses" aria-label="Go to Licenses">
+ Apache-2.0
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/nyaruka/gocommon/httpx" data-gtmc="search result" data-gtmv="5"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/nyaruka/gocommon/httpx"
+ data-rank="5"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/nyaruka/gocommon/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/nyaruka/gocommon/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>41</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v1.97.0</strong> published on <span data-test-id="snippet-published"><strong>Oct 14, 2026</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/nyaruka/gocommon/httpx?tab=licenses" aria-label="Go to Licenses">
+ AGPL-3.0, AGPL-3.0-or-later
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/tutti-os/tutti/packages/agent/daemon/httpx" data-gtmc="search result" data-gtmv="6"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/tutti-os/tutti/packages/agent/daemon/httpx"
+ data-rank="6"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/tutti-os/tutti/packages/agent/daemon/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package httpx is the single funnel for outbound HTTP from the daemon.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/tutti-os/tutti/packages/agent/daemon/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>17</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.427</strong> published on <span data-test-id="snippet-published"><strong>Aug 28, 2026</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/tutti-os/tutti/packages/agent/daemon/httpx?tab=licenses" aria-label="Go to Licenses">
+ Apache-2.0
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/m-lab/go/httpx" data-gtmc="search result" data-gtmv="7"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/m-lab/go/httpx"
+ data-rank="7"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/m-lab/go/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package httpx provides generic functions which extend the capabilities of the http package.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/m-lab/go/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>16</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.1.77</strong> published on <span data-test-id="snippet-published"><strong>Jun 11, 2026</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/m-lab/go/httpx?tab=licenses" aria-label="Go to Licenses">
+ Apache-2.0
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/aatuh/api-toolkit/v4/httpx" data-gtmc="search result" data-gtmv="8"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/aatuh/api-toolkit/v4/httpx"
+ data-rank="8"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/aatuh/api-toolkit/v4/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package httpx provides stable core HTTP response and error helpers.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/aatuh/api-toolkit/v4/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>13</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v4.0.1</strong> published on <span data-test-id="snippet-published"><strong>Jul 20, 2026</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/aatuh/api-toolkit/v4/httpx?tab=licenses" aria-label="Go to Licenses">
+ Apache-2.0
+ </a>
+ </span>
+ </div>
+ <div class="go-textSubtle">
+ <span class="go-textSubtle">Other major versions:</span>
+ <a href="/github.com/aatuh/api-toolkit/v2" data-gtmc="search result other major">
+ <strong>v2</strong><span class="go-textSubtle">,</span>
+ </a>
+ <a href="/github.com/aatuh/api-toolkit" data-gtmc="search result other major">
+ <strong>v1</strong><span class="go-textSubtle"></span>
+ </a>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/gogama/httpx" data-gtmc="search result" data-gtmv="9"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/gogama/httpx"
+ data-rank="9"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/gogama/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package httpx provides a robust HTTP client with retry support and other advanced features within a simple and familiar interface.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/gogama/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>9</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v1.1.5</strong> published on <span data-test-id="snippet-published"><strong>Dec 13, 2022</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/gogama/httpx?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ <div class="SearchSnippet-sub go-textSubtle">
+ <strong>Other packages in module github.com/gogama/httpx:</strong>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/gogama/httpx/request"
+ data-gtmc="search result same module">
+ request
+ </a>
+ <a class="go-Chip go-Chip--subtle"
+ href="/github.com/gogama/httpx/timeout"
+ data-gtmc="search result same module">
+ timeout
+ </a>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/gobuffalo/x/httpx" data-gtmc="search result" data-gtmv="10"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/gobuffalo/x/httpx"
+ data-rank="10"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/gobuffalo/x/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/gobuffalo/x/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>45</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.1.0</strong> published on <span data-test-id="snippet-published"><strong>Jun 29, 2019</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/gobuffalo/x/httpx?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/advanced-go/common/httpx" data-gtmc="search result" data-gtmv="11"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/advanced-go/common/httpx"
+ data-rank="11"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/advanced-go/common/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/advanced-go/common/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>19</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.0-...-a3b39dc</strong> published on <span data-test-id="snippet-published"><strong>Dec 2, 2024</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/advanced-go/common/httpx?tab=licenses" aria-label="Go to Licenses">
+ BSD-3-Clause
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/trustasia-com/go-van/pkg/server/httpx" data-gtmc="search result" data-gtmv="12"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/trustasia-com/go-van/pkg/server/httpx"
+ data-rank="12"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/trustasia-com/go-van/pkg/server/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package httpx provides ...
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/trustasia-com/go-van/pkg/server/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>9</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.6.1</strong> published on <span data-test-id="snippet-published"><strong>Sep 23, 2026</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/trustasia-com/go-van/pkg/server/httpx?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/go-leo/netx/httpx" data-gtmc="search result" data-gtmv="13"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/go-leo/netx/httpx"
+ data-rank="13"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/go-leo/netx/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/go-leo/netx/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>17</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v1.1.1</strong> published on <span data-test-id="snippet-published"><strong>Jan 28, 2023</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/go-leo/netx/httpx?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/behavioral-ai/core/httpx" data-gtmc="search result" data-gtmv="14"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/behavioral-ai/core/httpx"
+ data-rank="14"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/behavioral-ai/core/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/behavioral-ai/core/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>16</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.0-...-f3a1eb5</strong> published on <span data-test-id="snippet-published"><strong>Jul 9, 2025</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/behavioral-ai/core/httpx?tab=licenses" aria-label="Go to Licenses">
+ BSD-3-Clause
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/gitlab.com/cyberbladesec/forge/platform/httpx" data-gtmc="search result" data-gtmv="15"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="gitlab.com/cyberbladesec/forge/platform/httpx"
+ data-rank="15"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(gitlab.com/cyberbladesec/forge/platform/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package httpx is the HTTP edge: a chi server with the platform&#39;s middleware chain, a separate admin listener, and graceful shutdown.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/gitlab.com/cyberbladesec/forge/platform/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>6</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.2.1022</strong> published on <span data-test-id="snippet-published"><strong>1 day ago</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/gitlab.com/cyberbladesec/forge/platform/httpx?tab=licenses" aria-label="Go to Licenses">
+ Apache-2.0
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/cplieger/httpx/v5" data-gtmc="search result" data-gtmv="16"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/cplieger/httpx/v5"
+ data-rank="16"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/cplieger/httpx/v5)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package httpx is a resilient outbound-HTTP toolkit: transient-error classification, retries over one jittered exponential backoff loop, Retry-After parsing, status mapping, secret redaction, body helpers, custom-CA TLS transports and redirect allowlists.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/cplieger/httpx/v5?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>3</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v5.2.0</strong> published on <span data-test-id="snippet-published"><strong>Oct 22, 2026</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/cplieger/httpx/v5?tab=licenses" aria-label="Go to Licenses">
+ Apache-2.0
+ </a>
+ </span>
+ </div>
+ <div class="go-textSubtle">
+ <span class="go-textSubtle">Other major versions:</span>
+ <a href="/github.com/cplieger/httpx/v4" data-gtmc="search result other major">
+ <strong>v4</strong><span class="go-textSubtle"></span>
+ </a>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/johnnyeven/libtools/courier/httpx" data-gtmc="search result" data-gtmv="17"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/johnnyeven/libtools/courier/httpx"
+ data-rank="17"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/johnnyeven/libtools/courier/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/johnnyeven/libtools/courier/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>22</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.0-...-61829c1</strong> published on <span data-test-id="snippet-published"><strong>Nov 26, 2019</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/johnnyeven/libtools/courier/httpx?tab=licenses" aria-label="Go to Licenses">
+ Apache-2.0
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/ungerik/go-httpx/httperr" data-gtmc="search result" data-gtmv="18"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/ungerik/go-httpx/httperr"
+ data-rank="18"
+ data-experiment-cohort="control">
+ httperr
+ <span class="SearchSnippet-header-path">(github.com/ungerik/go-httpx/httperr)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ Package httperr provides HTTP error handling functionality that allows errors to be used as HTTP responses with status codes and custom messages.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/ungerik/go-httpx/httperr?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>10</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.0-...-97cd3c5</strong> published on <span data-test-id="snippet-published"><strong>Oct 17, 2025</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/ungerik/go-httpx/httperr?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ <div class="SearchSnippet-sub go-textSubtle">
+ <strong>Other packages in module github.com/ungerik/go-httpx:</strong>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/ccfos/nightingale/v6/pkg/httpx" data-gtmc="search result" data-gtmv="19"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/ccfos/nightingale/v6/pkg/httpx"
+ data-rank="19"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/ccfos/nightingale/v6/pkg/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/ccfos/nightingale/v6/pkg/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>9</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v6.7.3</strong> published on <span data-test-id="snippet-published"><strong>Jan 8, 2024</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/ccfos/nightingale/v6/pkg/httpx?tab=licenses" aria-label="Go to Licenses">
+ Apache-2.0
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/sjclijie/go-zero/rest/httpx" data-gtmc="search result" data-gtmv="20"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/sjclijie/go-zero/rest/httpx"
+ data-rank="20"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/sjclijie/go-zero/rest/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/sjclijie/go-zero/rest/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>9</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v1.10.56</strong> published on <span data-test-id="snippet-published"><strong>Nov 5, 2024</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/sjclijie/go-zero/rest/httpx?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/cloudtask/libtools/gounits/httpx" data-gtmc="search result" data-gtmv="21"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/cloudtask/libtools/gounits/httpx"
+ data-rank="21"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/cloudtask/libtools/gounits/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/cloudtask/libtools/gounits/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>18</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v0.0.0-...-385f941</strong> published on <span data-test-id="snippet-published"><strong>Jun 22, 2018</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/cloudtask/libtools/gounits/httpx?tab=licenses" aria-label="Go to Licenses">
+ Apache-2.0
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/go.kyoto.codes/zen/v3/httpx" data-gtmc="search result" data-gtmv="22"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="go.kyoto.codes/zen/v3/httpx"
+ data-rank="22"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(go.kyoto.codes/zen/v3/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <p class="SearchSnippet-synopsis" data-test-id="snippet-synopsis">
+ httpx - a package with http extensions and wrappers.
+ </p>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/go.kyoto.codes/zen/v3/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>4</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v3.2.0</strong> published on <span data-test-id="snippet-published"><strong>Aug 2, 2024</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/go.kyoto.codes/zen/v3/httpx?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" >
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/oy3o/httpx" data-gtmc="search result" data-gtmv="23"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/oy3o/httpx"
+ data-rank="23"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/oy3o/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/oy3o/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>3</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v1.5.11</strong> published on <span data-test-id="snippet-published"><strong>Mar 26, 2026</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/oy3o/httpx?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ <div class="SearchSnippet" id="more-results">
+ <div class="SearchSnippet-headerContainer">
+ <h2>
+ <a href="/github.com/go-courier/httptransport/httpx" data-gtmc="search result" data-gtmv="24"
+ data-test-id="snippet-title"
+ data-search-query="httpx"
+ data-clicked-package="github.com/go-courier/httptransport/httpx"
+ data-rank="24"
+ data-experiment-cohort="control">
+ httpx
+ <span class="SearchSnippet-header-path">(github.com/go-courier/httptransport/httpx)</span>
+ </a>
+ </h2>
+ </div>
+ <div class="SearchSnippet-infoLabel">
+ <a href="/github.com/go-courier/httptransport/httpx?tab=importedby" aria-label="Go to Imported By">
+ <span class="go-textSubtle">Imported by </span><strong>8</strong>
+ </a>
+ <span class="go-textSubtle">|</span>
+ <span class="go-textSubtle">
+ <strong>v1.22.2</strong> published on <span data-test-id="snippet-published"><strong>May 30, 2023</strong></span>
+ </span>
+ <span class="go-textSubtle">|</span>
+ <span data-test-id="snippet-license">
+ <a href="/github.com/go-courier/httptransport/httpx?tab=licenses" aria-label="Go to Licenses">
+ MIT
+ </a>
+ </span>
+ </div>
+ </div> 
+ </div>
+ <div class="SearchPagination" data-test-id="pagination">
+ Didn't find what you were looking for?
+ <a href="/search?limit=100&amp;m=package&amp;q=httpx#more-results" data-gtmc="search more results">Show more results.</a></div>
+ </div>
+ </main>
+ <footer class="go-Footer">
+ <div class="go-Footer-links">
+ <div class="go-Footer-linkColumn">
+ <a href="https://go.dev/solutions" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Why Go
+ </a>
+ <a href="https://go.dev/solutions/use-cases" class="go-Footer-link"
+ data-gtmc="footer link">
+ Use Cases
+ </a>
+ <a href="https://go.dev/solutions/case-studies" class="go-Footer-link"
+ data-gtmc="footer link">
+ Case Studies
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://learn.go.dev/" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Get Started
+ </a>
+ <a href="https://play.golang.org" class="go-Footer-link" data-gtmc="footer link">
+ Playground
+ </a>
+ <a href="https://tour.golang.org" class="go-Footer-link" data-gtmc="footer link">
+ Tour
+ </a>
+ <a href="https://stackoverflow.com/questions/tagged/go?tab=Newest" class="go-Footer-link"
+ data-gtmc="footer link">
+ Stack Overflow
+ </a>
+ <a href="https://go.dev/help" class="go-Footer-link"
+ data-gtmc="footer link">
+ Help
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://pkg.go.dev" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Packages
+ </a>
+ <a href="/std" class="go-Footer-link" data-gtmc="footer link">
+ Standard Library
+ </a>
+ <a href="/golang.org/x" class="go-Footer-link" data-gtmc="footer link">
+ Sub-repositories
+ </a>
+ <a href="https://pkg.go.dev/about" class="go-Footer-link" data-gtmc="footer link">
+ About Go Packages
+ </a>
+ <a href="/api" class="go-Footer-link" data-gtmc="footer link">
+ pkg.go.dev API
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://go.dev/project" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ About
+ </a>
+ <a href="https://go.dev/dl/" class="go-Footer-link" data-gtmc="footer link">Download</a>
+ <a href="https://go.dev/blog" class="go-Footer-link" data-gtmc="footer link">Blog</a>
+ <a href="https://github.com/golang/go/issues" class="go-Footer-link" data-gtmc="footer link">
+ Issue Tracker
+ </a>
+ <a href="https://go.dev/doc/devel/release.html" class="go-Footer-link"
+ data-gtmc="footer link">
+ Release Notes
+ </a>
+ <a href="https://go.dev/brand" class="go-Footer-link" data-gtmc="footer link">
+ Brand Guidelines
+ </a>
+ <a href="https://go.dev/conduct" class="go-Footer-link" data-gtmc="footer link">
+ Code of Conduct
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://www.twitter.com/golang" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Connect
+ </a>
+ <a href="https://www.twitter.com/golang" class="go-Footer-link" data-gtmc="footer link">
+ Twitter
+ </a>
+ <a href="https://github.com/golang" class="go-Footer-link" data-gtmc="footer link">GitHub</a>
+ <a href="https://invite.slack.golangbridge.org/" class="go-Footer-link"
+ data-gtmc="footer link">
+ Slack
+ </a>
+ <a href="https://reddit.com/r/golang" class="go-Footer-link" data-gtmc="footer link">
+ r/golang
+ </a>
+ <a href="https://www.meetup.com/pro/go" class="go-Footer-link" data-gtmc="footer link">
+ Meetup
+ </a>
+ <a href="https://golangweekly.com/" class="go-Footer-link" data-gtmc="footer link">
+ Golang Weekly
+ </a>
+ </div>
+ </div>
+ <div class="go-Footer-bottom">
+ <img class="go-Footer-gopher" width="1431" height="901"
+ src="/static/shared/gopher/pilot-bust-1431x901.svg" alt="Gopher in flight goggles">
+ <ul class="go-Footer-listRow">
+ <li class="go-Footer-listItem">
+ <a href="https://go.dev/copyright" data-gtmc="footer link">Copyright</a>
+ </li>
+ <li class="go-Footer-listItem">
+ <a href="https://go.dev/tos" data-gtmc="footer link">Terms of Service</a>
+ </li>
+ <li class="go-Footer-listItem">
+ <a href="http://www.google.com/intl/en/policies/privacy/" data-gtmc="footer link"
+ target="_blank" rel="noopener">
+ Privacy Policy
+ </a>
+ </li>
+ <li class="go-Footer-listItem">
+ <a href="https://go.dev/s/pkgsite-feedback" target="_blank" rel="noopener"
+ data-gtmc="footer link">
+ Report an Issue
+ </a>
+ </li>
+ <li class="go-Footer-listItem">
+ <button class="go-Button go-Button--text go-Footer-toggleTheme js-toggleTheme" aria-label="Theme Toggle">
+ <img data-value="auto" class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/brightness_6_gm_grey_24dp.svg" alt="System theme">
+ <img data-value="dark" class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/brightness_2_gm_grey_24dp.svg" alt="Dark theme">
+ <img data-value="light" class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/light_mode_gm_grey_24dp.svg" alt="Light theme">
+ <p> Theme Toggle </p>
+ </button>
+ </li>
+ <li class="go-Footer-listItem">
+ <button class="go-Button go-Button--text go-Footer-keyboard js-openShortcuts" aria-label="Shorcuts Modal">
+ <img class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/keyboard_grey_24dp.svg" alt="">
+ <p> Shortcuts Modal </p>
+ </button>
+ </li>
+ </ul>
+ <a class="go-Footer-googleLogo" href="https://google.com" target="_blank"rel="noopener"
+ data-gtmc="footer link">
+ <img class="go-Footer-googleLogoImg" height="24" width="72"
+ src="/static/shared/logo/google-white.svg" alt="Google logo">
+ </a>
+ </div>
+ </footer>
+ <dialog id="jump-to-modal" class="JumpDialog go-Modal go-Modal--md js-modal">
+ <form method="dialog" data-gmtc="jump to form" aria-label="Jump to Identifier">
+ <div class="Dialog-title go-Modal-header">
+ <h2>Jump to</h2>
+ <button
+ class="go-Button go-Button--inline"
+ type="button"
+ data-modal-close
+ data-gtmc="modal button"
+ aria-label="Close"
+ >
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/close_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </div>
+ <div class="JumpDialog-filter">
+ <input class="JumpDialog-input go-Input" autocomplete="off" type="text">
+ </div>
+ <div class="JumpDialog-body go-Modal-body">
+ <div class="JumpDialog-list"></div>
+ </div>
+ <div class="go-Modal-actions">
+ <button class="go-Button" data-test-id="close-dialog">Close</button>
+ </div>
+ </form>
+ </dialog>
+ <dialog class="ShortcutsDialog go-Modal go-Modal--sm js-modal">
+ <form method="dialog">
+ <div class="go-Modal-header">
+ <h2>Keyboard shortcuts</h2>
+ <button
+ class="go-Button go-Button--inline"
+ type="button"
+ data-modal-close
+ data-gtmc="modal button"
+ aria-label="Close"
+ >
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/close_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </div>
+ <div class="go-Modal-body">
+ <table>
+ <tbody>
+ <tr><td class="ShortcutsDialog-key">
+ <strong>?</strong></td><td> : This menu</td>
+ </tr>
+ <tr><td class="ShortcutsDialog-key">
+ <strong>/</strong></td><td> : Search site</td>
+ </tr>
+ <tr><td class="ShortcutsDialog-key">
+ <strong>f</strong> or <strong>F</strong></td><td> : Jump to</td>
+ </tr>
+ <tr>
+ <td class="ShortcutsDialog-key"><strong>y</strong> or <strong>Y</strong></td>
+ <td> : Canonical URL</td>
+ </tr>
+ </tbody>
+ </table>
+ </div>
+ <div class="go-Modal-actions">
+ <button class="go-Button" data-test-id="close-dialog">Close</button>
+ </div>
+ </form>
+ </dialog>
+ <section class="Cookie-notice js-cookieNotice">
+ <div>go.dev uses cookies from Google to deliver and enhance the quality of its services and to
+ analyze traffic. <a target=_blank href="https://policies.google.com/technologies/cookies">Learn more.</a></div>
+ <div><button class="go-Button">Okay</button></div>
+ </section>
+ </body>
+</html>

@@ -1,0 +1,1 @@
+<html><head><title>Getting started</title></head><body><h1>Getting started</h1><p>Install quillmark with pip and call render() on a Markdown string.</p></body></html>

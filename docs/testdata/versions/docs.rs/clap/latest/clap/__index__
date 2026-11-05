@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>clap - Rust</title>
+<meta name="generator" content="rustdoc" />
+<meta name="description" content="Command Line Argument Parser for Rust" />
+<meta name="rustdoc-vars" data-root-path="../" data-static-root-path="/-/rustdoc.static/" data-current-crate="clap" data-themes="" data-resource-suffix="-20260913-1.100.0-nightly-4b6d04e70" data-rustdoc-version="1.100.0-nightly (4b6d04e70 2026-09-13)" data-channel="nightly" data-search-js="search-b167f383.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-170eb4bf.js" />
+<script src="/-/rustdoc.static/storage-41dd4d93.js"></script>
+<script src="../crates-20260913-1.100.0-nightly-4b6d04e70.js"></script>
+<script src="/-/rustdoc.static/main-1814ead3.js"></script>
+<script src="/-/rustdoc.static/scrape-examples-2bbcccac.js"></script>
+<script src="/-/static/menu.js?0-0-0-435e529e59073c986fa6c2051a1da284fa8b4d8c-2026-10-12"></script>
+<script src="/-/static/index.js?0-0-0-435e529e59073c986fa6c2051a1da284fa8b4d8c-2026-10-12"></script>
+</head>
+<body>
+<h1>Crate clap Copy item path</h1>
+<a href="/">Docs.rs</a>
+<a href="#">clap-4.6.7</a>
+<a href="/clap/4.6.7/clap/">Permalink</a>
+<a href="/crate/clap/latest">Docs.rs crate page</a>
+<a href="https://spdx.org/licenses/MIT">MIT</a>
+<a href="https://spdx.org/licenses/Apache-2.0">Apache-2.0</a>
+<a href="https://github.com/clap-rs/clap">Repository</a>
+<a href="https://crates.io/crates/clap">crates.io</a>
+<a href="/crate/clap/latest/source/">Source</a>
+<a href="https://crates.io/users/kbknapp">kbknapp</a>
+<a href="https://crates.io/teams/github:clap-rs:admins">github:clap-rs:admins</a>
+<a href="https://github.com/clap-rs/clap/discussions">Discussions</a>
+<a href="https://github.com/clap-rs/clap/blob/v4.6.7/CHANGELOG.md">CHANGELOG</a>
+<a href="https://github.com/clap-rs/clap/tree/master/clap_complete">shell completions</a>
+<a href="https://github.com/rust-cli/team/">WG-CLI</a>
+<a href="https://github.com/rust-cli/argparse-benchmarks-rs">argparse-benchmarks</a>
+</body>
+</html>

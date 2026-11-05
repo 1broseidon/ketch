@@ -1,0 +1,13 @@
+{
+ "name": "astro",
+ "version": "7.4.2",
+ "description": "Astro is a modern site builder with web best practices, performance, and DX front-of-mind.",
+ "homepage": "https://astro.build",
+ "repository": {
+  "url": "git+https://github.com/withastro/astro.git",
+  "type": "git",
+  "directory": "packages/astro"
+ },
+ "bugs": "https://github.com/withastro/astro/issues",
+ "license": "MIT"
+}

@@ -247,6 +247,32 @@ describe("argument construction", () => {
 		assert.equal(calls.length, 2);
 	});
 
+	test("docs: the web backend takes library specs as they are", async () => {
+		const { tools, calls } = fakePi();
+		await run(tools, "ketch_docs", { query: "middleware", backend: "web", library: "django@5.2" });
+		assert.deepEqual(calls[0].args, ["docs", "--json", "--backend=web", "--library=django@5.2", "--", "middleware"]);
+		await run(tools, "ketch_docs", { query: "@astrojs/starlight@0.30", backend: "web", resolve: true });
+		assert.deepEqual(calls[1].args, ["docs", "--json", "--backend=web", "--resolve", "--", "@astrojs/starlight@0.30"]);
+		await run(tools, "ketch_docs", { query: "how do I set retries in requests", backend: "web" });
+		assert.deepEqual(calls[2].args, ["docs", "--json", "--backend=web", "--", "how do I set retries in requests"]);
+	});
+
+	test("docs: descriptions cover the web backend and its library specs", () => {
+		const { tools } = fakePi();
+		const docs = tools.get("ketch_docs");
+		assert.ok(docs);
+		assert.match(docs.description, /Context7 or Web/);
+		assert.match(docs.description, /django@5\.2/);
+		assert.match(docs.description, /Resolve a name once/);
+		const props = docs.parameters.properties as Record<string, { description: string }>;
+		assert.match(props.backend.description, /\bweb\b/);
+		assert.match(props.backend.description, /\bauto\b/);
+		assert.match(docs.description, /anonymous quota/);
+		for (const form of ["name@version", "npm:/pypi:/crates:/go:/github:", "owner/repo", "Go module path"]) {
+			assert.ok(props.library.description.includes(form), `library description names ${form}`);
+		}
+	});
+
 	test("scrape: single url, then every option", async () => {
 		const { tools, calls } = fakePi();
 		await run(tools, "ketch_scrape", { url: "https://example.com" });

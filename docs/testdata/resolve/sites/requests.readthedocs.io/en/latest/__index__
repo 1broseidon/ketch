@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Requests: HTTP for Humans™ — Requests 2.34.2 documentation</title>
+<meta name="readthedocs-project-slug" content="requests" />
+<meta name="readthedocs-version-slug" content="latest" />
+<meta name="readthedocs-resolver-filename" content="/" />
+<meta name="readthedocs-http-status" content="200" />
+<script src="_static/documentation_options.js?v=b81d1745"></script>
+<script src="_static/doctools.js?v=888ff710"></script>
+<script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+<script src="/_/static/javascript/readthedocs-addons.js"></script>
+</head>
+<body>
+<h1>Requests: HTTP for Humans™¶</h1>
+<a href="#requests-http-for-humans">¶</a>
+<a href="user/install/#install">Installation</a>
+<a href="https://pypi.org/project/requests/"></a>
+<a href="https://pepy.tech/project/requests"></a>
+<a href="https://github.com/psf/requests/graphs/contributors"></a>
+<a href="https://requests.readthedocs.io"></a>
+<a href="https://gist.github.com/973705">similar code, sans Requests</a>
+<a href="https://github.com/urllib3/urllib3">urllib3</a>
+<a href="#beloved-features">¶</a>
+<a href="#the-user-guide">¶</a>
+<a href="user/install/">Installation of Requests</a>
+<a href="user/install/#python-m-pip-install-requests">$ python -m pip install requests</a>
+<a href="user/install/#get-the-source-code">Get the Source Code</a>
+<a href="https://github.com/psf/requests">Requests @ GitHub</a>
+<a href="https://github.com/psf/requests/issues">Issue Tracker</a>
+</body>
+</html>

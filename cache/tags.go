@@ -11,6 +11,8 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/1broseidon/ketch/internal/failure"
+
 	"github.com/1broseidon/ketch/extract"
 	"github.com/1broseidon/ketch/scrape"
 )
@@ -21,7 +23,7 @@ import (
 // ErrTagsUnsupported is returned when the configured Store cannot hold tags.
 // Store has no enumeration by design (Get/Put/Stats/Clear/Close), so tags
 // need a capability the interface does not describe; BBoltStore has it.
-var ErrTagsUnsupported = errors.New("the configured cache backend does not support tags")
+var ErrTagsUnsupported = failure.New(failure.Precondition, "tags_unsupported", "the configured cache backend does not support tags")
 
 // ErrNotCached is no longer returned: a URL can be tagged whether or not its
 // body is cached. Kept so callers compiled against the old behaviour still
@@ -29,7 +31,7 @@ var ErrTagsUnsupported = errors.New("the configured cache backend does not suppo
 //
 // Deprecated: tagging an uncached URL succeeds and yields an entry with no
 // title or description until the page is fetched.
-var ErrNotCached = errors.New("page is not in the cache")
+var ErrNotCached = failure.New(failure.NotFound, "not_cached", "page is not in the cache")
 
 // descriptionMax bounds a derived description. Long enough to tell two pages
 // on the same site apart, short enough that a tag of fifty pages still reads
@@ -219,15 +221,52 @@ func (c *Cache) tagEntry(tag string, entry TagEntry) error {
 func (c *Cache) TagURL(tag, key, url string) (cached bool, err error) {
 	var page *scrape.Page
 	if c != nil {
-		page, _ = c.Get(key)
-		if page == nil && c.pages != nil {
-			page, _ = c.pages.Get(key)
-		}
+		page = c.bookmarkBody(key)
 	}
 	if page == nil {
 		return false, c.tagEntry(tag, TagEntry{URL: url, Key: key, TaggedAt: time.Now().Unix()})
 	}
 	return true, c.TagPage(tag, key, url, page)
+}
+
+// bookmarkBody returns the cached page behind a bookmark's cache key: under
+// the key itself, else under the key without its URL fragment (see
+// warmthKey).
+func (c *Cache) bookmarkBody(key string) *scrape.Page {
+	keys := []string{key}
+	if bare := warmthKey(key); bare != key {
+		keys = append(keys, bare)
+	}
+	for _, k := range keys {
+		if page, _ := c.Get(k); page != nil {
+			return page
+		}
+		if c.pages != nil {
+			if page, _ := c.pages.Get(k); page != nil {
+				return page
+			}
+		}
+	}
+	return nil
+}
+
+// warmthKey is a bookmark's cache key without the URL's fragment. A
+// fragment never reaches the server, so page#section is served by the body
+// cached for page: a docs result tagged with its heading anchor is warm
+// when its page is. The fetch URL leads a composite key, before any
+// NUL-separated cookie or User-Agent namespace, which is kept. Only the
+// warmth lookup uses it; membership still follows the URL as given
+// (ADR-0004).
+func warmthKey(key string) string {
+	end := strings.IndexByte(key, 0)
+	if end < 0 {
+		end = len(key)
+	}
+	i := strings.IndexByte(key[:end], '#')
+	if i < 0 {
+		return key
+	}
+	return key[:i] + key[end:]
 }
 
 // Tagged returns the complete index for package callers. CLI and MCP use
@@ -357,6 +396,9 @@ func (c *Cache) TagCounts() (tags int, entries int, err error) {
 	return len(names), entries, nil
 }
 
+// tagWarmth reports, by entry key, which bookmarks have a fresh body in the
+// page cache: under the entry's key or, for a URL with a fragment, under
+// the same key without it (warmthKey).
 func (c *Cache) tagWarmth(entries []TagEntry) (map[string]bool, string) {
 	if len(entries) == 0 {
 		return nil, "available"
@@ -364,25 +406,33 @@ func (c *Cache) tagWarmth(entries []TagEntry) (map[string]bool, string) {
 	keys := make([]string, 0, len(entries))
 	for _, entry := range entries {
 		keys = append(keys, entry.Key)
+		if bare := warmthKey(entry.Key); bare != entry.Key {
+			keys = append(keys, bare)
+		}
 	}
 	pc, closeReader, status := c.tagPageReader()
 	defer closeReader()
 	if pc == nil {
 		return nil, status
 	}
+	var warm map[string]bool
 	if s, ok := pc.store.(*BBoltStore); ok {
-		warm, err := s.cachedKeys(keys, c.ttl)
-		if err != nil {
+		var err error
+		if warm, err = s.cachedKeys(keys, c.ttl); err != nil {
 			return nil, "unavailable"
 		}
-		return warm, "available"
+	} else {
+		warm = map[string]bool{}
+		for _, key := range keys {
+			page, _ := pc.Get(key)
+			warm[key] = page != nil
+		}
 	}
-	warm := map[string]bool{}
-	for _, key := range keys {
-		page, _ := pc.Get(key)
-		warm[key] = page != nil
+	out := make(map[string]bool, len(entries))
+	for _, entry := range entries {
+		out[entry.Key] = warm[entry.Key] || warm[warmthKey(entry.Key)]
 	}
-	return warm, "available"
+	return out, "available"
 }
 
 // Open at most one page-cache reader per index operation, after the tag file

@@ -7,10 +7,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/1broseidon/ketch/internal/failure"
 )
 
 // ErrNoBrowser is returned when browser rendering is needed but not configured.
-var ErrNoBrowser = errors.New("no browser configured (set with: ketch config set browser chrome)")
+var ErrNoBrowser = failure.New(failure.Precondition, "no_browser", "no browser configured (set with: ketch config set browser chrome)")
 
 // BrowserConn represents a connection to a headless browser for JS rendering.
 type BrowserConn interface {
@@ -35,6 +37,50 @@ type StatusFetcher interface {
 // a rendered HTML/XML viewer DOM. Used for 403 retries of sitemap XML.
 type ContentFetcher interface {
 	FetchContent(ctx context.Context, url string) (*FetchedContent, int, error)
+}
+
+// browserNavigator is implemented by a BrowserConn that can also say where
+// a render ended up after HTTP redirects and script navigation. Callers that
+// must know where content came from, such as the docs backend's scope check,
+// read it from Page.FinalURL.
+type browserNavigator interface {
+	FetchFinal(ctx context.Context, url string) (html, finalURL string, err error)
+}
+
+// rendering is one browser render of a URL: the HTML, the main document's
+// HTTP status (0 when the browser cannot say) and the URL the tab ended on
+// ("" when the browser cannot say).
+type rendering struct {
+	html     string
+	status   int
+	finalURL string
+}
+
+// pageRenderer is implemented by a BrowserConn that yields the HTML, status
+// and landing URL from a single navigation; rodConn does.
+type pageRenderer interface {
+	render(ctx context.Context, url string) (rendering, error)
+}
+
+// browserRender renders url through b with whatever b can report: one
+// navigation for a pageRenderer, else the richest of FetchStatus, FetchFinal
+// and Fetch. A status or URL b cannot report stays 0 or "", and callers then
+// fall back safely: an unknown status is trusted, and an unknown landing URL
+// falls back to the URL the plain HTTP fetch ended on (which the browser's own
+// navigation followed too) or stays unknown when there was none.
+func browserRender(ctx context.Context, b BrowserConn, url string) (rendering, error) {
+	switch c := b.(type) {
+	case pageRenderer:
+		return c.render(ctx, url)
+	case StatusFetcher:
+		html, status, err := c.FetchStatus(ctx, url)
+		return rendering{html: html, status: status}, err
+	case browserNavigator:
+		html, finalURL, err := c.FetchFinal(ctx, url)
+		return rendering{html: html, finalURL: finalURL}, err
+	}
+	html, err := b.Fetch(ctx, url)
+	return rendering{html: html}, err
 }
 
 // ResolveBrowserBin resolves a browser configuration value to an absolute path.

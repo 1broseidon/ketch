@@ -1,0 +1,64 @@
+<!doctype html>
+<html><head>
+<title>express - Rust</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="rustdoc">
+<meta name="description" content="API documentation for the Rust `express` crate.">
+<meta name="rustdoc-vars">
+<script src="/-/rustdoc.static/storage-41dd4d93.js"></script>
+<script src="../crates-20260906-1.100.0-nightly-5a2be9f5f.js"></script>
+<script src="/-/rustdoc.static/main-1814ead3.js"></script>
+<script>
+        
+        {
+            "name": "express",
+            "version": "0.0.2"
+        }
+    </script>
+<script src="/-/static/menu.js?0-0-0-cfd9f1bfe1f4df04f03b77f162d41067bd20ddff-2026-10-27"></script>
+<script src="/-/static/index.js?0-0-0-cfd9f1bfe1f4df04f03b77f162d41067bd20ddff-2026-10-27"></script>
+</head><body>
+<a href="/" aria-label="Docs.rs" class="pure-menu-heading pure-menu-link docsrs-logo">Docs.rs</a>
+<a href="#" title="Compatible node express API web Framework for Rust" class="pure-menu-link crate-name">express-0.0.2</a>
+<a href="/express/0.0.2/express/" title="Get a link to this specific version" class="pure-menu-link description">Permalink</a>
+<a href="/crate/express/latest" title="See express in docs.rs" class="pure-menu-link description">Docs.rs crate page</a>
+<a href="https://spdx.org/licenses/MIT" class="pure-menu-sublink">MIT</a>
+<a href="https://github.com/express-rs/express" class="pure-menu-link">Repository</a>
+<a href="https://crates.io/crates/express" title="See express in crates.io" class="pure-menu-link">crates.io</a>
+<a href="/crate/express/latest/source/" title="Browse source of express-0.0.2" class="pure-menu-link">Source</a>
+<a href="https://crates.io/users/uvd" class="pure-menu-link">uvd</a>
+<a href="/crate/express/latest" class="pure-menu-link">0% of the crate is documented</a>
+<a href="#" aria-label="Platform" class="pure-menu-link">Platform</a>
+<a href="/crate/express/latest/target-redirect/express/" class="pure-menu-link">x86_64-unknown-linux-gnu</a>
+<a href="/crate/express/latest/features" title="Browse available feature flags of express-0.0.2" class="pure-menu-link">Feature flags</a>
+<a href="#" aria-label="docs.rs" class="pure-menu-link">docs.rs</a>
+<a href="/about" class="pure-menu-link">About docs.rs</a>
+<a href="/about/badges" class="pure-menu-link">Badges</a>
+<a href="/about/builds" class="pure-menu-link">Builds</a>
+<a href="/about/metadata" class="pure-menu-link">Metadata</a>
+<a href="/about/redirections" class="pure-menu-link">Shorthand URLs</a>
+<a href="/about/download" class="pure-menu-link">Download</a>
+<a href="/about/rustdoc-json" class="pure-menu-link">Rustdoc JSON</a>
+<a href="/releases/queue" class="pure-menu-link">Build queue</a>
+<a href="https://foundation.rust-lang.org/policies/privacy-policy/#docs.rs" class="pure-menu-link">Privacy policy</a>
+<a href="#" aria-label="Rust" class="pure-menu-link">Rust</a>
+<a href="https://www.rust-lang.org/" class="pure-menu-link">Rust website</a>
+<a href="https://doc.rust-lang.org/book/" class="pure-menu-link">The Book</a>
+<a href="https://doc.rust-lang.org/std/" class="pure-menu-link">Standard Library API Reference</a>
+<a href="https://doc.rust-lang.org/rust-by-example/" class="pure-menu-link">Rust by Example</a>
+<a href="https://doc.rust-lang.org/cargo/guide/" class="pure-menu-link">The Cargo Guide</a>
+<a href="https://doc.rust-lang.org/nightly/clippy" class="pure-menu-link">Clippy Documentation</a>
+<a href="#main-content" class="skip-main-content">Skip to main content</a>
+<a href="#">Crate express</a>
+<a href="../express/index.html">express</a>
+<a href="all.html">All Items</a>
+<a href="#structs">Crate Items</a>
+<a href="#structs" title="Structs">Structs</a>
+<a href="#traits" title="Traits">Traits</a>
+<a href="../src/express/lib.rs.html#1-6" class="src">Source</a>
+<a href="#structs" class="anchor">§</a>
+<a href="struct.Express.html" title="struct express::Express" class="struct">Express</a>
+<a href="struct.Router.html" title="struct express::Router" class="struct">Router</a>
+<a href="#traits" class="anchor">§</a>
+<a href="trait.Middleware.html" title="trait express::Middleware" class="trait">Middleware</a>
+</body></html>

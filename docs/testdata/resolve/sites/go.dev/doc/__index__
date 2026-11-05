@@ -1,0 +1,211 @@
+<!doctype html>
+<html><head>
+<title>Documentation - The Go Programming Language</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#00add8">
+<script src="/js/site.js"></script>
+<meta name="og:url" content="https://go.dev/doc/">
+<meta name="og:title" content="Documentation - The Go Programming Language">
+<meta name="og:image" content="https://go.dev/doc/gopher/gopher5logo.jpg">
+<meta name="twitter:image" content="https://go.dev/doc/gopher/gopherbelly300.jpg">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:site" content="@golang">
+<script src="/js/jquery.js"></script>
+<script src="/js/carousels.js"></script>
+<script src="/js/searchBox.js"></script>
+<script src="/js/misc.js"></script>
+<script src="/js/hats.js"></script>
+<script src="/js/playground.js"></script>
+<script src="/js/godocs.js"></script>
+<script src="/js/copypaste.js"></script>
+</head><body>
+<a class="SurveyBanner-link js-surveyBannerLink" href="https://blink.qualtrics.com/jfe/form/SV_ba8fa1ZcSQQdTRs?s=g" rel="noopener">Take the 2026 Go Developer Survey</a>
+<a href="/"></a>
+<a class="skip-to-content-link" aria-label="Skip to main content" href="#main-content">Skip to Main Content</a>
+<a href="#" class="js-desktop-menu-hover" aria-label="Why Go">Why Go arrow_drop_down</a>
+<a href="/solutions/case-studies">Case Studies</a>
+<a href="/solutions/use-cases">Use Cases</a>
+<a href="/security/">Security</a>
+<a href="/learn/" aria-label="Learn">Learn</a>
+<a href="#" class="js-desktop-menu-hover" aria-label="Docs">Docs arrow_drop_down</a>
+<a href="/ref/spec">Go Spec</a>
+<a href="/doc">Go User Manual</a>
+<a href="https://pkg.go.dev/std">Standard library</a>
+<a href="/doc/devel/release">Release Notes</a>
+<a href="/doc/effective_go">Effective Go</a>
+<a href="https://pkg.go.dev" aria-label="Packages">Packages</a>
+<a href="#" class="js-desktop-menu-hover" aria-label="Community">Community arrow_drop_down</a>
+<a href="/talks/">Recorded Talks</a>
+<a href="https://www.meetup.com/pro/go">Meetups open_in_new</a>
+<a href="/wiki/Conferences">Conferences open_in_new</a>
+<a href="/blog">Go blog</a>
+<a href="/help">Go project</a>
+<a class="Header-socialIcon" aria-label="Get connected with google-groups (Opens in new window)" href="https://groups.google.com/g/golang-nuts"></a>
+<a class="Header-socialIcon" aria-label="Get connected with github (Opens in new window)" href="https://github.com/golang"></a>
+<a class="Header-socialIcon" aria-label="Get connected with bluesky (Opens in new window)" href="https://bsky.app/profile/golang.org"></a>
+<a class="Header-socialIcon" aria-label="Get connected with mastodon (Opens in new window)" href="https://hachyderm.io/@golang"></a>
+<a class="Header-socialIcon" aria-label="Get connected with twitter (Opens in new window)" href="https://twitter.com/golang"></a>
+<a class="Header-socialIcon" aria-label="Get connected with reddit (Opens in new window)" href="https://www.reddit.com/r/golang/"></a>
+<a class="Header-socialIcon" aria-label="Get connected with slack (Opens in new window)" href="https://invite.slack.golangbridge.org/"></a>
+<a class="Header-socialIcon" aria-label="Get connected with stack-overflow (Opens in new window)" href="https://stackoverflow.com/tags/go"></a>
+<a href="/"></a>
+<a href="#">Why Go navigate_next</a>
+<a href="#">navigate_beforeWhy Go</a>
+<a href="/solutions/case-studies">Case Studies</a>
+<a href="/solutions/use-cases">Use Cases</a>
+<a href="/security/">Security</a>
+<a href="/learn/">Learn</a>
+<a href="#">Docs navigate_next</a>
+<a href="#">navigate_beforeDocs</a>
+<a href="/ref/spec">Go Spec</a>
+<a href="/doc">Go User Manual</a>
+<a href="https://pkg.go.dev/std">Standard library</a>
+<a href="/doc/devel/release">Release Notes</a>
+<a href="/doc/effective_go">Effective Go</a>
+<a href="https://pkg.go.dev">Packages</a>
+<a href="#">Community navigate_next</a>
+<a href="#">navigate_beforeCommunity</a>
+<a href="/talks/">Recorded Talks</a>
+<a href="https://www.meetup.com/pro/go">Meetups open_in_new</a>
+<a href="/wiki/Conferences">Conferences open_in_new</a>
+<a href="/blog">Go blog</a>
+<a href="/help">Go project</a>
+<a class="Header-socialIcon" href="https://groups.google.com/g/golang-nuts"></a>
+<a class="Header-socialIcon" href="https://github.com/golang"></a>
+<a class="Header-socialIcon" href="https://bsky.app/profile/golang.org"></a>
+<a class="Header-socialIcon" href="https://hachyderm.io/@golang"></a>
+<a class="Header-socialIcon" href="https://twitter.com/golang"></a>
+<a class="Header-socialIcon" href="https://www.reddit.com/r/golang/"></a>
+<a class="Header-socialIcon" href="https://invite.slack.golangbridge.org/"></a>
+<a class="Header-socialIcon" href="https://stackoverflow.com/tags/go"></a>
+<a href="/doc/install">Installing Go</a>
+<a href="/doc/tutorial/getting-started.html">Tutorial: Getting started</a>
+<a href="/doc/tutorial/create-module.html">Tutorial: Create a module</a>
+<a href="/doc/tutorial/workspaces.html">Tutorial: Getting started with multi-module workspaces</a>
+<a href="/doc/tutorial/web-service-gin.html">Tutorial: Developing a RESTful API with Go and Gin</a>
+<a href="/doc/tutorial/generics.html">Tutorial: Getting started with generics</a>
+<a href="/doc/tutorial/fuzz.html">Tutorial: Getting started with fuzzing</a>
+<a href="/doc/articles/wiki/">Writing Web Applications</a>
+<a href="code.html">How to write Go code</a>
+<a href="/cmd/go/">go command</a>
+<a href="/tour/">A Tour of Go</a>
+<a href="/tour/">take the tour online</a>
+<a href="/cmd/go/#hdr-GOPATH_and_Modules">GOPATH</a>
+<a href="effective_go.html">Effective Go</a>
+<a href="/doc/faq">Frequently Asked Questions (FAQ)</a>
+<a href="editors.html">Editor plugins and IDEs</a>
+<a href="/doc/diagnostics.html">Diagnostics</a>
+<a href="/doc/gc-guide">A Guide to the Go Garbage Collector</a>
+<a href="/doc/modules/managing-dependencies">Managing dependencies</a>
+<a href="/security/fuzz">Fuzzing</a>
+<a href="/doc/build-cover">Coverage for Go applications</a>
+<a href="/doc/pgo">Profile-guided optimization</a>
+<a href="/doc/jsonv2-migration">encoding/json/v2 Migration Guide</a>
+<a href="/pkg/">Package Documentation</a>
+<a href="/doc/cmd">Command Documentation</a>
+<a href="/ref/spec">Language Specification</a>
+<a href="/ref/mod">Go Modules Reference</a>
+<a href="/doc/modules/gomod-ref">go.mod file reference</a>
+<a href="/ref/mem">The Go Memory Model</a>
+<a href="/doc/contribute">Contribution Guide</a>
+<a href="/doc/devel/release.html">Release History</a>
+<a href="/doc/tutorial/database-access">Tutorial: Accessing a relational database</a>
+<a href="/doc/database/index">Accessing relational databases</a>
+<a href="/doc/database/open-handle">Opening a database handle</a>
+<a href="/doc/database/change-data">Executing SQL statements that don't return data</a>
+<a href="/doc/database/querying">Querying for data</a>
+<a href="/doc/database/prepared-statements">Using prepared statements</a>
+<a href="/doc/database/execute-transactions">Executing transactions</a>
+<a href="/doc/database/cancel-operations">Canceling in-progress database operations</a>
+<a href="https://pkg.go.dev/context#Context">context.Context</a>
+<a href="/doc/database/manage-connections">Managing connections</a>
+<a href="/doc/database/sql-injection">Avoiding SQL injection risk</a>
+<a href="/doc/modules/developing">Developing and publishing modules</a>
+<a href="/doc/modules/release-workflow">Module release and versioning workflow</a>
+<a href="/doc/modules/managing-source">Managing module source</a>
+<a href="/doc/modules/layout">Organizing a Go module</a>
+<a href="/doc/modules/major-version">Developing a major version update</a>
+<a href="/doc/modules/publishing">Publishing a module</a>
+<a href="/doc/modules/version-numbers">Module version numbering</a>
+<a href="https://research.swtch.com/gotour">A Video Tour of Go</a>
+<a href="https://vimeo.com/53221560">Code that grows with grace</a>
+<a href="https://www.youtube.com/watch?v=f6kdp27TYZs">Go Concurrency Patterns</a>
+<a href="https://www.youtube.com/watch?v=QDDwwePbDtw">Advanced Go Concurrency Patterns</a>
+<a href="/talks">Go Talks site</a>
+<a href="/wiki/GoTalks">wiki page</a>
+<a href="/doc/codewalk/functions">First-Class Functions in Go</a>
+<a href="/doc/codewalk/markov">Generating arbitrary text: a Markov chain algorithm</a>
+<a href="/doc/codewalk/sharemem">Share Memory by Communicating</a>
+<a href="/blog/json-rpc-tale-of-interfaces">JSON-RPC: a tale of interfaces</a>
+<a href="/blog/gos-declaration-syntax">Go's Declaration Syntax</a>
+<a href="/blog/defer-panic-and-recover">Defer, Panic, and Recover</a>
+<a href="/blog/go-concurrency-patterns-timing-out-and">Go Concurrency Patterns: Timing out, moving on</a>
+<a href="/blog/go-slices-usage-and-internals">Go Slices: usage and internals</a>
+<a href="/blog/gif-decoder-exercise-in-go-interfaces">A GIF decoder: an exercise in Go interfaces</a>
+<a href="/blog/error-handling-and-go">Error Handling and Go</a>
+<a href="/doc/tutorial/json">Working with JSON</a>
+<a href="/pkg/encoding/json/v2">json</a>
+<a href="/blog/gobs-of-data">Gobs of data</a>
+<a href="/pkg/encoding/gob/">gob</a>
+<a href="/blog/laws-of-reflection">The Laws of Reflection</a>
+<a href="/pkg/reflect/">reflect</a>
+<a href="/blog/go-image-package">The Go image package</a>
+<a href="/pkg/image/">image</a>
+<a href="/blog/go-imagedraw-package">The Go image/draw package</a>
+<a href="/pkg/image/draw/">image/draw</a>
+<a href="/blog/using-go-modules">Using Go Modules</a>
+<a href="/blog/migrating-to-go-modules">Migrating to Go Modules</a>
+<a href="/blog/publishing-go-modules">Publishing Go Modules</a>
+<a href="/blog/v2-go-modules">Go Modules: v2 and Beyond</a>
+<a href="/blog/module-compatibility">Keeping Your Modules Compatible</a>
+<a href="/doc/articles/go_command.html">About the Go command</a>
+<a href="/doc/comment">Go Doc Comments</a>
+<a href="/doc/gdb">Debugging Go Code with GDB</a>
+<a href="/doc/articles/race_detector.html">Data Race Detector</a>
+<a href="/doc/asm">A Quick Guide to Go's Assembler</a>
+<a href="/blog/c-go-cgo">C? Go? Cgo!</a>
+<a href="/cmd/cgo/">cgo</a>
+<a href="/blog/profiling-go-programs">Profiling Go Programs</a>
+<a href="/blog/race-detector">Introducing the Go Race Detector</a>
+<a href="/gopls">Gopls: The language server for Go</a>
+<a href="/wiki">Go Wiki</a>
+<a href="/wiki/Learn">Learn</a>
+<a href="/wiki">Wiki</a>
+<a href="/wiki/NonEnglish">NonEnglish</a>
+<a href="/wiki">Wiki</a>
+<a href="/solutions/" class="Footer-link Footer-link--primary">Why Go</a>
+<a href="/solutions/use-cases" class="Footer-link">Use Cases</a>
+<a href="/solutions/case-studies" class="Footer-link">Case Studies</a>
+<a href="/learn/" class="Footer-link Footer-link--primary">Get Started</a>
+<a href="/play" class="Footer-link">Playground</a>
+<a href="/tour/" class="Footer-link">Tour</a>
+<a href="https://stackoverflow.com/questions/tagged/go?tab=Newest" class="Footer-link">Stack Overflow</a>
+<a href="/help/" class="Footer-link">Help</a>
+<a href="https://pkg.go.dev" class="Footer-link Footer-link--primary">Packages</a>
+<a href="/pkg/" class="Footer-link">Standard Library</a>
+<a href="https://pkg.go.dev/about" class="Footer-link">About Go Packages</a>
+<a href="https://pkg.go.dev/api" class="Footer-link">pkg.go.dev API</a>
+<a href="/project" class="Footer-link Footer-link--primary">About</a>
+<a href="/dl/" class="Footer-link">Download</a>
+<a href="/blog/" class="Footer-link">Blog</a>
+<a href="https://github.com/golang/go/issues" class="Footer-link">Issue Tracker</a>
+<a href="/doc/devel/release" class="Footer-link">Release Notes</a>
+<a href="/brand" class="Footer-link">Brand Guidelines</a>
+<a href="/conduct" class="Footer-link">Code of Conduct</a>
+<a href="/wiki/#the-go-community" class="Footer-link Footer-link--primary">Connect</a>
+<a href="https://bsky.app/profile/golang.org" class="Footer-link">Bluesky</a>
+<a href="https://hachyderm.io/@golang" class="Footer-link">Mastodon</a>
+<a href="https://www.twitter.com/golang" class="Footer-link">Twitter</a>
+<a href="https://github.com/golang" class="Footer-link">GitHub</a>
+<a href="https://invite.slack.golangbridge.org/" class="Footer-link">Slack</a>
+<a href="https://reddit.com/r/golang" class="Footer-link">r/golang</a>
+<a href="https://www.meetup.com/pro/go" class="Footer-link">Meetup</a>
+<a href="https://golangweekly.com/" class="Footer-link">Golang Weekly</a>
+<a href="/copyright">Copyright</a>
+<a href="/tos">Terms of Service</a>
+<a href="http://www.google.com/intl/en/policies/privacy/" rel="noopener">Privacy Policy</a>
+<a href="/s/website-issue" rel="noopener">Report an Issue</a>
+<a class="Footer-googleLogo" href="https://google.com" rel="noopener"></a>
+<a href="https://policies.google.com/technologies/cookies">Learn more.</a>
+</body></html>

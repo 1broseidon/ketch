@@ -1,0 +1,1709 @@
+
+<!DOCTYPE html>
+<html lang="en" data-layout="responsive" data-local="" data-version="prod-frontend-00275-2gh">
+ <head>
+ <meta charset="utf-8">
+ <meta http-equiv="X-UA-Compatible" content="IE=edge">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <meta class="js-gtmID" data-gtmid="GTM-W8MVQXG">
+ <link rel="shortcut icon" href="/static/shared/icon/favicon.ico">
+ <link rel="canonical" href="https://pkg.go.dev/github.com/projectdiscovery/httpx">
+ <link href="/static/frontend/frontend.min.css?version=prod-frontend-00275-2gh" rel="stylesheet">
+ <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="Go Packages">
+ <title>httpx module - github.com/projectdiscovery/httpx - Go Packages</title>
+ <link href="/static/frontend/unit/unit.min.css?version=prod-frontend-00275-2gh" rel="stylesheet">
+ <link href="/static/frontend/unit/main/main.min.css?version=prod-frontend-00275-2gh" rel="stylesheet">
+ </head>
+ <body>
+ <section class="go-SurveyBanner js-surveyBanner" role="region" aria-label="2026 Go Developer Survey" data-survey-id="go-survey-2026">
+ <img class="go-SurveyBanner-gopher" src="/static/shared/survey/gopher-announcement.png" width="108" height="80" alt="" aria-hidden="true">
+ <img class="go-SurveyBanner-bullhornMobile" src="/static/shared/survey/bullhorn-mobile.svg" width="22" height="23" alt="" aria-hidden="true">
+ <img class="go-SurveyBanner-bullhornDesktop" src="/static/shared/survey/bullhorn-desktop.svg" width="28" height="28" alt="" aria-hidden="true">
+ <div class="go-SurveyBanner-content">
+ <span class="go-SurveyBanner-lead">Help us shape the future of Go!</span>
+ <a class="go-SurveyBanner-link js-surveyBannerLink" href="https://blink.qualtrics.com/jfe/form/SV_ba8fa1ZcSQQdTRs?s=p" target="_blank" rel="noopener"><span class="go-SurveyBanner-linkPrefix">Take the </span>2026 Go Developer Survey</a>
+ </div>
+ <button class="go-SurveyBanner-close js-surveyBannerClose" type="button" aria-label="Minimize the survey banner">
+ <img class="go-SurveyBanner-minimizeIcon" src="/static/shared/survey/minimize.svg" width="20" height="20" alt="" aria-hidden="true">
+ </button>
+ </section>
+ <header class="go-Header go-Header--full js-siteHeader">
+ <div class="go-Header-inner go-Header-inner--dark">
+ <nav class="go-Header-nav">
+ <a href="https://go.dev/" class="js-headerLogo" data-gtmc="nav link"
+ data-test-id="go-header-logo-link" role="heading" aria-level="1">
+ <img class="go-Header-logo" src="/static/shared/logo/go-white.svg" alt="Go">
+ </a>
+ <div class="skip-navigation-wrapper">
+ <a class="skip-to-content-link" aria-label="Skip to main content" href="#main-content"> Skip to Main Content </a>
+ </div>
+ <div class="go-Header-rightContent">
+<div class="go-SearchForm js-searchForm">
+ <form
+ class="go-InputGroup go-ShortcutKey go-SearchForm-form"
+ action="/search"
+ data-shortcut="/"
+ data-shortcut-alt="search"
+ data-gtmc="search form"
+ aria-label="Search for a package"
+ role="search"
+ >
+ <input name="q" class="go-Input js-searchFocus" aria-label="Search for a package" type="search"
+ autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"
+ placeholder="Search packages or symbols"
+ value="" />
+ <input name="m" value="" hidden>
+ <button class="go-Button go-Button--inverted" aria-label="Submit search">
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/search_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </form>
+ <button class="go-SearchForm-expandSearch js-expandSearch" data-gtmc="nav button"
+ aria-label="Open search" data-test-id="expand-search">
+ <img class="go-Icon go-Icon--inverted" height="24" width="24"
+ src="/static/shared/icon/search_gm_grey_24dp.svg" alt="">
+ </button>
+</div>
+ <ul class="go-Header-menu">
+ <li class="go-Header-menuItem">
+ <a class="js-desktop-menu-hover" href="#" data-gtmc="nav link">
+ Why Go
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_drop_down_gm_grey_24dp.svg" alt="submenu dropdown icon">
+ </a>
+ <ul class="go-Header-submenu go-Header-submenu--why js-desktop-submenu-hover" aria-label="submenu">
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/solutions/case-studies">
+ <span>Case Studies</span>
+ </a>
+ </div>
+ <p>Common problems companies solve with Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/solutions/use-cases">
+ <span>Use Cases</span>
+ </a>
+ </div>
+ <p>Stories about how and why companies use Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/security/">
+ <span>Security</span>
+ </a>
+ </div>
+ <p>How Go can help keep you secure by default</p>
+ </li>
+ </ul>
+ </li>
+ <li class="go-Header-menuItem">
+ <a href="https://go.dev/learn/" data-gtmc="nav link">Learn</a>
+ </li>
+ <li class="go-Header-menuItem">
+ <a class="js-desktop-menu-hover" href="#" data-gtmc="nav link">
+ Docs
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_drop_down_gm_grey_24dp.svg" alt="submenu dropdown icon">
+ </a>
+ <ul class="go-Header-submenu go-Header-submenu--docs js-desktop-submenu-hover" aria-label="submenu">
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/doc/effective_go">
+ <span>Effective Go</span>
+ </a>
+ </div>
+ <p>Tips for writing clear, performant, and idiomatic Go code</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/doc/">
+ <span>Go User Manual</span>
+ </a>
+ </div>
+ <p>A complete introduction to building software with Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://pkg.go.dev/std">
+ <span>Standard library</span>
+ </a>
+ </div>
+ <p>Reference documentation for Go's standard library</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/doc/devel/release">
+ <span>Release Notes</span>
+ </a>
+ </div>
+ <p>Learn what's new in each Go release</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="/api">
+ <span>API</span>
+ </a>
+ </div>
+ <p>Reference documentation for the pkg.go.dev API</p>
+ </li>
+ </ul>
+ </li>
+ <li class="go-Header-menuItem go-Header-menuItem--active">
+ <a href="/" data-gtmc="nav link">Packages</a>
+ </li>
+ <li class="go-Header-menuItem">
+ <a class="js-desktop-menu-hover" href="#" data-gtmc="nav link">
+ Community
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_drop_down_gm_grey_24dp.svg" alt="submenu dropdown icon">
+ </a>
+ <ul class="go-Header-submenu go-Header-submenu--community js-desktop-submenu-hover" aria-label="submenu">
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/talks/">
+ <span>Recorded Talks</span>
+ </a>
+ </div>
+ <p>Videos from prior events</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://www.meetup.com/pro/go">
+ <span>Meetups</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </div>
+ <p>Meet other local Go developers</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://github.com/golang/go/wiki/Conferences">
+ <span>Conferences</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </div>
+ <p>Learn and network with Go developers from around the world</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/blog">
+ <span>Go blog</span>
+ </a>
+ </div>
+ <p>The Go project's official blog.</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/help">
+ <span>Go project</span>
+ </a>
+ </div>
+ <p>Get help and stay informed from Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ Get connected
+ </div>
+ <p></p>
+ <div class="go-Header-socialIcons">
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with google-groups (Opens in new window)"
+ title="Get connected with google-groups (Opens in new window)"
+ href="https://groups.google.com/g/golang-nuts">
+ <img src="/static/shared/logo/social/google-groups.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with github (Opens in new window)"
+ title="Get connected with github (Opens in new window)"
+ href="https://github.com/golang">
+ <img src="/static/shared/logo/social/github.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with twitter (Opens in new window)"
+ title="Get connected with twitter (Opens in new window)"
+ href="https://twitter.com/golang">
+ <img src="/static/shared/logo/social/twitter.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with reddit (Opens in new window)"
+ title="Get connected with reddit (Opens in new window)"
+ href="https://www.reddit.com/r/golang/">
+ <img src="/static/shared/logo/social/reddit.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with slack (Opens in new window)"
+ title="Get connected with slack (Opens in new window)"
+ href="https://invite.slack.golangbridge.org/">
+ <img src="/static/shared/logo/social/slack.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with stack-overflow (Opens in new window)"
+ title=""
+ href="https://stackoverflow.com/collectives/go">
+ <img src="/static/shared/logo/social/stack-overflow.svg" />
+ </a>
+ </div>
+ </li>
+ </ul>
+ </li>
+ </ul>
+ <button class="go-Header-navOpen js-headerMenuButton go-Header-navOpen--white" data-gtmc="nav button" aria-label="Open navigation">
+ </button>
+ </div>
+ </nav>
+ </div>
+ </header>
+ <aside class="go-NavigationDrawer js-header">
+ <nav class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="https://go.dev/">
+ <img class="go-NavigationDrawer-logo" src="/static/shared/logo/go-blue.svg" alt="Go.">
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem js-mobile-subnav-trigger go-NavigationDrawer-hasSubnav">
+ <a href="#">
+ <span>Why Go</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_next_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ <div class="go-NavigationDrawer go-NavigationDrawer-submenuItem">
+ <div class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="#">
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_before_gm_grey_24dp.svg" alt="">
+ </i>
+ Why Go
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/solutions/case-studies">
+ Case Studies
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/solutions/use-cases">
+ Use Cases
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/security/">
+ Security
+ </a>
+ </li>
+ </ul>
+ </div>
+ </div>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/learn/">Learn</a>
+ </li>
+ <li class="go-NavigationDrawer-listItem js-mobile-subnav-trigger go-NavigationDrawer-hasSubnav">
+ <a href="#">
+ <span>Docs</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_next_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ <div class="go-NavigationDrawer go-NavigationDrawer-submenuItem">
+ <div class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="#"><i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_before_gm_grey_24dp.svg" alt="">
+ </i>
+ Docs
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/doc/effective_go">
+ Effective Go
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/doc/">
+ Go User Manual
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://pkg.go.dev/std">
+ Standard library
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/doc/devel/release">
+ Release Notes
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="/api">
+ API
+ </a>
+ </li>
+ </ul>
+ </div>
+ </div>
+ </li>
+ <li class="go-NavigationDrawer-listItem go-NavigationDrawer-listItem--active">
+ <a href="/">Packages</a>
+ </li>
+ <li class="go-NavigationDrawer-listItem js-mobile-subnav-trigger go-NavigationDrawer-hasSubnav">
+ <a href="#">
+ <span>Community</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_next_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ <div class="go-NavigationDrawer go-NavigationDrawer-submenuItem">
+ <div class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="#">
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_before_gm_grey_24dp.svg" alt="">
+ </i>
+ Community
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/talks/">
+ Recorded Talks
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://www.meetup.com/pro/go">
+ Meetups
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://github.com/golang/go/wiki/Conferences">
+ Conferences
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/blog">
+ Go blog
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/help">
+ Go project
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <div>Get connected</div>
+ <div class="go-Header-socialIcons">
+ <a class="go-Header-socialIcon" href="https://groups.google.com/g/golang-nuts"><img src="/static/shared/logo/social/google-groups.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://github.com/golang"><img src="/static/shared/logo/social/github.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://twitter.com/golang"><img src="/static/shared/logo/social/twitter.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://www.reddit.com/r/golang/"><img src="/static/shared/logo/social/reddit.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://invite.slack.golangbridge.org/"><img src="/static/shared/logo/social/slack.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://stackoverflow.com/collectives/go"><img src="/static/shared/logo/social/stack-overflow.svg" /></a>
+ </div>
+ </li>
+ </ul>
+ </div>
+ </div>
+ </li>
+ </ul>
+ </nav>
+ </aside>
+ <div class="go-NavigationDrawer-scrim js-scrim" role="presentation"></div>
+ <main class="go-Main" id="main-content">
+ <div class="go-Main-banner" role="alert"></div>
+ <header class="go-Main-header js-mainHeader">
+ <nav class="go-Main-headerBreadcrumb go-Breadcrumb" aria-label="Breadcrumb" data-test-id="UnitHeader-breadcrumb">
+ <ol>
+ <li data-test-id="UnitHeader-breadcrumbItem">
+ <a href="/" data-gtmc="breadcrumb link">Discover Packages</a>
+ </li>
+ <li>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0" data-gtmc="breadcrumb link" aria-current="location"
+ data-test-id="UnitHeader-breadcrumbCurrent">
+ github.com/projectdiscovery/httpx
+ </a>
+ <button
+ class="go-Button go-Button--inline go-Clipboard js-clipboard"
+ title="Copy path to clipboard.&#10;&#10;github.com/projectdiscovery/httpx"
+ aria-label="Copy Path to Clipboard"
+ data-to-copy="github.com/projectdiscovery/httpx"
+ data-gtmc="breadcrumbs button"
+ >
+ <img
+ class="go-Icon go-Icon--accented"
+ height="24"
+ width="24"
+ src="/static/shared/icon/content_copy_gm_grey_24dp.svg"
+ alt=""
+ >
+ </button>
+ </li>
+ </ol>
+ </nav>
+ <div class="go-Main-headerContent">
+ <div class="go-Main-headerTitle js-stickyHeader">
+ <a class="go-Main-headerLogo" href="https://go.dev/" aria-hidden="true" tabindex="-1" data-gtmc="header link" aria-label="Link to Go Homepage">
+ <img height="78" width="207" src="/static/shared/logo/go-blue.svg" alt="Go">
+ </a>
+ <h1 class="UnitHeader-titleHeading" data-test-id="UnitHeader-title">httpx</h1>
+ <span class="go-Chip go-Chip--inverted">module</span>
+ <button
+ class="go-Button go-Button--inline go-Clipboard js-clipboard"
+ title="Copy path to clipboard.&#10;&#10;github.com/projectdiscovery/httpx"
+ aria-label="Copy Path to Clipboard"
+ data-to-copy="github.com/projectdiscovery/httpx"
+ data-gtmc="title button"
+ tabindex="-1"
+ >
+ <img
+ class="go-Icon go-Icon--accented"
+ height="24"
+ width="24"
+ src="/static/shared/icon/content_copy_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </div>
+ <div class="go-Main-headerDetails">
+ <span class="go-Main-headerDetailItem" data-test-id="UnitHeader-version">
+ <a href="?tab=versions" aria-label="Version: v1.12.0" 
+ data-gtmc="header link" aria-describedby="version-description">
+ <span class="go-textSubtle" aria-hidden="true">Version: </span>
+ v1.12.0
+ </a>
+ <div class="screen-reader-only" id="version-description" hidden>
+ Opens a new window with list of versions in this module.
+ </div>
+ <span class="DetailsHeader-badge--latest" data-test-id="UnitHeader-minorVersionBanner">
+ <span class="go-Chip DetailsHeader-span--latest">Latest</span>
+ <span class="go-Chip DetailsHeader-span--notAtLatest">
+ Latest
+ <details class="go-Tooltip js-tooltip" data-gtmc="tooltip">
+ <summary>
+ <img class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/alert_gm_grey_24dp.svg" alt="Warning">
+ </summary>
+ <p>This package is not in the latest version of its module.</p>
+ </details>
+ </span>
+ <a href="/github.com/projectdiscovery/httpx" aria-label="Go to Latest Version" data-gtmc="header link">
+ <span class="go-Chip go-Chip--alert DetailsHeader-span--goToLatest">Go to latest</span>
+ </a>
+ </span>
+ </span>
+ <span class="go-Main-headerDetailItem" data-test-id="UnitHeader-commitTime">
+ Published: Sep 8, 2026
+ </span>
+ <span class="go-Main-headerDetailItem" data-test-id="UnitHeader-licenses">
+ License: <a href="/github.com/projectdiscovery/httpx?tab=licenses" data-test-id="UnitHeader-license" 
+ data-gtmc="header link" aria-describedby="license-description">MIT</a>
+ </span>
+ <div class="screen-reader-only" id="license-description" hidden>
+ Opens a new window with license information.
+ </div>
+ </div>
+ <div class="UnitHeader-overflowContainer">
+ <select class="UnitHeader-overflowSelect js-selectNav" tabindex="-1">
+ <option value="/">Main</option>
+ <option value="/github.com/projectdiscovery/httpx?tab=versions">
+ Versions
+ </option>
+ <option value="/github.com/projectdiscovery/httpx?tab=licenses">
+ Licenses
+ </option>
+ </select>
+ </div>
+ </div>
+</header>
+ <aside class="go-Main-aside js-mainAside">
+ <div class="UnitMeta">
+ <h2 class="go-textLabel">Details</h2>
+ <ul class="UnitMeta-details">
+ <li>
+ <details class="go-Tooltip js-tooltip" data-gtmc="tooltip">
+ <summary class="go-textSubtle">
+ <img class="go-Icon go-Icon--accented"
+ tabindex="0"
+ role="button"src="/static/shared/icon/check_circle_gm_grey_24dp.svg" alt="checked" aria-label="Valid file, toggle tooltip"height="24" width="24">
+ Valid <a href="https://github.com/projectdiscovery/httpx/tree/v1.12.0/go.mod" target="_blank" rel="noopener">go.mod</a> file
+ <img class="go-Icon" role="button" tabindex="0" src="/static/shared/icon/help_gm_grey_24dp.svg" alt="" aria-label="Toggle go.mod validity tooltip" height="24" width="24">
+ </summary>
+ <p aria-live="polite" role="tooltip">
+ The Go module system was introduced in Go 1.11 and is the official dependency management
+ solution for Go.
+ </p>
+ </details>
+ </li>
+ <li>
+ <details class="go-Tooltip js-tooltip" data-gtmc="tooltip">
+ <summary class="go-textSubtle">
+ <img class="go-Icon go-Icon--accented"
+ tabindex="0"
+ role="button"src="/static/shared/icon/check_circle_gm_grey_24dp.svg" alt="checked" aria-label="Valid file, toggle tooltip"height="24" width="24">
+ Redistributable license
+ <img class="go-Icon" role="button" tabindex="0" src="/static/shared/icon/help_gm_grey_24dp.svg" alt="" aria-label="Toggle redistributable help tooltip" height="24" width="24">
+ </summary>
+ <p aria-live="polite" role="tooltip">
+ Redistributable licenses place minimal restrictions on how software can be used,
+ modified, and redistributed.
+ </p>
+ </details>
+ </li>
+ <li>
+ <details class="go-Tooltip js-tooltip" data-gtmc="tooltip">
+ <summary class="go-textSubtle">
+ <img class="go-Icon go-Icon--accented"
+ tabindex="0"
+ role="button"src="/static/shared/icon/check_circle_gm_grey_24dp.svg" alt="checked" aria-label="Valid file, toggle tooltip"height="24" width="24">
+ Tagged version
+ <img class="go-Icon" role="button" tabindex="0" src="/static/shared/icon/help_gm_grey_24dp.svg" alt="" aria-label="Toggle tagged version tooltip" height="24" width="24">
+ </summary>
+ <p aria-live="polite" role="tooltip">Modules with tagged versions give importers more predictable builds.</p>
+ </details>
+ </li>
+ <li>
+ <details class="go-Tooltip js-tooltip" data-gtmc="tooltip">
+ <summary class="go-textSubtle">
+ <img class="go-Icon go-Icon--accented"
+ tabindex="0"
+ role="button"src="/static/shared/icon/check_circle_gm_grey_24dp.svg" alt="checked" aria-label="Valid file, toggle tooltip"height="24" width="24">
+ Stable version
+ <img class="go-Icon" role="button" tabindex="0" aria-label="Toggle stable version tooltip" src="/static/shared/icon/help_gm_grey_24dp.svg" alt="" height="24" width="24">
+ </summary>
+ <p aria-live="polite" role="tooltip">When a project reaches major version v1 it is considered stable.</p>
+ </details>
+ </li>
+ <li class="UnitMeta-detailsLearn">
+ <a href="/about#best-practices" data-gtmc="meta link">Learn more about best practices</a>
+ </li>
+ </ul>
+ <h2 class="go-textLabel">Repository</h2>
+ <div class="UnitMeta-repo">
+ <a href="https://github.com/projectdiscovery/httpx" title="https://github.com/projectdiscovery/httpx" target="_blank" rel="noopener">
+ github.com/projectdiscovery/httpx
+ </a>
+ </div>
+ <h2 class="go-textLabel" data-test-id="links-heading">Links</h2>
+ <ul class="UnitMeta-links">
+ <li>
+ <a href="https://deps.dev/go/github.com%2Fprojectdiscovery%2Fhttpx/v1.12.0" title="View this module on Open Source Insights"
+ target="_blank" rel="noopener" data-test-id="meta-link-depsdev">
+ <img class="link-Icon" src="/static/shared/icon/depsdev-logo.svg"
+ alt="Open Source Insights Logo" />
+ Open Source Insights
+ </a>
+ </li>
+ </ul>
+ </div>
+</aside>
+ <nav class="go-Main-nav go-Main-nav--sticky js-mainNav" aria-label="Outline">
+ <div class="go-Main-navDesktop">
+ <div class="UnitOutline-jumpTo">
+ <button class="UnitOutline-jumpToInput go-ShortcutKey js-jumpToInput"
+ aria-controls="jump-to-modal"
+ aria-label="Open Jump to Identifier"
+ data-shortcut="f"
+ data-shortcut-alt="find"
+ data-test-id="jump-to-button" data-gtmc="outline button">
+ Jump to ...
+ </button>
+ </div>
+ <ul class="go-Tree js-tree" role="tree" aria-label="Outline">
+ <li class="js-readmeOutline">
+ <a href="#section-readme" data-gtmc="outline link">
+ README
+ </a>
+ <ul id="readme-outline">
+ <li>
+ <a href="#readme-features" data-gtmc="readme outline link">
+ Features
+ </a>
+ <ul>
+ <li>
+ <a href="#readme-supported-probes" data-gtmc="readme outline link">
+ Supported probes
+ </a>
+ </li>
+ </ul>
+ </li>
+ <li>
+ <a href="#readme-installation-instructions" data-gtmc="readme outline link">
+ Installation Instructions
+ </a>
+ </li>
+ <li>
+ <a href="#readme-usage" data-gtmc="readme outline link">
+ Usage
+ </a>
+ </li>
+ <li>
+ <a href="#readme-running-httpx" data-gtmc="readme outline link">
+ Running httpx
+ </a>
+ <ul>
+ <li>
+ <a href="#readme-using-httpx-as-a-library" data-gtmc="readme outline link">
+ Using httpx as a library
+ </a>
+ </li>
+ <li>
+ <a href="#readme-common-recipes" data-gtmc="readme outline link">
+ Common Recipes
+ </a>
+ <ul>
+ <li>
+ <a href="#readme-well-known-files" data-gtmc="readme outline link">
+ Well-known files
+ </a>
+ </li>
+ <li>
+ <a href="#readme-well-known-uris" data-gtmc="readme outline link">
+ Well-known URIs
+ </a>
+ </li>
+ </ul>
+ </li>
+ </ul>
+ </li>
+ <li>
+ <a href="#readme-notes" data-gtmc="readme outline link">
+ Notes
+ </a>
+ </li>
+ <li>
+ <a href="#readme-acknowledgement" data-gtmc="readme outline link">
+ Acknowledgement
+ </a>
+ </li>
+ </ul>
+ </li>
+ <li>
+ <a href="#section-directories" data-gtmc="outline link">
+ Directories
+ </a>
+ </li>
+ </ul>
+ </div>
+ <div class="go-Main-navMobile js-mainNavMobile">
+ <label class="go-Label">
+ <select class="go-Select">
+ <option selected disabled>README</option>
+ </select>
+ </label>
+ </div>
+</nav>
+ <article class="go-Main-article js-mainContent">
+ <div class="UnitDetails" data-test-id="UnitDetails" style="display: block;">
+ <div class="UnitDetails-content js-unitDetailsContent" data-test-id="UnitDetails-content">
+ <div class="UnitReadme UnitReadme--expanded js-readme">
+ <h2 class="UnitReadme-title" id="section-readme">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/chrome_reader_mode_gm_grey_24dp.svg" alt="">
+ README
+ <a class="UnitReadme-idLink" href="#section-readme" title="Go to Readme" aria-label="Go to Readme">¶</a>
+ </h2>
+ <div class="UnitReadme-content" data-test-id="Unit-readmeContent">
+ <div class="Overview-readmeContent js-readmeContent"><h1>
+<img src="https://github.com/projectdiscovery/httpx/raw/v1.12.0/static/httpx-logo.png" alt="httpx" width="200px"/>
+ <br/>
+</h1>
+<p align="center">
+<a href="https://opensource.org/licenses/MIT" rel="nofollow"><img src="https://img.shields.io/badge/license-MIT-_red.svg"/></a>
+<a href="https://goreportcard.com/badge/github.com/projectdiscovery/httpx" rel="nofollow"><img src="https://goreportcard.com/badge/github.com/projectdiscovery/httpx"/></a>
+<a href="https://github.com/projectdiscovery/httpx/releases" rel="nofollow"><img src="https://img.shields.io/github/release/projectdiscovery/httpx"/></a>
+<a href="https://hub.docker.com/r/projectdiscovery/httpx" rel="nofollow"><img src="https://img.shields.io/docker/pulls/projectdiscovery/httpx.svg"/></a>
+<a href="https://twitter.com/pdiscoveryio" rel="nofollow"><img src="https://img.shields.io/twitter/follow/pdiscoveryio.svg?logo=twitter"/></a>
+<a href="https://discord.gg/projectdiscovery" rel="nofollow"><img src="https://img.shields.io/discord/695645237418131507.svg?logo=discord"/></a>
+</p>
+<p align="center">
+ <a href="#features" rel="nofollow">Features</a> •
+ <a href="#installation-instructions" rel="nofollow">Installation</a> •
+ <a href="#usage" rel="nofollow">Usage</a> •
+ <a href="https://docs.projectdiscovery.io/tools/httpx/" rel="nofollow">Documentation</a> •
+ <a href="#notes" rel="nofollow">Notes</a> •
+ <a href="https://discord.gg/projectdiscovery" rel="nofollow">Join Discord</a>
+</p>
+<p><code>httpx</code> is a fast and multi-purpose HTTP toolkit that allows running multiple probes using the <a href="https://github.com/projectdiscovery/retryablehttp-go" rel="nofollow">retryablehttp</a> library. It is designed to maintain result reliability with an increased number of threads.</p>
+<h3 class="h1" id="readme-features">Features</h3>
+<h1>
+ <img src="https://user-images.githubusercontent.com/8293321/135731750-4c1d38b1-bd2a-40f9-88e9-3c4b9f6da378.png" alt="httpx" width="700px"/>
+ <br/>
+</h1>
+<ul>
+<li>Simple and modular code base making it easy to contribute.</li>
+<li>Fast And fully configurable flags to probe multiple elements.</li>
+<li>Supports multiple HTTP based probings.</li>
+<li>Smart auto fallback from https to http by default.</li>
+<li>Supports hosts, URLs and CIDR as input.</li>
+<li>Handles edge cases doing retries, backoffs etc for handling WAFs.</li>
+</ul>
+<h5 class="h3" id="readme-supported-probes">Supported probes</h5>
+<table>
+<thead>
+<tr>
+<th>Probes</th>
+<th>Default check</th>
+<th>Probes</th>
+<th>Default check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>URL</td>
+<td>true</td>
+<td>IP</td>
+<td>true</td>
+</tr>
+<tr>
+<td>Title</td>
+<td>true</td>
+<td>CNAME</td>
+<td>true</td>
+</tr>
+<tr>
+<td>Status Code</td>
+<td>true</td>
+<td>Raw HTTP</td>
+<td>false</td>
+</tr>
+<tr>
+<td>Content Length</td>
+<td>true</td>
+<td>HTTP2</td>
+<td>false</td>
+</tr>
+<tr>
+<td>TLS Certificate</td>
+<td>true</td>
+<td>HTTP Pipeline</td>
+<td>false</td>
+</tr>
+<tr>
+<td>CSP Header</td>
+<td>true</td>
+<td>Virtual host</td>
+<td>false</td>
+</tr>
+<tr>
+<td>Line Count</td>
+<td>true</td>
+<td>Word Count</td>
+<td>true</td>
+</tr>
+<tr>
+<td>Location Header</td>
+<td>true</td>
+<td>CDN</td>
+<td>false</td>
+</tr>
+<tr>
+<td>Web Server</td>
+<td>true</td>
+<td>Paths</td>
+<td>false</td>
+</tr>
+<tr>
+<td>Web Socket</td>
+<td>true</td>
+<td>Ports</td>
+<td>false</td>
+</tr>
+<tr>
+<td>Response Time</td>
+<td>true</td>
+<td>Request Method</td>
+<td>true</td>
+</tr>
+<tr>
+<td>Favicon Hash</td>
+<td>false</td>
+<td>Probe Status</td>
+<td>false</td>
+</tr>
+<tr>
+<td>Body Hash</td>
+<td>true</td>
+<td>Header Hash</td>
+<td>true</td>
+</tr>
+<tr>
+<td>Redirect chain</td>
+<td>false</td>
+<td>URL Scheme</td>
+<td>true</td>
+</tr>
+<tr>
+<td>JARM Hash</td>
+<td>false</td>
+<td>ASN</td>
+<td>false</td>
+</tr>
+</tbody>
+</table>
+<h3 class="h1" id="readme-installation-instructions">Installation Instructions</h3>
+<p><code>httpx</code> requires <strong>go &gt;=1.25.0</strong> to install successfully. Run the following command to get the repo:</p>
+<pre><code>go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
+</code></pre>
+<p>To learn more about installing httpx, see <a href="https://docs.projectdiscovery.io/tools/httpx/install" rel="nofollow">https://docs.projectdiscovery.io/tools/httpx/install</a>.</p>
+<table>
+<thead>
+<tr>
+<th>❗ <strong>Disclaimer</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>This project is in active development</strong>. Expect breaking changes with releases. Review the changelog before updating.</td>
+</tr>
+<tr>
+<td>This project was primarily built to be used as a standalone CLI tool. <strong>Running it as a service may pose security risks.</strong> It&#39;s recommended to use with caution and additional security measures.</td>
+</tr>
+</tbody>
+</table>
+<h3 class="h1" id="readme-usage">Usage</h3>
+<pre><code>httpx -h
+</code></pre>
+<p>This will display help for the tool. Here are all the switches it supports.</p>
+<pre><code>httpx is a fast and multi-purpose HTTP toolkit that allows running multiple probes using the retryablehttp library.
+Usage:
+ ./httpx [flags]
+Flags:
+INPUT:
+ -l, -list string input file containing list of hosts to process
+ -rr, -request string file containing raw request
+ -u, -target string[] input target host(s) to probe
+ -im, -input-mode string mode of input file (burp)
+PROBES:
+ -sc, -status-code display response status-code
+ -cl, -content-length display response content-length
+ -ct, -content-type display response content-type
+ -location display response redirect location
+ -favicon display mmh3 hash for &#39;/favicon.ico&#39; file
+ -hash string display response body hash (supported: md5,mmh3,simhash,sha1,sha256,sha512)
+ -jarm display jarm fingerprint hash
+ -rt, -response-time display response time
+ -lc, -line-count display response body line count
+ -wc, -word-count display response body word count
+ -title display page title
+ -bp, -body-preview display first N characters of response body (default 100)
+ -server, -web-server display server name
+ -td, -tech-detect display technology in use based on wappalyzer dataset
+ -cff, -custom-fingerprint-file string path to a custom fingerprint file for technology detection
+ -kb, -knowledge-base enable knowledge base classification
+ -method display http request method
+ -ws, -websocket display server using websocket
+ -ip display host ip
+ -cname display host cname
+ -extract-fqdn, -efqdn get domain and subdomains from response body and header in jsonl/csv output
+ -asn display host asn information
+ -cdn display cdn/waf in use (default true)
+ -probe display probe status
+HEADLESS:
+ -ss, -screenshot enable saving screenshot of the page using headless browser
+ -system-chrome enable using local installed chrome for screenshot
+ -ho, -headless-options string[] start headless chrome with additional options
+ -esb, -exclude-screenshot-bytes enable excluding screenshot bytes from json output
+ -ehb, -exclude-headless-body enable excluding headless header from json output
+ -no-screenshot-full-page disable saving full page screenshot
+ -st, -screenshot-timeout value set timeout for screenshot in seconds (default 10s)
+ -sid, -screenshot-idle value set idle time before taking screenshot in seconds (default 1s)
+ -jsc, -javascript-code string[] execute JavaScript code after navigation
+MATCHERS:
+ -mc, -match-code string match response with specified status code (-mc 200,302)
+ -ml, -match-length string match response with specified content length (-ml 100,102)
+ -mlc, -match-line-count string match response body with specified line count (-mlc 423,532)
+ -mwc, -match-word-count string match response body with specified word count (-mwc 43,55)
+ -mfc, -match-favicon string[] match response with specified favicon hash (-mfc 1494302000)
+ -ms, -match-string string[] match response with specified string (-ms admin)
+ -mr, -match-regex string[] match response with specified regex (-mr admin)
+ -mcdn, -match-cdn string[] match host with specified cdn provider (cloudfront, fastly, google, etc.)
+ -mrt, -match-response-time string match response with specified response time in seconds (-mrt &#39;&lt; 1&#39;)
+ -mdc, -match-condition string match response with dsl expression condition
+EXTRACTOR:
+ -er, -extract-regex string[] display response content with matched regex
+ -ep, -extract-preset string[] display response content matched by a pre-defined regex (url,ipv4,mail)
+FILTERS:
+ -fc, -filter-code string filter response with specified status code (-fc 403,401)
+ -fpt, -filter-page-type string[] filter response with specified page type (e.g. -fpt login,captcha,parked)
+ -fep, -filter-error-page [DEPRECATED: use -fpt] filter response with ML based error page detection
+ -fd, -filter-duplicates filter out near-duplicate responses (only first response is retained)
+ -fl, -filter-length string filter response with specified content length (-fl 23,33)
+ -flc, -filter-line-count string filter response body with specified line count (-flc 423,532)
+ -fwc, -filter-word-count string filter response body with specified word count (-fwc 423,532)
+ -ffc, -filter-favicon string[] filter response with specified favicon hash (-ffc 1494302000)
+ -fs, -filter-string string[] filter response with specified string (-fs admin)
+ -fe, -filter-regex string[] filter response with specified regex (-fe admin)
+ -fcdn, -filter-cdn string[] filter host with specified cdn provider (cloudfront, fastly, google, etc.)
+ -frt, -filter-response-time string filter response with specified response time in seconds (-frt &#39;&gt; 1&#39;)
+ -fdc, -filter-condition string filter response with dsl expression condition
+ -strip strips all tags in response. supported formats: html,xml (default html)
+ -lof, -list-output-fields list of fields to output (comma separated)
+ -eof, -exclude-output-fields string[] exclude output fields output based on a condition
+RATE-LIMIT:
+ -t, -threads int number of threads to use (default 50)
+ -rl, -rate-limit int maximum requests to send per second (default 150)
+ -rlm, -rate-limit-minute int maximum number of requests to send per minute
+MISCELLANEOUS:
+ -pa, -probe-all-ips probe all the ips associated with same host
+ -p, -ports string[] ports to probe (nmap syntax: eg http:1,2-10,11,https:80)
+ -path string path or list of paths to probe (comma-separated, file)
+ -tls-probe send http probes on the extracted TLS domains (dns_name)
+ -csp-probe send http probes on the extracted CSP domains
+ -tls-grab perform TLS(SSL) data grabbing
+ -pipeline probe and display server supporting HTTP1.1 pipeline
+ -http2 probe and display server supporting HTTP2
+ -vhost probe and display server supporting VHOST
+ -ldv, -list-dsl-variables list json output field keys name that support dsl matcher/filter
+UPDATE:
+ -up, -update update httpx to latest version
+ -duc, -disable-update-check disable automatic httpx update check
+OUTPUT:
+ -o, -output string file to write output results
+ -oa, -output-all filename to write output results in all formats
+ -sr, -store-response store http response to output directory
+ -srd, -store-response-dir string store http response to custom directory
+ -ob, -omit-body omit response body in output
+ -csv store output in csv format
+ -csvo, -csv-output-encoding string define output encoding
+ -j, -json store output in JSONL(ines) format
+ -irh, -include-response-header include http response (headers) in JSON output (-json only)
+ -irr, -include-response include http request/response (headers + body) in JSON output (-json only)
+ -irrb, -include-response-base64 include base64 encoded http request/response in JSON output (-json only)
+ -include-chain include redirect http chain in JSON output (-json only)
+ -store-chain include http redirect chain in responses (-sr only)
+ -svrc, -store-vision-recon-cluster include visual recon clusters (-ss and -sr only)
+ -pr, -protocol string protocol to use (unknown, http11, http2, http3)
+ -fepp, -filter-error-page-path string path to store filtered error pages (default &#34;filtered_error_page.json&#34;)
+ -rdb, -result-db store results in database
+ -rdbc, -result-db-config string path to database config file
+ -rdbt, -result-db-type string database type (mongodb, postgres, mysql)
+ -rdbcs, -result-db-conn string database connection string (env: HTTPX_DB_CONNECTION_STRING)
+ -rdbn, -result-db-name string database name (default &#34;httpx&#34;)
+ -rdbtb, -result-db-table string table/collection name (default &#34;results&#34;)
+ -rdbbs, -result-db-batch-size int batch size for database inserts (default 100)
+ -rdbor, -result-db-omit-raw omit raw request/response data from database
+CONFIGURATIONS:
+ -config string path to the httpx configuration file (default $HOME/.config/httpx/config.yaml)
+ -r, -resolvers string[] list of custom resolver (file or comma separated)
+ -allow string[] allowed list of IP/CIDR&#39;s to process (file or comma separated)
+ -deny string[] denied list of IP/CIDR&#39;s to process (file or comma separated)
+ -sni, -sni-name string custom TLS SNI name
+ -random-agent enable Random User-Agent to use (default true)
+ -auto-referer set the Referer header to the current URL
+ -H, -header string[] custom http headers to send with request
+ -http-proxy, -proxy string proxy (http|socks) to use (eg http://127.0.0.1:8080)
+ -unsafe send raw requests skipping golang normalization
+ -resume resume scan using resume.cfg
+ -fr, -follow-redirects follow http redirects
+ -maxr, -max-redirects int max number of redirects to follow per host (default 10)
+ -fhr, -follow-host-redirects follow redirects on the same host
+ -rhsts, -respect-hsts respect HSTS response headers for redirect requests
+ -vhost-input get a list of vhosts as input
+ -x string request methods to probe, use &#39;all&#39; to probe all HTTP methods
+ -body string post body to include in http request
+ -s, -stream stream mode - start elaborating input targets without sorting
+ -sd, -skip-dedupe disable dedupe input items (only used with stream mode)
+ -ldp, -leave-default-ports leave default http/https ports in host header (eg. http://host:80 - https://host:443
+ -ztls use ztls library with autofallback to standard one for tls13
+ -no-decode avoid decoding body
+ -tlsi, -tls-impersonate string enable experimental client hello (ja3) tls impersonation (chrome, or ja3 full string)
+ -no-stdin Disable Stdin processing
+ -hae, -http-api-endpoint string experimental http api endpoint
+ -sf, -secret-file string path to secret file for authentication
+DEBUG:
+ -health-check, -hc run diagnostic check up
+ -debug display request/response content in cli
+ -debug-req display request content in cli
+ -debug-resp display response content in cli
+ -version display httpx version
+ -stats display scan statistic
+ -profile-mem string optional httpx memory profile dump file
+ -silent silent mode
+ -v, -verbose verbose mode
+ -si, -stats-interval int number of seconds to wait between showing a statistics update (default: 5)
+ -nc, -no-color disable colors in cli output
+ -tr, -trace trace
+OPTIMIZATIONS:
+ -nf, -no-fallback display both probed protocol (HTTPS and HTTP)
+ -nfs, -no-fallback-scheme probe with protocol scheme specified in input
+ -maxhr, -max-host-error int max error count per host before skipping remaining path/s (default 30)
+ -e, -exclude string[] exclude host matching specified filter (&#39;cdn&#39;, &#39;private-ips&#39;, cidr, ip, regex)
+ -retries int number of retries
+ -timeout int timeout in seconds (default 10)
+ -delay value duration between each http request (eg: 200ms, 1s) (default -1ns)
+ -rsts, -response-size-to-save int max response size to save in bytes (default 50000000)
+ -rstr, -response-size-to-read int max response size to read in bytes (default 50000000)
+CLOUD:
+ -auth configure projectdiscovery cloud (pdcp) api key (default true)
+ -ac, -auth-config string configure projectdiscovery cloud (pdcp) api key credential file
+ -pd, -dashboard upload / view output in projectdiscovery cloud (pdcp) UI dashboard
+ -tid, -team-id string upload asset results to given team id (optional)
+ -aid, -asset-id string upload new assets to existing asset id (optional)
+ -aname, -asset-name string assets group name to set (optional)
+ -pdu, -dashboard-upload string upload httpx output file (jsonl) in projectdiscovery cloud (pdcp) UI dashboard
+</code></pre>
+<h3 class="h1" id="readme-running-httpx">Running httpx</h3>
+<p>For details about running httpx, see <a href="https://docs.projectdiscovery.io/tools/httpx/running" rel="nofollow">https://docs.projectdiscovery.io/tools/httpx/running</a>.</p>
+<h5 class="h3" id="readme-using-httpx-as-a-library">Using <code>httpx</code> as a library</h5>
+<p><code>httpx</code> can be used as a library by creating an instance of the <code>Option</code> struct and populating it with the same options that would be specified via CLI. Once validated, the struct should be passed to a runner instance (to be closed at the end of the program) and the <code>RunEnumeration</code> method should be called. A minimal example of how to do it is in the <a href="https://github.com/projectdiscovery/httpx/blob/v1.12.0/examples" rel="nofollow">examples</a> folder.</p>
+<h4 class="h2" id="readme-common-recipes">Common Recipes</h4>
+<p>Below are practical one-liners for common use cases leveraging httpx&#39;s composable primitives. These recipes are validated in <code>runner/wellknown_recipes_test.go</code>.</p>
+<p>Use <code>-mdc</code> with DSL helpers such as <code>contains(content_type, ...)</code> and <code>contains(body, ...)</code> to match response metadata and body content. (<code>-mr</code>/<code>-ms</code> match the full raw response; use <code>-mdc</code> for structured field matching.)</p>
+<h5 class="h3" id="readme-well-known-files">Well-known files</h5>
+<p><strong>security.txt</strong><br/>
+Probe for a valid <a href="https://www.rfc-editor.org/rfc/rfc9116.html" rel="nofollow">RFC 9116</a> security.txt file at the standard paths (<code>/.well-known/security.txt</code>, <code>/security.txt</code>):</p>
+<pre><code>echo target.com | httpx -path &#39;/.well-known/security.txt,/security.txt&#39; -mc 200 -mdc &#39;contains(content_type, &#34;text/plain&#34;) &amp;&amp; contains(body, &#34;Contact:&#34;) &amp;&amp; contains_any(body, &#34;mailto:&#34;, &#34;https://&#34;)&#39;
+</code></pre>
+<ul>
+<li><code>-path</code> tests custom path(s)</li>
+<li><code>-mc 200</code> matches HTTP 200</li>
+<li><code>-mdc</code> matches using DSL expressions on response fields such as <code>content_type</code> and <code>body</code></li>
+</ul>
+<p><strong>robots.txt</strong></p>
+<pre><code>echo target.com | httpx -path &#39;/robots.txt&#39; -mc 200 -mdc &#39;contains(content_type, &#34;text/plain&#34;)&#39;
+</code></pre>
+<p><strong>sitemap.xml</strong></p>
+<pre><code>echo target.com | httpx -path &#39;/sitemap.xml&#39; -mc 200 -mdc &#39;contains_any(content_type, &#34;application/xml&#34;, &#34;text/xml&#34;) &amp;&amp; contains(body, &#34;&lt;urlset&#34;)&#39;
+</code></pre>
+<p><strong>humans.txt</strong></p>
+<pre><code>echo target.com | httpx -path &#39;/humans.txt&#39; -mc 200 -mdc &#39;contains(content_type, &#34;text/plain&#34;)&#39;
+</code></pre>
+<p><strong>ads.txt</strong></p>
+<pre><code>echo target.com | httpx -path &#39;/ads.txt&#39; -mc 200 -mdc &#39;contains(content_type, &#34;text/plain&#34;) &amp;&amp; contains(body, &#34;google.com&#34;)&#39;
+</code></pre>
+<h5 class="h3" id="readme-well-known-uris">Well-known URIs</h5>
+<p><strong>OpenID Connect discovery</strong> (<a href="https://openid.net/specs/openid-connect-discovery-1_0.html" rel="nofollow">spec</a>)</p>
+<pre><code>echo target.com | httpx -path &#39;/.well-known/openid-configuration&#39; -mc 200 -mdc &#39;contains(content_type, &#34;application/json&#34;) &amp;&amp; contains(body, &#34;\&#34;issuer\&#34;&#34;)&#39;
+</code></pre>
+<p><strong>Apple Universal Links</strong></p>
+<pre><code>echo target.com | httpx -path &#39;/.well-known/apple-app-site-association,/.well-known/apple-app-site-association.json&#39; -mc 200 -mdc &#39;contains(content_type, &#34;application/json&#34;) &amp;&amp; contains(body, &#34;\&#34;applinks\&#34;&#34;)&#39;
+</code></pre>
+<p><strong>Android App Links</strong></p>
+<pre><code>echo target.com | httpx -path &#39;/.well-known/assetlinks.json&#39; -mc 200 -mdc &#39;contains(content_type, &#34;application/json&#34;) &amp;&amp; contains(body, &#34;\&#34;android_app\&#34;&#34;)&#39;
+</code></pre>
+<p><strong>crossdomain.xml</strong> (legacy Flash policy file)</p>
+<pre><code>echo target.com | httpx -path &#39;/crossdomain.xml&#39; -mc 200 -mdc &#39;contains_any(content_type, &#34;application/xml&#34;, &#34;text/xml&#34;) &amp;&amp; contains(body, &#34;cross-domain-policy&#34;)&#39;
+</code></pre>
+<p><strong>Other well-known URIs</strong> (<a href="https://www.iana.org/assignments/well-known-uris/well-known-uris.xhtml" rel="nofollow">IANA registry</a>):</p>
+<pre><code>echo target.com | httpx -path &#39;/.well-known/security.txt,/.well-known/change-password,/.well-known/openid-configuration&#39; -mc 200
+</code></pre>
+<h3 class="h1" id="readme-notes">Notes</h3>
+<ul>
+<li>As default, <code>httpx</code> probe with <strong>HTTPS</strong> scheme and fall-back to <strong>HTTP</strong> only if <strong>HTTPS</strong> is not reachable.</li>
+<li>Burp Suite XML exports can be used as input with <code>-l burp-export.xml -im burp</code></li>
+<li>The <code>-no-fallback</code> flag can be used to probe and display both <strong>HTTP</strong> and <strong>HTTPS</strong> result.</li>
+<li>Custom scheme for ports can be defined, for example <code>-ports http:443,http:80,https:8443</code></li>
+<li>Custom resolver supports multiple protocol (<strong>doh|tcp|udp</strong>) in form of <code>protocol:resolver:port</code> (e.g. <code>udp:127.0.0.1:53</code>)</li>
+<li>Secret files can be used for domain-based authentication via <code>-sf secrets.yaml</code>. Supported auth types: <code>BasicAuth</code>, <code>BearerToken</code>, <code>Header</code>, <code>Cookie</code>, <code>Query</code>. Example:
+<pre><code>id: example-auth
+info:
+ name: Example Auth Config
+static:
+ - type: Header
+ domains:
+ - api.example.com
+ headers:
+ - key: X-API-Key
+ value: secret-key-here
+ - type: BasicAuth
+ domains-regex:
+ - &#34;.*\\.internal\\.com$&#34;
+ username: admin
+ password: secret
+</code></pre>
+</li>
+<li>The following flags should be used for specific use cases instead of running them as default with other probes:
+<ul>
+<li><code>-ports</code></li>
+<li><code>-path</code></li>
+<li><code>-vhost</code></li>
+<li><code>-screenshot</code></li>
+<li><code>-csp-probe</code></li>
+<li><code>-tls-probe</code></li>
+<li><code>-favicon</code></li>
+<li><code>-http2</code></li>
+<li><code>-pipeline</code></li>
+<li><code>-tls-impersonate</code></li>
+</ul>
+</li>
+</ul>
+<h3 class="h1" id="readme-acknowledgement">Acknowledgement</h3>
+<p>Probing feature is inspired by <a href="https://github.com/tomnomnom/httprobe" rel="nofollow">@tomnomnom/httprobe</a> work ❤️</p>
+<hr/>
+<div align="center">
+<p><code>httpx</code> is made with 💙 by the <a href="https://projectdiscovery.io" rel="nofollow">projectdiscovery</a> team and distributed under <a href="https://github.com/projectdiscovery/httpx/blob/v1.12.0/LICENSE.md" rel="nofollow">MIT License</a>.</p>
+<p><a href="https://discord.gg/projectdiscovery" rel="nofollow"><img src="https://raw.githubusercontent.com/projectdiscovery/nuclei-burp-plugin/main/static/join-discord.png" width="300" alt="Join Discord"/></a></p>
+</div>
+</div>
+ </div>
+ <button class="UnitReadme-expandLink js-readmeExpand"
+ data-test-id="readme-expand" data-gtmc="readme button"
+ aria-label="Expand Readme">Expand ▾</button>
+ <button class="UnitReadme-collapseLink js-readmeCollapse"
+ data-test-id="readme-collapse" data-gtmc="readme button"
+ aria-label="Expand Readme">Collapse ▴</button>
+ </div>
+ <div class="UnitDirectories js-unitDirectories">
+ <h2 class="UnitDirectories-title" id="section-directories">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/folder_gm_grey_24dp.svg" alt="">
+ Directories
+ <a class="UnitDirectories-idLink" href="#section-directories" title="Go to Directories" aria-label="Go to Directories">¶</a>
+ </h2>
+ <div class="UnitDirectories-toggles">
+ <div class="UnitDirectories-toggleButtons">
+ <button class="js-showInternalDirectories" data-test-id="internal-directories-toggle"
+ data-gtmc="directories button" aria-label="Show Internal Directories">
+ Show internal
+ </button>
+ <button class="js-expandAllDirectories" data-test-id="directories-toggle"
+ data-gtmc="directories button" aria-label="Expand All Directories">
+ Expand all
+ </button>
+ </div>
+ </div>
+ <table class="UnitDirectories-table UnitDirectories-table--tree js-expandableTable"
+ data-test-id="UnitDirectories-table">
+ <tr class="UnitDirectories-tableHeader UnitDirectories-tableHeader--tree">
+ <th>Path</th>
+ <th class="UnitDirectories-desktopSynopsis">Synopsis</th>
+ </tr>
+ <tr data-aria-controls="cmd-functional-test cmd-httpx cmd-integration-test "
+ class="">
+ <td data-id="cmd" data-aria-owns="cmd-functional-test cmd-httpx cmd-integration-test ">
+ <div class="UnitDirectories-pathCell">
+ <div><button type="button" class="go-Button go-Button--inline UnitDirectories-toggleButton"
+ aria-expanded="false"
+ aria-label="3 more from"
+ data-aria-controls="cmd-functional-test cmd-httpx cmd-integration-test "
+ data-aria-labelledby="cmd-button cmd"
+ data-id="cmd-button">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_right_gm_grey_24dp.svg"
+ alt="">
+ </button><span>cmd</span>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr><tr data-id="cmd-functional-test" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/cmd/functional-test">functional-test</a>
+ <span class="go-Chip go-Chip--inverted">command</span>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="cmd-httpx" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/cmd/httpx">httpx</a>
+ <span class="go-Chip go-Chip--inverted">command</span>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="cmd-integration-test" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/cmd/integration-test">integration-test</a>
+ <span class="go-Chip go-Chip--inverted">command</span>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr>
+ <tr data-aria-controls="common-authprovider common-authprovider/authx common-customextract common-customheader common-customlist common-customports common-fileutil common-hashes common-hashes/jarm common-httputilz common-httpx common-inputformats common-stringz "
+ class="">
+ <td data-id="common" data-aria-owns="common-authprovider common-authprovider/authx common-customextract common-customheader common-customlist common-customports common-fileutil common-hashes common-hashes/jarm common-httputilz common-httpx common-inputformats common-stringz ">
+ <div class="UnitDirectories-pathCell">
+ <div><button type="button" class="go-Button go-Button--inline UnitDirectories-toggleButton"
+ aria-expanded="false"
+ aria-label="13 more from"
+ data-aria-controls="common-authprovider common-authprovider/authx common-customextract common-customheader common-customlist common-customports common-fileutil common-hashes common-hashes/jarm common-httputilz common-httpx common-inputformats common-stringz "
+ data-aria-labelledby="common-button common"
+ data-id="common-button">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_right_gm_grey_24dp.svg"
+ alt="">
+ </button><span>common</span>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr><tr data-id="common-authprovider" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/common/authprovider">authprovider</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis">TODO: This package should be abstracted out to projectdiscovery/utils so it can be shared between httpx, nuclei, and other tools.</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">TODO: This package should be abstracted out to projectdiscovery/utils so it can be shared between httpx, nuclei, and other tools.</td><tr data-id="common-authprovider/authx" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/common/authprovider/authx">authprovider/authx</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="common-customextract" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/common/customextract">customextract</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="common-customheader" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/common/customheader">customheader</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis">Package customheader contains all the functionality to deal with Custom Global Headers</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">Package customheader contains all the functionality to deal with Custom Global Headers</td><tr data-id="common-customlist" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/common/customlist">customlist</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis">Package customlist contains all the functionality to deal with Custom Target List</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">Package customlist contains all the functionality to deal with Custom Target List</td><tr data-id="common-customports" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/common/customports">customports</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis">Package customport contains all the functionality to deal with HTTP ports</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">Package customport contains all the functionality to deal with HTTP ports</td><tr data-id="common-fileutil" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/common/fileutil">fileutil</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis">Package fileutil contains all the functionality related to deal with files</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">Package fileutil contains all the functionality related to deal with files</td><tr data-id="common-hashes" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/common/hashes">hashes</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="common-hashes/jarm" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/common/hashes/jarm">hashes/jarm</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="common-httputilz" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/common/httputilz">httputilz</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis">Package httputilz contains all the functionality related to common HTTP operations, dump, define methods...</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">Package httputilz contains all the functionality related to common HTTP operations, dump, define methods...</td><tr data-id="common-httpx" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/common/httpx">httpx</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis">Package httpx containst the httpx common functionality</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">Package httpx containst the httpx common functionality</td><tr data-id="common-inputformats" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/common/inputformats">inputformats</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis">TODO: This package should be abstracted out to projectdiscovery/utils so it can be shared between httpx, nuclei, and other tools.</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">TODO: This package should be abstracted out to projectdiscovery/utils so it can be shared between httpx, nuclei, and other tools.</td><tr data-id="common-stringz" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/common/stringz">stringz</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis">Package stringz contains a set of utilities to deal with strings</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">Package stringz contains a set of utilities to deal with strings</td></tr>
+ <tr data-aria-controls="examples-simple examples-speed_control "
+ class="">
+ <td data-id="examples" data-aria-owns="examples-simple examples-speed_control ">
+ <div class="UnitDirectories-pathCell">
+ <div><button type="button" class="go-Button go-Button--inline UnitDirectories-toggleButton"
+ aria-expanded="false"
+ aria-label="2 more from"
+ data-aria-controls="examples-simple examples-speed_control "
+ data-aria-labelledby="examples-button examples"
+ data-id="examples-button">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_right_gm_grey_24dp.svg"
+ alt="">
+ </button><span>examples</span>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr><tr data-id="examples-simple" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/examples/simple">simple</a>
+ <span class="go-Chip go-Chip--inverted">command</span>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="examples-speed_control" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/examples/speed_control">speed_control</a>
+ <span class="go-Chip go-Chip--inverted">command</span>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr>
+ <tr data-aria-controls="internal-db internal-pdcp internal-testutils "
+ class="UnitDirectories-internal">
+ <td data-id="internal" data-aria-owns="internal-db internal-pdcp internal-testutils ">
+ <div class="UnitDirectories-pathCell">
+ <div><button type="button" class="go-Button go-Button--inline UnitDirectories-toggleButton UnitDirectories-internal"
+ aria-expanded="false"
+ aria-label="3 more from"
+ data-aria-controls="internal-db internal-pdcp internal-testutils "
+ data-aria-labelledby="internal-button internal"
+ data-id="internal-button">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_right_gm_grey_24dp.svg"
+ alt="">
+ </button><span>internal</span>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr><tr data-id="internal-db" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/internal/db">db</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="internal-pdcp" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/internal/pdcp">pdcp</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="internal-testutils" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/projectdiscovery/httpx@v1.12.0/internal/testutils">testutils</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr>
+ <tr
+ class="">
+ <td data-id="runner" data-aria-owns="">
+ <div class="UnitDirectories-pathCell">
+ <div><a href="/github.com/projectdiscovery/httpx@v1.12.0/runner">runner</a>
+ </div>
+ <div class="UnitDirectories-mobileSynopsis">TODO: move this to internal package</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">TODO: move this to internal package</td></tr></tr>
+ <tr
+ class="">
+ <td data-id="static" data-aria-owns="">
+ <div class="UnitDirectories-pathCell">
+ <div><a href="/github.com/projectdiscovery/httpx@v1.12.0/static">static</a>
+ </div>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr></tr>
+ </table>
+ </div>
+ </div>
+ </div>
+ <div id="showInternal-description" hidden> Click to show internal directories. </div>
+ <div id="hideInternal-description" hidden> Click to hide internal directories. </div>
+</article>
+ <footer class="go-Main-footer"></footer>
+ </main>
+ <footer class="go-Footer">
+ <div class="go-Footer-links">
+ <div class="go-Footer-linkColumn">
+ <a href="https://go.dev/solutions" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Why Go
+ </a>
+ <a href="https://go.dev/solutions/use-cases" class="go-Footer-link"
+ data-gtmc="footer link">
+ Use Cases
+ </a>
+ <a href="https://go.dev/solutions/case-studies" class="go-Footer-link"
+ data-gtmc="footer link">
+ Case Studies
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://learn.go.dev/" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Get Started
+ </a>
+ <a href="https://play.golang.org" class="go-Footer-link" data-gtmc="footer link">
+ Playground
+ </a>
+ <a href="https://tour.golang.org" class="go-Footer-link" data-gtmc="footer link">
+ Tour
+ </a>
+ <a href="https://stackoverflow.com/questions/tagged/go?tab=Newest" class="go-Footer-link"
+ data-gtmc="footer link">
+ Stack Overflow
+ </a>
+ <a href="https://go.dev/help" class="go-Footer-link"
+ data-gtmc="footer link">
+ Help
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://pkg.go.dev" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Packages
+ </a>
+ <a href="/std" class="go-Footer-link" data-gtmc="footer link">
+ Standard Library
+ </a>
+ <a href="/golang.org/x" class="go-Footer-link" data-gtmc="footer link">
+ Sub-repositories
+ </a>
+ <a href="https://pkg.go.dev/about" class="go-Footer-link" data-gtmc="footer link">
+ About Go Packages
+ </a>
+ <a href="/api" class="go-Footer-link" data-gtmc="footer link">
+ pkg.go.dev API
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://go.dev/project" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ About
+ </a>
+ <a href="https://go.dev/dl/" class="go-Footer-link" data-gtmc="footer link">Download</a>
+ <a href="https://go.dev/blog" class="go-Footer-link" data-gtmc="footer link">Blog</a>
+ <a href="https://github.com/golang/go/issues" class="go-Footer-link" data-gtmc="footer link">
+ Issue Tracker
+ </a>
+ <a href="https://go.dev/doc/devel/release.html" class="go-Footer-link"
+ data-gtmc="footer link">
+ Release Notes
+ </a>
+ <a href="https://go.dev/brand" class="go-Footer-link" data-gtmc="footer link">
+ Brand Guidelines
+ </a>
+ <a href="https://go.dev/conduct" class="go-Footer-link" data-gtmc="footer link">
+ Code of Conduct
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://www.twitter.com/golang" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Connect
+ </a>
+ <a href="https://www.twitter.com/golang" class="go-Footer-link" data-gtmc="footer link">
+ Twitter
+ </a>
+ <a href="https://github.com/golang" class="go-Footer-link" data-gtmc="footer link">GitHub</a>
+ <a href="https://invite.slack.golangbridge.org/" class="go-Footer-link"
+ data-gtmc="footer link">
+ Slack
+ </a>
+ <a href="https://reddit.com/r/golang" class="go-Footer-link" data-gtmc="footer link">
+ r/golang
+ </a>
+ <a href="https://www.meetup.com/pro/go" class="go-Footer-link" data-gtmc="footer link">
+ Meetup
+ </a>
+ <a href="https://golangweekly.com/" class="go-Footer-link" data-gtmc="footer link">
+ Golang Weekly
+ </a>
+ </div>
+ </div>
+ <div class="go-Footer-bottom">
+ <img class="go-Footer-gopher" width="1431" height="901"
+ src="/static/shared/gopher/pilot-bust-1431x901.svg" alt="Gopher in flight goggles">
+ <ul class="go-Footer-listRow">
+ <li class="go-Footer-listItem">
+ <a href="https://go.dev/copyright" data-gtmc="footer link">Copyright</a>
+ </li>
+ <li class="go-Footer-listItem">
+ <a href="https://go.dev/tos" data-gtmc="footer link">Terms of Service</a>
+ </li>
+ <li class="go-Footer-listItem">
+ <a href="http://www.google.com/intl/en/policies/privacy/" data-gtmc="footer link"
+ target="_blank" rel="noopener">
+ Privacy Policy
+ </a>
+ </li>
+ <li class="go-Footer-listItem">
+ <a href="https://go.dev/s/pkgsite-feedback" target="_blank" rel="noopener"
+ data-gtmc="footer link">
+ Report an Issue
+ </a>
+ </li>
+ <li class="go-Footer-listItem">
+ <button class="go-Button go-Button--text go-Footer-toggleTheme js-toggleTheme" aria-label="Theme Toggle">
+ <img data-value="auto" class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/brightness_6_gm_grey_24dp.svg" alt="System theme">
+ <img data-value="dark" class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/brightness_2_gm_grey_24dp.svg" alt="Dark theme">
+ <img data-value="light" class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/light_mode_gm_grey_24dp.svg" alt="Light theme">
+ <p> Theme Toggle </p>
+ </button>
+ </li>
+ <li class="go-Footer-listItem">
+ <button class="go-Button go-Button--text go-Footer-keyboard js-openShortcuts" aria-label="Shorcuts Modal">
+ <img class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/keyboard_grey_24dp.svg" alt="">
+ <p> Shortcuts Modal </p>
+ </button>
+ </li>
+ </ul>
+ <a class="go-Footer-googleLogo" href="https://google.com" target="_blank"rel="noopener"
+ data-gtmc="footer link">
+ <img class="go-Footer-googleLogoImg" height="24" width="72"
+ src="/static/shared/logo/google-white.svg" alt="Google logo">
+ </a>
+ </div>
+ </footer>
+ <dialog id="jump-to-modal" class="JumpDialog go-Modal go-Modal--md js-modal">
+ <form method="dialog" data-gmtc="jump to form" aria-label="Jump to Identifier">
+ <div class="Dialog-title go-Modal-header">
+ <h2>Jump to</h2>
+ <button
+ class="go-Button go-Button--inline"
+ type="button"
+ data-modal-close
+ data-gtmc="modal button"
+ aria-label="Close"
+ >
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/close_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </div>
+ <div class="JumpDialog-filter">
+ <input class="JumpDialog-input go-Input" autocomplete="off" type="text">
+ </div>
+ <div class="JumpDialog-body go-Modal-body">
+ <div class="JumpDialog-list"></div>
+ </div>
+ <div class="go-Modal-actions">
+ <button class="go-Button" data-test-id="close-dialog">Close</button>
+ </div>
+ </form>
+ </dialog>
+ <dialog class="ShortcutsDialog go-Modal go-Modal--sm js-modal">
+ <form method="dialog">
+ <div class="go-Modal-header">
+ <h2>Keyboard shortcuts</h2>
+ <button
+ class="go-Button go-Button--inline"
+ type="button"
+ data-modal-close
+ data-gtmc="modal button"
+ aria-label="Close"
+ >
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/close_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </div>
+ <div class="go-Modal-body">
+ <table>
+ <tbody>
+ <tr><td class="ShortcutsDialog-key">
+ <strong>?</strong></td><td> : This menu</td>
+ </tr>
+ <tr><td class="ShortcutsDialog-key">
+ <strong>/</strong></td><td> : Search site</td>
+ </tr>
+ <tr><td class="ShortcutsDialog-key">
+ <strong>f</strong> or <strong>F</strong></td><td> : Jump to</td>
+ </tr>
+ <tr>
+ <td class="ShortcutsDialog-key"><strong>y</strong> or <strong>Y</strong></td>
+ <td> : Canonical URL</td>
+ </tr>
+ </tbody>
+ </table>
+ </div>
+ <div class="go-Modal-actions">
+ <button class="go-Button" data-test-id="close-dialog">Close</button>
+ </div>
+ </form>
+ </dialog>
+ <section class="Cookie-notice js-cookieNotice">
+ <div>go.dev uses cookies from Google to deliver and enhance the quality of its services and to
+ analyze traffic. <a target=_blank href="https://policies.google.com/technologies/cookies">Learn more.</a></div>
+ <div><button class="go-Button">Okay</button></div>
+ </section>
+ <div class="js-canonicalURLPath" data-canonical-url-path="/github.com/projectdiscovery/httpx@v1.12.0" hidden></div>
+ <div class="js-playgroundVars" data-modulepath="github.com/projectdiscovery/httpx" data-version="v1.12.0" hidden></div>
+ </body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "id": 41000002,
+  "name": "widget",
+  "full_name": "pywidget/widget",
+  "owner": {"login": "pywidget"},
+  "html_url": "https://github.com/pywidget/widget",
+  "description": "Widgets for Python GUIs",
+  "homepage": "https://widget.readthedocs.io",
+  "fork": false,
+  "archived": false,
+  "stargazers_count": 900,
+  "default_branch": "main"
+}

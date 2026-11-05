@@ -267,7 +267,7 @@ func (c *crawler) processItem(item queueItem) {
 	c.handleFetchedPage(item, cacheKey, page, fetchSource, contentIsHTML, rawHTML, doc)
 }
 
-func (c *crawler) handleFetchedPage(item queueItem, cacheKey string, page *scrape.Page, fetchSource string, contentIsHTML bool, rawHTML string, doc *goquery.Document) {
+func (c *crawler) handleFetchedPage(item queueItem, cacheKey string, page *scrape.Page, fetchSource scrape.Source, contentIsHTML bool, rawHTML string, doc *goquery.Document) {
 	var links []string
 	linksKnown := !contentIsHTML
 	if contentIsHTML {
@@ -294,7 +294,7 @@ func (c *crawler) handleFetchedPage(item queueItem, cacheKey string, page *scrap
 
 func (c *crawler) processCachedItem(item queueItem, cacheKey string) bool {
 	cached, source, links, linksKnown := c.pc.GetCrawl(cacheKey)
-	if cached == nil || scrape.CacheStaleForBrowser(source, c.scraper.HasBrowser()) {
+	if cached == nil || !c.scraper.ServeFromCache(source) {
 		return false
 	}
 	// A page-only entry from before link caching (or from a regular scrape)
@@ -322,7 +322,7 @@ func (c *crawler) processCachedItem(item queueItem, cacheKey string) bool {
 func (c *crawler) cachedFallback(item queueItem, cacheKey string) (*scrape.Page, bool) {
 	cached, source, _, linksKnown := c.pc.GetCrawl(cacheKey)
 	if cached == nil || linksKnown || item.depth >= c.opts.Depth ||
-		scrape.CacheStaleForBrowser(source, c.scraper.HasBrowser()) {
+		!c.scraper.ServeFromCache(source) {
 		return nil, false
 	}
 	return cached, true

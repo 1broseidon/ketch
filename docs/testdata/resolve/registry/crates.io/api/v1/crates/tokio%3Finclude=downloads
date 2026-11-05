@@ -1,0 +1,19 @@
+{
+ "crate": {
+  "id": "tokio",
+  "name": "tokio",
+  "description": "An event-driven, non-blocking I/O platform for writing asynchronous I/O\nbacked applications.\n",
+  "homepage": "https://tokio.rs",
+  "documentation": null,
+  "repository": "https://github.com/tokio-rs/tokio",
+  "max_stable_version": null,
+  "max_version": "0.0.0",
+  "newest_version": "0.0.0",
+  "default_version": "1.54.1",
+  "recent_downloads": 274400094,
+  "downloads": 1111811459
+ },
+ "versions": null,
+ "keywords": [],
+ "categories": []
+}

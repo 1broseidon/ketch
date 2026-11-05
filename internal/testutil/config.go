@@ -17,5 +17,6 @@ func SetIsolatedConfigHome(t testing.TB) string {
 	t.Setenv("LOCALAPPDATA", dir)
 	t.Setenv("USERPROFILE", dir)
 	t.Setenv("KETCH_TAGS_PATH", filepath.Join(dir, "tags.db"))
+	t.Setenv("KETCH_DOCS_INDEX_PATH", filepath.Join(dir, "docs-index.db"))
 	return dir
 }

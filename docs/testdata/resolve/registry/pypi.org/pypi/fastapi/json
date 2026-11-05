@@ -1,0 +1,75 @@
+{
+ "info": {
+  "name": "fastapi",
+  "version": "0.162.0",
+  "summary": "FastAPI framework, high performance, easy to learn, fast to code, ready for production",
+  "home_page": null,
+  "docs_url": null,
+  "project_urls": {
+   "Changelog": "https://fastapi.tiangolo.com/release-notes/",
+   "Documentation": "https://fastapi.tiangolo.com/",
+   "Homepage": "https://github.com/fastapi/fastapi",
+   "Issues": "https://github.com/fastapi/fastapi/issues",
+   "Repository": "https://github.com/fastapi/fastapi"
+  }
+ },
+ "last_serial": 42655285,
+ "releases": {
+  "0.97.0": [
+   {
+    "filename": "fastapi-0.97.0-py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "py3",
+    "size": 56972,
+    "upload_time_iso_8601": "2023-06-11T22:55:42.114180Z",
+    "url": "https://files.pythonhosted.org/packages/04/af/1749185fe149662b1f0af3bea74ab0620294752366306cd6098fdb52eafa/fastapi-0.97.0-py3-none-any.whl",
+    "yanked": false
+   }
+  ],
+  "0.98.0": [
+   {
+    "filename": "fastapi-0.98.0-py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "py3",
+    "size": 56987,
+    "upload_time_iso_8601": "2023-06-22T18:09:10.723237Z",
+    "url": "https://files.pythonhosted.org/packages/50/2c/6b94f191519dcc8190e78aff7bcb12c58329d1ab4c8aa11f2def9c214599/fastapi-0.98.0-py3-none-any.whl",
+    "yanked": false
+   }
+  ],
+  "0.99.0": [
+   {
+    "filename": "fastapi-0.99.0-py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "py3",
+    "size": 58222,
+    "upload_time_iso_8601": "2023-06-30T19:03:01.435483Z",
+    "url": "https://files.pythonhosted.org/packages/8c/fa/367b05a05fbb0c8466ef2363153b18dc64356b363aa1ad4a79e3b0b79d83/fastapi-0.99.0-py3-none-any.whl",
+    "yanked": false
+   }
+  ],
+  "0.99.1": [
+   {
+    "filename": "fastapi-0.99.1-py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "py3",
+    "size": 58366,
+    "upload_time_iso_8601": "2023-07-02T16:04:01.515486Z",
+    "url": "https://files.pythonhosted.org/packages/73/eb/03b691afa0b5ffa1e93ed34f97ec1e7855c758efbdcfb16c209af0b0506b/fastapi-0.99.1-py3-none-any.whl",
+    "yanked": false
+   }
+  ]
+ },
+ "urls": [
+  {
+   "filename": "fastapi-0.162.0-py3-none-any.whl",
+   "packagetype": "bdist_wheel",
+   "python_version": "py3",
+   "size": 148912,
+   "upload_time_iso_8601": "2026-10-23T18:47:31.734776Z",
+   "url": "https://files.pythonhosted.org/packages/b4/4f/3f2c25c9b43970b5e9a08beb5e04776247edea684ddc0930f4f02f0bb6cb/fastapi-0.162.0-py3-none-any.whl",
+   "yanked": false
+  }
+ ],
+ "vulnerabilities": []
+}

@@ -1,0 +1,71 @@
+{
+ "info": {
+  "name": "react",
+  "version": "4.3.0",
+  "summary": "Server-side rendering of React components with data from your Python system",
+  "home_page": "https://github.com/markfinger/python-react",
+  "docs_url": null,
+  "project_urls": {
+   "Homepage": "https://github.com/markfinger/python-react"
+  }
+ },
+ "last_serial": 4351332,
+ "releases": {
+  "4.1.1": [
+   {
+    "filename": "react-4.1.1.tar.gz",
+    "packagetype": "sdist",
+    "python_version": "source",
+    "size": 10077,
+    "upload_time_iso_8601": "2017-08-09T00:16:24.573055Z",
+    "url": "https://files.pythonhosted.org/packages/cb/5d/d095d8665c0af60816f1594fbd2c82bd629bb43dca4887427f87fdaec999/react-4.1.1.tar.gz",
+    "yanked": false
+   }
+  ],
+  "4.2.0": [
+   {
+    "filename": "react-4.2.0.tar.gz",
+    "packagetype": "sdist",
+    "python_version": "source",
+    "size": 10158,
+    "upload_time_iso_8601": "2018-07-17T00:35:31.243971Z",
+    "url": "https://files.pythonhosted.org/packages/a6/4a/d3690949f7ca405a9c04d14c1a3f5319477f58a8535d3fd9c8b3e8cdfb8a/react-4.2.0.tar.gz",
+    "yanked": false
+   }
+  ],
+  "4.2.1": [
+   {
+    "filename": "react-4.2.1.tar.gz",
+    "packagetype": "sdist",
+    "python_version": "source",
+    "size": 10191,
+    "upload_time_iso_8601": "2018-07-17T00:52:43.015027Z",
+    "url": "https://files.pythonhosted.org/packages/47/96/999837ec4909bc0561ae77e160d86121856646aa43aece09a99c2194729a/react-4.2.1.tar.gz",
+    "yanked": false
+   }
+  ],
+  "4.3.0": [
+   {
+    "filename": "react-4.3.0.tar.gz",
+    "packagetype": "sdist",
+    "python_version": "source",
+    "size": 10278,
+    "upload_time_iso_8601": "2018-10-08T09:55:41.421714Z",
+    "url": "https://files.pythonhosted.org/packages/c1/bf/d8489400d3e46a4629c57e032b2a94e1f866e434e374411bdf591c459b8a/react-4.3.0.tar.gz",
+    "yanked": false
+   }
+  ]
+ },
+ "urls": [
+  {
+   "filename": "react-4.3.0.tar.gz",
+   "packagetype": "sdist",
+   "python_version": "source",
+   "size": 10278,
+   "upload_time_iso_8601": "2018-10-08T09:55:41.421714Z",
+   "url": "https://files.pythonhosted.org/packages/c1/bf/d8489400d3e46a4629c57e032b2a94e1f866e434e374411bdf591c459b8a/react-4.3.0.tar.gz",
+   "yanked": false
+  }
+ ],
+ "vulnerabilities": []
+}

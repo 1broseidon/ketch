@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>anyhow - Rust</title>
+<meta name="generator" content="rustdoc" />
+<meta name="description" content="github crates-io docs-rs" />
+<meta name="rustdoc-vars" data-root-path="../" data-static-root-path="/-/rustdoc.static/" data-current-crate="anyhow" data-themes="" data-resource-suffix="-20260928-1.101.0-nightly-c1070d693" data-rustdoc-version="1.101.0-nightly (c1070d693 2026-09-28)" data-channel="nightly" data-search-js="search-b167f383.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-170eb4bf.js" />
+<script src="/-/rustdoc.static/storage-41dd4d93.js"></script>
+<script src="../crates-20260928-1.101.0-nightly-c1070d693.js"></script>
+<script src="/-/rustdoc.static/main-1814ead3.js"></script>
+<script src="/-/static/menu.js?0-0-0-435e529e59073c986fa6c2051a1da284fa8b4d8c-2026-10-12"></script>
+<script src="/-/static/index.js?0-0-0-435e529e59073c986fa6c2051a1da284fa8b4d8c-2026-10-12"></script>
+</head>
+<body>
+<h1>Crate anyhow Copy item path</h1>
+<a href="/">Docs.rs</a>
+<a href="#">anyhow-1.0.104</a>
+<a href="/anyhow/1.0.104/anyhow/">Permalink</a>
+<a href="/crate/anyhow/latest">Docs.rs crate page</a>
+<a href="https://spdx.org/licenses/MIT">MIT</a>
+<a href="https://spdx.org/licenses/Apache-2.0">Apache-2.0</a>
+<a href="https://github.com/dtolnay/anyhow">Repository</a>
+<a href="https://crates.io/crates/anyhow">crates.io</a>
+<a href="/crate/anyhow/latest/source/">Source</a>
+<a href="https://crates.io/users/dtolnay">dtolnay</a>
+<a href="/futures/^0.3/">futures ^0.3 dev</a>
+<a href="/rustversion/^1.0.6/">rustversion ^1.0.6 dev</a>
+<a href="/syn/^3/">syn ^3 dev</a>
+<a href="https://github.com/dtolnay/thiserror">thiserror</a>
+</body>
+</html>

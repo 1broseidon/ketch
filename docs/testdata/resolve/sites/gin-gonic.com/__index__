@@ -1,0 +1,30 @@
+<!doctype html>
+<html><head>
+<title>Gin Web Framework | Gin Web Framework</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="Astro v7.3.1">
+<meta name="generator" content="Starlight v0.42.0">
+<meta property="og:title" content="Gin Web Framework">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://gin-gonic.com/">
+<meta property="og:locale" content="en">
+<meta property="og:description" content="The fastest full-featured web framework for Go. Crystal clear.">
+<meta property="og:site_name" content="Gin Web Framework">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="description" content="The fastest full-featured web framework for Go. Crystal clear.">
+<script src="/_astro/page.Dwipeu-R.js"></script>
+<script src="/_astro/Search.astro_astro_type_script_index_0_lang.Bbh0UEtI.js"></script>
+</head><body>
+<a class="sl-skip-link astro-qb7clj6f" href="#_top">Skip to content</a>
+<a href="/en" class="site-title sl-flex astro-6rvad3va">Gin Web Framework</a>
+<a href="https://github.com/gin-gonic/gin" rel="me" class="sl-flex astro-n2mnl6yq">GitHub</a>
+<a class="sl-link-button not-content primary astro-2qjbuh7f astro-dcqstdaq" href="/en/docs/">Read the docs</a>
+<a class="sl-link-button not-content minimal astro-2qjbuh7f astro-dcqstdaq" href="https://github.com/gin-gonic/gin/releases">Download</a>
+<a class="sl-anchor-link" href="#what-is-gin">Section titled “What is Gin?”</a>
+<a class="sl-anchor-link" href="#how-to-use-gin">Section titled “How to use Gin?”</a>
+<a href="https://github.com/gin-gonic/examples">examples</a>
+<a href="/en/docs/users">Gin users</a>
+<a class="sl-anchor-link" href="#how-to-contribute-to-gin">Section titled “How to contribute to Gin?”</a>
+<a href="https://github.com/gin-gonic/website/edit/master/src/content/docs/index.mdx" class="sl-flex print:hidden astro-qlekgd3o">Edit page</a>
+</body></html>

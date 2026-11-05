@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to Click &#8212; Click Documentation (8.5.x)</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/click.css?v=66889b38" />
+    <script src="_static/documentation_options.js?v=2a4eea78"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="canonical" href="https://click.palletsprojects.com/en/stable/" />
+    <link rel="icon" href="_static/click-icon.svg"/>
+    <link rel="index" title="Index" href="genindex/" />
+    <link rel="search" title="Search" href="search/" />
+    <link rel="next" title="Frequently Asked Questions" href="faqs/" /> 
+  <script async type="text/javascript" src="/_/static/javascript/readthedocs-addons.js"></script><meta name="readthedocs-project-slug" content="pallets-click" /><meta name="readthedocs-version-slug" content="stable" /><meta name="readthedocs-resolver-filename" content="/" /><meta name="readthedocs-http-status" content="200" /></head><body>
+    <div class="document">
+      <div class="body" role="main">
+<section id="welcome-to-click">
+<h1>Welcome to Click<a class="headerlink" href="#welcome-to-click" title="Link to this heading">¶</a></h1>
+<p>Click is a Python package for creating beautiful command line interfaces
+in a composable way with as little code as necessary.  It’s the “Command
+Line Interface Creation Kit”.  It’s highly configurable but comes with
+sensible defaults out of the box.</p>
+<section id="tutorials">
+<h2>Tutorials<a class="headerlink" href="#tutorials" title="Link to this heading">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="virtualenv/">Virtualenv</a></li>
+</ul>
+</div>
+</section>
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/">API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/#decorators">Decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/#testing">Testing</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+      </div>
+    </div>
+    <div class="footer" role="contentinfo">
+      &#169; Copyright 2014 Pallets.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

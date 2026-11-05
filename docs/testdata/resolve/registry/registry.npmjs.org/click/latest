@@ -1,0 +1,13 @@
+{
+ "name": "click",
+ "version": "0.1.0",
+ "description": "Simulate mouse events",
+ "repository": {
+  "url": "git://github.com/uggedal/click.git",
+  "type": "git"
+ },
+ "bugs": {
+  "url": "https://github.com/uggedal/click/issues"
+ },
+ "license": "MIT"
+}

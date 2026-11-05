@@ -1,0 +1,69 @@
+[
+  {
+    "version": "dev",
+    "title": "dev",
+    "aliases": []
+  },
+  {
+    "version": "15.0",
+    "title": "15.0",
+    "aliases": [
+      "latest"
+    ]
+  },
+  {
+    "version": "14.0",
+    "title": "14.0",
+    "aliases": []
+  },
+  {
+    "version": "13.0",
+    "title": "13.0",
+    "aliases": []
+  },
+  {
+    "version": "12.1",
+    "title": "12.1",
+    "aliases": []
+  },
+  {
+    "version": "12.0",
+    "title": "12.0",
+    "aliases": []
+  },
+  {
+    "version": "11.0",
+    "title": "11.0",
+    "aliases": []
+  },
+  {
+    "version": "10.4",
+    "title": "10.4",
+    "aliases": []
+  },
+  {
+    "version": "10.3",
+    "title": "10.3",
+    "aliases": []
+  },
+  {
+    "version": "10.2",
+    "title": "10.2",
+    "aliases": []
+  },
+  {
+    "version": "10.1",
+    "title": "10.1",
+    "aliases": []
+  },
+  {
+    "version": "10.0",
+    "title": "10.0",
+    "aliases": []
+  },
+  {
+    "version": "9.3",
+    "title": "9.3",
+    "aliases": []
+  }
+]

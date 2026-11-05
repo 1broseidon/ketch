@@ -1,0 +1,85 @@
+{
+ "items": [
+  {
+   "packagePath": "github.com/spf13/cobra",
+   "modulePath": "github.com/spf13/cobra",
+   "version": "v1.10.2",
+   "synopsis": "Package cobra is a commander providing a simple interface to create powerful modern CLI interfaces.",
+   "importedByCounts": {
+    "packages": 195884,
+    "modules": 99323
+   }
+  },
+  {
+   "packagePath": "github.com/cosmos/cosmos-sdk/server",
+   "modulePath": "github.com/cosmos/cosmos-sdk",
+   "version": "v0.55.0",
+   "synopsis": "The commands from the SDK are defined with `cobra` and configured with the `viper` package.",
+   "importedByCounts": {
+    "packages": 4633,
+    "modules": 1971
+   }
+  },
+  {
+   "packagePath": "github.com/spf13/cobra/doc",
+   "modulePath": "github.com/spf13/cobra",
+   "version": "v1.10.2",
+   "synopsis": "",
+   "importedByCounts": {
+    "packages": 3177,
+    "modules": 3604
+   }
+  },
+  {
+   "packagePath": "github.com/muesli/mango-cobra",
+   "modulePath": "github.com/muesli/mango-cobra",
+   "version": "v1.3.0",
+   "synopsis": "",
+   "importedByCounts": {
+    "packages": 120,
+    "modules": 169
+   }
+  },
+  {
+   "packagePath": "github.com/charmbracelet/fang",
+   "modulePath": "github.com/charmbracelet/fang",
+   "version": "v1.0.0",
+   "synopsis": "Package fang provides styling for cobra commands.",
+   "importedByCounts": {
+    "packages": 559,
+    "modules": 601
+   }
+  },
+  {
+   "packagePath": "github.com/tj/cobra",
+   "modulePath": "github.com/tj/cobra",
+   "version": "v0.0.0-20160702192511-5e2db986a612",
+   "synopsis": "Package cobra is a commander providing a simple interface to create powerful modern CLI interfaces.",
+   "importedByCounts": {
+    "packages": 508,
+    "modules": 31
+   }
+  },
+  {
+   "packagePath": "github.com/withfig/autocomplete-tools/integrations/cobra",
+   "modulePath": "github.com/withfig/autocomplete-tools/integrations/cobra",
+   "version": "v1.2.1",
+   "synopsis": "",
+   "importedByCounts": {
+    "packages": 77,
+    "modules": 87
+   }
+  },
+  {
+   "packagePath": "github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper",
+   "modulePath": "github.com/jenkins-x/jx-helpers/v3",
+   "version": "v3.11.9",
+   "synopsis": "",
+   "importedByCounts": {
+    "packages": 256,
+    "modules": 31
+   }
+  }
+ ],
+ "total": 1000
+}

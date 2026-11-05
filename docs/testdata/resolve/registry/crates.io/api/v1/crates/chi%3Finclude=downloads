@@ -1,0 +1,15 @@
+{
+ "crate": {
+  "id": "chi",
+  "name": "chi",
+  "description": "A safe, understandable, & lightning-fast distributed version control system (DVCS).",
+  "homepage": null,
+  "documentation": null,
+  "repository": null,
+  "max_stable_version": null,
+  "max_version": "0.0.0",
+  "newest_version": "0.0.0",
+  "default_version": "0.0.1",
+  "recent_downloads": 2
+ }
+}

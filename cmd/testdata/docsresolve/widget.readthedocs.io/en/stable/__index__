@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Widget 2.4 documentation</title>
+<meta name="description" content="Widget: widgets for Python GUIs.">
+</head>
+<body>
+<div class="sidebar">
+<h3>Navigation</h3>
+<ul>
+<li><a href="installation/">Installation</a></li>
+<li><a href="themes/">Configuring themes</a></li>
+<li><a href="api/">API reference</a></li>
+</ul>
+<h3>Versions</h3>
+<ul>
+<li><a href="/en/latest/">latest</a></li>
+<li><a href="/en/stable/">stable</a></li>
+<li><a href="/en/2.4/">2.4</a></li>
+<li><a href="/en/2.3/">2.3</a></li>
+</ul>
+<p><a href="https://github.com/pywidget/widget">Source on GitHub</a></p>
+</div>
+<div class="body">
+<h1>Widget</h1>
+<p>Widget builds desktop GUIs in Python from small composable widgets, with themes, layouts and an event loop that stays out of your way.</p>
+<p>This documentation covers installation, configuring themes and the full API reference for every widget class.</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+ "id": 1362490,
+ "name": "requests",
+ "full_name": "psf/requests",
+ "html_url": "https://github.com/psf/requests",
+ "description": "A simple, yet elegant, HTTP library.",
+ "fork": false,
+ "homepage": "https://requests.readthedocs.io/en/latest/",
+ "language": "Python",
+ "stargazers_count": 54728,
+ "archived": false
+}

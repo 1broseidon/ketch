@@ -1,0 +1,130 @@
+<!doctype html>
+<html><head>
+<title>gin command - github.com/codegangsta/gin - Go Packages</title>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta class="js-gtmID" data-gtmid="GTM-W8MVQXG">
+</head><body>
+<a class="go-SurveyBanner-link js-surveyBannerLink" href="https://blink.qualtrics.com/jfe/form/SV_ba8fa1ZcSQQdTRs?s=p" rel="noopener">Take the 2026 Go Developer Survey</a>
+<a href="https://go.dev/" class="js-headerLogo"></a>
+<a class="skip-to-content-link" aria-label="Skip to main content" href="#main-content">Skip to Main Content</a>
+<a class="js-desktop-menu-hover" href="#">Why Go</a>
+<a href="https://go.dev/solutions/case-studies">Case Studies</a>
+<a href="https://go.dev/solutions/use-cases">Use Cases</a>
+<a href="https://go.dev/security/">Security</a>
+<a href="https://go.dev/learn/">Learn</a>
+<a class="js-desktop-menu-hover" href="#">Docs</a>
+<a href="https://go.dev/doc/effective_go">Effective Go</a>
+<a href="https://go.dev/doc/">Go User Manual</a>
+<a href="https://pkg.go.dev/std">Standard library</a>
+<a href="https://go.dev/doc/devel/release">Release Notes</a>
+<a href="/api">API</a>
+<a href="/">Packages</a>
+<a class="js-desktop-menu-hover" href="#">Community</a>
+<a href="https://go.dev/talks/">Recorded Talks</a>
+<a href="https://www.meetup.com/pro/go">Meetups</a>
+<a href="https://github.com/golang/go/wiki/Conferences">Conferences</a>
+<a href="https://go.dev/blog">Go blog</a>
+<a href="https://go.dev/help">Go project</a>
+<a class="go-Header-socialIcon" aria-label="Get connected with google-groups (Opens in new window)" title="Get connected with google-groups (Opens in new window)" href="https://groups.google.com/g/golang-nuts"></a>
+<a class="go-Header-socialIcon" aria-label="Get connected with github (Opens in new window)" title="Get connected with github (Opens in new window)" href="https://github.com/golang"></a>
+<a class="go-Header-socialIcon" aria-label="Get connected with twitter (Opens in new window)" title="Get connected with twitter (Opens in new window)" href="https://twitter.com/golang"></a>
+<a class="go-Header-socialIcon" aria-label="Get connected with reddit (Opens in new window)" title="Get connected with reddit (Opens in new window)" href="https://www.reddit.com/r/golang/"></a>
+<a class="go-Header-socialIcon" aria-label="Get connected with slack (Opens in new window)" title="Get connected with slack (Opens in new window)" href="https://invite.slack.golangbridge.org/"></a>
+<a class="go-Header-socialIcon" aria-label="Get connected with stack-overflow (Opens in new window)" title="" href="https://stackoverflow.com/collectives/go"></a>
+<a href="https://go.dev/"></a>
+<a href="#">Why Go</a>
+<a href="#">Why Go</a>
+<a href="https://go.dev/solutions/case-studies">Case Studies</a>
+<a href="https://go.dev/solutions/use-cases">Use Cases</a>
+<a href="https://go.dev/security/">Security</a>
+<a href="https://go.dev/learn/">Learn</a>
+<a href="#">Docs</a>
+<a href="#">Docs</a>
+<a href="https://go.dev/doc/effective_go">Effective Go</a>
+<a href="https://go.dev/doc/">Go User Manual</a>
+<a href="https://pkg.go.dev/std">Standard library</a>
+<a href="https://go.dev/doc/devel/release">Release Notes</a>
+<a href="/api">API</a>
+<a href="/">Packages</a>
+<a href="#">Community</a>
+<a href="#">Community</a>
+<a href="https://go.dev/talks/">Recorded Talks</a>
+<a href="https://www.meetup.com/pro/go">Meetups</a>
+<a href="https://github.com/golang/go/wiki/Conferences">Conferences</a>
+<a href="https://go.dev/blog">Go blog</a>
+<a href="https://go.dev/help">Go project</a>
+<a class="go-Header-socialIcon" href="https://groups.google.com/g/golang-nuts"></a>
+<a class="go-Header-socialIcon" href="https://github.com/golang"></a>
+<a class="go-Header-socialIcon" href="https://twitter.com/golang"></a>
+<a class="go-Header-socialIcon" href="https://www.reddit.com/r/golang/"></a>
+<a class="go-Header-socialIcon" href="https://invite.slack.golangbridge.org/"></a>
+<a class="go-Header-socialIcon" href="https://stackoverflow.com/collectives/go"></a>
+<a href="/">Discover Packages</a>
+<a href="/github.com/codegangsta/gin@v0.0.0-20230218063734-2c98d96c9244">github.com/codegangsta/gin</a>
+<a class="go-Main-headerLogo" href="https://go.dev/" aria-label="Link to Go Homepage"></a>
+<a href="?tab=versions" aria-label="Version: v0.0.0-...-2c98d96">Version: v0.0.0-...-2c98d96</a>
+<a href="/github.com/codegangsta/gin" aria-label="Go to Latest Version">Go to latest</a>
+<a href="/github.com/codegangsta/gin?tab=licenses">MIT</a>
+<a href="/github.com/codegangsta/gin?tab=imports" aria-label="Imports: 15">Imports: 15</a>
+<a href="/github.com/codegangsta/gin?tab=importedby" aria-label="Imported By: 0">Imported by: 0</a>
+<a href="/about#best-practices">Learn more about best practices</a>
+<a href="https://github.com/codegangsta/gin" title="https://github.com/codegangsta/gin" rel="noopener">github.com/codegangsta/gin</a>
+<a href="https://deps.dev/go/github.com%2Fcodegangsta%2Fgin/v0.0.0-20230218063734-2c98d96c9244" title="View this module on Open Source Insights" rel="noopener">Open Source Insights</a>
+<a href="#section-readme">README</a>
+<a href="#readme-installation">Installation</a>
+<a href="#readme-basic-usage">Basic usage</a>
+<a href="#readme-supporting-gin-in-your-web-app">Supporting Gin in Your Web app</a>
+<a href="#readme-using-flags">Using flags?</a>
+<a href="#section-documentation">Documentation</a>
+<a href="#section-sourcefiles">Source Files</a>
+<a href="#section-directories">Directories</a>
+<a class="UnitReadme-idLink" href="#section-readme" title="Go to Readme" aria-label="Go to Readme">¶</a>
+<a href="https://app.wercker.com/project/bykey/f413ccbd85cfc4a58a37f03dd7aaa87e" rel="nofollow"></a>
+<a href="http://github.com/codegangsta/martini" rel="nofollow">Martini</a>
+<a href="https://godoc.org/flag" rel="nofollow">flags</a>
+<a href="https://github.com/namsral/flag" rel="nofollow">github.com/namsral/flag</a>
+<a href="http://stackoverflow.com/questions/24873883/organizing-environment-variables-golang/28160665#28160665" rel="nofollow">this post</a>
+<a href="https://github.com/peak6/envflag" rel="nofollow">github.com/peak6/envflag</a>
+<a class="UnitDoc-idLink" href="#section-documentation" title="Go to Documentation" aria-label="Go to Documentation">¶</a>
+<a class="UnitFiles-idLink" href="#section-sourcefiles" title="Go to Source Files" aria-label="Go to Source Files">¶</a>
+<a href="https://github.com/codegangsta/gin/tree/2c98d96c9244" rel="noopener">View all Source files</a>
+<a href="https://github.com/codegangsta/gin/blob/2c98d96c9244/main.go" rel="noopener" title="main.go">main.go</a>
+<a class="UnitDirectories-idLink" href="#section-directories" title="Go to Directories" aria-label="Go to Directories">¶</a>
+<a href="/github.com/codegangsta/gin@v0.0.0-20230218063734-2c98d96c9244/lib">lib</a>
+<a href="/github.com/codegangsta/gin@v0.0.0-20230218063734-2c98d96c9244/lib/test_fixtures/build_success">test_fixtures/build_success</a>
+<a href="https://go.dev/solutions" class="go-Footer-link go-Footer-link--primary">Why Go</a>
+<a href="https://go.dev/solutions/use-cases" class="go-Footer-link">Use Cases</a>
+<a href="https://go.dev/solutions/case-studies" class="go-Footer-link">Case Studies</a>
+<a href="https://learn.go.dev/" class="go-Footer-link go-Footer-link--primary">Get Started</a>
+<a href="https://play.golang.org" class="go-Footer-link">Playground</a>
+<a href="https://tour.golang.org" class="go-Footer-link">Tour</a>
+<a href="https://stackoverflow.com/questions/tagged/go?tab=Newest" class="go-Footer-link">Stack Overflow</a>
+<a href="https://go.dev/help" class="go-Footer-link">Help</a>
+<a href="https://pkg.go.dev" class="go-Footer-link go-Footer-link--primary">Packages</a>
+<a href="/std" class="go-Footer-link">Standard Library</a>
+<a href="/golang.org/x" class="go-Footer-link">Sub-repositories</a>
+<a href="https://pkg.go.dev/about" class="go-Footer-link">About Go Packages</a>
+<a href="/api" class="go-Footer-link">pkg.go.dev API</a>
+<a href="https://go.dev/project" class="go-Footer-link go-Footer-link--primary">About</a>
+<a href="https://go.dev/dl/" class="go-Footer-link">Download</a>
+<a href="https://go.dev/blog" class="go-Footer-link">Blog</a>
+<a href="https://github.com/golang/go/issues" class="go-Footer-link">Issue Tracker</a>
+<a href="https://go.dev/doc/devel/release.html" class="go-Footer-link">Release Notes</a>
+<a href="https://go.dev/brand" class="go-Footer-link">Brand Guidelines</a>
+<a href="https://go.dev/conduct" class="go-Footer-link">Code of Conduct</a>
+<a href="https://www.twitter.com/golang" class="go-Footer-link go-Footer-link--primary">Connect</a>
+<a href="https://www.twitter.com/golang" class="go-Footer-link">Twitter</a>
+<a href="https://github.com/golang" class="go-Footer-link">GitHub</a>
+<a href="https://invite.slack.golangbridge.org/" class="go-Footer-link">Slack</a>
+<a href="https://reddit.com/r/golang" class="go-Footer-link">r/golang</a>
+<a href="https://www.meetup.com/pro/go" class="go-Footer-link">Meetup</a>
+<a href="https://golangweekly.com/" class="go-Footer-link">Golang Weekly</a>
+<a href="https://go.dev/copyright">Copyright</a>
+<a href="https://go.dev/tos">Terms of Service</a>
+<a href="http://www.google.com/intl/en/policies/privacy/" rel="noopener">Privacy Policy</a>
+<a href="https://go.dev/s/pkgsite-feedback" rel="noopener">Report an Issue</a>
+<a class="go-Footer-googleLogo" href="https://google.com" rel="noopener"></a>
+<a href="https://policies.google.com/technologies/cookies">Learn more.</a>
+</body></html>

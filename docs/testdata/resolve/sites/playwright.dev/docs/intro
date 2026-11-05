@@ -1,0 +1,160 @@
+<!doctype html>
+<html><head>
+<title>Installation | Playwright</title>
+<meta name="generator" content="Docusaurus v3.10.1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://repository-images.githubusercontent.com/221981891/8c5c6942-c91f-4df1-825f-4cf474056bd7">
+<meta name="twitter:image" content="https://repository-images.githubusercontent.com/221981891/8c5c6942-c91f-4df1-825f-4cf474056bd7">
+<meta property="og:url" content="https://playwright.dev/docs/intro">
+<meta property="og:locale" content="en">
+<meta name="docusaurus_locale" content="en">
+<meta name="docsearch:language" content="en">
+<meta name="docusaurus_version" content="stable">
+<meta name="docusaurus_tag" content="docs-default-stable">
+<meta name="docsearch:version" content="stable">
+<meta name="docsearch:docusaurus_tag" content="docs-default-stable">
+<meta property="og:title" content="Installation | Playwright">
+<meta name="description" content="Introduction">
+<meta property="og:description" content="Introduction">
+<script src="/js/redirection.js"></script>
+<script src="/assets/js/runtime~main.f3d7c595.js"></script>
+<script src="/assets/js/main.bb11800a.js"></script>
+</head><body>
+<a href="#__docusaurus_skipToContent_fallback" class="skipToContent_fXgn">Skip to main content</a>
+<a href="/" class="navbar__brand">Playwright</a>
+<a href="/docs/intro" class="navbar__item navbar__link navbar__link--active">Docs</a>
+<a href="/mcp/introduction" class="navbar__item navbar__link">MCP</a>
+<a href="/agent-cli/introduction" class="navbar__item navbar__link">CLI</a>
+<a href="/docs/api/class-playwright" class="navbar__item navbar__link">API</a>
+<a href="#" class="navbar__link">Node.js</a>
+<a href="/docs/intro" class="dropdown__link undefined dropdown__link--active">Node.js</a>
+<a href="/python/docs/intro" class="dropdown__link">Python</a>
+<a href="/java/docs/intro" class="dropdown__link">Java</a>
+<a href="/dotnet/docs/intro" class="dropdown__link">.NET</a>
+<a href="https://github.com/microsoft/playwright" aria-label="GitHub repository" class="navbar__item navbar__link header-github-link"></a>
+<a href="https://aka.ms/playwright/discord" aria-label="Discord server" class="navbar__item navbar__link header-discord-link"></a>
+<a href="/docs/intro" class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret menu__link--active">Getting Started</a>
+<a href="/docs/intro" class="menu__link menu__link--active">Installation</a>
+<a href="/docs/writing-tests" class="menu__link">Writing tests</a>
+<a href="/docs/codegen-intro" class="menu__link">Generating tests</a>
+<a href="/docs/running-tests" class="menu__link">Running and debugging tests</a>
+<a href="/docs/trace-viewer-intro" class="menu__link">Trace viewer</a>
+<a href="/docs/ci-intro" class="menu__link">Setting up CI</a>
+<a href="/docs/getting-started-vscode" class="menu__link">VS Code</a>
+<a href="/docs/release-notes" class="menu__link">Release notes</a>
+<a href="/docs/canary-releases" class="menu__link">Canary releases</a>
+<a href="/docs/test-agents" class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret">Playwright Test</a>
+<a href="/docs/test-agents" class="menu__link">Agents</a>
+<a href="/docs/test-annotations" class="menu__link">Annotations</a>
+<a href="/docs/test-cli" class="menu__link">Command line</a>
+<a href="/docs/test-configuration" class="menu__link">Configuration</a>
+<a href="/docs/test-use-options" class="menu__link">Configuration (use)</a>
+<a href="/docs/emulation" class="menu__link">Emulation</a>
+<a href="/docs/test-fixtures" class="menu__link">Fixtures</a>
+<a href="/docs/test-global-setup-teardown" class="menu__link">Global setup and teardown</a>
+<a href="/docs/test-parallel" class="menu__link">Parallelism</a>
+<a href="/docs/test-parameterize" class="menu__link">Parameterize tests</a>
+<a href="/docs/test-projects" class="menu__link">Projects</a>
+<a href="/docs/test-reporters" class="menu__link">Reporters</a>
+<a href="/docs/test-retries" class="menu__link">Retries</a>
+<a href="/docs/test-sharding" class="menu__link">Sharding</a>
+<a href="/docs/test-timeouts" class="menu__link">Timeouts</a>
+<a href="/docs/test-typescript" class="menu__link">TypeScript</a>
+<a href="/docs/test-ui-mode" class="menu__link">UI Mode</a>
+<a href="/docs/test-webserver" class="menu__link">Web server</a>
+<a href="/docs/library" class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret">Guides</a>
+<a href="/docs/library" class="menu__link">Library</a>
+<a href="/docs/accessibility-testing" class="menu__link">Accessibility testing</a>
+<a href="/docs/input" class="menu__link">Actions</a>
+<a href="/docs/test-assertions" class="menu__link">Assertions</a>
+<a href="/docs/api-testing" class="menu__link">API testing</a>
+<a href="/docs/auth" class="menu__link">Authentication</a>
+<a href="/docs/actionability" class="menu__link">Auto-waiting</a>
+<a href="/docs/best-practices" class="menu__link">Best Practices</a>
+<a href="/docs/browsers" class="menu__link">Browsers</a>
+<a href="/docs/chrome-extensions" class="menu__link">Chrome extensions</a>
+<a href="/docs/clock" class="menu__link">Clock</a>
+<a href="/docs/test-components" class="menu__link">Component testing</a>
+<a href="/docs/debug" class="menu__link">Debugging Tests</a>
+<a href="/docs/dialogs" class="menu__link">Dialogs</a>
+<a href="/docs/downloads" class="menu__link">Downloads</a>
+<a href="/docs/evaluating" class="menu__link">Evaluating JavaScript</a>
+<a href="/docs/events" class="menu__link">Events</a>
+<a href="/docs/extensibility" class="menu__link">Extensibility</a>
+<a href="/docs/frames" class="menu__link">Frames</a>
+<a href="/docs/handles" class="menu__link">Handles</a>
+<a href="/docs/browser-contexts" class="menu__link">Isolation</a>
+<a href="/docs/locators" class="menu__link">Locators</a>
+<a href="/docs/mock" class="menu__link">Mock APIs</a>
+<a href="/docs/mock-browser-apis" class="menu__link">Mock browser APIs</a>
+<a href="/docs/navigations" class="menu__link">Navigations</a>
+<a href="/docs/network" class="menu__link">Network</a>
+<a href="/docs/other-locators" class="menu__link">Other locators</a>
+<a href="/docs/pages" class="menu__link">Pages</a>
+<a href="/docs/pom" class="menu__link">Page object models</a>
+<a href="/docs/screenshots" class="menu__link">Screenshots</a>
+<a href="/docs/service-workers" class="menu__link">Service Workers</a>
+<a href="/docs/aria-snapshots" class="menu__link">Snapshot testing</a>
+<a href="/docs/codegen" class="menu__link">Test generator</a>
+<a href="/docs/touch-events" class="menu__link">Touch events (legacy)</a>
+<a href="/docs/trace-viewer" class="menu__link">Trace viewer</a>
+<a href="/docs/videos" class="menu__link">Videos</a>
+<a href="/docs/test-snapshots" class="menu__link">Visual comparisons</a>
+<a href="/docs/webview2" class="menu__link">WebView2</a>
+<a href="/docs/protractor" class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret">Migration</a>
+<a href="/docs/docker" class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret">Integrations</a>
+<a href="/docs/languages" class="menu__link">Supported languages</a>
+<a href="/" aria-label="Home page" class="breadcrumbs__link"></a>
+<a href="#introduction" aria-label="Direct link to Introduction" title="Direct link to Introduction" class="hash-link">​</a>
+<a href="/docs/intro#installing-playwright">How to install Playwright</a>
+<a href="/docs/intro#whats-installed">What&#x27;s installed</a>
+<a href="/docs/intro#running-the-example-test">How to run the example test</a>
+<a href="/docs/intro#html-test-reports">How to open the HTML test report</a>
+<a href="#installing-playwright" aria-label="Direct link to Installing Playwright" title="Direct link to Installing Playwright" class="hash-link">​</a>
+<a href="#using-npm-yarn-or-pnpm" aria-label="Direct link to Using npm, yarn or pnpm" title="Direct link to Using npm, yarn or pnpm" class="hash-link">​</a>
+<a href="#using-the-vs-code-extension" aria-label="Direct link to Using the VS Code Extension" title="Direct link to Using the VS Code Extension" class="hash-link">​</a>
+<a href="/docs/getting-started-vscode">VS Code Extension</a>
+<a href="#whats-installed" aria-label="Direct link to What&#x27;s Installed" title="Direct link to What&#x27;s Installed" class="hash-link">​</a>
+<a href="/docs/test-configuration">playwright.config</a>
+<a href="#running-the-example-test" aria-label="Direct link to Running the Example Test" title="Direct link to Running the Example Test" class="hash-link">​</a>
+<a href="/docs/test-configuration">playwright.config</a>
+<a href="/docs/running-tests">Running Tests</a>
+<a href="#html-test-reports" aria-label="Direct link to HTML Test Reports" title="Direct link to HTML Test Reports" class="hash-link">​</a>
+<a href="/docs/test-reporters#html-reporter">HTML Reporter</a>
+<a href="#running-the-example-test-in-ui-mode" aria-label="Direct link to Running the Example Test in UI Mode" title="Direct link to Running the Example Test in UI Mode" class="hash-link">​</a>
+<a href="/docs/test-ui-mode">UI Mode</a>
+<a href="/docs/test-ui-mode">detailed guide on UI Mode</a>
+<a href="#updating-playwright" aria-label="Direct link to Updating Playwright" title="Direct link to Updating Playwright" class="hash-link">​</a>
+<a href="#system-requirements" aria-label="Direct link to System requirements" title="Direct link to System requirements" class="hash-link">​</a>
+<a href="#whats-next" aria-label="Direct link to What&#x27;s next" title="Direct link to What&#x27;s next" class="hash-link">​</a>
+<a href="/docs/writing-tests">Write tests using web-first assertions, fixtures and locators</a>
+<a href="/docs/running-tests">Run single or multiple tests; headed mode</a>
+<a href="/docs/codegen-intro">Generate tests with Codegen</a>
+<a href="/docs/trace-viewer-intro">View a trace of your tests</a>
+<a href="/docs/writing-tests" class="pagination-nav__link pagination-nav__link--next">NextWriting tests</a>
+<a href="#introduction" class="table-of-contents__link toc-highlight">Introduction</a>
+<a href="#installing-playwright" class="table-of-contents__link toc-highlight">Installing Playwright</a>
+<a href="#using-npm-yarn-or-pnpm" class="table-of-contents__link toc-highlight">Using npm, yarn or pnpm</a>
+<a href="#using-the-vs-code-extension" class="table-of-contents__link toc-highlight">Using the VS Code Extension</a>
+<a href="#whats-installed" class="table-of-contents__link toc-highlight">What&#x27;s Installed</a>
+<a href="#running-the-example-test" class="table-of-contents__link toc-highlight">Running the Example Test</a>
+<a href="#html-test-reports" class="table-of-contents__link toc-highlight">HTML Test Reports</a>
+<a href="#running-the-example-test-in-ui-mode" class="table-of-contents__link toc-highlight">Running the Example Test in UI Mode</a>
+<a href="#updating-playwright" class="table-of-contents__link toc-highlight">Updating Playwright</a>
+<a href="#system-requirements" class="table-of-contents__link toc-highlight">System requirements</a>
+<a href="#whats-next" class="table-of-contents__link toc-highlight">What&#x27;s next</a>
+<a href="/docs/intro" class="footer__link-item">Getting started</a>
+<a href="https://learn.microsoft.com/en-us/training/modules/build-with-playwright/" class="footer__link-item">Playwright Training</a>
+<a href="/community/learn-videos" class="footer__link-item">Learn Videos</a>
+<a href="/community/feature-videos" class="footer__link-item">Feature Videos</a>
+<a href="https://stackoverflow.com/questions/tagged/playwright" class="footer__link-item">Stack Overflow</a>
+<a href="https://aka.ms/playwright/discord" class="footer__link-item">Discord</a>
+<a href="https://x.com/playwrightweb" class="footer__link-item">X</a>
+<a href="https://www.linkedin.com/company/playwrightweb" class="footer__link-item">LinkedIn</a>
+<a href="https://github.com/microsoft/playwright" class="footer__link-item">GitHub</a>
+<a href="https://www.youtube.com/channel/UC46Zj8pDH5tDosqm1gd7WTg" class="footer__link-item">YouTube</a>
+<a href="https://dev.to/playwright" class="footer__link-item">Blog</a>
+<a href="/community/ambassadors" class="footer__link-item">Ambassadors</a>
+<a href="https://go.microsoft.com/fwlink/?LinkId=521839" class="footer__link-item">Microsoft Privacy Statement</a>
+</body></html>

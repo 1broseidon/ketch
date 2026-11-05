@@ -20,22 +20,31 @@ func (libraryFixture) GetDocs(context.Context, string, string, int) ([]Result, e
 	return nil, nil
 }
 
+// plainFixture is a provider without library operations.
+type plainFixture struct{}
+
+func (plainFixture) Search(context.Context, string, int) ([]Result, error) { return nil, nil }
+
 func TestRegistryDiscoversOptionalLibraryInterface(t *testing.T) {
 	previous := providers
 	before := LibraryBackends()
 	providers = append(Providers(), Provider{
 		ID: "libraryfixture", Name: "Library Fixture",
 		Usable: func(*config.Config) bool { return true },
-		New:    func(*config.Config) (Searcher, error) { return libraryFixture{}, nil },
+		New:    func(*config.Config, Deps) (Searcher, error) { return libraryFixture{}, nil },
+	}, Provider{
+		ID: "plainfixture", Name: "Plain Fixture",
+		Usable: func(*config.Config) bool { return true },
+		New:    func(*config.Config, Deps) (Searcher, error) { return plainFixture{}, nil },
 	})
 	t.Cleanup(func() { providers = previous })
 	if !slices.Equal(LibraryBackends(), append(before, "libraryfixture")) {
 		t.Fatalf("library capability discovery = %v", LibraryBackends())
 	}
-	if ResolveBackend("libraryfixture") != "libraryfixture" || ResolveBackend("local") != "context7" {
+	if ResolveBackend("libraryfixture") != "libraryfixture" || ResolveBackend("local") != "local" || ResolveBackend("plainfixture") != "context7" {
 		t.Fatal("library selection or legacy resolve fallback changed")
 	}
-	client, err := NewFromConfig(&config.Config{}, "libraryfixture")
+	client, err := NewFromConfig(&config.Config{}, "libraryfixture", Deps{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,18 +54,36 @@ func TestRegistryDiscoversOptionalLibraryInterface(t *testing.T) {
 }
 
 func TestRegistryKeepsUnknownAndUnavailableDistinct(t *testing.T) {
-	// Context7 is usable with no key (its anonymous quota), so the
-	// unavailable case is the unimplemented local backend alone.
-	if _, err := NewFromConfig(&config.Config{}, "context7"); err != nil {
-		t.Fatalf("context7 with no key must build (keyless), got %v", err)
+	// Context7 is usable with no key (its anonymous quota), and the local
+	// backend with nothing indexed (it refuses each query), so every
+	// registered backend builds and only an unknown one is rejected.
+	for _, backend := range []string{"context7", "local", "web", AutoBackend} {
+		if _, err := NewFromConfig(&config.Config{}, backend, Deps{}); err != nil {
+			t.Fatalf("%s must build with no keys, got %v", backend, err)
+		}
 	}
-	for _, backend := range []string{"local", "unknown"} {
-		_, err := NewFromConfig(&config.Config{}, backend)
-		if err == nil || errors.Is(err, ErrUnknownBackend) != (backend == "unknown") {
-			t.Fatalf("%s error taxonomy = %v", backend, err)
+	if _, err := NewFromConfig(&config.Config{}, "unknown", Deps{}); !errors.Is(err, ErrUnknownBackend) {
+		t.Fatalf("unknown error taxonomy = %v", err)
+	}
+}
+
+// LibraryHelp is shared by the CLI help and the MCP descriptions: each
+// library provider's LibraryHelp, labelled with its name.
+func TestLibraryHelp(t *testing.T) {
+	var parts []string
+	for _, id := range LibraryBackends() {
+		if p, _ := Lookup(id); p.LibraryHelp != "" {
+			parts = append(parts, p.Name+": "+p.LibraryHelp)
 		}
-		if backend == "local" && !strings.Contains(err.Error(), "not yet implemented") {
-			t.Fatalf("local rejection changed: %v", err)
-		}
+	}
+	if len(parts) == 0 {
+		t.Fatal("no library provider declares LibraryHelp; the web backend should")
+	}
+	want := strings.Join(parts, "; ")
+	if got := LibraryHelp(); got != want {
+		t.Errorf("LibraryHelp() = %q, want %q", got, want)
+	}
+	if got := WithLibraryHelp("a library ID"); got != "a library ID ("+want+")" {
+		t.Errorf("WithLibraryHelp = %q", got)
 	}
 }

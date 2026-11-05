@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/1broseidon/ketch/extract"
+	"github.com/1broseidon/ketch/internal/failure"
 	"github.com/1broseidon/ketch/scrape"
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -38,9 +39,9 @@ type ScrapeInput struct {
 // and a per-URL error slot used by batch scrapes.
 type ScrapeResult struct {
 	scrape.Page
-	Source  string `json:"source,omitempty" jsonschema:"fetch path that produced the page (http, http_shell, browser); raw mode only"`
-	RawHTML string `json:"raw_html,omitempty" jsonschema:"raw page HTML; set when raw is true"`
-	Error   string `json:"error,omitempty" jsonschema:"per-URL failure (batch scrapes only); other fields are empty when set"`
+	Source  scrape.Source `json:"source,omitempty" jsonschema:"fetch path that produced the page (http, http_shell, browser); raw mode only"`
+	RawHTML string        `json:"raw_html,omitempty" jsonschema:"raw page HTML; set when raw is true"`
+	Error   string        `json:"error,omitempty" jsonschema:"per-URL failure (batch scrapes only); other fields are empty when set"`
 }
 
 // ScrapeOutput is the output schema for the "scrape" tool: one entry per
@@ -177,14 +178,17 @@ func (s *Server) scrapeBatch(ctx context.Context, in ScrapeInput) []ScrapeResult
 	return results
 }
 
+// classifyScrapeFailure words a failed scrape for MCP; the prefix is the
+// error's failure.Kind (upstream when it carries none), as on the CLI.
 func classifyScrapeFailure(err error) error {
 	switch {
-	case errors.Is(err, scrape.ErrInvalidURL):
-		return errf(kindValidation, "%w", err)
+	case errors.Is(err, scrape.ErrInvalidURL), errors.Is(err, scrape.ErrBadSelector),
+		errors.Is(err, scrape.ErrPDFSelectorUnsupported), errors.Is(err, scrape.ErrSelectorNoMatch):
+		return classifiedf(err, failure.Upstream, "%w", err)
 	case errors.Is(err, extract.ErrPDFNoText):
-		return errf(kindPrecondition, "scrape failed: %w; hint: configure external_pdf_to_md_converter_command with an OCR-capable converter", err)
+		return classifiedf(err, failure.Upstream, "scrape failed: %w; hint: configure external_pdf_to_md_converter_command with an OCR-capable converter", err)
 	case errors.Is(err, scrape.ErrNoBrowser):
-		return errf(kindPrecondition, "force_browser requires a configured browser (set with: ketch config set browser chrome): %w", err)
+		return classifiedf(err, failure.Upstream, "force_browser requires a configured browser (set with: ketch config set browser chrome): %w", err)
 	default:
 		return upstreamErrf(err, "scrape failed")
 	}
@@ -194,12 +198,5 @@ func classifyScrapeFailure(err error) error {
 // kinds: bad selector → validation, no match → not_found, anything else
 // (fetch/browser failure) → upstream/cancelled.
 func classifySelectorErr(err error) error {
-	switch {
-	case errors.Is(err, scrape.ErrBadSelector), errors.Is(err, scrape.ErrPDFSelectorUnsupported):
-		return errf(kindValidation, "%w", err)
-	case errors.Is(err, scrape.ErrSelectorNoMatch):
-		return errf(kindNotFound, "%w", err)
-	default:
-		return classifyScrapeFailure(err)
-	}
+	return classifyScrapeFailure(err)
 }

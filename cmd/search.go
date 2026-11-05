@@ -78,7 +78,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 
 	results, served, err := runBackendSearch(cmd.Context(), searcher, query, limit)
 	if err != nil {
-		return exitErrf(ExitUpstream, "search failed: %w", err)
+		return upstreamErr(err, "search failed")
 	}
 	if served != "" {
 		backend = served
@@ -214,7 +214,7 @@ func newSearcher(cmd *cobra.Command, backend string) (search.Searcher, error) {
 	searxngURL, _ := cmd.Flags().GetString("searxng-url")
 	s, err := search.NewFromConfig(&cfg, backend, searxngURL)
 	if err != nil {
-		return nil, backendErr(err, search.ErrUnknownBackend)
+		return nil, backendErr(err)
 	}
 	return s, nil
 }
@@ -271,12 +271,12 @@ func runMultiSearch(cmd *cobra.Command, query string, limit int, doScrape, asJSO
 	searxngURL, _ := cmd.Flags().GetString("searxng-url")
 	m, err := search.NewMultiFromConfig(&cfg, names, searxngURL)
 	if err != nil {
-		return backendErr(err, search.ErrUnknownBackend)
+		return backendErr(err)
 	}
 
 	results, berrs, err := m.Search(cmd.Context(), query, limit)
 	if err != nil {
-		return exitErrf(ExitUpstream, "search failed: %w", err)
+		return upstreamErr(err, "search failed")
 	}
 	for _, be := range berrs {
 		fmt.Fprintf(os.Stderr, "warn: %s: %v\n", be.Backend, be.Err)
@@ -328,11 +328,11 @@ func runRandomSearch(cmd *cobra.Command, query string, limit int, doScrape, asJS
 	searxngURL, _ := cmd.Flags().GetString("searxng-url")
 	randomSearch, err := search.NewRandomFromConfig(&cfg, names, searxngURL)
 	if err != nil {
-		return backendErr(err, search.ErrUnknownBackend)
+		return backendErr(err)
 	}
 	results, selected, failures, err := randomSearch.Search(cmd.Context(), query, limit)
 	if err != nil {
-		return exitErrf(ExitUpstream, "search failed: %w", err)
+		return upstreamErr(err, "search failed")
 	}
 	for _, failure := range failures {
 		fmt.Fprintf(os.Stderr, "warn: %s: %v\n", failure.Backend, failure.Err)

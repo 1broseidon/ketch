@@ -12,7 +12,7 @@ Most research tooling for agents means wiring up several provider SDKs, each wit
 
 - `ketch search` — web search, no API key required (Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, Keenable, Tavily, TinyFish, Parallel, SerpBase, Serply, or You.com)
 - `ketch code` — grep real OSS source across public repos (Grep, Sourcegraph, or GitHub Code Search)
-- `ketch docs` — curated, version-aware library documentation (Context7)
+- `ketch docs` — version-aware library documentation: curated snippets (Context7, keyless on a small monthly quota), or the library's own docs site with no key (web), or `auto`: web first, then Context7
 
 Plus `ketch scrape` and `ketch crawl` to turn HTML pages and text-based PDFs into clean markdown.
 
@@ -227,7 +227,7 @@ a stderr warning (`warning.code: tag_write_failed` with `--json`), and MCP adds
 |---|---|
 | `search` | Web search — Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, Keenable, Tavily, Parallel, SerpBase, Serply, or You.com |
 | `code` | Grep real OSS source — Grep (default), Sourcegraph, or GitHub Code Search |
-| `docs` | Library/framework docs — Context7 (curated, version-aware snippets) |
+| `docs` | Library/framework docs — Context7 (curated, version-aware snippets; keyless on its anonymous quota) or web (the library's own docs site, found from its name; no key), or auto (web, then Context7 when web finds no library or several) |
 | `scrape` | Fetch HTML or PDF URL(s) and extract clean markdown; concurrent batch, JSON array, file, or stdin input |
 | `extract` | Convert piped HTML to clean markdown (`curl ... \| ketch extract`) — no fetch, no cache, no browser |
 | `crawl` | BFS or sitemap crawl with optional background execution and status tracking |
@@ -252,7 +252,7 @@ Every command supports `-h/--help` for its full flag list; `--json` is the only 
 |---|---|---|---|
 | `search` | `auto` | `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `tinyfish`, `parallel`, `serpbase`, `degoog`, `serply`, `youcom` | Nothing — `auto` falls back through the keyless providers (`parallel` → `exa` → `keenable` → `youcom` → `firecrawl` → `ddg`) and needs no key. Brave, Tavily, TinyFish, SerpBase, and Serply need a free key (`ketch config set brave_api_key <key>` / `tavily_api_key` / `tinyfish_api_key` / `serpbase_api_key` / `serply_api_key`) and `auto` prefers them once set; `firecrawl_api_key`, `exa_api_key`, `keenable_api_key`, `parallel_api_key`, and `youcom_api_key` are optional and lift the hosted caps. `degoog` needs a self-hosted instance (`ketch config set degoog_url <url>`), `searxng` an instance URL (`ketch config set searxng_url <url>`); both are preferred over hosted APIs once configured |
 | `code` | `grepapp` | `sourcegraph`, `github` | Grep and Sourcegraph need nothing; GitHub uses `gh auth login`, `$GITHUB_TOKEN`, or `ketch config set github_token <tok>` |
-| `docs` | `context7` (no key: ~200 requests/month per IP) | `local` (planned, not yet implemented) | Optional free key lifts the cap: `ketch config set context7_api_key <key>` |
+| `docs` | `context7` | `web`, `auto`, `local` (planned, not yet implemented) | Context7 works with no key on its anonymous quota, about 200 requests a month per IP (a search spends two; `ketch doctor` shows what was left at the last response without spending any), and a free key lifts it: `ketch config set context7_api_key <key>`. `auto` asks `web` first and Context7 only when `web` refuses; an ambiguous name is answered from Context7 only if it picks one of `web`'s candidates. `web` needs nothing; resolving a library name asks GitHub about its repository, and the GitHub token above lifts the unauthenticated rate limit |
 
 ## Why it works well for agents
 
@@ -328,7 +328,7 @@ Use `ketch` for external research — web pages, OSS code, library docs.
 - `ketch scrape <url> [url...]` for clean markdown from one or more URLs
 - `ketch extract` for already-fetched/piped HTML (`curl ... | ketch extract`) — no fetch, no cache, no browser
 - `ketch code "query" --lang go` for real OSS code with repo/line context; `--repo owner/name` searches one repository
-- `ketch docs "query" --library /org/repo` for version-aware library docs
+- `ketch docs "query" --library /org/repo` for version-aware library docs; `-b web --library django@5.2` reads the library's own docs site, no key
 - All commands support `--json`. `ketch config` reports active backends.
 ```
 

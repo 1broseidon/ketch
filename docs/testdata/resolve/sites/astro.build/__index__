@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width" />
+<title>Astro</title>
+<meta name="description" content="Astro builds fast content sites, powerful web applications, dynamic server APIs, and everything in-between." />
+<meta property="og:title" content="Astro" />
+<meta property="og:site_name" content="Astro" />
+</head>
+<body>
+<header><nav>
+<a href="/">Astro</a>
+<a href="https://docs.astro.build">Documentation</a>
+<a href="https://docs.astro.build/en/tutorial/0-introduction/">Tutorials</a>
+<a href="/blog/">Blog</a>
+<a href="/integrations/">Integrations</a>
+<a href="https://github.com/withastro/astro" aria-label="Go to Astro's GitHub repo"></a>
+</nav></header>
+<main>
+<h1>The web framework for content-driven websites</h1>
+<a href="https://docs.astro.build/">Get Started</a>
+<a href="https://docs.astro.build/en/guides/content-collections/">Content Collections</a>
+<a href="https://docs.astro.build/en/guides/view-transitions/">View Transitions</a>
+<a href="https://developer.chrome.com/docs/crux">Chrome UX Report</a>
+</main>
+</body>
+</html>

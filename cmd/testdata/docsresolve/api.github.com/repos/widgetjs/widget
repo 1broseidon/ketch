@@ -1,0 +1,13 @@
+{
+  "id": 41000001,
+  "name": "widget",
+  "full_name": "widgetjs/widget",
+  "owner": {"login": "widgetjs"},
+  "html_url": "https://github.com/widgetjs/widget",
+  "description": "Accessible widgets for the browser",
+  "homepage": "https://widgetjs.dev",
+  "fork": false,
+  "archived": false,
+  "stargazers_count": 2100,
+  "default_branch": "main"
+}

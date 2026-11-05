@@ -1,0 +1,11 @@
+{
+ "name": "webpack",
+ "version": "5.112.2",
+ "description": "Packs ECMAScript/CommonJs/AMD modules for the browser. Allows you to split your codebase into multiple bundles, which can be loaded on demand. Supports loaders to preprocess files, i.e. json, jsx, es7, css, less, ... and your custom stuff.",
+ "homepage": "https://github.com/webpack/webpack",
+ "repository": {
+  "url": "git+https://github.com/webpack/webpack.git",
+  "type": "git"
+ },
+ "license": "MIT"
+}

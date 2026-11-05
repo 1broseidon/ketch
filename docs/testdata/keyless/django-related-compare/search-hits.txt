@@ -1,0 +1,10 @@
+https://dev.to/arthurobo/integrating-django-and-golang-with-a-shared-postgresql-database-a-scalable-approach-12fg
+https://github.com/Nigel2392/go-django
+https://github.com/petros-an/go-rest-framework
+http://github.com/django/django
+http://ljupcho.github.io/posts/Laravel-Django-Gin
+https://news.ycombinator.com/item?id=25974780
+https://medium.com/@ayush13anand/go-lang-vs-django-a-comprehensive-comparison-92e56f884515
+https://pkg.go.dev/github.com/Nigel2392/go-django
+https://docs.djangoproject.com/
+https://github.com/go-gorf/gorf

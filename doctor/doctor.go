@@ -1,5 +1,5 @@
 // Package doctor runs cheap live health checks against every ketch surface:
-// search/code/docs backends, the configured browser, and the page cache.
+// search/code/docs backends, the configured browser and the page cache.
 // Probes are read-only — they never write cache entries or mutate config —
 // and each is bounded by a per-probe timeout so a full run stays fast.
 package doctor
@@ -107,7 +107,46 @@ func Run(ctx context.Context, cfg *config.Config, timeout time.Duration) []Check
 		}()
 	}
 	wg.Wait()
-	return withAutoChainCheck(cfg, checks)
+	return withDocsAutoCheck(cfg, withAutoChainCheck(cfg, checks))
+}
+
+// docsAutoChain is the docs auto backend's order: web, then Context7.
+var docsAutoChain = []string{"web", "context7"}
+
+// withDocsAutoCheck adds the docs "auto" summary, right before the first
+// docs check, when it is the configured docs backend. Like search's, it is
+// derived from the provider checks rather than probed again: Context7's
+// keyless quota is small, which is also why its own keyless check reads the
+// last quota seen instead of asking.
+func withDocsAutoCheck(cfg *config.Config, checks []Check) []Check {
+	if cfg.DocsBackend != docs.AutoBackend {
+		return checks
+	}
+	byBackend := make(map[string]Check, len(docsAutoChain))
+	at := len(checks)
+	for i, c := range checks {
+		if c.Surface != "docs" {
+			continue
+		}
+		byBackend[c.Backend] = c
+		at = min(at, i)
+	}
+	var healthy []string
+	for _, name := range docsAutoChain {
+		if byBackend[name].Status == StatusOK {
+			healthy = append(healthy, name)
+		}
+	}
+	chain := strings.Join(docsAutoChain, " → ")
+	auto := Check{Surface: "docs", Backend: docs.AutoBackend, Status: StatusOK, Required: true,
+		Detail: fmt.Sprintf("%d of %d providers healthy (%s)", len(healthy), len(docsAutoChain), chain)}
+	if len(healthy) == 0 {
+		auto.Status, auto.Detail = StatusUnreachable, fmt.Sprintf("no provider in the chain answered (%s)", chain)
+	}
+	out := make([]Check, 0, len(checks)+1)
+	out = append(out, checks[:at]...)
+	out = append(out, auto)
+	return append(out, checks[at:]...)
 }
 
 // withAutoChainCheck prepends the "auto" summary when it is the configured

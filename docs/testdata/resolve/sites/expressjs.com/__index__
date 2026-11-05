@@ -1,0 +1,117 @@
+<!doctype html>
+<html><head>
+<title>Express.js · Node.js web application framework</title>
+<meta name="viewport" content="width=device-width">
+<meta name="description" content="Fast, unopinionated, minimalist web framework for Node.js">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Express.js">
+<meta property="og:url" content="https://expressjs.com/">
+<meta property="og:title" content="Express.js · Node.js web application framework">
+<meta property="og:description" content="Fast, unopinionated, minimalist web framework for Node.js">
+<meta property="og:image" content="https://expressjs.com/og/home-en.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@UseExpressJS">
+<meta name="twitter:title" content="Express.js · Node.js web application framework">
+<meta name="twitter:description" content="Fast, unopinionated, minimalist web framework for Node.js">
+<meta name="twitter:domain" content="expressjs.com">
+<meta name="twitter:image" content="https://expressjs.com/og/home-en.png">
+<meta name="robots" content="max-image-preview:large, index, follow">
+<script src="/_astro/LanguageSelect.astro_astro_type_script_index_0_lang.DWc0a3Ra.js"></script>
+<script src="/_astro/Sidebar.astro_astro_type_script_index_0_lang.En1SlENb.js"></script>
+<script src="/_astro/ec.0vx5m.js"></script>
+<script src="/_astro/Hero.astro_astro_type_script_index_0_lang.BrixRQv3.js"></script>
+</head><body>
+<a href="/" aria-label="home" class="logo-link"></a>
+<a href="#main-content" class="skip-link sr-only">Skip to content</a>
+<a href="/" aria-label="home" class="logo-link sidebar-nav-item"></a>
+<a href="/en/blog" aria-label="Blog" class="sidebar-nav-item">Blog</a>
+<a href="/en/support" aria-label="Support" class="sidebar-nav-item">Support</a>
+<a href="/en/5x/starter/installing" aria-label="Installing Express" class="sidebar-nav-item sidebar-nav-item--nested">Installing</a>
+<a href="/en/5x/starter/hello-world" aria-label="Hello world example" class="sidebar-nav-item sidebar-nav-item--nested">Hello world</a>
+<a href="/en/5x/starter/generator" aria-label="Express generator" class="sidebar-nav-item sidebar-nav-item--nested">Express generator</a>
+<a href="/en/5x/starter/basic-routing" aria-label="menu.aria.basicRouting" class="sidebar-nav-item sidebar-nav-item--nested">Basic routing</a>
+<a href="/en/5x/starter/static-files" aria-label="menu.aria.staticFiles" class="sidebar-nav-item sidebar-nav-item--nested">Serving static files</a>
+<a href="/en/5x/starter/examples" aria-label="menu.aria.examples" class="sidebar-nav-item sidebar-nav-item--nested">Examples</a>
+<a href="/en/5x/starter/faq" aria-label="menu.aria.faq" class="sidebar-nav-item sidebar-nav-item--nested">FAQ</a>
+<a href="/en/5x/guide/routing" aria-label="Routing guide" class="sidebar-nav-item sidebar-nav-item--nested">Routing</a>
+<a href="/en/5x/guide/writing-middleware" aria-label="Writing middleware guide" class="sidebar-nav-item sidebar-nav-item--nested">Writing middleware</a>
+<a href="/en/5x/guide/using-middleware" aria-label="Using middleware guide" class="sidebar-nav-item sidebar-nav-item--nested">Using middleware</a>
+<a href="/en/5x/guide/using-template-engines" aria-label="Using template engines guide" class="sidebar-nav-item sidebar-nav-item--nested">Using template engines</a>
+<a href="/en/5x/guide/error-handling" aria-label="Error handling guide" class="sidebar-nav-item sidebar-nav-item--nested">Error handling</a>
+<a href="/en/5x/guide/debugging" aria-label="Debugging Express" class="sidebar-nav-item sidebar-nav-item--nested">Debugging</a>
+<a href="/en/5x/guide/behind-proxies" aria-label="Express behind proxies" class="sidebar-nav-item sidebar-nav-item--nested">Behind proxies</a>
+<a href="/en/guide/database-integration" aria-label="Database integration guide" class="sidebar-nav-item sidebar-nav-item--nested">Database integration</a>
+<a href="/en/5x/guide/overriding-express-api" aria-label="Overriding the Express API guide" class="sidebar-nav-item sidebar-nav-item--nested">Overriding the Express API</a>
+<a href="/en/guide/migrating-4" aria-label="menu.aria.migratingTo4" class="sidebar-nav-item sidebar-nav-item--nested">Moving to Express 4</a>
+<a href="/en/guide/migrating-5" aria-label="menu.aria.migratingTo5" class="sidebar-nav-item sidebar-nav-item--nested">Moving to Express 5</a>
+<a href="/en/5x/advanced/developing-template-engines" aria-label="menu.aria.buildingTemplateEngines" class="sidebar-nav-item sidebar-nav-item--nested">Building template engines</a>
+<a href="/en/advanced/best-practice-performance" aria-label="menu.aria.bestPracticePerformance" class="sidebar-nav-item sidebar-nav-item--nested">Performance best practices</a>
+<a href="/en/advanced/best-practice-security" aria-label="menu.aria.bestPracticeSecurity" class="sidebar-nav-item sidebar-nav-item--nested">Security best practices</a>
+<a href="/en/advanced/healthcheck-graceful-shutdown" aria-label="menu.aria.healthcheckGracefulShutdown" class="sidebar-nav-item sidebar-nav-item--nested">Health checks &amp; graceful shutdown</a>
+<a href="/en/advanced/security-updates" aria-label="menu.aria.securityUpdates" class="sidebar-nav-item sidebar-nav-item--nested">Security updates</a>
+<a href="/en/5x/api" aria-label="API Reference" class="sidebar-nav-item sidebar-nav-item--nested">Overview</a>
+<a href="/en/5x/api/express/" aria-label="API Reference" class="sidebar-nav-item sidebar-nav-item--nested">Overview</a>
+<a href="/en/5x/api/express#methods" aria-label="API Reference" class="sidebar-nav-item sidebar-nav-item--nested">Methods</a>
+<a href="/en/5x/api/application" aria-label="Application overview" class="sidebar-nav-item sidebar-nav-item--nested">Overview</a>
+<a href="/en/5x/api/application#properties" aria-label="Application overview" class="sidebar-nav-item sidebar-nav-item--nested">Properties</a>
+<a href="/en/5x/api/application#events" aria-label="Application overview" class="sidebar-nav-item sidebar-nav-item--nested">Events</a>
+<a href="/en/5x/api/application#methods" aria-label="Application overview" class="sidebar-nav-item sidebar-nav-item--nested">Methods</a>
+<a href="/en/5x/api/request" aria-label="Request overview" class="sidebar-nav-item sidebar-nav-item--nested">Overview</a>
+<a href="/en/5x/api/request#properties" aria-label="Request overview" class="sidebar-nav-item sidebar-nav-item--nested">Properties</a>
+<a href="/en/5x/api/request#methods" aria-label="Request overview" class="sidebar-nav-item sidebar-nav-item--nested">Methods</a>
+<a href="/en/5x/api/response" aria-label="Response overview" class="sidebar-nav-item sidebar-nav-item--nested">Overview</a>
+<a href="/en/5x/api/response#properties" aria-label="Response overview" class="sidebar-nav-item sidebar-nav-item--nested">Properties</a>
+<a href="/en/5x/api/response#methods" aria-label="Response overview" class="sidebar-nav-item sidebar-nav-item--nested">Methods</a>
+<a href="/en/5x/api/router" aria-label="Router overview" class="sidebar-nav-item sidebar-nav-item--nested">Overview</a>
+<a href="/en/5x/api/router#methods" aria-label="Router overview" class="sidebar-nav-item sidebar-nav-item--nested">Methods</a>
+<a href="/en/resources/" aria-label="Overview" class="sidebar-nav-item sidebar-nav-item--nested">Overview</a>
+<a href="/en/resources/community" aria-label="Community resources" class="sidebar-nav-item sidebar-nav-item--nested">Community</a>
+<a href="/en/resources/glossary" aria-label="Glossary of terms" class="sidebar-nav-item sidebar-nav-item--nested">Glossary</a>
+<a href="/en/resources/contributing" aria-label="Contributing guide" class="sidebar-nav-item sidebar-nav-item--nested">Contributing</a>
+<a href="/en/resources/utils" aria-label="Utilities" class="sidebar-nav-item sidebar-nav-item--nested">Utilities</a>
+<a href="https://github.com/expressjs/express/releases" aria-label="Express changelog" class="sidebar-nav-item sidebar-nav-item--nested">Changelog</a>
+<a href="/en/resources/middleware/" aria-label="Middleware resources" class="sidebar-nav-item sidebar-nav-item--nested">Overview</a>
+<a href="/en/resources/middleware/body-parser" aria-label="body-parser middleware" class="sidebar-nav-item sidebar-nav-item--nested">body-parser</a>
+<a href="/en/resources/middleware/compression" aria-label="compression middleware" class="sidebar-nav-item sidebar-nav-item--nested">compression</a>
+<a href="/en/resources/middleware/cookie-parser" aria-label="cookie-parser middleware" class="sidebar-nav-item sidebar-nav-item--nested">cookie-parser</a>
+<a href="/en/resources/middleware/cookie-session" aria-label="cookie-session middleware" class="sidebar-nav-item sidebar-nav-item--nested">cookie-session</a>
+<a href="/en/resources/middleware/cors" aria-label="cors middleware" class="sidebar-nav-item sidebar-nav-item--nested">cors</a>
+<a href="/en/resources/middleware/errorhandler" aria-label="errorhandler middleware" class="sidebar-nav-item sidebar-nav-item--nested">errorhandler</a>
+<a href="/en/resources/middleware/method-override" aria-label="method-override middleware" class="sidebar-nav-item sidebar-nav-item--nested">method-override</a>
+<a href="/en/resources/middleware/morgan" aria-label="morgan middleware" class="sidebar-nav-item sidebar-nav-item--nested">morgan</a>
+<a href="/en/resources/middleware/multer" aria-label="multer middleware" class="sidebar-nav-item sidebar-nav-item--nested">multer</a>
+<a href="/en/resources/middleware/response-time" aria-label="response-time middleware" class="sidebar-nav-item sidebar-nav-item--nested">response-time</a>
+<a href="/en/resources/middleware/serve-favicon" aria-label="serve-favicon middleware" class="sidebar-nav-item sidebar-nav-item--nested">serve-favicon</a>
+<a href="/en/resources/middleware/serve-index" aria-label="serve-index middleware" class="sidebar-nav-item sidebar-nav-item--nested">serve-index</a>
+<a href="/en/resources/middleware/serve-static" aria-label="serve-static middleware" class="sidebar-nav-item sidebar-nav-item--nested">serve-static</a>
+<a href="/en/resources/middleware/session" aria-label="session middleware" class="sidebar-nav-item sidebar-nav-item--nested">session</a>
+<a href="/en/resources/middleware/timeout" aria-label="timeout middleware" class="sidebar-nav-item sidebar-nav-item--nested">timeout</a>
+<a href="/en/resources/middleware/vhost" aria-label="vhost middleware" class="sidebar-nav-item sidebar-nav-item--nested">vhost</a>
+<a href="/en/blog/2026-09-30-security-releases">Check out our latest blog</a>
+<a href="/en/5x/starter/installing" class="btn btn--size-md btn--variant-primary">Get Started</a>
+<a href="https://openjsf.org">OpenJS Foundation</a>
+<a href="https://openjsf.org">OpenJS Foundation</a>
+<a href="https://openjsf.org">OpenJS Foundation</a>
+<a href="https://trademark-policy.openjsf.org">Trademark Policy</a>
+<a href="https://trademark-list.openjsf.org">Trademark List</a>
+<a href="https://trademark-list.openjsf.org">list of OpenJS Foundation trademarks</a>
+<a href="https://openjsf.org">The OpenJS Foundation</a>
+<a href="https://ai-coding-assistants-policy.openjsf.org/">AI Coding Assistants Policy</a>
+<a href="https://bylaws.openjsf.org">Bylaws</a>
+<a href="https://code-of-conduct.openjsf.org">Code of Conduct</a>
+<a href="https://www.linuxfoundation.org/cookies">Cookie Policy</a>
+<a href="https://privacy-policy.openjsf.org">Privacy Policy</a>
+<a href="https://github.com/expressjs/express/security/policy">Security Policy</a>
+<a href="https://terms-of-use.openjsf.org">Terms of Use</a>
+<a href="https://trademark-list.openjsf.org">Trademark List</a>
+<a href="https://trademark-policy.openjsf.org">Trademark Policy</a>
+<a href="https://openjsf.org" aria-label="Hosted by OpenJS Foundation"></a>
+<a href="https://www.netlify.com" aria-label="Preview deployed by netlify"></a>
+<a href="https://github.com/expressjs/express" aria-label="expressjs on GitHub"></a>
+<a href="https://www.youtube.com/channel/UCYjxjAeH6TRik9Iwy5nXw7g" aria-label="expressjs channel on Youtube"></a>
+<a href="https://x.com/UseExpressJS" aria-label="follow expressjs on X account"></a>
+<a href="https://slack-invite.openjsf.org" aria-label="Join openjs foundation slack group"></a>
+<a href="https://opencollective.com/express" aria-label="support expressjs on Open Collective"></a>
+<a href="https://bsky.app/profile/expressjs.bsky.social" aria-label="follow expressjs on bluesky"></a>
+<a href="/feed.xml" aria-label="RSS Feed"></a>
+</body></html>

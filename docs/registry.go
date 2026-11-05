@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"slices"
+	"strings"
 
 	"github.com/1broseidon/ketch/health"
 	config "github.com/1broseidon/ketch/internal/configbase"
@@ -15,12 +16,17 @@ type Provider struct {
 	ID           string
 	Setup        string
 	LibrarySetup string
-	Name         string
-	Hidden       bool
-	Usable       func(*config.Config) bool
-	Settings     []config.Setting
-	New          func(*config.Config) (Searcher, error)
-	Probe        func(context.Context, *http.Client, *config.Config) (health.Status, string)
+	// LibraryHelp says what the provider accepts as a library. It feeds the
+	// --library and --resolve help and the MCP library, resolve and query
+	// descriptions, so shared help text never names a provider; empty adds
+	// nothing.
+	LibraryHelp string
+	Name        string
+	Hidden      bool
+	Usable      func(*config.Config) bool
+	Settings    []config.Setting
+	New         func(*config.Config, Deps) (Searcher, error)
+	Probe       func(context.Context, *http.Client, *config.Config) (health.Status, string)
 }
 
 // Required reports whether a failing health check must fail doctor. Selection
@@ -40,6 +46,8 @@ func (p Provider) Required(cfg *config.Config) bool {
 var providers = []Provider{
 	context7Provider(),
 	localProvider(),
+	webProvider(),
+	searchFirstProvider(),
 }
 
 // Providers returns the descriptors in their stable presentation order.
@@ -60,6 +68,22 @@ func AvailableBackends() []string {
 		}
 	}
 	return names
+}
+
+// SelectableBackends returns every value --backend and the docs_backend
+// config key accept: the providers in registry order, then the auto chain
+// (last, since it is not the default).
+func SelectableBackends() []string {
+	return append(AvailableBackends(), AutoBackend)
+}
+
+// IsBackend reports whether id names a selectable backend.
+func IsBackend(id string) bool {
+	if id == AutoBackend {
+		return true
+	}
+	p, ok := Lookup(id)
+	return ok && !p.Hidden
 }
 
 // ProviderNames returns human-readable names in registry order.
@@ -84,11 +108,11 @@ func Lookup(id string) (Provider, bool) {
 }
 
 // Build checks the descriptor's usability before constructing a client.
-func (p Provider) Build(c *config.Config) (Searcher, error) {
+func (p Provider) Build(c *config.Config, deps Deps) (Searcher, error) {
 	if !p.Usable(c) {
 		return nil, errors.New(p.Setup)
 	}
-	return p.New(c)
+	return p.New(c, deps)
 }
 
 // LibraryResolver is the optional library capability of a docs provider.
@@ -106,7 +130,7 @@ func LibraryBackends() []string {
 		if p.Hidden {
 			continue
 		}
-		client, err := p.New(&config.Config{})
+		client, err := p.New(&config.Config{}, Deps{})
 		if err != nil {
 			continue
 		}
@@ -117,8 +141,11 @@ func LibraryBackends() []string {
 	return names
 }
 
-// SupportsLibraries reports whether a registered provider has library operations.
-func SupportsLibraries(id string) bool { return slices.Contains(LibraryBackends(), id) }
+// SupportsLibraries reports whether a registered provider, or the auto
+// chain (whose providers all have them), has library operations.
+func SupportsLibraries(id string) bool {
+	return id == AutoBackend || slices.Contains(LibraryBackends(), id)
+}
 
 // ResolveBackend retains the legacy resolve fallback while allowing additional
 // library-capable providers to handle an explicitly selected backend.
@@ -141,4 +168,26 @@ func LibraryProviderNames() []string {
 		names = append(names, p.Name)
 	}
 	return names
+}
+
+// LibraryHelp joins what each library provider says it accepts as a
+// library beyond a resolved ID (its descriptor's LibraryHelp), labelled with
+// the provider's name, so the CLI help and the MCP descriptions that use it
+// name no provider themselves. Empty when no provider says anything.
+func LibraryHelp() string {
+	var parts []string
+	for _, id := range LibraryBackends() {
+		if p, ok := Lookup(id); ok && p.LibraryHelp != "" {
+			parts = append(parts, p.Name+": "+p.LibraryHelp)
+		}
+	}
+	return strings.Join(parts, "; ")
+}
+
+// WithLibraryHelp appends LibraryHelp to s in parentheses, when there is any.
+func WithLibraryHelp(s string) string {
+	if help := LibraryHelp(); help != "" {
+		return s + " (" + help + ")"
+	}
+	return s
 }

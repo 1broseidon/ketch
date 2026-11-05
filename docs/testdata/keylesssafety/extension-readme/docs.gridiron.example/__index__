@@ -1,0 +1,10 @@
+<html><head><title>Gridiron Documentation</title><meta name="generator" content="Docusaurus v3"></head>
+<body>
+<nav><a href="/intro">Introduction</a><a href="/tutorial/">Tutorial</a><a href="https://github.com/gridiron/gridiron">GitHub</a></nav>
+<aside><h2>Ecosystem</h2><ul>
+<li><a href="https://pypi.org/project/gridiron-vault/">gridiron-vault</a></li>
+<li><a href="https://pypi.org/project/gridiron-cache/">gridiron-cache</a></li>
+<li><a href="https://github.com/vaultsmith/gridiron-vault">gridiron-vault on GitHub</a></li>
+</ul></aside>
+<h1>Gridiron</h1><p>Gridiron is a web framework for Python.</p>
+</body></html>

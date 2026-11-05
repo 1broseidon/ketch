@@ -1,0 +1,15 @@
+{
+ "crate": {
+  "id": "axum",
+  "name": "axum",
+  "description": "HTTP routing and request handling library that focuses on ergonomics and modularity",
+  "homepage": "https://github.com/tokio-rs/axum",
+  "documentation": null,
+  "repository": "https://github.com/tokio-rs/axum",
+  "max_stable_version": null,
+  "max_version": "0.0.0",
+  "newest_version": "0.0.0",
+  "default_version": "0.8.9",
+  "recent_downloads": 142715585
+ }
+}

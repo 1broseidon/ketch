@@ -1,0 +1,13 @@
+{
+ "name": "solid",
+ "version": "0.2.1",
+ "description": "Make small, simple sites",
+ "homepage": "https://github.com/sarenji/solid",
+ "repository": {
+  "url": "git://github.com/sarenji/solid.git",
+  "type": "git"
+ },
+ "bugs": {
+  "name": "http://github.com/sarenji/solid/issues"
+ }
+}

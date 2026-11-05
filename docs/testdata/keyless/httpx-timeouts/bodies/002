@@ -1,0 +1,2236 @@
+
+<!DOCTYPE html>
+<html lang="en" data-layout="responsive" data-local="" data-version="prod-frontend-00275-2gh">
+ <head>
+ <meta charset="utf-8">
+ <meta http-equiv="X-UA-Compatible" content="IE=edge">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <meta class="js-gtmID" data-gtmid="GTM-W8MVQXG">
+ <link rel="shortcut icon" href="/static/shared/icon/favicon.ico">
+ <link rel="canonical" href="https://pkg.go.dev/github.com/zeromicro/go-zero">
+ <link href="/static/frontend/frontend.min.css?version=prod-frontend-00275-2gh" rel="stylesheet">
+ <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="Go Packages">
+ <title>go-zero module - github.com/zeromicro/go-zero - Go Packages</title>
+ <link href="/static/frontend/unit/unit.min.css?version=prod-frontend-00275-2gh" rel="stylesheet">
+ <link href="/static/frontend/unit/main/main.min.css?version=prod-frontend-00275-2gh" rel="stylesheet">
+ </head>
+ <body>
+ <section class="go-SurveyBanner js-surveyBanner" role="region" aria-label="2026 Go Developer Survey" data-survey-id="go-survey-2026">
+ <img class="go-SurveyBanner-gopher" src="/static/shared/survey/gopher-announcement.png" width="108" height="80" alt="" aria-hidden="true">
+ <img class="go-SurveyBanner-bullhornMobile" src="/static/shared/survey/bullhorn-mobile.svg" width="22" height="23" alt="" aria-hidden="true">
+ <img class="go-SurveyBanner-bullhornDesktop" src="/static/shared/survey/bullhorn-desktop.svg" width="28" height="28" alt="" aria-hidden="true">
+ <div class="go-SurveyBanner-content">
+ <span class="go-SurveyBanner-lead">Help us shape the future of Go!</span>
+ <a class="go-SurveyBanner-link js-surveyBannerLink" href="https://blink.qualtrics.com/jfe/form/SV_ba8fa1ZcSQQdTRs?s=p" target="_blank" rel="noopener"><span class="go-SurveyBanner-linkPrefix">Take the </span>2026 Go Developer Survey</a>
+ </div>
+ <button class="go-SurveyBanner-close js-surveyBannerClose" type="button" aria-label="Minimize the survey banner">
+ <img class="go-SurveyBanner-minimizeIcon" src="/static/shared/survey/minimize.svg" width="20" height="20" alt="" aria-hidden="true">
+ </button>
+ </section>
+ <header class="go-Header go-Header--full js-siteHeader">
+ <div class="go-Header-inner go-Header-inner--dark">
+ <nav class="go-Header-nav">
+ <a href="https://go.dev/" class="js-headerLogo" data-gtmc="nav link"
+ data-test-id="go-header-logo-link" role="heading" aria-level="1">
+ <img class="go-Header-logo" src="/static/shared/logo/go-white.svg" alt="Go">
+ </a>
+ <div class="skip-navigation-wrapper">
+ <a class="skip-to-content-link" aria-label="Skip to main content" href="#main-content"> Skip to Main Content </a>
+ </div>
+ <div class="go-Header-rightContent">
+<div class="go-SearchForm js-searchForm">
+ <form
+ class="go-InputGroup go-ShortcutKey go-SearchForm-form"
+ action="/search"
+ data-shortcut="/"
+ data-shortcut-alt="search"
+ data-gtmc="search form"
+ aria-label="Search for a package"
+ role="search"
+ >
+ <input name="q" class="go-Input js-searchFocus" aria-label="Search for a package" type="search"
+ autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"
+ placeholder="Search packages or symbols"
+ value="" />
+ <input name="m" value="" hidden>
+ <button class="go-Button go-Button--inverted" aria-label="Submit search">
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/search_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </form>
+ <button class="go-SearchForm-expandSearch js-expandSearch" data-gtmc="nav button"
+ aria-label="Open search" data-test-id="expand-search">
+ <img class="go-Icon go-Icon--inverted" height="24" width="24"
+ src="/static/shared/icon/search_gm_grey_24dp.svg" alt="">
+ </button>
+</div>
+ <ul class="go-Header-menu">
+ <li class="go-Header-menuItem">
+ <a class="js-desktop-menu-hover" href="#" data-gtmc="nav link">
+ Why Go
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_drop_down_gm_grey_24dp.svg" alt="submenu dropdown icon">
+ </a>
+ <ul class="go-Header-submenu go-Header-submenu--why js-desktop-submenu-hover" aria-label="submenu">
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/solutions/case-studies">
+ <span>Case Studies</span>
+ </a>
+ </div>
+ <p>Common problems companies solve with Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/solutions/use-cases">
+ <span>Use Cases</span>
+ </a>
+ </div>
+ <p>Stories about how and why companies use Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/security/">
+ <span>Security</span>
+ </a>
+ </div>
+ <p>How Go can help keep you secure by default</p>
+ </li>
+ </ul>
+ </li>
+ <li class="go-Header-menuItem">
+ <a href="https://go.dev/learn/" data-gtmc="nav link">Learn</a>
+ </li>
+ <li class="go-Header-menuItem">
+ <a class="js-desktop-menu-hover" href="#" data-gtmc="nav link">
+ Docs
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_drop_down_gm_grey_24dp.svg" alt="submenu dropdown icon">
+ </a>
+ <ul class="go-Header-submenu go-Header-submenu--docs js-desktop-submenu-hover" aria-label="submenu">
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/doc/effective_go">
+ <span>Effective Go</span>
+ </a>
+ </div>
+ <p>Tips for writing clear, performant, and idiomatic Go code</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/doc/">
+ <span>Go User Manual</span>
+ </a>
+ </div>
+ <p>A complete introduction to building software with Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://pkg.go.dev/std">
+ <span>Standard library</span>
+ </a>
+ </div>
+ <p>Reference documentation for Go's standard library</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/doc/devel/release">
+ <span>Release Notes</span>
+ </a>
+ </div>
+ <p>Learn what's new in each Go release</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="/api">
+ <span>API</span>
+ </a>
+ </div>
+ <p>Reference documentation for the pkg.go.dev API</p>
+ </li>
+ </ul>
+ </li>
+ <li class="go-Header-menuItem go-Header-menuItem--active">
+ <a href="/" data-gtmc="nav link">Packages</a>
+ </li>
+ <li class="go-Header-menuItem">
+ <a class="js-desktop-menu-hover" href="#" data-gtmc="nav link">
+ Community
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_drop_down_gm_grey_24dp.svg" alt="submenu dropdown icon">
+ </a>
+ <ul class="go-Header-submenu go-Header-submenu--community js-desktop-submenu-hover" aria-label="submenu">
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/talks/">
+ <span>Recorded Talks</span>
+ </a>
+ </div>
+ <p>Videos from prior events</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://www.meetup.com/pro/go">
+ <span>Meetups</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </div>
+ <p>Meet other local Go developers</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://github.com/golang/go/wiki/Conferences">
+ <span>Conferences</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </div>
+ <p>Learn and network with Go developers from around the world</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/blog">
+ <span>Go blog</span>
+ </a>
+ </div>
+ <p>The Go project's official blog.</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/help">
+ <span>Go project</span>
+ </a>
+ </div>
+ <p>Get help and stay informed from Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ Get connected
+ </div>
+ <p></p>
+ <div class="go-Header-socialIcons">
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with google-groups (Opens in new window)"
+ title="Get connected with google-groups (Opens in new window)"
+ href="https://groups.google.com/g/golang-nuts">
+ <img src="/static/shared/logo/social/google-groups.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with github (Opens in new window)"
+ title="Get connected with github (Opens in new window)"
+ href="https://github.com/golang">
+ <img src="/static/shared/logo/social/github.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with twitter (Opens in new window)"
+ title="Get connected with twitter (Opens in new window)"
+ href="https://twitter.com/golang">
+ <img src="/static/shared/logo/social/twitter.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with reddit (Opens in new window)"
+ title="Get connected with reddit (Opens in new window)"
+ href="https://www.reddit.com/r/golang/">
+ <img src="/static/shared/logo/social/reddit.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with slack (Opens in new window)"
+ title="Get connected with slack (Opens in new window)"
+ href="https://invite.slack.golangbridge.org/">
+ <img src="/static/shared/logo/social/slack.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with stack-overflow (Opens in new window)"
+ title=""
+ href="https://stackoverflow.com/collectives/go">
+ <img src="/static/shared/logo/social/stack-overflow.svg" />
+ </a>
+ </div>
+ </li>
+ </ul>
+ </li>
+ </ul>
+ <button class="go-Header-navOpen js-headerMenuButton go-Header-navOpen--white" data-gtmc="nav button" aria-label="Open navigation">
+ </button>
+ </div>
+ </nav>
+ </div>
+ </header>
+ <aside class="go-NavigationDrawer js-header">
+ <nav class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="https://go.dev/">
+ <img class="go-NavigationDrawer-logo" src="/static/shared/logo/go-blue.svg" alt="Go.">
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem js-mobile-subnav-trigger go-NavigationDrawer-hasSubnav">
+ <a href="#">
+ <span>Why Go</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_next_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ <div class="go-NavigationDrawer go-NavigationDrawer-submenuItem">
+ <div class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="#">
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_before_gm_grey_24dp.svg" alt="">
+ </i>
+ Why Go
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/solutions/case-studies">
+ Case Studies
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/solutions/use-cases">
+ Use Cases
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/security/">
+ Security
+ </a>
+ </li>
+ </ul>
+ </div>
+ </div>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/learn/">Learn</a>
+ </li>
+ <li class="go-NavigationDrawer-listItem js-mobile-subnav-trigger go-NavigationDrawer-hasSubnav">
+ <a href="#">
+ <span>Docs</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_next_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ <div class="go-NavigationDrawer go-NavigationDrawer-submenuItem">
+ <div class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="#"><i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_before_gm_grey_24dp.svg" alt="">
+ </i>
+ Docs
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/doc/effective_go">
+ Effective Go
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/doc/">
+ Go User Manual
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://pkg.go.dev/std">
+ Standard library
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/doc/devel/release">
+ Release Notes
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="/api">
+ API
+ </a>
+ </li>
+ </ul>
+ </div>
+ </div>
+ </li>
+ <li class="go-NavigationDrawer-listItem go-NavigationDrawer-listItem--active">
+ <a href="/">Packages</a>
+ </li>
+ <li class="go-NavigationDrawer-listItem js-mobile-subnav-trigger go-NavigationDrawer-hasSubnav">
+ <a href="#">
+ <span>Community</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_next_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ <div class="go-NavigationDrawer go-NavigationDrawer-submenuItem">
+ <div class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="#">
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_before_gm_grey_24dp.svg" alt="">
+ </i>
+ Community
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/talks/">
+ Recorded Talks
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://www.meetup.com/pro/go">
+ Meetups
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://github.com/golang/go/wiki/Conferences">
+ Conferences
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/blog">
+ Go blog
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/help">
+ Go project
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <div>Get connected</div>
+ <div class="go-Header-socialIcons">
+ <a class="go-Header-socialIcon" href="https://groups.google.com/g/golang-nuts"><img src="/static/shared/logo/social/google-groups.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://github.com/golang"><img src="/static/shared/logo/social/github.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://twitter.com/golang"><img src="/static/shared/logo/social/twitter.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://www.reddit.com/r/golang/"><img src="/static/shared/logo/social/reddit.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://invite.slack.golangbridge.org/"><img src="/static/shared/logo/social/slack.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://stackoverflow.com/collectives/go"><img src="/static/shared/logo/social/stack-overflow.svg" /></a>
+ </div>
+ </li>
+ </ul>
+ </div>
+ </div>
+ </li>
+ </ul>
+ </nav>
+ </aside>
+ <div class="go-NavigationDrawer-scrim js-scrim" role="presentation"></div>
+ <main class="go-Main" id="main-content">
+ <div class="go-Main-banner" role="alert"></div>
+ <header class="go-Main-header js-mainHeader">
+ <nav class="go-Main-headerBreadcrumb go-Breadcrumb" aria-label="Breadcrumb" data-test-id="UnitHeader-breadcrumb">
+ <ol>
+ <li data-test-id="UnitHeader-breadcrumbItem">
+ <a href="/" data-gtmc="breadcrumb link">Discover Packages</a>
+ </li>
+ <li>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3" data-gtmc="breadcrumb link" aria-current="location"
+ data-test-id="UnitHeader-breadcrumbCurrent">
+ github.com/zeromicro/go-zero
+ </a>
+ <button
+ class="go-Button go-Button--inline go-Clipboard js-clipboard"
+ title="Copy path to clipboard.&#10;&#10;github.com/zeromicro/go-zero"
+ aria-label="Copy Path to Clipboard"
+ data-to-copy="github.com/zeromicro/go-zero"
+ data-gtmc="breadcrumbs button"
+ >
+ <img
+ class="go-Icon go-Icon--accented"
+ height="24"
+ width="24"
+ src="/static/shared/icon/content_copy_gm_grey_24dp.svg"
+ alt=""
+ >
+ </button>
+ </li>
+ </ol>
+ </nav>
+ <div class="go-Main-headerContent">
+ <div class="go-Main-headerTitle js-stickyHeader">
+ <a class="go-Main-headerLogo" href="https://go.dev/" aria-hidden="true" tabindex="-1" data-gtmc="header link" aria-label="Link to Go Homepage">
+ <img height="78" width="207" src="/static/shared/logo/go-blue.svg" alt="Go">
+ </a>
+ <h1 class="UnitHeader-titleHeading" data-test-id="UnitHeader-title">go-zero</h1>
+ <span class="go-Chip go-Chip--inverted">module</span>
+ <button
+ class="go-Button go-Button--inline go-Clipboard js-clipboard"
+ title="Copy path to clipboard.&#10;&#10;github.com/zeromicro/go-zero"
+ aria-label="Copy Path to Clipboard"
+ data-to-copy="github.com/zeromicro/go-zero"
+ data-gtmc="title button"
+ tabindex="-1"
+ >
+ <img
+ class="go-Icon go-Icon--accented"
+ height="24"
+ width="24"
+ src="/static/shared/icon/content_copy_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </div>
+ <div class="go-Main-headerDetails">
+ <span class="go-Main-headerDetailItem" data-test-id="UnitHeader-version">
+ <a href="?tab=versions" aria-label="Version: v1.10.3" 
+ data-gtmc="header link" aria-describedby="version-description">
+ <span class="go-textSubtle" aria-hidden="true">Version: </span>
+ v1.10.3
+ </a>
+ <div class="screen-reader-only" id="version-description" hidden>
+ Opens a new window with list of versions in this module.
+ </div>
+ <span class="DetailsHeader-badge--latest" data-test-id="UnitHeader-minorVersionBanner">
+ <span class="go-Chip DetailsHeader-span--latest">Latest</span>
+ <span class="go-Chip DetailsHeader-span--notAtLatest">
+ Latest
+ <details class="go-Tooltip js-tooltip" data-gtmc="tooltip">
+ <summary>
+ <img class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/alert_gm_grey_24dp.svg" alt="Warning">
+ </summary>
+ <p>This package is not in the latest version of its module.</p>
+ </details>
+ </span>
+ <a href="/github.com/zeromicro/go-zero" aria-label="Go to Latest Version" data-gtmc="header link">
+ <span class="go-Chip go-Chip--alert DetailsHeader-span--goToLatest">Go to latest</span>
+ </a>
+ </span>
+ </span>
+ <span class="go-Main-headerDetailItem" data-test-id="UnitHeader-commitTime">
+ Published: Jul 31, 2026
+ </span>
+ <span class="go-Main-headerDetailItem" data-test-id="UnitHeader-licenses">
+ License: <a href="/github.com/zeromicro/go-zero?tab=licenses" data-test-id="UnitHeader-license" 
+ data-gtmc="header link" aria-describedby="license-description">MIT</a>
+ </span>
+ <div class="screen-reader-only" id="license-description" hidden>
+ Opens a new window with license information.
+ </div>
+ </div>
+ <div class="UnitHeader-overflowContainer">
+ <select class="UnitHeader-overflowSelect js-selectNav" tabindex="-1">
+ <option value="/">Main</option>
+ <option value="/github.com/zeromicro/go-zero?tab=versions">
+ Versions
+ </option>
+ <option value="/github.com/zeromicro/go-zero?tab=licenses">
+ Licenses
+ </option>
+ </select>
+ </div>
+ </div>
+</header>
+ <aside class="go-Main-aside js-mainAside">
+ <div class="UnitMeta">
+ <h2 class="go-textLabel">Details</h2>
+ <ul class="UnitMeta-details">
+ <li>
+ <details class="go-Tooltip js-tooltip" data-gtmc="tooltip">
+ <summary class="go-textSubtle">
+ <img class="go-Icon go-Icon--accented"
+ tabindex="0"
+ role="button"src="/static/shared/icon/check_circle_gm_grey_24dp.svg" alt="checked" aria-label="Valid file, toggle tooltip"height="24" width="24">
+ Valid <a href="https://github.com/zeromicro/go-zero/tree/v1.10.3/go.mod" target="_blank" rel="noopener">go.mod</a> file
+ <img class="go-Icon" role="button" tabindex="0" src="/static/shared/icon/help_gm_grey_24dp.svg" alt="" aria-label="Toggle go.mod validity tooltip" height="24" width="24">
+ </summary>
+ <p aria-live="polite" role="tooltip">
+ The Go module system was introduced in Go 1.11 and is the official dependency management
+ solution for Go.
+ </p>
+ </details>
+ </li>
+ <li>
+ <details class="go-Tooltip js-tooltip" data-gtmc="tooltip">
+ <summary class="go-textSubtle">
+ <img class="go-Icon go-Icon--accented"
+ tabindex="0"
+ role="button"src="/static/shared/icon/check_circle_gm_grey_24dp.svg" alt="checked" aria-label="Valid file, toggle tooltip"height="24" width="24">
+ Redistributable license
+ <img class="go-Icon" role="button" tabindex="0" src="/static/shared/icon/help_gm_grey_24dp.svg" alt="" aria-label="Toggle redistributable help tooltip" height="24" width="24">
+ </summary>
+ <p aria-live="polite" role="tooltip">
+ Redistributable licenses place minimal restrictions on how software can be used,
+ modified, and redistributed.
+ </p>
+ </details>
+ </li>
+ <li>
+ <details class="go-Tooltip js-tooltip" data-gtmc="tooltip">
+ <summary class="go-textSubtle">
+ <img class="go-Icon go-Icon--accented"
+ tabindex="0"
+ role="button"src="/static/shared/icon/check_circle_gm_grey_24dp.svg" alt="checked" aria-label="Valid file, toggle tooltip"height="24" width="24">
+ Tagged version
+ <img class="go-Icon" role="button" tabindex="0" src="/static/shared/icon/help_gm_grey_24dp.svg" alt="" aria-label="Toggle tagged version tooltip" height="24" width="24">
+ </summary>
+ <p aria-live="polite" role="tooltip">Modules with tagged versions give importers more predictable builds.</p>
+ </details>
+ </li>
+ <li>
+ <details class="go-Tooltip js-tooltip" data-gtmc="tooltip">
+ <summary class="go-textSubtle">
+ <img class="go-Icon go-Icon--accented"
+ tabindex="0"
+ role="button"src="/static/shared/icon/check_circle_gm_grey_24dp.svg" alt="checked" aria-label="Valid file, toggle tooltip"height="24" width="24">
+ Stable version
+ <img class="go-Icon" role="button" tabindex="0" aria-label="Toggle stable version tooltip" src="/static/shared/icon/help_gm_grey_24dp.svg" alt="" height="24" width="24">
+ </summary>
+ <p aria-live="polite" role="tooltip">When a project reaches major version v1 it is considered stable.</p>
+ </details>
+ </li>
+ <li class="UnitMeta-detailsLearn">
+ <a href="/about#best-practices" data-gtmc="meta link">Learn more about best practices</a>
+ </li>
+ </ul>
+ <h2 class="go-textLabel">Repository</h2>
+ <div class="UnitMeta-repo">
+ <a href="https://github.com/zeromicro/go-zero" title="https://github.com/zeromicro/go-zero" target="_blank" rel="noopener">
+ github.com/zeromicro/go-zero
+ </a>
+ </div>
+ <h2 class="go-textLabel" data-test-id="links-heading">Links</h2>
+ <ul class="UnitMeta-links">
+ <li>
+ <a href="https://deps.dev/go/github.com%2Fzeromicro%2Fgo-zero/v1.10.3" title="View this module on Open Source Insights"
+ target="_blank" rel="noopener" data-test-id="meta-link-depsdev">
+ <img class="link-Icon" src="/static/shared/icon/depsdev-logo.svg"
+ alt="Open Source Insights Logo" />
+ Open Source Insights
+ </a>
+ </li>
+ </ul>
+ </div>
+</aside>
+ <nav class="go-Main-nav go-Main-nav--sticky js-mainNav" aria-label="Outline">
+ <div class="go-Main-navDesktop">
+ <div class="UnitOutline-jumpTo">
+ <button class="UnitOutline-jumpToInput go-ShortcutKey js-jumpToInput"
+ aria-controls="jump-to-modal"
+ aria-label="Open Jump to Identifier"
+ data-shortcut="f"
+ data-shortcut-alt="find"
+ data-test-id="jump-to-button" data-gtmc="outline button">
+ Jump to ...
+ </button>
+ </div>
+ <ul class="go-Tree js-tree" role="tree" aria-label="Outline">
+ <li class="js-readmeOutline">
+ <a href="#section-readme" data-gtmc="outline link">
+ README
+ </a>
+ <ul id="readme-outline">
+ <li>
+ <a href="#readme-what-is-go-zero" data-gtmc="readme outline link">
+ 🤷‍ What is go-zero?
+ </a>
+ <ul>
+ <li>
+ <a href="#readme-advantages-of-go-zero" data-gtmc="readme outline link">
+ Advantages of go-zero:
+ </a>
+ </li>
+ </ul>
+ </li>
+ <li>
+ <a href="#readme-backgrounds-of-go-zero" data-gtmc="readme outline link">
+ Backgrounds of go-zero
+ </a>
+ </li>
+ <li>
+ <a href="#readme-design-considerations-on-go-zero" data-gtmc="readme outline link">
+ Design considerations on go-zero
+ </a>
+ </li>
+ <li>
+ <a href="#readme-the-implementation-and-features-of-go-zero" data-gtmc="readme outline link">
+ The implementation and features of go-zero
+ </a>
+ </li>
+ <li>
+ <a href="#readme-architecture-with-go-zero" data-gtmc="readme outline link">
+ Architecture with go-zero
+ </a>
+ </li>
+ <li>
+ <a href="#readme-installation" data-gtmc="readme outline link">
+ Installation
+ </a>
+ </li>
+ <li>
+ <a href="#readme-ai-native-development" data-gtmc="readme outline link">
+ AI-Native Development
+ </a>
+ <ul>
+ <li>
+ <a href="#readme-three-core-projects" data-gtmc="readme outline link">
+ Three Core Projects
+ </a>
+ </li>
+ <li>
+ <a href="#readme-quick-setup" data-gtmc="readme outline link">
+ Quick Setup
+ </a>
+ <ul>
+ <li>
+ <a href="#readme-github-copilot" data-gtmc="readme outline link">
+ GitHub Copilot
+ </a>
+ </li>
+ <li>
+ <a href="#readme-cursor" data-gtmc="readme outline link">
+ Cursor
+ </a>
+ </li>
+ <li>
+ <a href="#readme-windsurf" data-gtmc="readme outline link">
+ Windsurf
+ </a>
+ </li>
+ <li>
+ <a href="#readme-claude-desktop" data-gtmc="readme outline link">
+ Claude Desktop
+ </a>
+ </li>
+ </ul>
+ </li>
+ <li>
+ <a href="#readme-how-it-works" data-gtmc="readme outline link">
+ How It Works
+ </a>
+ </li>
+ </ul>
+ </li>
+ <li>
+ <a href="#readme-quick-start" data-gtmc="readme outline link">
+ Quick Start
+ </a>
+ </li>
+ <li>
+ <a href="#readme-benchmark" data-gtmc="readme outline link">
+ Benchmark
+ </a>
+ </li>
+ <li>
+ <a href="#readme-documents" data-gtmc="readme outline link">
+ Documents
+ </a>
+ </li>
+ <li>
+ <a href="#readme-chat-group" data-gtmc="readme outline link">
+ Chat group
+ </a>
+ </li>
+ <li>
+ <a href="#readme-cloud-native-landscape" data-gtmc="readme outline link">
+ Cloud Native Landscape
+ </a>
+ </li>
+ <li>
+ <a href="#readme-give-a-star" data-gtmc="readme outline link">
+ Give a Star! ⭐
+ </a>
+ </li>
+ </ul>
+ </li>
+ <li>
+ <a href="#section-directories" data-gtmc="outline link">
+ Directories
+ </a>
+ </li>
+ </ul>
+ </div>
+ <div class="go-Main-navMobile js-mainNavMobile">
+ <label class="go-Label">
+ <select class="go-Select">
+ <option selected disabled>README</option>
+ </select>
+ </label>
+ </div>
+</nav>
+ <article class="go-Main-article js-mainContent">
+ <div class="UnitDetails" data-test-id="UnitDetails" style="display: block;">
+ <div class="UnitDetails-content js-unitDetailsContent" data-test-id="UnitDetails-content">
+ <div class="UnitReadme UnitReadme--expanded js-readme">
+ <h2 class="UnitReadme-title" id="section-readme">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/chrome_reader_mode_gm_grey_24dp.svg" alt="">
+ README
+ <a class="UnitReadme-idLink" href="#section-readme" title="Go to Readme" aria-label="Go to Readme">¶</a>
+ </h2>
+ <div class="UnitReadme-content" data-test-id="Unit-readmeContent">
+ <div class="Overview-readmeContent js-readmeContent"><h3 class="h1" id="readme-go-zero">go-zero</h3>
+<p align="center">
+<img align="center" width="150px" src="https://raw.githubusercontent.com/zeromicro/zero-doc/main/doc/images/go-zero.png"/>
+</p>
+<p>go-zero is a web and rpc framework with lots of builtin engineering practices. It’s born to ensure the stability of the busy services with resilience design and has been serving sites with tens of millions of users for years.</p>
+<div align="center">
+<p><a href="https://codecov.io/gh/zeromicro/go-zero" rel="nofollow"><img src="https://codecov.io/gh/zeromicro/go-zero/branch/master/graph/badge.svg" alt="codecov"/></a>
+<a href="https://goreportcard.com/report/github.com/zeromicro/go-zero" rel="nofollow"><img src="https://goreportcard.com/badge/github.com/zeromicro/go-zero" alt="Go Report Card"/></a>
+<a href="https://github.com/zeromicro/go-zero" rel="nofollow"><img src="https://img.shields.io/github/v/release/zeromicro/go-zero.svg?style=flat-square" alt="Release"/></a>
+<a href="https://pkg.go.dev/github.com/zeromicro/go-zero" rel="nofollow"><img src="https://pkg.go.dev/badge/github.com/zeromicro/go-zero.svg" alt="Go Reference"/></a>
+<a href="https://github.com/avelino/awesome-go" rel="nofollow"><img src="https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg" alt="Awesome Go"/></a>
+<a href="https://opensource.org/licenses/MIT" rel="nofollow"><img src="https://img.shields.io/badge/License-MIT-yellow.svg"/></a>
+<a href="https://discord.gg/4JQvC5A4Fe" rel="nofollow"><img src="https://img.shields.io/discord/794530774463414292?label=chat&amp;logo=discord" alt="Discord"/></a></p>
+</div>
+<h4 class="h2" id="readme-what-is-go-zero">🤷‍ What is go-zero?</h4>
+<p>English | <a href="https://github.com/zeromicro/go-zero/blob/v1.10.3/readme-cn.md" rel="nofollow">简体中文</a> | <a href="https://github.com/zeromicro/go-zero/blob/v1.10.3/readme-ko.md" rel="nofollow">한국어</a></p>
+<p><a href="https://trendshift.io/repositories/3263" rel="nofollow"><img src="https://trendshift.io/api/badge/repositories/3263" width="250" height="55"/></a>
+<a href="https://www.producthunt.com/posts/go-zero?utm_source=badge-featured&amp;utm_medium=badge&amp;utm_souce=badge-go-zero" rel="nofollow"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=334030&amp;theme=light" width="250" height="54"/></a></p>
+<p>go-zero (listed in CNCF Landscape: <a href="https://landscape.cncf.io/?selected=go-zero" rel="nofollow">https://landscape.cncf.io/?selected=go-zero</a>) is a web and rpc framework with lots of builtin engineering practices. It’s born to ensure the stability of the busy services with resilience design and has been serving sites with tens of millions of users for years.</p>
+<p>go-zero contains simple API description syntax and code generation tool called <code>goctl</code>. You can generate Go, iOS, Android, Kotlin, Dart, TypeScript, JavaScript from .api files with <code>goctl</code>.</p>
+<h6 class="h4" id="readme-advantages-of-go-zero">Advantages of go-zero:</h6>
+<ul>
+<li>Improves the stability of the services with tens of millions of daily active users</li>
+<li>Builtin chained timeout control, concurrency control, rate limit, adaptive circuit breaker, adaptive load shedding, even no configuration needed</li>
+<li>Builtin middlewares also can be integrated into your frameworks</li>
+<li>Simple API syntax, one command to generate a couple of different languages</li>
+<li>Auto validate the request parameters from clients</li>
+<li>Plenty of builtin microservice management and concurrent toolkits</li>
+</ul>
+<img src="https://raw.githubusercontent.com/zeromicro/zero-doc/main/doc/images/architecture-en.png" alt="Architecture" width="1500"/>
+<h4 class="h2" id="readme-backgrounds-of-go-zero">Backgrounds of go-zero</h4>
+<p>In early 2018, we transitioned from a Java+MongoDB monolithic architecture to microservices, choosing:</p>
+<ul>
+<li><strong>Golang</strong> - High performance, simple syntax, excellent deployment experience, and low resource consumption</li>
+<li><strong>Self-designed microservice framework</strong> - Better problem isolation, easier feature extension, and faster issue resolution</li>
+</ul>
+<h4 class="h2" id="readme-design-considerations-on-go-zero">Design considerations on go-zero</h4>
+<p>go-zero follows these core design principles:</p>
+<ul>
+<li><strong>Simplicity</strong> - Keep it simple, first principle</li>
+<li><strong>High availability</strong> - Stable under high concurrency</li>
+<li><strong>Resilience</strong> - Failure-oriented programming with adaptive protection</li>
+<li><strong>Developer friendly</strong> - Encapsulate complexity, one way to do one thing</li>
+<li><strong>Easy to extend</strong> - Flexible architecture for growth</li>
+</ul>
+<h4 class="h2" id="readme-the-implementation-and-features-of-go-zero">The implementation and features of go-zero</h4>
+<p>go-zero integrates engineering best practices:</p>
+<ul>
+<li><strong>Code generation</strong> - Powerful tools to minimize boilerplate</li>
+<li><strong>Simple API</strong> - Clean interfaces, fully compatible with net/http</li>
+<li><strong>High performance</strong> - Optimized for speed and efficiency</li>
+<li><strong>Resilience</strong> - Built-in circuit breaker, rate limiting, load shedding, timeout control</li>
+<li><strong>Service mesh</strong> - Service discovery, load balancing, call tracing</li>
+<li><strong>Developer tools</strong> - Auto parameter validation, cache management, metrics and monitoring</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/zeromicro/zero-doc/main/doc/images/resilience-en.png" alt="Resilience"/></p>
+<h4 class="h2" id="readme-architecture-with-go-zero">Architecture with go-zero</h4>
+<img width="1067" alt="image" src="https://user-images.githubusercontent.com/1918356/171880372-5010d846-e8b1-4942-8fe2-e2bbb584f762.png"/>
+<h4 class="h2" id="readme-installation">Installation</h4>
+<p>Run the following command under your project:</p>
+<pre><code>go get -u github.com/zeromicro/go-zero
+</code></pre>
+<h4 class="h2" id="readme-ai-native-development">AI-Native Development</h4>
+<p>The go-zero team provides AI tooling for Claude, GitHub Copilot, Cursor to generate framework-compliant code.</p>
+<h5 class="h3" id="readme-three-core-projects">Three Core Projects</h5>
+<p><strong><a href="https://github.com/zeromicro/ai-context" rel="nofollow">ai-context</a></strong> - Workflow guide for AI assistants</p>
+<p><strong><a href="https://github.com/zeromicro/zero-skills" rel="nofollow">zero-skills</a></strong> - Pattern library with examples</p>
+<p><strong><a href="https://github.com/zeromicro/mcp-zero" rel="nofollow">mcp-zero</a></strong> - Code generation tools via Model Context Protocol</p>
+<h5 class="h3" id="readme-quick-setup">Quick Setup</h5>
+<h6 class="h4" id="readme-github-copilot">GitHub Copilot</h6>
+<pre><code>git submodule add https://github.com/zeromicro/ai-context.git .github/ai-context
+ln -s ai-context/00-instructions.md .github/copilot-instructions.md # macOS/Linux
+# Windows: mklink .github\copilot-instructions.md .github\ai-context\00-instructions.md
+git submodule update --remote .github/ai-context # Update
+</code></pre>
+<h6 class="h4" id="readme-cursor">Cursor</h6>
+<pre><code>git submodule add https://github.com/zeromicro/ai-context.git .cursorrules
+git submodule update --remote .cursorrules # Update
+</code></pre>
+<h6 class="h4" id="readme-windsurf">Windsurf</h6>
+<pre><code>git submodule add https://github.com/zeromicro/ai-context.git .windsurfrules
+git submodule update --remote .windsurfrules # Update
+</code></pre>
+<h6 class="h4" id="readme-claude-desktop">Claude Desktop</h6>
+<pre><code>git clone https://github.com/zeromicro/mcp-zero.git &amp;&amp; cd mcp-zero &amp;&amp; go build
+# Configure: ~/Library/Application Support/Claude/claude_desktop_config.json
+# Or: claude mcp add --transport stdio mcp-zero --env GOCTL_PATH=/path/to/goctl -- /path/to/mcp-zero
+</code></pre>
+<h5 class="h3" id="readme-how-it-works">How It Works</h5>
+<p>AI assistants use these tools together:</p>
+<ol>
+<li><strong>ai-context</strong> - workflow guidance</li>
+<li><strong>zero-skills</strong> - implementation patterns</li>
+<li><strong>mcp-zero</strong> - real-time code generation</li>
+</ol>
+<p><strong>Example</strong>: Creating a REST API → AI reads <strong>ai-context</strong> for workflow → calls <strong>mcp-zero</strong> to generate code → references <strong>zero-skills</strong> for patterns → produces production-ready code ✅</p>
+<h4 class="h2" id="readme-quick-start">Quick Start</h4>
+<ol>
+<li>
+<p>Full examples:</p>
+<p><a href="https://github.com/zeromicro/zero-doc/blob/main/doc/shorturl-en.md" rel="nofollow">Rapid development of microservice systems</a></p>
+<p><a href="https://github.com/zeromicro/zero-doc/blob/main/docs/zero/bookstore-en.md" rel="nofollow">Rapid development of microservice systems - multiple RPCs</a></p>
+</li>
+<li>
+<p>Install goctl</p>
+<pre><code># for Go
+go install github.com/zeromicro/go-zero/tools/goctl@latest
+# For Mac
+brew install goctl
+# docker for all platforms
+docker pull kevinwan/goctl
+# run goctl
+docker run --rm -it -v `pwd`:/app kevinwan/goctl --help
+</code></pre>
+<p>Ensure goctl is executable and in your $PATH.</p>
+</li>
+<li>
+<p>Create the API file (greet.api):</p>
+<pre><code>type (
+ Request {
+ Name string `path:&#34;name,options=[you,me]&#34;` // parameters are auto validated
+ }
+ Response {
+ Message string `json:&#34;message&#34;`
+ }
+)
+service greet-api {
+ @handler GreetHandler
+ get /greet/from/:name(Request) returns (Response)
+}
+</code></pre>
+<p>Generate .api template:</p>
+<pre><code>goctl api -o greet.api
+</code></pre>
+</li>
+<li>
+<p>Generate Go server code</p>
+<pre><code>goctl api go -api greet.api -dir greet
+</code></pre>
+<p>Generated structure:</p>
+<pre><code>├── greet
+│   ├── etc
+│   │   └── greet-api.yaml // configuration file
+│   ├── greet.go // main file
+│   └── internal
+│   ├── config
+│   │   └── config.go // configuration definition
+│   ├── handler
+│   │   ├── greethandler.go // get/put/post/delete routes are defined here
+│   │   └── routes.go // routes list
+│   ├── logic
+│   │   └── greetlogic.go // request logic can be written here
+│   ├── svc
+│   │   └── servicecontext.go // service context, mysql/redis can be passed in here
+│   └── types
+│   └── types.go // request/response defined here
+└── greet.api // api description file
+</code></pre>
+<p>Run the service:</p>
+<pre><code>cd greet
+go mod tidy
+go run greet.go -f etc/greet-api.yaml
+</code></pre>
+<p>Default port: 8888 (configurable in etc/greet-api.yaml)</p>
+<p>Test with curl:</p>
+<pre><code>curl -i http://localhost:8888/greet/from/you
+</code></pre>
+<p>Response:</p>
+<pre><code>HTTP/1.1 200 OK
+Date: Sun, 30 Aug 2020 15:32:35 GMT
+Content-Length: 0
+</code></pre>
+</li>
+<li>
+<p>Write business logic</p>
+<ul>
+<li>Pass dependencies (mysql, redis, etc.) via servicecontext.go</li>
+<li>Add logic code in the logic package per .api definition</li>
+</ul>
+</li>
+<li>
+<p>Generate client code for multiple languages</p>
+<pre><code>goctl api java -api greet.api -dir greet
+goctl api dart -api greet.api -dir greet
+...
+</code></pre>
+</li>
+</ol>
+<h4 class="h2" id="readme-benchmark">Benchmark</h4>
+<p><img src="https://raw.githubusercontent.com/zeromicro/zero-doc/main/doc/images/benchmark.png" alt="benchmark"/></p>
+<p><a href="https://github.com/smallnest/go-web-framework-benchmark" rel="nofollow">Checkout the test code</a></p>
+<h4 class="h2" id="readme-documents">Documents</h4>
+<ul>
+<li><a href="https://go-zero.dev/" rel="nofollow">Documents</a></li>
+<li><a href="https://github.com/zeromicro/zero-doc/blob/main/doc/shorturl-en.md" rel="nofollow">Rapid development of microservice systems</a></li>
+<li><a href="https://github.com/zeromicro/zero-doc/blob/main/docs/zero/bookstore-en.md" rel="nofollow">Rapid development of microservice systems - multiple RPCs</a></li>
+<li><a href="https://github.com/zeromicro/zero-examples" rel="nofollow">Examples</a></li>
+</ul>
+<h4 class="h2" id="readme-chat-group">Chat group</h4>
+<p>Join the chat via <a href="https://discord.gg/4JQvC5A4Fe" rel="nofollow">https://discord.gg/4JQvC5A4Fe</a></p>
+<h4 class="h2" id="readme-cloud-native-landscape">Cloud Native Landscape</h4>
+<p>
+<img src="https://raw.githubusercontent.com/zeromicro/zero-doc/main/doc/images/cncf-logo.svg" width="200"/>   
+<img src="https://raw.githubusercontent.com/zeromicro/zero-doc/main/doc/images/cncf-landscape-logo.svg" width="150"/>
+</p>
+<p>go-zero enlisted in the <a href="https://landscape.cncf.io/?selected=go-zero" rel="nofollow">CNCF Cloud Native Landscape</a>.</p>
+<h4 class="h2" id="readme-give-a-star">Give a Star! ⭐</h4>
+<p>If you like this project or are using it to learn or start your own solution, give it a star to get updates on new releases. Your support matters!</p>
+</div>
+ </div>
+ <button class="UnitReadme-expandLink js-readmeExpand"
+ data-test-id="readme-expand" data-gtmc="readme button"
+ aria-label="Expand Readme">Expand ▾</button>
+ <button class="UnitReadme-collapseLink js-readmeCollapse"
+ data-test-id="readme-collapse" data-gtmc="readme button"
+ aria-label="Expand Readme">Collapse ▴</button>
+ </div>
+ <div class="UnitDirectories js-unitDirectories">
+ <h2 class="UnitDirectories-title" id="section-directories">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/folder_gm_grey_24dp.svg" alt="">
+ Directories
+ <a class="UnitDirectories-idLink" href="#section-directories" title="Go to Directories" aria-label="Go to Directories">¶</a>
+ </h2>
+ <div class="UnitDirectories-toggles">
+ <div class="UnitDirectories-toggleButtons">
+ <button class="js-showInternalDirectories" data-test-id="internal-directories-toggle"
+ data-gtmc="directories button" aria-label="Show Internal Directories">
+ Show internal
+ </button>
+ <button class="js-expandAllDirectories" data-test-id="directories-toggle"
+ data-gtmc="directories button" aria-label="Expand All Directories">
+ Expand all
+ </button>
+ </div>
+ </div>
+ <table class="UnitDirectories-table UnitDirectories-table--tree js-expandableTable"
+ data-test-id="UnitDirectories-table">
+ <tr class="UnitDirectories-tableHeader UnitDirectories-tableHeader--tree">
+ <th>Path</th>
+ <th class="UnitDirectories-desktopSynopsis">Synopsis</th>
+ </tr>
+ <tr data-aria-controls="core-bloom core-breaker core-cmdline core-codec core-collection core-color core-conf core-configcenter core-configcenter/subscriber core-contextx core-discov core-discov/internal core-errorx core-executors core-filex core-fs core-fx core-hash core-iox core-jsonx core-lang core-limit core-load core-logc core-logx core-logx/logtest core-mapping core-mathx core-metric core-mr core-naming core-netx core-proc core-prof core-prometheus core-queue core-rescue core-search core-service core-stat core-stat/internal core-stores/builder core-stores/cache core-stores/dbtest core-stores/kv core-stores/mon core-stores/monc core-stores/postgres core-stores/redis core-stores/redis/redistest core-stores/sqlc core-stores/sqlx core-stringx core-syncx core-sysx core-threading core-timex core-trace core-trace/tracetest core-utils core-validation "
+ class="">
+ <td data-id="core" data-aria-owns="core-bloom core-breaker core-cmdline core-codec core-collection core-color core-conf core-configcenter core-configcenter/subscriber core-contextx core-discov core-discov/internal core-errorx core-executors core-filex core-fs core-fx core-hash core-iox core-jsonx core-lang core-limit core-load core-logc core-logx core-logx/logtest core-mapping core-mathx core-metric core-mr core-naming core-netx core-proc core-prof core-prometheus core-queue core-rescue core-search core-service core-stat core-stat/internal core-stores/builder core-stores/cache core-stores/dbtest core-stores/kv core-stores/mon core-stores/monc core-stores/postgres core-stores/redis core-stores/redis/redistest core-stores/sqlc core-stores/sqlx core-stringx core-syncx core-sysx core-threading core-timex core-trace core-trace/tracetest core-utils core-validation ">
+ <div class="UnitDirectories-pathCell">
+ <div><button type="button" class="go-Button go-Button--inline UnitDirectories-toggleButton"
+ aria-expanded="false"
+ aria-label="61 more from"
+ data-aria-controls="core-bloom core-breaker core-cmdline core-codec core-collection core-color core-conf core-configcenter core-configcenter/subscriber core-contextx core-discov core-discov/internal core-errorx core-executors core-filex core-fs core-fx core-hash core-iox core-jsonx core-lang core-limit core-load core-logc core-logx core-logx/logtest core-mapping core-mathx core-metric core-mr core-naming core-netx core-proc core-prof core-prometheus core-queue core-rescue core-search core-service core-stat core-stat/internal core-stores/builder core-stores/cache core-stores/dbtest core-stores/kv core-stores/mon core-stores/monc core-stores/postgres core-stores/redis core-stores/redis/redistest core-stores/sqlc core-stores/sqlx core-stringx core-syncx core-sysx core-threading core-timex core-trace core-trace/tracetest core-utils core-validation "
+ data-aria-labelledby="core-button core"
+ data-id="core-button">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_right_gm_grey_24dp.svg"
+ alt="">
+ </button><span>core</span>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr><tr data-id="core-bloom" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/bloom">bloom</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-breaker" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/breaker">breaker</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-cmdline" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/cmdline">cmdline</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-codec" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/codec">codec</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-collection" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/collection">collection</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-color" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/color">color</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-conf" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/conf">conf</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-configcenter" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/configcenter">configcenter</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-configcenter/subscriber" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/configcenter/subscriber">configcenter/subscriber</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-contextx" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/contextx">contextx</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-discov" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/discov">discov</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-discov/internal" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/discov/internal">discov/internal</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis">Package internal is a generated GoMock package.</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">Package internal is a generated GoMock package.</td><tr data-id="core-errorx" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/errorx">errorx</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-executors" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/executors">executors</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-filex" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/filex">filex</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-fs" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/fs">fs</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-fx" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/fx">fx</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-hash" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/hash">hash</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-iox" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/iox">iox</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-jsonx" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/jsonx">jsonx</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-lang" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/lang">lang</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-limit" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/limit">limit</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-load" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/load">load</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-logc" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/logc">logc</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-logx" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/logx">logx</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-logx/logtest" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/logx/logtest">logx/logtest</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-mapping" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/mapping">mapping</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-mathx" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/mathx">mathx</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-metric" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/metric">metric</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-mr" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/mr">mr</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-naming" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/naming">naming</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-netx" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/netx">netx</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-proc" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/proc">proc</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-prof" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/prof">prof</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-prometheus" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/prometheus">prometheus</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-queue" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/queue">queue</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-rescue" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/rescue">rescue</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-search" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/search">search</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-service" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/service">service</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-stat" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/stat">stat</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-stat/internal" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/stat/internal">stat/internal</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-stores/builder" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/stores/builder">stores/builder</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-stores/cache" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/stores/cache">stores/cache</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-stores/dbtest" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/stores/dbtest">stores/dbtest</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-stores/kv" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/stores/kv">stores/kv</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-stores/mon" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/stores/mon">stores/mon</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis">Package mon is a generated GoMock package.</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">Package mon is a generated GoMock package.</td><tr data-id="core-stores/monc" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/stores/monc">stores/monc</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-stores/postgres" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/stores/postgres">stores/postgres</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-stores/redis" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/stores/redis">stores/redis</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-stores/redis/redistest" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/stores/redis/redistest">stores/redis/redistest</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-stores/sqlc" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/stores/sqlc">stores/sqlc</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-stores/sqlx" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/stores/sqlx">stores/sqlx</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-stringx" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/stringx">stringx</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-syncx" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/syncx">syncx</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-sysx" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/sysx">sysx</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-threading" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/threading">threading</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-timex" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/timex">timex</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-trace" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/trace">trace</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-trace/tracetest" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/trace/tracetest">trace/tracetest</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-utils" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/utils">utils</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="core-validation" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/core/validation">validation</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr>
+ <tr data-aria-controls="gateway-internal "
+ class="">
+ <td data-id="gateway" data-aria-owns="gateway-internal ">
+ <div class="UnitDirectories-pathCell">
+ <div><button type="button" class="go-Button go-Button--inline UnitDirectories-toggleButton UnitDirectories-internal"
+ aria-expanded="false"
+ aria-label="1 more from"
+ data-aria-controls="gateway-internal "
+ data-aria-labelledby="gateway-button gateway"
+ data-id="gateway-button">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_right_gm_grey_24dp.svg"
+ alt="">
+ </button><a href="/github.com/zeromicro/go-zero@v1.10.3/gateway">gateway</a>
+ </div>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr><tr data-id="gateway-internal" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/gateway/internal">internal</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr>
+ <tr data-aria-controls="internal-devserver internal-encoding internal-health internal-mock internal-profiling internal-trace "
+ class="UnitDirectories-internal">
+ <td data-id="internal" data-aria-owns="internal-devserver internal-encoding internal-health internal-mock internal-profiling internal-trace ">
+ <div class="UnitDirectories-pathCell">
+ <div><button type="button" class="go-Button go-Button--inline UnitDirectories-toggleButton UnitDirectories-internal"
+ aria-expanded="false"
+ aria-label="6 more from"
+ data-aria-controls="internal-devserver internal-encoding internal-health internal-mock internal-profiling internal-trace "
+ data-aria-labelledby="internal-button internal"
+ data-id="internal-button">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_right_gm_grey_24dp.svg"
+ alt="">
+ </button><span>internal</span>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr><tr data-id="internal-devserver" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/internal/devserver">devserver</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="internal-encoding" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/internal/encoding">encoding</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="internal-health" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/internal/health">health</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="internal-mock" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/internal/mock">mock</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="internal-profiling" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/internal/profiling">profiling</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="internal-trace" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/internal/trace">trace</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr>
+ <tr
+ class="">
+ <td data-id="mcp" data-aria-owns="">
+ <div class="UnitDirectories-pathCell">
+ <div><a href="/github.com/zeromicro/go-zero@v1.10.3/mcp">mcp</a>
+ </div>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr></tr>
+ <tr data-aria-controls="rest-chain rest-handler rest-httpc rest-httpc/internal rest-httpx rest-internal rest-internal/cors rest-internal/encoding rest-internal/errcode rest-internal/fileserver rest-internal/header rest-internal/response rest-internal/security rest-pathvar rest-router rest-token "
+ class="">
+ <td data-id="rest" data-aria-owns="rest-chain rest-handler rest-httpc rest-httpc/internal rest-httpx rest-internal rest-internal/cors rest-internal/encoding rest-internal/errcode rest-internal/fileserver rest-internal/header rest-internal/response rest-internal/security rest-pathvar rest-router rest-token ">
+ <div class="UnitDirectories-pathCell">
+ <div><button type="button" class="go-Button go-Button--inline UnitDirectories-toggleButton"
+ aria-expanded="false"
+ aria-label="16 more from"
+ data-aria-controls="rest-chain rest-handler rest-httpc rest-httpc/internal rest-httpx rest-internal rest-internal/cors rest-internal/encoding rest-internal/errcode rest-internal/fileserver rest-internal/header rest-internal/response rest-internal/security rest-pathvar rest-router rest-token "
+ data-aria-labelledby="rest-button rest"
+ data-id="rest-button">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_right_gm_grey_24dp.svg"
+ alt="">
+ </button><a href="/github.com/zeromicro/go-zero@v1.10.3/rest">rest</a>
+ </div>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr><tr data-id="rest-chain" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/rest/chain">chain</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="rest-handler" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/rest/handler">handler</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="rest-httpc" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/rest/httpc">httpc</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="rest-httpc/internal" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/rest/httpc/internal">httpc/internal</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="rest-httpx" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/rest/httpx">httpx</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="rest-internal" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/rest/internal">internal</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="rest-internal/cors" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/rest/internal/cors">internal/cors</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="rest-internal/encoding" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/rest/internal/encoding">internal/encoding</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="rest-internal/errcode" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/rest/internal/errcode">internal/errcode</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="rest-internal/fileserver" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/rest/internal/fileserver">internal/fileserver</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="rest-internal/header" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/rest/internal/header">internal/header</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="rest-internal/response" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/rest/internal/response">internal/response</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="rest-internal/security" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/rest/internal/security">internal/security</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="rest-pathvar" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/rest/pathvar">pathvar</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="rest-router" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/rest/router">router</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="rest-token" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/rest/token">token</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr>
+ <tr data-aria-controls="tools-goctl "
+ class="">
+ <td data-id="tools" data-aria-owns="tools-goctl ">
+ <div class="UnitDirectories-pathCell">
+ <div><button type="button" class="go-Button go-Button--inline UnitDirectories-toggleButton"
+ aria-expanded="false"
+ aria-label="1 more from"
+ data-aria-controls="tools-goctl "
+ data-aria-labelledby="tools-button tools"
+ data-id="tools-button">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_right_gm_grey_24dp.svg"
+ alt="">
+ </button><span>tools</span>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr><tr data-id="tools-goctl" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero/tools/goctl">goctl</a>
+ <span class="go-Chip go-Chip--inverted">module</span>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr>
+ <tr data-aria-controls="zrpc-internal zrpc-internal/auth zrpc-internal/balancer/consistenthash zrpc-internal/balancer/p2c zrpc-internal/clientinterceptors zrpc-internal/codes zrpc-internal/serverinterceptors zrpc-resolver zrpc-resolver/internal zrpc-resolver/internal/kube zrpc-resolver/internal/targets "
+ class="">
+ <td data-id="zrpc" data-aria-owns="zrpc-internal zrpc-internal/auth zrpc-internal/balancer/consistenthash zrpc-internal/balancer/p2c zrpc-internal/clientinterceptors zrpc-internal/codes zrpc-internal/serverinterceptors zrpc-resolver zrpc-resolver/internal zrpc-resolver/internal/kube zrpc-resolver/internal/targets ">
+ <div class="UnitDirectories-pathCell">
+ <div><button type="button" class="go-Button go-Button--inline UnitDirectories-toggleButton"
+ aria-expanded="false"
+ aria-label="11 more from"
+ data-aria-controls="zrpc-internal zrpc-internal/auth zrpc-internal/balancer/consistenthash zrpc-internal/balancer/p2c zrpc-internal/clientinterceptors zrpc-internal/codes zrpc-internal/serverinterceptors zrpc-resolver zrpc-resolver/internal zrpc-resolver/internal/kube zrpc-resolver/internal/targets "
+ data-aria-labelledby="zrpc-button zrpc"
+ data-id="zrpc-button">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_right_gm_grey_24dp.svg"
+ alt="">
+ </button><a href="/github.com/zeromicro/go-zero@v1.10.3/zrpc">zrpc</a>
+ </div>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr><tr data-id="zrpc-internal" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/zrpc/internal">internal</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="zrpc-internal/auth" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/zrpc/internal/auth">internal/auth</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="zrpc-internal/balancer/consistenthash" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/zrpc/internal/balancer/consistenthash">internal/balancer/consistenthash</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="zrpc-internal/balancer/p2c" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/zrpc/internal/balancer/p2c">internal/balancer/p2c</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="zrpc-internal/clientinterceptors" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/zrpc/internal/clientinterceptors">internal/clientinterceptors</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="zrpc-internal/codes" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/zrpc/internal/codes">internal/codes</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="zrpc-internal/serverinterceptors" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/zrpc/internal/serverinterceptors">internal/serverinterceptors</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="zrpc-resolver" class="">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/zrpc/resolver">resolver</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="zrpc-resolver/internal" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/zrpc/resolver/internal">resolver/internal</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="zrpc-resolver/internal/kube" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/zrpc/resolver/internal/kube">resolver/internal/kube</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td><tr data-id="zrpc-resolver/internal/targets" class="UnitDirectories-internal">
+ <td>
+ <div class="UnitDirectories-subdirectory">
+ <span>
+ <a href="/github.com/zeromicro/go-zero@v1.10.3/zrpc/resolver/internal/targets">resolver/internal/targets</a>
+ </span>
+ <div class="UnitDirectories-mobileSynopsis"></div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis"></td></tr>
+ </table>
+ </div>
+ </div>
+ </div>
+ <div id="showInternal-description" hidden> Click to show internal directories. </div>
+ <div id="hideInternal-description" hidden> Click to hide internal directories. </div>
+</article>
+ <footer class="go-Main-footer"></footer>
+ </main>
+ <footer class="go-Footer">
+ <div class="go-Footer-links">
+ <div class="go-Footer-linkColumn">
+ <a href="https://go.dev/solutions" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Why Go
+ </a>
+ <a href="https://go.dev/solutions/use-cases" class="go-Footer-link"
+ data-gtmc="footer link">
+ Use Cases
+ </a>
+ <a href="https://go.dev/solutions/case-studies" class="go-Footer-link"
+ data-gtmc="footer link">
+ Case Studies
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://learn.go.dev/" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Get Started
+ </a>
+ <a href="https://play.golang.org" class="go-Footer-link" data-gtmc="footer link">
+ Playground
+ </a>
+ <a href="https://tour.golang.org" class="go-Footer-link" data-gtmc="footer link">
+ Tour
+ </a>
+ <a href="https://stackoverflow.com/questions/tagged/go?tab=Newest" class="go-Footer-link"
+ data-gtmc="footer link">
+ Stack Overflow
+ </a>
+ <a href="https://go.dev/help" class="go-Footer-link"
+ data-gtmc="footer link">
+ Help
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://pkg.go.dev" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Packages
+ </a>
+ <a href="/std" class="go-Footer-link" data-gtmc="footer link">
+ Standard Library
+ </a>
+ <a href="/golang.org/x" class="go-Footer-link" data-gtmc="footer link">
+ Sub-repositories
+ </a>
+ <a href="https://pkg.go.dev/about" class="go-Footer-link" data-gtmc="footer link">
+ About Go Packages
+ </a>
+ <a href="/api" class="go-Footer-link" data-gtmc="footer link">
+ pkg.go.dev API
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://go.dev/project" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ About
+ </a>
+ <a href="https://go.dev/dl/" class="go-Footer-link" data-gtmc="footer link">Download</a>
+ <a href="https://go.dev/blog" class="go-Footer-link" data-gtmc="footer link">Blog</a>
+ <a href="https://github.com/golang/go/issues" class="go-Footer-link" data-gtmc="footer link">
+ Issue Tracker
+ </a>
+ <a href="https://go.dev/doc/devel/release.html" class="go-Footer-link"
+ data-gtmc="footer link">
+ Release Notes
+ </a>
+ <a href="https://go.dev/brand" class="go-Footer-link" data-gtmc="footer link">
+ Brand Guidelines
+ </a>
+ <a href="https://go.dev/conduct" class="go-Footer-link" data-gtmc="footer link">
+ Code of Conduct
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://www.twitter.com/golang" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Connect
+ </a>
+ <a href="https://www.twitter.com/golang" class="go-Footer-link" data-gtmc="footer link">
+ Twitter
+ </a>
+ <a href="https://github.com/golang" class="go-Footer-link" data-gtmc="footer link">GitHub</a>
+ <a href="https://invite.slack.golangbridge.org/" class="go-Footer-link"
+ data-gtmc="footer link">
+ Slack
+ </a>
+ <a href="https://reddit.com/r/golang" class="go-Footer-link" data-gtmc="footer link">
+ r/golang
+ </a>
+ <a href="https://www.meetup.com/pro/go" class="go-Footer-link" data-gtmc="footer link">
+ Meetup
+ </a>
+ <a href="https://golangweekly.com/" class="go-Footer-link" data-gtmc="footer link">
+ Golang Weekly
+ </a>
+ </div>
+ </div>
+ <div class="go-Footer-bottom">
+ <img class="go-Footer-gopher" width="1431" height="901"
+ src="/static/shared/gopher/pilot-bust-1431x901.svg" alt="Gopher in flight goggles">
+ <ul class="go-Footer-listRow">
+ <li class="go-Footer-listItem">
+ <a href="https://go.dev/copyright" data-gtmc="footer link">Copyright</a>
+ </li>
+ <li class="go-Footer-listItem">
+ <a href="https://go.dev/tos" data-gtmc="footer link">Terms of Service</a>
+ </li>
+ <li class="go-Footer-listItem">
+ <a href="http://www.google.com/intl/en/policies/privacy/" data-gtmc="footer link"
+ target="_blank" rel="noopener">
+ Privacy Policy
+ </a>
+ </li>
+ <li class="go-Footer-listItem">
+ <a href="https://go.dev/s/pkgsite-feedback" target="_blank" rel="noopener"
+ data-gtmc="footer link">
+ Report an Issue
+ </a>
+ </li>
+ <li class="go-Footer-listItem">
+ <button class="go-Button go-Button--text go-Footer-toggleTheme js-toggleTheme" aria-label="Theme Toggle">
+ <img data-value="auto" class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/brightness_6_gm_grey_24dp.svg" alt="System theme">
+ <img data-value="dark" class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/brightness_2_gm_grey_24dp.svg" alt="Dark theme">
+ <img data-value="light" class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/light_mode_gm_grey_24dp.svg" alt="Light theme">
+ <p> Theme Toggle </p>
+ </button>
+ </li>
+ <li class="go-Footer-listItem">
+ <button class="go-Button go-Button--text go-Footer-keyboard js-openShortcuts" aria-label="Shorcuts Modal">
+ <img class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/keyboard_grey_24dp.svg" alt="">
+ <p> Shortcuts Modal </p>
+ </button>
+ </li>
+ </ul>
+ <a class="go-Footer-googleLogo" href="https://google.com" target="_blank"rel="noopener"
+ data-gtmc="footer link">
+ <img class="go-Footer-googleLogoImg" height="24" width="72"
+ src="/static/shared/logo/google-white.svg" alt="Google logo">
+ </a>
+ </div>
+ </footer>
+ <dialog id="jump-to-modal" class="JumpDialog go-Modal go-Modal--md js-modal">
+ <form method="dialog" data-gmtc="jump to form" aria-label="Jump to Identifier">
+ <div class="Dialog-title go-Modal-header">
+ <h2>Jump to</h2>
+ <button
+ class="go-Button go-Button--inline"
+ type="button"
+ data-modal-close
+ data-gtmc="modal button"
+ aria-label="Close"
+ >
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/close_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </div>
+ <div class="JumpDialog-filter">
+ <input class="JumpDialog-input go-Input" autocomplete="off" type="text">
+ </div>
+ <div class="JumpDialog-body go-Modal-body">
+ <div class="JumpDialog-list"></div>
+ </div>
+ <div class="go-Modal-actions">
+ <button class="go-Button" data-test-id="close-dialog">Close</button>
+ </div>
+ </form>
+ </dialog>
+ <dialog class="ShortcutsDialog go-Modal go-Modal--sm js-modal">
+ <form method="dialog">
+ <div class="go-Modal-header">
+ <h2>Keyboard shortcuts</h2>
+ <button
+ class="go-Button go-Button--inline"
+ type="button"
+ data-modal-close
+ data-gtmc="modal button"
+ aria-label="Close"
+ >
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/close_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </div>
+ <div class="go-Modal-body">
+ <table>
+ <tbody>
+ <tr><td class="ShortcutsDialog-key">
+ <strong>?</strong></td><td> : This menu</td>
+ </tr>
+ <tr><td class="ShortcutsDialog-key">
+ <strong>/</strong></td><td> : Search site</td>
+ </tr>
+ <tr><td class="ShortcutsDialog-key">
+ <strong>f</strong> or <strong>F</strong></td><td> : Jump to</td>
+ </tr>
+ <tr>
+ <td class="ShortcutsDialog-key"><strong>y</strong> or <strong>Y</strong></td>
+ <td> : Canonical URL</td>
+ </tr>
+ </tbody>
+ </table>
+ </div>
+ <div class="go-Modal-actions">
+ <button class="go-Button" data-test-id="close-dialog">Close</button>
+ </div>
+ </form>
+ </dialog>
+ <section class="Cookie-notice js-cookieNotice">
+ <div>go.dev uses cookies from Google to deliver and enhance the quality of its services and to
+ analyze traffic. <a target=_blank href="https://policies.google.com/technologies/cookies">Learn more.</a></div>
+ <div><button class="go-Button">Okay</button></div>
+ </section>
+ <div class="js-canonicalURLPath" data-canonical-url-path="/github.com/zeromicro/go-zero@v1.10.3" hidden></div>
+ <div class="js-playgroundVars" data-modulepath="github.com/zeromicro/go-zero" data-version="v1.10.3" hidden></div>
+ </body>
+</html>

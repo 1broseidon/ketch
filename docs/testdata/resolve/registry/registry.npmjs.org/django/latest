@@ -1,0 +1,14 @@
+{
+ "name": "django",
+ "version": "1.0.0",
+ "description": "security holding package",
+ "homepage": "https://github.com/npm/security-holder#readme",
+ "repository": {
+  "url": "git+https://github.com/npm/security-holder.git",
+  "type": "git"
+ },
+ "bugs": {
+  "url": "https://github.com/npm/security-holder/issues"
+ },
+ "deprecated": "django is now django-express on request of the Django Software Foundation."
+}

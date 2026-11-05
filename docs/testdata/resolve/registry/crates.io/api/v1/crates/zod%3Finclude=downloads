@@ -1,0 +1,15 @@
+{
+ "crate": {
+  "id": "zod",
+  "name": "zod",
+  "description": "Rust integraions with the `zod` typescript library.",
+  "homepage": null,
+  "documentation": "https://docs.rs/zod",
+  "repository": "https://github.com/nicolaiunrein/zod",
+  "max_stable_version": null,
+  "max_version": "0.0.0",
+  "newest_version": "0.0.0",
+  "default_version": "0.1.0",
+  "recent_downloads": 11
+ }
+}

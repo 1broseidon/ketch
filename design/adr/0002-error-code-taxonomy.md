@@ -55,3 +55,31 @@ handled with the same care as changing output format.
 - The categories are intentionally coarse. Finer-grained diagnostics still go in
   the human-readable message; the code/prefix is only the *class* of failure, so
   the branching contract stays small and stable.
+
+## Amendment (2026-11-02): one classifier
+
+The "one internal classification" above was two mirrored switches, in
+`cmd/exit.go` and `mcp/errors.go`, plus four mirrored per-command pairs, kept
+in step by comments. They had drifted: a `context.DeadlineExceeded` was
+`[cancelled]` over MCP and exit 4 on the CLI, and two providers patched around
+it in opposite directions.
+
+Classification now lives in `internal/failure`. A package marks each sentinel
+with its kind where it defines it (`failure.New`), and `failure.Classify`
+decides every propagated error in one order: cancellation, then the first
+classified error in the chain, then a deadline, then the bbolt lock timeout,
+then the caller's fallback. The CLI's exit codes and the MCP prefixes are both
+derived from `failure.Kind`, and one table (`internal/failure/failuretest`)
+tests both surfaces.
+
+Two mappings changed, both toward this ADR's own definitions:
+
+- A deadline (a backend's timeout, a client library's) is `upstream`
+  (exit 4, `[upstream]`): it is a budget ketch set, never the caller
+  cancelling. `[cancelled]` and exit 6 now mean only that the caller cancelled.
+- The cache or tag file being locked by another process is `upstream`
+  (exit 4), not `precondition`: trying again is the fix, and no configuration
+  is missing.
+
+Each classified failure also has a short `reason` (`timeout`, `busy`,
+`ambiguous`, `no_browser`, ...) for callers that want more than the class.

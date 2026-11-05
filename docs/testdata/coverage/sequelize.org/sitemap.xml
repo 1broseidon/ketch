@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>https://sequelize.org/docs/v6/</loc></url>
+<url><loc>https://sequelize.org/docs/v6/core-concepts/model-basics/</loc></url>
+<url><loc>https://sequelize.org/docs/v6/core-concepts/model-instances/</loc></url>
+<url><loc>https://sequelize.org/docs/v6/core-concepts/model-querying-basics/</loc></url>
+<url><loc>https://sequelize.org/docs/v6/core-concepts/model-querying-finders/</loc></url>
+<url><loc>https://sequelize.org/docs/v6/core-concepts/assocs/</loc></url>
+<url><loc>https://sequelize.org/docs/v6/core-concepts/paranoid/</loc></url>
+<url><loc>https://sequelize.org/docs/v6/moved/models-definition/</loc></url>
+<url><loc>https://sequelize.org/docs/v6/moved/models-usage/</loc></url>
+<url><loc>https://sequelize.org/docs/v6/other-topics/hooks/</loc></url>
+</urlset>

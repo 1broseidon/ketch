@@ -1,0 +1,4 @@
+{"info": {"name": "gridiron-vault", "version": "1.4.0", "summary": "Secret storage for Gridiron apps", "home_page": "", "docs_url": null,
+ "project_urls": {"Source": "https://github.com/vaultsmith/gridiron-vault"},
+ "description": "# gridiron-vault\n\nSecret storage for [Gridiron](https://gridiron.example/) apps.\n\n## Install\n\n    pip install gridiron-vault\n\nNew to Gridiron? Start with the [Gridiron documentation](https://docs.gridiron.example/) and its [tutorial](https://docs.gridiron.example/tutorial/).\n\nSponsored by [Acme Hosting](https://acme-hosting.example/).\n"},
+ "releases": {}}

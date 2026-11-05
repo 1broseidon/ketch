@@ -1,0 +1,19 @@
+{
+ "crate": {
+  "id": "react",
+  "name": "react",
+  "description": "React library for server-side rendering with Rust. Very early days, this doesn't do much yet.",
+  "homepage": null,
+  "documentation": null,
+  "repository": "https://github.com/camjackson/react-rs",
+  "max_stable_version": null,
+  "max_version": "0.0.0",
+  "newest_version": "0.0.0",
+  "default_version": "0.1.0",
+  "recent_downloads": 14,
+  "downloads": 2935
+ },
+ "versions": null,
+ "keywords": [],
+ "categories": []
+}

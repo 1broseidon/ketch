@@ -47,6 +47,10 @@ func NewContext7(apiKey string) *Context7 {
 // Field names track the upstream schema: "title" (not "name"),
 // "totalSnippets" (not "codeSnippets"), and "trustScore" (numeric, not
 // the older string "trust").
+//
+// Version, Evidence and Packages belong to the web backend. Context7 never
+// sets them and they are omitted when empty, so Context7's JSON does not
+// change.
 type LibraryMatch struct {
 	ID            string   `json:"id"`
 	Title         string   `json:"title"`
@@ -54,6 +58,15 @@ type LibraryMatch struct {
 	TotalSnippets int      `json:"totalSnippets"`
 	TrustScore    float64  `json:"trustScore"`
 	Versions      []string `json:"versions"`
+	// Version is the version the ID's docs are for: the requested one, else
+	// the site's current one, as a concrete label rather than an alias.
+	Version string `json:"version,omitempty"`
+	// Evidence says, one finding per entry, why the ID is this library's
+	// docs ("pypi click lists it as Documentation").
+	Evidence []string `json:"evidence,omitempty"`
+	// Packages are the library's package and repository specs, each usable
+	// as the library (pypi:click, github:pallets/click).
+	Packages []string `json:"packages,omitempty"`
 }
 
 type context7SearchResponse struct {
@@ -459,7 +472,9 @@ func context7Provider() Provider {
 		// Keyless use runs on the anonymous quota, so Context7 needs no
 		// setup; a key only lifts the cap.
 		Usable: func(*config.Config) bool { return true },
-		New:    func(c *config.Config) (Searcher, error) { return NewContext7(c.String("context7_api_key")), nil },
+		New: func(c *config.Config, _ Deps) (Searcher, error) {
+			return NewContext7(c.String("context7_api_key")), nil
+		},
 		Probe: func(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
 			return ProbeContext7(ctx, client, context7Base, c.String("context7_api_key"))
 		},

@@ -1,13 +1,13 @@
 ---
 name: ketch
-description: "Research skill for ketch — a fast stateless CLI for web search, OSS code search, curated library docs, page scraping, and site crawling; an optional MCP server exists for operators who want it, but the CLI is the primary interface. Use when a question needs live sources: 'research X', 'what are people saying about Y', 'find docs or real-world examples for Z', 'scrape/crawl this site' — or when installing or configuring ketch backends. Routes search vs code vs docs vs scrape vs crawl, keeps every fetch inside a token budget, turns error prefixes into control flow, and produces cited syntheses. Not for local codebase search, private repos, or pages behind auth."
+description: "Research skill for ketch — a fast stateless CLI for web search, OSS code search, library docs, page scraping, and site crawling; an optional MCP server exists for operators who want it, but the CLI is the primary interface. Use when a question needs live sources: 'research X', 'what are people saying about Y', 'find docs or real-world examples for Z', 'scrape/crawl this site' — or when installing or configuring ketch backends. Routes search vs code vs docs vs scrape vs crawl, keeps every fetch inside a token budget, turns error prefixes into control flow, and produces cited syntheses. Not for local codebase search, private repos, or pages behind auth."
 metadata:
   version: "0.1.0"
 ---
 
 # Ketch
 
-Route every live-source question to one of ketch's five research surfaces — search, code, docs, scrape, crawl — over the transport the operator gave you, with a token budget on every fetch and a source URL on every claim. ketch is one stateless binary — call, result, exit — with web search, OSS code grep, curated library docs, and page/site extraction together, so a complete research pipeline needs no other tool and no daemon.
+Route every live-source question to one of ketch's five research surfaces — search, code, docs, scrape, crawl — over the transport the operator gave you, with a token budget on every fetch and a source URL on every claim. ketch is one stateless binary — call, result, exit — with web search, OSS code grep, library docs, and page/site extraction together, so a complete research pipeline needs no other tool and no daemon.
 
 ## Transport: stateless CLI by default, MCP when the operator wired it
 
@@ -35,7 +35,7 @@ Use only these terms in ketch output.
 | **surface** | One of the five research operations: `search`, `code`, `docs`, `scrape`, `crawl` |
 | **tag** | A label filed across surfaces: search hits, code hits, docs chunks, scraped pages, crawled pages. Not a research surface — it answers "what did I already find?", not "what is out there?" |
 | **transport** | How a surface is called: the CLI binary (default), the optional MCP tools, or the pi package's `ketch_*` tools (which run the CLI) |
-| **backend** | The provider behind a surface: auto (default; a fallback chain, not a provider)/brave/ddg/searxng/exa/firecrawl/keenable/tavily/tinyfish/parallel/serpbase/degoog/serply/youcom (search), grepapp/sourcegraph/github (code), context7 (docs) |
+| **backend** | The provider behind a surface: auto (default; a fallback chain, not a provider)/brave/ddg/searxng/exa/firecrawl/keenable/tavily/tinyfish/parallel/serpbase/degoog/serply/youcom (search), grepapp/sourcegraph/github (code), context7/web/auto (docs; auto = web, then Context7) |
 | **operator action** | A system-managing or diagnostic command — `config set`, `cache`, `browser install`, background crawls, `doctor` — CLI-only by design |
 | **error prefix** | The stable class on every ketch error: CLI exit codes 2–6, mirrored as the bracketed prefix opening every MCP tool error — `[validation]`, `[not_found]`, `[upstream]`, `[precondition]`, `[cancelled]` |
 | **fan-out** | How many queries are searched and URLs scraped under one plan |
@@ -93,7 +93,7 @@ First match wins:
 
 | The question needs | Surface | Not |
 | --- | --- | --- |
-| Current web pages, opinions, news, comparisons | `search` | `docs` — that is curated library docs only |
+| Current web pages, opinions, news, comparisons | `search` | `docs` — that is library docs only |
 | How real projects call an API | `code` | `search` — blogs talk *about* code; `code` greps public OSS repos via grep.app |
 | A library's own documentation, version-aware | `docs` | `scrape` of the docs site — `docs` is already extracted and token-budgeted |
 | The content of a URL you already hold | `scrape` | `search` — never re-find a known URL |
@@ -156,14 +156,14 @@ file; test labs must set `KETCH_TAGS_PATH` as well as isolating the page cache.
 | 5 | `[precondition]` | Operator config missing | Stop researching; enter `ketch setup` |
 | 6 | `[cancelled]` | Cancelled or timed out | Rerun with smaller scope |
 
-Situations → class: unknown backend, `regexp` on github → `[validation]`. Selector matched nothing, a `repo` the code backend does not have → `[not_found]` (for `repo`, change the backend). ddg rate limit (it rate-limits readily under fan-out), DNS failure, grepapp's intermittent 504 → `[upstream]`, rotate or retry once. Missing API key, docs backend `local` (planned, unimplemented), `force_browser` with no browser configured → `[precondition]`. One asymmetry: a CLI `crawl` interrupted by SIGINT exits **0** with partial results, by design.
+Situations → class: unknown backend, `regexp` on github → `[validation]`. Selector matched nothing, a `repo` the code backend does not have → `[not_found]` (for `repo`, change the backend). ddg rate limit (it rate-limits readily under fan-out), DNS failure, grepapp's intermittent 504 → `[upstream]`, rotate or retry once. A spent keyless Context7 quota (about 200 requests a month per IP) is `[upstream]` naming the reset — switch docs to `web` rather than retry. Missing API key, docs backend `local` (planned, unimplemented), `force_browser` with no browser configured → `[precondition]`. One asymmetry: a CLI `crawl` interrupted by SIGINT exits **0** with partial results, by design.
 
 ## Gotchas
 
 Detail for each lives in `references/surfaces.md`.
 
 - Scraping a **bare domain** auto-probes `/llms.txt` and may silently return that instead of the homepage — the `title` field reveals the swap; `no_llms_txt` opts out.
-- `docs` is a two-step: `resolve` the name → **vet the matches** → fetch by `library` ID. Resolve never returns empty — garbage in gets confident fuzzy matches out, so check the name, not just the trust score.
+- `docs` is a two-step: `resolve` the name → **vet the matches** → fetch by `library` ID, and resolve once: a name is resolved again on every call. Context7's resolve never returns empty — garbage in gets confident fuzzy matches out, so check the name, not just the trust score. `web` (keyless, the library's own docs site) returns only verified matches with their evidence, and an ambiguous name is `[validation]` listing each candidate's ID — pass one as `library`. Context7 needs no key but its anonymous quota is small; `auto` asks `web` first and Context7 only when `web` refuses, and `source` says which answered.
 - Batch scrape reports per-URL failures inside a successful call: `isError=false` with `results[].error` set. Check every entry.
 - `regexp` works on grepapp and sourcegraph only; github rejects it with a pointer to those backends.
 - Background crawls (`--background`, `status`, `stop`) are CLI-only; the MCP `crawl` is synchronous and capped.

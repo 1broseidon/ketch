@@ -23,7 +23,6 @@ linters:
   exclusions:
     paths:
       - vendor
-      - docs
     rules:
       - path: _test\.go
         linters:

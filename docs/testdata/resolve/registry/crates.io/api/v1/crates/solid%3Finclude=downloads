@@ -1,0 +1,19 @@
+{
+ "crate": {
+  "id": "solid",
+  "name": "solid",
+  "description": "Solidity encoding/decoding library",
+  "homepage": "https://github.com/danielakhterov/solid",
+  "documentation": null,
+  "repository": "https://github.com/danielakhterov/solid",
+  "max_stable_version": null,
+  "max_version": "0.0.0",
+  "newest_version": "0.0.0",
+  "default_version": "0.1.5",
+  "recent_downloads": 23,
+  "downloads": 8358
+ },
+ "versions": null,
+ "keywords": [],
+ "categories": []
+}

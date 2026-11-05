@@ -1,0 +1,14 @@
+{
+ "name": "next",
+ "version": "16.4.3",
+ "description": "The React Framework",
+ "homepage": "https://nextjs.org",
+ "repository": {
+  "url": "git+https://github.com/vercel/next.js.git",
+  "type": "git"
+ },
+ "bugs": {
+  "url": "https://github.com/vercel/next.js/issues"
+ },
+ "license": "MIT"
+}

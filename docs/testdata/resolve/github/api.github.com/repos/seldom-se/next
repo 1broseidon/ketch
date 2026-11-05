@@ -1,0 +1,12 @@
+{
+ "id": 977294707,
+ "name": "next",
+ "full_name": "Seldom-SE/next",
+ "html_url": "https://github.com/Seldom-SE/next",
+ "description": "Provides a trait to get the next sequential value",
+ "fork": false,
+ "homepage": "",
+ "language": "Rust",
+ "stargazers_count": 0,
+ "archived": false
+}

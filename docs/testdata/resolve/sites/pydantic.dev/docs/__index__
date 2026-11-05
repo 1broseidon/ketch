@@ -1,0 +1,56 @@
+<!doctype html>
+<html><head>
+<title>Pydantic Docs - Validation, AI Agents, Logfire Observability</title>
+<meta name="astro-view-transitions-enabled" content="true">
+<meta name="astro-view-transitions-fallback" content="animate">
+<script src="/docs/_astro/ClientRouter.astro_astro_type_script_index_0_lang.DtS7Jegb.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="Astro v7.2.4">
+<meta name="generator" content="Starlight v0.41.7">
+<meta property="og:title" content="Pydantic Docs">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://pydantic.dev/docs/">
+<meta property="og:locale" content="en">
+<meta property="og:description" content="Documentation for the Pydantic stack. Validate data with Pydantic Validation, build production AI agents with Pydantic AI, and monitor LLM calls, agent behavior, and costs with Pydantic Logfire.">
+<meta property="og:site_name" content="Pydantic Docs">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="description" content="Documentation for the Pydantic stack. Validate data with Pydantic Validation, build production AI agents with Pydantic AI, and monitor LLM calls, agent behavior, and costs with Pydantic Logfire.">
+<meta property="og:image" content="https://pydantic.dev/docs/og/index.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://pydantic.dev/docs/og/index.png">
+<script src="/docs/_astro/Head.astro_astro_type_script_index_1_lang.y6aCeTTi.js"></script>
+<script src="/docs/_astro/Head.astro_astro_type_script_index_2_lang.Pp8ggVs0.js"></script>
+<script src="/docs/_astro/Head.astro_astro_type_script_index_3_lang.CJyAELRF.js"></script>
+<script src="/docs/_astro/Head.astro_astro_type_script_index_6_lang.x4XO9Cjw.js"></script>
+<script src="/flarelytics/client.js"></script>
+<script src="/docs/_astro/page.CphabkUM.js"></script>
+<script src="/docs/_astro/Search.astro_astro_type_script_index_0_lang.Dd2cdNrl.js"></script>
+<script src="/docs/_astro/HomeAiProviders.astro_astro_type_script_index_0_lang.DZcd10P3.js"></script>
+</head><body>
+<a href="#_top" class="sl-skip-link astro-mljvx3hg">Skip to content</a>
+<a href="https://pydantic.dev/" aria-label="Pydantic home" class="brand-link astro-hen6hmfb"></a>
+<a href="/docs/" class="docs-breadcrumb astro-hen6hmfb">Docs Pydantic Docs</a>
+<a href="/docs/validation/latest/get-started/" class="library-nav-link astro-nen7h5rs">Pydantic Validation</a>
+<a href="/docs/ai/" class="library-nav-link astro-nen7h5rs">Pydantic AI</a>
+<a href="/docs/logfire/" class="library-nav-link astro-nen7h5rs">Pydantic Logfire</a>
+<a href="/docs/httpx2/get-started/" class="library-nav-link wide-library-link astro-nen7h5rs">HTTPX2</a>
+<a href="/docs/monty/get-started/" class="library-nav-link wide-library-link astro-nen7h5rs">Monty</a>
+<a href="/docs/httpx2/get-started/" class="more-library-link astro-nen7h5rs">HTTPX2</a>
+<a href="/docs/monty/get-started/" class="more-library-link astro-nen7h5rs">Monty</a>
+<a href="/docs/validation/latest/get-started/" class="library-menu-link astro-nen7h5rs">Pydantic Validation</a>
+<a href="/docs/ai/" class="library-menu-link astro-nen7h5rs">Pydantic AI</a>
+<a href="/docs/logfire/" class="library-menu-link astro-nen7h5rs">Pydantic Logfire</a>
+<a href="/docs/httpx2/get-started/" class="library-menu-link astro-nen7h5rs">HTTPX2</a>
+<a href="/docs/monty/get-started/" class="library-menu-link astro-nen7h5rs">Monty</a>
+<a href="/docs/logfire/get-started/" class="library-card library-card--logfire">Not just Python!Logfire lets you monitor, secure, and optimize agents written in Python, TypeScript, Rust, Go, Java, Ruby, or any other language. Pydantic LogfireObservability and governance for AI agents, LLMs, applications, services, and hosts.logfire.configure(); logfire.info(&#x27;app started&#x27;);See the best AI Engineering platform→</a>
+<a href="/docs/ai/overview/" class="library-card library-card--pydantic-ai">Pydantic AIThe batteries-included type-safe framework for building production agents.model = &#x27;openai:gpt-5.6-sol&#x27; agent = Agent(model) agent.run_sync(&#x27;Does it snow?&#x27;)Build production-ready Agents→</a>
+<a href="/docs/monty/get-started/" class="library-card library-card--monty">MontyA minimal, secure Python interpreter in Rust, for running the code your agent writes.with Monty() as pool: with pool.checkout() as s: s.feed_run(&#x27;2 ** 10&#x27;)Run agent code safely→</a>
+<a href="/docs/validation/latest/get-started/" class="library-card library-card--pydantic">Pydantic ValidationData validation from Python type hints. Parse, validate, and serialize with confidence.class User(BaseModel): name: str age: intLearn about Validation→</a>
+<a href="/docs/httpx2/get-started/" class="library-card library-card--httpx2">HTTPX2A next-generation HTTP client. Sync and async APIs, HTTP/1.1 and HTTP/2.client = httpx2.Client() r = client.get(&#x27;https://pydantic.dev&#x27;)Make requests with HTTPX2→</a>
+<a href="https://github.com/pydantic" title="Pydantic on GitHub" class="astro-7pllvep4"></a>
+<a href="https://x.com/pydantic" title="Pydantic on X" class="astro-7pllvep4"></a>
+<a href="https://www.linkedin.com/company/pydantic/" title="Pydantic on LinkedIn" class="astro-7pllvep4"></a>
+<a href="https://bsky.app/profile/pydantic.dev" title="Pydantic on Bluesky" class="astro-7pllvep4"></a>
+</body></html>

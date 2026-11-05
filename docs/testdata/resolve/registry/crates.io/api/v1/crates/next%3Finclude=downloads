@@ -1,0 +1,19 @@
+{
+ "crate": {
+  "id": "next",
+  "name": "next",
+  "description": "Provides a trait to get the next sequential value",
+  "homepage": null,
+  "documentation": null,
+  "repository": "https://github.com/Seldom-SE/next",
+  "max_stable_version": null,
+  "max_version": "0.0.0",
+  "newest_version": "0.0.0",
+  "default_version": "0.2.0",
+  "recent_downloads": 91,
+  "downloads": 1360
+ },
+ "versions": null,
+ "keywords": [],
+ "categories": []
+}

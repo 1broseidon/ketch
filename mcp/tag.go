@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/1broseidon/ketch/cache"
+	"github.com/1broseidon/ketch/internal/failure"
 	"github.com/1broseidon/ketch/scrape"
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -99,7 +100,7 @@ func (s *Server) tagAdd(in TagInput) (*mcpsdk.CallToolResult, TagOutput, error) 
 		key := s.scraper.CacheKey(s.scraper.Rewrite(url))
 		cached, err := s.tags.TagURL(in.Tag, key, url)
 		if err != nil {
-			return nil, TagOutput{}, errf(kindPrecondition, "%v", err)
+			return nil, TagOutput{}, classifiedf(err, failure.Precondition, "%w", err)
 		}
 		out.Tagged = append(out.Tagged, url)
 		// Indexed, but with no title or description until the page is
@@ -118,7 +119,7 @@ func (s *Server) tagShow(in TagInput) (*mcpsdk.CallToolResult, TagOutput, error)
 	}
 	view, err := s.tags.ShowTag(in.Tag, limit)
 	if err != nil {
-		return nil, TagOutput{}, errf(kindPrecondition, "%v", err)
+		return nil, TagOutput{}, classifiedf(err, failure.Precondition, "%w", err)
 	}
 	entries, shown, cached := view.Entries, view.Shown, view.Cached
 	return nil, TagOutput{Tag: in.Tag, Entries: &entries, Shown: &shown, Cached: &cached, Pages: view.Pages, CacheStatus: view.CacheStatus}, nil
@@ -127,7 +128,7 @@ func (s *Server) tagShow(in TagInput) (*mcpsdk.CallToolResult, TagOutput, error)
 func (s *Server) tagListOp() (*mcpsdk.CallToolResult, TagOutput, error) {
 	tags, err := s.tags.TagList()
 	if err != nil {
-		return nil, TagOutput{}, errf(kindPrecondition, "%v", err)
+		return nil, TagOutput{}, classifiedf(err, failure.Precondition, "%w", err)
 	}
 	if tags == nil {
 		tags = []cache.TagSummary{}
@@ -147,7 +148,7 @@ func (s *Server) tagRemove(in TagInput) (*mcpsdk.CallToolResult, TagOutput, erro
 		removed, missing, err = s.tags.RemoveTagged(in.Tag, in.URLs)
 	}
 	if err != nil {
-		return nil, TagOutput{}, errf(kindPrecondition, "%v", err)
+		return nil, TagOutput{}, classifiedf(err, failure.Precondition, "%w", err)
 	}
 	if removed == 0 {
 		return nil, TagOutput{}, errf(kindNotFound, "nothing removed: %q holds no such entries", in.Tag)

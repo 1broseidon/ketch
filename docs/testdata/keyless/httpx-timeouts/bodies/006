@@ -1,0 +1,583 @@
+
+<!doctype html>
+<html lang="en">
+ <head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1">
+ <meta name="description" content="A next-generation HTTP client for Python.">
+ <link rel="canonical" href="https://www.python-httpx.org/">
+ <link rel="next" href="quickstart/">
+ <link rel="icon" href="assets/images/favicon.png">
+ <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.47">
+ <title>HTTPX</title>
+ <link rel="stylesheet" href="assets/stylesheets/main.6f8fc17f.min.css">
+ <link rel="stylesheet" href="assets/stylesheets/palette.06af60db.min.css">
+ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+ <link rel="stylesheet" href="css/custom.css">
+ </head>
+ <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+ <input data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+ <input data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+ <label for="__drawer"></label>
+ <div data-md-component="skip">
+ <a href="#features">
+ Skip to content
+ </a>
+ </div>
+ <div data-md-component="announce">
+ </div>
+<header data-md-component="header">
+ <nav aria-label="Header">
+ <a href="." title="HTTPX" aria-label="HTTPX" data-md-component="logo">
+ </a>
+ <label for="__drawer">
+ </label>
+ <div data-md-component="header-title">
+ <div>
+ <div>
+ <span>
+ HTTPX
+ </span>
+ </div>
+ <div data-md-component="header-topic">
+ <span>
+ Introduction
+ </span>
+ </div>
+ </div>
+ </div>
+ <form data-md-component="palette">
+ <input data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo" aria-label="Switch to dark mode" type="radio" name="__palette" id="__palette_0">
+ <label title="Switch to dark mode" for="__palette_1" hidden>
+ </label>
+ <input data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="indigo" aria-label="Switch to light mode" type="radio" name="__palette" id="__palette_1">
+ <label title="Switch to light mode" for="__palette_0" hidden>
+ </label>
+</form>
+ <label for="__search">
+ </label>
+ <div data-md-component="search" role="dialog">
+ <label for="__search"></label>
+ <div role="search">
+ <form name="search">
+ <input type="text" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+ <label for="__search">
+ </label>
+ <nav aria-label="Search">
+ <button type="reset" title="Clear" aria-label="Clear" tabindex="-1">
+ </button>
+ </nav>
+ </form>
+ <div>
+ <div tabindex="0" data-md-scrollfix>
+ <div data-md-component="search-result">
+ <div>
+ Initializing search
+ </div>
+ <ol role="presentation"></ol>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div>
+ <a href="https://github.com/encode/httpx/" title="Go to repository" data-md-component="source">
+ <div>
+ </div>
+ <div>
+ encode/httpx
+ </div>
+</a>
+ </div>
+ </nav>
+</header>
+ <div data-md-component="container">
+ <main data-md-component="main">
+ <div>
+ <div data-md-component="sidebar" data-md-type="navigation" >
+ <div>
+ <div>
+ <nav
+ aria-label="nav.title"
+ data-md-level="0"
+ >
+ <label for="__drawer">
+ <a
+ href="."
+ title="HTTPX"
+ aria-label="HTTPX"
+ data-md-component="logo"
+ >
+ </a>
+ HTTPX
+ </label>
+ <div>
+ <a href="https://github.com/encode/httpx/" title="Go to repository" data-md-component="source">
+ <div>
+ </div>
+ <div>
+ encode/httpx
+ </div>
+</a>
+ </div>
+ <ul data-md-scrollfix>
+ <li>
+ <input type="checkbox" id="__toc">
+ <label for="__toc">
+ <span>
+ Introduction
+ </span>
+ <span></span>
+ </label>
+ <a href=".">
+ <span>
+ Introduction
+ </span>
+ </a>
+<nav aria-label="Table of contents">
+ <label for="__toc">
+ <span></span>
+ Table of contents
+ </label>
+ <ul data-md-component="toc" data-md-scrollfix>
+ <li>
+ <a href="#features">
+ <span>
+ Features
+ </span>
+ </a>
+</li>
+ <li>
+ <a href="#documentation">
+ <span>
+ Documentation
+ </span>
+ </a>
+</li>
+ <li>
+ <a href="#dependencies">
+ <span>
+ Dependencies
+ </span>
+ </a>
+</li>
+ <li>
+ <a href="#installation">
+ <span>
+ Installation
+ </span>
+ </a>
+</li>
+ </ul>
+</nav>
+ </li>
+ <li>
+ <a href="quickstart/">
+ <span>
+ QuickStart
+ </span>
+ </a>
+ </li>
+ <li>
+ <input type="checkbox" id="__nav_3" >
+ <label for="__nav_3" id="__nav_3_label" tabindex="0">
+ <span>
+ Advanced
+ </span>
+ <span></span>
+ </label>
+ <nav data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+ <label for="__nav_3">
+ <span></span>
+ Advanced
+ </label>
+ <ul data-md-scrollfix>
+ <li>
+ <a href="advanced/clients/">
+ <span>
+ Clients
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="advanced/authentication/">
+ <span>
+ Authentication
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="advanced/ssl/">
+ <span>
+ SSL
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="advanced/proxies/">
+ <span>
+ Proxies
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="advanced/timeouts/">
+ <span>
+ Timeouts
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="advanced/resource-limits/">
+ <span>
+ Resource Limits
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="advanced/event-hooks/">
+ <span>
+ Event Hooks
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="advanced/transports/">
+ <span>
+ Transports
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="advanced/text-encodings/">
+ <span>
+ Text Encodings
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="advanced/extensions/">
+ <span>
+ Extensions
+ </span>
+ </a>
+ </li>
+ </ul>
+ </nav>
+ </li>
+ <li>
+ <input type="checkbox" id="__nav_4" >
+ <label for="__nav_4" id="__nav_4_label" tabindex="0">
+ <span>
+ Guides
+ </span>
+ <span></span>
+ </label>
+ <nav data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+ <label for="__nav_4">
+ <span></span>
+ Guides
+ </label>
+ <ul data-md-scrollfix>
+ <li>
+ <a href="async/">
+ <span>
+ Async Support
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="http2/">
+ <span>
+ HTTP/2 Support
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="logging/">
+ <span>
+ Logging
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="compatibility/">
+ <span>
+ Requests Compatibility
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="troubleshooting/">
+ <span>
+ Troubleshooting
+ </span>
+ </a>
+ </li>
+ </ul>
+ </nav>
+ </li>
+ <li>
+ <input type="checkbox" id="__nav_5" >
+ <label for="__nav_5" id="__nav_5_label" tabindex="0">
+ <span>
+ API Reference
+ </span>
+ <span></span>
+ </label>
+ <nav data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+ <label for="__nav_5">
+ <span></span>
+ API Reference
+ </label>
+ <ul data-md-scrollfix>
+ <li>
+ <a href="api/">
+ <span>
+ Developer Interface
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="exceptions/">
+ <span>
+ Exceptions
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="environment_variables/">
+ <span>
+ Environment Variables
+ </span>
+ </a>
+ </li>
+ </ul>
+ </nav>
+ </li>
+ <li>
+ <input type="checkbox" id="__nav_6" >
+ <label for="__nav_6" id="__nav_6_label" tabindex="0">
+ <span>
+ Community
+ </span>
+ <span></span>
+ </label>
+ <nav data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+ <label for="__nav_6">
+ <span></span>
+ Community
+ </label>
+ <ul data-md-scrollfix>
+ <li>
+ <a href="third_party_packages/">
+ <span>
+ Third Party Packages
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="contributing/">
+ <span>
+ Contributing
+ </span>
+ </a>
+ </li>
+ <li>
+ <a href="code_of_conduct/">
+ <span>
+ Code of Conduct
+ </span>
+ </a>
+ </li>
+ </ul>
+ </nav>
+ </li>
+ </ul>
+ <ul data-md-scrollfix style="padding-top: 15px; padding-left: 10px">
+ <div>
+ <a href="https://speakeasy.com"><img src="/img/speakeasy.png" width=150px style=></img></a>
+ </div>
+ </ul>
+ </nav>
+ </div>
+ </div>
+ </div>
+ <div data-md-component="sidebar" data-md-type="toc" >
+ <div>
+ <div>
+<nav aria-label="Table of contents">
+ <label for="__toc">
+ <span></span>
+ Table of contents
+ </label>
+ <ul data-md-component="toc" data-md-scrollfix>
+ <li>
+ <a href="#features">
+ <span>
+ Features
+ </span>
+ </a>
+</li>
+ <li>
+ <a href="#documentation">
+ <span>
+ Documentation
+ </span>
+ </a>
+</li>
+ <li>
+ <a href="#dependencies">
+ <span>
+ Dependencies
+ </span>
+ </a>
+</li>
+ <li>
+ <a href="#installation">
+ <span>
+ Installation
+ </span>
+ </a>
+</li>
+ </ul>
+</nav>
+ </div>
+ </div>
+ </div>
+ <div data-md-component="content">
+ <article>
+<p align="center" style="margin: 0 0 10px">
+ <img width="350" height="208" src="https://raw.githubusercontent.com/encode/httpx/master/docs/img/butterfly.png" alt='HTTPX'>
+</p>
+<h1 align="center" style="font-size: 3rem; margin: -15px 0">
+HTTPX
+</h1>
+<hr />
+<div align="center">
+<p>
+<a href="https://github.com/encode/httpx/actions">
+ <img src="https://github.com/encode/httpx/workflows/Test%20Suite/badge.svg" alt="Test Suite">
+</a>
+<a href="https://pypi.org/project/httpx/">
+ <img src="https://badge.fury.io/py/httpx.svg" alt="Package version">
+</a>
+</p>
+<em>A next-generation HTTP client for Python.</em>
+</div>
+<p>HTTPX is a fully featured HTTP client for Python 3, which provides sync and async APIs, and support for both HTTP/1.1 and HTTP/2.</p>
+<hr />
+<p>Install HTTPX using pip:</p>
+<div><pre><span></span><code>$<span> </span>pip<span> </span>install<span> </span>httpx
+</code></pre></div>
+<p>Now, let's get started:</p>
+<div><pre><span></span><code><span>&gt;&gt;&gt; </span><span>import</span><span> </span><span>httpx</span>
+<span>&gt;&gt;&gt; </span><span>r</span> <span>=</span> <span>httpx</span><span>.</span><span>get</span><span>(</span><span>&#39;https://www.example.org/&#39;</span><span>)</span>
+<span>&gt;&gt;&gt; </span><span>r</span>
+<span>&lt;Response [200 OK]&gt;</span>
+<span>&gt;&gt;&gt; </span><span>r</span><span>.</span><span>status_code</span>
+<span>200</span>
+<span>&gt;&gt;&gt; </span><span>r</span><span>.</span><span>headers</span><span>[</span><span>&#39;content-type&#39;</span><span>]</span>
+<span>&#39;text/html; charset=UTF-8&#39;</span>
+<span>&gt;&gt;&gt; </span><span>r</span><span>.</span><span>text</span>
+<span>&#39;&lt;!doctype html&gt;\n&lt;html&gt;\n&lt;head&gt;\n&lt;title&gt;Example Domain&lt;/title&gt;...&#39;</span>
+</code></pre></div>
+<p>Or, using the command-line client.</p>
+<div><pre><span></span><code><span># The command line client is an optional dependency.</span>
+$<span> </span>pip<span> </span>install<span> </span><span>&#39;httpx[cli]&#39;</span>
+</code></pre></div>
+<p>Which now allows us to use HTTPX directly from the command-line...</p>
+<p><img alt="httpx --help" src="img/httpx-help.png" /></p>
+<p>Sending a request...</p>
+<p><img alt="httpx http://httpbin.org/json" src="img/httpx-request.png" /></p>
+<h2 id="features">Features</h2>
+<p>HTTPX builds on the well-established usability of <code>requests</code>, and gives you:</p>
+<ul>
+<li>A broadly <a href="compatibility/">requests-compatible API</a>.</li>
+<li>Standard synchronous interface, but with <a href="async/">async support if you need it</a>.</li>
+<li>HTTP/1.1 <a href="http2/">and HTTP/2 support</a>.</li>
+<li>Ability to make requests directly to <a href="advanced/transports/#wsgi-transport">WSGI applications</a> or <a href="advanced/transports/#asgi-transport">ASGI applications</a>.</li>
+<li>Strict timeouts everywhere.</li>
+<li>Fully type annotated.</li>
+<li>100% test coverage.</li>
+</ul>
+<p>Plus all the standard features of <code>requests</code>...</p>
+<ul>
+<li>International Domains and URLs</li>
+<li>Keep-Alive &amp; Connection Pooling</li>
+<li>Sessions with Cookie Persistence</li>
+<li>Browser-style SSL Verification</li>
+<li>Basic/Digest Authentication</li>
+<li>Elegant Key/Value Cookies</li>
+<li>Automatic Decompression</li>
+<li>Automatic Content Decoding</li>
+<li>Unicode Response Bodies</li>
+<li>Multipart File Uploads</li>
+<li>HTTP(S) Proxy Support</li>
+<li>Connection Timeouts</li>
+<li>Streaming Downloads</li>
+<li>.netrc Support</li>
+<li>Chunked Requests</li>
+</ul>
+<h2 id="documentation">Documentation</h2>
+<p>For a run-through of all the basics, head over to the <a href="quickstart/">QuickStart</a>.</p>
+<p>For more advanced topics, see the <strong>Advanced</strong> section,
+the <a href="async/">async support</a> section, or the <a href="http2/">HTTP/2</a> section.</p>
+<p>The <a href="api/">Developer Interface</a> provides a comprehensive API reference.</p>
+<p>To find out about tools that integrate with HTTPX, see <a href="third_party_packages/">Third Party Packages</a>.</p>
+<h2 id="dependencies">Dependencies</h2>
+<p>The HTTPX project relies on these excellent libraries:</p>
+<ul>
+<li><code>httpcore</code> - The underlying transport implementation for <code>httpx</code>.</li>
+<li><code>h11</code> - HTTP/1.1 support.</li>
+<li><code>certifi</code> - SSL certificates.</li>
+<li><code>idna</code> - Internationalized domain name support.</li>
+<li><code>sniffio</code> - Async library autodetection.</li>
+</ul>
+<p>As well as these optional installs:</p>
+<ul>
+<li><code>h2</code> - HTTP/2 support. <em>(Optional, with <code>httpx[http2]</code>)</em></li>
+<li><code>socksio</code> - SOCKS proxy support. <em>(Optional, with <code>httpx[socks]</code>)</em></li>
+<li><code>rich</code> - Rich terminal support. <em>(Optional, with <code>httpx[cli]</code>)</em></li>
+<li><code>click</code> - Command line client support. <em>(Optional, with <code>httpx[cli]</code>)</em></li>
+<li><code>brotli</code> or <code>brotlicffi</code> - Decoding for "brotli" compressed responses. <em>(Optional, with <code>httpx[brotli]</code>)</em></li>
+<li><code>zstandard</code> - Decoding for "zstd" compressed responses. <em>(Optional, with <code>httpx[zstd]</code>)</em></li>
+</ul>
+<p>A huge amount of credit is due to <code>requests</code> for the API layout that
+much of this work follows, as well as to <code>urllib3</code> for plenty of design
+inspiration around the lower-level networking details.</p>
+<h2 id="installation">Installation</h2>
+<p>Install with pip:</p>
+<div><pre><span></span><code>$<span> </span>pip<span> </span>install<span> </span>httpx
+</code></pre></div>
+<p>Or, to include the optional HTTP/2 support, use:</p>
+<div><pre><span></span><code>$<span> </span>pip<span> </span>install<span> </span>httpx<span>[</span>http2<span>]</span>
+</code></pre></div>
+<p>To include the optional brotli and zstandard decoders support, use:</p>
+<div><pre><span></span><code>$<span> </span>pip<span> </span>install<span> </span>httpx<span>[</span>brotli,zstd<span>]</span>
+</code></pre></div>
+<p>HTTPX requires Python 3.9+</p>
+ </article>
+ </div>
+ </div>
+ </main>
+ <footer>
+ <div>
+ <div>
+ <div>
+ Made with
+ <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+ Material for MkDocs
+ </a>
+</div>
+ </div>
+ </div>
+</footer>
+ </div>
+ <div data-md-component="dialog">
+ <div></div>
+ </div>
+ <script src="assets/javascripts/bundle.83f73b43.min.js"></script>
+ </body>
+</html>

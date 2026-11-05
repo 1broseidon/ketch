@@ -1,0 +1,23 @@
+# Widgetry
+
+> Widget validation for Python.
+
+# [Aliases](https://linked-h1.test/docs/api/aliases/)
+
+# Aliases
+
+Support for alias configurations.
+
+## AliasPath
+
+A data class used by `validation_alias` to create aliases.
+
+# [Fields](https://linked-h1.test/docs/api/fields/)
+
+# Fields
+
+Defining fields on models.
+
+## Field
+
+Create a field for objects that can be configured.

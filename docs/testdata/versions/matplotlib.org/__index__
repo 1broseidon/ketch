@@ -1,0 +1,105 @@
+<!doctype html>
+<html><head>
+<title>Matplotlib — Visualization with Python</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="_static/scripts/fontawesome.js?digest=0790524f97105ba85085"></script>
+<script src="_static/documentation_options.js?v=5929fcd5"></script>
+<script src="_static/doctools.js?v=fd6eb6e6"></script>
+<script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+<script src="https://views.scientific-python.org/js/script.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="docsearch:language" content="en">
+<meta name="docsearch:version" content="">
+<script src="_static/searchtools.js"></script>
+<script src="_static/language_data.js"></script>
+<script src="searchindex.js"></script>
+<script src="_static/images-rotate-info.js"></script>
+<script src="_static/script.js"></script>
+<script src="_static/scripts/bootstrap.js?digest=0790524f97105ba85085"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085"></script>
+<script src="/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js"></script>
+</head><body>
+<a href="#main-content">Skip to main content</a>
+<a href="https://matplotlib.org/stable/" class="navbar-brand logo"></a>
+<a href="/stable/plot_types/index" class="reference internal nav-link">Plot types</a>
+<a href="/stable/users/index" class="reference internal nav-link">User guide</a>
+<a href="/stable/tutorials/index" class="reference internal nav-link">Tutorials</a>
+<a href="/stable/gallery/index" class="reference internal nav-link">Examples</a>
+<a href="/stable/api/index" class="reference internal nav-link">Reference</a>
+<a href="/stable/devel/index" class="reference internal nav-link">Contribute</a>
+<a href="/stable/users/release_notes" class="reference internal nav-link">Releases</a>
+<a href="https://gitter.im/matplotlib/matplotlib" title="Gitter" class="nav-link pst-navbar-icon">Gitter</a>
+<a href="https://discourse.matplotlib.org" title="Discourse" class="nav-link pst-navbar-icon">Discourse</a>
+<a href="https://github.com/matplotlib/matplotlib" title="GitHub" class="nav-link pst-navbar-icon">GitHub</a>
+<a href="/stable/plot_types/index" class="reference internal nav-link">Plot types</a>
+<a href="/stable/users/index" class="reference internal nav-link">User guide</a>
+<a href="/stable/tutorials/index" class="reference internal nav-link">Tutorials</a>
+<a href="/stable/gallery/index" class="reference internal nav-link">Examples</a>
+<a href="/stable/api/index" class="reference internal nav-link">Reference</a>
+<a href="/stable/devel/index" class="reference internal nav-link">Contribute</a>
+<a href="/stable/users/release_notes" class="reference internal nav-link">Releases</a>
+<a href="https://gitter.im/matplotlib/matplotlib" title="Gitter" class="nav-link pst-navbar-icon">Gitter</a>
+<a href="https://discourse.matplotlib.org" title="Discourse" class="nav-link pst-navbar-icon">Discourse</a>
+<a href="https://github.com/matplotlib/matplotlib" title="GitHub" class="nav-link pst-navbar-icon">GitHub</a>
+<a href="https://ieeexplore.ieee.org/document/4160265/citations?tabFilter=papers">publication quality plots</a>
+<a href="https://mybinder.org/v2/gh/matplotlib/mpl-brochure-binder/main?labpath=MatplotlibExample.ipynb">interactive figures</a>
+<a href="https://matplotlib.org/stable/gallery/style_sheets/style_sheets_reference.html">visual style</a>
+<a href="https://matplotlib.org/stable/tutorials/provisional/mosaic.html">layout</a>
+<a href="https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure.savefig">many file formats</a>
+<a href="https://matplotlib.org/stable/gallery/#embedding-matplotlib-in-graphical-user-interfaces">JupyterLab and Graphical User Interfaces</a>
+<a href="https://matplotlib.org/mpl-third-party/">third-party packages</a>
+<a href="https://mybinder.org/v2/gh/matplotlib/mpl-brochure-binder/main?labpath=MatplotlibExample.ipynb" class="button button--purple">Try Matplotlib (on Binder)</a>
+<a href="https://matplotlib.org/stable/users/getting_started/">Getting Started</a>
+<a href="https://matplotlib.org/stable/plot_types/index.html">Examples</a>
+<a href="https://matplotlib.org/stable/index.html">Reference</a>
+<a href="https://matplotlib.org/cheatsheets/">Cheat Sheets</a>
+<a href="https://matplotlib.org/stable/index.html">Documentation</a>
+<a href="#news" title="Permalink to news section" class="headerlink">#</a>
+<a href="https://discourse.matplotlib.org/t/matplotlib-announce-ann-matplotlib-3-11-0/" class="link--offsite">Matplotlib 3.11.0 Released</a>
+<a href="https://discourse.matplotlib.org/t/matplotlib-announce-ann-matplotlib-3-10-0/25601" class="link--offsite">Matplotlib 3.10.0 Released</a>
+<a href="https://discourse.matplotlib.org/t/gsoc-2024-announcement/24469" class="link--offsite">GSOC 2024: Bivariate Colormaps</a>
+<a href="https://trygvrad.github.io/google-soc-bivariate-colormaps/">bivariate colormapping</a>
+<a href="https://discourse.matplotlib.org/t/matplotlib-announce-ann-matplotlib-3-9-0/24444" class="link--offsite">Matplotlib 3.9.0 Released</a>
+<a href="https://discourse.matplotlib.org/c/announce/14" class="link--offsite">Older Announcements</a>
+<a href="#resources" title="Permalink to resources section" class="headerlink">#</a>
+<a href="https://matplotlib.org/stable/users/index.html">Users guide</a>
+<a href="https://matplotlib.org/stable/api/index.html">API docs</a>
+<a href="https://matplotlib.org/stable/search.html">search</a>
+<a href="https://discourse.matplotlib.org">discourse.matplotlib.org</a>
+<a href="https://stackoverflow.com/questions/tagged/matplotlib">StackOverflow</a>
+<a href="https://scientific-python.org/calendars/">community calendar</a>
+<a href="#domain-specific-tools" title="Permalink to domain specific tools section" class="headerlink">#</a>
+<a href="https://matplotlib.org/mpl-third-party/" class="link--offsite">More Domain-Specific Tools</a>
+<a href="https://seaborn.pydata.org/" class="link--offsite">statistical data visualization</a>
+<a href="https://scitools.org.uk/cartopy/docs/latest/" class="link--offsite">Cartopy</a>
+<a href="https://github.com/Edinburgh-Genome-Foundry/DnaFeaturesViewer" class="link--offsite">DNA Features Viewer</a>
+<a href="https://plotnine.readthedocs.io/en/stable/" class="link--offsite">plotnine</a>
+<a href="https://docs.astropy.org/en/stable/visualization/wcsaxes/" class="link--offsite">WCSAxes</a>
+<a href="#support" title="Permalink to support Matplotlib section" class="headerlink">#</a>
+<a href="https://discourse.matplotlib.org">on discourse</a>
+<a href="https://github.com/matplotlib/matplotlib/issues">on GitHub</a>
+<a href="https://matplotlib.org/stable/devel/index.html">documentation and code</a>
+<a href="https://discourse.matplotlib.org" class="link--offsite">Join us on Discourse</a>
+<a href="https://github.com/matplotlib/matplotlib" class="link--offsite">Join us on GitHub</a>
+<a href="https://matplotlib.org/stable/project/credits.html">many contributors</a>
+<a href="https://matplotlib.org/stable/project/citing.html" class="link--offsite">Ready made citation</a>
+<a href="https://github.com/sponsors/matplotlib">sponsoring Matplotlib on GitHub</a>
+<a href="https://numfocus.org/donate-to-matplotlib">through NumFOCUS</a>
+<a href="https://github.com/sponsors/matplotlib" class="link--offsite">Sponsor on GitHub</a>
+<a href="https://numfocus.org/donate-to-matplotlib" class="link--offsite">Donate to Matplotlib</a>
+<a href="https://github.com/matplotlib/matplotlib" aria-label="Matplotlib on GitHub"></a>
+<a href="https://twitter.com/matplotlib" aria-label="Matplotlib on Twitter"></a>
+<a href="https://discourse.matplotlib.org" aria-label="Matplotlib Discourse"></a>
+<a href="https://gitter.im/matplotlib/matplotlib" aria-label="Matplotlib on Gitter"></a>
+<a href="https://instagram.com/matplotart" aria-label="Matplotlib on Instagram"></a>
+<a href="https://numfocus.org/donate-to-matplotlib" class="button button--green">Donate to Matplotlib</a>
+<a href="https://blog.scientific-python.org/tags/matplotlib/">Matplotblog</a>
+<a href="https://matplotlib.org/stable/project/code_of_conduct.html">Code of Conduct</a>
+<a href="https://matplotlib.org/stable/project/license.html">License</a>
+<a href="https://matplotlib.org/governance/">Governance</a>
+<a href="https://numfocus.org/sponsored-projects">NumFOCUS Fiscally Sponsored Project</a>
+<a href="https://matplotlib.org/stable">docs</a>
+<a href="https://matplotlib.org/stable/users/release_notes.html">changelog</a>
+<a href="https://matplotlib.org/devdocs/index.html">docs</a>
+</body></html>

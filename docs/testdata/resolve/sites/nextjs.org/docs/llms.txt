@@ -1,0 +1,8 @@
+# Next.js Documentation
+
+> Reference and guides for Next.js 16.4.3 — the React framework for building full-stack web applications.
+
+## [Getting Started](https://nextjs.org/docs/app/getting-started)
+
+- [Installation](https://nextjs.org/docs/app/getting-started/installation): Learn how to create a new Next.js application.
+- [Project Structure](https://nextjs.org/docs/app/getting-started/project-structure): Learn the folder and file conventions in Next.js.

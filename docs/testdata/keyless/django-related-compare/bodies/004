@@ -1,0 +1,2927 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+ <meta charset="utf-8">
+ <title>DEV Community</title>
+ <link rel="canonical" href="https://dev.to/" />
+ <meta name="description" content="A space to discuss and keep up software development and manage your software career">
+ <meta name="keywords" content="software development, engineering, rails, javascript, ruby">
+ <meta property="og:type" content="website" />
+ <meta property="og:url" content="https://dev.to/" />
+ <meta property="og:title" content="DEV Community" />
+ <meta property="og:image" content="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/3otvb2z646ytpt1hl2rv.jpg">
+ <meta property="og:description" content="A space to discuss and keep up software development and manage your software career" />
+ <meta property="og:site_name" content="DEV Community" />
+ <meta name="twitter:site" content="@thepracticaldev">
+ <meta name="twitter:title" content="DEV Community">
+ <meta name="twitter:description" content="A space to discuss and keep up software development and manage your software career">
+ <meta name="twitter:image:src" content="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/3otvb2z646ytpt1hl2rv.jpg">
+ <meta name="twitter:card" content="summary_large_image">
+ <link rel="alternate" type="application/rss+xml" title="DEV Community RSS Feed" href="https://dev.to/feed" />
+ <meta name="last-updated" content="2026-11-02 10:46:06 UTC">
+ <meta name="user-signed-in" content="false">
+ <meta name="head-cached-at" content="1793616366">
+ <meta name="environment" content="production">
+ <link rel="stylesheet" href="https://assets.dev.to/assets/minimal-7159cf3bbf06a194ecd4289552407874be2a6ab3d6d0218346363b70d1ec255f.css" media="all" id="main-minimal-stylesheet" />
+<link rel="stylesheet" href="https://assets.dev.to/assets/views-f0fe4fb47d419abc949a43abed35604ea7ac9f258085b0368e4841033cd26a3e.css" media="all" id="main-views-stylesheet" />
+<link rel="stylesheet" href="https://assets.dev.to/assets/crayons-08ce12ab8de9d434694954ab91d00f01cfec7749cb4753f53208a49d9b51a4a4.css" media="all" id="main-crayons-stylesheet" />
+ <script src="https://assets.dev.to/assets/base-216736cd2556ec1ebf8fda7b7f7001d21a7e306f1d351cf7516da74614ed7e41.js" defer="defer"></script>
+<script src="https://assets.dev.to/assets/application-342e7d4b1c7ea9e1634c6f8303526198ff77f22851ded964c7e98fd7b334e388.js" defer="defer"></script>
+<script src="https://assets.dev.to/assets/baseInitializers-b84685845718082fd04dcdf9cad0c14222f12f0d9889d2bd2431e594abc769f4.js" defer="defer"></script>
+<script src="https://assets.dev.to/assets/baseTracking-72a6d524cdf9aea517a8bbc18f8e57c791fd563c348bbfc9428a31d39ae4054e.js" defer="defer"></script>
+<script src="https://assets.dev.to/assets/followButtons-04b340a35763fe80e93d159eaeee40a94bebd3a76eb80ffd734c513b460fa33a.js" defer="defer"></script>
+<script src="https://assets.dev.to/assets/eventSignupButtons-d7be454dd15c446a3bd5f62b1ea9a91085c9a1c22e76fd9056002bb721293652.js" defer="defer"></script>
+ <meta name="search-script" content="https://assets.dev.to/assets/Search-6eba4df9888cfc306d79c474e99c1b556a3fb73f7e2a066be22c5ec71a2e1114.js">
+ <meta name="mermaid-script" content="https://assets.dev.to/assets/mermaidRenderer-2799dd717da288d72e5de9448cc9c0f0495ad4e3277ba9b7c0911fd32a8efcf3.js">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+ <link rel="icon" type="image/x-icon" href="https://media2.dev.to/dynamic/image/width=32,height=,fit=scale-down,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2F8j7kvp660rqzt99zui8e.png" />
+ <link rel="apple-touch-icon" href="https://media2.dev.to/dynamic/image/width=180,height=,fit=scale-down,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2F8j7kvp660rqzt99zui8e.png">
+ <link rel="apple-touch-icon" sizes="152x152" href="https://media2.dev.to/dynamic/image/width=152,height=,fit=scale-down,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2F8j7kvp660rqzt99zui8e.png">
+ <link rel="apple-touch-icon" sizes="180x180" href="https://media2.dev.to/dynamic/image/width=180,height=,fit=scale-down,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2F8j7kvp660rqzt99zui8e.png">
+ <link rel="apple-touch-icon" sizes="167x167" href="https://media2.dev.to/dynamic/image/width=167,height=,fit=scale-down,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2F8j7kvp660rqzt99zui8e.png">
+ <link href="https://media2.dev.to/dynamic/image/width=192,height=,fit=scale-down,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2F8j7kvp660rqzt99zui8e.png" rel="icon" sizes="192x192" />
+ <link href="https://media2.dev.to/dynamic/image/width=128,height=,fit=scale-down,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2F8j7kvp660rqzt99zui8e.png" rel="icon" sizes="128x128" />
+ <meta name="apple-mobile-web-app-title" content="dev.to">
+ <meta name="application-name" content="dev.to">
+ <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+ <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+ <link rel="search" href="https://dev.to/open-search.xml" type="application/opensearchdescription+xml" title="DEV Community" />
+ <link rel="describedby" href="https://dev.to/llms.txt" type="text/plain" title="Guidance for AI agents" />
+ <meta property="forem:name" content="DEV Community" />
+ <meta property="forem:logo" content="https://media2.dev.to/dynamic/image/width=512,height=,fit=scale-down,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2F8j7kvp660rqzt99zui8e.png" />
+ <meta property="forem:domain" content="dev.to" />
+ </head>
+ <body
+ data-user-status="logged-out"
+ data-is-root-subforem="false"
+ data-subforem-id="1"
+ data-side-nav-visible="true"
+ data-community-name="DEV Community"
+ data-subscription-icon="https://assets.dev.to/assets/subscription-icon-805dfa7ac7dd660f07ed8d654877270825b07a92a03841aa99a1093bd00431b2.png"
+ data-community-leader-icon="https://assets.dev.to/assets/community-leader-icon-b72c9e74eff54916e5c46c962f47ba40c9f611a71f8b157511f9613f69c0001b.svg"
+ data-locale="en"
+ data-honeybadger-key="hbp_nqu4Y66HuEKlD6YRGssZuRQnPOjDm50J8Zkr"
+ data-deployed-at="2026-11-01T23:36:51Z"
+ data-latest-commit-id="b08bddac4624b02b0374c4d42560bff9e6dcbcc0"
+ data-ga-tracking="UA-71991109-1"
+ data-cookie-banner-user-context="logged_out_only"
+ data-cookie-banner-platform-context="off"
+ data-algolia-id="PRSOBFP46H"
+ data-algolia-search-key="9aa7d31610cba78851c9b1f63776a9dd"
+ data-algolia-display="true"
+ data-dynamic-url-component="bmar11"
+ data-ga4-tracking-id="G-TYEM8Y3JN3"
+ data-global-feature-flags-enabled="data_update_scripts onboarding_newsletter_content schedule_articles moderator_role display_ad_tags replace_unicorn_with_jump_to_comments article_id_adjusted_weight cloudflare_preferred_for_hosted_images multiple_reactions subscriber_icon ab_experiment_feed_strategy use_stories_endpoint digest_subject_testing digest_results_count_testing consistent_rendering discover_and_following_tabs hero_billboard onboarding_drip_emails algolia_frontend hide_onboarding_task_card optimize_article_tag_query dev_core_user_sync personalized_email_digests customerio_email_delivery community_favorites"
+ data-style-fingerprint="000daeaddd">
+ <link rel="stylesheet" href="https://assets.dev.to/assets/minimal-7159cf3bbf06a194ecd4289552407874be2a6ab3d6d0218346363b70d1ec255f.css" media="all" id="secondary-minimal-stylesheet" />
+<link rel="stylesheet" href="https://assets.dev.to/assets/views-f0fe4fb47d419abc949a43abed35604ea7ac9f258085b0368e4841033cd26a3e.css" media="all" id="secondary-views-stylesheet" />
+<link rel="stylesheet" href="https://assets.dev.to/assets/crayons-08ce12ab8de9d434694954ab91d00f01cfec7749cb4753f53208a49d9b51a4a4.css" media="all" id="secondary-crayons-stylesheet" />
+ <div id="body-styles">
+ </div>
+ <div id="audiocontent" data-podcast="">
+ </div>
+ <div id="navigation-progress"></div>
+<header id="topbar">
+ <span id="route-change-target" tabindex="-1"></span>
+ <a href="#main-content">Skip to content</a>
+ <div>
+ <span>
+ <button>
+ </button>
+ </span>
+ <a href="/" aria-label="DEV Community Home" >
+ <img
+ src="https://media2.dev.to/dynamic/image/quality=100/https://dev-to-uploads.s3.amazonaws.com/uploads/logos/resized_logo_UQww2soKuUsjaOGNB38o.png"
+ style="aspect-ratio: 10 / 8"
+ alt="DEV Community">
+</a>
+ <div id="header-search">
+ <form accept-charset="UTF-8" method="get" action="/search" role="search">
+ <div>
+ <div>
+ <input id="search-input" type="text" id="nav-search" name="q" placeholder="Search..." autocomplete="off" />
+ <button type="submit" aria-label="Search">
+ </button>
+ <a href="https://www.algolia.com/developers/?utm_source=devto&utm_medium=referral" target="_blank" rel="noopener noreferrer">
+ Powered by Algolia
+ </a>
+ </div>
+ </div>
+ </form>
+ </div>
+ <div>
+ <div id="authentication-top-nav-actions">
+ <span>
+ <a href="https://dev.to/enter?signup_subforem=1" data-no-instant>
+ Log in
+ </a>
+ </span>
+ <a href="https://dev.to/enter?signup_subforem=1&amp;state=new-user" data-tracking-id="ca_top_nav" data-tracking-source="top_navbar" data-no-instant>
+ Create account
+ </a>
+ </div>
+ </div>
+ </div>
+</header>
+<div>
+ <div>
+ <header>
+ <h2>DEV Community</h2>
+ <button aria-label="Close">
+ </button>
+ </header>
+ <div id="authentication-hamburger-actions">
+ </div>
+ </div>
+ <div></div>
+</div>
+ <div id="active-broadcast"></div>
+<div id="page-content" data-current-page="stories-index">
+ <div id="page-content-inner" data-internal-nav="false" data-viewable-id="" data-viewable-type="">
+ <div id="page-route-change" aria-live="polite" aria-atomic="true"></div>
+<script src="https://assets.dev.to/assets/homePage-c4504645f9c4841cd0fc5ba6d02beff049a860644a06d7cd5134a7679eab788e.js" defer="defer"></script>
+ <div id="index-container"
+ data-params="{&quot;sort_by&quot;:&quot;hotness_score&quot;,&quot;sort_direction&quot;:&quot;desc&quot;}" data-which=""
+ data-tag=""
+ data-feed="base-feed"
+ data-feed-use-stories-endpoint="false"
+ data-feed-context-type="home"
+ data-feed-category-impression="impression"
+ data-feed-category-click="click"
+ data-feed-category-reaction="reaction"
+ data-feed-category-comment="comment"
+ data-feed-category-extended_pageview="extended_pageview"
+ data-articles-since="">
+ <div id="sidebar-wrapper-left">
+ <aside aria-label="Primary sidebar">
+ <div>
+ <h2>
+ DEV Community is a community of 4,187,913 amazing developers
+ </h2>
+ <p>
+ We&#39;re a place where coders share, stay up-to-date and grow their careers.
+ </p>
+ <div>
+ <a href="https://dev.to/enter?signup_subforem=1&amp;state=new-user" data-tracking-id="ca_left_sidebar_home_page" data-tracking-source="left_sidebar" aria-label="Create new account">Create account</a>
+ <a href="https://dev.to/enter?signup_subforem=1" aria-label="Log in">Log in</a>
+ </div>
+</div>
+<nav data-testid="main-nav" aria-label="DEV Community">
+ <ul>
+ <li>
+ <a href="/">
+ <span>
+ </span>
+ Home
+ </a>
+ </li>
+ <li>
+ <a href="/challenges">
+ <span>
+ </span>
+ DEV Challenges
+ </a>
+ </li>
+ <li>
+ <a href="/++">
+ <span>
+ </span>
+ DEV++
+ </a>
+ </li>
+ <li>
+ <a href="/videos">
+ <span>
+ </span>
+ Videos
+ </a>
+ </li>
+ <li>
+ <a href="/deved">
+ <span>
+ </span>
+ DEV Education Tracks
+ </a>
+ </li>
+ <li>
+ <a href="/help">
+ <span>
+ </span>
+ DEV Help
+ </a>
+ </li>
+ <li>
+ <a href="/advertise">
+ <span>
+ </span>
+ Advertise on DEV
+ </a>
+ </li>
+ <li>
+ <a href="/organizations">
+ <span>
+ </span>
+ Organization Accounts
+ </a>
+ </li>
+ <li>
+ <a href="/showcase">
+ <span>
+ </span>
+ DEV Showcase
+ </a>
+ </li>
+ <li>
+ <a href="/about">
+ <span>
+ </span>
+ About
+ </a>
+ </li>
+ <li>
+ <a href="/contact">
+ <span>
+ </span>
+ Contact
+ </a>
+ </li>
+ <li>
+ <a href="/free-postgres-database-tier">
+ <span>
+ </span>
+ Free Postgres Database
+ </a>
+ </li>
+ <li>
+ <a href="https://shop.forem.com/">
+ <span>
+ </span>
+ DEV Shop
+ </a>
+ </li>
+ <li>
+ <a href="https://mlh.io/">
+ <span>
+ </span>
+ MLH
+ </a>
+ </li>
+ <li>
+ <a href="/trending">
+ <span>
+ </span>
+ Trends
+ </a>
+ </li>
+ </ul>
+</nav>
+ <nav data-testid="other-nav" aria-labelledby="other-nav-heading-sidebar">
+ <h2 id="other-nav-heading-sidebar">
+ Other
+ </h2>
+ <ul>
+ <li>
+ <a href="/code-of-conduct">
+ <span>
+ </span>
+ Code of Conduct
+ </a>
+ </li>
+ <li>
+ <a href="/privacy">
+ <span>
+ </span>
+ Privacy Policy
+ </a>
+ </li>
+ <li>
+ <a href="/terms">
+ <span>
+ </span>
+ Terms of Use
+ </a>
+ </li>
+ </ul>
+ </nav>
+<div>
+ <a
+ href="https://x.com/thepracticaldev"
+ target="_blank"
+ rel="noopener me">
+ </a>
+ <a
+ href="https://facebook.com/thepracticaldev"
+ target="_blank"
+ rel="noopener me">
+ </a>
+ <a
+ href="https://github.com/forem"
+ target="_blank"
+ rel="noopener me">
+ </a>
+ <a
+ href="https://instagram.com/thepracticaldev"
+ target="_blank"
+ rel="noopener me">
+ </a>
+ <a
+ href="https://twitch.com/thepracticaldev"
+ target="_blank"
+ rel="noopener me">
+ </a>
+ <a
+ href="https://fosstodon.org/@thepracticaldev"
+ target="_blank"
+ rel="noopener me">
+ </a>
+ <a
+ href="https://bsky.app/profile/dev.to"
+ target="_blank"
+ rel="noopener me">
+ </a>
+</div>
+ <nav aria-label="Secondary sidebar nav">
+ <h3>Popular Tags</h3>
+ <div id="sidebar-nav-default-tags" style="max-height: 42vh">
+ <div id="default-sidebar-element-ai">
+ <a href="/t/ai">
+ #ai
+ </a>
+ </div>
+ <div id="default-sidebar-element-webdev">
+ <a href="/t/webdev">
+ #webdev
+ </a>
+ </div>
+ <div id="default-sidebar-element-productivity">
+ <a href="/t/productivity">
+ #productivity
+ </a>
+ </div>
+ <div id="default-sidebar-element-programming">
+ <a href="/t/programming">
+ #programming
+ </a>
+ </div>
+ <div id="default-sidebar-element-javascript">
+ <a href="/t/javascript">
+ #javascript
+ </a>
+ </div>
+ <div id="default-sidebar-element-tutorial">
+ <a href="/t/tutorial">
+ #tutorial
+ </a>
+ </div>
+ <div id="default-sidebar-element-python">
+ <a href="/t/python">
+ #python
+ </a>
+ </div>
+ <div id="default-sidebar-element-security">
+ <a href="/t/security">
+ #security
+ </a>
+ </div>
+ <div id="default-sidebar-element-beginners">
+ <a href="/t/beginners">
+ #beginners
+ </a>
+ </div>
+ <div id="default-sidebar-element-opensource">
+ <a href="/t/opensource">
+ #opensource
+ </a>
+ </div>
+ <div id="default-sidebar-element-devops">
+ <a href="/t/devops">
+ #devops
+ </a>
+ </div>
+ <div id="default-sidebar-element-automation">
+ <a href="/t/automation">
+ #automation
+ </a>
+ </div>
+ <div id="default-sidebar-element-career">
+ <a href="/t/career">
+ #career
+ </a>
+ </div>
+ <div id="default-sidebar-element-architecture">
+ <a href="/t/architecture">
+ #architecture
+ </a>
+ </div>
+ <div id="default-sidebar-element-api">
+ <a href="/t/api">
+ #api
+ </a>
+ </div>
+ <div id="default-sidebar-element-machinelearning">
+ <a href="/t/machinelearning">
+ #machinelearning
+ </a>
+ </div>
+ <div id="default-sidebar-element-discuss">
+ <a href="/t/discuss">
+ #discuss
+ </a>
+ </div>
+ <div id="default-sidebar-element-node">
+ <a href="/t/node">
+ #node
+ </a>
+ </div>
+ <div id="default-sidebar-element-llm">
+ <a href="/t/llm">
+ #llm
+ </a>
+ </div>
+ <div id="default-sidebar-element-devchallenge">
+ <a href="/t/devchallenge">
+ #devchallenge
+ </a>
+ </div>
+ <div id="default-sidebar-element-testing">
+ <a href="/t/testing">
+ #testing
+ </a>
+ </div>
+ <div id="default-sidebar-element-agents">
+ <a href="/t/agents">
+ #agents
+ </a>
+ </div>
+ <div id="default-sidebar-element-showdev">
+ <a href="/t/showdev">
+ #showdev
+ </a>
+ </div>
+ <div id="default-sidebar-element-react">
+ <a href="/t/react">
+ #react
+ </a>
+ </div>
+ <div id="default-sidebar-element-typescript">
+ <a href="/t/typescript">
+ #typescript
+ </a>
+ </div>
+ <div id="default-sidebar-element-news">
+ <a href="/t/news">
+ #news
+ </a>
+ </div>
+ <div id="default-sidebar-element-seo">
+ <a href="/t/seo">
+ #seo
+ </a>
+ </div>
+ <div id="default-sidebar-element-web3">
+ <a href="/t/web3">
+ #web3
+ </a>
+ </div>
+ <div id="default-sidebar-element-startup">
+ <a href="/t/startup">
+ #startup
+ </a>
+ </div>
+ <div id="default-sidebar-element-android">
+ <a href="/t/android">
+ #android
+ </a>
+ </div>
+ </div>
+</nav>
+ <div data-async-url="/bmar11/sidebar_left"></div>
+ <div data-async-url="/bmar11/sidebar_left_2"></div>
+ <footer>
+ <p>
+ <a aria-label="DEV Community Home" href="/">DEV Community</a>
+A space to discuss and keep up software development and manage your software career
+ </p>
+ <p>Built on <a target="_blank" rel="noopener" href="https://www.forem.com">Forem</a> — the <a target="_blank" rel="noopener" href="https://dev.to/t/opensource">open source</a> software that powers <a target="_blank" rel="noopener" href="https://dev.to">DEV</a> and other inclusive communities.</p>
+ <p>Made with love and <a target="_blank" rel="noopener" href="https://dev.to/t/rails">Ruby on Rails</a>. DEV Community <span title="copyright">&copy;</span> 2016 - 2026.</p>
+</footer>
+ </aside>
+</div>
+<script src="https://assets.dev.to/assets/billboard-a2ae4497495b4240f720f278670979ff858ada6fc0c13afc96c0f098a5b302d5.js" defer="defer"></script>
+ <main id="main-content" data-follow-button-container="true">
+ <header>
+ <h1>Posts</h1>
+ <nav aria-label="View posts by">
+ <ul>
+ <li>
+ <a data-text="Relevant" href="/"
+ aria-current="page">Relevant</a>
+ </li>
+ <li>
+ <a data-text="Latest" href="/latest">
+ Latest
+ </a>
+ </li>
+ <li>
+ <a data-text="Top" href="/top/week"
+ >
+ Top
+ </a>
+ </li>
+ </ul>
+ </nav>
+ </header>
+ <div data-feed-content-id="4943245" data-content-user-id="3535771">
+ <a href="https://dev.to/sylwia-lask/yes-0-no-javascript-isnt-broken-14ob" aria-labelledby="article-link-4943245">Yes, {} + [] = 0. No, JavaScript Isn’t Broken</a>
+ <div id="featured-story-marker" data-featured-article="articles-4943245"></div>
+ <div style="aspect-ratio: auto 1000 / 420;">
+ <a href="https://dev.to/sylwia-lask/yes-0-no-javascript-isnt-broken-14ob" title="Yes, {} + [] = 0. No, JavaScript Isn’t Broken" aria-label="article">
+ <img src="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Folm3zyjvpymz88fwvzrw.png" width="1000" height="420" style="background-color:#dddddd;" alt="Cover image for Yes, {} + [] = 0. No, JavaScript Isn’t Broken">
+ </a>
+ </div>
+ <div>
+ <a href="https://dev.to/sylwia-lask/yes-0-no-javascript-isnt-broken-14ob"><p>Born from airport boredom and spec quirks</p>
+</a>
+ <div>
+ <div>
+ <div>
+ <a href="/sylwia-lask">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3535771%2Fe22860d5-274b-43c9-819b-56b162e5bd5a.jpeg" alt="sylwia-lask profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/sylwia-lask">
+ Sylwia Laskowska
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4943245" aria-controls="story-author-preview-content-4943245" aria-label="Sylwia Laskowska profile details">
+ Sylwia Laskowska
+ <img alt="Community Curator" src="https://assets.dev.to/assets/community-leader-icon-b72c9e74eff54916e5c46c962f47ba40c9f611a71f8b157511f9613f69c0001b.svg" />
+ </button>
+ <div
+ id="story-author-preview-content-4943245"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/sylwia-lask">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3535771%2Fe22860d5-274b-43c9-819b-56b162e5bd5a.jpeg"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Sylwia Laskowska</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:3535771,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Sylwia Laskowska&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="3535771"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <a href="https://dev.to/sylwia-lask/yes-0-no-javascript-isnt-broken-14ob"><time datetime="2026-10-29T20:08:53Z">Oct 29</time><span data-seconds="1793304533"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/sylwia-lask/yes-0-no-javascript-isnt-broken-14ob" data-preload-image="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Folm3zyjvpymz88fwvzrw.png" id="article-link-4943245">
+ Yes, {} + [] = 0. No, JavaScript Isn’t Broken
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(247, 223, 30, 0.10);
+ --tag-prefix: #f7df1e;
+ --tag-bg-hover: rgba(247, 223, 30, 0.10);
+ --tag-prefix-hover: #f7df1e;
+ " href="/t/javascript"><span>#</span>javascript</a>
+ <a style="
+ --tag-bg: rgba(86, 39, 101, 0.10);
+ --tag-prefix: #562765;
+ --tag-bg-hover: rgba(86, 39, 101, 0.10);
+ --tag-prefix-hover: #562765;
+ " href="/t/webdev"><span>#</span>webdev</a>
+ <a style="
+ --tag-bg: rgba(61, 136, 54, 0.10);
+ --tag-prefix: #3d8836;
+ --tag-bg-hover: rgba(61, 136, 54, 0.10);
+ --tag-prefix-hover: #3d8836;
+ " href="/t/node"><span>#</span>node</a>
+ <a style="
+ --tag-bg: rgba(137, 6, 6, 0.10);
+ --tag-prefix: #890606;
+ --tag-bg-hover: rgba(137, 6, 6, 0.10);
+ --tag-prefix-hover: #890606;
+ " href="/t/programming"><span>#</span>programming</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/sylwia-lask/yes-0-no-javascript-isnt-broken-14ob" data-reaction-count data-reactable-id="4943245" aria-label="Add a comment to post - Yes, {} + [] = 0. No, JavaScript Isn’t Broken">
+ <div>
+ <span dir="rtl">
+ <span>
+ <img src="https://assets.dev.to/assets/exploding-head-daceb38d627e6ae9b730f36a1e390fca556a4289d5a41abb2c35068ad3e2c4b5.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/multi-unicorn-b44d6f8c23cdd00964192bedc38af3e82463978aa611b4365bd33a0f1f4f3e97.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/sparkle-heart-5f9bee3767e18deb1bb725290cb151c25234768a0e9a2bd39370c382d02920cf.svg" width="18" height="18" />
+ </span>
+ </span>
+ <span>142<span> reactions</span></span>
+ </div>
+ </a>
+ <span
+ data-favorited-marker
+ data-favorited-by-user-id="3446021">
+ <span>
+ <span data-favorited-icon="other">
+ </span>
+ <span data-favorited-icon="self">
+ </span>
+ </span>
+ </span>
+ <a href="https://dev.to/sylwia-lask/yes-0-no-javascript-isnt-broken-14ob#comments" aria-label="Add a comment to post - Yes, {} + [] = 0. No, JavaScript Isn’t Broken">
+ 111<span> comments</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 5 min read
+ </small>
+ <div>
+ <button data-article-path="/sylwia-lask/yes-0-no-javascript-isnt-broken-14ob">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+<div id="article-index-podcast-div"></div>
+<div id="substories">
+ <div data-feed-content-id="4954082" data-content-user-id="3743406">
+ <a href="https://dev.to/dj29/every-codebase-has-a-do-not-touch-file-i-built-an-ai-necromancer-to-summon-the-ghost-of-the-2no5" aria-labelledby="article-link-4954082">Every Codebase Has a &#39;// DO NOT TOUCH&#39; File. I Built an AI Necromancer to Summon the Ghost of the Developer Who Wrote It 💀🔮</a>
+ <div>
+ <a href="https://dev.to/dj29/every-codebase-has-a-do-not-touch-file-i-built-an-ai-necromancer-to-summon-the-ghost-of-the-2no5"><p>Hacktoberfest Open-Source AI Challenge: Ghost in the Machine Submission 👻🌼</p>
+</a>
+ <div>
+ <div>
+ <div>
+ <a href="/dj29">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3743406%2F227d53d3-1443-4ceb-9fb8-98c02ff9e60f.jpg" alt="dj29 profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/dj29">
+ Dhruv Jani
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4954082" aria-controls="story-author-preview-content-4954082" aria-label="Dhruv Jani profile details">
+ Dhruv Jani
+ <a style="display: inline;" href="/++"><img alt="Subscriber" src="https://assets.dev.to/assets/subscription-icon-805dfa7ac7dd660f07ed8d654877270825b07a92a03841aa99a1093bd00431b2.png" /></a>
+ </button>
+ <div
+ id="story-author-preview-content-4954082"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/dj29">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3743406%2F227d53d3-1443-4ceb-9fb8-98c02ff9e60f.jpg"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Dhruv Jani</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:3743406,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Dhruv Jani&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="3743406"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <a href="https://dev.to/dj29/every-codebase-has-a-do-not-touch-file-i-built-an-ai-necromancer-to-summon-the-ghost-of-the-2no5"><time datetime="2026-10-31T17:57:27Z">Oct 31</time><span data-seconds="1793469447"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/dj29/every-codebase-has-a-do-not-touch-file-i-built-an-ai-necromancer-to-summon-the-ghost-of-the-2no5" data-preload-image="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Fezbb0xf5v8087ny2qes2.jpg" id="article-link-4954082">
+ Every Codebase Has a &#39;// DO NOT TOUCH&#39; File. I Built an AI Necromancer to Summon the Ghost of the Developer Who Wrote It 💀🔮
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(132, 206, 249, 0.10);
+ --tag-prefix: #84CEF9;
+ --tag-bg-hover: rgba(132, 206, 249, 0.10);
+ --tag-prefix-hover: #84CEF9;
+ " href="/t/devchallenge"><span>#</span>devchallenge</a>
+ <a style="
+ --tag-bg: rgba(0, 0, 0, 0.10);
+ --tag-prefix: #000000;
+ --tag-bg-hover: rgba(0, 0, 0, 0.10);
+ --tag-prefix-hover: #000000;
+ " href="/t/hf26challenge"><span>#</span>hf26challenge</a>
+ <a style="
+ --tag-bg: rgba(38, 190, 0, 0.10);
+ --tag-prefix: #26BE00;
+ --tag-bg-hover: rgba(38, 190, 0, 0.10);
+ --tag-prefix-hover: #26BE00;
+ " href="/t/opensource"><span>#</span>opensource</a>
+ <a style="
+ --tag-bg: rgba(23, 253, 26, 0.10);
+ --tag-prefix: #17fd1a;
+ --tag-bg-hover: rgba(23, 253, 26, 0.10);
+ --tag-prefix-hover: #17fd1a;
+ " href="/t/ai"><span>#</span>ai</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/dj29/every-codebase-has-a-do-not-touch-file-i-built-an-ai-necromancer-to-summon-the-ghost-of-the-2no5" data-reaction-count data-reactable-id="4954082" aria-label="Add a comment to post - Every Codebase Has a &#39;// DO NOT TOUCH&#39; File. I Built an AI Necromancer to Summon the Ghost of the Developer Who Wrote It 💀🔮">
+ <div>
+ <span dir="rtl">
+ <span>
+ <img src="https://assets.dev.to/assets/exploding-head-daceb38d627e6ae9b730f36a1e390fca556a4289d5a41abb2c35068ad3e2c4b5.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/multi-unicorn-b44d6f8c23cdd00964192bedc38af3e82463978aa611b4365bd33a0f1f4f3e97.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/sparkle-heart-5f9bee3767e18deb1bb725290cb151c25234768a0e9a2bd39370c382d02920cf.svg" width="18" height="18" />
+ </span>
+ </span>
+ <span>59<span> reactions</span></span>
+ </div>
+ </a>
+ <span
+ data-favorited-marker
+ data-favorited-by-user-id="3535771">
+ <span>
+ <span data-favorited-icon="other">
+ </span>
+ <span data-favorited-icon="self">
+ </span>
+ </span>
+ </span>
+ <a href="https://dev.to/dj29/every-codebase-has-a-do-not-touch-file-i-built-an-ai-necromancer-to-summon-the-ghost-of-the-2no5#comments" aria-label="Add a comment to post - Every Codebase Has a &#39;// DO NOT TOUCH&#39; File. I Built an AI Necromancer to Summon the Ghost of the Developer Who Wrote It 💀🔮">
+ 36<span> comments</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 12 min read
+ </small>
+ <div>
+ <button data-article-path="/dj29/every-codebase-has-a-do-not-touch-file-i-built-an-ai-necromancer-to-summon-the-ghost-of-the-2no5">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div data-feed-content-id="4958573" data-content-user-id="3307586">
+ <a href="https://dev.to/hemapriya_kanagala/dev-pet-corner-4-show-us-your-pets-55jh" aria-labelledby="article-link-4958573">🐾 DEV Pet Corner #4: Show Us Your Pets!</a>
+ <div>
+ <a href="https://dev.to/hemapriya_kanagala/dev-pet-corner-4-show-us-your-pets-55jh"><p>Readers share cute campus squirrels and pets</p>
+</a>
+ <div>
+ <div>
+ <div>
+ <a href="/hemapriya_kanagala">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3307586%2F2dffaf97-946d-44a6-8a39-07d94a72e07d.png" alt="hemapriya_kanagala profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/hemapriya_kanagala">
+ Hemapriya Kanagala
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4958573" aria-controls="story-author-preview-content-4958573" aria-label="Hemapriya Kanagala profile details">
+ Hemapriya Kanagala
+ </button>
+ <div
+ id="story-author-preview-content-4958573"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/hemapriya_kanagala">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3307586%2F2dffaf97-946d-44a6-8a39-07d94a72e07d.png"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Hemapriya Kanagala</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:3307586,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Hemapriya Kanagala&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="3307586"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <a href="https://dev.to/hemapriya_kanagala/dev-pet-corner-4-show-us-your-pets-55jh"><time datetime="2026-11-01T17:53:50Z">Nov 1</time><span data-seconds="1793555630"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/hemapriya_kanagala/dev-pet-corner-4-show-us-your-pets-55jh" data-preload-image="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Fuonbff781lc6lq68fu5f.jpeg" id="article-link-4958573">
+ 🐾 DEV Pet Corner #4: Show Us Your Pets!
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(113, 234, 139, 0.10);
+ --tag-prefix: #71EA8B;
+ --tag-bg-hover: rgba(113, 234, 139, 0.10);
+ --tag-prefix-hover: #71EA8B;
+ " href="/t/discuss"><span>#</span>discuss</a>
+ <a style="
+ --tag-bg: rgba(247, 150, 0, 0.10);
+ --tag-prefix: #f79600;
+ --tag-bg-hover: rgba(247, 150, 0, 0.10);
+ --tag-prefix-hover: #f79600;
+ " href="/t/community"><span>#</span>community</a>
+ <a style="
+ --tag-bg: rgba(208, 236, 255, 0.10);
+ --tag-prefix: #D0ECFF;
+ --tag-bg-hover: rgba(208, 236, 255, 0.10);
+ --tag-prefix-hover: #D0ECFF;
+ " href="/t/watercooler"><span>#</span>watercooler</a>
+ <a style="
+ --tag-bg: rgba(64, 78, 211, 0.10);
+ --tag-prefix: #404ED3;
+ --tag-bg-hover: rgba(64, 78, 211, 0.10);
+ --tag-prefix-hover: #404ED3;
+ " href="/t/pets"><span>#</span>pets</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/hemapriya_kanagala/dev-pet-corner-4-show-us-your-pets-55jh" data-reaction-count data-reactable-id="4958573" aria-label="Add a comment to post - 🐾 DEV Pet Corner #4: Show Us Your Pets!">
+ <div>
+ <span dir="rtl">
+ <span>
+ <img src="https://assets.dev.to/assets/fire-f60e7a582391810302117f987b22a8ef04a2fe0df7e3258a5f49332df1cec71e.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/multi-unicorn-b44d6f8c23cdd00964192bedc38af3e82463978aa611b4365bd33a0f1f4f3e97.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/sparkle-heart-5f9bee3767e18deb1bb725290cb151c25234768a0e9a2bd39370c382d02920cf.svg" width="18" height="18" />
+ </span>
+ </span>
+ <span>69<span> reactions</span></span>
+ </div>
+ </a>
+ <a href="https://dev.to/hemapriya_kanagala/dev-pet-corner-4-show-us-your-pets-55jh#comments" aria-label="Add a comment to post - 🐾 DEV Pet Corner #4: Show Us Your Pets!">
+ 8<span> comments</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 3 min read
+ </small>
+ <div>
+ <button data-article-path="/hemapriya_kanagala/dev-pet-corner-4-show-us-your-pets-55jh">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div data-feed-content-id="4941092" data-content-user-id="1209000">
+ <a href="https://dev.to/hadil/gp-grid-a-free-open-source-typescript-data-grid-for-react-vue-and-angular-no-paywalled-5heb" aria-labelledby="article-link-4941092">gp-grid: A Free, Open-Source TypeScript Data Grid for React, Vue, and Angular (No Paywalled Features)</a>
+ <div>
+ <a href="https://dev.to/hadil/gp-grid-a-free-open-source-typescript-data-grid-for-react-vue-and-angular-no-paywalled-5heb"><p>Apache 2.0 license with zero dependencies</p>
+</a>
+ <div>
+ <div>
+ <div>
+ <a href="/hadil">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F1209000%2Fb29d37d8-2efe-4391-9796-a6f8a483f1bd.png" alt="hadil profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/hadil">
+ Hadil Ben Abdallah
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4941092" aria-controls="story-author-preview-content-4941092" aria-label="Hadil Ben Abdallah profile details">
+ Hadil Ben Abdallah
+ </button>
+ <div
+ id="story-author-preview-content-4941092"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/hadil">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F1209000%2Fb29d37d8-2efe-4391-9796-a6f8a483f1bd.png"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Hadil Ben Abdallah</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:1209000,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Hadil Ben Abdallah&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="1209000"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <a href="https://dev.to/hadil/gp-grid-a-free-open-source-typescript-data-grid-for-react-vue-and-angular-no-paywalled-5heb"><time datetime="2026-11-02T09:05:46Z">Nov 2</time><span data-seconds="1793610346"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/hadil/gp-grid-a-free-open-source-typescript-data-grid-for-react-vue-and-angular-no-paywalled-5heb" data-preload-image="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Ffhh705ti5amsemyc79e9.png" id="article-link-4941092">
+ gp-grid: A Free, Open-Source TypeScript Data Grid for React, Vue, and Angular (No Paywalled Features)
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(137, 6, 6, 0.10);
+ --tag-prefix: #890606;
+ --tag-bg-hover: rgba(137, 6, 6, 0.10);
+ --tag-prefix-hover: #890606;
+ " href="/t/programming"><span>#</span>programming</a>
+ <a style="
+ --tag-bg: rgba(34, 34, 34, 0.10);
+ --tag-prefix: #222222;
+ --tag-bg-hover: rgba(34, 34, 34, 0.10);
+ --tag-prefix-hover: #222222;
+ " href="/t/react"><span>#</span>react</a>
+ <a style="
+ --tag-bg: rgba(65, 184, 131, 0.10);
+ --tag-prefix: #41b883;
+ --tag-bg-hover: rgba(65, 184, 131, 0.10);
+ --tag-prefix-hover: #41b883;
+ " href="/t/vue"><span>#</span>vue</a>
+ <a style="
+ --tag-bg: rgba(169, 2, 42, 0.10);
+ --tag-prefix: #A9022A;
+ --tag-bg-hover: rgba(169, 2, 42, 0.10);
+ --tag-prefix-hover: #A9022A;
+ " href="/t/angular"><span>#</span>angular</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/hadil/gp-grid-a-free-open-source-typescript-data-grid-for-react-vue-and-angular-no-paywalled-5heb" data-reaction-count data-reactable-id="4941092" aria-label="Add a comment to post - gp-grid: A Free, Open-Source TypeScript Data Grid for React, Vue, and Angular (No Paywalled Features)">
+ <div>
+ <span dir="rtl">
+ <span>
+ <img src="https://assets.dev.to/assets/exploding-head-daceb38d627e6ae9b730f36a1e390fca556a4289d5a41abb2c35068ad3e2c4b5.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/multi-unicorn-b44d6f8c23cdd00964192bedc38af3e82463978aa611b4365bd33a0f1f4f3e97.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/sparkle-heart-5f9bee3767e18deb1bb725290cb151c25234768a0e9a2bd39370c382d02920cf.svg" width="18" height="18" />
+ </span>
+ </span>
+ <span>16<span> reactions</span></span>
+ </div>
+ </a>
+ <a href="https://dev.to/hadil/gp-grid-a-free-open-source-typescript-data-grid-for-react-vue-and-angular-no-paywalled-5heb#comments" aria-label="Add a comment to post - gp-grid: A Free, Open-Source TypeScript Data Grid for React, Vue, and Angular (No Paywalled Features)">
+ 2<span> comments</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 15 min read
+ </small>
+ <div>
+ <button data-article-path="/hadil/gp-grid-a-free-open-source-typescript-data-grid-for-react-vue-and-angular-no-paywalled-5heb">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div data-feed-content-id="4960832" data-content-user-id="11355">
+ <a href="https://dev.to/rpalo/overbuilding-part-1-discord-bot-mvp-3h8n" aria-labelledby="article-link-4960832">Overbuilding Part 1: Discord Bot MVP</a>
+ <div>
+ <div>
+ <div>
+ <div>
+ <a href="/rpalo">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F11355%2F14909201.jpeg" alt="rpalo profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/rpalo">
+ Ryan Palo
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4960832" aria-controls="story-author-preview-content-4960832" aria-label="Ryan Palo profile details">
+ Ryan Palo
+ </button>
+ <div
+ id="story-author-preview-content-4960832"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/rpalo">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F11355%2F14909201.jpeg"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Ryan Palo</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:11355,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Ryan Palo&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="11355"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <a href="https://dev.to/rpalo/overbuilding-part-1-discord-bot-mvp-3h8n"><time datetime="2026-11-02T06:37:21Z">Nov 2</time><span data-seconds="1793601441"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/rpalo/overbuilding-part-1-discord-bot-mvp-3h8n" data-preload-image="" id="article-link-4960832">
+ Overbuilding Part 1: Discord Bot MVP
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(235, 223, 55, 0.10);
+ --tag-prefix: #ebdf37;
+ --tag-bg-hover: rgba(235, 223, 55, 0.10);
+ --tag-prefix-hover: #ebdf37;
+ " href="/t/architecture"><span>#</span>architecture</a>
+ <a style="
+ --tag-bg: rgba(64, 78, 211, 0.10);
+ --tag-prefix: #404ED3;
+ --tag-bg-hover: rgba(64, 78, 211, 0.10);
+ --tag-prefix-hover: #404ED3;
+ " href="/t/bot"><span>#</span>bot</a>
+ <a style="
+ --tag-bg: rgba(88, 101, 242, 0.10);
+ --tag-prefix: #5865f2;
+ --tag-bg-hover: rgba(88, 101, 242, 0.10);
+ --tag-prefix-hover: #5865f2;
+ " href="/t/discord"><span>#</span>discord</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/rpalo/overbuilding-part-1-discord-bot-mvp-3h8n#comments" aria-label="Add a comment to post - Overbuilding Part 1: Discord Bot MVP">
+ <span>Add Comment</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 4 min read
+ </small>
+ <div>
+ <button data-article-path="/rpalo/overbuilding-part-1-discord-bot-mvp-3h8n">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div data-feed-content-id="4955502" data-content-user-id="1076361">
+ <a href="https://dev.to/soumyadeepdey/my-local-ai-invented-162-python-packages-i-reran-everything-from-scratch-and-161-came-back-4j73" aria-labelledby="article-link-4955502">My Local AI Invented 162 Python Packages. I Reran Everything From Scratch, and 161 Came Back.</a>
+ <div>
+ <a href="https://dev.to/soumyadeepdey/my-local-ai-invented-162-python-packages-i-reran-everything-from-scratch-and-161-came-back-4j73"><p>Hacktoberfest Open-Source AI Challenge: Ghost in the Machine Submission 👻🌼</p>
+</a>
+ <div>
+ <div>
+ <div>
+ <a href="/soumyadeepdey">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F1076361%2F0aa8630b-3826-4103-9ca3-7436013bf933.jpg" alt="soumyadeepdey profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/soumyadeepdey">
+ Soumyadeep Dey 
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4955502" aria-controls="story-author-preview-content-4955502" aria-label="Soumyadeep Dey profile details">
+ Soumyadeep Dey 
+ <a style="display: inline;" href="/++"><img alt="Subscriber" src="https://assets.dev.to/assets/subscription-icon-805dfa7ac7dd660f07ed8d654877270825b07a92a03841aa99a1093bd00431b2.png" /></a>
+ </button>
+ <div
+ id="story-author-preview-content-4955502"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/soumyadeepdey">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F1076361%2F0aa8630b-3826-4103-9ca3-7436013bf933.jpg"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Soumyadeep Dey </span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:1076361,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Soumyadeep Dey &quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="1076361"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <a href="https://dev.to/soumyadeepdey/my-local-ai-invented-162-python-packages-i-reran-everything-from-scratch-and-161-came-back-4j73"><time datetime="2026-11-01T02:22:52Z">Nov 1</time><span data-seconds="1793499772"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/soumyadeepdey/my-local-ai-invented-162-python-packages-i-reran-everything-from-scratch-and-161-came-back-4j73" data-preload-image="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Fk0muq7rnwgqvoopal8dx.jpg" id="article-link-4955502">
+ My Local AI Invented 162 Python Packages. I Reran Everything From Scratch, and 161 Came Back.
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(132, 206, 249, 0.10);
+ --tag-prefix: #84CEF9;
+ --tag-bg-hover: rgba(132, 206, 249, 0.10);
+ --tag-prefix-hover: #84CEF9;
+ " href="/t/devchallenge"><span>#</span>devchallenge</a>
+ <a style="
+ --tag-bg: rgba(0, 0, 0, 0.10);
+ --tag-prefix: #000000;
+ --tag-bg-hover: rgba(0, 0, 0, 0.10);
+ --tag-prefix-hover: #000000;
+ " href="/t/hf26challenge"><span>#</span>hf26challenge</a>
+ <a style="
+ --tag-bg: rgba(23, 253, 26, 0.10);
+ --tag-prefix: #17fd1a;
+ --tag-bg-hover: rgba(23, 253, 26, 0.10);
+ --tag-prefix-hover: #17fd1a;
+ " href="/t/ai"><span>#</span>ai</a>
+ <a style="
+ --tag-bg: rgba(64, 78, 211, 0.10);
+ --tag-prefix: #404ED3;
+ --tag-bg-hover: rgba(64, 78, 211, 0.10);
+ --tag-prefix-hover: #404ED3;
+ " href="/t/halloween"><span>#</span>halloween</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/soumyadeepdey/my-local-ai-invented-162-python-packages-i-reran-everything-from-scratch-and-161-came-back-4j73" data-reaction-count data-reactable-id="4955502" aria-label="Add a comment to post - My Local AI Invented 162 Python Packages. I Reran Everything From Scratch, and 161 Came Back.">
+ <div>
+ <span dir="rtl">
+ <span>
+ <img src="https://assets.dev.to/assets/exploding-head-daceb38d627e6ae9b730f36a1e390fca556a4289d5a41abb2c35068ad3e2c4b5.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/multi-unicorn-b44d6f8c23cdd00964192bedc38af3e82463978aa611b4365bd33a0f1f4f3e97.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/sparkle-heart-5f9bee3767e18deb1bb725290cb151c25234768a0e9a2bd39370c382d02920cf.svg" width="18" height="18" />
+ </span>
+ </span>
+ <span>26<span> reactions</span></span>
+ </div>
+ </a>
+ <a href="https://dev.to/soumyadeepdey/my-local-ai-invented-162-python-packages-i-reran-everything-from-scratch-and-161-came-back-4j73#comments" aria-label="Add a comment to post - My Local AI Invented 162 Python Packages. I Reran Everything From Scratch, and 161 Came Back.">
+ 15<span> comments</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 21 min read
+ </small>
+ <div>
+ <button data-article-path="/soumyadeepdey/my-local-ai-invented-162-python-packages-i-reran-everything-from-scratch-and-161-came-back-4j73">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div data-feed-content-id="4960868" data-content-user-id="11355">
+ <a href="https://dev.to/rpalo/overbuilding-part-2-sharing-is-caring-o4k" aria-labelledby="article-link-4960868">Overbuilding Part 2: Sharing is Caring</a>
+ <div>
+ <div>
+ <div>
+ <div>
+ <a href="/rpalo">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F11355%2F14909201.jpeg" alt="rpalo profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/rpalo">
+ Ryan Palo
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4960868" aria-controls="story-author-preview-content-4960868" aria-label="Ryan Palo profile details">
+ Ryan Palo
+ </button>
+ <div
+ id="story-author-preview-content-4960868"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/rpalo">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F11355%2F14909201.jpeg"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Ryan Palo</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:11355,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Ryan Palo&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="11355"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <a href="https://dev.to/rpalo/overbuilding-part-2-sharing-is-caring-o4k"><time datetime="2026-11-02T06:42:03Z">Nov 2</time><span data-seconds="1793601723"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/rpalo/overbuilding-part-2-sharing-is-caring-o4k" data-preload-image="" id="article-link-4960868">
+ Overbuilding Part 2: Sharing is Caring
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(235, 223, 55, 0.10);
+ --tag-prefix: #ebdf37;
+ --tag-bg-hover: rgba(235, 223, 55, 0.10);
+ --tag-prefix-hover: #ebdf37;
+ " href="/t/architecture"><span>#</span>architecture</a>
+ <a style="
+ --tag-bg: rgba(64, 78, 211, 0.10);
+ --tag-prefix: #404ED3;
+ --tag-bg-hover: rgba(64, 78, 211, 0.10);
+ --tag-prefix-hover: #404ED3;
+ " href="/t/bot"><span>#</span>bot</a>
+ <a style="
+ --tag-bg: rgba(33, 43, 58, 0.10);
+ --tag-prefix: #212b3a;
+ --tag-bg-hover: rgba(33, 43, 58, 0.10);
+ --tag-prefix-hover: #212b3a;
+ " href="/t/aws"><span>#</span>aws</a>
+ <a style="
+ --tag-bg: rgba(64, 78, 211, 0.10);
+ --tag-prefix: #404ED3;
+ --tag-bg-hover: rgba(64, 78, 211, 0.10);
+ --tag-prefix-hover: #404ED3;
+ " href="/t/lightsail"><span>#</span>lightsail</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/rpalo/overbuilding-part-2-sharing-is-caring-o4k#comments" aria-label="Add a comment to post - Overbuilding Part 2: Sharing is Caring">
+ <span>Add Comment</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 5 min read
+ </small>
+ <div>
+ <button data-article-path="/rpalo/overbuilding-part-2-sharing-is-caring-o4k">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div data-feed-content-id="4961856" data-content-user-id="885064">
+ <a href="https://dev.to/varshithvhegde/codex-was-torching-your-ssd-and-nobody-noticed-for-months-4c5h" aria-labelledby="article-link-4961856">Codex Was Torching Your SSD and Nobody Noticed for Months</a>
+ <div>
+ <div>
+ <div>
+ <div>
+ <a href="/varshithvhegde">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F885064%2F4ab304f4-a3f3-409c-8217-9ce130e57c18.jpeg" alt="varshithvhegde profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/varshithvhegde">
+ Varshith V Hegde
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4961856" aria-controls="story-author-preview-content-4961856" aria-label="Varshith V Hegde profile details">
+ Varshith V Hegde
+ <a style="display: inline;" href="/++"><img alt="Subscriber" src="https://assets.dev.to/assets/subscription-icon-805dfa7ac7dd660f07ed8d654877270825b07a92a03841aa99a1093bd00431b2.png" /></a>
+ </button>
+ <div
+ id="story-author-preview-content-4961856"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/varshithvhegde">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F885064%2F4ab304f4-a3f3-409c-8217-9ce130e57c18.jpeg"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Varshith V Hegde</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:885064,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Varshith V Hegde&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="885064"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <a href="https://dev.to/varshithvhegde/codex-was-torching-your-ssd-and-nobody-noticed-for-months-4c5h"><time datetime="2026-11-02T08:57:05Z">Nov 2</time><span data-seconds="1793609825"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/varshithvhegde/codex-was-torching-your-ssd-and-nobody-noticed-for-months-4c5h" data-preload-image="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Fuwumzuicrzyp2slqdp54.png" id="article-link-4961856">
+ Codex Was Torching Your SSD and Nobody Noticed for Months
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(64, 78, 211, 0.10);
+ --tag-prefix: #404ED3;
+ --tag-bg-hover: rgba(64, 78, 211, 0.10);
+ --tag-prefix-hover: #404ED3;
+ " href="/t/codex"><span>#</span>codex</a>
+ <a style="
+ --tag-bg: rgba(27, 172, 128, 0.10);
+ --tag-prefix: #1bac80;
+ --tag-bg-hover: rgba(27, 172, 128, 0.10);
+ --tag-prefix-hover: #1bac80;
+ " href="/t/security"><span>#</span>security</a>
+ <a style="
+ --tag-bg: rgba(6, 181, 0, 0.10);
+ --tag-prefix: #06B500;
+ --tag-bg-hover: rgba(6, 181, 0, 0.10);
+ --tag-prefix-hover: #06B500;
+ " href="/t/devops"><span>#</span>devops</a>
+ <a style="
+ --tag-bg: rgba(42, 7, 152, 0.10);
+ --tag-prefix: #2A0798;
+ --tag-bg-hover: rgba(42, 7, 152, 0.10);
+ --tag-prefix-hover: #2A0798;
+ " href="/t/productivity"><span>#</span>productivity</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/varshithvhegde/codex-was-torching-your-ssd-and-nobody-noticed-for-months-4c5h" data-reaction-count data-reactable-id="4961856" aria-label="Add a comment to post - Codex Was Torching Your SSD and Nobody Noticed for Months">
+ <div>
+ <span dir="rtl">
+ <span>
+ <img src="https://assets.dev.to/assets/exploding-head-daceb38d627e6ae9b730f36a1e390fca556a4289d5a41abb2c35068ad3e2c4b5.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/multi-unicorn-b44d6f8c23cdd00964192bedc38af3e82463978aa611b4365bd33a0f1f4f3e97.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/sparkle-heart-5f9bee3767e18deb1bb725290cb151c25234768a0e9a2bd39370c382d02920cf.svg" width="18" height="18" />
+ </span>
+ </span>
+ <span>6<span> reactions</span></span>
+ </div>
+ </a>
+ <a href="https://dev.to/varshithvhegde/codex-was-torching-your-ssd-and-nobody-noticed-for-months-4c5h#comments" aria-label="Add a comment to post - Codex Was Torching Your SSD and Nobody Noticed for Months">
+ <span>Add Comment</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 10 min read
+ </small>
+ <div>
+ <button data-article-path="/varshithvhegde/codex-was-torching-your-ssd-and-nobody-noticed-for-months-4c5h">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div data-feed-content-id="4959595" data-content-user-id="430913">
+ <a href="https://dev.to/programmerraja/i-let-ai-type-the-code-and-lost-the-map-1jie" aria-labelledby="article-link-4959595">I Let AI Type the Code and Lost the Map</a>
+ <div>
+ <div>
+ <div>
+ <div>
+ <a href="/programmerraja">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F430913%2F46bcaec6-10d0-4395-8161-5b0b881ac731.jpg" alt="programmerraja profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/programmerraja">
+ Boopathi
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4959595" aria-controls="story-author-preview-content-4959595" aria-label="Boopathi profile details">
+ Boopathi
+ </button>
+ <div
+ id="story-author-preview-content-4959595"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/programmerraja">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F430913%2F46bcaec6-10d0-4395-8161-5b0b881ac731.jpg"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Boopathi</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:430913,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Boopathi&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="430913"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <a href="https://dev.to/programmerraja/i-let-ai-type-the-code-and-lost-the-map-1jie"><time datetime="2026-11-02T01:09:57Z">Nov 2</time><span data-seconds="1793581797"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/programmerraja/i-let-ai-type-the-code-and-lost-the-map-1jie" data-preload-image="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Fw9tuohyhy2wwjju845mi.png" id="article-link-4959595">
+ I Let AI Type the Code and Lost the Map
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(23, 253, 26, 0.10);
+ --tag-prefix: #17fd1a;
+ --tag-bg-hover: rgba(23, 253, 26, 0.10);
+ --tag-prefix-hover: #17fd1a;
+ " href="/t/ai"><span>#</span>ai</a>
+ <a style="
+ --tag-bg: rgba(255, 102, 237, 0.10);
+ --tag-prefix: #ff66ed;
+ --tag-bg-hover: rgba(255, 102, 237, 0.10);
+ --tag-prefix-hover: #ff66ed;
+ " href="/t/learning"><span>#</span>learning</a>
+ <a style="
+ --tag-bg: rgba(214, 10, 10, 0.10);
+ --tag-prefix: #d60a0a;
+ --tag-bg-hover: rgba(214, 10, 10, 0.10);
+ --tag-prefix-hover: #d60a0a;
+ " href="/t/vibecoding"><span>#</span>vibecoding</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/programmerraja/i-let-ai-type-the-code-and-lost-the-map-1jie" data-reaction-count data-reactable-id="4959595" aria-label="Add a comment to post - I Let AI Type the Code and Lost the Map">
+ <div>
+ <span dir="rtl">
+ <span>
+ <img src="https://assets.dev.to/assets/exploding-head-daceb38d627e6ae9b730f36a1e390fca556a4289d5a41abb2c35068ad3e2c4b5.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/multi-unicorn-b44d6f8c23cdd00964192bedc38af3e82463978aa611b4365bd33a0f1f4f3e97.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/sparkle-heart-5f9bee3767e18deb1bb725290cb151c25234768a0e9a2bd39370c382d02920cf.svg" width="18" height="18" />
+ </span>
+ </span>
+ <span>7<span> reactions</span></span>
+ </div>
+ </a>
+ <a href="https://dev.to/programmerraja/i-let-ai-type-the-code-and-lost-the-map-1jie#comments" aria-label="Add a comment to post - I Let AI Type the Code and Lost the Map">
+ 2<span> comments</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 6 min read
+ </small>
+ <div>
+ <button data-article-path="/programmerraja/i-let-ai-type-the-code-and-lost-the-map-1jie">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div data-feed-content-id="4962109" data-content-user-id="774921">
+ <a href="https://dev.to/gde/securing-an-angular-firebase-ai-app-with-emailpassword-authentication-part-1-emulator-4jm" aria-labelledby="article-link-4962109">Securing an Angular Firebase AI App with Email/Password Authentication (Part 1: Emulator, AuthService, and Route Guard) [GDE]</a>
+ <div>
+ <div>
+ <div>
+ <div>
+ <a href="/gde">
+ <img alt="Google Developer Experts logo" src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Forganization%2Fprofile_image%2F11939%2Fe3080d5b-ecde-42a8-b089-bafecc31fa97.png" loading="lazy" />
+ </a>
+ <a href="/railsstudent">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F774921%2F1f16eaef-f6d6-4ef0-ab0d-17eaa5c01e75.jpeg" alt="railsstudent profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/railsstudent">
+ Connie Leung
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4962109" aria-controls="story-author-preview-content-4962109" aria-label="Connie Leung profile details">
+ Connie Leung
+ </button>
+ <div
+ id="story-author-preview-content-4962109"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/railsstudent">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F774921%2F1f16eaef-f6d6-4ef0-ab0d-17eaa5c01e75.jpeg"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Connie Leung</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:774921,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Connie Leung&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="774921"></div>
+ </div>
+ </div>
+ </div>
+ <span>
+ <span> for </span><a href="/gde">Google Developer Experts</a>
+ </span>
+ </div>
+ <a href="https://dev.to/gde/securing-an-angular-firebase-ai-app-with-emailpassword-authentication-part-1-emulator-4jm"><time datetime="2026-11-02T09:45:08Z">Nov 2</time><span data-seconds="1793612708"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/gde/securing-an-angular-firebase-ai-app-with-emailpassword-authentication-part-1-emulator-4jm" data-preload-image="" id="article-link-4962109">
+ Securing an Angular Firebase AI App with Email/Password Authentication (Part 1: Emulator, AuthService, and Route Guard) [GDE]
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(169, 2, 42, 0.10);
+ --tag-prefix: #A9022A;
+ --tag-bg-hover: rgba(169, 2, 42, 0.10);
+ --tag-prefix-hover: #A9022A;
+ " href="/t/angular"><span>#</span>angular</a>
+ <a style="
+ --tag-bg: rgba(3, 155, 229, 0.10);
+ --tag-prefix: #039be5;
+ --tag-bg-hover: rgba(3, 155, 229, 0.10);
+ --tag-prefix-hover: #039be5;
+ " href="/t/firebase"><span>#</span>firebase</a>
+ <a style="
+ --tag-bg: rgba(86, 39, 101, 0.10);
+ --tag-prefix: #562765;
+ --tag-bg-hover: rgba(86, 39, 101, 0.10);
+ --tag-prefix-hover: #562765;
+ " href="/t/webdev"><span>#</span>webdev</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/gde/securing-an-angular-firebase-ai-app-with-emailpassword-authentication-part-1-emulator-4jm#comments" aria-label="Add a comment to post - Securing an Angular Firebase AI App with Email/Password Authentication (Part 1: Emulator, AuthService, and Route Guard) [GDE]">
+ <span>Add Comment</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 7 min read
+ </small>
+ <div>
+ <button data-article-path="/gde/securing-an-angular-firebase-ai-app-with-emailpassword-authentication-part-1-emulator-4jm">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div data-feed-content-id="4959790" data-content-user-id="3558992">
+ <a href="https://dev.to/mashraf_aiman/how-to-make-link-to-saas-launch-video-system-5a8k" aria-labelledby="article-link-4959790">How to make link to SaaS Launch Video system</a>
+ <div>
+ <div>
+ <div>
+ <div>
+ <a href="/mashraf_aiman">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3558992%2Fdab7a0d1-e0ac-458a-8c1f-01723e9c7c91.jpg" alt="mashraf_aiman profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/mashraf_aiman">
+ Mashraf Aiman
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4959790" aria-controls="story-author-preview-content-4959790" aria-label="Mashraf Aiman profile details">
+ Mashraf Aiman
+ </button>
+ <div
+ id="story-author-preview-content-4959790"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/mashraf_aiman">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3558992%2Fdab7a0d1-e0ac-458a-8c1f-01723e9c7c91.jpg"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Mashraf Aiman</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:3558992,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Mashraf Aiman&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="3558992"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <a href="https://dev.to/mashraf_aiman/how-to-make-link-to-saas-launch-video-system-5a8k"><time datetime="2026-11-02T02:16:23Z">Nov 2</time><span data-seconds="1793585783"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/mashraf_aiman/how-to-make-link-to-saas-launch-video-system-5a8k" data-preload-image="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Fmp7hwxt2jounbdnrbtn6.png" id="article-link-4959790">
+ How to make link to SaaS Launch Video system
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(23, 253, 26, 0.10);
+ --tag-prefix: #17fd1a;
+ --tag-bg-hover: rgba(23, 253, 26, 0.10);
+ --tag-prefix-hover: #17fd1a;
+ " href="/t/ai"><span>#</span>ai</a>
+ <a style="
+ --tag-bg: rgba(38, 190, 0, 0.10);
+ --tag-prefix: #26BE00;
+ --tag-bg-hover: rgba(38, 190, 0, 0.10);
+ --tag-prefix-hover: #26BE00;
+ " href="/t/opensource"><span>#</span>opensource</a>
+ <a style="
+ --tag-bg: rgba(170, 255, 236, 0.10);
+ --tag-prefix: #aaffec;
+ --tag-bg-hover: rgba(170, 255, 236, 0.10);
+ --tag-prefix-hover: #aaffec;
+ " href="/t/saas"><span>#</span>saas</a>
+ <a style="
+ --tag-bg: rgba(42, 7, 152, 0.10);
+ --tag-prefix: #2A0798;
+ --tag-bg-hover: rgba(42, 7, 152, 0.10);
+ --tag-prefix-hover: #2A0798;
+ " href="/t/productivity"><span>#</span>productivity</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/mashraf_aiman/how-to-make-link-to-saas-launch-video-system-5a8k" data-reaction-count data-reactable-id="4959790" aria-label="Add a comment to post - How to make link to SaaS Launch Video system">
+ <div>
+ <span dir="rtl">
+ <span>
+ <img src="https://assets.dev.to/assets/exploding-head-daceb38d627e6ae9b730f36a1e390fca556a4289d5a41abb2c35068ad3e2c4b5.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/fire-f60e7a582391810302117f987b22a8ef04a2fe0df7e3258a5f49332df1cec71e.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/sparkle-heart-5f9bee3767e18deb1bb725290cb151c25234768a0e9a2bd39370c382d02920cf.svg" width="18" height="18" />
+ </span>
+ </span>
+ <span>55<span> reactions</span></span>
+ </div>
+ </a>
+ <a href="https://dev.to/mashraf_aiman/how-to-make-link-to-saas-launch-video-system-5a8k#comments" aria-label="Add a comment to post - How to make link to SaaS Launch Video system">
+ 2<span> comments</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 3 min read
+ </small>
+ <div>
+ <button data-article-path="/mashraf_aiman/how-to-make-link-to-saas-launch-video-system-5a8k">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div data-feed-content-id="4955906" data-content-user-id="3977056">
+ <a href="https://dev.to/akhourianmolkumar/are-you-a-web-developer-or-a-browser-expert-7-tests-i-failed-building-a-photo-editor-that-never-2j97" aria-labelledby="article-link-4955906">Are You a Web Developer or a Browser Expert? 7 Tests I Failed Building a Photo Editor That Never Uploads Your Photos</a>
+ <div>
+ <div>
+ <div>
+ <div>
+ <a href="/akhourianmolkumar">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3977056%2Fa5394b5b-b434-4187-becb-fde55f0357d2.gif" alt="akhourianmolkumar profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/akhourianmolkumar">
+ Akhouri Anmol Kumar
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4955906" aria-controls="story-author-preview-content-4955906" aria-label="Akhouri Anmol Kumar profile details">
+ Akhouri Anmol Kumar
+ </button>
+ <div
+ id="story-author-preview-content-4955906"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/akhourianmolkumar">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3977056%2Fa5394b5b-b434-4187-becb-fde55f0357d2.gif"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Akhouri Anmol Kumar</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:3977056,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Akhouri Anmol Kumar&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="3977056"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <a href="https://dev.to/akhourianmolkumar/are-you-a-web-developer-or-a-browser-expert-7-tests-i-failed-building-a-photo-editor-that-never-2j97"><time datetime="2026-11-01T05:18:13Z">Nov 1</time><span data-seconds="1793510293"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/akhourianmolkumar/are-you-a-web-developer-or-a-browser-expert-7-tests-i-failed-building-a-photo-editor-that-never-2j97" data-preload-image="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Fqmx33rcjcruq9o8nwljs.png" id="article-link-4955906">
+ Are You a Web Developer or a Browser Expert? 7 Tests I Failed Building a Photo Editor That Never Uploads Your Photos
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(86, 39, 101, 0.10);
+ --tag-prefix: #562765;
+ --tag-bg-hover: rgba(86, 39, 101, 0.10);
+ --tag-prefix-hover: #562765;
+ " href="/t/webdev"><span>#</span>webdev</a>
+ <a style="
+ --tag-bg: rgba(247, 223, 30, 0.10);
+ --tag-prefix: #f7df1e;
+ --tag-bg-hover: rgba(247, 223, 30, 0.10);
+ --tag-prefix-hover: #f7df1e;
+ " href="/t/javascript"><span>#</span>javascript</a>
+ <a style="
+ --tag-bg: rgba(23, 253, 26, 0.10);
+ --tag-prefix: #17fd1a;
+ --tag-bg-hover: rgba(23, 253, 26, 0.10);
+ --tag-prefix-hover: #17fd1a;
+ " href="/t/ai"><span>#</span>ai</a>
+ <a style="
+ --tag-bg: rgba(254, 255, 165, 0.10);
+ --tag-prefix: #FEFFA5;
+ --tag-bg-hover: rgba(254, 255, 165, 0.10);
+ --tag-prefix-hover: #FEFFA5;
+ " href="/t/tutorial"><span>#</span>tutorial</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/akhourianmolkumar/are-you-a-web-developer-or-a-browser-expert-7-tests-i-failed-building-a-photo-editor-that-never-2j97" data-reaction-count data-reactable-id="4955906" aria-label="Add a comment to post - Are You a Web Developer or a Browser Expert? 7 Tests I Failed Building a Photo Editor That Never Uploads Your Photos">
+ <div>
+ <span dir="rtl">
+ <span>
+ <img src="https://assets.dev.to/assets/exploding-head-daceb38d627e6ae9b730f36a1e390fca556a4289d5a41abb2c35068ad3e2c4b5.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/multi-unicorn-b44d6f8c23cdd00964192bedc38af3e82463978aa611b4365bd33a0f1f4f3e97.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/sparkle-heart-5f9bee3767e18deb1bb725290cb151c25234768a0e9a2bd39370c382d02920cf.svg" width="18" height="18" />
+ </span>
+ </span>
+ <span>34<span> reactions</span></span>
+ </div>
+ </a>
+ <a href="https://dev.to/akhourianmolkumar/are-you-a-web-developer-or-a-browser-expert-7-tests-i-failed-building-a-photo-editor-that-never-2j97#comments" aria-label="Add a comment to post - Are You a Web Developer or a Browser Expert? 7 Tests I Failed Building a Photo Editor That Never Uploads Your Photos">
+ 88<span> comments</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 7 min read
+ </small>
+ <div>
+ <button data-article-path="/akhourianmolkumar/are-you-a-web-developer-or-a-browser-expert-7-tests-i-failed-building-a-photo-editor-that-never-2j97">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div data-feed-content-id="4956807" data-content-user-id="4140494">
+ <a href="https://dev.to/rudratosh/your-ai-agent-trusts-everything-it-reads-a-field-guide-to-hijacking-claude-gpt-gemini-copilot-1l6k" aria-labelledby="article-link-4956807">Your AI Agent Trusts Everything It Reads — A Field Guide to Hijacking Claude, GPT, Gemini &amp; Copilot</a>
+ <div>
+ <a href="https://dev.to/rudratosh/your-ai-agent-trusts-everything-it-reads-a-field-guide-to-hijacking-claude-gpt-gemini-copilot-1l6k"><p>Splitting the lethal trifecta fixes it</p>
+</a>
+ <div>
+ <div>
+ <div>
+ <a href="/rudratosh">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F4140494%2Fc72f2abd-6030-4eac-a11b-df299b2b87e3.png" alt="rudratosh profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/rudratosh">
+ Rudratosh Shastri
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4956807" aria-controls="story-author-preview-content-4956807" aria-label="Rudratosh Shastri profile details">
+ Rudratosh Shastri
+ </button>
+ <div
+ id="story-author-preview-content-4956807"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/rudratosh">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F4140494%2Fc72f2abd-6030-4eac-a11b-df299b2b87e3.png"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Rudratosh Shastri</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:4140494,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Rudratosh Shastri&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="4140494"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <a href="https://dev.to/rudratosh/your-ai-agent-trusts-everything-it-reads-a-field-guide-to-hijacking-claude-gpt-gemini-copilot-1l6k"><time datetime="2026-11-01T10:03:30Z">Nov 1</time><span data-seconds="1793527410"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/rudratosh/your-ai-agent-trusts-everything-it-reads-a-field-guide-to-hijacking-claude-gpt-gemini-copilot-1l6k" data-preload-image="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Frudratoshs.github.io%2Fassets%2Fai-agent-hijack%2Fcover.png" id="article-link-4956807">
+ Your AI Agent Trusts Everything It Reads — A Field Guide to Hijacking Claude, GPT, Gemini &amp; Copilot
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(27, 172, 128, 0.10);
+ --tag-prefix: #1bac80;
+ --tag-bg-hover: rgba(27, 172, 128, 0.10);
+ --tag-prefix-hover: #1bac80;
+ " href="/t/security"><span>#</span>security</a>
+ <a style="
+ --tag-bg: rgba(23, 253, 26, 0.10);
+ --tag-prefix: #17fd1a;
+ --tag-bg-hover: rgba(23, 253, 26, 0.10);
+ --tag-prefix-hover: #17fd1a;
+ " href="/t/ai"><span>#</span>ai</a>
+ <a style="
+ --tag-bg: rgba(64, 78, 211, 0.10);
+ --tag-prefix: #404ED3;
+ --tag-bg-hover: rgba(64, 78, 211, 0.10);
+ --tag-prefix-hover: #404ED3;
+ " href="/t/llm"><span>#</span>llm</a>
+ <a style="
+ --tag-bg: rgba(227, 255, 0, 0.10);
+ --tag-prefix: #e3ff00;
+ --tag-bg-hover: rgba(227, 255, 0, 0.10);
+ --tag-prefix-hover: #e3ff00;
+ " href="/t/cybersecurity"><span>#</span>cybersecurity</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/rudratosh/your-ai-agent-trusts-everything-it-reads-a-field-guide-to-hijacking-claude-gpt-gemini-copilot-1l6k" data-reaction-count data-reactable-id="4956807" aria-label="Add a comment to post - Your AI Agent Trusts Everything It Reads — A Field Guide to Hijacking Claude, GPT, Gemini &amp; Copilot">
+ <div>
+ <span dir="rtl">
+ <span>
+ <img src="https://assets.dev.to/assets/exploding-head-daceb38d627e6ae9b730f36a1e390fca556a4289d5a41abb2c35068ad3e2c4b5.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/multi-unicorn-b44d6f8c23cdd00964192bedc38af3e82463978aa611b4365bd33a0f1f4f3e97.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/sparkle-heart-5f9bee3767e18deb1bb725290cb151c25234768a0e9a2bd39370c382d02920cf.svg" width="18" height="18" />
+ </span>
+ </span>
+ <span>16<span> reactions</span></span>
+ </div>
+ </a>
+ <a href="https://dev.to/rudratosh/your-ai-agent-trusts-everything-it-reads-a-field-guide-to-hijacking-claude-gpt-gemini-copilot-1l6k#comments" aria-label="Add a comment to post - Your AI Agent Trusts Everything It Reads — A Field Guide to Hijacking Claude, GPT, Gemini &amp; Copilot">
+ 10<span> comments</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 15 min read
+ </small>
+ <div>
+ <button data-article-path="/rudratosh/your-ai-agent-trusts-everything-it-reads-a-field-guide-to-hijacking-claude-gpt-gemini-copilot-1l6k">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div data-feed-content-id="4958390" data-content-user-id="222568">
+ <a href="https://dev.to/indiciumai/build-without-limits-sdlc-briefing-4-lnf" aria-labelledby="article-link-4958390">Build without limits - SDLC Briefing, #4</a>
+ <div>
+ <div>
+ <div>
+ <div>
+ <a href="/indiciumai">
+ <img alt="Indicium AI logo" src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Forganization%2Fprofile_image%2F14256%2Fd8d78488-6358-4e6a-83c3-b85ca547394d.jpeg" loading="lazy" />
+ </a>
+ <a href="/094459">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F222568%2Fa3308896-d537-4f9d-b802-862f43f44f97.jpg" alt="094459 profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/094459">
+ Ricardo Sueiras
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4958390" aria-controls="story-author-preview-content-4958390" aria-label="Ricardo Sueiras profile details">
+ Ricardo Sueiras
+ </button>
+ <div
+ id="story-author-preview-content-4958390"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/094459">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F222568%2Fa3308896-d537-4f9d-b802-862f43f44f97.jpg"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Ricardo Sueiras</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:222568,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Ricardo Sueiras&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="222568"></div>
+ </div>
+ </div>
+ </div>
+ <span>
+ <span> for </span><a href="/indiciumai">Indicium AI</a>
+ </span>
+ </div>
+ <a href="https://dev.to/indiciumai/build-without-limits-sdlc-briefing-4-lnf"><time datetime="2026-11-02T08:23:16Z">Nov 2</time><span data-seconds="1793607796"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/indiciumai/build-without-limits-sdlc-briefing-4-lnf" data-preload-image="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Fbmlx10f4vf88qcw1shze.webp" id="article-link-4958390">
+ Build without limits - SDLC Briefing, #4
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(23, 253, 26, 0.10);
+ --tag-prefix: #17fd1a;
+ --tag-bg-hover: rgba(23, 253, 26, 0.10);
+ --tag-prefix-hover: #17fd1a;
+ " href="/t/ai"><span>#</span>ai</a>
+ <a style="
+ --tag-bg: rgba(194, 0, 0, 0.10);
+ --tag-prefix: #c20000;
+ --tag-bg-hover: rgba(194, 0, 0, 0.10);
+ --tag-prefix-hover: #c20000;
+ " href="/t/claude"><span>#</span>claude</a>
+ <a style="
+ --tag-bg: rgba(64, 78, 211, 0.10);
+ --tag-prefix: #404ED3;
+ --tag-bg-hover: rgba(64, 78, 211, 0.10);
+ --tag-prefix-hover: #404ED3;
+ " href="/t/developer"><span>#</span>developer</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/indiciumai/build-without-limits-sdlc-briefing-4-lnf" data-reaction-count data-reactable-id="4958390" aria-label="Add a comment to post - Build without limits - SDLC Briefing, #4">
+ <div>
+ <span dir="rtl">
+ <span>
+ <img src="https://assets.dev.to/assets/fire-f60e7a582391810302117f987b22a8ef04a2fe0df7e3258a5f49332df1cec71e.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/exploding-head-daceb38d627e6ae9b730f36a1e390fca556a4289d5a41abb2c35068ad3e2c4b5.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/sparkle-heart-5f9bee3767e18deb1bb725290cb151c25234768a0e9a2bd39370c382d02920cf.svg" width="18" height="18" />
+ </span>
+ </span>
+ <span>3<span> reactions</span></span>
+ </div>
+ </a>
+ <a href="https://dev.to/indiciumai/build-without-limits-sdlc-briefing-4-lnf#comments" aria-label="Add a comment to post - Build without limits - SDLC Briefing, #4">
+ <span>Add Comment</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 4 min read
+ </small>
+ <div>
+ <button data-article-path="/indiciumai/build-without-limits-sdlc-briefing-4-lnf">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div data-feed-content-id="4960841" data-content-user-id="3977056">
+ <a href="https://dev.to/akhourianmolkumar/apic-v2-sneak-peek-a-free-offline-image-editor-converter-compressor-for-desktop-4ilk" aria-labelledby="article-link-4960841">APIC v2 Sneak Peek: A Free, Offline Image Editor, Converter &amp; Compressor for Desktop</a>
+ <div>
+ <div>
+ <div>
+ <div>
+ <a href="/akhourianmolkumar">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3977056%2Fa5394b5b-b434-4187-becb-fde55f0357d2.gif" alt="akhourianmolkumar profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/akhourianmolkumar">
+ Akhouri Anmol Kumar
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4960841" aria-controls="story-author-preview-content-4960841" aria-label="Akhouri Anmol Kumar profile details">
+ Akhouri Anmol Kumar
+ </button>
+ <div
+ id="story-author-preview-content-4960841"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/akhourianmolkumar">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3977056%2Fa5394b5b-b434-4187-becb-fde55f0357d2.gif"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Akhouri Anmol Kumar</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:3977056,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Akhouri Anmol Kumar&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="3977056"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <a href="https://dev.to/akhourianmolkumar/apic-v2-sneak-peek-a-free-offline-image-editor-converter-compressor-for-desktop-4ilk"><time datetime="2026-11-02T07:20:10Z">Nov 2</time><span data-seconds="1793604010"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/akhourianmolkumar/apic-v2-sneak-peek-a-free-offline-image-editor-converter-compressor-for-desktop-4ilk" data-preload-image="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Fyodgdqctptj1073u4091.png" id="article-link-4960841">
+ APIC v2 Sneak Peek: A Free, Offline Image Editor, Converter &amp; Compressor for Desktop
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(9, 27, 71, 0.10);
+ --tag-prefix: #091b47;
+ --tag-bg-hover: rgba(9, 27, 71, 0.10);
+ --tag-prefix-hover: #091b47;
+ " href="/t/showdev"><span>#</span>showdev</a>
+ <a style="
+ --tag-bg: rgba(30, 56, 187, 0.10);
+ --tag-prefix: #1E38BB;
+ --tag-bg-hover: rgba(30, 56, 187, 0.10);
+ --tag-prefix-hover: #1E38BB;
+ " href="/t/python"><span>#</span>python</a>
+ <a style="
+ --tag-bg: rgba(38, 190, 0, 0.10);
+ --tag-prefix: #26BE00;
+ --tag-bg-hover: rgba(38, 190, 0, 0.10);
+ --tag-prefix-hover: #26BE00;
+ " href="/t/opensource"><span>#</span>opensource</a>
+ <a style="
+ --tag-bg: rgba(42, 7, 152, 0.10);
+ --tag-prefix: #2A0798;
+ --tag-bg-hover: rgba(42, 7, 152, 0.10);
+ --tag-prefix-hover: #2A0798;
+ " href="/t/productivity"><span>#</span>productivity</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/akhourianmolkumar/apic-v2-sneak-peek-a-free-offline-image-editor-converter-compressor-for-desktop-4ilk" data-reaction-count data-reactable-id="4960841" aria-label="Add a comment to post - APIC v2 Sneak Peek: A Free, Offline Image Editor, Converter &amp; Compressor for Desktop">
+ <div>
+ <span dir="rtl">
+ <span>
+ <img src="https://assets.dev.to/assets/exploding-head-daceb38d627e6ae9b730f36a1e390fca556a4289d5a41abb2c35068ad3e2c4b5.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/multi-unicorn-b44d6f8c23cdd00964192bedc38af3e82463978aa611b4365bd33a0f1f4f3e97.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/sparkle-heart-5f9bee3767e18deb1bb725290cb151c25234768a0e9a2bd39370c382d02920cf.svg" width="18" height="18" />
+ </span>
+ </span>
+ <span>20<span> reactions</span></span>
+ </div>
+ </a>
+ <a href="https://dev.to/akhourianmolkumar/apic-v2-sneak-peek-a-free-offline-image-editor-converter-compressor-for-desktop-4ilk#comments" aria-label="Add a comment to post - APIC v2 Sneak Peek: A Free, Offline Image Editor, Converter &amp; Compressor for Desktop">
+ 7<span> comments</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 5 min read
+ </small>
+ <div>
+ <button data-article-path="/akhourianmolkumar/apic-v2-sneak-peek-a-free-offline-image-editor-converter-compressor-for-desktop-4ilk">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div data-feed-content-id="4962170" data-content-user-id="652576">
+ <a href="https://dev.to/jacobandrewsky/how-to-configure-a-web-performance-budget-with-lighthouse-ci-4klg" aria-labelledby="article-link-4962170">How to configure a Web Performance Budget with Lighthouse CI</a>
+ <div>
+ <div>
+ <div>
+ <div>
+ <a href="/jacobandrewsky">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F652576%2F71679021-521f-4d3b-b57f-af2d4ad055d9.png" alt="jacobandrewsky profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/jacobandrewsky">
+ Jakub Andrzejewski
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4962170" aria-controls="story-author-preview-content-4962170" aria-label="Jakub Andrzejewski profile details">
+ Jakub Andrzejewski
+ </button>
+ <div
+ id="story-author-preview-content-4962170"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/jacobandrewsky">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F652576%2F71679021-521f-4d3b-b57f-af2d4ad055d9.png"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Jakub Andrzejewski</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:652576,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Jakub Andrzejewski&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="652576"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <a href="https://dev.to/jacobandrewsky/how-to-configure-a-web-performance-budget-with-lighthouse-ci-4klg"><time datetime="2026-11-02T10:00:53Z">Nov 2</time><span data-seconds="1793613653"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/jacobandrewsky/how-to-configure-a-web-performance-budget-with-lighthouse-ci-4klg" data-preload-image="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Fkaf54s6cqnaby2y8et49.png" id="article-link-4962170">
+ How to configure a Web Performance Budget with Lighthouse CI
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(255, 163, 100, 0.10);
+ --tag-prefix: #ffa364;
+ --tag-bg-hover: rgba(255, 163, 100, 0.10);
+ --tag-prefix-hover: #ffa364;
+ " href="/t/performance"><span>#</span>performance</a>
+ <a style="
+ --tag-bg: rgba(86, 39, 101, 0.10);
+ --tag-prefix: #562765;
+ --tag-bg-hover: rgba(86, 39, 101, 0.10);
+ --tag-prefix-hover: #562765;
+ " href="/t/webdev"><span>#</span>webdev</a>
+ <a style="
+ --tag-bg: rgba(247, 223, 30, 0.10);
+ --tag-prefix: #f7df1e;
+ --tag-bg-hover: rgba(247, 223, 30, 0.10);
+ --tag-prefix-hover: #f7df1e;
+ " href="/t/javascript"><span>#</span>javascript</a>
+ <a style="
+ --tag-bg: rgba(254, 255, 165, 0.10);
+ --tag-prefix: #FEFFA5;
+ --tag-bg-hover: rgba(254, 255, 165, 0.10);
+ --tag-prefix-hover: #FEFFA5;
+ " href="/t/tutorial"><span>#</span>tutorial</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/jacobandrewsky/how-to-configure-a-web-performance-budget-with-lighthouse-ci-4klg#comments" aria-label="Add a comment to post - How to configure a Web Performance Budget with Lighthouse CI">
+ <span>Add Comment</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 2 min read
+ </small>
+ <div>
+ <button data-article-path="/jacobandrewsky/how-to-configure-a-web-performance-budget-with-lighthouse-ci-4klg">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div data-feed-content-id="4961142" data-content-user-id="4145544">
+ <a href="https://dev.to/muhammadalimughal/zero-trust-reverse-proxy-hardening-in-nginx-rate-limiting-request-smuggling-guards-mtls-e71" aria-labelledby="article-link-4961142">Zero-Trust Reverse Proxy Hardening in Nginx: Rate Limiting, Request Smuggling Guards &amp; mTLS</a>
+ <div>
+ <div>
+ <div>
+ <div>
+ <a href="/muhammadalimughal">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F4145544%2F4189fcb4-1949-496a-8c1a-7ec317ba6b06.jpg" alt="muhammadalimughal profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/muhammadalimughal">
+ Muhammad Ali Mughal
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4961142" aria-controls="story-author-preview-content-4961142" aria-label="Muhammad Ali Mughal profile details">
+ Muhammad Ali Mughal
+ </button>
+ <div
+ id="story-author-preview-content-4961142"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/muhammadalimughal">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F4145544%2F4189fcb4-1949-496a-8c1a-7ec317ba6b06.jpg"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Muhammad Ali Mughal</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:4145544,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Muhammad Ali Mughal&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="4145544"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <a href="https://dev.to/muhammadalimughal/zero-trust-reverse-proxy-hardening-in-nginx-rate-limiting-request-smuggling-guards-mtls-e71"><time datetime="2026-11-02T07:18:16Z">Nov 2</time><span data-seconds="1793603896"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/muhammadalimughal/zero-trust-reverse-proxy-hardening-in-nginx-rate-limiting-request-smuggling-guards-mtls-e71" data-preload-image="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2F94bnldob0fxzc7p5wsko.jpg" id="article-link-4961142">
+ Zero-Trust Reverse Proxy Hardening in Nginx: Rate Limiting, Request Smuggling Guards &amp; mTLS
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(0, 0, 0, 0.10);
+ --tag-prefix: #000000;
+ --tag-bg-hover: rgba(0, 0, 0, 0.10);
+ --tag-prefix-hover: #000000;
+ " href="/t/nginx"><span>#</span>nginx</a>
+ <a style="
+ --tag-bg: rgba(27, 172, 128, 0.10);
+ --tag-prefix: #1bac80;
+ --tag-bg-hover: rgba(27, 172, 128, 0.10);
+ --tag-prefix-hover: #1bac80;
+ " href="/t/security"><span>#</span>security</a>
+ <a style="
+ --tag-bg: rgba(6, 181, 0, 0.10);
+ --tag-prefix: #06B500;
+ --tag-bg-hover: rgba(6, 181, 0, 0.10);
+ --tag-prefix-hover: #06B500;
+ " href="/t/devops"><span>#</span>devops</a>
+ <a style="
+ --tag-bg: rgba(86, 39, 101, 0.10);
+ --tag-prefix: #562765;
+ --tag-bg-hover: rgba(86, 39, 101, 0.10);
+ --tag-prefix-hover: #562765;
+ " href="/t/webdev"><span>#</span>webdev</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/muhammadalimughal/zero-trust-reverse-proxy-hardening-in-nginx-rate-limiting-request-smuggling-guards-mtls-e71" data-reaction-count data-reactable-id="4961142" aria-label="Add a comment to post - Zero-Trust Reverse Proxy Hardening in Nginx: Rate Limiting, Request Smuggling Guards &amp; mTLS">
+ <div>
+ <span dir="rtl">
+ <span>
+ <img src="https://assets.dev.to/assets/sparkle-heart-5f9bee3767e18deb1bb725290cb151c25234768a0e9a2bd39370c382d02920cf.svg" width="18" height="18" />
+ </span>
+ </span>
+ <span>1<span> reaction</span></span>
+ </div>
+ </a>
+ <a href="https://dev.to/muhammadalimughal/zero-trust-reverse-proxy-hardening-in-nginx-rate-limiting-request-smuggling-guards-mtls-e71#comments" aria-label="Add a comment to post - Zero-Trust Reverse Proxy Hardening in Nginx: Rate Limiting, Request Smuggling Guards &amp; mTLS">
+ 2<span> comments</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 9 min read
+ </small>
+ <div>
+ <button data-article-path="/muhammadalimughal/zero-trust-reverse-proxy-hardening-in-nginx-rate-limiting-request-smuggling-guards-mtls-e71">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div data-feed-content-id="4962019" data-content-user-id="4036503">
+ <a href="https://dev.to/sazmco/core-web-vitals-remediation-fixing-lcp-inp-cls-at-the-root-kl2" aria-labelledby="article-link-4962019">Core Web Vitals Remediation: Fixing LCP, INP &amp; CLS at the Root</a>
+ <div>
+ <div>
+ <div>
+ <div>
+ <a href="/sazmco">
+ <img alt="SazM logo" src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Forganization%2Fprofile_image%2F15242%2Ffca4fabd-2c6d-4744-9470-d6f7dede006e.png" loading="lazy" />
+ </a>
+ <a href="/sazm_">
+ <img src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F4036503%2F2fdcf58e-8a14-4d4a-93f7-981e3502576c.jpg" alt="sazm_ profile" loading="lazy" />
+ </a>
+ </div>
+ <div>
+ <div>
+ <a href="/sazm_">
+ Saravana Bhava
+ </a>
+ <div>
+ <button id="story-author-preview-trigger-4962019" aria-controls="story-author-preview-content-4962019" aria-label="Saravana Bhava profile details">
+ Saravana Bhava
+ </button>
+ <div
+ id="story-author-preview-content-4962019"
+ style="border-top-color: var(--card-color);"
+ data-repositioning-dropdown="true"
+ data-testid="profile-preview-card">
+ <div>
+ <div>
+ <a href="/sazm_">
+ <span>
+ <img
+ src="https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F4036503%2F2fdcf58e-8a14-4d4a-93f7-981e3502576c.jpg"
+ alt=""
+ loading="lazy" />
+ </span>
+ <span>Saravana Bhava</span>
+ </a>
+ </div>
+ <div>
+ <button
+ data-info='{&quot;style&quot;:&quot;full&quot;,&quot;id&quot;:4036503,&quot;className&quot;:&quot;User&quot;,&quot;name&quot;:&quot;Saravana Bhava&quot;}'>
+ Follow
+ </button>
+ </div>
+ <div
+ data-author-id="4036503"></div>
+ </div>
+ </div>
+ </div>
+ <span>
+ <span> for </span><a href="/sazmco">SazM</a>
+ </span>
+ </div>
+ <a href="https://dev.to/sazmco/core-web-vitals-remediation-fixing-lcp-inp-cls-at-the-root-kl2"><time datetime="2026-11-02T09:27:50Z">Nov 2</time><span data-seconds="1793611670"></span></a>
+ </div>
+ </div>
+ </div>
+ <div>
+ <h2>
+ <a href="https://dev.to/sazmco/core-web-vitals-remediation-fixing-lcp-inp-cls-at-the-root-kl2" data-preload-image="" id="article-link-4962019">
+ Core Web Vitals Remediation: Fixing LCP, INP &amp; CLS at the Root
+ </a>
+ </h2>
+ <div>
+ <a style="
+ --tag-bg: rgba(255, 163, 100, 0.10);
+ --tag-prefix: #ffa364;
+ --tag-bg-hover: rgba(255, 163, 100, 0.10);
+ --tag-prefix-hover: #ffa364;
+ " href="/t/performance"><span>#</span>performance</a>
+ <a style="
+ --tag-bg: rgba(143, 16, 12, 0.10);
+ --tag-prefix: #8f100c;
+ --tag-bg-hover: rgba(143, 16, 12, 0.10);
+ --tag-prefix-hover: #8f100c;
+ " href="/t/webperf"><span>#</span>webperf</a>
+ <a style="
+ --tag-bg: rgba(86, 39, 101, 0.10);
+ --tag-prefix: #562765;
+ --tag-bg-hover: rgba(86, 39, 101, 0.10);
+ --tag-prefix-hover: #562765;
+ " href="/t/webdev"><span>#</span>webdev</a>
+ <a style="
+ --tag-bg: rgba(16, 142, 194, 0.10);
+ --tag-prefix: #108EC2;
+ --tag-bg-hover: rgba(16, 142, 194, 0.10);
+ --tag-prefix-hover: #108EC2;
+ " href="/t/wordpress"><span>#</span>wordpress</a>
+ </div>
+ <div>
+ <div>
+ <a href="https://dev.to/sazmco/core-web-vitals-remediation-fixing-lcp-inp-cls-at-the-root-kl2" data-reaction-count data-reactable-id="4962019" aria-label="Add a comment to post - Core Web Vitals Remediation: Fixing LCP, INP &amp; CLS at the Root">
+ <div>
+ <span dir="rtl">
+ <span>
+ <img src="https://assets.dev.to/assets/exploding-head-daceb38d627e6ae9b730f36a1e390fca556a4289d5a41abb2c35068ad3e2c4b5.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/multi-unicorn-b44d6f8c23cdd00964192bedc38af3e82463978aa611b4365bd33a0f1f4f3e97.svg" width="18" height="18" />
+ </span>
+ <span>
+ <img src="https://assets.dev.to/assets/sparkle-heart-5f9bee3767e18deb1bb725290cb151c25234768a0e9a2bd39370c382d02920cf.svg" width="18" height="18" />
+ </span>
+ </span>
+ <span>5<span> reactions</span></span>
+ </div>
+ </a>
+ <a href="https://dev.to/sazmco/core-web-vitals-remediation-fixing-lcp-inp-cls-at-the-root-kl2#comments" aria-label="Add a comment to post - Core Web Vitals Remediation: Fixing LCP, INP &amp; CLS at the Root">
+ <span>Add Comment</span>
+ </a>
+ </div>
+ <div>
+ <small>
+ 4 min read
+ </small>
+ <div>
+ <button data-article-path="/sazmco/core-web-vitals-remediation-fixing-lcp-inp-cls-at-the-root-kl2">
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+ <div></div>
+ <div id="article-index-hidden-div" style="display:none"></div>
+</div>
+<script src="https://assets.dev.to/assets/homePageFeedShortcuts-d5207d5fd0bd0d357a4c4675bad9f88778a956769b8b340b1e63615a64db7c8d.js" defer="defer"></script>
+<script src="https://assets.dev.to/assets/feedPreviewCards-4ec7f900474bec9164d548de1fa125b136dfd31350159e0f07b349300cab005e.js" defer="defer"></script>
+ <div id="followed-podcasts" data-episodes="null"></div>
+ <div id="loading-articles">
+ loading...
+ </div>
+ </main>
+ <div id="sidebar-wrapper-right">
+ <aside id="sidebar-additional">
+ <section>
+ <header>
+ <h3><a href="/t/discuss">#discuss</a></h3>
+ <div>
+ Discussion threads targeting the whole community!
+ </div>
+ </header>
+ <div>
+<a href="https://dev.to/lycore/sam-altman-says-the-ram-in-your-pc-is-quite-terrible-for-client-work-hes-half-right-17ho">
+ Sam Altman Says the RAM in Your PC Is &quot;Quite Terrible.&quot; For Client Work, He&#39;s Half Right
+ <div>
+ 8 comments
+ </div>
+</a>
+<a href="https://dev.to/hemapriya_kanagala/dev-pet-corner-4-show-us-your-pets-55jh">
+ 🐾 DEV Pet Corner #4: Show Us Your Pets!
+ <div>
+ 8 comments
+ </div>
+</a>
+<a href="https://dev.to/ssv445/running-ai-agents-in-parallel-6-failures-and-their-fixes-3eg2">
+ Running AI agents in parallel: 6 failures and their fixes
+ <div>
+ <span>New</span>
+ </div>
+</a>
+<a href="https://dev.to/saurabh_pathak394/what-should-an-approval-gate-for-ai-agents-actually-bind-to-lessons-from-the-comments-5d5d">
+ What should an approval gate for AI agents actually bind to? Lessons from the comments
+ <div>
+ 3 comments
+ </div>
+</a>
+<a href="https://dev.to/yuichi-tanaka/working-across-repositories-with-ai-without-moving-to-a-monorepo-1gh8">
+ Working Across Repositories With AI, Without Moving to a Monorepo
+ <div>
+ <span>New</span>
+ </div>
+</a>
+ </div>
+ </section>
+ <section>
+ <header>
+ <h4>trending guides/resources</h4>
+ </header>
+ <div>
+ <div>
+<a href="/arshtechpro/rea-let-your-ai-agent-reverse-engineer-the-app-features-you-wish-you-had-3en7">
+ REA: Let Your AI Agent Reverse Engineer the App Features You Wish You Had
+</a>
+<a href="/seppegadeyne/patch-php2shell-on-php-74-and-81-compiled-from-source-without-a-panel-j60">
+ Patch PHP2Shell on PHP 7.4 and 8.1 compiled from source, without a panel
+</a>
+<a href="/thecodestreet/rea-github-tutorial-reverse-engineer-anything-with-claude-code-full-setup-fixes-1g89">
+ REA GitHub Tutorial: Reverse Engineer Anything with Claude Code (Full Setup + Fixes)
+</a>
+<a href="/valyuai/how-to-use-jev-a-practical-guide-to-typesafes-system-one-model-g5e">
+ How to Use Jev: A practical guide to TypeSafe&#39;s System One model
+</a>
+<a href="/dd8888/cleanyourtv-debloats-android-tv-and-replaces-its-home-screen-i3f">
+ cleanyourtv Debloats Android TV and Replaces Its Home Screen
+</a>
+<a href="/prakh_r/longcat-25-preview-vs-space-bunny-alpha-my-experience-building-real-projects-5an1">
+ LongCat 2.5 Preview vs Space Bunny Alpha: My Experience Building Real Projects
+</a>
+<a href="/seppegadeyne/patching-php-56-to-81-for-php2shell-on-old-ubuntu-servers-by-rebuilding-runclouds-php-1bl7">
+ Patching PHP 5.6 to 8.1 for PHP2Shell on old Ubuntu servers by rebuilding RunCloud&#39;s PHP
+</a>
+<a href="/shinpr/switching-from-gpt-56-sol-to-gpt-6-astra-start-with-medium-effort-25ao">
+ Switching from GPT-5.6 Sol to GPT-6 Astra: Start with Medium Effort
+</a>
+<a href="/erikch/2-agent-skills-every-frontend-developer-should-try-16pl">
+ 2 Agent Skills Every Frontend Developer Should Try
+</a>
+<a href="/fulviojorge/next-concept-modeling-ncm-a-new-approach-to-ai-language-generation-44gg">
+ Next-Concept Modeling (NCM): A New Approach to AI Language Generation
+</a>
+<a href="/arshtechpro/orca-explained-the-agent-development-environment-for-running-ai-coding-agents-in-parallel-440n">
+ Orca: The Agent Development Environment for Running AI Coding Agents in Parallel
+</a>
+<a href="/valyuai/claude-code-now-supports-agentsmd-natively-heres-how-it-actually-works-5nl">
+ Claude Code now supports AGENTS.md Natively - Here&#39;s how it actually works
+</a>
+<a href="/jamilxt/two-critical-php-vulnerabilities-what-to-do-before-the-emergency-release-n14">
+ Two Critical PHP Vulnerabilities: What to Do Before the Emergency Release
+</a>
+<a href="/vivek_shetye/how-to-use-claude-code-for-free-with-omniroute-maa">
+ How to Use Claude Code for Free with OmniRoute
+</a>
+<a href="/qpphello1/getting-started-with-kytyps5-a-practical-look-at-ps5-emulation-on-pc-48cg">
+ Getting Started with KytyPS5: A Practical Look at PS5 Emulation on PC
+</a>
+<a href="/akhourianmolkumar/which-programming-language-is-the-best-overall-python-vs-javascript-vs-java-vs-c-vs-rust-1md1">
+ Which Programming Language Is the Best Overall? Python vs JavaScript vs Java vs C++ vs Rust
+</a>
+<a href="/arshtechpro/ponytail-the-ai-coding-skill-that-makes-your-agent-write-less-code-29l3">
+ Ponytail: the AI coding skill that makes your agent write less code
+</a>
+<a href="/francistrdev/why-you-still-need-a-website-portfolio-even-though-everyone-can-vibe-code-it-e63">
+ Why you still need a Website Portfolio, even though everyone can Vibe Code it.
+</a>
+<a href="/akartit/gemini-4-argon-vs-opus-55-vs-gpt-6-astra-same-prompt-real-bills-1dd9">
+ Gemini 4 Argon vs Opus 5.5 vs GPT-6 Astra: Same Prompt, Real Bills
+</a>
+<a href="/slabb/a-ca-private-key-was-the-number-4-your-curl-still-trusts-it-cve-2026-111943-45o4">
+ A CA private key was the number 4. Your curl still trusts it (CVE-2026-111943)
+</a>
+ </div>
+ </div>
+ </section>
+</aside>
+</div>
+ </div>
+ <script src="https://assets.dev.to/assets/storiesList-56533b637386308c7577b1f27a9d61aba78a89fc0963fa9a9081928138f72d32.js" defer="defer"></script>
+<script src="https://assets.dev.to/assets/feedPreviewCards-4ec7f900474bec9164d548de1fa125b136dfd31350159e0f07b349300cab005e.js" defer="defer"></script>
+<script src="https://assets.dev.to/assets/heroBannerClose-060a9fc82f12bba4d632e4b385504a75da592429a2aa38111e4ae2dcff27403f.js" defer="defer"></script>
+<script src="https://assets.dev.to/assets/localizeArticleDates-ae9de0a2788a22884a206d2884c5caa8f6c344a28ce597574b4b78d1dd64f9d8.js" defer="defer"></script>
+<script src="https://assets.dev.to/assets/feedEvents-66983f3957013026919abfb28573ff20bdf7acf9dbf91d4e729f552f546b4a6e.js" defer="defer"></script>
+<script src="https://assets.dev.to/assets/articleModerationTools-b625ee128c91a86254ebe08a34160abdba0c930aace8d168253c9c1feb117386.js" defer="defer"></script>
+ <div id="runtime-banner-container"></div>
+ <div id="i18n-translations" data-translations="{&quot;en&quot;:{&quot;core&quot;:{&quot;add_comment&quot;:&quot;Add comment&quot;,&quot;beta&quot;:&quot;beta&quot;,&quot;comment&quot;:&quot;Comment&quot;,&quot;copy_link&quot;:&quot;Copy link&quot;,&quot;edit_profile&quot;:&quot;Edit profile&quot;,&quot;follow&quot;:&quot;Follow&quot;,&quot;follow_back&quot;:&quot;Follow back&quot;,&quot;following&quot;:&quot;Following&quot;,&quot;image_upload_server_error&quot;:&quot;A server error has occurred!&quot;,&quot;like&quot;:&quot;Like&quot;,&quot;loading&quot;:&quot;loading...&quot;,&quot;reaction&quot;:&quot;Reaction&quot;,&quot;report_abuse&quot;:&quot;Report abuse&quot;,&quot;search&quot;:&quot;Search&quot;,&quot;success_settings&quot;:&quot;Successfully updated settings.&quot;,&quot;search_placeholder&quot;:&quot;Search...&quot;,&quot;search_find_related_posts&quot;:&quot;Find related posts...&quot;,&quot;search_powered_by&quot;:&quot;Powered by Algolia&quot;,&quot;search_submit_search&quot;:&quot;Submit search for advanced filtering.&quot;,&quot;search_displaying_recommendations&quot;:&quot;Displaying Algolia Recommendations — Start typing to search&quot;,&quot;article_form_save_changes&quot;:&quot;Save changes&quot;,&quot;article_form_schedule&quot;:&quot;Schedule&quot;,&quot;article_form_publish&quot;:&quot;Publish&quot;,&quot;article_form_loading_preview&quot;:&quot;Loading preview&quot;,&quot;article_form_preview_loaded&quot;:&quot;Preview loaded&quot;,&quot;article_form_co_authors&quot;:&quot;Co-authors&quot;,&quot;article_form_co_authors_description&quot;:&quot;Add up to 4 co-authors from %{org_name}.&quot;,&quot;article_form_co_authors_placeholder&quot;:&quot;Add up to 4...&quot;,&quot;article_form_co_author_invitations_description&quot;:&quot;Invite people who follow you. They&#39;ll be credited once they accept from their notifications.&quot;,&quot;article_form_co_author_invitations_placeholder&quot;:&quot;Search your followers...&quot;,&quot;article_form_co_author_invitations_declined&quot;:&quot;Declined: %{names}&quot;,&quot;article_form_co_author_invitation_new&quot;:&quot;Invite on save&quot;,&quot;article_form_co_author_invitation_pending&quot;:&quot;Pending&quot;,&quot;article_form_co_author_invitation_accepted&quot;:&quot;Accepted&quot;,&quot;article_form_co_author_invitation_edit&quot;:&quot;Edit %{name}&quot;,&quot;article_form_co_author_invitation_remove&quot;:&quot;Remove %{name}&quot;,&quot;comments_preview&quot;:&quot;Preview&quot;,&quot;comments_continue_editing&quot;:&quot;Continue editing&quot;,&quot;survey_enter_response&quot;:&quot;Enter your response here...&quot;,&quot;survey_thank_you_response&quot;:&quot;Thank you for your response.&quot;,&quot;survey_thank_you_completing&quot;:&quot;Thank you for completing the survey!&quot;,&quot;dashboard_analytics_readers&quot;:&quot;Readers&quot;,&quot;dashboard_analytics_avg_read_time&quot;:&quot;avg. read time %{seconds}s&quot;,&quot;dashboard_analytics_comments&quot;:&quot;Comments&quot;,&quot;dashboard_analytics_reactions&quot;:&quot;Reactions&quot;,&quot;dashboard_analytics_unique_reactors&quot;:&quot;from %{count} unique users&quot;,&quot;dashboard_analytics_bookmarks&quot;:&quot;Bookmarks&quot;,&quot;dashboard_analytics_followers&quot;:&quot;New Followers&quot;,&quot;top_contributors_empty&quot;:&quot;No engagers found for this period.&quot;,&quot;top_contributors_reactions&quot;:&quot;reactions&quot;,&quot;top_contributors_comments&quot;:&quot;comments&quot;,&quot;top_contributors_weight_note&quot;:&quot;Comments carry more weight&quot;,&quot;follower_engagement_ratio&quot;:&quot;%{ratio}% of followers engaged&quot;,&quot;follower_engagement_detail&quot;:&quot;(%{engaged} of %{total})&quot;,&quot;dashboard_analytics_no_data&quot;:&quot;No data available for this period&quot;,&quot;dashboard_analytics_no_referrers&quot;:&quot;No traffic sources yet&quot;,&quot;stats_by&quot;:&quot;by&quot;,&quot;editor_new_title&quot;:&quot;New post title here...&quot;,&quot;editor_body_placeholder&quot;:&quot;Write your post content here...&quot;,&quot;tags_field_label&quot;:&quot;Add up to 4 tags&quot;,&quot;tags_field_placeholder&quot;:&quot;Add up to 4 tags...&quot;,&quot;counted_organization&quot;:{&quot;one&quot;:&quot;%{count} organization&quot;,&quot;other&quot;:&quot;%{count} organizations&quot;},&quot;counted_user&quot;:{&quot;one&quot;:&quot;%{count} person&quot;,&quot;other&quot;:&quot;%{count} people&quot;},&quot;not_following&quot;:&quot;You&#39;re not following anyone&quot;,&quot;following_everyone&quot;:&quot;You&#39;re following %{details} (everyone)&quot;,&quot;you_are_following&quot;:&quot;You&#39;re following&quot;,&quot;and&quot;:&quot;and&quot;},&quot;views&quot;:{&quot;stories&quot;:{&quot;feed&quot;:{&quot;no_results&quot;:{&quot;discover&quot;:{&quot;title&quot;:&quot;No posts found&quot;,&quot;description&quot;:&quot;Check back later for or make your own post!&quot;,&quot;action_text&quot;:&quot;Create Post&quot;,&quot;action_href&quot;:&quot;/new&quot;},&quot;following&quot;:{&quot;title&quot;:&quot;No posts from people you follow&quot;,&quot;description&quot;:&quot;Follow some members to see their latest posts in your feed.&quot;,&quot;action_text&quot;:&quot;Back to discover tab&quot;,&quot;action_href&quot;:&quot;/discover&quot;},&quot;curated&quot;:{&quot;title&quot;:&quot;No curated posts found&quot;,&quot;description&quot;:&quot;Check back later to see posts favorited by the community!&quot;,&quot;action_text&quot;:&quot;Back to discover tab&quot;,&quot;action_href&quot;:&quot;/discover&quot;},&quot;default&quot;:{&quot;title&quot;:&quot;No posts found&quot;,&quot;description&quot;:&quot;Check back later for ore make your own post!&quot;,&quot;action_text&quot;:&quot;Create Post&quot;,&quot;action_href&quot;:&quot;/new&quot;}}}}}}}"></div>
+ </div>
+</div>
+<footer id="footer">
+ <div id="footer-container">
+ <p>
+ <a aria-label="DEV Community Home" href="/">DEV Community</a> — A space to discuss and keep up software development and manage your software career
+ </p>
+ <ul style="" />
+ <li>
+ <a href="/">
+ Home
+ </a>
+ <span></span>
+ </li>
+ <li>
+ <a href="/challenges">
+ DEV Challenges
+ </a>
+ <span></span>
+ </li>
+ <li>
+ <a href="/++">
+ DEV++
+ </a>
+ <span></span>
+ </li>
+ <li>
+ <a href="/videos">
+ Videos
+ </a>
+ <span></span>
+ </li>
+ <li>
+ <a href="/deved">
+ DEV Education Tracks
+ </a>
+ <span></span>
+ </li>
+ <li>
+ <a href="/help">
+ DEV Help
+ </a>
+ <span></span>
+ </li>
+ <li>
+ <a href="/advertise">
+ Advertise on DEV
+ </a>
+ <span></span>
+ </li>
+ <li>
+ <a href="/organizations">
+ Organization Accounts
+ </a>
+ <span></span>
+ </li>
+ <li>
+ <a href="/showcase">
+ DEV Showcase
+ </a>
+ <span></span>
+ </li>
+ <li>
+ <a href="/about">
+ About
+ </a>
+ <span></span>
+ </li>
+ <li>
+ <a href="/contact">
+ Contact
+ </a>
+ <span></span>
+ </li>
+ <li>
+ <a href="/free-postgres-database-tier">
+ Free Postgres Database
+ </a>
+ <span></span>
+ </li>
+ <li>
+ <a href="https://shop.forem.com/">
+ DEV Shop
+ </a>
+ <span></span>
+ </li>
+ <li>
+ <a href="https://mlh.io/">
+ MLH
+ </a>
+ <span></span>
+ </li>
+ </ul>
+ <ul style="" />
+ <li>
+ <a href="/code-of-conduct">
+ Code of Conduct
+ </a>
+ <span></span>
+ </li>
+ <li>
+ <a href="/privacy">
+ Privacy Policy
+ </a>
+ <span></span>
+ </li>
+ <li>
+ <a href="/terms">
+ Terms of Use
+ </a>
+ <span></span>
+ </li>
+ </ul>
+ <div>
+ <p>Built on <a target="_blank" rel="noopener" href="https://www.forem.com">Forem</a> — the <a target="_blank" rel="noopener" href="https://dev.to/t/opensource">open source</a> software that powers <a target="_blank" rel="noopener" href="https://dev.to">DEV</a> and other inclusive communities.</p>
+ <p>Made with love and <a target="_blank" rel="noopener" href="https://dev.to/t/rails">Ruby on Rails</a>. DEV Community <span title="copyright">&copy;</span> 2016 - 2026.</p>
+ </div>
+ </div>
+</footer>
+<div id="snack-zone"></div>
+ <div id="global-signup-modal">
+ <div>
+ <figure>
+ <img src="https://media2.dev.to/dynamic/image/width=190,height=,fit=scale-down,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2F8j7kvp660rqzt99zui8e.png"
+ alt="DEV Community" loading="lazy" />
+ </figure>
+ <div>
+ <p>
+ We&#39;re a place where coders share, stay up-to-date and grow their careers.
+ </p>
+ </div>
+ <div>
+ <a href="https://dev.to/enter?signup_subforem=1" aria-label="Log in" data-no-instant>
+ Log in
+ </a>
+ <a href="https://dev.to/enter?signup_subforem=1&amp;state=new-user" aria-label="Create new account" data-no-instant>
+ Create account
+ </a>
+ </div>
+ </div>
+</div>
+<script src="https://assets.dev.to/assets/signupModalShortcuts-26d9b060053ea01474ae33d1e545700ae8416b0baf9f40c401957e81dd1ece4e.js" defer="defer"></script>
+ <div id="cookie-consent"></div>
+ <div id="reaction-category-resources" aria-hidden="true">
+ <img data-name="Like" data-slug="like" data-position="1" src="https://assets.dev.to/assets/sparkle-heart-5f9bee3767e18deb1bb725290cb151c25234768a0e9a2bd39370c382d02920cf.svg" width="18" height="18" />
+ <img data-name="Unicorn" data-slug="unicorn" data-position="2" src="https://assets.dev.to/assets/multi-unicorn-b44d6f8c23cdd00964192bedc38af3e82463978aa611b4365bd33a0f1f4f3e97.svg" width="18" height="18" />
+ <img data-name="Exploding Head" data-slug="exploding_head" data-position="3" src="https://assets.dev.to/assets/exploding-head-daceb38d627e6ae9b730f36a1e390fca556a4289d5a41abb2c35068ad3e2c4b5.svg" width="18" height="18" />
+ <img data-name="Raised Hands" data-slug="raised_hands" data-position="4" src="https://assets.dev.to/assets/raised-hands-74b2099fd66a39f2d7eed9305ee0f4553df0eb7b4f11b01b6b1b499973048fe5.svg" width="18" height="18" />
+ <img data-name="Fire" data-slug="fire" data-position="5" src="https://assets.dev.to/assets/fire-f60e7a582391810302117f987b22a8ef04a2fe0df7e3258a5f49332df1cec71e.svg" width="18" height="18" />
+</div>
+ </body>
+ </html>

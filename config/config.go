@@ -40,11 +40,12 @@ func NormalizeSearchOrder(list []string) ([]string, error) { return search.Norma
 // AvailableCodeBackends returns the list of known code search backends.
 func AvailableCodeBackends() []string { return code.AvailableBackends() }
 
-// AvailableDocBackends returns the list of usable docs backends. The local
+// AvailableDocBackends returns every value the docs --backend flag and the
+// docs_backend key accept: the providers, then the auto chain. The local
 // FTS5 backend is planned but not implemented, so it is not advertised here;
 // docs.NewFromConfig still recognizes "local" and rejects it with a clear
 // precondition error.
-func AvailableDocBackends() []string { return docs.AvailableBackends() }
+func AvailableDocBackends() []string { return docs.SelectableBackends() }
 
 // Path returns the config file path: $KETCH_CONFIG if set, otherwise
 // ~/.config/ketch/config.json. KETCH_CONFIG redirects reads and writes

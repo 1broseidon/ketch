@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>Next.js by Vercel - The React Framework</title>
+<meta name="description" content="Next.js by Vercel is the full-stack React framework for the web."/>
+<meta property="og:title" content="Next.js by Vercel - The React Framework"/>
+<meta property="og:url" content="https://nextjs.org"/>
+<meta property="og:type" content="website"/>
+<script src="/_next/static/immutable/chunks/261v_dk1rk2w5.js" async=""></script>
+</head>
+<body>
+<header>
+<a href="https://vercel.com/oss" aria-label="Vercel OSS"></a>
+<a href="/" aria-label="Next.js"></a>
+<nav>
+<a href="/docs">Docs</a>
+<a href="/learn">Learn</a>
+<a href="/showcase">Showcase</a>
+<a href="/blog">Blog</a>
+<a href="https://vercel.com/templates/next.js">Templates</a>
+<a href="https://vercel.com/new">Deploy</a>
+<a href="https://github.com/vercel/next.js">GitHub</a>
+</nav>
+</header>
+<main>
+<h1>The React Framework for the Web</h1>
+<p>Used by some of the world's largest companies, Next.js enables you to create high-quality web applications with the power of React components.</p>
+<a href="/learn">Get Started</a>
+</main>
+<footer>
+<a href="https://svelte.dev/">Svelte</a>
+<a href="https://nuxt.com/">Nuxt</a>
+<a href="https://turborepo.dev/">Turborepo</a>
+<a href="https://github.com/vercel">GitHub</a>
+</footer>
+</body>
+</html>

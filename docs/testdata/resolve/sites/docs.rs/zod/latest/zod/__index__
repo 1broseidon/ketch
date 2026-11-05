@@ -1,0 +1,161 @@
+<!doctype html>
+<html><head>
+<title>zod - Rust</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="rustdoc">
+<meta name="description" content="Derive your `typescript` / `Rust` interop CI Unsafe Rust forbidden Crates.io version docs.rs docs downloads PRs Welcome">
+<meta name="rustdoc-vars">
+<script src="/-/rustdoc.static/storage-41dd4d93.js"></script>
+<script src="../crates-20261009-1.101.0-nightly-32dba69d6.js"></script>
+<script src="/-/rustdoc.static/main-1814ead3.js"></script>
+<script>
+        
+        {
+            "name": "zod",
+            "version": "0.1.0"
+        }
+    </script>
+<script src="/-/static/menu.js?0-0-0-cfd9f1bfe1f4df04f03b77f162d41067bd20ddff-2026-10-27"></script>
+<script src="/-/static/index.js?0-0-0-cfd9f1bfe1f4df04f03b77f162d41067bd20ddff-2026-10-27"></script>
+</head><body>
+<a href="/" aria-label="Docs.rs" class="pure-menu-heading pure-menu-link docsrs-logo">Docs.rs</a>
+<a href="#" title="Rust integraions with the `zod` typescript library." class="pure-menu-link crate-name">zod-0.1.0</a>
+<a href="/zod/0.1.0/zod/" title="Get a link to this specific version" class="pure-menu-link description">Permalink</a>
+<a href="/crate/zod/latest" title="See zod in docs.rs" class="pure-menu-link description">Docs.rs crate page</a>
+<a href="https://spdx.org/licenses/MIT" class="pure-menu-sublink">MIT</a>
+<a href="https://spdx.org/licenses/Apache-2.0" class="pure-menu-sublink">Apache-2.0</a>
+<a href="https://github.com/nicolaiunrein/zod" class="pure-menu-link">Repository</a>
+<a href="https://crates.io/crates/zod" title="See zod in crates.io" class="pure-menu-link">crates.io</a>
+<a href="/crate/zod/latest/source/" title="Browse source of zod-0.1.0" class="pure-menu-link">Source</a>
+<a href="https://crates.io/users/nicolaiunrein" class="pure-menu-link">nicolaiunrein</a>
+<a href="/async-trait/^0.1.64/" class="pure-menu-link">async-trait ^0.1.64 normal optional</a>
+<a href="/axum/^0.6.7/" class="pure-menu-link">axum ^0.6.7 normal optional</a>
+<a href="/futures/^0.3.26/" class="pure-menu-link">futures ^0.3.26 normal optional</a>
+<a href="/inventory/^0.3.3/" class="pure-menu-link">inventory ^0.3.3 normal optional</a>
+<a href="/pin-project-lite/^0.2.9/" class="pure-menu-link">pin-project-lite ^0.2.9 normal optional</a>
+<a href="/serde/^1.0.152/" class="pure-menu-link">serde ^1.0.152 normal optional</a>
+<a href="/serde_json/^1.0.92/" class="pure-menu-link">serde_json ^1.0.92 normal optional</a>
+<a href="/thiserror/^1.0.38/" class="pure-menu-link">thiserror ^1.0.38 normal optional</a>
+<a href="/tokio/^1.25.0/" class="pure-menu-link">tokio ^1.25.0 normal optional</a>
+<a href="/tracing/^0.1.37/" class="pure-menu-link">tracing ^0.1.37 normal optional</a>
+<a href="/zod-core/^0.1.0/" class="pure-menu-link">zod-core ^0.1.0 normal</a>
+<a href="/zod-derive/^0.1.0/" class="pure-menu-link">zod-derive ^0.1.0 normal</a>
+<a href="/paste/^1.0.11/" class="pure-menu-link">paste ^1.0.11 dev</a>
+<a href="/pretty_assertions/^1.3.0/" class="pure-menu-link">pretty_assertions ^1.3.0 dev</a>
+<a href="/serde/^1.0.152/" class="pure-menu-link">serde ^1.0.152 dev</a>
+<a href="/serde_json/^1.0.93/" class="pure-menu-link">serde_json ^1.0.93 dev</a>
+<a href="/tracing-subscriber/^0.3.16/" class="pure-menu-link">tracing-subscriber ^0.3.16 dev</a>
+<a href="/trybuild/^1.0.77/" class="pure-menu-link">trybuild ^1.0.77 dev</a>
+<a href="/zod-core/^0.1.0/" class="pure-menu-link">zod-core ^0.1.0 build</a>
+<a href="/zod-derive/^0.1.0/" class="pure-menu-link">zod-derive ^0.1.0 build</a>
+<a href="/crate/zod/latest" class="pure-menu-link">4.76% of the crate is documented</a>
+<a href="#" aria-label="Platform" class="pure-menu-link">Platform</a>
+<a href="/crate/zod/latest/target-redirect/zod/" class="pure-menu-link">x86_64-unknown-linux-gnu</a>
+<a href="/crate/zod/latest/features" title="Browse available feature flags of zod-0.1.0" class="pure-menu-link">Feature flags</a>
+<a href="#" aria-label="docs.rs" class="pure-menu-link">docs.rs</a>
+<a href="/about" class="pure-menu-link">About docs.rs</a>
+<a href="/about/badges" class="pure-menu-link">Badges</a>
+<a href="/about/builds" class="pure-menu-link">Builds</a>
+<a href="/about/metadata" class="pure-menu-link">Metadata</a>
+<a href="/about/redirections" class="pure-menu-link">Shorthand URLs</a>
+<a href="/about/download" class="pure-menu-link">Download</a>
+<a href="/about/rustdoc-json" class="pure-menu-link">Rustdoc JSON</a>
+<a href="/releases/queue" class="pure-menu-link">Build queue</a>
+<a href="https://foundation.rust-lang.org/policies/privacy-policy/#docs.rs" class="pure-menu-link">Privacy policy</a>
+<a href="#" aria-label="Rust" class="pure-menu-link">Rust</a>
+<a href="https://www.rust-lang.org/" class="pure-menu-link">Rust website</a>
+<a href="https://doc.rust-lang.org/book/" class="pure-menu-link">The Book</a>
+<a href="https://doc.rust-lang.org/std/" class="pure-menu-link">Standard Library API Reference</a>
+<a href="https://doc.rust-lang.org/rust-by-example/" class="pure-menu-link">Rust by Example</a>
+<a href="https://doc.rust-lang.org/cargo/guide/" class="pure-menu-link">The Cargo Guide</a>
+<a href="https://doc.rust-lang.org/nightly/clippy" class="pure-menu-link">Clippy Documentation</a>
+<a href="#main-content" class="skip-main-content">Skip to main content</a>
+<a href="#">Crate zod</a>
+<a href="../zod/index.html">zod</a>
+<a href="all.html">All Items</a>
+<a href="#">Sections</a>
+<a href="#overview" title="Overview">Overview</a>
+<a href="#example" title="Example">Example</a>
+<a href="#todo" title="TODO">TODO</a>
+<a href="#consideration" title="Consideration?">Consideration?</a>
+<a href="#contributing" title="Contributing">Contributing</a>
+<a href="#type-overview" title="Type Overview">Type Overview</a>
+<a href="#modules">Crate Items</a>
+<a href="#modules" title="Modules">Modules</a>
+<a href="#structs" title="Structs">Structs</a>
+<a href="#enums" title="Enums">Enums</a>
+<a href="#traits" title="Traits">Traits</a>
+<a href="#attributes" title="Attribute Macros">Attribute Macros</a>
+<a href="#derives" title="Derive Macros">Derive Macros</a>
+<a href="../src/zod/lib.rs.html#1-140" class="src">Source</a>
+<a href="https://github.com/nicolaiunrein/zod/actions/workflows/ci.yml"></a>
+<a href="https://github.com/rust-secure-code/safety-dance/"></a>
+<a href="https://crates.io/crates/zod"></a>
+<a href="https://docs.rs/zod"></a>
+<a href="https://crates.io/crates/zod"></a>
+<a href="https://github.com/nicolaiunrein/zod/compare"></a>
+<a href="https://github.com/colinhacks/zod">zod</a>
+<a href="#overview" class="doc-anchor">§</a>
+<a href="https://github.com/colinhacks/zod">zod</a>
+<a href="#example" class="doc-anchor">§</a>
+<a href="https://docs.rs/zod-core/ZodType">ZodType</a>
+<a href="#todo" class="doc-anchor">§</a>
+<a href="https://docs.rs/ts-rs/latest/ts_rs/">ts-rs</a>
+<a href="#consideration" class="doc-anchor">§</a>
+<a href="#contributing" class="doc-anchor">§</a>
+<a href="#type-overview" class="doc-anchor">§</a>
+<a href="https://doc.rust-lang.org/std/primitive.unit.html">()</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html" title="primitive bool">bool</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.char.html" title="primitive char">char</a>
+<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option&lt;T&gt;</a>
+<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result&lt;T, E&gt;</a>
+<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec&lt;T&gt;</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.str.html" title="primitive str">&amp;str</a>
+<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html" title="struct alloc::string::String">String</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html" title="primitive usize">usize</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html" title="primitive u8">u8</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.u16.html" title="primitive u16">u16</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html" title="primitive u32">u32</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html" title="primitive u64">u64</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.u128.html" title="primitive u128">u128</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.i8.html" title="primitive i8">i8</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.i16.html" title="primitive i16">i16</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html" title="primitive i32">i32</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html" title="primitive i64">i64</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.i128.html" title="primitive i128">i128</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html" title="primitive usize">usize</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.isize.html" title="primitive isize">isize</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.f32.html" title="primitive f32">f32</a>
+<a href="https://doc.rust-lang.org/nightly/std/primitive.f64.html" title="primitive f64">f64</a>
+<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html" title="struct alloc::boxed::Box">Box&lt;T&gt;</a>
+<a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html" title="struct alloc::rcs::arc::Arc">Arc&lt;T&gt;</a>
+<a href="https://doc.rust-lang.org/nightly/alloc/rcs/rc/struct.Rc.html" title="struct alloc::rcs::rc::Rc">Rc&lt;T&gt;</a>
+<a href="https://doc.rust-lang.org/nightly/alloc/borrow/enum.Cow.html" title="enum alloc::borrow::Cow">Cow&lt;’static, T&gt;</a>
+<a href="https://doc.rust-lang.org/nightly/core/cell/struct.Cell.html" title="struct core::cell::Cell">Cell&lt;T&gt;</a>
+<a href="https://doc.rust-lang.org/nightly/core/cell/struct.RefCell.html" title="struct core::cell::RefCell">RefCell&lt;T&gt;</a>
+<a href="https://doc.rust-lang.org/nightly/std/sync/poison/mutex/struct.Mutex.html" title="struct std::sync::poison::mutex::Mutex">Mutex&lt;T&gt;</a>
+<a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Weak.html" title="struct alloc::rcs::arc::Weak">Weak&lt;T&gt;</a>
+<a href="https://doc.rust-lang.org/nightly/core/marker/struct.PhantomData.html" title="struct core::marker::PhantomData">PhantomData&lt;T&gt;</a>
+<a href="https://doc.rust-lang.org/nightly/std/collections/hash/set/struct.HashSet.html" title="struct std::collections::hash::set::HashSet">HashSet&lt;T&gt;</a>
+<a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html" title="struct std::collections::hash::map::HashMap">HashMap&lt;T1, U2&gt;</a>
+<a href="https://doc.rust-lang.org/nightly/alloc/collections/btree/set/struct.BTreeSet.html" title="struct alloc::collections::btree::set::BTreeSet">BTreeSet&lt;T&gt;</a>
+<a href="https://doc.rust-lang.org/nightly/alloc/collections/btree/map/struct.BTreeMap.html" title="struct alloc::collections::btree::map::BTreeMap">BTreeMap&lt;T1, U2&gt;</a>
+<a href="#modules" class="anchor">§</a>
+<a href="docs/index.html" title="mod zod::docs" class="mod">docs</a>
+<a href="rpc/index.html" title="mod zod::rpc" class="mod">rpc</a>
+<a href="#structs" class="anchor">§</a>
+<a href="struct.NamespaceMemberDefinition.html" title="struct zod::NamespaceMemberDefinition" class="struct">NamespaceMemberDefinition</a>
+<a href="#enums" class="anchor">§</a>
+<a href="enum.InlinedType.html" title="enum zod::InlinedType" class="enum">InlinedType</a>
+<a href="enum.TsTypeDef.html" title="enum zod::TsTypeDef" class="enum">TsTypeDef</a>
+<a href="#traits" class="anchor">§</a>
+<a href="trait.Namespace.html" title="trait zod::Namespace" class="trait">Namespace</a>
+<a href="trait.TypeRegister.html" title="trait zod::TypeRegister" class="trait">TypeRegister</a>
+<a href="trait.ZodType.html" title="trait zod::ZodType" class="trait">ZodType</a>
+<a href="#attributes" class="anchor">§</a>
+<a href="attr.namespace.html" title="attr zod::namespace" class="attr">namespace</a>
+<a href="#derives" class="anchor">§</a>
+<a href="derive.Backend.html" title="derive zod::Backend" class="derive">Backend</a>
+<a href="derive.Namespace.html" title="derive zod::Namespace" class="derive">Namespace</a>
+<a href="derive.Zod.html" title="derive zod::Zod" class="derive">Zod</a>
+</body></html>

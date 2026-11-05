@@ -1,0 +1,14 @@
+{
+ "name": "solid-js",
+ "version": "1.9.17",
+ "description": "A declarative JavaScript library for building user interfaces.",
+ "homepage": "https://solidjs.com",
+ "repository": {
+  "url": "git+https://github.com/solidjs/solid.git",
+  "type": "git"
+ },
+ "bugs": {
+  "url": "https://github.com/solidjs/solid/issues"
+ },
+ "license": "MIT"
+}

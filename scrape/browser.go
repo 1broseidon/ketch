@@ -161,8 +161,16 @@ func closeBrowser(b *rod.Browser, l *launcher.Launcher) {
 // per-fetch filtering still bounds what each navigation loads. Acceptable for
 // a single-operator CLI.
 func (r *rodConn) Fetch(ctx context.Context, rawURL string) (string, error) {
-	html, _, err := r.FetchStatus(ctx, rawURL)
-	return html, err
+	out, err := r.render(ctx, rawURL)
+	return out.html, err
+}
+
+// FetchFinal is Fetch that also returns the URL the tab ended on after
+// redirects and script navigation, "" when the tab cannot say. Callers then
+// fall back to the HTTP response URL.
+func (r *rodConn) FetchFinal(ctx context.Context, rawURL string) (string, string, error) {
+	out, err := r.render(ctx, rawURL)
+	return out.html, out.finalURL, err
 }
 
 // navigationStatusJS reads the HTTP status of the main document from the
@@ -177,14 +185,32 @@ const navigationStatusJS = `() => {
 // 0 when the browser cannot say. Reading it from the page after load, rather
 // than from Network events, avoids racing the event stream against WaitLoad.
 func (r *rodConn) FetchStatus(ctx context.Context, rawURL string) (string, int, error) {
+	out, err := r.render(ctx, rawURL)
+	return out.html, out.status, err
+}
+
+// render navigates to rawURL once and reports the rendered HTML, the main
+// document's HTTP status and the URL the tab ended on; Fetch, FetchStatus and
+// FetchFinal are views of it. The status is read from the page after load,
+// before the HTML. The landing URL is read after the HTML, so a navigation
+// that races the read is reported rather than missed; a tab that cannot say
+// where it is reports "" rather than failing a render that worked.
+func (r *rodConn) render(ctx context.Context, rawURL string) (rendering, error) {
 	page, err := r.navigate(ctx, rawURL)
 	if err != nil {
-		return "", 0, err
+		return rendering{}, err
 	}
 	defer closePage(page)
 	status := navigationStatus(page)
 	html, err := page.HTML()
-	return html, status, err
+	if err != nil {
+		return rendering{status: status}, err
+	}
+	out := rendering{html: html, status: status}
+	if info, err := page.Info(); err == nil {
+		out.finalURL = info.URL
+	}
+	return out, nil
 }
 
 // FetchContent returns the original main resource rather than page.HTML:
@@ -290,7 +316,11 @@ func browserResponseContent(page *rod.Page, event *proto.FetchRequestPaused) (*F
 			break
 		}
 	}
-	return &FetchedContent{Body: body, ContentType: contentType}, status, nil
+	served := ""
+	if event.Request != nil {
+		served = event.Request.URL // the paused document request, after redirects
+	}
+	return &FetchedContent{Body: body, ContentType: contentType, URL: served}, status, nil
 }
 
 func decodeBrowserBody(response *proto.FetchGetResponseBodyResult) ([]byte, error) {

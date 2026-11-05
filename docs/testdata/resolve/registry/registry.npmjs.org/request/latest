@@ -1,0 +1,15 @@
+{
+ "name": "request",
+ "version": "2.88.2",
+ "description": "Simplified HTTP request client.",
+ "homepage": "https://github.com/request/request#readme",
+ "repository": {
+  "url": "git+https://github.com/request/request.git",
+  "type": "git"
+ },
+ "bugs": {
+  "url": "http://github.com/request/request/issues"
+ },
+ "deprecated": "request has been deprecated, see https://github.com/request/request/issues/3142",
+ "license": "Apache-2.0"
+}

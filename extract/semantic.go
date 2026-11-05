@@ -788,6 +788,7 @@ func pruneChrome(root *goquery.Selection, doc *goquery.Document, pageURL string,
 	p.rootWords = p.wc.count(root)
 
 	p.dropEmbeds()
+	p.labelTabPanels()
 	p.dropForms()
 	p.unwrapDisclosureButtons()
 	p.dropSpacers()
@@ -828,6 +829,7 @@ type pruner struct {
 	hub        bool                // the page is made of links: link blocks are its content
 	data       map[*html.Node]bool // links that are data, not menu: in captions, definitions, data-table cells
 	threads    map[*html.Node]bool // comment threads found by dropComments
+	codeCount  map[string]int      // the root's code blocks by their words (hiddenCode)
 }
 
 // bulk reports whether a block is the root or holds half its words. No rule
@@ -863,6 +865,45 @@ func (p *pruner) dropEmbeds() {
 	drop("non-content", p.root.Find(nonContentTags))
 	drop("landmark", p.root.Find(landmarkChrome))
 }
+
+// labelTabPanels moves each tab's label onto the panel it shows, and
+// drops the strip of labels when every tab found its panel: code samples
+// in tabs (npm and yarn, XML and JSON) read as one labelled block per tab,
+// where the strip above them would read as one run-together word.
+func (p *pruner) labelTabPanels() {
+	lists := p.root.Find("[role=tablist]")
+	if lists.Length() == 0 {
+		return
+	}
+	panels := map[string]*goquery.Selection{}
+	p.root.Find("[id]").Each(func(_ int, s *goquery.Selection) {
+		id, _ := s.Attr("id")
+		if _, ok := panels[id]; !ok {
+			panels[id] = s
+		}
+	})
+	lists.Each(func(_ int, list *goquery.Selection) {
+		tabs := list.Find("[role=tab]")
+		labelled := 0
+		tabs.Each(func(_ int, tab *goquery.Selection) {
+			id, _ := tab.Attr("aria-controls")
+			label := strings.Join(strings.Fields(tab.Text()), " ")
+			panel, ok := panels[strings.TrimSpace(id)]
+			if !ok || label == "" || len(label) > maxTabLabel || panel.Find("[role=tablist]").Length() > 0 {
+				return
+			}
+			panel.PrependHtml("<p><strong>" + html.EscapeString(label) + "</strong></p>")
+			labelled++
+		})
+		if labelled > 0 && labelled == tabs.Length() {
+			drop("tablist", list)
+		}
+	})
+}
+
+// maxTabLabel bounds a tab label moved onto its panel: a tab names a
+// language, a tool or a platform in a few words.
+const maxTabLabel = 40
 
 // dropForms removes tab strips and the forms that are widgets.
 func (p *pruner) dropForms() {
@@ -938,7 +979,7 @@ func (p *pruner) dropHidden() {
 	// aria-hidden hides from the reader we serve, except the panel a
 	// disclosure or tab control names: that is content someone collapsed.
 	p.root.Find("[aria-hidden=true]").Each(func(_ int, s *goquery.Selection) {
-		if isCollapsedContent(s, "", false, p.controlled) {
+		if isCollapsedContent(s, "", false, p.controlled) || p.hiddenCode(s) {
 			return
 		}
 		drop("aria-hidden", s)
@@ -969,7 +1010,7 @@ func (p *pruner) hiddenRule(s *goquery.Selection) {
 	if !invisible && !hiddenCls {
 		return
 	}
-	if isCollapsedContent(s, hiddenAttr, hasHidden, p.controlled) {
+	if isCollapsedContent(s, hiddenAttr, hasHidden, p.controlled) || p.hiddenCode(s) {
 		return
 	}
 	if !invisible {
@@ -985,6 +1026,39 @@ func (p *pruner) hiddenRule(s *goquery.Selection) {
 
 func hiddenByStyle(style string) bool {
 	return style != "" && inlineHidden(style)
+}
+
+// hiddenCode reports a hidden block holding a code block the page shows
+// nowhere else: a tab of a code sample a script reveals (the JSON of an
+// XML/JSON pair, one language of several), which is the page's content.
+// A hidden copy of code the page also shows (a copy button's source) is
+// not. Code is compared by its words, counted once per page.
+func (p *pruner) hiddenCode(s *goquery.Selection) bool {
+	pres := s.Find("pre").AddSelection(s.Filter("pre"))
+	if pres.Length() == 0 {
+		return false
+	}
+	if p.codeCount == nil {
+		p.codeCount = map[string]int{}
+		p.root.Find("pre").Each(func(_ int, pre *goquery.Selection) {
+			p.codeCount[codeWords(pre)]++
+		})
+	}
+	inside := map[string]int{}
+	pres.Each(func(_ int, pre *goquery.Selection) {
+		inside[codeWords(pre)]++
+	})
+	for code, n := range inside {
+		if code != "" && p.codeCount[code] <= n {
+			return true
+		}
+	}
+	return false
+}
+
+// codeWords is a code block's text with its white space folded.
+func codeWords(pre *goquery.Selection) string {
+	return strings.Join(strings.Fields(pre.Text()), " ")
 }
 
 // dropAsides removes the asides that are sidebars: made of links, or of
