@@ -13,11 +13,9 @@ import (
 	"sync"
 	"time"
 	"unicode"
-	"unicode/utf8"
 
 	config "github.com/1broseidon/ketch/internal/configbase"
 	"github.com/1broseidon/ketch/internal/docsindex"
-	"github.com/1broseidon/ketch/internal/embed"
 	"github.com/1broseidon/ketch/internal/failure"
 )
 
@@ -25,8 +23,8 @@ import (
 // version's root when one is asked for), enumerate its pages
 // (local_plan.go), keeping that version's tree alone, fetch them through
 // the injected Fetcher (the scrape pipeline and page cache), section them
-// as the web backend does, cut each section into snippet units
-// (local_snippets.go), embed the sections' windows, and store the lot. A
+// as the web backend does, label the sections about a later major
+// (crossVersion), and store them with their full-text rows. A
 // library's key is its docs root, so each version of a library (each its
 // own root) is indexed side by side.
 
@@ -44,9 +42,6 @@ type IndexRequest struct {
 	// Concurrency is how many pages are fetched at once
 	// (IndexDefaultConcurrency when <= 0).
 	MaxPages, Concurrency int
-	// Embedder embeds the sections; nil indexes text alone, which the
-	// local backend ranks by keywords.
-	Embedder embed.Embedder
 	// Seeder names pages the web points to for the library, indexed first;
 	// nil for none.
 	Seeder PageSeeder
@@ -68,7 +63,6 @@ type IndexReport struct {
 	Unchanged int     `json:"unchanged"`
 	Removed   int     `json:"removed"`
 	Failed    int     `json:"failed"`
-	Embedded  int     `json:"embedded"` // section windows embedded by this run
 	Seconds   float64 `json:"seconds"`
 	Bytes     int64   `json:"index_bytes"` // the index file's size afterwards
 	// Planned is a dry run's plan: the docs root and the pages, in order,
@@ -92,18 +86,8 @@ const (
 	IndexDefaultMaxPages = 1500
 	// IndexDefaultConcurrency is polite: four pages at a time from one site.
 	IndexDefaultConcurrency = 4
-	// indexWindowChars is how much of a section one vector covers:
-	// about 300-400 tokens, well inside bge's 512-token window, so nothing
-	// of a long section is cut off before it is embedded.
-	indexWindowChars = 1200
-	// indexMaxWindows bounds one section's vectors (a huge reference
-	// listing); its text past them is still stored and shown.
-	indexMaxWindows = 24
 	// indexWriteBatch is how many pages one write transaction holds.
-	indexWriteBatch = 40
-	// indexEmbedBatch is how many windows are embedded between progress
-	// reports.
-	indexEmbedBatch  = 256
+	indexWriteBatch  = 40
 	indexPageTimeout = 45 * time.Second
 )
 
@@ -112,9 +96,8 @@ var ErrIndexInput = failure.New(failure.Validation, "invalid_index_request", "in
 
 // IndexLibrary builds or refreshes the local index of one library, as
 // `ketch docs index` does. Re-running it fetches the pages again (through
-// the page cache) and re-sections and re-embeds only those whose content
-// changed, or all of them when the model changed; pages discovery no
-// longer lists are removed.
+// the page cache) and re-sections only those whose content changed; pages
+// discovery no longer lists are removed.
 func IndexLibrary(ctx context.Context, c *config.Config, deps Deps, store *docsindex.Store, req IndexRequest) (IndexReport, error) {
 	w := newWebFromConfig(c, deps)
 	w.probeTimeout = 20 * time.Second
@@ -286,16 +269,16 @@ func (w *Web) index(ctx context.Context, store *docsindex.Store, req IndexReques
 	if len(target.packages) == 0 {
 		target.packages = sitePkgs
 	}
-	b := &indexBuild{store: store, key: target.root.String(), emb: req.Embedder, say: say, version: target.version, title: target.title}
-	report, err := b.write(ctx, pages, failed)
+	b := &indexBuild{store: store, key: target.root.String(), say: say, version: target.version, title: target.title}
+	report, err := b.write(pages, failed)
 	if err != nil {
 		return report, err
 	}
 	lib := docsindex.Library{
 		Key: b.key, Library: req.Library, Title: target.title, Root: target.root.String(), Version: target.version,
 		Requested: target.spec.version, Resolved: target.resolved, Evidence: target.evidence, Trust: target.trust, Packages: target.packages,
-		Model: b.model, Dims: b.dims, Format: docsindex.FormatVersion, Built: time.Now().UTC(),
-		Pages: report.Library.Pages, Sections: report.Library.Sections, Vectors: report.Library.Vectors, Units: report.Library.Units,
+		Format: docsindex.FormatVersion, Built: time.Now().UTC(),
+		Pages: report.Library.Pages, Sections: report.Library.Sections,
 		Discovered: plan.listed - plan.variants, OtherVersions: plan.otherVersions, Capped: plan.capped, Failed: len(failed), Sources: site.sources,
 		DisplayRoot: target.display, Seeds: plan.seeds, SiteName: siteName,
 	}
@@ -459,7 +442,6 @@ func (w *Web) fetchIndexPages(ctx context.Context, root webRoot, links []webLink
 type indexBuild struct {
 	store *docsindex.Store
 	key   string
-	emb   embed.Embedder
 	say   func(string, ...any)
 	// version and title are the indexed version's label and the library's
 	// title, which label cross-version sections (crossVersion).
@@ -467,32 +449,24 @@ type indexBuild struct {
 	// source is how the pages came in: "index" (a build) or "search".
 	source string
 
-	prev        docsindex.Library // the library as stored before, if it was
-	model       string
-	dims        int
-	reembedding bool // the model changed: every page is embedded again
+	prev docsindex.Library // the library as stored before, if it was
 }
 
-// write sections the pages, embeds the windows of new and changed ones,
-// stores them in batches and removes the pages no longer listed. Its
-// report's Library carries the stored totals.
-func (b *indexBuild) write(ctx context.Context, pages []webPage, failed []string) (IndexReport, error) {
+// write sections the pages, stores the new and changed ones in batches
+// and removes the pages no longer listed. Its report's Library carries
+// the stored totals.
+func (b *indexBuild) write(pages []webPage, failed []string) (IndexReport, error) {
 	var report IndexReport
 	stored, err := b.begin()
 	if err != nil {
 		return report, err
 	}
 	todo := b.diff(pages, stored, &report)
-	if report.Embedded, err = b.embed(ctx, todo); err != nil {
-		return report, err
-	}
 	if err := putPageBatches(b.store, b.key, todo); err != nil {
 		return report, err
 	}
 	for _, pd := range todo {
 		report.Library.Sections += pd.Page.Sections
-		report.Library.Vectors += pd.Page.Windows
-		report.Library.Units += pd.Page.Units
 	}
 	gone := b.unlisted(pages, failed, stored, &report)
 	if err := b.store.DeletePages(b.key, gone); err != nil {
@@ -500,17 +474,13 @@ func (b *indexBuild) write(ctx context.Context, pages []webPage, failed []string
 	}
 	report.Removed, report.Failed = len(gone), len(failed)
 	report.Library.Pages = len(pages) + len(failed) - countMissing(failed, stored)
-	embedded := ""
-	if b.emb != nil {
-		embedded = fmt.Sprintf("; %d windows embedded", report.Embedded)
-	}
-	b.say("stored %d pages: %d new, %d changed, %d unchanged, %d removed%s", len(pages), report.New, report.Changed, report.Unchanged, report.Removed, embedded)
+	b.say("stored %d pages: %d new, %d changed, %d unchanged, %d removed", len(pages), report.New, report.Changed, report.Unchanged, report.Removed)
 	return report, nil
 }
 
 // begin reads what the store holds for the library: its metadata (a
 // library in another index format is removed, to be rebuilt) and its
-// pages; and decides whether the model changed.
+// pages.
 func (b *indexBuild) begin() (map[string]docsindex.Page, error) {
 	prev, found, err := b.store.Library(b.key)
 	if err != nil {
@@ -521,25 +491,13 @@ func (b *indexBuild) begin() (map[string]docsindex.Page, error) {
 		if _, err := b.store.Remove(b.key); err != nil {
 			return nil, err
 		}
-		found = false
 	}
 	b.prev = prev
-	if b.emb != nil {
-		b.model, b.dims = b.emb.ID(), b.emb.Dim()
-	}
-	stored, err := b.store.Pages(b.key)
-	if err != nil {
-		return nil, err
-	}
-	b.reembedding = found && prev.Model != b.model
-	if b.reembedding && len(stored) > 0 {
-		b.say("model changed (%s -> %s): re-embedding every page", modelName(prev.Model), modelName(b.model))
-	}
-	return stored, nil
+	return b.store.Pages(b.key)
 }
 
 // diff sections every page (anchors corrected by the links of all of
-// them) and returns the new and changed ones, ready to embed; unchanged
+// them) and returns the new and changed ones, ready to store; unchanged
 // pages are counted with what they already hold.
 func (b *indexBuild) diff(pages []webPage, stored map[string]docsindex.Page, report *IndexReport) []docsindex.PageData {
 	var sections []webSection
@@ -556,11 +514,9 @@ func (b *indexBuild) diff(pages []webPage, stored map[string]docsindex.Page, rep
 		hash := pageHash(p)
 		old, had := stored[p.URL]
 		switch {
-		case had && old.Hash == hash && !b.reembedding:
+		case had && old.Hash == hash:
 			report.Unchanged++
 			report.Library.Sections += old.Sections
-			report.Library.Vectors += old.Windows
-			report.Library.Units += old.Units
 			continue
 		case had:
 			report.Changed++
@@ -589,8 +545,6 @@ func (b *indexBuild) unlisted(pages []webPage, failed []string, stored map[strin
 		case fetched[u]:
 		case kept[u]:
 			report.Library.Sections += p.Sections
-			report.Library.Vectors += p.Windows
-			report.Library.Units += p.Units
 		default:
 			gone = append(gone, u)
 		}
@@ -611,8 +565,8 @@ func countMissing(failed []string, stored map[string]docsindex.Page) int {
 	return n
 }
 
-// pageData is a page's record and sections, with their snippet units and
-// cross-version labels, ready to embed and store. A page whose title or
+// pageData is a page's record and sections, with their cross-version
+// labels, ready to store. A page whose title or
 // path names a migration to a later major labels every section; a page
 // that does not, the sections whose own headings do.
 func (b *indexBuild) pageData(p webPage, hash string, secs []webSection) docsindex.PageData {
@@ -623,127 +577,12 @@ func (b *indexBuild) pageData(p webPage, hash string, secs []webSection) docsind
 	pd := docsindex.PageData{Page: docsindex.Page{URL: p.URL, Title: p.Title, Hash: hash, Sections: len(secs), Version: b.version, Fetched: time.Now().UTC(), Source: source}}
 	pageTexts := []string{p.Title, pathWords(p.URL, b.key)}
 	for i, s := range secs {
-		units := extractUnits(s.text)
-		pd.Page.Units += len(units)
 		pd.Sections = append(pd.Sections, docsindex.Section{
 			Page: p.URL, Order: i, Anchor: s.anchor, Heading: s.heading, Crumbs: s.crumbs, Text: s.text,
-			Units: units, CrossVersion: crossVersion(b.version, b.title, append(slices.Clone(pageTexts), s.crumbs...)),
+			CrossVersion: crossVersion(b.version, b.title, append(slices.Clone(pageTexts), s.crumbs...)),
 		})
 	}
 	return pd
-}
-
-// embed embeds every window of the pages' sections, in batches with
-// progress, and records each page's window count. Snippet units are not
-// embedded (ADR-0007, amendment 2: the snippet view scores a unit by its
-// section's windows). It returns how many windows it embedded.
-func (b *indexBuild) embed(ctx context.Context, pages []docsindex.PageData) (int, error) {
-	if b.emb == nil {
-		return 0, nil
-	}
-	type ref struct{ page, sec int }
-	var texts []string
-	var refs []ref
-	for i := range pages {
-		for j, s := range pages[i].Sections {
-			pages[i].Sections[j].Vectors, pages[i].Sections[j].UnitVectors = nil, nil
-			for _, t := range sectionWindows(s.Crumbs, s.Text) {
-				texts = append(texts, t)
-				refs = append(refs, ref{page: i, sec: j})
-			}
-		}
-		pages[i].Page.Windows = 0
-	}
-	if len(texts) == 0 {
-		return 0, nil
-	}
-	b.say("embedding %d windows of %d sections with %s", len(texts), countSections(pages), b.model)
-	start, last := time.Now(), time.Now()
-	for s := 0; s < len(texts); s += indexEmbedBatch {
-		vecs, err := b.emb.EmbedPassages(ctx, texts[s:min(s+indexEmbedBatch, len(texts))])
-		if err != nil {
-			return 0, fmt.Errorf("embedding: %w", err)
-		}
-		for k, v := range vecs {
-			r := refs[s+k]
-			pages[r.page].Sections[r.sec].Vectors = append(pages[r.page].Sections[r.sec].Vectors, v)
-			pages[r.page].Page.Windows++
-		}
-		if time.Since(last) > 15*time.Second {
-			last = time.Now()
-			done := min(s+indexEmbedBatch, len(texts))
-			b.say("embedded %d of %d windows (%.0f/s)", done, len(texts), float64(done)/time.Since(start).Seconds())
-		}
-	}
-	return len(texts), nil
-}
-
-func countSections(pages []docsindex.PageData) int {
-	n := 0
-	for _, p := range pages {
-		n += len(p.Sections)
-	}
-	return n
-}
-
-// sectionWindows is what a section's vectors embed: its heading path, a
-// line break, then a part of its text, each part at most about
-// indexWindowChars, cut at block boundaries (paragraphs, lists, whole code
-// blocks; a block too long for one window at line breaks, a line too long
-// at a rune boundary). The heading path leads every window, so each says
-// where it is.
-func sectionWindows(crumbs []string, text string) []string {
-	head := strings.Join(crumbs, " > ")
-	var out []string
-	for _, chunk := range packBlocks(textBlocks(text), indexWindowChars) {
-		out = append(out, head+"\n"+chunk)
-		if len(out) == indexMaxWindows {
-			break
-		}
-	}
-	if len(out) == 0 {
-		out = append(out, head)
-	}
-	return out
-}
-
-// packBlocks joins blocks into chunks of at most n bytes, splitting any
-// block longer than n into lines, and any line longer than n.
-func packBlocks(blocks []string, n int) []string {
-	var parts []string
-	for _, b := range blocks {
-		if len(b) <= n {
-			parts = append(parts, b)
-			continue
-		}
-		for _, line := range strings.Split(b, "\n") {
-			for len(line) > n {
-				cut := n
-				for cut > 0 && !utf8.RuneStart(line[cut]) {
-					cut--
-				}
-				parts = append(parts, line[:cut])
-				line = line[cut:]
-			}
-			parts = append(parts, line)
-		}
-	}
-	var out []string
-	var cur strings.Builder
-	for _, p := range parts {
-		if cur.Len() > 0 && cur.Len()+2+len(p) > n {
-			out = append(out, cur.String())
-			cur.Reset()
-		}
-		if cur.Len() > 0 {
-			cur.WriteString("\n\n")
-		}
-		cur.WriteString(p)
-	}
-	if strings.TrimSpace(cur.String()) != "" {
-		out = append(out, cur.String())
-	}
-	return out
 }
 
 // pageHash identifies a page's content as fetched.
@@ -940,69 +779,6 @@ func withoutLanguageWord(label string) string {
 	return strings.Join(kept, "-")
 }
 
-// Reembed re-embeds a stored library's sections with emb, from their
-// stored text, without the network: for an index built without a model or
-// with another one.
-func Reembed(ctx context.Context, store *docsindex.Store, key string, emb embed.Embedder, progress io.Writer) (IndexReport, error) {
-	start := time.Now()
-	lib, found, err := store.Library(key)
-	if err != nil || !found {
-		return IndexReport{}, errors.Join(err, fmt.Errorf("docs index: %s %w", key, ErrNotIndexed))
-	}
-	if !lib.Current() {
-		return IndexReport{}, outdatedErr(lib)
-	}
-	secs, err := store.Sections(key, 0, false)
-	if err != nil {
-		return IndexReport{}, err
-	}
-	list := sectionPages(secs)
-	b := &indexBuild{store: store, key: key, emb: emb, say: progressf(progress), model: emb.ID(), dims: emb.Dim()}
-	n, err := b.embed(ctx, list)
-	if err != nil {
-		return IndexReport{}, err
-	}
-	stored, err := store.Pages(key)
-	if err != nil {
-		return IndexReport{}, err
-	}
-	var updated []docsindex.PageData
-	for _, pd := range list {
-		if p, ok := stored[pd.Page.URL]; ok {
-			p.Windows = pd.Page.Windows
-			updated = append(updated, docsindex.PageData{Page: p, Sections: pd.Sections})
-		}
-	}
-	if err := putPageBatches(store, key, updated); err != nil {
-		return IndexReport{}, err
-	}
-	windows := 0
-	for _, pd := range updated {
-		windows += pd.Page.Windows
-	}
-	lib.Model, lib.Dims, lib.Vectors, lib.Built = b.model, b.dims, windows, time.Now().UTC()
-	if err := store.PutLibrary(lib); err != nil {
-		return IndexReport{}, err
-	}
-	return IndexReport{Library: lib, Embedded: n, Unchanged: len(list), Seconds: time.Since(start).Seconds(), Bytes: store.Size()}, nil
-}
-
-// sectionPages groups stored sections (in page order) into their pages.
-func sectionPages(secs []docsindex.Section) []docsindex.PageData {
-	var out []docsindex.PageData
-	at := map[string]int{}
-	for _, s := range secs {
-		i, ok := at[s.Page]
-		if !ok {
-			i = len(out)
-			at[s.Page] = i
-			out = append(out, docsindex.PageData{Page: docsindex.Page{URL: s.Page}})
-		}
-		out[i].Sections = append(out[i].Sections, s)
-	}
-	return out
-}
-
 // putPageBatches writes pages indexWriteBatch to a transaction, in URL
 // order: pages fetched concurrently arrive in any order, and the order
 // they are stored in breaks ties in the keyword ranking.
@@ -1042,11 +818,4 @@ func capNote(capped bool, n int) string {
 		return ""
 	}
 	return fmt.Sprintf(" (capped at %d; raise with --max-pages)", n)
-}
-
-func modelName(id string) string {
-	if id == "" {
-		return "none"
-	}
-	return id
 }

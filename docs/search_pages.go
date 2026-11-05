@@ -6,7 +6,6 @@ import (
 	"path"
 	"strings"
 	"sync"
-	"time"
 )
 
 // The pages a search-first answer reads: the site's search hits, then
@@ -176,6 +175,5 @@ func unreadShell(p *webPage) bool {
 
 // sfStored is what one search-first call added to the index.
 type sfStored struct {
-	newPages, changed, unchanged, embedded int
-	embedTime                              time.Duration
+	newPages, changed, unchanged int
 }

@@ -10,24 +10,22 @@ import (
 	"testing"
 
 	"github.com/1broseidon/ketch/internal/docsindex"
-	"github.com/1broseidon/ketch/internal/embed"
 	"github.com/1broseidon/ketch/internal/failure"
 	"github.com/1broseidon/ketch/search"
 )
 
 // searchFirstOver is the backend over a fake site, a fake web search
-// answering every query with hits, and a store embedding with bow.
-func searchFirstOver(t *testing.T, f *fakeFetcher, hits []search.Result) (*SearchFirst, *docsindex.Store, *atomic.Int32, *bowEmbedder) {
+// answering every query with hits, and a store.
+func searchFirstOver(t *testing.T, f *fakeFetcher, hits []search.Result) (*SearchFirst, *docsindex.Store, *atomic.Int32) {
 	t.Helper()
-	store, emb := newStore(t), &bowEmbedder{id: "test/bow"}
+	store := newStore(t)
 	var searches atomic.Int32
 	w := NewWeb(f)
 	w.sites = siteSearchFunc(func(context.Context, string, int) ([]search.Result, error) {
 		searches.Add(1)
 		return hits, nil
 	})
-	l := NewLocal(store, func() (embed.Embedder, error) { return emb, nil })
-	return NewSearchFirst(w, l), store, &searches, emb
+	return NewSearchFirst(w, NewLocal(store)), store, &searches
 }
 
 func hit(u, title string) search.Result { return search.Result{URL: u, Title: title} }
@@ -51,7 +49,7 @@ func exampleHits() []search.Result {
 // Asked again, the index answers without searching.
 func TestSearchFirstAnswersFromTheSite(t *testing.T) {
 	f := exampleSite()
-	s, store, searches, _ := searchFirstOver(t, f, exampleHits())
+	s, store, searches := searchFirstOver(t, f, exampleHits())
 	o := s.SearchSelect(context.Background(), "add middleware to a route", 0)
 	if o.Status != Partial || o.Reason != ReasonPartialSite || o.Backend != SearchBackend {
 		t.Fatalf("outcome = %s/%s from %q (%v), want partial/%s from search", o.Status, o.Reason, o.Backend, o.Err(), ReasonPartialSite)
@@ -86,17 +84,15 @@ func checkNeverRead(t *testing.T, f *fakeFetcher) {
 func checkSearchLibrary(t *testing.T, store *docsindex.Store) {
 	t.Helper()
 	lib, found, err := store.Library(idxRoot)
-	if err != nil || !found || lib.Resolved != resolvedBySearch || lib.Pages == 0 || lib.Vectors == 0 {
-		t.Fatalf("stored library = %+v (found %v, %v), want one built by search with pages and vectors", lib, found, err)
+	if err != nil || !found || lib.Resolved != resolvedBySearch || lib.Pages == 0 || lib.Sections == 0 {
+		t.Fatalf("stored library = %+v (found %v, %v), want one built by search with pages and sections", lib, found, err)
 	}
 }
 
-// A question asked in other words than one answered before is answered
-// from the same library when the two questions are close, without
-// searching; one about something else searches.
+// A question with the same terms as one answered before is answered from
+// the same library, without searching; one about something else searches.
 func TestSearchFirstRemembersQuestions(t *testing.T) {
-	s, store, searches, _ := searchFirstOver(t, exampleSite(), exampleHits())
-	s.localFloor = 2 // sections alone never answer here
+	s, store, searches := searchFirstOver(t, exampleSite(), exampleHits())
 	if o := s.SearchSelect(context.Background(), "add middleware to a route", 0); o.Status != Partial {
 		t.Fatalf("first answer = %s (%v)", o.Status, o.Err())
 	}
@@ -148,44 +144,12 @@ func TestSearchFirstRefusals(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			s, _, _, _ := searchFirstOver(t, exampleSite(), tc.hits)
+			s, _, _ := searchFirstOver(t, exampleSite(), tc.hits)
 			o := s.SearchSelect(context.Background(), "add middleware", 0)
 			if o.Status != tc.status || o.Reason != tc.reason || o.Kind() != tc.kind {
 				t.Fatalf("outcome = %s/%s kind %v (%v), want %s/%s kind %v", o.Status, o.Reason, o.Kind(), o.Err(), tc.status, tc.reason, tc.kind)
 			}
 		})
-	}
-}
-
-// A question embeds at most its window budget, the sections its words
-// rank first; the rest are kept as text for later questions.
-func TestSearchFirstEmbedsWithinBudget(t *testing.T) {
-	s, store, _, emb := searchFirstOver(t, exampleSite(), exampleHits())
-	s.embedWindows = 2
-	o := s.SearchSelect(context.Background(), "add middleware to a route", 0)
-	if o.Status != Partial {
-		t.Fatalf("outcome = %s (%v)", o.Status, o.Err())
-	}
-	if n := emb.passages.Load(); n > 2 {
-		t.Errorf("embedded %d windows, want at most the budget of 2", n)
-	}
-	secs, err := store.Sections(idxRoot, bowDims, true)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var withVec, without int
-	for _, sec := range secs {
-		if len(sec.Vectors) > 0 {
-			withVec++
-			if !strings.Contains(strings.ToLower(sec.Text+sec.Heading), "middleware") {
-				t.Errorf("embedded %q, which names none of the question's words", sec.Heading)
-			}
-		} else {
-			without++
-		}
-	}
-	if withVec == 0 || without == 0 {
-		t.Errorf("%d sections embedded, %d not; want some of each", withVec, without)
 	}
 }
 

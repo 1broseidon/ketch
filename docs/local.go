@@ -2,30 +2,24 @@ package docs
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"slices"
 	"sort"
-	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/1broseidon/ketch/health"
 	config "github.com/1broseidon/ketch/internal/configbase"
 	"github.com/1broseidon/ketch/internal/docsindex"
-	"github.com/1broseidon/ketch/internal/embed"
 	"github.com/1broseidon/ketch/internal/failure"
 )
 
 // The local docs backend answers from the local index (ADR-0007), with no
-// network: it embeds the question, ranks the library's sections by
-// cosine fused with BM25 (brute force: a library is thousands of
-// sections), groups them into families (a section with the others under
-// its H2) and returns the best five, verbatim and trimmed to about 1,800
-// tokens (local_rank.go). LocalOptions.Snippets asks instead for
-// code-first snippet units (local_snippets.go). Without a usable model it
-// ranks with the web backend's BM25 alone and says so in the outcome.
+// network and no model: it ranks the library's sections by keywords over
+// its full-text table (local_fts.go), groups them into families (a
+// section with the others under its H2) and returns the best five,
+// verbatim and trimmed to about 1,800 tokens (local_rank.go), or fitted
+// compactly to a caller's budget (local_compact.go).
 //
 // An index holds one version of a library; several versions are indexed
 // side by side. A library value with a version (name@3) answers from that
@@ -48,62 +42,24 @@ func outdatedErr(lib docsindex.Library) error {
 		lib.Root, lib.Format, docsindex.FormatVersion, lib.Root, ErrIndexOutdated)
 }
 
-// ReasonKeywordRanking is an answered outcome's reason when the local
-// backend ranked by keywords: no embedding model installed, or the index
-// was built with another one or with none. Outcome.Note says which.
-const ReasonKeywordRanking = "keyword_ranking"
-
 // Local answers from the local docs index.
 type Local struct {
 	store *docsindex.Store // nil when there is no cache directory
-	// model is the embedding model, located and opened (lazily) once; nil
-	// unless hybrid ranking is on (HybridKey), which is the only time the
-	// backend or a build runs it.
-	model func() (embed.Embedder, error)
 }
 
-// HybridKey is the config key that turns hybrid ranking on: true
-// embeds sections at index time (and the sections a search-first
-// question reads) with the installed model and fuses cosine with the
-// keyword ranking; unset or false, ketch ranks by keywords alone and
-// never loads a model (ADR-0007, amendment 5).
-const HybridKey = "docs_hybrid"
-
-// Hybrid reports whether the config turns hybrid ranking on.
-func Hybrid(c *config.Config) bool {
-	if c == nil {
-		return false
-	}
-	on, err := strconv.ParseBool(strings.TrimSpace(c.String(HybridKey)))
-	return err == nil && on
+// NewLocal returns the backend over store (OpenIndex).
+func NewLocal(store *docsindex.Store) *Local {
+	return &Local{store: store}
 }
 
-// NewLocal returns the backend over store (OpenIndex), ranking by
-// keywords, or, with a model (non-nil), fusing them with the cosine of
-// the question's embedding (an error from model: keywords, saying why).
-func NewLocal(store *docsindex.Store, model func() (embed.Embedder, error)) *Local {
-	return &Local{store: store, model: model}
-}
-
-// newLocalFromConfig is the backend over the default index file, with
-// the model model_path names, or the installed one, when hybrid ranking
-// is on. It does no I/O.
-func newLocalFromConfig(c *config.Config) *Local {
+// newLocalFromConfig is the backend over the default index file. It does
+// no I/O.
+func newLocalFromConfig() *Local {
 	var store *docsindex.Store
 	if path, err := docsindex.DefaultPath(); err == nil {
 		store = OpenIndex(path)
 	}
-	if !Hybrid(c) {
-		return NewLocal(store, nil)
-	}
-	modelPath := c.String("model_path")
-	return NewLocal(store, sync.OnceValues(func() (embed.Embedder, error) {
-		m, err := embed.Locate(modelPath)
-		if err != nil {
-			return nil, err
-		}
-		return embed.Open(m), nil
-	}))
+	return NewLocal(store)
 }
 
 // Search answers a bare query; see SearchSelect.
@@ -201,12 +157,9 @@ func (l *Local) ResolveSelect(_ context.Context, name string, limit int) Outcome
 
 // indexedMatch is an indexed library as a resolve match.
 func indexedMatch(lib docsindex.Library) LibraryMatch {
-	about := fmt.Sprintf("indexed %s: %d pages, %d sections, %d snippets", lib.Built.Format("2006-01-02"), lib.Pages, lib.Sections, lib.Units)
+	about := fmt.Sprintf("indexed %s: %d pages, %d sections", lib.Built.Format("2006-01-02"), lib.Pages, lib.Sections)
 	if !lib.Current() {
 		about = fmt.Sprintf("indexed %s in format %d: rebuild with ketch docs index %s", lib.Built.Format("2006-01-02"), lib.Format, lib.Root)
-	}
-	if lib.Model != "" {
-		about += ", embedded with " + lib.Model
 	}
 	return LibraryMatch{ID: lib.Root, Title: lib.Title, Version: lib.Version, Packages: lib.Packages, TrustScore: lib.Trust, Evidence: append([]string{about}, lib.Evidence...)}
 }
@@ -225,8 +178,8 @@ func (l *Local) libraries() ([]docsindex.Library, error) {
 }
 
 // answer ranks lib's sections for query and renders the best families
-// within opts' budget, or, with opts.Snippets, its best snippet units; an
-// answer from a library a search built is partial (partialLibrary).
+// within opts' budget; an answer from a library a search built is partial
+// (partialLibrary).
 func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string, opts LocalOptions) Outcome {
 	return partialLibrary(l.rank(ctx, lib, query, opts), lib)
 }
@@ -236,15 +189,7 @@ func (l *Local) rank(ctx context.Context, lib docsindex.Library, query string, o
 	if !lib.Current() {
 		return Answer("local", nil, outdatedErr(lib))
 	}
-	emb, note := l.usableModel(lib)
-	var qv []float32
-	if emb != nil {
-		var err error
-		if qv, err = emb.EmbedQuery(ctx, query); err != nil {
-			return Answer("local", nil, fmt.Errorf("local: embedding the query: %w", err))
-		}
-	}
-	results, err := l.rankResults(lib, query, qv, opts)
+	results, err := l.rankResults(lib, query, opts)
 	if err != nil {
 		return Answer("local", nil, fmt.Errorf("local: reading the docs index: %w", err))
 	}
@@ -253,66 +198,21 @@ func (l *Local) rank(ctx context.Context, lib docsindex.Library, query string, o
 	}
 	showUnder(results, lib)
 	pointToSections(results, opts)
-	o := Answer("local", results, nil)
-	if note != "" {
-		o.Reason, o.Note = ReasonKeywordRanking, note
-		o.Attempts[0].Reason = ReasonKeywordRanking
-	}
-	return o
+	return Answer("local", results, nil)
 }
 
-// rankResults ranks lib's sections for the query and renders them: by
-// keywords over the full-text table (only the candidates' pages are
-// read), or, with a query vector, every section's cosine fused with the
-// keyword ranking; or, with opts.Snippets, its best snippet units.
-func (l *Local) rankResults(lib docsindex.Library, query string, qv []float32, opts LocalOptions) ([]Result, error) {
+// rankResults ranks lib's sections for the query by keywords over the
+// full-text table (only the candidates' pages are read) and renders them.
+func (l *Local) rankResults(lib docsindex.Library, query string, opts LocalOptions) ([]Result, error) {
 	limit := opts.Limit
 	if limit <= 0 {
 		limit = localMaxResults
 	}
-	if opts.Snippets || qv != nil {
-		secs, err := l.store.Sections(lib.Key, lib.Dims, qv != nil)
-		if err != nil {
-			return nil, err
-		}
-		if opts.Snippets {
-			var keyword []scoredSection
-			if qv == nil {
-				keyword = relevant(rankSections(webSections(secs), query))
-			}
-			return snippetResults(lib, secs, rankUnits(secs, qv, keyword, query), qv != nil, opts.Tokens, opts.Limit), nil
-		}
-		keyword, err := l.keywordOrder(lib, secs, query)
-		if err != nil {
-			return nil, err
-		}
-		return familyResults(lib, secs, families(secs, fuseRanks(secs, qv, keyword, query), limit, lib.Root), query, opts.Tokens, opts.Hint), nil
-	}
-	secs, ranked, err := l.keywordRank(lib, query, true)
+	secs, ranked, err := l.keywordRank(lib, query)
 	if err != nil {
 		return nil, err
 	}
 	return familyResults(lib, secs, families(secs, ranked, limit, lib.Root), query, opts.Tokens, opts.Hint), nil
-}
-
-// keywordOrder is the keyword ranking of every section of a library
-// (secs, as stored), as indices into secs, best first.
-func (l *Local) keywordOrder(lib docsindex.Library, secs []docsindex.Section, query string) ([]int, error) {
-	cands, ranked, err := l.keywordRank(lib, query, false)
-	if err != nil {
-		return nil, err
-	}
-	at := make(map[int64]int, len(secs))
-	for i, s := range secs {
-		at[s.ID] = i
-	}
-	out := make([]int, 0, len(ranked))
-	for _, r := range ranked {
-		if i, ok := at[cands[r.sec].ID]; ok {
-			out = append(out, i)
-		}
-	}
-	return out, nil
 }
 
 // showUnder shows a re-rooted current release's results at the
@@ -330,74 +230,12 @@ func showUnder(results []Result, lib docsindex.Library) {
 func pointToSections(results []Result, opts LocalOptions) {
 	for i, r := range results {
 		results[i].Section = r.URL
-		if opts.Tokens > 0 && !opts.Snippets && opts.Hint == HintMCP {
+		if opts.Tokens > 0 && opts.Hint == HintMCP {
 			if h := SectionHint(results[i], HintMCP); h != "" {
 				results[i].Snippet += "\n\n" + h
 			}
 		}
 	}
-}
-
-// usableModel is the embedder that can rank lib's vectors, or nil and why
-// not: no model installed, an index built with another model, or one
-// built with none.
-func (l *Local) usableModel(lib docsindex.Library) (embed.Embedder, string) {
-	if l.model == nil {
-		return nil, "" // keyword ranking, the default: nothing to say
-	}
-	if lib.Model == "" {
-		return nil, "ranked by keywords: this library was indexed without an embedding model (ketch model install, then ketch docs index --reembed " + lib.Root + ")"
-	}
-	var emb embed.Embedder
-	err := embed.ErrNotInstalled
-	if l.model != nil {
-		emb, err = l.model()
-	}
-	switch {
-	case errors.Is(err, embed.ErrNotInstalled):
-		return nil, "ranked by keywords: no embedding model installed (ketch model install)"
-	case err != nil:
-		return nil, "ranked by keywords: " + err.Error()
-	case emb.ID() != lib.Model:
-		return nil, fmt.Sprintf("ranked by keywords: this library was indexed with %s, not the installed %s (ketch docs index --reembed %s)", lib.Model, emb.ID(), lib.Root)
-	}
-	return emb, ""
-}
-
-// denseRank scores each section by its best window's cosine with the
-// question, best first, a section about a later version than indexed
-// demoted unless the question asks about it; sections without vectors are
-// left out.
-func denseRank(secs []docsindex.Section, qv []float32, query string) []scoredSection {
-	out := make([]scoredSection, 0, len(secs))
-	for i, s := range secs {
-		best, ok := float32(0), false
-		for _, v := range s.Vectors {
-			if len(v) == len(qv) {
-				if c := embed.Dot(v, qv); !ok || c > best {
-					best, ok = c, true
-				}
-			}
-		}
-		if ok {
-			score := float64(best)
-			if s.CrossVersion != "" && !asksAbout(query, s.CrossVersion) {
-				score -= crossVersionPenalty
-			}
-			out = append(out, scoredSection{webSection: webSectionOf(s, i), score: score})
-		}
-	}
-	sort.SliceStable(out, func(i, j int) bool { return out[i].score > out[j].score })
-	return out
-}
-
-// webSections are stored sections in the shape the web backend ranks.
-func webSections(secs []docsindex.Section) []webSection {
-	out := make([]webSection, len(secs))
-	for i, s := range secs {
-		out[i] = webSectionOf(s, i)
-	}
-	return out
 }
 
 // webSectionOf is a stored section as the web backend's section. Its
@@ -754,7 +592,7 @@ func versionNames(want, have string) bool {
 }
 
 // probeLocal reports what the index holds, without the network.
-func probeLocal(_ context.Context, _ *http.Client, c *config.Config) (health.Status, string) {
+func probeLocal(_ context.Context, _ *http.Client, _ *config.Config) (health.Status, string) {
 	path, err := docsindex.DefaultPath()
 	if err != nil {
 		return health.StatusMisconfigured, err.Error()
@@ -771,14 +609,7 @@ func probeLocal(_ context.Context, _ *http.Client, c *config.Config) (health.Sta
 	if err != nil {
 		return health.StatusMisconfigured, fmt.Sprintf("cannot read %s: %v", path, err)
 	}
-	ranking := "keywords (full-text)"
-	if Hybrid(c) {
-		ranking = "keywords fused with embeddings (docs_hybrid)"
-		if _, err := embed.Locate(c.String("model_path")); err != nil {
-			ranking = "keywords (docs_hybrid is on, but no model is installed)"
-		}
-	}
-	return health.StatusOK, fmt.Sprintf("%d libraries indexed in %s; ranking by %s%s", len(libs), path, ranking, legacy)
+	return health.StatusOK, fmt.Sprintf("%d libraries indexed in %s%s", len(libs), path, legacy)
 }
 
 func localProvider() Provider {
@@ -786,13 +617,8 @@ func localProvider() Provider {
 		ID:          "local",
 		Name:        "Local index",
 		LibraryHelp: "an indexed library's name or docs root URL (ketch docs index --list)",
-		// docs_hybrid turns hybrid ranking on (off: keywords alone, no
-		// model); model_path points at an embedding model directory;
-		// unset, ketch uses the one `ketch model install` put in its
-		// cache directory.
-		Settings: []config.Setting{config.Scalar(HybridKey), config.Scalar("model_path")},
-		Usable:   func(*config.Config) bool { return true },
-		New:      func(c *config.Config, _ Deps) (Searcher, error) { return newLocalFromConfig(c), nil },
-		Probe:    probeLocal,
+		Usable:      func(*config.Config) bool { return true },
+		New:         func(*config.Config, Deps) (Searcher, error) { return newLocalFromConfig(), nil },
+		Probe:       probeLocal,
 	}
 }

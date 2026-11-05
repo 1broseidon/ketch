@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/1broseidon/ketch/internal/docsindex"
-	"github.com/1broseidon/ketch/internal/embed"
 )
 
 // Indexed libraries as a build stores them (the metadata names come from).
@@ -132,9 +131,9 @@ func TestMatchIndexedNeverAnotherLibrary(t *testing.T) {
 // --library or a bare query) is refused as not_indexed, not answered from
 // Vue Router's docs.
 func TestLocalRefusesComponentWord(t *testing.T) {
-	f, store, emb := vueSite(t), newStore(t), &bowEmbedder{id: "test/bow"}
-	indexAs(t, f, store, emb, "https://vr.example.test/")
-	l := NewLocal(store, func() (embed.Embedder, error) { return emb, nil })
+	f, store := vueSite(t), newStore(t)
+	indexAs(t, f, store, "https://vr.example.test/")
+	l := NewLocal(store)
 	ctx := context.Background()
 	if o := l.GetDocsSelect(ctx, "vue", "two-way binding with v-model on a component", 0); o.Status != Refused || o.Reason != "not_indexed" {
 		t.Errorf("--library vue = %s/%s (%d results)", o.Status, o.Reason, len(o.Results))

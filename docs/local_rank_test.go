@@ -74,25 +74,6 @@ func TestFamiliesPerPage(t *testing.T) {
 	}
 }
 
-// Fusion puts a section the keywords rank first ahead of one only near
-// by cosine, and demotes a later version's section in the cosine
-// ranking unless the question asks about it.
-func TestFuseRanks(t *testing.T) {
-	near, far := []float32{1, 0}, []float32{0.8, 0.6}
-	secs := []docsindex.Section{
-		{Page: "https://x.test/a", Heading: "Overview", Crumbs: []string{"Overview"}, Text: "General words about the library.", Vectors: [][]float32{near}},
-		{Page: "https://x.test/b", Heading: "Retries", Crumbs: []string{"Retries"}, Text: "Set max_retries to retry failed requests.", Vectors: [][]float32{far}},
-		{Page: "https://x.test/c", Heading: "Retries in v5", Crumbs: []string{"Migrating to v5", "Retries in v5"}, Text: "Retry failed requests with max_retries.", CrossVersion: "5", Vectors: [][]float32{far}},
-	}
-	got := fuseRanks(secs, []float32{1, 0}, []int{1}, "retry failed requests max_retries")
-	if got[0].sec != 1 {
-		t.Errorf("fused order = %+v", got)
-	}
-	if got[len(got)-1].sec != 2 {
-		t.Errorf("the later version's section should rank last: %+v", got)
-	}
-}
-
 // The keyword ranking over the full-text table puts the section naming
 // the question's identifier first, leaves a later version's section out
 // unless asked, and finds an identifier by its words.
@@ -112,8 +93,8 @@ func TestKeywordRank(t *testing.T) {
 	if err := store.PutLibrary(lib); err != nil {
 		t.Fatal(err)
 	}
-	l := NewLocal(store, nil)
-	secs, ranked, err := l.keywordRank(lib, "retry failed requests max_retries", true)
+	l := NewLocal(store)
+	secs, ranked, err := l.keywordRank(lib, "retry failed requests max_retries")
 	if err != nil || len(ranked) == 0 || secs[ranked[0].sec].Page != root+"b" || ranked[0].score != 1 {
 		t.Fatalf("ranked = %+v %v", ranked, err)
 	}
@@ -123,7 +104,7 @@ func TestKeywordRank(t *testing.T) {
 		}
 	}
 	for _, q := range []string{"validateField", "validate field", "form.validateField"} {
-		secs, ranked, err := l.keywordRank(lib, q, true)
+		secs, ranked, err := l.keywordRank(lib, q)
 		if err != nil || len(ranked) == 0 || secs[ranked[0].sec].Page != root+"d" {
 			t.Errorf("%q: ranked = %+v %v", q, ranked, err)
 		}
@@ -196,8 +177,8 @@ func TestKeywordRankPriors(t *testing.T) {
 	if err := store.PutLibrary(lib); err != nil {
 		t.Fatal(err)
 	}
-	l := NewLocal(store, nil)
-	secs, ranked, err := l.keywordRank(lib, "how do I use a route guard", true)
+	l := NewLocal(store)
+	secs, ranked, err := l.keywordRank(lib, "how do I use a route guard")
 	if err != nil || len(ranked) == 0 || secs[ranked[0].sec].Page != root+"guide/route-guards" {
 		t.Fatalf("ranked = %+v %v", ranked, err)
 	}

@@ -74,7 +74,7 @@ func (a *Auto) WithLocal(l autoLocal) *Auto {
 // backend with its name resolution sources, and Context7 with c's key or
 // none.
 func newAutoFromConfig(c *config.Config, deps Deps) *Auto {
-	return NewAuto(newWebFromConfig(c, deps), NewContext7(c.String("context7_api_key"))).WithLocal(newLocalFromConfig(c))
+	return NewAuto(newWebFromConfig(c, deps), NewContext7(c.String("context7_api_key"))).WithLocal(newLocalFromConfig())
 }
 
 // Search answers a bare query; see SearchSelect.

@@ -175,7 +175,7 @@ func TestSearchFirstTriesTheDomainsNextTree(t *testing.T) {
 		hit("https://help.example.test/s/article/3", "Routes - Example help"),
 		hit(idxRoot+"guide/middleware", "Middleware - Example docs"),
 	}
-	s, _, _, _ := searchFirstOver(t, f, hits)
+	s, _, _ := searchFirstOver(t, f, hits)
 	o := s.SearchSelect(context.Background(), "add middleware to a route in example", 0)
 	if len(o.Results) == 0 || !strings.HasPrefix(o.Results[0].URL, idxRoot) {
 		t.Fatalf("outcome %s (%v), results %+v; want the example.test docs tree", o.Status, o.Err(), o.Results)
@@ -185,9 +185,7 @@ func TestSearchFirstTriesTheDomainsNextTree(t *testing.T) {
 // A remembered question answers only the same question: a more specific
 // follow-up (one more term) is searched.
 func TestSearchFirstMemoryNeedsTheSameTerms(t *testing.T) {
-	s, _, searches, _ := searchFirstOver(t, exampleSite(), exampleHits())
-	s.localFloor = 2
-	s.local.model = nil // keywords only: questions compared by their terms
+	s, _, searches := searchFirstOver(t, exampleSite(), exampleHits())
 	if o := s.SearchSelect(context.Background(), "add logger middleware to a route", 0); o.Status != Partial {
 		t.Fatalf("first answer = %s (%v)", o.Status, o.Err())
 	}

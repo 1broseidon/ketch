@@ -8,52 +8,43 @@ import (
 	"slices"
 	"testing"
 	"time"
-
-	"github.com/1broseidon/ketch/internal/embed"
 )
-
-func unit(dims int, hot int) []float32 {
-	v := make([]float32, dims)
-	v[hot%dims] = 1
-	return v
-}
 
 const testKey = "https://docs.example.test/"
 
-// seed writes two pages, one with two sections (three vector windows),
-// and the library's metadata.
+// seed writes two pages, one with two sections, and the library's
+// metadata.
 func seed(t *testing.T, s *Store) []PageData {
 	t.Helper()
 	key := testKey
 	pages := []PageData{
 		{Page: Page{URL: key + "b", Title: "B", Hash: "h-b"}, Sections: []Section{
-			{Order: 0, Heading: "B", Crumbs: []string{"B"}, Text: "intro of b", Vectors: [][]float32{unit(8, 0)}},
-			{Order: 1, Anchor: "two", Heading: "Two", Crumbs: []string{"B", "Two"}, Text: "second", Vectors: [][]float32{unit(8, 1), unit(8, 2)}},
+			{Order: 0, Heading: "B", Crumbs: []string{"B"}, Text: "intro of b"},
+			{Order: 1, Anchor: "two", Heading: "Two", Crumbs: []string{"B", "Two"}, Text: "second"},
 		}},
 		{Page: Page{URL: key + "a", Title: "A", Hash: "h-a"}, Sections: []Section{{Order: 0, Heading: "A", Text: "only a"}}},
 	}
 	if err := s.PutPages(key, pages); err != nil {
 		t.Fatal(err)
 	}
-	lib := Library{Key: key, Library: "example", Names: []string{"example"}, Root: key, Model: "org/m", Dims: 8, Format: FormatVersion, Built: time.Now().UTC(), Pages: 2, Sections: 3}
+	lib := Library{Key: key, Library: "example", Names: []string{"example"}, Root: key, Title: "Example", Format: FormatVersion, Built: time.Now().UTC(), Pages: 2, Sections: 3}
 	if err := s.PutLibrary(lib); err != nil {
 		t.Fatal(err)
 	}
 	return pages
 }
 
-// A library round-trips: metadata, pages, sections in page order, and
-// float16 vectors, several windows per section.
+// A library round-trips: metadata, pages, and sections in page order.
 func TestStoreRoundTrip(t *testing.T) {
 	s := Open(filepath.Join(t.TempDir(), "docs-index.db"))
 	if libs, err := s.Libraries(); err != nil || len(libs) != 0 || s.Exists() {
 		t.Fatalf("a missing file is an empty index: %v %v", libs, err)
 	}
 	seed(t, s)
-	if got, ok, err := s.Library(testKey); err != nil || !ok || got.Model != "org/m" || !got.Current() {
+	if got, ok, err := s.Library(testKey); err != nil || !ok || got.Title != "Example" || !got.Current() {
 		t.Fatalf("Library = %+v %v %v", got, ok, err)
 	}
-	secs, err := s.Sections(testKey, 8, true)
+	secs, err := s.Sections(testKey)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,11 +55,8 @@ func TestStoreRoundTrip(t *testing.T) {
 	if !slices.Equal(order, []string{"a/A", "b/B", "b/Two"}) {
 		t.Fatalf("section order = %v", order)
 	}
-	if len(secs[2].Vectors) != 2 || embed.Dot(secs[2].Vectors[1], unit(8, 2)) != 1 || secs[0].Vectors != nil {
-		t.Errorf("vectors = %v / %v", secs[2].Vectors, secs[0].Vectors)
-	}
-	if noVec, _ := s.Sections(testKey, 8, false); noVec[1].Vectors != nil {
-		t.Error("vectors read when not asked for")
+	if two := secs[2]; two.Anchor != "two" || !slices.Equal(two.Crumbs, []string{"B", "Two"}) || two.Text != "second" || two.Family() != "Two" {
+		t.Errorf("section = %+v", two)
 	}
 }
 
@@ -82,7 +70,7 @@ func TestStoreReplaceAndDeletePages(t *testing.T) {
 	if err := s.PutPages(testKey, pages[:1]); err != nil {
 		t.Fatal(err)
 	}
-	if secs, _ := s.Sections(testKey, 8, true); len(secs) != 2 {
+	if secs, _ := s.Sections(testKey); len(secs) != 2 {
 		t.Errorf("a rewritten page kept its old sections: %d", len(secs))
 	}
 	if ps, _ := s.Pages(testKey); ps[testKey+"b"].Hash != "h-b2" || len(ps) != 2 {
@@ -91,29 +79,21 @@ func TestStoreReplaceAndDeletePages(t *testing.T) {
 	if err := s.DeletePages(testKey, []string{testKey + "a"}); err != nil {
 		t.Fatal(err)
 	}
-	if secs, _ := s.Sections(testKey, 8, true); len(secs) != 1 || secs[0].Page != testKey+"b" {
+	if secs, _ := s.Sections(testKey); len(secs) != 1 || secs[0].Page != testKey+"b" {
 		t.Errorf("after delete = %+v", secs)
 	}
 }
 
-// Re-embedding replaces a library's vectors in place, and Remove takes
-// the library and all it stored; removing nothing reports so.
-func TestStoreVectorsAndRemove(t *testing.T) {
+// Remove takes the library and all it stored; removing nothing reports
+// so.
+func TestStoreRemove(t *testing.T) {
 	s := Open(filepath.Join(t.TempDir(), "docs-index.db"))
 	const key = "https://x.test/docs/"
-	if err := s.PutPages(key, []PageData{{Page: Page{URL: key}, Sections: []Section{{Order: 0, Heading: "X", Text: "x", Vectors: [][]float32{unit(4, 0)}}}}}); err != nil {
+	if err := s.PutPages(key, []PageData{{Page: Page{URL: key}, Sections: []Section{{Order: 0, Heading: "X", Text: "x"}}}}); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.PutLibrary(Library{Key: key, Root: key, Format: FormatVersion}); err != nil {
 		t.Fatal(err)
-	}
-	secs, _ := s.Sections(key, 4, true)
-	secs[0].Vectors = [][]float32{unit(4, 3), unit(4, 1)}
-	if err := s.PutVectors(key, secs); err != nil {
-		t.Fatal(err)
-	}
-	if again, _ := s.Sections(key, 4, true); len(again[0].Vectors) != 2 || again[0].Vectors[0][3] != 1 {
-		t.Errorf("re-embedded vectors = %v", again[0].Vectors)
 	}
 	if found, err := s.Remove(key); err != nil || !found {
 		t.Fatalf("Remove = %v %v", found, err)
@@ -238,7 +218,7 @@ func TestStorePageSections(t *testing.T) {
 	s := Open(filepath.Join(t.TempDir(), "docs-index.db"))
 	seed(t, s)
 	secs, err := s.PageSections(testKey, testKey+"b")
-	if err != nil || len(secs) != 2 || secs[0].Heading != "B" || secs[1].Anchor != "two" || secs[1].Vectors != nil {
+	if err != nil || len(secs) != 2 || secs[0].Heading != "B" || secs[1].Anchor != "two" {
 		t.Fatalf("page b = %+v %v", secs, err)
 	}
 	for _, page := range []string{testKey + "c", testKey, testKey + "b/x"} {
@@ -248,5 +228,47 @@ func TestStorePageSections(t *testing.T) {
 	}
 	if secs, err := s.PageSections("https://nope.test/", testKey+"b"); err != nil || len(secs) != 0 {
 		t.Errorf("unknown library = %+v %v", secs, err)
+	}
+}
+
+// A format-3 file written while the index could also hold embeddings and
+// snippet units (a vectors table, units and window counts) is read and
+// written as it is: those columns and that table are left alone.
+func TestStoreReadsEarlierFormat3Schema(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "docs-index.sqlite")
+	db, err := sql.Open("sqlite", "file:"+path+"?_pragma=foreign_keys(1)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.Exec(`
+CREATE TABLE libraries(id INTEGER PRIMARY KEY, key TEXT NOT NULL UNIQUE, meta TEXT, fts TEXT NOT NULL DEFAULT '');
+CREATE TABLE pages(lib INTEGER NOT NULL REFERENCES libraries(id) ON DELETE CASCADE, url TEXT NOT NULL, title TEXT NOT NULL DEFAULT '',
+	hash TEXT NOT NULL DEFAULT '', version TEXT NOT NULL DEFAULT '', fetched_at INTEGER NOT NULL DEFAULT 0, source TEXT NOT NULL DEFAULT '',
+	sections INTEGER NOT NULL DEFAULT 0, windows INTEGER NOT NULL DEFAULT 0, units INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(lib, url)) WITHOUT ROWID;
+CREATE TABLE sections(id INTEGER PRIMARY KEY, lib INTEGER NOT NULL REFERENCES libraries(id) ON DELETE CASCADE, page TEXT NOT NULL,
+	ord INTEGER NOT NULL, anchor TEXT NOT NULL DEFAULT '', heading TEXT NOT NULL DEFAULT '', crumbs TEXT NOT NULL DEFAULT '[]',
+	family TEXT NOT NULL DEFAULT '', text TEXT NOT NULL DEFAULT '', units TEXT NOT NULL DEFAULT '', cross_version TEXT NOT NULL DEFAULT '',
+	UNIQUE(lib, page, ord));
+CREATE TABLE vectors(section INTEGER PRIMARY KEY REFERENCES sections(id) ON DELETE CASCADE, windows BLOB, units BLOB);
+INSERT INTO libraries(id, key, meta) VALUES(1, 'https://docs.example.test/', '{"key":"https://docs.example.test/","root":"https://docs.example.test/","format":3,"model":"org/m","dims":8,"vectors":1,"units":2}');
+INSERT INTO pages(lib, url, hash, sections, windows, units) VALUES(1, 'https://docs.example.test/old', 'h', 1, 1, 2);
+INSERT INTO sections(id, lib, page, ord, heading, text, units) VALUES(1, 1, 'https://docs.example.test/old', 0, 'Old', 'old text', '[{"kind":"prose","body":[0,3]}]');
+INSERT INTO vectors(section, windows) VALUES(1, x'0000');`)
+	_ = db.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := Open(path)
+	if lib, ok, err := s.Library(testKey); err != nil || !ok || !lib.Current() {
+		t.Fatalf("library = %+v %v %v", lib, ok, err)
+	}
+	if err := s.PutPages(testKey, []PageData{{Page: Page{URL: testKey + "new", Hash: "n", Sections: 1}, Sections: []Section{{Order: 0, Heading: "New", Text: "new text"}}}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.DeletePages(testKey, []string{testKey + "old"}); err != nil {
+		t.Fatal(err)
+	}
+	if secs, err := s.Sections(testKey); err != nil || len(secs) != 1 || secs[0].Heading != "New" {
+		t.Errorf("sections = %+v %v", secs, err)
 	}
 }

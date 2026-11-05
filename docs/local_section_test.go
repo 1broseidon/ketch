@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/1broseidon/ketch/internal/docsindex"
-	"github.com/1broseidon/ketch/internal/embed"
 	"github.com/1broseidon/ketch/internal/failure"
 )
 
@@ -48,7 +47,7 @@ func sectionLocal(t *testing.T, display string) *Local {
 	if err := store.PutLibrary(lib); err != nil {
 		t.Fatal(err)
 	}
-	return NewLocal(store, func() (embed.Embedder, error) { return nil, embed.ErrNotInstalled })
+	return NewLocal(store)
 }
 
 // compactSectionsAt is compactSections on another page.

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -32,10 +31,9 @@ import (
 //	        │       (none: no_docs_found; split: ambiguous_site)
 //	fetch the hit pages and close siblings from the site's own lists
 //	        │       (≤ sfMaxPages, through the page cache)
-//	section them, store them in the local index under the docs root,
-//	embed the sections the question's words rank first (a window budget)
+//	section them, store them in the local index under the docs root
 //	        │
-//	rank with the local index's hybrid ranker, render as -b local does
+//	rank with the local index's keyword ranker, render as -b local does
 //	        └──▶ partial: N pages read, and how to index the whole site
 //
 // What it reads stays in the index, so the next question those pages
@@ -62,47 +60,30 @@ const (
 	sfDiscoverBudget = 6 * time.Second
 	sfPageTimeout    = 15 * time.Second
 	sfConcurrency    = 6
-	// sfEmbedWindows is how many section windows one question embeds,
-	// the sections its words rank first; the rest are stored as text and
-	// embedded by later questions that rank them (about 20 windows a
-	// second with bge-base).
-	sfEmbedWindows = 96
-	// sfSectionWindows caps one section's windows embedded per question.
-	sfSectionWindows = 4
-	// sfLocalFloor is the cosine a stored section must reach for the
-	// local index to answer without searching.
-	sfLocalFloor = 0.80
 )
 
 // SearchFirst is the search-first backend.
 type SearchFirst struct {
-	web   *Web
-	local *Local
-	// searchDocs runs one web search; web.sites unless a test sets it.
-	maxPages, maxHits, embedWindows int
-	localFloor                      float64
-	timeout                         time.Duration
-	trace                           io.Writer // nil: no trace
+	web               *Web
+	local             *Local
+	maxPages, maxHits int
+	timeout           time.Duration
+	trace             io.Writer // nil: no trace
 }
 
 // NewSearchFirst builds the backend over a web backend (its fetcher,
-// search and registries) and a local backend (its index and model).
+// search and registries) and a local backend (its index).
 func NewSearchFirst(w *Web, l *Local) *SearchFirst {
 	w.concurrency = sfConcurrency
 	w.sitemapBudget = sfDiscoverBudget / 2
 	w.probeTimeout = sfDiscoverBudget
-	return &SearchFirst{web: w, local: l, maxPages: sfMaxPages, maxHits: sfMaxHitPages, embedWindows: sfEmbedWindows,
-		localFloor: sfLocalFloor, timeout: sfTimeout}
+	return &SearchFirst{web: w, local: l, maxPages: sfMaxPages, maxHits: sfMaxHitPages, timeout: sfTimeout}
 }
 
 func newSearchFirstFromConfig(c *config.Config, deps Deps) *SearchFirst {
-	s := NewSearchFirst(newWebFromConfig(c, deps), newLocalFromConfig(c))
+	s := NewSearchFirst(newWebFromConfig(c, deps), newLocalFromConfig())
 	if os.Getenv("KETCH_DOCS_TRACE") != "" {
 		s.trace = os.Stderr
-	}
-	// For calibrating the floor on dev sets; not a setting.
-	if f, err := strconv.ParseFloat(os.Getenv("KETCH_DOCS_LOCAL_FLOOR"), 64); err == nil {
-		s.localFloor = f
 	}
 	return s
 }
@@ -177,7 +158,7 @@ const sfDefaultTokens = 1800
 
 // compactByDefault gives a request without a budget the compact one.
 func compactByDefault(o LocalOptions) LocalOptions {
-	if o.Tokens <= 0 && !o.Snippets {
+	if o.Tokens <= 0 {
 		o.Tokens = sfDefaultTokens
 	}
 	return o
@@ -292,19 +273,17 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 	if len(pages) == 0 {
 		return s.failed(ctx, cctx, fmt.Errorf("search: none of the %d pages of %s could be read: %w", len(links), site.root, ErrNotFound))
 	}
-	lib, st, err := s.keep(ctx, site, prof, pages, req.query)
+	lib, st, err := s.keep(site, prof, pages)
 	tr.stored = st
 	if err != nil {
 		return Answer(SearchBackend, nil, err)
 	}
-	qv := s.queryVector(ctx, req.query)
-	_, tr.answerCos, _ = s.closest(ctx, []docsindex.Library{lib}, qv)
 	o := s.local.rank(ctx, lib, req.query, req.opts)
 	if o.Status == Answered && tr.domains == 1 {
 		// Only the first site read is remembered (any of its docs trees): a
 		// fallback site's answer, read because the one the hits agreed on
 		// gave nothing, is a guess the next search may do better than.
-		s.remember(lib, req.library, req.query, qv)
+		s.remember(lib, req.library, req.query)
 	}
 	return searchAnswered(o, lib, len(pages), st)
 }
@@ -331,8 +310,8 @@ func searchAnswered(o Outcome, lib docsindex.Library, read int, st sfStored) Out
 	for i := range o.Results {
 		o.Results[i].Source = SearchBackend
 	}
-	note := fmt.Sprintf("read %d pages of %s found by web search (%d new to the local index, %d sections embedded); the whole site: ketch docs index %s",
-		read, lib.Root, st.newPages, st.embedded, lib.Root)
+	note := fmt.Sprintf("read %d pages of %s found by web search (%d new to the local index); the whole site: ketch docs index %s",
+		read, lib.Root, st.newPages, lib.Root)
 	return asPartial(o, SearchBackend, note)
 }
 

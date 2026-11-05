@@ -10,10 +10,7 @@ import (
 )
 
 // Section answers: the local index's default view (ADR-0007, amendment 2).
-// Sections are ranked by fusing two rankings with reciprocal rank fusion:
-// cosine (each section's best window against the question) and BM25 over
-// the section's heading, breadcrumb and text (rankSections, the heading
-// counting three times its body). Ranked sections are then grouped into
+// Sections ranked by keywords (keywordRank, local_fts.go) are grouped into
 // families: a section and the others under the same second-level heading
 // of its page (an H2 with its H3s; a page's lead section is a family of
 // its own). Each family is one result, carrying the family's own text and
@@ -23,15 +20,12 @@ import (
 // at two addresses) are one.
 //
 // The weights are few on purpose. On 63 gold-labelled dev questions over
-// frozen indexes, ranking sections instead of snippet units, families and
-// the keyword fusion each moved the gold section into the top five more
-// often; a page-level aggregate, a penalty for thin API stubs or reference
-// paths and a prior for a page's first sections did not.
+// frozen indexes, ranking sections instead of snippet units and families
+// each moved the gold section into the top five more often; a penalty for
+// thin API stubs or reference paths and a prior for a page's first
+// sections did not.
 
 const (
-	// localRRFK is reciprocal rank fusion's constant: a section's fused
-	// score is the sum of 1/(localRRFK+rank) over the rankings it is in.
-	localRRFK = 60
 	// localMaxResults is how many family results are returned without a
 	// limit: what an agent reads, and where the measurements were taken.
 	localMaxResults = 5
@@ -40,7 +34,7 @@ const (
 	// a token.
 	localTokens       = 1800
 	localResultTokens = 600
-	// localRankedDepth is how deep in the fused ranking a section must sit
+	// localRankedDepth is how deep in the ranking a section must sit
 	// for its family to show it beyond the family's own text.
 	localRankedDepth = 40
 	// localFamilyParts is the most sections one result shows when its
@@ -55,36 +49,10 @@ const (
 )
 
 // rankedSection is a section (an index into the library's sections) and
-// its fused score.
+// its score.
 type rankedSection struct {
 	sec   int
 	score float64
-}
-
-// fuseRanks ranks secs for the query by reciprocal rank fusion of
-// cosine (qv) and the keyword ranking (keyword: indices into secs, best
-// first, from the full-text table). A section about a later version than
-// indexed is demoted in the cosine ranking (the keyword one already
-// leaves it out unless the question asks about it).
-func fuseRanks(secs []docsindex.Section, qv []float32, keyword []int, query string) []rankedSection {
-	score := map[int]float64{}
-	for r, d := range denseRank(secs, qv, query) {
-		score[d.page] += 1 / float64(localRRFK+r+1)
-	}
-	for r, i := range keyword {
-		score[i] += 1 / float64(localRRFK+r+1)
-	}
-	out := make([]rankedSection, 0, len(score))
-	for i, sc := range score {
-		out = append(out, rankedSection{sec: i, score: sc})
-	}
-	sort.Slice(out, func(a, b int) bool {
-		if out[a].score != out[b].score {
-			return out[a].score > out[b].score
-		}
-		return out[a].sec < out[b].sec
-	})
-	return out
 }
 
 // family is the sections of one page under one second-level heading.

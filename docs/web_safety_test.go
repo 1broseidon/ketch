@@ -143,7 +143,7 @@ func TestBlogSectionsAreNotDocs(t *testing.T) {
 	for _, lib := range []string{"pypi:quillmark", "https://quillmark.example/"} {
 		w, _ := safetyWorld(t, "org-blog-root")
 		store := newStore(t)
-		r, err := w.index(context.Background(), store, IndexRequest{Library: lib, Embedder: &bowEmbedder{id: "test/bow"}})
+		r, err := w.index(context.Background(), store, IndexRequest{Library: lib})
 		if err != nil {
 			t.Fatalf("index %s: %v", lib, err)
 		}

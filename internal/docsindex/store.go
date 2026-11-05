@@ -18,11 +18,6 @@
 // (a contentless table), and a library whose rows were made by another
 // tokenizer version has them rebuilt from its stored sections
 // (EnsureFTS), with no network.
-//
-// Vectors are optional: float16 (embed.AppendHalf), one or more per
-// section (a long section is embedded as several windows), present only
-// when the library was built with hybrid ranking on, and comparable only
-// with vectors of the model recorded in its metadata.
 package docsindex
 
 import (
@@ -39,14 +34,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/1broseidon/ketch/internal/embed"
 	_ "modernc.org/sqlite" // the database/sql driver "sqlite"
 )
 
 // FormatVersion is the index layout this code writes. A library written
 // in another format is rebuilt, never read (Library.Current): format 2 was
-// the bbolt store, format 1 had no snippet units, no cross-version labels
-// and looser version scoping.
+// the bbolt store, format 1 had no cross-version labels and looser version
+// scoping. A format-3 file written while the index could also store
+// embeddings and snippet units (never released) keeps those tables and
+// columns unread.
 const FormatVersion = 3
 
 // Library is one indexed docs root.
@@ -71,24 +67,18 @@ type Library struct {
 	// Resolved says how the root was found: "docs_url" (given), or
 	// "resolved" (a name, through the web backend's resolution, with
 	// Evidence, Trust and Packages as it reported them).
-	Resolved string   `json:"resolved"`
-	Evidence []string `json:"evidence,omitempty"`
-	Trust    float64  `json:"trust,omitempty"`
-	Packages []string `json:"packages,omitempty"`
-	// Model is the embedding model the vectors are from, and Dims their
-	// length; "" and 0 for an index of text alone (the default).
-	Model  string    `json:"model,omitempty"`
-	Dims   int       `json:"dims,omitempty"`
-	Format int       `json:"format"`
-	Built  time.Time `json:"built_at"`
-	// Pages, Sections and Vectors count what is stored. Discovered is how
+	Resolved string    `json:"resolved"`
+	Evidence []string  `json:"evidence,omitempty"`
+	Trust    float64   `json:"trust,omitempty"`
+	Packages []string  `json:"packages,omitempty"`
+	Format   int       `json:"format"`
+	Built    time.Time `json:"built_at"`
+	// Pages and Sections count what is stored. Discovered is how
 	// many pages discovery listed (after collapsing versions and locales),
 	// Capped whether the page cap left some out, Failed how many could not
 	// be fetched, and Sources which discovery sources answered.
 	Pages      int `json:"pages"`
 	Sections   int `json:"sections"`
-	Vectors    int `json:"vectors"`
-	Units      int `json:"units,omitempty"`
 	Discovered int `json:"discovered"`
 	// OtherVersions is how many listed pages were left out as other
 	// versions' trees (or copies of their pages).
@@ -116,7 +106,6 @@ type Library struct {
 type Asked struct {
 	Question string `json:"q"`
 	Library  string `json:"lib,omitempty"` // the library the request named, as given
-	Vector   []byte `json:"v,omitempty"`   // float16 query vector (hybrid ranking only)
 }
 
 // MaxAsked caps the questions a library remembers.
@@ -131,8 +120,6 @@ type Page struct {
 	Title    string `json:"title,omitempty"`
 	Hash     string `json:"hash"` // of the page's title and Markdown, as fetched
 	Sections int    `json:"sections"`
-	Windows  int    `json:"windows,omitempty"` // vectors across its sections
-	Units    int    `json:"units,omitempty"`   // snippet units across its sections
 	// Version is the library version the page was indexed under, Fetched
 	// when it was stored, and Source how it came in ("index": a docs
 	// index build; "search": a search-first question).
@@ -153,18 +140,10 @@ type Section struct {
 	Heading string   `json:"heading"`
 	Crumbs  []string `json:"crumbs,omitempty"`
 	Text    string   `json:"text"`
-	// Units are the section's snippet units, in order: each a byte range
-	// of Text, so a snippet is always the docs' own words.
-	Units []Unit `json:"units,omitempty"`
 	// CrossVersion is the later major version a section documents though
 	// it sits in this version's tree (a migration guide to it): "" for
 	// most. Ranking demotes it for questions about the indexed version.
 	CrossVersion string `json:"cross_version,omitempty"`
-	// Vectors are the section's windows' embeddings, in order, and
-	// UnitVectors its units', one each; none when the library has no
-	// model. Stored apart from the text.
-	Vectors     [][]float32 `json:"-"`
-	UnitVectors [][]float32 `json:"-"`
 }
 
 // Family is the second-level heading a section sits under (its
@@ -175,34 +154,6 @@ func (s Section) Family() string {
 		return s.Crumbs[1]
 	}
 	return ""
-}
-
-// Unit kinds.
-const (
-	UnitCode  = "code"  // fenced code with the prose just before it
-	UnitProse = "prose" // prose no code block claimed
-)
-
-// Unit is one snippet a section offers: for a code unit, the sentences
-// just before a run of fenced code blocks (Explain, possibly empty) and
-// the code (Body); for a prose unit, a sentence-bounded stretch of prose
-// (Body). Ranges are [start, end) byte offsets into the section's Text.
-type Unit struct {
-	Kind    string `json:"kind"`
-	Explain [2]int `json:"explain,omitzero"`
-	Body    [2]int `json:"body"`
-}
-
-// Parts returns u's explanation and body as they appear in text ("" for a
-// range text does not hold, which a stored section never has).
-func (u Unit) Parts(text string) (explain, body string) {
-	cut := func(r [2]int) string {
-		if r[0] < 0 || r[1] > len(text) || r[0] >= r[1] {
-			return ""
-		}
-		return text[r[0]:r[1]]
-	}
-	return cut(u.Explain), cut(u.Body)
 }
 
 // PageData is a page with its sections, as written together.
@@ -331,8 +282,6 @@ CREATE TABLE IF NOT EXISTS pages(
 	fetched_at INTEGER NOT NULL DEFAULT 0,
 	source     TEXT NOT NULL DEFAULT '',
 	sections   INTEGER NOT NULL DEFAULT 0,
-	windows    INTEGER NOT NULL DEFAULT 0,
-	units      INTEGER NOT NULL DEFAULT 0,
 	PRIMARY KEY(lib, url)
 ) WITHOUT ROWID;
 CREATE TABLE IF NOT EXISTS sections(
@@ -345,14 +294,8 @@ CREATE TABLE IF NOT EXISTS sections(
 	crumbs        TEXT NOT NULL DEFAULT '[]',  -- JSON array
 	family        TEXT NOT NULL DEFAULT '',    -- the H2 it sits under
 	text          TEXT NOT NULL DEFAULT '',
-	units         TEXT NOT NULL DEFAULT '',    -- JSON array of snippet units
 	cross_version TEXT NOT NULL DEFAULT '',
 	UNIQUE(lib, page, ord)
-);
-CREATE TABLE IF NOT EXISTS vectors(
-	section INTEGER PRIMARY KEY REFERENCES sections(id) ON DELETE CASCADE,
-	windows BLOB,
-	units   BLOB
 );
 PRAGMA user_version = 1;
 `
@@ -567,7 +510,7 @@ func (s *Store) Remove(key string) (found bool, err error) {
 func (s *Store) Pages(key string) (map[string]Page, error) {
 	out := map[string]Page{}
 	err := s.view(func(db *sql.DB) error {
-		rows, err := db.Query(`SELECT p.url, p.title, p.hash, p.version, p.fetched_at, p.source, p.sections, p.windows, p.units
+		rows, err := db.Query(`SELECT p.url, p.title, p.hash, p.version, p.fetched_at, p.source, p.sections
 			FROM pages p JOIN libraries l ON l.id = p.lib WHERE l.key = ?`, key)
 		if err != nil {
 			return err
@@ -576,7 +519,7 @@ func (s *Store) Pages(key string) (map[string]Page, error) {
 		for rows.Next() {
 			var p Page
 			var fetched int64
-			if err := rows.Scan(&p.URL, &p.Title, &p.Hash, &p.Version, &fetched, &p.Source, &p.Sections, &p.Windows, &p.Units); err != nil {
+			if err := rows.Scan(&p.URL, &p.Title, &p.Hash, &p.Version, &fetched, &p.Source, &p.Sections); err != nil {
 				return err
 			}
 			if fetched > 0 {
@@ -589,8 +532,8 @@ func (s *Store) Pages(key string) (map[string]Page, error) {
 	return out, err
 }
 
-// PutPages writes pages with their sections, full-text rows and vectors
-// in one transaction, replacing whatever each page had.
+// PutPages writes pages with their sections and full-text rows in one
+// transaction, replacing whatever each page had.
 func (s *Store) PutPages(key string, pages []PageData) error {
 	if len(pages) == 0 {
 		return nil
@@ -643,7 +586,7 @@ type pageWriter struct {
 }
 
 type stmts struct {
-	delFTS, delSecs, delPage, insPage, insSec, insFTS, insVec *sql.Stmt
+	delFTS, delSecs, delPage, insPage, insSec, insFTS *sql.Stmt
 }
 
 func (s *Store) writer(tx *sql.Tx, key string) (*pageWriter, error) {
@@ -667,10 +610,9 @@ func (s *Store) writer(tx *sql.Tx, key string) (*pageWriter, error) {
 		{&w.delFTS, `DELETE FROM ` + w.fts + ` WHERE rowid IN (SELECT id FROM sections WHERE lib = ? AND page = ?)`},
 		{&w.delSecs, `DELETE FROM sections WHERE lib = ? AND page = ?`},
 		{&w.delPage, `DELETE FROM pages WHERE lib = ? AND url = ?`},
-		{&w.insPage, `INSERT INTO pages(lib, url, title, hash, version, fetched_at, source, sections, windows, units) VALUES(?,?,?,?,?,?,?,?,?,?)`},
-		{&w.insSec, `INSERT INTO sections(lib, page, ord, anchor, heading, crumbs, family, text, units, cross_version) VALUES(?,?,?,?,?,?,?,?,?,?)`},
+		{&w.insPage, `INSERT INTO pages(lib, url, title, hash, version, fetched_at, source, sections) VALUES(?,?,?,?,?,?,?,?)`},
+		{&w.insSec, `INSERT INTO sections(lib, page, ord, anchor, heading, crumbs, family, text, cross_version) VALUES(?,?,?,?,?,?,?,?,?)`},
 		{&w.insFTS, `INSERT INTO ` + w.fts + `(rowid, heading, crumbs, ident, body) VALUES(?,?,?,?,?)`},
-		{&w.insVec, `INSERT OR REPLACE INTO vectors(section, windows, units) VALUES(?,?,?)`},
 	} {
 		if *p.into, err = tx.Prepare(p.q); err != nil {
 			w.close()
@@ -681,15 +623,14 @@ func (s *Store) writer(tx *sql.Tx, key string) (*pageWriter, error) {
 }
 
 func (w *pageWriter) close() {
-	for _, st := range []*sql.Stmt{w.delFTS, w.delSecs, w.delPage, w.insPage, w.insSec, w.insFTS, w.insVec} {
+	for _, st := range []*sql.Stmt{w.delFTS, w.delSecs, w.delPage, w.insPage, w.insSec, w.insFTS} {
 		if st != nil {
 			_ = st.Close()
 		}
 	}
 }
 
-// deletePage removes a page's record, sections, full-text rows and
-// vectors (cascaded).
+// deletePage removes a page's record, sections and full-text rows.
 func (w *pageWriter) deletePage(url string) error {
 	if _, err := w.delFTS.Exec(w.lib, url); err != nil {
 		return err
@@ -707,79 +648,44 @@ func (w *pageWriter) putPage(pd PageData) error {
 	if !p.Fetched.IsZero() {
 		fetched = p.Fetched.Unix()
 	}
-	if _, err := w.insPage.Exec(w.lib, p.URL, p.Title, p.Hash, p.Version, fetched, p.Source, p.Sections, p.Windows, p.Units); err != nil {
+	if _, err := w.insPage.Exec(w.lib, p.URL, p.Title, p.Hash, p.Version, fetched, p.Source, p.Sections); err != nil {
 		return err
 	}
 	for _, sec := range pd.Sections {
 		sec.Page = p.URL
-		id, err := w.putSection(sec)
-		if err != nil {
-			return err
-		}
-		if err := w.putVectors(id, sec); err != nil {
+		if err := w.putSection(sec); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (w *pageWriter) putSection(sec Section) (int64, error) {
+func (w *pageWriter) putSection(sec Section) error {
 	crumbs, err := json.Marshal(sec.Crumbs)
 	if err != nil {
-		return 0, err
+		return err
 	}
-	units := ""
-	if len(sec.Units) > 0 {
-		b, err := json.Marshal(sec.Units)
-		if err != nil {
-			return 0, err
-		}
-		units = string(b)
-	}
-	res, err := w.insSec.Exec(w.lib, sec.Page, sec.Order, sec.Anchor, sec.Heading, string(crumbs), sec.Family(), sec.Text, units, sec.CrossVersion)
+	res, err := w.insSec.Exec(w.lib, sec.Page, sec.Order, sec.Anchor, sec.Heading, string(crumbs), sec.Family(), sec.Text, sec.CrossVersion)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
-		return 0, err
+		return err
 	}
 	row := w.tok.Row(sec)
 	_, err = w.insFTS.Exec(id, row[0], row[1], row[2], row[3])
-	return id, err
-}
-
-// putVectors stores a section's vectors, or nothing when it has none.
-func (w *pageWriter) putVectors(id int64, sec Section) error {
-	if len(sec.Vectors) == 0 && len(sec.UnitVectors) == 0 {
-		return nil
-	}
-	_, err := w.insVec.Exec(id, nilIfEmpty(encodeVectors(sec.Vectors)), nilIfEmpty(encodeVectors(sec.UnitVectors)))
 	return err
 }
 
-func nilIfEmpty(b []byte) any {
-	if len(b) == 0 {
-		return nil
-	}
-	return b
-}
+// sectionCols are the columns scanSection reads, from sections s.
+const sectionCols = `s.id, s.page, s.ord, s.anchor, s.heading, s.crumbs, s.text, s.cross_version`
 
-// sectionCols are the columns scanSection reads, from sections s left
-// joined to vectors v.
-const sectionCols = `s.id, s.page, s.ord, s.anchor, s.heading, s.crumbs, s.text, s.units, s.cross_version`
-
-// scanSection reads one section row (sectionCols, then optionally the
-// window and unit vector blobs).
-func scanSection(rows *sql.Rows, dims int, withVectors bool) (Section, error) {
+// scanSection reads one section row (sectionCols).
+func scanSection(rows *sql.Rows) (Section, error) {
 	var sec Section
-	var crumbs, units string
-	dest := []any{&sec.ID, &sec.Page, &sec.Order, &sec.Anchor, &sec.Heading, &crumbs, &sec.Text, &units, &sec.CrossVersion}
-	var wv, uv []byte
-	if withVectors {
-		dest = append(dest, &wv, &uv)
-	}
-	if err := rows.Scan(dest...); err != nil {
+	var crumbs string
+	if err := rows.Scan(&sec.ID, &sec.Page, &sec.Order, &sec.Anchor, &sec.Heading, &crumbs, &sec.Text, &sec.CrossVersion); err != nil {
 		return sec, err
 	}
 	if crumbs != "" && crumbs != "[]" && crumbs != "null" {
@@ -787,19 +693,11 @@ func scanSection(rows *sql.Rows, dims int, withVectors bool) (Section, error) {
 			return sec, err
 		}
 	}
-	if units != "" {
-		if err := json.Unmarshal([]byte(units), &sec.Units); err != nil {
-			return sec, err
-		}
-	}
-	if withVectors && dims > 0 {
-		sec.Vectors, sec.UnitVectors = decodeVectors(wv, dims), decodeVectors(uv, dims)
-	}
 	return sec, nil
 }
 
 // querySections runs a section query and reads its rows.
-func querySections(db *sql.DB, dims int, withVectors bool, q string, args ...any) ([]Section, error) {
+func querySections(db *sql.DB, q string, args ...any) ([]Section, error) {
 	rows, err := db.Query(q, args...)
 	if err != nil {
 		return nil, err
@@ -807,7 +705,7 @@ func querySections(db *sql.DB, dims int, withVectors bool, q string, args ...any
 	defer func() { _ = rows.Close() }()
 	var out []Section
 	for rows.Next() {
-		sec, err := scanSection(rows, dims, withVectors)
+		sec, err := scanSection(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -816,27 +714,20 @@ func querySections(db *sql.DB, dims int, withVectors bool, q string, args ...any
 	return out, rows.Err()
 }
 
-// Sections returns every section of a library in page and section order,
-// with its window and unit vectors (of dims dimensions each) when
-// withVectors is set and the section has them.
-func (s *Store) Sections(key string, dims int, withVectors bool) ([]Section, error) {
+// Sections returns every section of a library in page and section order.
+func (s *Store) Sections(key string) ([]Section, error) {
 	var out []Section
 	err := s.view(func(db *sql.DB) error {
 		var err error
-		if withVectors && dims > 0 {
-			out, err = querySections(db, dims, true, `SELECT `+sectionCols+`, v.windows, v.units FROM sections s
-				JOIN libraries l ON l.id = s.lib LEFT JOIN vectors v ON v.section = s.id WHERE l.key = ? ORDER BY s.page, s.ord`, key)
-		} else {
-			out, err = querySections(db, 0, false, `SELECT `+sectionCols+` FROM sections s
-				JOIN libraries l ON l.id = s.lib WHERE l.key = ? ORDER BY s.page, s.ord`, key)
-		}
+		out, err = querySections(db, `SELECT `+sectionCols+` FROM sections s
+			JOIN libraries l ON l.id = s.lib WHERE l.key = ? ORDER BY s.page, s.ord`, key)
 		return err
 	})
 	return out, err
 }
 
-// PageSections returns the sections of one page of a library, in order,
-// without vectors: an index lookup, so reading one section of a large
+// PageSections returns the sections of one page of a library, in order:
+// an index lookup, so reading one section of a large
 // index costs a seek, not a pass over the library. It returns none for a
 // page the library does not hold.
 func (s *Store) PageSections(key, page string) ([]Section, error) {
@@ -844,7 +735,7 @@ func (s *Store) PageSections(key, page string) ([]Section, error) {
 }
 
 // SectionsOfPages returns the sections of the given pages of a library,
-// without vectors, page by page in order.
+// page by page in order.
 func (s *Store) SectionsOfPages(key string, pages []string) ([]Section, error) {
 	if len(pages) == 0 {
 		return nil, nil
@@ -856,45 +747,11 @@ func (s *Store) SectionsOfPages(key string, pages []string) ([]Section, error) {
 	var out []Section
 	err = s.view(func(db *sql.DB) error {
 		var err error
-		out, err = querySections(db, 0, false, `SELECT `+sectionCols+` FROM sections s
+		out, err = querySections(db, `SELECT `+sectionCols+` FROM sections s
 			JOIN libraries l ON l.id = s.lib WHERE l.key = ? AND s.page IN (SELECT value FROM json_each(?)) ORDER BY s.page, s.ord`, key, string(list))
 		return err
 	})
 	return out, err
-}
-
-// PutVectors replaces the window and unit vectors of the given sections
-// (keyed by page URL and order), for embedding with another model.
-func (s *Store) PutVectors(key string, secs []Section) error {
-	return s.update(func(tx *sql.Tx) error {
-		id, err := libID(tx, key)
-		if err != nil {
-			return err
-		}
-		find, err := tx.Prepare(`SELECT id FROM sections WHERE lib = ? AND page = ? AND ord = ?`)
-		if err != nil {
-			return err
-		}
-		defer func() { _ = find.Close() }()
-		put, err := tx.Prepare(`INSERT OR REPLACE INTO vectors(section, windows, units) VALUES(?,?,?)`)
-		if err != nil {
-			return err
-		}
-		defer func() { _ = put.Close() }()
-		for _, sec := range secs {
-			var sid int64
-			switch err := find.QueryRow(id, sec.Page, sec.Order).Scan(&sid); {
-			case errors.Is(err, sql.ErrNoRows):
-				continue
-			case err != nil:
-				return err
-			}
-			if _, err := put.Exec(sid, nilIfEmpty(encodeVectors(sec.Vectors)), nilIfEmpty(encodeVectors(sec.UnitVectors))); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
 }
 
 // Hit is one full-text match: a section's ID and its score (FTS5's bm25,
@@ -945,7 +802,7 @@ func (s *Store) Search(key, match string, weights []float64, limit int) ([]Hit, 
 }
 
 // SectionsByID returns the sections with the given IDs (of any library),
-// without vectors, in no particular order.
+// in no particular order.
 func (s *Store) SectionsByID(ids []int64) ([]Section, error) {
 	if len(ids) == 0 {
 		return nil, nil
@@ -957,7 +814,7 @@ func (s *Store) SectionsByID(ids []int64) ([]Section, error) {
 	var out []Section
 	err = s.view(func(db *sql.DB) error {
 		var err error
-		out, err = querySections(db, 0, false, `SELECT `+sectionCols+` FROM sections s WHERE s.id IN (SELECT value FROM json_each(?))`, string(list))
+		out, err = querySections(db, `SELECT `+sectionCols+` FROM sections s WHERE s.id IN (SELECT value FROM json_each(?))`, string(list))
 		return err
 	})
 	return out, err
@@ -995,7 +852,7 @@ func (s *Store) EnsureFTS(key string) (bool, error) {
 // RebuildFTS remakes a library's full-text table from its stored
 // sections with the store's tokenizer.
 func (s *Store) RebuildFTS(key string) error {
-	secs, err := s.Sections(key, 0, false)
+	secs, err := s.Sections(key)
 	if err != nil {
 		return err
 	}
@@ -1024,30 +881,4 @@ func (s *Store) RebuildFTS(key string) error {
 		_, err = tx.Exec(`UPDATE libraries SET fts = ? WHERE id = ?`, s.tok.Version(), id)
 		return err
 	})
-}
-
-// encodeVectors concatenates float16 vectors.
-func encodeVectors(vecs [][]float32) []byte {
-	n := 0
-	for _, v := range vecs {
-		n += 2 * len(v)
-	}
-	b := make([]byte, 0, n)
-	for _, v := range vecs {
-		b = embed.AppendHalf(b, v)
-	}
-	return b
-}
-
-// decodeVectors splits concatenated float16 vectors of dims each.
-func decodeVectors(b []byte, dims int) [][]float32 {
-	if len(b) == 0 || dims <= 0 || len(b)%(2*dims) != 0 {
-		return nil
-	}
-	flat := embed.FromHalf(nil, b)
-	out := make([][]float32, 0, len(flat)/dims)
-	for i := 0; i < len(flat); i += dims {
-		out = append(out, flat[i:i+dims:i+dims])
-	}
-	return out
 }

@@ -11,9 +11,9 @@ import (
 // The local docs index end to end, through the built binary, the real
 // scrape pipeline and page cache: each fixture site is indexed with docs
 // index, then answered offline by -b local with the section the web
-// backend finds for the same query. Hybrid ranking is off by default,
-// so the text is indexed alone, no model runs, and the answer is ranked
-// by keywords over the full-text table without a note saying so.
+// backend finds for the same query. The text is indexed alone, no model
+// runs, and the answer is ranked by keywords over the full-text table
+// without a note saying so.
 func TestDocsIndexFixtureSitesCLI(t *testing.T) {
 	for _, name := range slices.Sorted(maps.Keys(docsFixtures)) {
 		fx := docsFixtures[name]
@@ -40,8 +40,7 @@ func TestDocsIndexFixtureSitesCLI(t *testing.T) {
 }
 
 // checkLocalTop asserts -b local answers fx's query with fx's section,
-// ranked by keywords (the default, unremarked), as sections by default and as
-// code-first snippets with --snippets.
+// ranked by keywords (unremarked), as sections; --snippets is gone.
 func checkLocalTop(t *testing.T, site *fixtureSite, fx docsFixture, library string) {
 	t.Helper()
 	code, out, stderr := cli(t, "--json", "docs", "-b", "local", "--library", library, fx.query)
@@ -59,18 +58,16 @@ func checkLocalTop(t *testing.T, site *fixtureSite, fx docsFixture, library stri
 		t.Errorf("top result = %+v, want the section %s#%s from local", top, fx.page, fx.anchor)
 	}
 	if strings.Contains(stderr, "ranked by keywords") {
-		t.Errorf("keyword ranking is the default, not a note: %q", stderr)
+		t.Errorf("keyword ranking is the only ranking, not a note: %q", stderr)
 	}
-	// The text output renders results as Markdown, sections and snippets
-	// alike.
+	// The text output renders results as Markdown.
 	top := results[0]
 	code, out, stderr = cli(t, "docs", "-b", "local", "--library", library, fx.query)
 	if code != 0 || !strings.Contains(out, "### "+top.Breadcrumb+"\n\n") || !strings.Contains(out, "\n\nsource: "+top.URL+"\n") {
 		t.Errorf("section output (exit %d):\n%s%s", code, out, stderr)
 	}
-	code, out, _ = cli(t, "docs", "-b", "local", "--snippets", "--library", library, fx.query)
-	if code != 0 || !strings.Contains(out, "\n\nsource: "+site.URL+fx.page) {
-		t.Errorf("--snippets output (exit %d):\n%s", code, out)
+	if code, _, stderr = cli(t, "docs", "-b", "local", "--snippets", "--library", library, fx.query); code == 0 || !strings.Contains(stderr, "unknown flag") {
+		t.Errorf("--snippets exited %d (%s), want an unknown flag", code, stderr)
 	}
 }
 

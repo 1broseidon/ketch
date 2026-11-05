@@ -24,7 +24,7 @@ import (
 // web backend's ranker applies on top of BM25 (sectionBoost: the share of
 // the question's terms named, an exact title, an API entry the question
 // names, its terms in code and side by side) order them; families and
-// rendering are the hybrid ranker's.
+// rendering follow (local_rank.go).
 
 // ftsVersion names the normalization of the full-text rows: rows made by
 // another version are rebuilt from the stored sections on first use.
@@ -210,11 +210,11 @@ func withoutFiller(terms []string) []string {
 
 // keywordRank ranks a library's sections for the query by the full-text
 // table: the candidates' sections (every section of the pages they are
-// on, so families are whole), and their ranking as indices into them,
-// best first, scores relative to the best; with cut, the relevant ones
-// only (within webRelevanceRatio of the best). A section about a later
-// version than indexed is left out unless the question asks about it.
-func (l *Local) keywordRank(lib docsindex.Library, query string, cut bool) ([]docsindex.Section, []rankedSection, error) {
+// on, so families are whole), and the relevant ones' ranking (within
+// webRelevanceRatio of the best) as indices into them, best first, scores
+// relative to the best. A section about a later version than indexed is
+// left out unless the question asks about it.
+func (l *Local) keywordRank(lib docsindex.Library, query string) ([]docsindex.Section, []rankedSection, error) {
 	q := newRankQuery(query)
 	hits, err := l.ftsHits(lib, q)
 	if err != nil || len(hits) == 0 {
@@ -236,11 +236,7 @@ func (l *Local) keywordRank(lib docsindex.Library, query string, cut bool) ([]do
 	if err != nil {
 		return nil, nil, err
 	}
-	ranked := rerankHits(lib, secs, hits, q)
-	if cut {
-		ranked = relevantRanked(ranked)
-	}
-	return secs, ranked, nil
+	return secs, relevantRanked(rerankHits(lib, secs, hits, q)), nil
 }
 
 // ftsHits are the full-text table's best sections for the query; the
