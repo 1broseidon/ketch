@@ -236,7 +236,7 @@ func TestDocsWebResolveFormatting(t *testing.T) {
 	ft := recordedFixtures(t)
 	docsEnv(t, fixtureFallback{ft})
 
-	matches, raw := resolveJSON(t, "-b", "web", "click")
+	matches, raw := resolveJSON(t, "-b", "search", "click")
 	if len(matches) != 1 {
 		t.Fatalf("resolve click = %v, want exactly one match (PyPI's click)", matchIDs(matches))
 	}
@@ -256,7 +256,7 @@ func TestDocsWebResolveFormatting(t *testing.T) {
 		}
 	}
 
-	text, err := docsCLI(t, "-b", "web", "--resolve", "click")
+	text, err := docsCLI(t, "-b", "search", "--resolve", "click")
 	if err != nil {
 		t.Fatalf("resolve click: %v", err)
 	}
@@ -269,16 +269,15 @@ func TestDocsWebResolveFormatting(t *testing.T) {
 	}
 }
 
-// A name two unrelated projects publish is listed by --resolve, refused
-// where one library is needed (--library, or a bare query naming it) with
-// both candidates named, and settled by an ecosystem prefix.
+// A name two unrelated projects publish is listed by --resolve, with both
+// candidates' evidence, and settled by an ecosystem prefix.
 func TestDocsWebResolveAmbiguousName(t *testing.T) {
 	ft := widgetFixtures(t)
 	docsEnv(t, fixtureFallback{ft})
 
-	matches, _ := resolveJSON(t, "-b", "web", "widget")
+	matches, _ := resolveJSON(t, "-b", "search", "widget")
 	checkWidgetMatches(t, matches)
-	text, err := docsCLI(t, "-b", "web", "--resolve", "widget")
+	text, err := docsCLI(t, "-b", "search", "--resolve", "widget")
 	if err != nil {
 		t.Fatalf("resolve widget: %v", err)
 	}
@@ -287,15 +286,7 @@ func TestDocsWebResolveAmbiguousName(t *testing.T) {
 		t.Errorf("text output has %d evidence lines, want 2:\n%s", n, text)
 	}
 
-	for _, args := range [][]string{
-		{"-b", "web", "--library", "widget", "configure themes"},
-		{"-b", "web", "widget configure themes"},
-	} {
-		_, err := docsCLI(t, args...)
-		checkAmbiguous(t, args, err, matches)
-	}
-
-	one, _ := resolveJSON(t, "-b", "web", "pypi:widget")
+	one, _ := resolveJSON(t, "-b", "search", "pypi:widget")
 	if len(one) != 1 || hostOf(t, one[0].ID) != "widget.readthedocs.io" {
 		t.Errorf("resolve pypi:widget = %v, want PyPI's widget alone", matchIDs(one))
 	}
@@ -324,29 +315,9 @@ func checkWidgetMatches(t *testing.T, matches []docs.LibraryMatch) {
 	}
 }
 
-// checkAmbiguous asserts err is the ambiguity error, exit 2, naming every
-// candidate's ID and package spec and the flag to pass one with.
-func checkAmbiguous(t *testing.T, args []string, err error, matches []docs.LibraryMatch) {
-	t.Helper()
-	if code := exitCode(err); code != ExitValidation {
-		t.Errorf("docs %q: exit %d, want %d (ambiguous): %v", args, code, ExitValidation, err)
-		return
-	}
-	var amb *docs.AmbiguousLibraryError
-	if !errors.As(err, &amb) {
-		t.Errorf("docs %q: %v, want an *AmbiguousLibraryError", args, err)
-	}
-	for _, want := range append(matchIDs(matches), "npm:widget", "pypi:widget", "--library") {
-		if !strings.Contains(err.Error(), want) {
-			t.Errorf("docs %q: error %q does not name %q", args, err, want)
-		}
-	}
-}
-
-// Every way a docs run can fail maps to its exit code: input to fix (2), a
-// library or version nobody offers (3), a source that is down (4).
+// Every way a --resolve can fail maps to its exit code: a library or
+// version nobody offers (3), a source that is down (4).
 func TestDocsWebResolveExitCodes(t *testing.T) {
-	widget := func(t *testing.T) http.RoundTripper { return fixtureFallback{widgetFixtures(t)} }
 	recorded := func(t *testing.T) http.RoundTripper { return fixtureFallback{recordedFixtures(t)} }
 	nothing := func(*testing.T) http.RoundTripper { return fixtureFallback{testutil.NewFixtureTransport()} }
 	down := func(*testing.T) http.RoundTripper { return statusTransport(http.StatusServiceUnavailable) }
@@ -358,24 +329,15 @@ func TestDocsWebResolveExitCodes(t *testing.T) {
 		code  int
 		names []string // text the error must contain
 	}{
-		{"empty version", widget, []string{"--library", "widget@", "configure themes"}, ExitValidation, []string{"widget@"}},
-		{"unknown ecosystem", widget, []string{"--library", "maven:widget", "configure themes"}, ExitValidation, []string{"maven"}},
-		{"docs URL with a version", widget, []string{"--library", "https://widgetjs.dev/docs/@3", "configure themes"}, ExitValidation, []string{"version"}},
-		{"bare query naming no library", nothing, []string{"how do i configure the themes"}, ExitValidation, []string{"--library"}},
 		{"resolve a name nobody publishes", nothing, []string{"--resolve", "zzqxnosuchlib"}, ExitNotFound, []string{"zzqxnosuchlib"}},
-		{"docs for a name nobody publishes", nothing, []string{"--library", "zzqxnosuchlib", "configure themes"}, ExitNotFound, []string{"zzqxnosuchlib"}},
-		{"version not offered", recorded, []string{"--library", "django@4.0", "middleware"}, ExitNotFound, []string{"4.0", "5.2"}},
 		{"resolve a version not offered", recorded, []string{"--resolve", "django@4.0"}, ExitNotFound, []string{"4.0", "5.2"}},
 		{"every source down", down, []string{"--resolve", "widget"}, ExitUpstream, nil},
-		{"bare query while every source is down", down, []string{"how do i configure the themes in starlight"}, ExitUpstream, []string{"starlight", "503"}},
-		{"bare question naming no library, every source down", down, []string{"how do i configure the themes"}, ExitValidation, []string{"--library"}},
-		{"docs while every source is down", down, []string{"--library", "widget", "configure themes"}, ExitUpstream, nil},
 		{"github the only source, down", down, []string{"--resolve", "github:widgetjs/widget"}, ExitUpstream, nil},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			docsEnv(t, tc.rt(t))
-			out, err := docsCLI(t, append([]string{"-b", "web"}, tc.args...)...)
+			out, err := docsCLI(t, append([]string{"-b", "search"}, tc.args...)...)
 			if code := exitCode(err); code != tc.code {
 				t.Fatalf("docs %q: exit %d, want %d: %v\nstdout: %s", tc.args, code, tc.code, err, out)
 			}
@@ -410,14 +372,33 @@ func (d registryDown) RoundTrip(req *http.Request) (*http.Response, error) {
 func TestDocsWebResolveSaysWhenIncomplete(t *testing.T) {
 	resetDocsFlags(t)
 	docsEnv(t, registryDown{fixtureFallback{widgetFixtures(t)}, "pypi.org"})
-	out, err := docsCLI(t, "-b", "web", "--resolve", "widget")
+	out, err := docsCLI(t, "-b", "search", "--resolve", "widget")
 	if err != nil || !strings.Contains(out, "evidence: this list may be incomplete: pypi widget") || strings.Contains(out, "readthedocs") {
 		t.Fatalf("--resolve widget with PyPI down: %v\n%s", err, out)
 	}
-	out, err = docsCLI(t, "--json", "-b", "web", "--resolve", "widget")
+	out, err = docsCLI(t, "--json", "-b", "search", "--resolve", "widget")
 	var matches []docs.LibraryMatch
 	if err != nil || json.Unmarshal([]byte(out), &matches) != nil || len(matches) != 1 ||
 		!strings.HasPrefix(matches[0].Evidence[0], "this list may be incomplete: pypi widget") {
 		t.Errorf("--json --resolve widget with PyPI down: %v\n%s", err, out)
+	}
+}
+
+// checkAmbiguous asserts err is the ambiguity error, exit 2, naming every
+// candidate's ID and package spec and the flag to pass one with.
+func checkAmbiguous(t *testing.T, args []string, err error, matches []docs.LibraryMatch) {
+	t.Helper()
+	if code := exitCode(err); code != ExitValidation {
+		t.Errorf("docs %q: exit %d, want %d (ambiguous): %v", args, code, ExitValidation, err)
+		return
+	}
+	var amb *docs.AmbiguousLibraryError
+	if !errors.As(err, &amb) {
+		t.Errorf("docs %q: %v, want an *AmbiguousLibraryError", args, err)
+	}
+	for _, want := range append(matchIDs(matches), "npm:widget", "pypi:widget", "--library") {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("docs %q: error %q does not name %q", args, err, want)
+		}
 	}
 }

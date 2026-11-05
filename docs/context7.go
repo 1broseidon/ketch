@@ -466,9 +466,10 @@ func context7KeylessStatus(state *context7State, now time.Time) (health.Status, 
 
 func context7Provider() Provider {
 	return Provider{
-		Settings: []config.Setting{{Key: "context7_api_key", ValidationOrder: 20, Secret: true, GateDoctor: true, FileOrder: 20, DiscoveryOrder: 23, EnvOrder: 14}},
-		ID:       "context7",
-		Name:     "Context7",
+		Settings:    []config.Setting{{Key: "context7_api_key", ValidationOrder: 20, Secret: true, GateDoctor: true, FileOrder: 20, DiscoveryOrder: 23, EnvOrder: 14}},
+		ID:          "context7",
+		Name:        "Context7",
+		LibraryHelp: "a library ID from resolve, such as /vercel/next.js",
 		// Keyless use runs on the anonymous quota, so Context7 needs no
 		// setup; a key only lifts the cap.
 		Usable: func(*config.Config) bool { return true },

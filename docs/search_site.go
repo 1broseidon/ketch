@@ -73,12 +73,6 @@ type sfSite struct {
 	retry bool     // an alternative tree of a site read before
 }
 
-// fuseHits merges search result lists into one ranking of pages, each
-// weighed by its rank in every list it is in, best first.
-func fuseHits(lists [][]search.Result) []sfHit {
-	return fuseWeighted(lists, nil)
-}
-
 // fuseWeighted is fuseHits with each list's weights scaled (1 when scale
 // is nil or short).
 func fuseWeighted(lists [][]search.Result, scale []float64) []sfHit {

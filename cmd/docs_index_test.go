@@ -39,18 +39,18 @@ func indexCLI(t *testing.T, args ...string) (string, error) {
 	return out, runErr
 }
 
-// docs index resolves a name exactly as a docs query does, over the
-// recorded registries and sites: an ambiguous name is refused with every
-// candidate (exit 2), and the agent passes the one it means; a spec that
-// settles it is resolved, indexed from the site's recorded pages, and then
-// answered offline by -b local under that spec, with the resolution's
-// evidence kept.
+// docs index resolves a name exactly as --resolve does, over the recorded
+// registries and sites: an ambiguous name is refused with every candidate
+// (exit 2), and the agent passes the one it means; a spec that settles it
+// is resolved, indexed from the site's recorded pages, and then answered
+// offline by ketch docs under that spec, with the resolution's evidence
+// kept.
 func TestDocsIndexResolvesLikeAQuery(t *testing.T) {
 	ft := widgetFixtures(t)
 	docsEnv(t, fixtureFallback{ft})
 
 	_, err := indexCLI(t, "widget")
-	matches, _ := resolveJSON(t, "-b", "web", "widget")
+	matches, _ := resolveJSON(t, "-b", "search", "widget")
 	checkAmbiguous(t, []string{"docs", "index", "widget"}, err, matches)
 
 	out, err := indexCLI(t, "--json", "pypi:widget")
@@ -65,11 +65,11 @@ func TestDocsIndexResolvesLikeAQuery(t *testing.T) {
 	if !strings.HasPrefix(lib.Root, "https://widget.readthedocs.io/") || lib.Resolved != "resolved" || len(lib.Evidence) == 0 || lib.Pages == 0 {
 		t.Fatalf("library = %+v", lib)
 	}
-	text, err := docsCLI(t, "-b", "local", "--library", "pypi:widget", "configure themes")
+	text, err := docsCLI(t, "-b", "search", "--library", "pypi:widget", "configure themes")
 	if err != nil {
-		t.Fatalf("-b local pypi:widget: exit %d: %v", exitCode(err), err)
+		t.Fatalf("--library pypi:widget: exit %d: %v", exitCode(err), err)
 	}
-	if !strings.Contains(text, "backend: local") || !strings.Contains(text, "source: https://widget.readthedocs.io/") {
+	if !strings.Contains(text, "backend: search") || !strings.Contains(text, "source: https://widget.readthedocs.io/") {
 		t.Errorf("local answer:\n%s", text)
 	}
 }

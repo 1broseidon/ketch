@@ -79,11 +79,11 @@ func TestSectionFetchFamily(t *testing.T) {
 	l := sectionLocal(t, "")
 	ref := secRoot + "guide/forms#validation"
 	o := fetch(t, l, "", ref, 0)
-	if o.Status != Answered || len(o.Results) != 1 || o.Backend != "local" {
+	if o.Status != Answered || len(o.Results) != 1 || o.Backend != SearchBackend {
 		t.Fatalf("outcome = %+v", o)
 	}
 	r := o.Results[0]
-	if r.URL != ref || r.Section != ref || r.Source != "local" || r.Library != secRoot || r.Truncated ||
+	if r.URL != ref || r.Section != ref || r.Source != SearchBackend || r.Library != secRoot || r.Truncated ||
 		r.Title != "Validation" || r.Breadcrumb != "Forms > Validation" || strings.Join(r.Anchors, ",") != "validation,rules,async" {
 		t.Errorf("result = %+v", r)
 	}
@@ -168,7 +168,7 @@ func TestSectionFetchCap(t *testing.T) {
 		t.Errorf("cut inside a paragraph")
 	}
 	page := fetch(t, l, "", secRoot+"guide/forms", 110).Results[0]
-	if !page.Truncated || !strings.HasSuffix(page.Snippet, "next section: ketch docs -b local --section "+secRoot+"guide/forms#"+nextAnchor(page.Snippet)) {
+	if !page.Truncated || !strings.HasSuffix(page.Snippet, "next section: ketch docs --section "+secRoot+"guide/forms#"+nextAnchor(page.Snippet)) {
 		t.Errorf("cut after the first section:\n%s", page.Snippet)
 	}
 	if got := estimateTokens(RenderSnippet(page)); got > 110 {
@@ -176,7 +176,7 @@ func TestSectionFetchCap(t *testing.T) {
 	}
 	// The MCP wording is the docs call.
 	mcp := l.SectionSelect(WithLocalOptions(context.Background(), LocalOptions{Hint: HintMCP}), "", secRoot+"guide/forms", 110).Results[0]
-	if !strings.Contains(mcp.Snippet, `next section: docs(backend="local", section="`+secRoot+"guide/forms#") {
+	if !strings.Contains(mcp.Snippet, `next section: docs(section="`+secRoot+"guide/forms#") {
 		t.Errorf("MCP notice:\n%s", mcp.Snippet)
 	}
 	// A code block is never cut inside: the fences stay balanced at every cap.
@@ -232,7 +232,7 @@ func TestCompactAnswerPointsToFullSection(t *testing.T) {
 			t.Errorf("section = %q, url %q", r.Section, r.URL)
 		}
 		got := RenderResult(r, HintCLI)
-		hint := "full section: ketch docs -b local --section " + r.Section + "\n"
+		hint := "full section: ketch docs --section " + r.Section + "\n"
 		if r.Truncated != strings.HasSuffix(got, "source: "+r.URL+"\n"+hint) {
 			t.Errorf("truncated=%v but rendering is:\n%s", r.Truncated, got)
 		}
@@ -295,7 +295,7 @@ func TestCompactAnswerMCPPointer(t *testing.T) {
 	l := sectionLocal(t, "")
 	o := l.GetDocsSelect(WithLocalOptions(context.Background(), LocalOptions{Tokens: 300, Hint: HintMCP}), secRoot, "default form action POST", 0)
 	r := o.Results[0]
-	want := "\n\nfull section: docs(backend=\"local\", section=\"" + r.Section + "\")"
+	want := "\n\nfull section: docs(section=\"" + r.Section + "\")"
 	if !r.Truncated || !strings.HasSuffix(r.Snippet, elidedMarker+want) {
 		t.Errorf("MCP snippet:\n%s", r.Snippet)
 	}

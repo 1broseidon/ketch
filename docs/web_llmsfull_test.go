@@ -1,11 +1,8 @@
 package docs
 
 import (
-	"context"
-	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"testing"
 )
@@ -107,49 +104,6 @@ func TestFrontmatterEndNeedsKeys(t *testing.T) {
 	}
 }
 
-// End to end: a VitePress site's llms-full.txt answers from its pages,
-// each result at its own page rather than at llms-full.txt.
-func TestWebFrontmatterFullTextCitesPages(t *testing.T) {
-	f := &fakeFetcher{raw: map[string]fakeRaw{
-		"https://sinonjs.org/llms.txt":      plain(llmsFullFixture(t, "sinonjs.org", "llms.txt")),
-		"https://sinonjs.org/llms-full.txt": plain(llmsFullFixture(t, "sinonjs.org", "llms-full.txt")),
-	}}
-	results, err := NewWeb(f).GetDocs(context.Background(), "https://sinonjs.org", "clock tick", 2000)
-	if err != nil {
-		t.Fatalf("GetDocs: %v", err)
-	}
-	if len(results) == 0 || results[0].URL != "https://sinonjs.org/concepts/fake-timers/tick" {
-		t.Fatalf("first result should be the tick page: %+v", results)
-	}
-	if slices.ContainsFunc(results, func(r Result) bool { return strings.Contains(r.URL, "llms-full.txt") }) {
-		t.Errorf("a result cites llms-full.txt: %+v", results)
-	}
-}
-
-// GitBook paginates llms-full.txt ("part 1 of 8 … Next part: …"); the
-// first part holds a hundred pages, llms.txt lists them all. A page the
-// query's candidates include that llms-full.txt does not hold is fetched;
-// the ones it holds are not. Shaped like gitbook.com/docs.
-func TestWebPartialFullTextFetchesUncoveredPages(t *testing.T) {
-	f := &fakeFetcher{raw: map[string]fakeRaw{
-		"https://book.test/docs/llms.txt":                  plain("# Bookery\n\n- [Quickstart](https://book.test/docs/quickstart.md)\n- [Custom domains](https://book.test/docs/custom-domains.md)\n- [Visitor authentication](https://book.test/docs/visitor-authentication.md)\n"),
-		"https://book.test/docs/llms-full.txt":             plain("> This is part 1 of 2 of the full documentation (pages 1–1 of 3).\n> Next part: https://book.test/docs/llms-full.txt/1\n\n# Quickstart\n\nCreate a space and publish it.\n"),
-		"https://book.test/docs/visitor-authentication.md": md("# Visitor authentication\n\nVisitor authentication lets you publish docs behind a login with a JWT signing key.\n"),
-	}}
-	results, err := NewWeb(f).GetDocs(context.Background(), "https://book.test/docs/", "visitor authentication jwt", 2000)
-	if err != nil {
-		t.Fatalf("GetDocs: %v", err)
-	}
-	if len(results) == 0 || results[0].URL != "https://book.test/docs/visitor-authentication" {
-		t.Fatalf("results = %+v", results)
-	}
-	for _, c := range f.called() {
-		if strings.Contains(c, "quickstart") {
-			t.Errorf("a page llms-full.txt holds was fetched: %s", c)
-		}
-	}
-}
-
 // Fumadocs' default llms-full.txt writes each page's address after its
 // title: "# Title (/docs/path)". Shaped like prisma.io/docs.
 func TestSplitFullTextPathAfterTitle(t *testing.T) {
@@ -159,38 +113,4 @@ func TestSplitFullTextPathAfterTitle(t *testing.T) {
 		{"Choose a setup path", "/docs/getting-started", "fastest path"},
 		{"Install on macOS (with Homebrew)", "", "parentheses"},
 	})
-}
-
-// A large llms-full.txt is read as the site's full text: its best-matching
-// pages, interleaved with llms.txt's best by title, are the pages ranked,
-// so many reference pages that each mention the query's words do not
-// crowd out the guide llms.txt titles with them.
-func TestWebFullTextRanksChosenPages(t *testing.T) {
-	var full, links strings.Builder
-	links.WriteString("# Widgets\n\n- [Retry policies](https://wid.test/guides/retry.md): How to retry failed requests with backoff\n")
-	full.WriteString("---\nurl: /guides/retry.md\n---\n\n# Retry policies\n\nWrap a call in `withRetry(fn, {attempts: 3})` to retry it with exponential backoff.\n\n")
-	for i := range 8 {
-		fmt.Fprintf(&links, "- [Client option %d](https://wid.test/ref/opt%d.md)\n", i, i)
-		fmt.Fprintf(&full, "---\nurl: /ref/opt%d.md\n---\n\n# Client option %d\n\n## retry\n\nThe retry retry option of client %d: retry count for failed requests, retry delay.\n\n", i, i, i)
-	}
-	f := &fakeFetcher{raw: map[string]fakeRaw{
-		"https://wid.test/llms.txt":      plain(links.String()),
-		"https://wid.test/llms-full.txt": plain(full.String()),
-	}}
-	results, err := NewWeb(f).GetDocs(context.Background(), "https://wid.test/", "retry policies backoff", 4000)
-	if err != nil {
-		t.Fatalf("GetDocs: %v", err)
-	}
-	if len(results) == 0 || results[0].URL != "https://wid.test/guides/retry" {
-		t.Fatalf("first result = %+v", results)
-	}
-	var pages []string
-	for _, r := range results {
-		if p, _, _ := strings.Cut(r.URL, "#"); !slices.Contains(pages, p) {
-			pages = append(pages, p)
-		}
-	}
-	if len(pages) > webMaxFetch {
-		t.Errorf("results come from %d pages, more than the %d chosen: %v", len(pages), webMaxFetch, pages)
-	}
 }

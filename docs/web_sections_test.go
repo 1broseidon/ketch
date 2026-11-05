@@ -192,25 +192,6 @@ func TestWebDisplayURL(t *testing.T) {
 	}
 }
 
-func TestWebRankingIsDeterministic(t *testing.T) {
-	sections := []webSection{
-		{page: 0, order: 0, heading: "Alpha", crumbs: []string{"Alpha"}, text: "routing is covered here"},
-		{page: 1, order: 0, heading: "Beta", crumbs: []string{"Beta"}, text: "routing is covered here"},
-		{page: 1, order: 1, heading: "Routing", crumbs: []string{"Beta", "Routing"}, text: "routing is covered here"},
-		{page: 2, order: 0, heading: "Gamma", crumbs: []string{"Gamma"}, text: "nothing relevant at all"},
-	}
-	for range 5 {
-		ranked := rankSections(sections, "routing")
-		var order []string
-		for _, s := range ranked {
-			order = append(order, s.heading)
-		}
-		if !slices.Equal(order, []string{"Routing", "Alpha", "Beta"}) {
-			t.Fatalf("rank order = %v: heading match first, ties in page order, non-matches dropped", order)
-		}
-	}
-}
-
 func TestWebPickCandidates(t *testing.T) {
 	root, _ := parseWebRoot("https://x.test/docs/")
 	link := func(p, title, desc string) webLink {
@@ -331,132 +312,6 @@ func sectionNamed(t *testing.T, sections []webSection, heading string) webSectio
 	return webSection{}
 }
 
-// topAnchors returns the anchors of the n best sections for query.
-func topAnchors(sections []webSection, query string, n int) []string {
-	var out []string
-	for _, s := range rankSections(sections, query) {
-		if len(out) == n {
-			break
-		}
-		out = append(out, s.anchor)
-	}
-	return out
-}
-
-// Django's reference puts each QuerySet method at H4. Split only at H1–H3,
-// "Methods that return new QuerySets" swallowed every method (87,706
-// characters on the live page) and its snippet showed only the intro. A
-// code heading is an API entry and gets a section of its own, with the
-// crumbs of every heading above it and the id Sphinx gives it
-// (select-related, not github-slugger's select_related).
-func TestWebSplitSectionsDjangoAPIEntries(t *testing.T) {
-	const page = "https://docs.djangoproject.com/en/6.1/ref/models/querysets/"
-	sections := fixtureSections(t, "docs.djangoproject.com/querysets.md", page)
-	sr := sectionNamed(t, sections, "select_related()")
-	if got := strings.Join(sr.crumbs, " > "); got != "QuerySet API reference > QuerySet API > Methods that return new QuerySets > select_related()" {
-		t.Errorf("crumbs = %q", got)
-	}
-	if sr.URL() != page+"#select-related" {
-		t.Errorf("URL = %s, want the page's own id #select-related", sr.URL())
-	}
-	if !strings.HasPrefix(sr.text, `select\_related(*\*fields*)`) || len(sr.text) > 6000 || !strings.Contains(sr.text, "Book.objects.select_related") {
-		t.Errorf("select_related() should hold its own entry, signature first, %d bytes:\n%.300s", len(sr.text), sr.text)
-	}
-	if parent := sectionNamed(t, sections, "Methods that return new QuerySets"); len(parent.text) > 1000 || strings.Contains(parent.text, "select_related(") {
-		t.Errorf("the methods' parent keeps only its intro, got %d bytes", len(parent.text))
-	}
-	if got := topAnchors(sections, "queryset select_related", 1); !slices.Equal(got, []string{"select-related"}) {
-		t.Errorf("best section = %v, want select-related", got)
-	}
-}
-
-// docs.rs puts each method at H4 inside one impl block, its Errors and
-// Optional notes at H5. Methods split off with rustdoc's ids (method.json);
-// their small notes stay with them; impl headings take the id the § link
-// before them carries; the empty auto-trait sections that outranked the
-// methods on "send a json body" are gone.
-func TestWebSplitSectionsDocsRSMethods(t *testing.T) {
-	const page = "https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html"
-	sections := fixtureSections(t, "docs.rs/reqwest-RequestBuilder.md", page)
-	jsonSec := sectionNamed(t, sections, "pub fn json<T: Serialize + ?Sized>(self, json: &T) -> RequestBuilder")
-	if jsonSec.anchor != "method.json" || !strings.Contains(jsonSec.text, "##### Optional") || !strings.Contains(jsonSec.text, "##### Errors") {
-		t.Errorf("json: #%s, notes attached: %v\n%s", jsonSec.anchor, strings.Contains(jsonSec.text, "Errors"), jsonSec.text)
-	}
-	if got := strings.Join(jsonSec.crumbs[:3], " > "); got != "Struct RequestBuilder > Implementations > impl RequestBuilder" {
-		t.Errorf("crumbs = %q", got)
-	}
-	for _, s := range sections {
-		if strings.HasPrefix(s.anchor, "impl") && strings.Contains(s.anchor, "lt") || strings.Contains(s.text, "[Source](") || strings.Contains(s.text, "[§](") {
-			t.Errorf("section %q (#%s) keeps entity-slug anchors or source links:\n%.200s", s.heading, s.anchor, s.text)
-		}
-		if strings.HasPrefix(s.heading, "impl ") {
-			t.Errorf("an impl heading with nothing under it should not be a section: %q (#%s)", s.heading, s.anchor)
-		}
-	}
-	if got := topAnchors(sections, "send a json body", 1); !slices.Equal(got, []string{"method.json"}) {
-		t.Errorf("best section = %v, want method.json", got)
-	}
-}
-
-// pkg.go.dev's ids are its own: section-readme and readme-…, pkg-overview,
-// hdr-Choosing_a_Logger for a doc heading, the bare name for a func or
-// type and Type.Method for a method. Its Types block (every type and
-// method at H4, 2,000 lines on zap's page) splits into entries.
-func TestWebSplitSectionsPkgsite(t *testing.T) {
-	const page = "https://pkg.go.dev/go.uber.org/zap"
-	sections := fixtureSections(t, "pkg.go.dev/zap.md", page)
-	anchors := map[string]string{}
-	for _, s := range sections {
-		anchors[s.anchor] = strings.Join(s.crumbs, " > ")
-		if strings.Contains(s.text, "[¶](") {
-			t.Errorf("section %q keeps an example permalink", s.heading)
-		}
-	}
-	for anchor, crumbs := range map[string]string{
-		"readme-quick-start":             "zap > README > ⚡ zap > Quick Start",
-		"pkg-overview":                   "zap > Documentation > Overview",
-		"hdr-Choosing_a_Logger":          "zap > Documentation > Overview > Choosing a Logger",
-		"CombineWriteSyncers":            "zap > Documentation > Functions > func CombineWriteSyncers",
-		"SugaredLogger":                  "zap > Documentation > Types > type SugaredLogger",
-		"SugaredLogger.Debug":            "zap > Documentation > Types > func (*SugaredLogger) Debug",
-		"Logger.Sugar":                   "zap > Documentation > Types > func (*Logger) Sugar",
-		"NewStdLogAt":                    "zap > Documentation > Functions > func NewStdLogAt added in v1.7.0",
-		"hdr-Frequently_Asked_Questions": "zap > Documentation > Overview > Frequently Asked Questions",
-	} {
-		got, ok := anchors[anchor]
-		if !ok || crumbs != "" && got != crumbs {
-			t.Errorf("#%s: crumbs %q (present %v), want %q", anchor, got, ok, crumbs)
-		}
-	}
-	top := topAnchors(sections, "sugared logger", 3)
-	// The overview's guide and the type's own entry, whose camel-case name
-	// spells the query; the type's methods do not count as about it.
-	if !slices.Contains(top, "hdr-Choosing_a_Logger") || !slices.Contains(top, "SugaredLogger") {
-		t.Errorf("top 3 for sugared logger = %v", top)
-	}
-}
-
-// serde.rs lists each field attribute as an H5 that opens a list item,
-// "- ##### `#[serde(rename = "name")]`". Each is an entry of its own, so
-// the one asked about is found instead of the whole page.
-func TestWebSplitSectionsListItemHeadings(t *testing.T) {
-	sections := fixtureSections(t, "serde.rs/field-attrs.md", "https://serde.rs/field-attrs.html")
-	if len(sections) < 15 {
-		t.Fatalf("got %d sections, want one per attribute", len(sections))
-	}
-	skip := sectionNamed(t, sections, `#[serde(skip_serializing_if = "path")]`)
-	if !strings.Contains(skip.text, "Option::is_none") || strings.Contains(skip.text, "serialize_with") {
-		t.Errorf("skip_serializing_if section:\n%s", skip.text)
-	}
-	ranked := rankSections(sections, "skip serializing a field if it is None")
-	if len(ranked) == 0 || ranked[0].heading != skip.heading {
-		t.Errorf("best section = %q", ranked[0].heading)
-	}
-	if ranked := rankSections(sections, "serde rename field"); ranked[0].heading != `#[serde(rename = "name")]` {
-		t.Errorf("best section for rename = %q", ranked[0].heading)
-	}
-}
-
 // Splitting deeper must not scatter one API entry: react.dev's
 // useEffect(setup, dependencies?) keeps its Parameters, Returns and
 // Caveats, while the long Usage section beside it splits into its H4
@@ -574,75 +429,6 @@ func TestWebSectionDecorationsStripped(t *testing.T) {
 	}
 }
 
-// v2.vuejs.org (Hexo) keeps the heading's case in its ids:
-// #Customizing-Component-v-model, where github-slugger's lower-case slug
-// is dead. Nothing in a page's Markdown says Hexo, but the pages' own
-// links do: Props links to its #Prop-Validation. A heading named by a
-// link takes the linked id, and the rule those ids follow re-slugs the
-// site's other guessed anchors. Without the evidence, the guess stands.
-func TestWebAnchorsFromLinkEvidence(t *testing.T) {
-	events := fixtureSections(t, "v2.vuejs.org/components-custom-events.md", "https://v2.vuejs.org/v2/guide/components-custom-events.html")
-	props := fixtureSections(t, "v2.vuejs.org/components-props.md", "https://v2.vuejs.org/v2/guide/components-props.html")
-	for i := range props {
-		props[i].page = 1
-	}
-	anchors := map[string]string{}
-	for _, s := range rankSections(append(slices.Clone(events), props...), "v-model on custom components prop validation") {
-		anchors[s.heading] = s.anchor
-	}
-	for heading, want := range map[string]string{
-		"Customizing Component v-model":       "Customizing-Component-v-model",
-		"Prop Validation":                     "Prop-Validation",
-		"Binding Native Events to Components": "Binding-Native-Events-to-Components",
-	} {
-		if anchors[heading] != want {
-			t.Errorf("%s: #%s, want #%s", heading, anchors[heading], want)
-		}
-	}
-	for _, s := range rankSections(events, "v-model on custom components") {
-		if s.heading == "Customizing Component v-model" && s.anchor != "customizing-component-v-model" {
-			t.Errorf("with no link evidence the github-slugger guess stands, got #%s", s.anchor)
-		}
-	}
-	// An id the generator fixes is never second-guessed.
-	fixed := webSection{pageURL: "https://docs.rs/x/latest/x/struct.A.html", heading: "pub fn json()", anchor: "method.json", source: anchorFixed, text: "See [json](https://docs.rs/x/latest/x/struct.A.html#json) and json."}
-	if got := adoptLinkedAnchors([]webSection{fixed}); got[0].anchor != "method.json" {
-		t.Errorf("fixed anchor changed to %s", got[0].anchor)
-	}
-}
-
-// vite.dev's llms.txt serves each page's VitePress source, which keeps no
-// trace of the generator. Its links to its own headings do: #build-target
-// for build.target and #build-minify for build.minify, two ids only
-// VitePress's rule makes, so the page's other guessed anchors follow it
-// (#build-lib, not github-slugger's #buildlib). One such id alone could be
-// hand-written, and moves only its own heading.
-func TestWebAnchorsVitePressSourceFromLinks(t *testing.T) {
-	const page = "https://vite.dev/config/build-options"
-	anchorsFor := func(sections []webSection) map[string]string {
-		out := map[string]string{}
-		for _, s := range rankSections(sections, "build") {
-			out[s.heading] = s.anchor
-		}
-		return out
-	}
-	got := anchorsFor(fixtureSections(t, "vite.dev/build-options.src.md", page))
-	for heading, want := range map[string]string{"build.target": "build-target", "build.minify": "build-minify", "build.lib": "build-lib", "build.assetsDir": "build-assetsdir"} {
-		if got[heading] != want {
-			t.Errorf("%s: #%s, want #%s", heading, got[heading], want)
-		}
-	}
-	body, err := os.ReadFile(filepath.Join("testdata", "sections", "vite.dev", "build-options.src.md"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	one := strings.ReplaceAll(string(body), "(#build-minify)", "(https://vite.dev/config/other#elsewhere)")
-	got = anchorsFor(splitSections(webPage{URL: page, Title: "Build Options", Markdown: one}, 0))
-	if got["build.target"] != "build-target" || got["build.lib"] != "buildlib" {
-		t.Errorf("one punctuation id: build.target #%s (want build-target), build.lib #%s (want the guess buildlib)", got["build.target"], got["build.lib"])
-	}
-}
-
 // When the fetcher read the page's targets, every cited anchor is one of
 // them: a slug the page does not carry takes the id of the page heading
 // with the same words (repeated headings in page order), and a heading
@@ -753,6 +539,87 @@ func TestWebLinkLabels(t *testing.T) {
 	} {
 		if got := linkLabels(in); got != want {
 			t.Errorf("linkLabels(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+// Django's reference puts each QuerySet method at H4. Split only at H1–H3,
+// "Methods that return new QuerySets" swallowed every method (87,706
+// characters on the live page) and its snippet showed only the intro. A
+// code heading is an API entry and gets a section of its own, with the
+// crumbs of every heading above it and the id Sphinx gives it
+// (select-related, not github-slugger's select_related).
+func TestWebSplitSectionsDjangoAPIEntries(t *testing.T) {
+	const page = "https://docs.djangoproject.com/en/6.1/ref/models/querysets/"
+	sections := fixtureSections(t, "docs.djangoproject.com/querysets.md", page)
+	sr := sectionNamed(t, sections, "select_related()")
+	if got := strings.Join(sr.crumbs, " > "); got != "QuerySet API reference > QuerySet API > Methods that return new QuerySets > select_related()" {
+		t.Errorf("crumbs = %q", got)
+	}
+	if sr.URL() != page+"#select-related" {
+		t.Errorf("URL = %s, want the page's own id #select-related", sr.URL())
+	}
+	if !strings.HasPrefix(sr.text, `select\_related(*\*fields*)`) || len(sr.text) > 6000 || !strings.Contains(sr.text, "Book.objects.select_related") {
+		t.Errorf("select_related() should hold its own entry, signature first, %d bytes:\n%.300s", len(sr.text), sr.text)
+	}
+	if parent := sectionNamed(t, sections, "Methods that return new QuerySets"); len(parent.text) > 1000 || strings.Contains(parent.text, "select_related(") {
+		t.Errorf("the methods' parent keeps only its intro, got %d bytes", len(parent.text))
+	}
+}
+
+// docs.rs puts each method at H4 inside one impl block, its Errors and
+// Optional notes at H5. Methods split off with rustdoc's ids (method.json);
+// their small notes stay with them; impl headings take the id the § link
+// before them carries; the empty auto-trait sections that outranked the
+// methods on "send a json body" are gone.
+func TestWebSplitSectionsDocsRSMethods(t *testing.T) {
+	const page = "https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html"
+	sections := fixtureSections(t, "docs.rs/reqwest-RequestBuilder.md", page)
+	jsonSec := sectionNamed(t, sections, "pub fn json<T: Serialize + ?Sized>(self, json: &T) -> RequestBuilder")
+	if jsonSec.anchor != "method.json" || !strings.Contains(jsonSec.text, "##### Optional") || !strings.Contains(jsonSec.text, "##### Errors") {
+		t.Errorf("json: #%s, notes attached: %v\n%s", jsonSec.anchor, strings.Contains(jsonSec.text, "Errors"), jsonSec.text)
+	}
+	if got := strings.Join(jsonSec.crumbs[:3], " > "); got != "Struct RequestBuilder > Implementations > impl RequestBuilder" {
+		t.Errorf("crumbs = %q", got)
+	}
+	for _, s := range sections {
+		if strings.HasPrefix(s.anchor, "impl") && strings.Contains(s.anchor, "lt") || strings.Contains(s.text, "[Source](") || strings.Contains(s.text, "[§](") {
+			t.Errorf("section %q (#%s) keeps entity-slug anchors or source links:\n%.200s", s.heading, s.anchor, s.text)
+		}
+		if strings.HasPrefix(s.heading, "impl ") {
+			t.Errorf("an impl heading with nothing under it should not be a section: %q (#%s)", s.heading, s.anchor)
+		}
+	}
+}
+
+// pkg.go.dev's ids are its own: section-readme and readme-…, pkg-overview,
+// hdr-Choosing_a_Logger for a doc heading, the bare name for a func or
+// type and Type.Method for a method. Its Types block (every type and
+// method at H4, 2,000 lines on zap's page) splits into entries.
+func TestWebSplitSectionsPkgsite(t *testing.T) {
+	const page = "https://pkg.go.dev/go.uber.org/zap"
+	sections := fixtureSections(t, "pkg.go.dev/zap.md", page)
+	anchors := map[string]string{}
+	for _, s := range sections {
+		anchors[s.anchor] = strings.Join(s.crumbs, " > ")
+		if strings.Contains(s.text, "[¶](") {
+			t.Errorf("section %q keeps an example permalink", s.heading)
+		}
+	}
+	for anchor, crumbs := range map[string]string{
+		"readme-quick-start":             "zap > README > ⚡ zap > Quick Start",
+		"pkg-overview":                   "zap > Documentation > Overview",
+		"hdr-Choosing_a_Logger":          "zap > Documentation > Overview > Choosing a Logger",
+		"CombineWriteSyncers":            "zap > Documentation > Functions > func CombineWriteSyncers",
+		"SugaredLogger":                  "zap > Documentation > Types > type SugaredLogger",
+		"SugaredLogger.Debug":            "zap > Documentation > Types > func (*SugaredLogger) Debug",
+		"Logger.Sugar":                   "zap > Documentation > Types > func (*Logger) Sugar",
+		"NewStdLogAt":                    "zap > Documentation > Functions > func NewStdLogAt added in v1.7.0",
+		"hdr-Frequently_Asked_Questions": "zap > Documentation > Overview > Frequently Asked Questions",
+	} {
+		got, ok := anchors[anchor]
+		if !ok || crumbs != "" && got != crumbs {
+			t.Errorf("#%s: crumbs %q (present %v), want %q", anchor, got, ok, crumbs)
 		}
 	}
 }

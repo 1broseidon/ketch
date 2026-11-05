@@ -95,27 +95,33 @@ func TestContext7SnippetsRecorded(t *testing.T) {
 					}
 					continue
 				}
-				if !strings.HasPrefix(r.Snippet, strings.TrimSpace(want.description)+"\n\n") {
-					t.Errorf("result %d snippet does not open with the description:\n%s", i, r.Snippet)
-				}
-				// Every block, in order, fenced with its language.
-				rest := r.Snippet
-				for j, code := range want.blocks {
-					open := "```" + want.languages[j] + "\n"
-					at := strings.Index(rest, open)
-					if at < 0 {
-						t.Fatalf("result %d block %d: no %q fence after the previous block", i, j, open)
-					}
-					rest = rest[at+len(open):]
-					body := strings.TrimRight(code, "\r\n")
-					if !strings.HasPrefix(rest, body+"\n") {
-						t.Fatalf("result %d block %d: code missing or out of order", i, j)
-					}
-					rest = rest[len(body):]
-				}
+				checkCodeSnippet(t, i, r, want)
 			}
 			checkGolden(t, tc.name, results)
 		})
+	}
+}
+
+// checkCodeSnippet asserts code result i opens with the snippet's
+// description, then holds every block, in order, fenced with its language.
+func checkCodeSnippet(t *testing.T, i int, r Result, want rawContext7Snippet) {
+	t.Helper()
+	if !strings.HasPrefix(r.Snippet, strings.TrimSpace(want.description)+"\n\n") {
+		t.Errorf("result %d snippet does not open with the description:\n%s", i, r.Snippet)
+	}
+	rest := r.Snippet
+	for j, code := range want.blocks {
+		open := "```" + want.languages[j] + "\n"
+		at := strings.Index(rest, open)
+		if at < 0 {
+			t.Fatalf("result %d block %d: no %q fence after the previous block", i, j, open)
+		}
+		rest = rest[at+len(open):]
+		body := strings.TrimRight(code, "\r\n")
+		if !strings.HasPrefix(rest, body+"\n") {
+			t.Fatalf("result %d block %d: code missing or out of order", i, j)
+		}
+		rest = rest[len(body):]
 	}
 }
 

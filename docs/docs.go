@@ -16,8 +16,8 @@ import (
 var ErrNotFound = failure.New(failure.NotFound, "not_found", "not found")
 
 // ErrLibraryRequired reports a docs request the backend cannot answer
-// without knowing which library's docs to search — for the web backend, a
-// docs URL passed as the library. Both surfaces classify it as a validation
+// without knowing which library's docs to search: a docs URL where one
+// is needed, or a web search to find one. Both surfaces classify it as a validation
 // error (CLI exit 2 / MCP [validation]): the caller fixes it by adding one.
 var ErrLibraryRequired = failure.New(failure.Validation, "library_required", "library required")
 
@@ -87,7 +87,7 @@ type Result struct {
 	// holds, in page order ("" for a page's lead section); other backends
 	// leave it empty.
 	Anchors []string `json:"anchors,omitempty"`
-	Source  string   `json:"source"` // "context7" | "web" | "local"
+	Source  string   `json:"source"` // the backend: "search" | "context7"
 	// Section is the local index's reference to this result's section,
 	// url#anchor as the result's URL carries it: what a follow-up fetch of
 	// the whole section takes (ketch docs --section, the docs tool's

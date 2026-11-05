@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
 )
 
 // Ecosystem hints (design/docs-keyless.md, Pipeline 4): which registry a
@@ -15,26 +14,6 @@ import (
 // and never adds a candidate; it only narrows a same-name contest between
 // projects that verified, before the dominance rule, and only where one
 // library is needed.
-
-// queryEcoWords are query words that name an ecosystem.
-var queryEcoWords = map[string]ecosystem{
-	"python": ecoPyPI, "pypi": ecoPyPI, "pip": ecoPyPI,
-	"npm": ecoNPM, "nodejs": ecoNPM, "javascript": ecoNPM, "typescript": ecoNPM,
-	"rust": ecoCrates, "cargo": ecoCrates, "crate": ecoCrates, "crates": ecoCrates,
-	"golang": ecoGo,
-}
-
-// queryEcosystems are the ecosystems a query's words name.
-func queryEcosystems(query string) []ecosystem {
-	var out []ecosystem
-	for _, w := range strings.Fields(strings.ToLower(query)) {
-		w = strings.Trim(w, ".,;:!?()[]{}\"'`")
-		if eco, ok := queryEcoWords[w]; ok && !slices.Contains(out, eco) {
-			out = append(out, eco)
-		}
-	}
-	return out
-}
 
 // manifestFiles are the project files that put a directory in an
 // ecosystem.
@@ -71,15 +50,6 @@ func dirEcosystems(dir string) []ecosystem {
 }
 
 type ecoHintKey struct{}
-
-// withQueryHint carries the ecosystems a bare query's own words name to
-// its resolution.
-func withQueryHint(ctx context.Context, ecos []ecosystem) context.Context {
-	if len(ecos) == 0 {
-		return ctx
-	}
-	return context.WithValue(ctx, ecoHintKey{}, ecos)
-}
 
 // ecoHint is the hint for one resolution: the query's words first, else
 // the working directory's project files. A hint naming every registry is

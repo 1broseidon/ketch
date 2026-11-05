@@ -14,10 +14,10 @@ import (
 
 var docsIndexCmd = &cobra.Command{
 	Use:   "index [<library|docs-url>]",
-	Short: "Index a library's docs site locally, for offline answers (ketch docs -b local)",
-	Long: `Index a library's documentation once, then answer questions about it offline with ketch docs -b local (or -b auto, which asks the local index first).
+	Short: "Index a library's docs site locally, so ketch docs answers about it offline",
+	Long: `Index a library's documentation once, then ketch docs answers questions about it offline: a question that names the library (or --library naming it) is answered from the index, with no network, instead of searching the web.
 
-The library is a docs URL, taken as the docs root, or a library name or spec (name, name@version, npm:/pypi:/crates:/go:/github: prefixes, owner/repo), resolved to its docs root exactly as the web backend resolves one: a name that is ambiguous or that nothing verifies is refused with its candidates, and the docs URL of the one you mean can then be passed instead.
+The library is a docs URL, taken as the docs root, or a library name or spec (name, name@version, npm:/pypi:/crates:/go:/github: prefixes, owner/repo), resolved to its docs root from the package registries and the project's repository (ketch docs --resolve shows the pick): a name that is ambiguous or that nothing verifies is refused with its candidates, and the docs URL of the one you mean can then be passed instead.
 
 One index holds one version of a library's docs. name@version (or --version) indexes that version's docs root, found with the site's own version list; with no version, the current docs. Either way only that version's tree is kept: other versions' trees below the root (/docs/2.x/, mike's version directories, a release channel such as /next/, or any tree the site's version list names) and their copies of pages are left out, as are other hosts (v3.router.vuejs.org beside router.vuejs.org) and paths outside a versioned root. Several versions of a library can be indexed side by side, each under its own docs root; a query names one with --library name@version, and without a version answers from the newest. A page in the indexed tree about a later major (a migration guide to it) is kept but labelled, and ranks lower unless the question asks about migrating.
 

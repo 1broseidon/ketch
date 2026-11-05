@@ -252,7 +252,7 @@ func TestMCPDirectLibraryDocsRecordsReturnedSources(t *testing.T) {
 	client.Transport = libraryFixtureTransport{}
 	t.Cleanup(func() { client.Transport = previous })
 	s := session(t, func(cfg *config.Config) { cfg.SetProvider("context7_api_key", "fixture") })
-	r := call(t, s, "docs", map[string]any{"query": "authentication", "library": "/project/docs", "limit": 1, "tag": "project"})
+	r := call(t, s, "docs", map[string]any{"query": "authentication", "backend": "context7", "library": "/project/docs", "limit": 1, "tag": "project"})
 	if r.IsError {
 		t.Fatal(output(r))
 	}

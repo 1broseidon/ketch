@@ -316,12 +316,12 @@ func TestDocsToolWebResolveMatchFields(t *testing.T) {
 	}
 }
 
-// Where one library is needed, an ambiguous name is [validation] naming
-// every candidate: its ID and its package specs.
+// resolve lists every project a name answers to, each with its ID and its
+// package specs, for the caller to pass one as library.
 func TestDocsToolAmbiguousLibraryNamesTheCandidates(t *testing.T) {
 	session := docsSession(t, fixtureFallback{testutil.LoadFixtures(t, widgetFixtureDir)})
 
-	res, raw := callDocs(t, session, map[string]any{"query": "widget", "backend": "web", "resolve": true})
+	res, raw := callDocs(t, session, map[string]any{"query": "widget", "backend": "search", "resolve": true})
 	if res.IsError {
 		t.Fatalf("resolve widget: %s", toolText(res))
 	}
@@ -329,36 +329,22 @@ func TestDocsToolAmbiguousLibraryNamesTheCandidates(t *testing.T) {
 	if len(matches) != 2 {
 		t.Fatalf("resolve widget = %+v, want npm's and PyPI's", matches)
 	}
-
-	for _, args := range []map[string]any{
-		{"query": "configure themes", "backend": "web", "library": "widget"},
-		{"query": "widget configure themes", "backend": "web"},
-	} {
-		res, _ := callDocs(t, session, args)
-		text := toolText(res)
-		if !res.IsError || !strings.HasPrefix(text, "[validation]") {
-			t.Errorf("docs %v: isError=%v %q, want [validation]", args, res.IsError, text)
-			continue
-		}
-		for _, m := range matches {
-			if !strings.Contains(text, m.ID) {
-				t.Errorf("docs %v: %q does not name %s", args, text, m.ID)
-			}
-		}
-		for _, spec := range []string{"npm:widget", "pypi:widget"} {
-			if !strings.Contains(text, spec) {
-				t.Errorf("docs %v: %q does not name %s", args, text, spec)
-			}
+	var specs []string
+	for _, m := range matches {
+		specs = append(specs, m.Packages...)
+	}
+	for _, spec := range []string{"npm:widget", "pypi:widget"} {
+		if !slices.Contains(specs, spec) {
+			t.Errorf("resolve widget: packages %v do not name %s", specs, spec)
 		}
 	}
 }
 
-// A name no registry or repository has is [not_found], resolved or fetched.
+// A name no registry or repository has is [not_found] to resolve.
 func TestDocsToolUnknownLibraryIsNotFound(t *testing.T) {
 	session := docsSession(t, fixtureFallback{testutil.NewFixtureTransport()})
 	for _, args := range []map[string]any{
-		{"query": "zzqxnosuchlib", "backend": "web", "resolve": true},
-		{"query": "configure themes", "backend": "web", "library": "zzqxnosuchlib"},
+		{"query": "zzqxnosuchlib", "backend": "search", "resolve": true},
 	} {
 		res, _ := callDocs(t, session, args)
 		if text := toolText(res); !res.IsError || !strings.HasPrefix(text, "[not_found]") || !strings.Contains(text, "zzqxnosuchlib") {
@@ -377,19 +363,19 @@ func (downTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}, nil
 }
 
-// With every source down, a bare query is [upstream], worth retrying, not
-// [validation]: the library it names may well exist. A question that
-// names no library is [validation] whatever is down (decision-15: the
-// verb after "how do i" is no library's name).
+// With every source down (the web search included), a question is
+// [upstream], worth retrying, with or without a library named.
 func TestDocsToolBareQueryWithSourcesDownIsUpstream(t *testing.T) {
 	session := docsSession(t, downTransport{})
-	res, _ := callDocs(t, session, map[string]any{"query": "how do i configure the themes in starlight", "backend": "web"})
-	if text := toolText(res); !res.IsError || !strings.HasPrefix(text, "[upstream]") {
-		t.Errorf("bare query, every source down: isError=%v %q, want [upstream]", res.IsError, text)
-	}
-	res, _ = callDocs(t, session, map[string]any{"query": "how do i configure the themes", "backend": "web"})
-	if text := toolText(res); !res.IsError || !strings.HasPrefix(text, "[validation]") {
-		t.Errorf("bare query naming no library, every source down: isError=%v %q, want [validation]", res.IsError, text)
+	for _, args := range []map[string]any{
+		{"query": "how do i configure the themes in starlight"},
+		{"query": "how do i configure the themes"},
+		{"query": "configure the themes", "library": "starlight"},
+	} {
+		res, _ := callDocs(t, session, args)
+		if text := toolText(res); !res.IsError || !strings.HasPrefix(text, "[upstream]") {
+			t.Errorf("docs %v, every source down: isError=%v %q, want [upstream]", args, res.IsError, text)
+		}
 	}
 }
 
@@ -407,50 +393,12 @@ func (d pypiDown) RoundTrip(req *http.Request) (*http.Response, error) {
 // the list may be incomplete and why.
 func TestDocsToolResolveSaysWhenIncomplete(t *testing.T) {
 	session := docsSession(t, pypiDown{fixtureFallback{testutil.LoadFixtures(t, widgetFixtureDir)}})
-	res, raw := callDocs(t, session, map[string]any{"query": "widget", "backend": "web", "resolve": true})
+	res, raw := callDocs(t, session, map[string]any{"query": "widget", "backend": "search", "resolve": true})
 	if res.IsError {
 		t.Fatalf("resolve widget: %s", toolText(res))
 	}
 	matches := decodeMatches(t, raw)
 	if len(matches) != 1 || len(matches[0].Evidence) == 0 || !strings.HasPrefix(matches[0].Evidence[0], "this list may be incomplete: pypi widget") {
 		t.Errorf("resolve widget with PyPI down = %+v, want npm's widget noting PyPI's failure", matches)
-	}
-}
-
-// The auto backend reports which provider answered and what it fell
-// through: web finds "widget" ambiguous, Context7 (keyless) picks PyPI's,
-// one of web's candidates.
-func TestDocsToolAutoReportsProvider(t *testing.T) {
-	ft := testutil.LoadFixtures(t, widgetFixtureDir)
-	ft.Handle(http.MethodGet, "https://context7.com/api/v1/search?query=widget+configure+themes", testutil.Fixture{
-		Body: `{"results":[{"id":"/pywidget/widget","title":"Widget"}]}`,
-	})
-	ft.Handle(http.MethodGet, "https://context7.com/api/v2/context?libraryId=/pywidget/widget&query=widget+configure+themes&type=json&tokens=4000", testutil.Fixture{
-		Body: `{"codeSnippets":[{"codeTitle":"Configure themes","codeId":"https://widget.readthedocs.io/en/stable/themes/","codeList":[{"code":"x"}]}],"infoSnippets":[]}`,
-	})
-	session := docsSession(t, fixtureFallback{ft})
-
-	res, err := session.CallTool(context.Background(), &mcpsdk.CallToolParams{Name: "docs", Arguments: map[string]any{"query": "widget configure themes", "backend": "auto"}})
-	if err != nil || res.IsError {
-		t.Fatalf("auto: %v %s", err, toolText(res))
-	}
-	var out DocsOutput
-	data, _ := json.Marshal(res.StructuredContent)
-	if err := json.Unmarshal(data, &out); err != nil {
-		t.Fatal(err)
-	}
-	if out.Backend != "context7" || len(out.Results) != 1 || out.Results[0].Source != "context7" || !strings.HasPrefix(out.Errors["web"], "ambiguous library") {
-		t.Errorf("auto output = %+v", out)
-	}
-	for _, c := range ft.Calls() {
-		if strings.Contains(c.URL, "://context7.com/") && c.Header.Get("Authorization") != "" {
-			t.Errorf("keyless Context7 request sent Authorization: %s", c.URL)
-		}
-	}
-
-	// A named provider reports neither field.
-	res, err = session.CallTool(context.Background(), &mcpsdk.CallToolParams{Name: "docs", Arguments: map[string]any{"query": "widget configure themes", "backend": "web"}})
-	if err != nil || !res.IsError || !strings.HasPrefix(toolText(res), "[validation] ") || strings.Contains(toolText(res), "context7") {
-		t.Errorf("web: %v %s", err, toolText(res))
 	}
 }

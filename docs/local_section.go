@@ -45,9 +45,9 @@ const (
 // (a command line for HintNone as well).
 func SectionCall(ref string, style HintStyle) string {
 	if style == HintMCP {
-		return `docs(backend="local", section="` + ref + `")`
+		return `docs(section="` + ref + `")`
 	}
-	return "ketch docs -b local --section " + ref
+	return "ketch docs --section " + ref
 }
 
 // SectionHint is the pointer a compact result ends with when it was cut:
@@ -77,8 +77,6 @@ type SectionFetcher interface {
 	SectionSelect(ctx context.Context, library, ref string, tokens int) Outcome
 }
 
-var _ SectionFetcher = (*Local)(nil)
-
 // SectionSelect reads one section of an indexed library from the index:
 // the section ref names with the subsections under it (an H2 is its
 // family), or the page's sections in order when ref has no anchor, all cut
@@ -88,28 +86,28 @@ var _ SectionFetcher = (*Local)(nil)
 func (l *Local) SectionSelect(ctx context.Context, library, ref string, tokens int) Outcome {
 	page, anchor, err := parseSectionRef(ref)
 	if err != nil {
-		return Answer("local", nil, err)
+		return Answer(SearchBackend, nil, err)
 	}
 	libs, err := l.libraries()
 	if err != nil {
-		return Answer("local", nil, err)
+		return Answer(SearchBackend, nil, err)
 	}
 	cands, note := librariesHolding(libs, page), ""
 	if strings.TrimSpace(library) != "" {
 		var lib docsindex.Library
 		if lib, note, err = pickVersion(libs, library); err != nil {
-			return Answer("local", nil, err)
+			return Answer(SearchBackend, nil, err)
 		}
 		cands = []docsindex.Library{lib}
 	}
 	opts, _ := localOptionsFrom(ctx)
 	for _, lib := range cands {
 		if !lib.Current() {
-			return Answer("local", nil, outdatedErr(lib))
+			return Answer(SearchBackend, nil, outdatedErr(lib))
 		}
 		secs, err := l.pageSections(lib, page)
 		if err != nil {
-			return Answer("local", nil, fmt.Errorf("local: reading the docs index: %w", err))
+			return Answer(SearchBackend, nil, fmt.Errorf("local: reading the docs index: %w", err))
 		}
 		if len(secs) == 0 {
 			continue
@@ -117,9 +115,9 @@ func (l *Local) SectionSelect(ctx context.Context, library, ref string, tokens i
 		return withVersionNote(fetchSection(lib, secs, anchor, tokens, opts.Hint), note)
 	}
 	if strings.TrimSpace(library) != "" {
-		return Answer("local", nil, fmt.Errorf("local: the index of %s has no page %s: %w", cands[0].Root, page, ErrSectionNotFound))
+		return Answer(SearchBackend, nil, fmt.Errorf("local: the index of %s has no page %s: %w", cands[0].Root, page, ErrSectionNotFound))
 	}
-	return Answer("local", nil, fmt.Errorf("local: no indexed library holds %s (ketch docs index --list): %w", page, ErrSectionNotFound))
+	return Answer(SearchBackend, nil, fmt.Errorf("local: no indexed library holds %s (ketch docs index --list): %w", page, ErrSectionNotFound))
 }
 
 // parseSectionRef splits a section reference into its page URL and its
@@ -234,7 +232,7 @@ func sectionUnit(secs []docsindex.Section, anchor string) (unit []docsindex.Sect
 func fetchSection(lib docsindex.Library, secs []docsindex.Section, anchor string, tokens int, style HintStyle) Outcome {
 	unit, ok := sectionUnit(secs, anchor)
 	if !ok {
-		return Answer("local", nil, fmt.Errorf("local: %s has no section #%s (sections: %s): %w", shownURL(lib, secs[0].Page), anchor, anchorList(secs), ErrSectionNotFound))
+		return Answer(SearchBackend, nil, fmt.Errorf("local: %s has no section #%s (sections: %s): %w", shownURL(lib, secs[0].Page), anchor, anchorList(secs), ErrSectionNotFound))
 	}
 	if tokens <= 0 {
 		tokens = localSectionTokens
@@ -245,7 +243,7 @@ func fetchSection(lib docsindex.Library, secs []docsindex.Section, anchor string
 		ref = sectionRef(lib, head)
 	}
 	title, crumbs := head.Heading, strings.Join(head.Crumbs, " > ")
-	r := Result{Library: lib.Root, Version: lib.Version, Title: title, Breadcrumb: crumbs, URL: ref, Section: ref, Source: "local"}
+	r := Result{Library: lib.Root, Version: lib.Version, Title: title, Breadcrumb: crumbs, URL: ref, Section: ref, Source: SearchBackend}
 	chunks := sectionChunks(unit, title)
 	shown, cut := fitChunks(lib, r, unit, chunks, tokens, style)
 	r.Snippet = joinChunks(chunks[:shown], cut)
@@ -253,7 +251,7 @@ func fetchSection(lib docsindex.Library, secs []docsindex.Section, anchor string
 		r.Anchors = appendAnchor(r.Anchors, unit[c.part].Anchor)
 	}
 	r.Truncated = cut != ""
-	return Answer("local", []Result{r}, nil)
+	return Answer(SearchBackend, []Result{r}, nil)
 }
 
 // appendAnchor adds a section's anchor to a result's, once, in order.

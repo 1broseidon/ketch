@@ -127,52 +127,6 @@ func (w *Web) probe(ctx context.Context, root webRoot, loc string) ([]byte, *url
 	return raw.Body, from, true
 }
 
-// fetchPages fetches the candidates concurrently (bounded) and returns the
-// pages that arrived, in candidate order so ranking ties stay deterministic.
-// It fails only when every fetch failed, with the first failure that is not
-// ErrNotFound when there is one: the call is not-found only when every page
-// is missing, and worth retrying when any of them was merely unreachable.
-func (w *Web) fetchPages(ctx context.Context, root webRoot, links []webLink) ([]webPage, error) {
-	pages := make([]*webPage, len(links))
-	errs := make([]error, len(links))
-	sem := make(chan struct{}, max(1, w.concurrency))
-	var wg sync.WaitGroup
-	for i, link := range links {
-		if link.page != nil {
-			pages[i] = link.page
-			continue
-		}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			select {
-			case sem <- struct{}{}:
-			case <-ctx.Done():
-				errs[i] = ctx.Err()
-				return
-			}
-			defer func() { <-sem }()
-			pages[i], errs[i] = w.fetchOne(ctx, root, link)
-		}()
-	}
-	wg.Wait()
-
-	var out []webPage
-	var failure error
-	for i := range links {
-		switch {
-		case pages[i] != nil:
-			out = append(out, *pages[i])
-		case failure == nil || errors.Is(failure, ErrNotFound) && !errors.Is(errs[i], ErrNotFound):
-			failure = errs[i]
-		}
-	}
-	if len(out) == 0 && failure != nil {
-		return nil, fmt.Errorf("web: fetching docs pages under %s failed: %w", root, failure)
-	}
-	return out, nil
-}
-
 // fetchOne fetches a candidate: Markdown links through FetchRaw (falling
 // back to FetchPage when the server answers with HTML), everything else
 // through the scrape pipeline. The page is shown at the URL it was served

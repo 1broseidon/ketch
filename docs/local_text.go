@@ -31,8 +31,8 @@ type LocalOptions struct {
 
 type localOptionsKey struct{}
 
-// WithLocalOptions carries o to the local backend, directly or through the
-// auto chain.
+// WithLocalOptions carries o to the local index's answer, through the
+// search backend.
 func WithLocalOptions(ctx context.Context, o LocalOptions) context.Context {
 	return context.WithValue(ctx, localOptionsKey{}, o)
 }

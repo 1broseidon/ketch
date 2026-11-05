@@ -22,7 +22,6 @@ type Provider struct {
 	// nothing.
 	LibraryHelp string
 	Name        string
-	Hidden      bool
 	Usable      func(*config.Config) bool
 	Settings    []config.Setting
 	New         func(*config.Config, Deps) (Searcher, error)
@@ -43,11 +42,25 @@ func (p Provider) Required(cfg *config.Config) bool {
 	return false
 }
 
+// providers are the docs backends, the default (search) first.
 var providers = []Provider{
+	searchProvider(),
 	context7Provider(),
-	localProvider(),
-	webProvider(),
-	searchFirstProvider(),
+}
+
+// legacyBackends maps a docs_backend value an earlier release stored to
+// the backend that serves it now. ketch 0.20 let `ketch config set
+// docs_backend local` store the local index's ID before it was
+// implemented; the local index is now part of search.
+var legacyBackends = map[string]string{"local": SearchBackend}
+
+// CanonicalBackend is the backend id names: a legacy value's replacement
+// (legacyBackends), else id itself.
+func CanonicalBackend(id string) string {
+	if to, ok := legacyBackends[id]; ok {
+		return to
+	}
+	return id
 }
 
 // Providers returns the descriptors in their stable presentation order.
@@ -59,40 +72,21 @@ func Providers() []Provider {
 	return snapshot
 }
 
-// AvailableBackends returns the implemented provider IDs in registry order.
+// AvailableBackends returns the provider IDs in registry order: every value
+// --backend and the docs_backend config key accept.
 func AvailableBackends() []string {
 	var names []string
 	for _, p := range providers {
-		if !p.Hidden {
-			names = append(names, p.ID)
-		}
+		names = append(names, p.ID)
 	}
 	return names
-}
-
-// SelectableBackends returns every value --backend and the docs_backend
-// config key accept: the providers in registry order, then the auto chain
-// (last, since it is not the default).
-func SelectableBackends() []string {
-	return append(AvailableBackends(), AutoBackend)
-}
-
-// IsBackend reports whether id names a selectable backend.
-func IsBackend(id string) bool {
-	if id == AutoBackend {
-		return true
-	}
-	p, ok := Lookup(id)
-	return ok && !p.Hidden
 }
 
 // ProviderNames returns human-readable names in registry order.
 func ProviderNames() []string {
 	var names []string
 	for _, p := range providers {
-		if !p.Hidden {
-			names = append(names, p.Name)
-		}
+		names = append(names, p.Name)
 	}
 	return names
 }
@@ -127,9 +121,6 @@ type LibraryResolver interface {
 func LibraryBackends() []string {
 	var names []string
 	for _, p := range providers {
-		if p.Hidden {
-			continue
-		}
 		client, err := p.New(&config.Config{}, Deps{})
 		if err != nil {
 			continue
@@ -141,10 +132,10 @@ func LibraryBackends() []string {
 	return names
 }
 
-// SupportsLibraries reports whether a registered provider, or the auto
-// chain (whose providers all have them), has library operations.
+// SupportsLibraries reports whether a registered provider has library
+// operations.
 func SupportsLibraries(id string) bool {
-	return id == AutoBackend || slices.Contains(LibraryBackends(), id)
+	return slices.Contains(LibraryBackends(), id)
 }
 
 // ResolveBackend retains the legacy resolve fallback while allowing additional

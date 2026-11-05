@@ -200,33 +200,6 @@ func TestWebHubRootDocsLinkAndStemming(t *testing.T) {
 	}
 }
 
-// expressjs.com's llms.txt lists only index files (guides, API, the
-// whole), each a run of pages headed by "URL: …". They are read as
-// discovery input, the "full" one alone, and the answer links to the
-// page the text came from, never to the .txt file.
-func TestWebIndexFilesAreDiscoveryInput(t *testing.T) {
-	w, ft := discoverWeb(t)
-	results, err := w.GetDocs(context.Background(), "https://expressjs.com/", "express error handling middleware", 4000)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// The fixture holds no rendered page to check a section's anchor
-	// against, so the page itself is cited.
-	if len(results) == 0 || results[0].URL != "https://expressjs.com/en/5x/guide/error-handling" {
-		t.Fatalf("results = %+v", results)
-	}
-	for _, r := range results {
-		if strings.Contains(r.URL, ".txt") {
-			t.Errorf("a result links to an index file: %s", r.URL)
-		}
-	}
-	for _, c := range requested(ft) {
-		if strings.HasPrefix(c, "GET https://expressjs.com/llms/") && c != "GET https://expressjs.com/llms/full.txt" {
-			t.Errorf("read %s besides the full index", c)
-		}
-	}
-}
-
 // react.dev's llms.txt names the page "memo"; the query says "memoize".
 // The two meet by stem, and "component", in dozens of titles, weighs less
 // than the rarer word: memo's page is picked first instead of three

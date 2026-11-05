@@ -107,46 +107,7 @@ func Run(ctx context.Context, cfg *config.Config, timeout time.Duration) []Check
 		}()
 	}
 	wg.Wait()
-	return withDocsAutoCheck(cfg, withAutoChainCheck(cfg, checks))
-}
-
-// docsAutoChain is the docs auto backend's order: web, then Context7.
-var docsAutoChain = []string{"web", "context7"}
-
-// withDocsAutoCheck adds the docs "auto" summary, right before the first
-// docs check, when it is the configured docs backend. Like search's, it is
-// derived from the provider checks rather than probed again: Context7's
-// keyless quota is small, which is also why its own keyless check reads the
-// last quota seen instead of asking.
-func withDocsAutoCheck(cfg *config.Config, checks []Check) []Check {
-	if cfg.DocsBackend != docs.AutoBackend {
-		return checks
-	}
-	byBackend := make(map[string]Check, len(docsAutoChain))
-	at := len(checks)
-	for i, c := range checks {
-		if c.Surface != "docs" {
-			continue
-		}
-		byBackend[c.Backend] = c
-		at = min(at, i)
-	}
-	var healthy []string
-	for _, name := range docsAutoChain {
-		if byBackend[name].Status == StatusOK {
-			healthy = append(healthy, name)
-		}
-	}
-	chain := strings.Join(docsAutoChain, " → ")
-	auto := Check{Surface: "docs", Backend: docs.AutoBackend, Status: StatusOK, Required: true,
-		Detail: fmt.Sprintf("%d of %d providers healthy (%s)", len(healthy), len(docsAutoChain), chain)}
-	if len(healthy) == 0 {
-		auto.Status, auto.Detail = StatusUnreachable, fmt.Sprintf("no provider in the chain answered (%s)", chain)
-	}
-	out := make([]Check, 0, len(checks)+1)
-	out = append(out, checks[:at]...)
-	out = append(out, auto)
-	return append(out, checks[at:]...)
+	return withAutoChainCheck(cfg, checks)
 }
 
 // withAutoChainCheck prepends the "auto" summary when it is the configured
@@ -218,9 +179,6 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 		specs = append(specs, spec{0, "code", p.ID, p.Required(cfg), func(ctx context.Context) (Status, string) { return p.Probe(ctx, client, cfg) }})
 	}
 	for _, p := range docs.Providers() {
-		if p.Hidden {
-			continue
-		}
 		specs = append(specs, spec{0, "docs", p.ID, p.Required(cfg), func(ctx context.Context) (Status, string) { return p.Probe(ctx, client, cfg) }})
 	}
 	return append(specs,

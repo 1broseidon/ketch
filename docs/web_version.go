@@ -1180,14 +1180,6 @@ func urlLabels(u *url.URL) []string {
 	return out
 }
 
-// sameMajor reports whether want and version share a major version, for
-// accepting want on a site that publishes no versions.
-func sameMajor(want, version string) bool {
-	a, okA := parseVerNum(want)
-	b, okB := parseVerNum(version)
-	return okA && okB && a.parts[0] == b.parts[0]
-}
-
 // namesRelease reports want naming release on dot boundaries, no more
 // precisely than release itself: 7 and 7.1 name 7.1.2, 1.38 does not name
 // 1.54.1, and 7.1.2.4 is not named by 7.1.2.
@@ -1547,39 +1539,4 @@ func addsVersion(req, out []string) bool {
 	}
 	_, ok := segmentLabel(out[i+extra-1])
 	return ok
-}
-
-// labelResults sets each result's Version: the version segment of its URL
-// below root, else rootLabel. It fetches nothing.
-func labelResults(results []Result, root webRoot, rootLabel string) {
-	for i := range results {
-		results[i].Version = rootLabel
-		u, err := url.Parse(results[i].URL)
-		if err != nil || root.u == nil || !root.contains(u) {
-			continue
-		}
-		if l := pageVersion(u, root); l != "" {
-			results[i].Version = l
-		}
-	}
-}
-
-// pageVersion returns the version label in u's first path segment below
-// the root (after a locale), bare integers aside, or "".
-func pageVersion(u *url.URL, root webRoot) string {
-	rel := u.Path
-	if root.prefix != "/" {
-		rel = strings.TrimPrefix(rel, root.prefix)
-	}
-	segs := pathSegments(rel)
-	if len(segs) > 1 && localeRe.MatchString(segs[0]) {
-		segs = segs[1:]
-	}
-	if len(segs) == 0 {
-		return ""
-	}
-	if l, ok := segmentLabel(segs[0]); ok && !isBareInt(l) {
-		return l
-	}
-	return ""
 }

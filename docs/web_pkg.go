@@ -151,67 +151,11 @@ func (c *pkgClient) goVersions(ctx context.Context, module string) ([]string, er
 	return versions, nil
 }
 
-// searchGo searches pkg.go.dev for modules; see pkgSource. Packages of
-// one module count once, at the module's highest importer count. A 404
-// (the API is new) is no results.
-func (c *pkgClient) searchGo(ctx context.Context, name string, n int) ([]string, error) {
-	mods, err := c.searchGoModules(ctx, name, n)
-	if err != nil || mods == nil {
-		return nil, err
-	}
-	out := make([]string, 0, len(mods))
-	for _, m := range mods {
-		out = append(out, m.path)
-	}
-	return out, nil
-}
-
 // goModule is a module pkg.go.dev's search found, with the number of
 // modules importing it.
 type goModule struct {
 	path      string
 	importers int64
-}
-
-// searchGoModules is searchGo with each module's importer count, most
-// imported first. pkg.go.dev answers bursts with 429, so its requests go
-// one at a time and are retried (getPatient).
-func (c *pkgClient) searchGoModules(ctx context.Context, name string, n int) ([]goModule, error) {
-	var resp struct {
-		Items []struct {
-			ModulePath       string `json:"modulePath"`
-			ImportedByCounts struct {
-				Modules int64 `json:"modules"`
-			} `json:"importedByCounts"`
-		} `json:"items"`
-	}
-	u := c.pkgsite + "/v1/search?" + url.Values{"q": {name}}.Encode()
-	err := c.getPatient(ctx, c.pkgsiteSlot, "pkg.go.dev search "+name, u, decodeJSON(&resp))
-	if errors.Is(err, ErrNotFound) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	imported := map[string]int64{}
-	var mods []goModule
-	for _, it := range resp.Items {
-		if it.ModulePath == "" {
-			continue
-		}
-		if _, seen := imported[it.ModulePath]; !seen {
-			mods = append(mods, goModule{path: it.ModulePath})
-		}
-		imported[it.ModulePath] = max(imported[it.ModulePath], it.ImportedByCounts.Modules)
-	}
-	for i := range mods {
-		mods[i].importers = imported[mods[i].path]
-	}
-	sort.SliceStable(mods, func(i, j int) bool { return mods[i].importers > mods[j].importers })
-	if n > 0 && len(mods) > n {
-		mods = mods[:n]
-	}
-	return mods, nil
 }
 
 // searchGoPage is searchGoModules over pkg.go.dev's search page, which

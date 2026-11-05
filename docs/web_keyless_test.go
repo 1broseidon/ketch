@@ -137,36 +137,6 @@ func TestKeylessUnverifiedRivalRefuses(t *testing.T) {
 	}
 }
 
-// Two projects without a dominant count stay ambiguous; an ecosystem hint
-// from the working directory narrows a single-library pick to its
-// registry, while --resolve still lists both.
-func TestKeylessEcosystemHint(t *testing.T) {
-	f, pkgs := widgetWorld()
-	f.raw["https://widget.readthedocs.io/"] = html(`<html><head><title>widget</title><meta name="readthedocs-project-slug" content="widget"></head><body>
-<a href="usage.html">Usage</a><a href="https://github.com/pywidget/widget">Source</a></body></html>`)
-	pkgs.pkgs["pypi:widget"] = pkgInfo{eco: ecoPyPI, name: "widget", docsURL: "https://widget.readthedocs.io/", repoURL: "https://github.com/pywidget/widget", repo: repo("pywidget", "widget")}
-	pop := &fakePop{weekly_: map[string]int64{"npm:widget": 500_000, "pypi:widget": 400_000, "crates:widget": 0}}
-	w, _ := keylessWeb(f, pkgs, nil, pop)
-	var amb *AmbiguousLibraryError
-	if _, err := w.resolveOne(context.Background(), mustSpec(t, "widget"), false); !errors.As(err, &amb) {
-		t.Fatalf("no hint: resolveOne = %v, want ambiguity", err)
-	}
-	w.workdirHint = func() []ecosystem { return []ecosystem{ecoPyPI} }
-	m, err := w.resolveOne(context.Background(), mustSpec(t, "widget"), false)
-	if err != nil || m.root.String() != "https://widget.readthedocs.io/" {
-		t.Fatalf("PyPI hint: resolveOne = %s, %v; want widget.readthedocs.io", m.root, err)
-	}
-	matches, err := w.ResolveLibrary(context.Background(), "widget", 5)
-	if err != nil || len(matches) != 3 {
-		t.Errorf("ResolveLibrary with a hint = %d matches, %v; want all three listed", len(matches), err)
-	}
-	// The query's own words outrank the working directory.
-	ctx := withQueryHint(context.Background(), queryEcosystems("widget usage in typescript"))
-	if m, err := w.resolveOne(ctx, mustSpec(t, "widget"), false); err != nil || m.root.String() != "https://docs.widget.dev/" {
-		t.Errorf("npm query hint: resolveOne = %s, %v; want docs.widget.dev", m.root, err)
-	}
-}
-
 // One edge is not enough keyless: a docs site its package names, with
 // nothing on it pointing back at the package or repository and no second
 // host on the owner's domain, is rejected; a link back makes two.
@@ -349,27 +319,6 @@ func TestRegistryPackageOf(t *testing.T) {
 	}
 }
 
-func TestEcosystemHints(t *testing.T) {
-	if got := queryEcosystems("click groups in Python, not golang"); !slices.Equal(got, []ecosystem{ecoPyPI, ecoGo}) {
-		t.Errorf("queryEcosystems = %v", got)
-	}
-	if got := queryEcosystems("go to the next page"); len(got) != 0 {
-		t.Errorf("queryEcosystems(plain words) = %v, want none", got)
-	}
-	dir := t.TempDir()
-	for _, name := range []string{"package.json", "pyproject.toml"} {
-		if err := os.WriteFile(filepath.Join(dir, name), []byte("{}"), 0o600); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := os.Mkdir(filepath.Join(dir, "go.mod"), 0o700); err != nil { // a directory is no manifest
-		t.Fatal(err)
-	}
-	if got := dirEcosystems(dir); !slices.Equal(got, []ecosystem{ecoNPM, ecoPyPI}) {
-		t.Errorf("dirEcosystems = %v", got)
-	}
-}
-
 // The popularity client reads each registry's keyless endpoint and puts
 // the counts on one weekly scale; a package an endpoint has no row for
 // counts zero.
@@ -499,36 +448,6 @@ func TestKeylessGoByName(t *testing.T) {
 	var up *upstreamError
 	if _, err := w.resolveOne(context.Background(), mustSpec(t, "cobra"), false); !errors.As(err, &up) {
 		t.Errorf("pkg.go.dev down: resolveOne = %v, want an upstream error, not COBRApy", err)
-	}
-}
-
-// A bare query's guessed reading that names a real package whose docs do
-// not verify keeps a shorter reading from answering in its place unless
-// the shorter one outweighs it: "widget router hooks" with npm's popular
-// widget-router is not a question about widget.
-func TestKeylessStrictMiss(t *testing.T) {
-	for _, tc := range []struct {
-		routerPop  int64
-		routerRepo repoKey
-		want       string // "" for an ambiguity
-	}{
-		{10_000_000, repo("widget-org", "router"), ""},
-		{50, repo("widget-org", "router"), "https://docs.widget.dev/"},
-		{10_000_000, repo("widget-org", "widget"), "https://docs.widget.dev/"}, // widget's own repository: part of it
-	} {
-		f, pkgs := widgetWorld()
-		pkgs.pkgs["npm:widget-router"] = pkgInfo{eco: ecoNPM, name: "widget-router", homepage: "https://github.com/widget-org/router", repoURL: "https://github.com/" + tc.routerRepo.String(), repo: tc.routerRepo}
-		pop := &fakePop{weekly_: map[string]int64{"npm:widget": 500_000, "npm:widget-router": tc.routerPop}}
-		w, _ := keylessWeb(f, pkgs, nil, pop)
-		q := "widget router hooks"
-		m, _, err := w.resolveQuery(context.Background(), q, splitLibraryQuery(q))
-		var amb *AmbiguousLibraryError
-		switch {
-		case tc.want == "" && (!errors.As(err, &amb) || !slices.ContainsFunc(amb.Matches, func(lm LibraryMatch) bool { return lm.ID == "npm:widget-router" })):
-			t.Errorf("router at %d a week: resolveQuery = %s, %v; want ambiguity naming npm:widget-router", tc.routerPop, m.root, err)
-		case tc.want != "" && (err != nil || m.root.String() != tc.want):
-			t.Errorf("router at %d a week: resolveQuery = %s, %v; want %s", tc.routerPop, m.root, err, tc.want)
-		}
 	}
 }
 

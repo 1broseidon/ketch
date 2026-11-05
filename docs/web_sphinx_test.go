@@ -284,13 +284,6 @@ func TestWebSphinxRTDSitemapFallsThrough(t *testing.T) {
 	}
 	checkClickLinks(t, root, site)
 
-	results, err := w.GetDocs(context.Background(), root.String(), "capture modes", 1000)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(results) == 0 || results[0].URL != "https://click.palletsprojects.com/en/stable/testing/#capture-modes" {
-		t.Errorf("results = %+v", results)
-	}
 	for _, c := range ft.Calls() {
 		if strings.Contains(c.URL, "/_/addons/") {
 			t.Errorf("discovery asked for versions: %s", c)

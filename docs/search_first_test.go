@@ -67,7 +67,7 @@ func TestSearchFirstAnswersFromTheSite(t *testing.T) {
 	if searches.Load() != before {
 		t.Errorf("asked again, the question searched the web; the local index holds the answer")
 	}
-	if again.Status != Partial || again.Backend != "local" || len(again.Results) == 0 {
+	if again.Status != Partial || again.Backend != SearchBackend || len(again.Results) == 0 {
 		t.Errorf("again = %s from %q with %d results, want a partial local answer", again.Status, again.Backend, len(again.Results))
 	}
 }
@@ -101,7 +101,7 @@ func TestSearchFirstRemembersQuestions(t *testing.T) {
 		t.Fatalf("asked = %+v, want the question remembered", lib.Asked)
 	}
 	before := searches.Load()
-	if o := s.SearchSelect(context.Background(), "Add middleware to a route?", 0); o.Backend != "local" || searches.Load() != before {
+	if o := s.SearchSelect(context.Background(), "Add middleware to a route?", 0); o.Backend != SearchBackend || searches.Load() != before {
 		t.Errorf("the question again: backend %q, %d searches; want the local index", o.Backend, searches.Load()-before)
 	}
 	if s.SearchSelect(context.Background(), "fetch handler runtime", 0); searches.Load() == before {
@@ -114,7 +114,7 @@ func TestSearchFirstRemembersQuestions(t *testing.T) {
 		t.Error("a question asked bare answered the request naming a library from memory")
 	}
 	before = searches.Load()
-	if o := s.GetDocsSelect(context.Background(), idxRoot, "add middleware to a route", 0); searches.Load() != before || o.Backend != "local" {
+	if o := s.GetDocsSelect(context.Background(), idxRoot, "add middleware to a route", 0); searches.Load() != before || o.Backend != SearchBackend {
 		t.Errorf("asked again of the same library: backend %q, %d searches; want the local index", o.Backend, searches.Load()-before)
 	}
 }

@@ -25,7 +25,7 @@
   "cache_ttl": "72h",
   "user_agent": "ketch/dev (+https://github.com/1broseidon/ketch)",
   "code_backend": "grepapp",
-  "docs_backend": "context7",
+  "docs_backend": "search",
   "context7_api_key_set": true,
   "sourcegraph_url": "https://sourcegraph.com",
   "github_token_source": "config",
@@ -62,11 +62,8 @@
     "github"
   ],
   "available_doc_backends": [
-    "context7",
-    "local",
-    "web",
     "search",
-    "auto"
+    "context7"
   ],
   "tinyfish_api_key_set": false,
   "tinyfish_api_keys_count": 0,

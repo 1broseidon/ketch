@@ -41,7 +41,6 @@ var (
 	_ func(*pkgClient, context.Context, ecosystem, string) (pkgInfo, error) = (*pkgClient).lookup
 	_ func(*pkgClient, context.Context, libSpec) []pkgLookup                = (*pkgClient).lookupAll
 	_ func(*pkgClient, context.Context, string) ([]string, error)           = (*pkgClient).goVersions
-	_ func(*pkgClient, context.Context, string, int) ([]string, error)      = (*pkgClient).searchGo
 	_ func(*http.Client, func() string) *ghClient                           = newGHClient
 	_ func(*ghClient, context.Context, repoKey) (repoInfo, error)           = (*ghClient).repo
 	_ func(*ghClient, context.Context, string, int) ([]repoInfo, error)     = (*ghClient).searchRepos
@@ -65,7 +64,6 @@ var (
 	_ map[evidenceKind]float64                                               = trustPoints
 	_ func(*Web, context.Context, libSpec, int) ([]webMatch, error)          = (*Web).resolve
 	_ func(*Web, context.Context, libSpec, bool) (webMatch, error)           = (*Web).resolveOne
-	_ func(*Web, context.Context, libSpec, *resolveLog) []*project           = (*Web).gatherProjects
 	_ func(*Web, context.Context, *project, *resolveLog) []rootCandidate     = (*Web).candidateRoots
 	_ func(*Web, context.Context, *project, rootCandidate) (webMatch, error) = (*Web).verifyRoot
 	_ func(*Web, context.Context, string) []rootCandidate                    = (*Web).lastResortSearch
@@ -84,10 +82,8 @@ var (
 	_ func(webRoot, *siteProfile) []siteVersion                                 = siblingVersions
 	_ func(string, []siteVersion) (siteVersion, bool)                           = matchVersion
 	_ func(string, *url.URL) bool                                               = versionHolds
-	_ func(string, string) bool                                                 = sameMajor
 	_ func(pkgInfo, string, []string) (siteVersion, bool)                       = registryVersionRoot
 	_ func(webRoot, *url.URL) (webRoot, bool)                                   = canonicalRoot
-	_ func([]Result, webRoot, string)                                           = labelResults
 	_ func(*url.URL, string, []string) (sphinxSite, bool)                       = detectSphinx
 	_ func(*Web, context.Context, webRoot, sphinxSite) ([]webLink, error)       = (*Web).sphinxLinks
 	_ func([]byte) (sphinxIndex, error)                                         = parseSearchIndex
@@ -156,15 +152,15 @@ func TestWebFromConfigIsLazy(t *testing.T) {
 	testutil.SwapDefaultTransport(t, ft)
 	t.Setenv("KETCH_GITHUB_TOKEN", "at-construction")
 
-	p, _ := Lookup("web")
+	p, _ := Lookup(SearchBackend)
 	if p.LibraryHelp == "" {
-		t.Error("the web descriptor must say what it takes as a library")
+		t.Error("the search descriptor must say what it takes as a library")
 	}
 	s, err := p.New(&config.Config{}, Deps{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := s.(*Web)
+	w := s.(*SearchFirst).web
 	if w.pkgs == nil || w.repos == nil || w.sites == nil || w.resolveTimeout != webResolveTimeout {
 		t.Fatalf("sources not wired: pkgs %v, repos %v, sites %v, resolve timeout %s", w.pkgs, w.repos, w.sites, w.resolveTimeout)
 	}

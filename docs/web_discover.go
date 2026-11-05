@@ -111,17 +111,6 @@ func (w *Web) discoverSitemap(ctx context.Context, root webRoot, site *webSite) 
 	return true
 }
 
-// widenLLMS adds the site's other page lists to an llms.txt that names
-// little of the query (its link coverage is under webWeakCoverage): a
-// hand-written llms.txt lists a few pages the site's sitemap, nav and
-// search index do not stop at. The llms.txt links keep the lead.
-func (w *Web) widenLLMS(ctx context.Context, root webRoot, site *webSite, query string) {
-	if !site.llms || len(site.pages) > 0 || linkCoverage(site.links, query, root) >= webWeakCoverage {
-		return
-	}
-	w.discoverSitemap(ctx, root, site)
-}
-
 // discoverLLMS tries llms.txt (with llms-full.txt), as far as root's host
 // is worth probing, and reports whether it answered with pages.
 func (w *Web) discoverLLMS(ctx context.Context, root webRoot, site *webSite) bool {

@@ -171,10 +171,6 @@ type pkgSource interface {
 	// goVersions lists a Go module's published versions (the proxy's
 	// @v/list), newest first.
 	goVersions(ctx context.Context, module string) ([]string, error)
-	// searchGo returns module paths pkg.go.dev's search finds for name,
-	// most imported first, at most n. Optional: an implementation may
-	// return nil, nil.
-	searchGo(ctx context.Context, name string, n int) ([]string, error)
 }
 
 // repoSource reads GitHub. Implemented by *ghClient (chunk A).

@@ -898,7 +898,7 @@ func TestBuildSpecsRequiredGating(t *testing.T) {
 	if s := findSpec(t, specs, "code", "github"); s.required {
 		t.Error("github not default must be informational")
 	}
-	if s := findSpec(t, specs, "docs", "context7"); !s.required {
+	if s := findSpec(t, specs, "docs", "search"); !s.required {
 		t.Error("default docs backend must be required")
 	}
 	if s := findSpec(t, specs, "cache", "bbolt"); !s.required {
@@ -1090,35 +1090,5 @@ func TestWithAutoChainCheckFollowsSearchOrder(t *testing.T) {
 	got = withAutoChainCheck(&cfg, checks)
 	if got[0].Status != StatusMisconfigured || !strings.Contains(got[0].Detail, "invalid search_order") {
 		t.Fatalf("auto row = %+v, want misconfigured invalid search_order", got[0])
-	}
-}
-
-// With docs_backend auto, doctor adds a docs "auto" line before the docs
-// providers, derived from their checks (no probe of its own: each Context7
-// probe spends keyless quota), healthy while either provider is.
-func TestDocsAutoChainCheck(t *testing.T) {
-	cfg := config.Defaults()
-	checks := []Check{
-		{Surface: "search", Backend: "ddg", Status: StatusOK},
-		{Surface: "docs", Backend: "context7", Status: StatusNoKey},
-		{Surface: "docs", Backend: "web", Status: StatusOK},
-		{Surface: "cache", Backend: "bbolt", Status: StatusOK},
-	}
-	if got := withDocsAutoCheck(&cfg, checks); len(got) != len(checks) {
-		t.Fatalf("docs_backend %q gained an auto line: %+v", cfg.DocsBackend, got)
-	}
-
-	cfg.DocsBackend = "auto"
-	got := withDocsAutoCheck(&cfg, checks)
-	if len(got) != 5 || got[1].Surface != "docs" || got[1].Backend != "auto" || !got[1].Required {
-		t.Fatalf("checks = %+v, want a required docs auto line before the providers", got)
-	}
-	if got[1].Status != StatusOK || got[1].Detail != "1 of 2 providers healthy (web → context7)" {
-		t.Errorf("auto = %+v", got[1])
-	}
-
-	checks[2].Status = StatusUnreachable
-	if got := withDocsAutoCheck(&cfg, checks); got[1].Status != StatusUnreachable {
-		t.Errorf("no provider healthy: auto = %+v", got[1])
 	}
 }

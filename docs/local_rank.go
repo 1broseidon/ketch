@@ -237,7 +237,7 @@ func familyResult(lib docsindex.Library, secs []docsindex.Section, f *family, sh
 	}
 	return Result{
 		Library: lib.Root, Version: lib.Version, Title: title, Breadcrumb: strings.Join(crumbs, " > "),
-		Snippet: b.String(), URL: webSectionOf(secs[f.best], 0).URL(), Anchors: anchors, Source: "local", Truncated: cut,
+		Snippet: b.String(), URL: webSectionOf(secs[f.best], 0).URL(), Anchors: anchors, Source: SearchBackend, Truncated: cut,
 	}
 }
 

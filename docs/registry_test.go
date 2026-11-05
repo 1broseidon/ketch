@@ -41,7 +41,7 @@ func TestRegistryDiscoversOptionalLibraryInterface(t *testing.T) {
 	if !slices.Equal(LibraryBackends(), append(before, "libraryfixture")) {
 		t.Fatalf("library capability discovery = %v", LibraryBackends())
 	}
-	if ResolveBackend("libraryfixture") != "libraryfixture" || ResolveBackend("local") != "local" || ResolveBackend("plainfixture") != "context7" {
+	if ResolveBackend("libraryfixture") != "libraryfixture" || ResolveBackend("plainfixture") != SearchBackend {
 		t.Fatal("library selection or legacy resolve fallback changed")
 	}
 	client, err := NewFromConfig(&config.Config{}, "libraryfixture", Deps{})
@@ -57,7 +57,7 @@ func TestRegistryKeepsUnknownAndUnavailableDistinct(t *testing.T) {
 	// Context7 is usable with no key (its anonymous quota), and the local
 	// backend with nothing indexed (it refuses each query), so every
 	// registered backend builds and only an unknown one is rejected.
-	for _, backend := range []string{"context7", "local", "web", AutoBackend} {
+	for _, backend := range []string{"context7", SearchBackend, "local"} {
 		if _, err := NewFromConfig(&config.Config{}, backend, Deps{}); err != nil {
 			t.Fatalf("%s must build with no keys, got %v", backend, err)
 		}

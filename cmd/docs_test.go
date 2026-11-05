@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -35,22 +34,6 @@ func asExitError(t *testing.T, err error) *ExitError {
 	return exitErr
 }
 
-// The local docs backend refuses a library its index does not hold with
-// a nonzero exit (not found, 3) that says how to index it, never an error
-// and exit 0.
-func TestDocsLocalBackendRefusesNotIndexed(t *testing.T) {
-	setDocsBackend(t, "local")
-	t.Setenv("KETCH_DOCS_INDEX_PATH", filepath.Join(t.TempDir(), "docs-index.db"))
-
-	exitErr := asExitError(t, runDocs(docsCmd, []string{"test"}))
-	if exitErr.Code != ExitNotFound {
-		t.Errorf("exit code = %d, want %d (not found)", exitErr.Code, ExitNotFound)
-	}
-	if !strings.Contains(exitErr.Error(), "ketch docs index") {
-		t.Errorf("error should say how to index the library, got: %v", exitErr)
-	}
-}
-
 // An unknown docs backend is a validation failure (exit 2) and the error must
 // list the valid options.
 func TestDocsUnknownBackendExitsValidationWithOptions(t *testing.T) {
@@ -60,7 +43,7 @@ func TestDocsUnknownBackendExitsValidationWithOptions(t *testing.T) {
 	if exitErr.Code != ExitValidation {
 		t.Errorf("exit code = %d, want %d (validation)", exitErr.Code, ExitValidation)
 	}
-	if want := "(available: " + strings.Join(docs.SelectableBackends(), ", ") + ")"; !strings.Contains(want, "context7") || !strings.Contains(want, "auto") || !strings.Contains(exitErr.Error(), want) {
+	if want := "(available: " + strings.Join(docs.AvailableBackends(), ", ") + ";"; !strings.Contains(want, "context7") || !strings.Contains(want, "search") || !strings.Contains(exitErr.Error(), want) {
 		t.Errorf("error should list the available backends, got: %v", exitErr)
 	}
 }

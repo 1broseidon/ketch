@@ -10,8 +10,8 @@ import (
 
 // The local docs index end to end, through the built binary, the real
 // scrape pipeline and page cache: each fixture site is indexed with docs
-// index, then answered offline by -b local with the section the web
-// backend finds for the same query. The text is indexed alone, no model
+// index, then answered offline by ketch docs (search, the default backend)
+// with the section the query is about. The text is indexed alone, no model
 // runs, and the answer is ranked by keywords over the full-text table
 // without a note saying so.
 func TestDocsIndexFixtureSitesCLI(t *testing.T) {
@@ -32,20 +32,20 @@ func TestDocsIndexFixtureSitesCLI(t *testing.T) {
 			checkSectionFollowUp(t, site, fx, library)
 			checkIndexLifecycle(t, library)
 			mustCLI(t, "docs", "index", "--remove", library)
-			if code, _, stderr := cli(t, "docs", "-b", "local", "--library", library, fx.query); code != 3 || !strings.Contains(stderr, "not indexed") {
-				t.Errorf("after --remove: exit %d, %s", code, stderr)
+			if out := mustCLI(t, "--json", "docs", "index", "--list"); strings.Contains(out, library) {
+				t.Errorf("after --remove the index still lists %s: %s", library, out)
 			}
 		})
 	}
 }
 
-// checkLocalTop asserts -b local answers fx's query with fx's section,
+// checkLocalTop asserts ketch docs answers fx's query with fx's section,
 // ranked by keywords (unremarked), as sections; --snippets is gone.
 func checkLocalTop(t *testing.T, site *fixtureSite, fx docsFixture, library string) {
 	t.Helper()
-	code, out, stderr := cli(t, "--json", "docs", "-b", "local", "--library", library, fx.query)
+	code, out, stderr := cli(t, "--json", "docs", "--library", library, fx.query)
 	if code != 0 {
-		t.Fatalf("docs -b local exited %d: %s", code, stderr)
+		t.Fatalf("docs exited %d: %s", code, stderr)
 	}
 	var results []struct {
 		docsResult
@@ -54,19 +54,19 @@ func checkLocalTop(t *testing.T, site *fixtureSite, fx docsFixture, library stri
 	if err := json.Unmarshal([]byte(out), &results); err != nil || len(results) == 0 {
 		t.Fatalf("results %q: %v", out, err)
 	}
-	if top := results[0]; !strings.HasPrefix(top.URL, site.URL+fx.page) || !slices.Contains(top.Anchors, fx.anchor) || top.Source != "local" || top.Library != library {
-		t.Errorf("top result = %+v, want the section %s#%s from local", top, fx.page, fx.anchor)
+	if top := results[0]; !strings.HasPrefix(top.URL, site.URL+fx.page) || !slices.Contains(top.Anchors, fx.anchor) || top.Source != "search" || top.Library != library {
+		t.Errorf("top result = %+v, want the section %s#%s from the index", top, fx.page, fx.anchor)
 	}
 	if strings.Contains(stderr, "ranked by keywords") {
 		t.Errorf("keyword ranking is the only ranking, not a note: %q", stderr)
 	}
 	// The text output renders results as Markdown.
 	top := results[0]
-	code, out, stderr = cli(t, "docs", "-b", "local", "--library", library, fx.query)
+	code, out, stderr = cli(t, "docs", "--library", library, fx.query)
 	if code != 0 || !strings.Contains(out, "### "+top.Breadcrumb+"\n\n") || !strings.Contains(out, "\n\nsource: "+top.URL+"\n") {
 		t.Errorf("section output (exit %d):\n%s%s", code, out, stderr)
 	}
-	if code, _, stderr = cli(t, "docs", "-b", "local", "--snippets", "--library", library, fx.query); code == 0 || !strings.Contains(stderr, "unknown flag") {
+	if code, _, stderr = cli(t, "docs", "--snippets", "--library", library, fx.query); code == 0 || !strings.Contains(stderr, "unknown flag") {
 		t.Errorf("--snippets exited %d (%s), want an unknown flag", code, stderr)
 	}
 }
@@ -130,7 +130,7 @@ func decodeSectionResults(t *testing.T, out string) []sectionResult {
 // exits 3, a malformed reference 2.
 func checkSectionFollowUp(t *testing.T, site *fixtureSite, fx docsFixture, library string) {
 	t.Helper()
-	top := decodeSectionResults(t, mustCLI(t, "--json", "docs", "-b", "local", "--library", library, fx.query))[0]
+	top := decodeSectionResults(t, mustCLI(t, "--json", "docs", "--library", library, fx.query))[0]
 	if top.Section != top.URL || !strings.Contains(top.Section, site.URL+fx.page) {
 		t.Errorf("section = %q, url %q", top.Section, top.URL)
 	}
@@ -143,15 +143,20 @@ func checkSectionFollowUp(t *testing.T, site *fixtureSite, fx docsFixture, libra
 // each cut one's full section, JSON marks it and carries no pointer.
 func checkPointers(t *testing.T, fx docsFixture, library string) {
 	t.Helper()
-	text := mustCLI(t, "docs", "-b", "local", "--library", library, "--tokens", "110", fx.query)
-	for _, r := range decodeSectionResults(t, mustCLI(t, "--json", "docs", "-b", "local", "--library", library, "--tokens", "110", fx.query)) {
-		hint := "source: " + r.URL + "\nfull section: ketch docs -b local --section " + r.Section + "\n"
+	text := mustCLI(t, "docs", "--library", library, "--tokens", "110", fx.query)
+	for _, r := range decodeSectionResults(t, mustCLI(t, "--json", "docs", "--library", library, "--tokens", "110", fx.query)) {
+		hint := "source: " + r.URL + "\nfull section: ketch docs --section " + r.Section + "\n"
 		if r.Truncated != strings.Contains(text, hint) || strings.Contains(r.Snippet, "full section") {
 			t.Errorf("truncated=%v but the text output is:\n%s", r.Truncated, text)
 		}
 	}
-	if whole := mustCLI(t, "docs", "-b", "local", "--library", library, fx.query); strings.Contains(whole, "full section") {
-		t.Errorf("the default view points to a section:\n%s", whole)
+	// The default view, whole sections, points to a section only where it
+	// cut one.
+	whole := mustCLI(t, "docs", "--library", library, fx.query)
+	for _, r := range decodeSectionResults(t, mustCLI(t, "--json", "docs", "--library", library, fx.query)) {
+		if r.Truncated != strings.Contains(whole, "full section: ketch docs --section "+r.Section+"\n") {
+			t.Errorf("default view: truncated=%v but the text output is:\n%s", r.Truncated, whole)
+		}
 	}
 }
 
@@ -161,17 +166,17 @@ func checkPointers(t *testing.T, fx docsFixture, library string) {
 func checkSectionFetch(t *testing.T, site *fixtureSite, fx docsFixture, library string, top sectionResult) {
 	t.Helper()
 	for _, args := range [][]string{{"--section", top.Section}, {"--library", library, "--section", top.Section}} {
-		got := decodeSectionResults(t, mustCLI(t, append([]string{"--json", "docs", "-b", "local"}, args...)...))[0]
-		if got.URL != top.URL || got.Section != top.Section || got.Source != "local" || got.Library != library || got.Truncated || !slices.Contains(got.Anchors, fx.anchor) {
+		got := decodeSectionResults(t, mustCLI(t, append([]string{"--json", "docs"}, args...)...))[0]
+		if got.URL != top.URL || got.Section != top.Section || got.Source != "search" || got.Library != library || got.Truncated || !slices.Contains(got.Anchors, fx.anchor) {
 			t.Errorf("--section %v = %+v\nwant the section %s whole", args, got, top.Section)
 		}
 	}
-	section := decodeSectionResults(t, mustCLI(t, "--json", "docs", "-b", "local", "--section", top.Section))[0]
-	out := mustCLI(t, "docs", "-b", "local", "--section", top.Section)
+	section := decodeSectionResults(t, mustCLI(t, "--json", "docs", "--section", top.Section))[0]
+	out := mustCLI(t, "docs", "--section", top.Section)
 	if !strings.Contains(out, "### "+section.Breadcrumb+"\n\n"+section.Snippet) || !strings.Contains(out, "\n\nsource: "+top.URL+"\n") || strings.Contains(out, "query:") {
 		t.Errorf("--section text output:\n%s", out)
 	}
-	if page := decodeSectionResults(t, mustCLI(t, "--json", "docs", "-b", "local", "--section", site.URL+fx.page))[0]; page.URL != site.URL+fx.page || !slices.Contains(page.Anchors, fx.anchor) {
+	if page := decodeSectionResults(t, mustCLI(t, "--json", "docs", "--section", site.URL+fx.page))[0]; page.URL != site.URL+fx.page || !slices.Contains(page.Anchors, fx.anchor) {
 		t.Errorf("page = %+v", page)
 	}
 }
@@ -180,16 +185,16 @@ func checkSectionFetch(t *testing.T, site *fixtureSite, fx docsFixture, library 
 // reference or another backend 2.
 func checkSectionRefusals(t *testing.T, site *fixtureSite, fx docsFixture, top sectionResult) {
 	t.Helper()
-	if code, _, stderr := cli(t, "docs", "-b", "local", "--section", site.URL+fx.page+"#no-such-anchor"); code != 3 || !strings.Contains(stderr, "no section #no-such-anchor") {
+	if code, _, stderr := cli(t, "docs", "--section", site.URL+fx.page+"#no-such-anchor"); code != 3 || !strings.Contains(stderr, "no section #no-such-anchor") {
 		t.Errorf("unknown anchor: exit %d, %s", code, stderr)
 	}
-	if code, _, stderr := cli(t, "docs", "-b", "local", "--section", site.URL+"/no/such/page#x"); code != 3 {
+	if code, _, stderr := cli(t, "docs", "--section", site.URL+"/no/such/page#x"); code != 3 {
 		t.Errorf("unknown page: exit %d, %s", code, stderr)
 	}
-	if code, _, _ := cli(t, "docs", "-b", "local", "--section", "not-a-url"); code != 2 {
+	if code, _, _ := cli(t, "docs", "--section", "not-a-url"); code != 2 {
 		t.Errorf("malformed reference: exit %d", code)
 	}
-	if code, _, _ := cli(t, "docs", "-b", "web", "--section", top.Section); code != 2 {
-		t.Errorf("--section on the web backend: exit %d", code)
+	if code, _, _ := cli(t, "docs", "-b", "context7", "--section", top.Section); code != 2 {
+		t.Errorf("--section on the context7 backend: exit %d", code)
 	}
 }

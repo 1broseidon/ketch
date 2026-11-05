@@ -182,24 +182,6 @@ func TestVersionRootHolds(t *testing.T) {
 	}
 }
 
-func TestSameMajor(t *testing.T) {
-	for _, c := range []struct {
-		want, version string
-		same          bool
-	}{
-		{"14", "14.2.3", true},
-		{"v14.1", "14.2.3", true},
-		{"13", "14.2.3", false},
-		{"0.30", "0.34.1", true},
-		{"stable", "14.2.3", false},
-		{"14", "", false},
-	} {
-		if got := sameMajor(c.want, c.version); got != c.same {
-			t.Errorf("sameMajor(%q, %q) = %v", c.want, c.version, got)
-		}
-	}
-}
-
 func TestRegistryVersionRoot(t *testing.T) {
 	tokio := pkgInfo{eco: ecoCrates, name: "tokio", registryDocs: "https://docs.rs/tokio/latest/tokio/"}
 	cobra := pkgInfo{eco: ecoGo, name: "github.com/spf13/cobra", registryDocs: "https://pkg.go.dev/github.com/spf13/cobra"}
@@ -292,32 +274,6 @@ func TestCanonicalRoot(t *testing.T) {
 	}
 	if _, ok := canonicalRoot(webRoot{}, nil); ok {
 		t.Error("nothing served is no root")
-	}
-}
-
-func TestLabelResults(t *testing.T) {
-	root, _ := parseWebRoot("https://docusaurus.io/docs/")
-	results := []Result{
-		{URL: "https://docusaurus.io/docs/installation#requirements"},
-		{URL: "https://docusaurus.io/docs/2.x/installation"},
-		{URL: "https://docusaurus.io/docs/next/"},
-		{URL: "https://docusaurus.io/docs/14/whatever"}, // a bare integer is not a version here
-		{URL: "https://elsewhere.test/docs/2.x/"},
-		{URL: "::"},
-	}
-	labelResults(results, root, "3.10.2")
-	var got []string
-	for _, r := range results {
-		got = append(got, r.Version)
-	}
-	if want := []string{"3.10.2", "2.x", "next", "3.10.2", "3.10.2", "3.10.2"}; !slices.Equal(got, want) {
-		t.Errorf("versions = %q, want %q", got, want)
-	}
-	host, _ := parseWebRoot("https://docs.djangoproject.com/")
-	results = []Result{{URL: "https://docs.djangoproject.com/en/5.2/topics/db/"}, {URL: "https://docs.djangoproject.com/en/"}}
-	labelResults(results, host, "")
-	if results[0].Version != "5.2" || results[1].Version != "" {
-		t.Errorf("below a locale: %+v", results)
 	}
 }
 

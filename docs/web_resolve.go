@@ -681,15 +681,6 @@ type resolution struct {
 	hint []ecosystem
 }
 
-// resolve finds the docs for spec (plan §4): every verified match, best
-// first, at most limit when limit is positive. With nothing verified it
-// returns the §8 error: ErrNotFound with per-source reasons when every
-// source answered, a plain upstream error when one failed, and an
-// ErrNotFound listing the versions when spec.version is not offered.
-func (w *Web) resolve(ctx context.Context, spec libSpec, limit int) ([]webMatch, error) {
-	return w.resolveLogged(ctx, spec, limit, &resolveLog{})
-}
-
 // resolveLogged is resolve recording into log.
 func (w *Web) resolveLogged(ctx context.Context, spec libSpec, limit int, log *resolveLog) ([]webMatch, error) {
 	return w.resolveRun(ctx, spec, limit, log, false, false)
@@ -743,9 +734,6 @@ func (w *Web) resolveRun(ctx context.Context, spec libSpec, limit int, log *reso
 func (r *resolution) searches() bool { return !r.strict && !r.lean }
 
 type leanKey struct{}
-
-// withLean marks ctx as a lean reading's resolution (resolution.lean).
-func withLean(ctx context.Context) context.Context { return context.WithValue(ctx, leanKey{}, true) }
 
 func isLean(ctx context.Context) bool {
 	v, _ := ctx.Value(leanKey{}).(bool)
@@ -853,7 +841,7 @@ func (w *Web) gh() repoSource {
 // errNoNameSources is the error for a name given to a backend built
 // without resolution sources (NewWeb).
 func errNoNameSources(name string) error {
-	return fmt.Errorf("%w: this web backend takes the docs site URL as the library, not a name (got %q), e.g. https://docs.astro.build", ErrLibraryRequired, name)
+	return fmt.Errorf("%w: names are not resolved here; pass the docs site URL (got %q), e.g. https://docs.astro.build", ErrLibraryRequired, name)
 }
 
 // resolveOne resolves spec where exactly one library is needed (GetDocs
@@ -865,18 +853,6 @@ func errNoNameSources(name string) error {
 // from it without resolving.
 func (w *Web) resolveOne(ctx context.Context, spec libSpec, strict bool) (webMatch, error) {
 	return w.resolveOneAs(ctx, spec, strict, false, false)
-}
-
-// resolveReading is resolveOne for one reading of a bare query: a common
-// word's pick is weighed (commonWordBar compares its weight), and a
-// reading that verifies nothing reports the packages of exactly its name
-// (strictMiss), so another reading cannot answer in its place unless it
-// outweighs them.
-func (w *Web) resolveReading(ctx context.Context, s querySplit) (webMatch, error) {
-	if s.lean {
-		ctx = withLean(ctx)
-	}
-	return w.resolveOneAs(ctx, s.spec, s.strict, true, s.common)
 }
 
 // resolveOneAs is resolveOne, or resolveReading when reading is set; weigh
@@ -1053,13 +1029,6 @@ func incompleteNote(matches []webMatch, log *resolveLog) (evidence, bool) {
 		return evidence{}, false
 	}
 	return evidence{kind: evNote, detail: "this list may be incomplete: " + joinErrors(append(whole, missedErrs(partial)...))}, true
-}
-
-// gatherProjects looks spec up in the registries, groups the packages by
-// repository, enriches each group from GitHub and, when the registries
-// come up short, adds GitHub search hits (plan §4 steps 1-3).
-func (w *Web) gatherProjects(ctx context.Context, spec libSpec, log *resolveLog) []*project {
-	return w.gather(ctx, spec, log, true)
 }
 
 // gather is gatherProjects, searching GitHub only when search is set.

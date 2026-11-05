@@ -493,33 +493,6 @@ func TestSemverLess(t *testing.T) {
 	}
 }
 
-func TestPkgClientSearchGo(t *testing.T) {
-	c, _ := recordedPkgClient(t)
-	got, err := c.searchGo(context.Background(), "cobra", 3)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(got) != 3 || got[0] != "github.com/spf13/cobra" || slices.Index(got[1:], "github.com/spf13/cobra") >= 0 {
-		t.Errorf("searchGo(cobra, 3) = %v, want cobra first, once", got)
-	}
-	all, err := c.searchGo(context.Background(), "cobra", 0)
-	if err != nil || len(all) < 5 {
-		t.Errorf("searchGo(cobra, 0) = %v, %v", all, err)
-	}
-
-	ft := testutil.NewFixtureTransport()
-	ft.Handle(http.MethodGet, "https://pkg.go.dev/v1/search?q=gone", testutil.Fixture{Status: http.StatusNotFound})
-	ft.Handle(http.MethodGet, "https://pkg.go.dev/v1/search?q=down", testutil.Fixture{Status: http.StatusBadGateway})
-	c = newPkgClient(ft.Client())
-	c.retryWait = time.Millisecond
-	if got, err := c.searchGo(context.Background(), "gone", 5); got != nil || err != nil {
-		t.Errorf("a 404 search = %v, %v; want nil, nil", got, err)
-	}
-	if _, err := c.searchGo(context.Background(), "down", 5); err == nil {
-		t.Error("a 502 search succeeded")
-	}
-}
-
 // A 404 is not found; anything else that goes wrong is a failed source,
 // kept apart so the final error can say "upstream".
 func TestPkgClientErrors(t *testing.T) {

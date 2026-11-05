@@ -63,12 +63,12 @@ func callDocsOutput(t *testing.T, session *mcpsdk.ClientSession, args map[string
 // reads its section, and carries the section reference and truncated.
 func TestDocsToolLocalCompactPointer(t *testing.T) {
 	session := localSession(t)
-	res, out := callDocsOutput(t, session, map[string]any{"query": "validate a form with a rules object", "backend": "local", "library": sectionRoot, "tokens": 120})
+	res, out := callDocsOutput(t, session, map[string]any{"query": "validate a form with a rules object", "backend": "search", "library": sectionRoot, "tokens": 120})
 	if res.IsError || len(out.Results) == 0 {
 		t.Fatalf("compact answer: %s", toolText(res))
 	}
 	r := out.Results[0]
-	call := "full section: docs(backend=\"local\", section=\"" + r.Section + "\")"
+	call := "full section: docs(section=\"" + r.Section + "\")"
 	if !r.Truncated || r.Section != r.URL || !strings.HasSuffix(r.Snippet, "\n\n"+call) {
 		t.Fatalf("cut result = %+v", r)
 	}
@@ -77,10 +77,10 @@ func TestDocsToolLocalCompactPointer(t *testing.T) {
 			t.Errorf("truncated=%v, snippet:\n%s", r.Truncated, r.Snippet)
 		}
 	}
-	// Without tokens there is no pointer.
-	_, plain := callDocsOutput(t, session, map[string]any{"query": "validate a form with a rules object", "backend": "local", "library": sectionRoot})
+	// Without tokens (whole sections) a pointer ends only a result cut.
+	_, plain := callDocsOutput(t, session, map[string]any{"query": "validate a form with a rules object", "library": sectionRoot})
 	for _, r := range plain.Results {
-		if strings.Contains(r.Snippet, "full section") || r.Section == "" {
+		if r.Truncated != strings.Contains(r.Snippet, "full section: docs(") || r.Section == "" {
 			t.Errorf("default view result: %+v", r)
 		}
 	}
@@ -91,12 +91,12 @@ func TestDocsToolLocalCompactPointer(t *testing.T) {
 func TestDocsToolLocalSectionFetch(t *testing.T) {
 	session := localSession(t)
 	ref := sectionRoot + "guide/forms#rules"
-	res, full := callDocsOutput(t, session, map[string]any{"section": ref, "backend": "local"})
-	if res.IsError || len(full.Results) != 1 || full.Backend != "local" || full.Status != docs.Answered {
+	res, full := callDocsOutput(t, session, map[string]any{"section": ref, "backend": "search"})
+	if res.IsError || len(full.Results) != 1 || full.Backend != docs.SearchBackend || full.Status != docs.Answered {
 		t.Fatalf("section fetch: %s %+v", toolText(res), full)
 	}
 	got := full.Results[0]
-	if got.URL != ref || got.Section != ref || got.Source != "local" || got.Library != sectionRoot || got.Truncated ||
+	if got.URL != ref || got.Section != ref || got.Source != docs.SearchBackend || got.Library != sectionRoot || got.Truncated ||
 		!strings.Contains(got.Snippet, "name: (v) => (v.length < 2 ? 'Too short' : null),") || strings.Contains(got.Snippet, "full section") {
 		t.Errorf("section result = %+v", got)
 	}
@@ -107,7 +107,7 @@ func TestDocsToolLocalSectionFetch(t *testing.T) {
 func TestDocsToolLocalSectionPage(t *testing.T) {
 	session := localSession(t)
 	res, page := callDocsOutput(t, session, map[string]any{"section": sectionRoot + "guide/forms", "tokens": 100})
-	if res.IsError || len(page.Results) != 1 || !page.Results[0].Truncated || !strings.Contains(page.Results[0].Snippet, `next section: docs(backend="local", section="`+sectionRoot+"guide/forms#") {
+	if res.IsError || len(page.Results) != 1 || !page.Results[0].Truncated || !strings.Contains(page.Results[0].Snippet, `next section: docs(section="`+sectionRoot+"guide/forms#") {
 		t.Errorf("page fetch: %s %+v", toolText(res), page)
 	}
 }

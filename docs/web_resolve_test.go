@@ -3,14 +3,12 @@ package docs
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -294,47 +292,6 @@ func TestGuessedDocsRoot(t *testing.T) {
 	}
 }
 
-// Registry squatters, verified only by docs a package index hosts, do not
-// make a popular name ambiguous (dominant): crates' fastapi names a
-// repository GitHub no longer has (0 stars), crates' requests is on GitLab
-// (stars unknown) with docs.rs docs alone, and PyPI's Clap names no
-// repository (stars unknown) and has docs only on pythonhosted.org. Each
-// bare query from the live run, and a named GetDocs, picks the real
-// project.
-func TestResolveSquattersDoNotBlockDominance(t *testing.T) {
-	cases := []struct {
-		name, query, root, outweighed string
-	}{
-		{"fastapi", "fastapi dependency injection", "https://fastapi.tiangolo.com/", "crates:fastapi: outweighed by github:fastapi/fastapi"},
-		{"requests", "how do I set retries in requests", "https://requests.readthedocs.io/en/latest/", "crates:requests: outweighed by github:psf/requests"},
-		{"clap", "clap derive subcommands", "https://docs.rs/clap/latest/clap/", "pypi:Clap: outweighed by github:clap-rs/clap"},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			matches, log := resolveFixture(t, tc.name)
-			if len(matches) == 0 || matches[0].root.String() != tc.root {
-				t.Fatalf("resolve %s = %v, want %s first", tc.name, matchIDs(matches), tc.root)
-			}
-			assertReasons(t, log, tc.outweighed)
-
-			// The query's other readings (fastapi-dependency, clap-derive)
-			// are names no registry has: answered as such, not by a missing
-			// fixture, which would read as a source down.
-			w, ft := fixtureWeb(t)
-			nothingElse := notFoundFallback{ft}
-			w.pkgs = newPkgClient(&http.Client{Transport: nothingElse})
-			w.repos = newGHClient(&http.Client{Transport: nothingElse}, nil)
-			m, split, err := w.resolveQuery(context.Background(), tc.query, splitLibraryQuery(tc.query))
-			if err != nil || m.root.String() != tc.root || split.spec.name != tc.name {
-				t.Fatalf("resolveQuery(%q) = %s via %q, %v; want %s", tc.query, m.libraryMatch().ID, split.spec.raw, err, tc.root)
-			}
-			if _, err := w.resolveOne(context.Background(), mustSpec(t, tc.name), false); err != nil {
-				t.Errorf("resolveOne(%s) (a named GetDocs) = %v, want no ambiguity", tc.name, err)
-			}
-		})
-	}
-}
-
 func matchIDs(matches []webMatch) []string {
 	var out []string
 	for _, m := range matches {
@@ -403,8 +360,6 @@ func (f *fakePkgs) lookupAll(ctx context.Context, spec libSpec) []pkgLookup {
 }
 
 func (f *fakePkgs) goVersions(context.Context, string) ([]string, error) { return nil, nil }
-
-func (f *fakePkgs) searchGo(context.Context, string, int) ([]string, error) { return nil, nil }
 
 // fakeRepos is an in-memory repoSource: repositories by key, renames to
 // follow, search hits by name, or every call failing.
@@ -509,78 +464,6 @@ func widgetRepos(jsStars, pyStars int) *fakeRepos {
 		repo("widget-js", "widget"): {homepage: "https://widgetjs.dev", stars: jsStars},
 		repo("pywidget", "widget"):  {homepage: "https://pywidget.readthedocs.io", stars: pyStars},
 	}}
-}
-
-// Two verified projects called widget: --resolve lists both, a bare query
-// is ambiguous, and pypi:widget picks one.
-func TestResolveWidgetAmbiguity(t *testing.T) {
-	w := resolverWeb(widgetSites(), widgetPkgs(), widgetRepos(900, 300), nil)
-	ctx := context.Background()
-
-	matches, err := w.ResolveLibrary(ctx, "widget", 5)
-	if err != nil || len(matches) != 2 {
-		t.Fatalf("ResolveLibrary(widget) = %+v, %v; want 2 matches", matches, err)
-	}
-	ids := []string{matches[0].ID, matches[1].ID}
-	if !slices.Contains(ids, "https://widgetjs.dev/") || !slices.Contains(ids, "https://pywidget.readthedocs.io/") {
-		t.Errorf("IDs = %v", ids)
-	}
-
-	_, err = w.Search(ctx, "widget configuration", 5)
-	var amb *AmbiguousLibraryError
-	if !errors.As(err, &amb) || !errors.Is(err, ErrLibraryRequired) || len(amb.Matches) != 2 {
-		t.Fatalf("Search(widget configuration) = %v, want an AmbiguousLibraryError over 2 libraries", err)
-	}
-	for _, want := range []string{"https://widgetjs.dev/", "npm:widget", "https://pywidget.readthedocs.io/", "pypi:widget"} {
-		if !strings.Contains(err.Error(), want) {
-			t.Errorf("ambiguity message lacks %q: %v", want, err)
-		}
-	}
-	if _, err := w.GetDocs(ctx, "widget", "configuration", 1000); !errors.As(err, &amb) {
-		t.Errorf("GetDocs(widget) = %v, want the ambiguity", err)
-	}
-
-	matches, err = w.ResolveLibrary(ctx, "pypi:widget", 5)
-	if err != nil || len(matches) != 1 || matches[0].ID != "https://pywidget.readthedocs.io/" {
-		t.Errorf("ResolveLibrary(pypi:widget) = %+v, %v", matches, err)
-	}
-}
-
-// One widget with 40k stars, the other with 50: the popular one is picked
-// without asking.
-func TestResolveWidgetDominance(t *testing.T) {
-	w := resolverWeb(widgetSites(), widgetPkgs(), widgetRepos(40000, 50), nil)
-	m, err := w.resolveOne(context.Background(), mustSpec(t, "widget"), false)
-	if err != nil || m.root.String() != "https://widgetjs.dev/" {
-		t.Fatalf("resolveOne(widget) = %s, %v; want widgetjs.dev", m.libraryMatch().ID, err)
-	}
-	results, err := w.Search(context.Background(), "widget configuration", 5)
-	if err != nil || len(results) == 0 || results[0].Library != "https://widgetjs.dev/" || !strings.Contains(results[0].URL, "/docs/configuration") {
-		t.Fatalf("Search(widget configuration) = %+v, %v", results, err)
-	}
-	// An old PyPI package that names no repository, with a docs site of its
-	// own: its stars are unknown, so it could be the library meant, and the
-	// ambiguity stays. So it does for one whose repository is on GitLab.
-	pkgs := widgetPkgs()
-	pkgs.pkgs["pypi:widget"] = pkgInfo{eco: ecoPyPI, name: "widget", docsURL: "https://pywidget.readthedocs.io/"}
-	w = resolverWeb(widgetSites(), pkgs, widgetRepos(40000, 50), nil)
-	if _, err := w.resolveOne(context.Background(), mustSpec(t, "widget"), false); !errors.Is(err, ErrAmbiguousLibrary) {
-		t.Errorf("a project with no repository and its own docs site must keep the ambiguity: %v", err)
-	}
-	pkgs.pkgs["pypi:widget"] = pkgInfo{eco: ecoPyPI, name: "widget", docsURL: "https://pywidget.readthedocs.io/", repoURL: "https://gitlab.com/pywidget/widget"}
-	w = resolverWeb(widgetSites(), pkgs, widgetRepos(40000, 50), nil)
-	if _, err := w.resolveOne(context.Background(), mustSpec(t, "widget"), false); !errors.Is(err, ErrAmbiguousLibrary) {
-		t.Errorf("a project with unknown stars and its own docs site must keep the ambiguity: %v", err)
-	}
-	// The same package with docs only on pythonhosted.org, PyPI's retired
-	// docs hosting, is the squatter signal: it no longer blocks.
-	sites := widgetSites()
-	sites.raw["https://pythonhosted.org/widget/"] = html(`<!doctype html><html><head><title>Welcome to widget's documentation!</title></head><body><a href="intro.html">Intro</a><a href="api.html">API</a></body></html>`)
-	pkgs.pkgs["pypi:widget"] = pkgInfo{eco: ecoPyPI, name: "widget", docsURL: "https://pythonhosted.org/widget/"}
-	w = resolverWeb(sites, pkgs, widgetRepos(40000, 50), nil)
-	if m, err := w.resolveOne(context.Background(), mustSpec(t, "widget"), false); err != nil || m.root.String() != "https://widgetjs.dev/" {
-		t.Errorf("a project with only index-hosted docs and unknown stars must not block dominance: %s, %v", m.libraryMatch().ID, err)
-	}
 }
 
 // project.stars: 0 when GitHub says the repository does not exist, -1
@@ -778,34 +661,6 @@ func TestResolveGitHubOnlySourceRateLimited(t *testing.T) {
 	}
 }
 
-// Every source failing (5xx) is upstream; every source answering "no such
-// package" is not-found, naming each source's answer.
-func TestResolveSourceFailureClassification(t *testing.T) {
-	down := errors.New("status 503")
-	w := resolverWeb(&fakeFetcher{}, &fakePkgs{all: down}, &fakeRepos{err: errors.New("github: status 502")}, nil)
-	_, err := w.ResolveLibrary(context.Background(), "click", 5)
-	if err == nil || errors.Is(err, ErrNotFound) || errors.Is(err, ErrLibraryRequired) || !strings.Contains(err.Error(), "status 503") {
-		t.Errorf("every source 5xx = %v, want a plain upstream error", err)
-	}
-	if strings.Contains(fmt.Sprint(err), "github_token") {
-		t.Errorf("no token hint unless GitHub refused for its rate limit: %v", err)
-	}
-
-	w = resolverWeb(&fakeFetcher{}, &fakePkgs{}, &fakeRepos{}, &fakeSites{})
-	_, err = w.ResolveLibrary(context.Background(), "zzyzx", 5)
-	if !errors.Is(err, ErrNotFound) {
-		t.Fatalf("every source 404 = %v, want not found", err)
-	}
-	for _, want := range []string{"npm zzyzx: no such package", "pypi zzyzx: no such package", "crates zzyzx: no such package"} {
-		if !strings.Contains(err.Error(), want) {
-			t.Errorf("not-found message lacks %q: %v", want, err)
-		}
-	}
-	if _, err := w.GetDocs(context.Background(), "zzyzx", "q", 100); !errors.Is(err, ErrNotFound) {
-		t.Errorf("GetDocs(zzyzx) = %v, want not found", err)
-	}
-}
-
 // Metadata URLs come from third parties: private and local hosts are
 // rejected with a reason and never fetched.
 func TestResolveRejectsPrivateMetadataURLs(t *testing.T) {
@@ -827,30 +682,6 @@ func TestResolveRejectsPrivateMetadataURLs(t *testing.T) {
 	}
 	if calls := f.called(); len(calls) != 0 {
 		t.Errorf("fetched %v", calls)
-	}
-}
-
-// A name resolves, then the resolved root is searched; a malformed spec is
-// a validation error before anything is fetched.
-func TestGetDocsResolvesNames(t *testing.T) {
-	w := resolverWeb(widgetSites(), widgetPkgs(), widgetRepos(900, 300), nil)
-	results, err := w.GetDocs(context.Background(), "npm:widget", "configuration", 1000)
-	if err != nil || len(results) == 0 || results[0].Library != "https://widgetjs.dev/" || results[0].URL != "https://widgetjs.dev/docs/configuration" {
-		t.Fatalf("GetDocs(npm:widget) = %+v, %v", results, err)
-	}
-	for _, bad := range []string{"widget@", "maven:widget", "https://widgetjs.dev/@3"} {
-		if _, err := w.GetDocs(context.Background(), bad, "q", 100); !errors.Is(err, ErrLibraryRequired) {
-			t.Errorf("GetDocs(%q) = %v, want ErrLibraryRequired", bad, err)
-		}
-	}
-}
-
-// A bare query with no library in it, or none that resolves, asks for one.
-func TestSearchNoLibraryIdentified(t *testing.T) {
-	w := resolverWeb(&fakeFetcher{}, &fakePkgs{}, &fakeRepos{}, nil)
-	_, err := w.Search(context.Background(), "verify webhook signatures", 5)
-	if !errors.Is(err, ErrLibraryRequired) || !strings.Contains(err.Error(), "--library") || !strings.Contains(err.Error(), "library (MCP)") {
-		t.Errorf("Search = %v, want ErrLibraryRequired naming --library", err)
 	}
 }
 
@@ -1240,33 +1071,6 @@ func TestResolveHitsCannotVouchForThemselves(t *testing.T) {
 	}
 }
 
-// A source that fails must not change the answer. With PyPI down, widget
-// looks like npm's alone, though healthy it is ambiguous: a single-library
-// context answers with an upstream error naming what it would have picked,
-// not with npm's docs. A known project whose repository (or site) did not
-// answer is only unverified: the pick stands, with a note.
-func TestResolveFailedSourceIsNoAnswer(t *testing.T) {
-	ctx := context.Background()
-	pkgs := widgetPkgs()
-	pkgs.errs = map[string]error{"pypi:widget": errors.New("pypi widget: status 503")}
-	w := resolverWeb(widgetSites(), pkgs, widgetRepos(900, 300), nil)
-	_, err := w.GetDocs(ctx, "widget", "configuration", 1000)
-	if err == nil || errors.Is(err, ErrNotFound) || errors.Is(err, ErrLibraryRequired) ||
-		!strings.Contains(err.Error(), "https://widgetjs.dev/") || !strings.Contains(err.Error(), "503") {
-		t.Errorf("GetDocs(widget) with PyPI down = %v; want an upstream error naming the pick and the failure", err)
-	}
-	if _, err := w.Search(ctx, "widget configuration", 5); err == nil || errors.Is(err, ErrLibraryRequired) {
-		t.Errorf("Search(widget configuration) with PyPI down = %v; want an upstream error", err)
-	}
-	// --resolve lists what answered, and says the list may be incomplete.
-	ms, err := w.ResolveLibrary(ctx, "widget", 5)
-	if err != nil || len(ms) != 1 || len(ms[0].Evidence) == 0 ||
-		!strings.HasPrefix(ms[0].Evidence[0], "this list may be incomplete: pypi widget") {
-		t.Errorf("ResolveLibrary(widget) with PyPI down = %+v, %v; want npm's widget, noting PyPI's failure first", ms, err)
-	}
-
-}
-
 // Another project whose repository GitHub did not read (a 502) is
 // unresolved, not absent: GitHub decides its claim, its homepage and its
 // stars, so the pick depended on GitHub and is an upstream error naming
@@ -1312,14 +1116,13 @@ func (g githubLimited) RoundTrip(req *http.Request) (*http.Response, error) {
 // their repository claims corroborated, so they verify nothing, while
 // crates' same-named crates verify by their docs.rs docs alone. Where one
 // library is needed that is an upstream error naming the token fix, never
-// docs.rs; a bare query stops there rather than falling through; --resolve
+// docs.rs; --resolve
 // lists what verified, saying the list may be incomplete. Recorded live.
 func TestResolveRateLimitedGitHubLetsNoSquatterWin(t *testing.T) {
-	queries := map[string]string{"express": "express error handling middleware", "zod": "zod discriminated union", "gin": "gin bind json request body"}
 	for _, search := range []bool{false, true} {
-		for name, query := range queries {
+		for _, name := range []string{"express", "zod", "gin"} {
 			t.Run(fmt.Sprintf("%s/search-limited=%v", name, search), func(t *testing.T) {
-				rateLimitedSquatters(t, name, query, search)
+				rateLimitedSquatters(t, name, search)
 			})
 		}
 	}
@@ -1336,7 +1139,7 @@ func TestResolveRateLimitedGitHubLetsNoSquatterWin(t *testing.T) {
 }
 
 // rateLimitedSquatters checks one name of TestResolveRateLimitedGitHubLetsNoSquatterWin.
-func rateLimitedSquatters(t *testing.T, name, query string, search bool) {
+func rateLimitedSquatters(t *testing.T, name string, search bool) {
 	t.Helper()
 	w, ft := fixtureWeb(t)
 	w.pkgs = newPkgClient(&http.Client{Transport: notFoundFallback{ft}})
@@ -1359,8 +1162,6 @@ func rateLimitedSquatters(t *testing.T, name, query string, search bool) {
 		t.Fatalf("resolveOne(%s) picked %s with GitHub rate-limited", name, m.root)
 	}
 	check("resolveOne("+name+")", err)
-	_, err = w.Search(ctx, query, 5)
-	check("Search("+query+")", err)
 
 	ms, err := w.ResolveLibrary(ctx, name, 5)
 	if err != nil {
@@ -1400,25 +1201,6 @@ func (f *failingRepo) repo(ctx context.Context, key repoKey) (repoInfo, error) {
 		return repoInfo{}, errors.New("github: status 502")
 	}
 	return f.fakeRepos.repo(ctx, key)
-}
-
-// A bare query's preferred reading whose sources failed stops the search
-// with an upstream error: "how do I set retries in requests" with PyPI
-// down must not fall through to the docs of npm's "set".
-func TestResolveQueryStopsAtUpstreamFailure(t *testing.T) {
-	sites := &fakeFetcher{raw: map[string]fakeRaw{
-		"https://set.dev/": html(`<!doctype html><html><head><title>set docs</title><meta name="generator" content="Docusaurus"></head><body><a href="/docs/retries">Retries</a><a href="https://github.com/set-org/set">GitHub</a></body></html>`),
-	}}
-	pkgs := &fakePkgs{
-		pkgs: map[string]pkgInfo{"npm:set": {eco: ecoNPM, name: "set", homepage: "https://set.dev/", repoURL: "https://github.com/set-org/set", repo: repo("set-org", "set")}},
-		errs: map[string]error{"pypi:requests": errors.New("pypi requests: status 503")},
-	}
-	repos := &fakeRepos{repos: map[repoKey]repoInfo{repo("set-org", "set"): {homepage: "https://set.dev", stars: 3}}}
-	w := resolverWeb(sites, pkgs, repos, nil)
-	_, err := w.Search(context.Background(), "how do I set retries in requests", 5)
-	if err == nil || errors.Is(err, ErrLibraryRequired) || errors.Is(err, ErrNotFound) || !strings.Contains(err.Error(), `"requests"`) || !strings.Contains(err.Error(), "503") {
-		t.Errorf("Search = %v; want an upstream error about the requests reading", err)
-	}
 }
 
 // A version root that does not answer in time is an upstream failure, not
@@ -1525,66 +1307,6 @@ func (searchLimited) limit(req *http.Request) *http.Response {
 		Status: "403 Forbidden", StatusCode: http.StatusForbidden, Proto: "HTTP/1.1", ProtoMajor: 1, ProtoMinor: 1,
 		Header: http.Header{"X-Ratelimit-Remaining": {"0"}, "X-Ratelimit-Reset": {"1893456000"}, "Content-Type": {"application/json"}},
 		Body:   io.NopCloser(strings.NewReader(body)), ContentLength: int64(len(body)), Request: req,
-	}
-}
-
-// GitHub's search allows 10 unauthenticated requests a minute, and nearly
-// every bare query has a guessed reading (fastapi-dependency). A guess
-// needs an exact registry package, so it never searches, and a search that
-// fails for a reading whose name no registry has gives way to the next
-// reading: the query still answers from fastapi. So does a rate-limited
-// repository of a junk package the reading names (npm's production, PyPI's
-// fastapi-dependency, recorded live), which hides only its homepage.
-func TestSearchRateLimitDoesNotVetoBareQuery(t *testing.T) {
-	w, ft := fixtureWeb(t)
-	ft.Handle(http.MethodGet, "https://registry.npmjs.org/production/latest", testutil.Fixture{Body: `{"name":"production","version":"0.0.2",
-		"homepage":"http://github.com/qawemlilo/production","repository":{"type":"git","url":"git://github.com/qawemlilo/production.git"}}`})
-	ft.Handle(http.MethodGet, "https://pypi.org/pypi/fastapi-dependency/json", testutil.Fixture{Body: `{"info":{"name":"fastapi-dependency","version":"0.2.0",
-		"home_page":null,"project_urls":{"Homepage":"https://github.com/Kludex/fastapi-dependency"}}}`})
-	rt := searchLimited{notFoundFallback{ft}, []string{"qawemlilo/production", "kludex/fastapi-dependency"}}
-	w.pkgs = newPkgClient(&http.Client{Transport: rt})
-	w.repos = newGHClient(&http.Client{Transport: rt}, nil)
-	for _, q := range []string{"fastapi dependency injection", "how do I use fastapi in production"} {
-		m, split, err := w.resolveQuery(context.Background(), q, splitLibraryQuery(q))
-		if err != nil || m.root.String() != "https://fastapi.tiangolo.com/" || split.spec.name != "fastapi" {
-			t.Errorf("resolveQuery(%q) = %s via %q, %v; want fastapi.tiangolo.com", q, m.libraryMatch().ID, split.spec.raw, err)
-		}
-	}
-	for _, c := range ft.Calls() {
-		if strings.Contains(c.String(), "search/repositories?q=fastapi-dependency") {
-			t.Errorf("the guessed reading searched GitHub: %s", c)
-		}
-	}
-}
-
-// vetoes: which failed readings stop a bare query.
-func TestVetoes(t *testing.T) {
-	guess := querySplit{strict: true}
-	plain := querySplit{}
-	searchDown := &upstreamError{msg: "github search failed"}
-	cases := []struct {
-		name     string
-		err      error
-		s        querySplit
-		readings int
-		want     bool
-	}{
-		{"not found", fmt.Errorf("x: %w", ErrNotFound), plain, 3, false},
-		{"a registry down", &upstreamError{registryFailed: true}, plain, 3, true},
-		{"a registry down for a guess (a 429 on a speculative reading)", &upstreamError{registryFailed: true}, guess, 3, false},
-		{"a known package's site down", &upstreamError{nameKnown: true, siteFailed: true}, plain, 3, true},
-		{"a known package's site down, for a guess", &upstreamError{nameKnown: true, siteFailed: true}, guess, 3, false},
-		{"a known package, GitHub rate-limited", &upstreamError{nameKnown: true}, plain, 3, false},
-		{"a known package, GitHub rate-limited, the only reading", &upstreamError{nameKnown: true}, plain, 1, true},
-		{"search down for a guess", searchDown, guess, 3, false},
-		{"search down for a name no registry has", searchDown, plain, 3, false},
-		{"search down for the only reading", searchDown, plain, 1, true},
-		{"an unclassified failure", errors.New("boom"), plain, 3, true},
-	}
-	for _, tc := range cases {
-		if got := vetoes(tc.err, tc.s, tc.readings); got != tc.want {
-			t.Errorf("%s: vetoes = %v, want %v", tc.name, got, tc.want)
-		}
 	}
 }
 
@@ -1869,131 +1591,6 @@ func TestOwnSiteBeforeIndexHostedDocs(t *testing.T) {
 	if r.compareGroups(own, idx) >= 0 || r.compareGroups(idx, own) <= 0 {
 		t.Errorf("index-hosted docs ordered before a docs site of its own")
 	}
-}
-
-// ginSearch is GitHub's recorded search for gin, the URL it answers.
-const ginSearch = "https://api.github.com/search/repositories?q=gin+in%3Aname&sort=stars"
-
-// ginSearchWithout is the recorded search for gin as GitHub answers a
-// search it cut short: drop's hits missing and incomplete_results set.
-func ginSearchWithout(t *testing.T, drop string) string {
-	t.Helper()
-	body, err := os.ReadFile(filepath.Join("testdata", "resolve", "github", "api.github.com", "search", "repositories%3Fq=gin+in%3Aname&sort=stars"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	var sr struct {
-		Items []map[string]any `json:"items"`
-	}
-	if err := json.Unmarshal(body, &sr); err != nil {
-		t.Fatal(err)
-	}
-	sr.Items = slices.DeleteFunc(sr.Items, func(it map[string]any) bool { return it["full_name"] == drop })
-	out, err := json.Marshal(map[string]any{"incomplete_results": true, "items": sr.Items})
-	if err != nil {
-		t.Fatal(err)
-	}
-	return string(out)
-}
-
-// gin, as the round 1 benchmark met "gin bind json request body" twice with
-// one binary. Recorded live. The registries have npm's and PyPI's small
-// gins and crates' reserved one (docs.rs only); GitHub's search finds
-// gin-gonic/gin (89439 stars, gin-gonic.com) and codegangsta/gin (4240, a
-// live-reload tool documented only on pkg.go.dev), each its own Go module.
-// Where one library is needed, none of the runs below answers from
-// codegangsta/gin.
-const ginQuery = "gin bind json request body"
-
-// ginNoAnswer fails unless err says the resolution gave no answer.
-func ginNoAnswer(t *testing.T, what string, m webMatch, err error) {
-	t.Helper()
-	if err == nil {
-		t.Fatalf("%s answered from %s (%s); want no answer", what, m.root, m.project)
-	}
-}
-
-// wantUpstream fails unless err is an upstream error (not a not-found, a
-// missing library or an ambiguity) containing every want fragment.
-func wantUpstream(t *testing.T, what string, err error, want ...string) {
-	t.Helper()
-	var amb *AmbiguousLibraryError
-	if errors.Is(err, ErrNotFound) || errors.Is(err, ErrLibraryRequired) || errors.As(err, &amb) {
-		t.Fatalf("%s = %v; want an upstream error", what, err)
-	}
-	for _, w := range want {
-		if !strings.Contains(err.Error(), w) {
-			t.Errorf("%s: error lacks %q: %v", what, w, err)
-		}
-	}
-}
-
-// round1-1: everything answered. The live run listed the three verified
-// projects, as 89439 stars are not 50x 4240. Under decision-15
-// codegangsta/gin and crates' gin, documented only where a package index
-// hosts docs, do not block gin-gonic/gin, which outweighs both and has a
-// site of its own: gin answers from gin-gonic.com, as --resolve does.
-func TestResolveGinAllAnswered(t *testing.T) {
-	ctx := context.Background()
-	w, _ := fixtureWeb404(t)
-	m, err := w.resolveOne(ctx, mustSpec(t, "gin"), false)
-	if err != nil || m.root.String() != "https://gin-gonic.com/" {
-		t.Fatalf("resolveOne(gin) = %s, %v; want gin-gonic.com", m.root, err)
-	}
-	if _, err = w.Search(ctx, ginQuery, 5); err != nil {
-		t.Errorf("Search(%q) = %v; want gin-gonic.com's docs", ginQuery, err)
-	}
-	ms, err := w.ResolveLibrary(ctx, "gin", 5)
-	if err != nil || len(ms) == 0 || ms[0].ID != "https://gin-gonic.com/" {
-		t.Errorf("ResolveLibrary(gin) = %v, %v; want gin-gonic.com first", ms, err)
-	}
-}
-
-// round1-2: GitHub's search answered without gin-gonic/gin, as it does
-// when it runs out of time (incomplete_results): no module lookup or
-// homepage for it, and the web search's gin-gonic.com linked to no project
-// known. codegangsta/gin, dominating crates' gin, was the answer: the wrong
-// project. That search failed, so the pick is an upstream error, and
-// --resolve says its list may be incomplete.
-func TestResolveGinPastIncompleteSearch(t *testing.T) {
-	ctx := context.Background()
-	w, ft := fixtureWeb404(t)
-	ft.Handle(http.MethodGet, ginSearch, testutil.Fixture{Body: ginSearchWithout(t, "gin-gonic/gin")})
-	w.sites = &fakeSites{hits: []search.Result{{URL: "https://gin-gonic.com/"}, {URL: "https://go.dev/doc/"}}}
-	m, err := w.resolveOne(ctx, mustSpec(t, "gin"), false)
-	ginNoAnswer(t, "resolveOne(gin)", m, err)
-	wantUpstream(t, "resolveOne(gin)", err, "https://pkg.go.dev/github.com/codegangsta/gin/", `github search "gin": incomplete results`)
-	_, err = w.Search(ctx, ginQuery, 5)
-	wantUpstream(t, "Search("+ginQuery+")", err, "incomplete results")
-	for _, c := range ft.Calls() {
-		if strings.Contains(c.URL, "gin-gonic/gin/@latest") {
-			t.Errorf("gin-gonic/gin was looked up though the search did not return it: %s", c)
-		}
-	}
-	ms, err := w.ResolveLibrary(ctx, "gin", 5)
-	if err != nil || len(ms) == 0 {
-		t.Fatalf("ResolveLibrary(gin) = %v, %v; want what verified", ms, err)
-	}
-	for _, lm := range ms {
-		if !strings.HasPrefix(lm.Evidence[0], `this list may be incomplete: github search "gin": incomplete results`) {
-			t.Errorf("ResolveLibrary(gin) lists %s without saying the search was incomplete: %v", lm.ID, lm.Evidence)
-		}
-	}
-}
-
-// gin-gonic's side down instead (its homepage and its module lookup 503):
-// gin-gonic/gin verifies nothing, and codegangsta/gin, with fewer stars and
-// only index-hosted docs, must not stand past it either.
-func TestResolveGinWithGinGonicDown(t *testing.T) {
-	ctx := context.Background()
-	w, ft := fixtureWeb404(t)
-	ft.Handle(http.MethodGet, "https://gin-gonic.com/", testutil.Fixture{Status: http.StatusServiceUnavailable})
-	ft.Handle(http.MethodGet, "https://proxy.golang.org/github.com/gin-gonic/gin/@latest", testutil.Fixture{Status: http.StatusServiceUnavailable})
-	m, err := w.resolveOne(ctx, mustSpec(t, "gin"), false)
-	ginNoAnswer(t, "resolveOne(gin)", m, err)
-	wantUpstream(t, "resolveOne(gin)", err, "https://gin-gonic.com/", "503")
-	_, err = w.Search(ctx, ginQuery, 5)
-	wantUpstream(t, "Search("+ginQuery+")", err, "503")
 }
 
 // failingSite is a fakeFetcher whose URLs containing bad answer 503: a

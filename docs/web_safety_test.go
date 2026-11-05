@@ -104,9 +104,6 @@ func TestKeylessReadmeFrameworkDocsRefused(t *testing.T) {
 		t.Fatalf("resolved %v: the framework's docs answered for its extension", matchIDs(matches))
 	}
 	assertReasons(t, log, "https://docs.gridiron.example/ names another project (gridiron)")
-	if _, err := w.GetDocs(context.Background(), "pypi:gridiron-vault", "store a secret", 2000); err == nil {
-		t.Error("GetDocs answered from the framework's docs")
-	}
 }
 
 // isBlogLike reports a result URL in a blog-like section.
@@ -121,25 +118,10 @@ func isBlogLike(u string) bool {
 
 // (b) A project whose docs are its site's root, beside a blog, news,
 // announcements, a showcase, community posts and dated posts, all in its
-// sitemap: the posts name the query more often than the docs page does,
-// and answered it. Pages in blog-like sections below the root are not
-// docs: never candidates, never ranked, never indexed.
+// sitemap: the posts name the query more often than the docs page does.
+// Pages in blog-like sections below the root are not docs: never indexed.
 func TestBlogSectionsAreNotDocs(t *testing.T) {
-	w, _ := safetyWorld(t, "org-blog-root")
-	results, err := w.GetDocs(context.Background(), "pypi:quillmark", "stream render output", 4000)
-	if err != nil || len(results) == 0 {
-		t.Fatalf("GetDocs = %v, %v", results, err)
-	}
-	for _, r := range results {
-		if isBlogLike(r.URL) {
-			t.Errorf("result %s is a post, not docs", r.URL)
-		}
-	}
-	if !strings.HasPrefix(results[0].URL, "https://quillmark.example/guide/streaming") {
-		t.Errorf("first result %s, want the streaming guide", results[0].URL)
-	}
-
-	// The same for `ketch docs index`, by name and by docs URL.
+	// `ketch docs index`, by name and by docs URL, leaves the posts out.
 	for _, lib := range []string{"pypi:quillmark", "https://quillmark.example/"} {
 		w, _ := safetyWorld(t, "org-blog-root")
 		store := newStore(t)
@@ -171,15 +153,6 @@ func TestHomePageRootMovesToDocsSection(t *testing.T) {
 	m, err := w.resolveOne(context.Background(), mustSpec(t, "pypi:inkpot"), false)
 	if err != nil || m.root.String() != "https://inkpot.example/docs/" {
 		t.Fatalf("resolveOne = %s, %v; want the docs section", m.root, err)
-	}
-	results, err := w.GetDocs(context.Background(), "pypi:inkpot", "custom filter", 4000)
-	if err != nil || len(results) == 0 {
-		t.Fatalf("GetDocs = %v, %v", results, err)
-	}
-	for _, r := range results {
-		if !strings.HasPrefix(r.URL, "https://inkpot.example/docs/") {
-			t.Errorf("result %s is outside the docs section", r.URL)
-		}
 	}
 }
 

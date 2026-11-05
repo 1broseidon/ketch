@@ -151,7 +151,7 @@ func TestLocalSectionResults(t *testing.T) {
 	buildIndex(t, f, store)
 	l := NewLocal(store)
 	o := l.GetDocsSelect(context.Background(), "example", "add middleware to a route", 0)
-	if o.Status != Answered || o.Backend != "local" || o.Reason != "" || len(o.Results) == 0 || len(o.Results) > localMaxResults {
+	if o.Status != Answered || o.Backend != SearchBackend || o.Reason != "" || len(o.Results) == 0 || len(o.Results) > localMaxResults {
 		t.Fatalf("outcome = %+v", o)
 	}
 	checkTopSection(t, o.Results[0])
@@ -169,7 +169,7 @@ func TestLocalSectionResults(t *testing.T) {
 
 func checkTopSection(t *testing.T, top Result) {
 	t.Helper()
-	if top.URL != idxRoot+"guide/middleware#add-middleware-to-a-route" || top.Source != "local" || top.Library != idxRoot ||
+	if top.URL != idxRoot+"guide/middleware#add-middleware-to-a-route" || top.Source != SearchBackend || top.Library != idxRoot ||
 		top.Breadcrumb != "Middleware > Add middleware to a route" || top.Title != "Add middleware to a route" ||
 		!slices.Equal(top.Anchors, []string{"add-middleware-to-a-route"}) {
 		t.Errorf("top result = %+v", top)

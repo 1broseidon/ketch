@@ -12,7 +12,7 @@ import (
 
 // When the local index answers a search-first question without
 // searching: the request names a library indexed in full (by
-// `docs index`, not by search), as -b local would answer; or the same
+// `docs index`, not by search), with whole sections; or the same
 // question (its terms, sfAskedOverlap) was answered before from a
 // library, the first site its search read (an answer from a fallback
 // site is not remembered). A library a search built holds only the pages
@@ -51,7 +51,7 @@ func (s *SearchFirst) fromAsked(ctx context.Context, libs []docsindex.Library, r
 	if sim < sfAskedOverlap {
 		return Outcome{}, false
 	}
-	o := s.local.answer(ctx, lib, req.query, req.opts)
+	o := s.local.answer(ctx, lib, req.query, req.compact())
 	return o, o.Status == Answered || o.Status == Partial
 }
 

@@ -18,10 +18,9 @@ import (
 	"github.com/1broseidon/ketch/search"
 )
 
-// The search-first docs backend (`-b search`) answers a question about
-// any documentation, not only a package's. The other backends start from
-// a library name and look for its docs; this one starts from the
-// question:
+// The search docs backend (`search`, the default) answers a question
+// about any documentation, not only a package's. Context7 starts from a
+// library name and looks up its docs; this one starts from the question:
 //
 //	the local index covers it? ──yes──▶ answer offline (local)
 //	        │no
@@ -33,7 +32,7 @@ import (
 //	        │       (≤ sfMaxPages, through the page cache)
 //	section them, store them in the local index under the docs root
 //	        │
-//	rank with the local index's keyword ranker, render as -b local does
+//	rank with the local index's keyword ranker, compactly
 //	        └──▶ partial: N pages read, and how to index the whole site
 //
 // What it reads stays in the index, so the next question those pages
@@ -42,8 +41,42 @@ import (
 // never a requirement: a site its name or its resolved docs root matches
 // weighs more, and the version it asks for picks the tree.
 
-// SearchBackend is the search-first backend's ID.
+// SearchBackend is the search backend's ID: the default docs backend.
 const SearchBackend = "search"
+
+// SelectingSearcher is a docs backend that reports each call as an
+// Outcome, with the reason a refusal or a partial answer carries: the
+// search backend.
+type SelectingSearcher interface {
+	Searcher
+	LibraryResolver
+	SearchSelect(ctx context.Context, query string, limit int) Outcome
+	GetDocsSelect(ctx context.Context, libraryID, query string, tokens int) Outcome
+	ResolveSelect(ctx context.Context, name string, limit int) Outcome
+}
+
+// libraryKey is a name reduced for comparison: lower case, letters and
+// digits only, without a trailing "js" (Next.js, nextjs and next match).
+func libraryKey(s string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(s) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			b.WriteRune(r)
+		}
+	}
+	k := b.String()
+	if trimmed := strings.TrimSuffix(k, "js"); len(trimmed) >= 2 {
+		k = trimmed
+	}
+	return k
+}
+
+// genericNames are words a title or repository can be ("docs", "api")
+// that name no library on their own.
+var genericNames = map[string]bool{
+	"doc": true, "docs": true, "documentation": true, "api": true, "apis": true, "reference": true,
+	"guide": true, "guides": true, "website": true, "site": true, "sdk": true, "library": true,
+}
 
 // ReasonPartialSite is a search-first answer's reason: it read part of a
 // docs site, found by search.
@@ -71,8 +104,8 @@ type SearchFirst struct {
 	trace             io.Writer // nil: no trace
 }
 
-// NewSearchFirst builds the backend over a web backend (its fetcher,
-// search and registries) and a local backend (its index).
+// NewSearchFirst builds the backend over the web internals (fetcher, web
+// search, registries, discovery) and the local index.
 func NewSearchFirst(w *Web, l *Local) *SearchFirst {
 	w.concurrency = sfConcurrency
 	w.sitemapBudget = sfDiscoverBudget / 2
@@ -88,7 +121,16 @@ func newSearchFirstFromConfig(c *config.Config, deps Deps) *SearchFirst {
 	return s
 }
 
-var _ SelectingSearcher = (*SearchFirst)(nil)
+var (
+	_ SelectingSearcher = (*SearchFirst)(nil)
+	_ SectionFetcher    = (*SearchFirst)(nil)
+)
+
+// SectionSelect reads one section from the local index; see
+// Local.SectionSelect.
+func (s *SearchFirst) SectionSelect(ctx context.Context, library, ref string, tokens int) Outcome {
+	return s.local.SectionSelect(ctx, library, ref, tokens)
+}
 
 // Search answers a question; see SearchSelect.
 func (s *SearchFirst) Search(ctx context.Context, query string, limit int) ([]Result, error) {
@@ -102,15 +144,15 @@ func (s *SearchFirst) GetDocs(ctx context.Context, library, query string, tokens
 	return o.Results, o.Err()
 }
 
-// ResolveLibrary resolves a name as the web backend does.
+// ResolveLibrary resolves a name to its docs root (Web.ResolveLibrary).
 func (s *SearchFirst) ResolveLibrary(ctx context.Context, name string, limit int) ([]LibraryMatch, error) {
 	return s.web.ResolveLibrary(ctx, name, limit)
 }
 
-// ResolveSelect resolves a name as the web backend does.
+// ResolveSelect resolves a name to its docs root (Web.ResolveLibrary).
 func (s *SearchFirst) ResolveSelect(ctx context.Context, name string, limit int) Outcome {
 	matches, err := s.web.ResolveLibrary(ctx, name, limit)
-	return Resolved("web", matches, err)
+	return Resolved(SearchBackend, matches, err)
 }
 
 // SearchSelect answers a question from the local index when it covers
@@ -120,7 +162,7 @@ func (s *SearchFirst) SearchSelect(ctx context.Context, query string, limit int)
 	if opts.Limit <= 0 {
 		opts.Limit = limit
 	}
-	req := sfRequest{query: query, opts: compactByDefault(opts)}
+	req := sfRequest{query: query, opts: opts}
 	if spec, ok := pinnedSpec(query); ok {
 		req.spec = spec
 	}
@@ -137,7 +179,7 @@ func (s *SearchFirst) GetDocsSelect(ctx context.Context, library, query string, 
 	if !ok {
 		opts.Tokens = tokens
 	}
-	req := sfRequest{query: query, library: strings.TrimSpace(library), opts: compactByDefault(opts)}
+	req := sfRequest{query: query, library: strings.TrimSpace(library), opts: opts}
 	if req.library != "" && !isHTTPURL(req.library) {
 		spec, err := parseLibSpec(req.library)
 		if err != nil {
@@ -164,12 +206,19 @@ func compactByDefault(o LocalOptions) LocalOptions {
 	return o
 }
 
+// compact is the options an answer from pages search read renders with:
+// the caller's, compact at sfDefaultTokens when they set no budget. An
+// answer from a library indexed in full (ketch docs index) takes the
+// caller's options as they are: whole sections unless a budget is set, as
+// measured on the library set (ADR-0007, amendments 3 and 8).
+func (r sfRequest) compact() LocalOptions { return compactByDefault(r.opts) }
+
 // sfRequest is one question and what it names.
 type sfRequest struct {
 	query   string
-	library string  // as given: a docs URL, a spec or a name; "" for none
-	spec    libSpec // the library as a spec (zero for a docs URL or none)
-	opts    LocalOptions
+	library string       // as given: a docs URL, a spec or a name; "" for none
+	spec    libSpec      // the library as a spec (zero for a docs URL or none)
+	opts    LocalOptions // as the caller gave them; see compact
 }
 
 // pinnedSpec is the library a question pins with a spec of its own
@@ -278,7 +327,7 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 	if err != nil {
 		return Answer(SearchBackend, nil, err)
 	}
-	o := s.local.rank(ctx, lib, req.query, req.opts)
+	o := s.local.rank(ctx, lib, req.query, req.compact())
 	if o.Status == Answered && tr.domains == 1 {
 		// Only the first site read is remembered (any of its docs trees): a
 		// fallback site's answer, read because the one the hits agreed on
@@ -569,17 +618,25 @@ func (s *SearchFirst) hitProfile(ctx context.Context, site sfSite) *siteProfile 
 	return prof
 }
 
-func probeSearchFirst(context.Context, *http.Client, *config.Config) (health.Status, string) {
-	return health.StatusOK, "keyless: web search, then the docs site it finds, kept in the local index"
+// probeSearch needs no network: search is keyless (it searches through
+// the search surface's providers) and has no fixed endpoint. It reports
+// what the local index holds.
+func probeSearch(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
+	const keyless = "keyless: web search, then the docs site it finds, kept in the local index"
+	status, index := probeIndex(ctx, client, c)
+	if status == health.StatusMisconfigured {
+		return status, index
+	}
+	return health.StatusOK, keyless + "; " + index
 }
 
-func searchFirstProvider() Provider {
+func searchProvider() Provider {
 	return Provider{
 		ID:          SearchBackend,
-		Name:        "Search-first",
-		LibraryHelp: "a docs URL to search within, or a library name or name@version to prefer",
+		Name:        "Search",
+		LibraryHelp: "a docs URL to search within, or a library name or name@version to prefer; a library indexed with ketch docs index answers offline",
 		Usable:      func(*config.Config) bool { return true },
 		New:         func(c *config.Config, deps Deps) (Searcher, error) { return newSearchFirstFromConfig(c, deps), nil },
-		Probe:       probeSearchFirst,
+		Probe:       probeSearch,
 	}
 }

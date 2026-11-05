@@ -16,13 +16,13 @@ import (
 type DocsInput struct {
 	Query   string `json:"query,omitempty" jsonschema:"the docs search query, or the library to resolve when resolve is true; not needed with section"`
 	Backend string `json:"backend,omitempty" jsonschema:"docs backend (default: the configured backend)"`
-	Library string `json:"library,omitempty" jsonschema:"library ID to fetch docs from directly, skipping the resolve step; requires a backend with library operations"`
-	Tokens  int    `json:"tokens,omitempty" jsonschema:"library token budget when library is set (default 4000)"`
+	Library string `json:"library,omitempty" jsonschema:"the library to answer from"`
+	Tokens  int    `json:"tokens,omitempty" jsonschema:"token budget"`
 	Limit   int    `json:"limit,omitempty" jsonschema:"max number of results (default: the configured limit; with library set, unbounded unless given)"`
 	Tag     string `json:"tag,omitempty" jsonschema:"record each result under this tag, retrievable later with the tag tool; not with resolve"`
 	Resolve bool   `json:"resolve,omitempty" jsonschema:"resolve a library name to library IDs instead of searching docs"`
-	// Section asks the local backend for one section in full.
-	Section string `json:"section,omitempty" jsonschema:"local backend: read one section in full"`
+	// Section asks for one section of the local index in full.
+	Section string `json:"section,omitempty" jsonschema:"read one section in full from the local index"`
 }
 
 // DocsOutput is the output schema for the "docs" tool. Results is populated
@@ -32,11 +32,9 @@ type DocsInput struct {
 // structured content needs the object wrapper).
 //
 // Status is where the call ended (answered or partial; a refused or failed
-// call is a tool error), Reason why a partial answer is partial (or, for
-// the local index, why it ranked by keywords, with Note saying it in
-// words), Backend the provider that answered, and Attempts every provider tried, in order, with
-// its status and reason. Errors is the same failures by provider, kept for
-// callers that read it.
+// call is a tool error), Reason why a partial answer is partial, Note what
+// it says in words (how much of a site search read, and how to index the
+// rest), and Backend the backend that answered.
 type DocsOutput struct {
 	Warnings []string            `json:"warnings,omitempty"`
 	Status   docs.Status         `json:"status,omitempty"`
@@ -45,32 +43,21 @@ type DocsOutput struct {
 	Results  []docs.Result       `json:"results,omitempty"`
 	Matches  []docs.LibraryMatch `json:"matches,omitempty"`
 	Backend  string              `json:"backend,omitempty"`
-	Attempts []docs.Attempt      `json:"attempts,omitempty"`
-	Errors   map[string]string   `json:"errors,omitempty"`
 }
 
 // fromOutcome renders an answered or partial outcome.
 func fromOutcome(o docs.Outcome) DocsOutput {
-	out := DocsOutput{Status: o.Status, Reason: o.Reason, Note: o.Note, Results: o.Results, Matches: o.Matches, Backend: o.Backend, Attempts: o.Attempts}
-	if failures := o.Failures(); len(failures) > 0 {
-		out.Errors = make(map[string]string, len(failures))
-		for _, f := range failures {
-			out.Errors[f.Backend] = f.Error
-		}
-	}
-	return out
+	return DocsOutput{Status: o.Status, Reason: o.Reason, Note: o.Note, Results: o.Results, Matches: o.Matches, Backend: o.Backend}
 }
 
 func (s *Server) registerDocsTool() {
 	mcpsdk.AddTool(s.mcp, &mcpsdk.Tool{
 		Name:        "docs",
 		InputSchema: docsInputSchema(),
-		Description: "Search library documentation using " + strings.Join(docs.ProviderNames(), ", ") + ". Supports resolving a library name to a " + strings.Join(docs.LibraryProviderNames(), ", ") + " library ID (resolve), and fetching docs directly from a known library ID (library)." +
-			docs.WithLibraryHelp(" A library is a library ID from resolve") + ". Resolve a name once and pass the returned ID as library on later calls: a name is resolved again on every call." +
-			" Context7 needs no key: without one it runs on Context7's anonymous quota (about 200 requests a month per IP; a spent quota is an [upstream] error naming when it resets), and a key lifts it." +
-			" Backend local answers offline from the docs the operator indexed (ketch docs index): the five nearest sections, verbatim with their code, each a section and the parts of it that matched (title, breadcrumb, anchors), trimmed to its lead, first code block and the blocks naming the query, about 1,800 tokens; with tokens set, fitted to that many tokens compactly (each result its heading path, first sentence, the code block naming the question whole and the sentences naming it best: four or five results at 880). A library indexed at several versions answers from the newest (each result's version says which) unless library names one as name@version." +
-			" To read a local result in full, pass section instead of a query: the url#anchor in the result's section field (its source). A compact answer (tokens set) ends each result it cut short with that call. Use it when a cut result is the right section but the code or detail you need is missing; it reads the local index only (no network, no quota, milliseconds). It returns the section with the subsections under it (an H2 is its whole family), or a page's sections in order for a URL with no anchor, cut at a block boundary within tokens (default 4000) with [...] and the next section to read; library is optional (the URL names it); an unknown URL or anchor is [not_found]." +
-			" Backend auto asks the local index first when it holds the library, then web, and asks Context7 only when web identifies no library, finds several, or fails; Context7's pick must be a library the query names, and for an ambiguous name one of web's candidates. It reports the provider that answered in backend (each result's source says the same) and what it fell through in errors." +
+		Description: "Search library documentation. The default backend, search, answers from the docs themselves: a library the operator indexed (ketch docs index) answers offline from the local index; otherwise ketch searches the web for the question, picks the documentation site the results agree on, reads the matching pages and keeps them in the local index, so a repeated question answers offline (status partial, with a note naming the site and how to index all of it). Results are whole sections, verbatim with their code (title, breadcrumb, anchors, url), about 1,800 tokens in all: compact for pages search read (each result its heading path, first sentence, the code block naming the question whole and the sentences naming it best: four or five results at tokens 880), whole sections for an indexed library unless tokens is set. A library indexed at several versions answers from the newest (each result's version says which) unless library names one as name@version." +
+			docs.WithLibraryHelp(" library names the library to answer from") + "." +
+			" To read a result in full, pass section instead of a query: the url#anchor in the result's section field. A compact result cut short ends with that call, docs(section=\"<url#anchor>\"). Use it when a cut result is the right section but the code or detail you need is missing; it reads the local index only (no network, no quota, milliseconds). It returns the section with the subsections under it (an H2 is its whole family), or a page's sections in order for a URL with no anchor, cut at a block boundary within tokens (default 4000) with [...] and the next section to read; library is optional (the URL names it); an unknown URL or anchor is [not_found]." +
+			" Backend context7 (or the operator's docs_backend) returns Context7's curated snippets instead; resolve maps a name to " + strings.Join(docs.LibraryProviderNames(), " or ") + " library IDs (docs roots for search), and library takes one. Context7 needs no key: without one it runs on Context7's anonymous quota (about 200 requests a month per IP; a spent quota is an [upstream] error naming when it resets), and a key lifts it." +
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in DocsInput) (*mcpsdk.CallToolResult, DocsOutput, error) {
@@ -84,7 +71,7 @@ func (s *Server) registerDocsTool() {
 		if in.Query == "" {
 			return nil, DocsOutput{}, errf(kindValidation, "query is required")
 		}
-		backend := in.Backend
+		backend := docs.CanonicalBackend(in.Backend)
 		if backend == "" {
 			backend = s.cfg.DocsBackend
 		}
@@ -96,8 +83,8 @@ func (s *Server) registerDocsTool() {
 		if tokens <= 0 {
 			tokens = 4000
 		}
-		// The local backend takes the budget and limit only when given, and
-		// its own defaults otherwise.
+		// Search takes the budget and limit only when given, and its own
+		// defaults otherwise.
 		ctx = docs.WithLocalOptions(ctx, docs.LocalOptions{Tokens: max(in.Tokens, 0), Limit: max(in.Limit, 0), Hint: docs.HintMCP})
 
 		if in.Resolve {
@@ -144,25 +131,27 @@ func (s *Server) registerDocsTool() {
 
 // docsSection returns one section of the local index in full (the
 // follow-up to a compact answer that cut it), as the CLI's --section does.
+// The index is search's, whatever the configured default; only another
+// backend named in the call is refused.
 func (s *Server) docsSection(ctx context.Context, in DocsInput, diagnostics *tagDiagnostics) (*mcpsdk.CallToolResult, DocsOutput, error) {
 	if in.Resolve {
 		return nil, DocsOutput{}, errf(kindValidation, "section cannot be combined with resolve")
 	}
-	if in.Backend != "" && in.Backend != "local" && in.Backend != "auto" {
-		return nil, DocsOutput{}, errf(kindValidation, "section requires the local backend (got %q)", in.Backend)
+	if backend := docs.CanonicalBackend(in.Backend); backend != "" && backend != docs.SearchBackend {
+		return nil, DocsOutput{}, errf(kindValidation, "section reads the local docs index, which the %s backend does not use (drop backend)", backend)
 	}
 	tokens := in.Tokens
 	if tokens <= 0 {
 		tokens = 4000
 	}
 	ctx = docs.WithLocalOptions(ctx, docs.LocalOptions{Hint: docs.HintMCP})
-	searcher, err := docs.NewFromConfig(s.cfg, "local", s.docsDeps(ctx))
+	searcher, err := docs.NewFromConfig(s.cfg, docs.SearchBackend, s.docsDeps(ctx))
 	if err != nil {
 		return nil, DocsOutput{}, backendErrf(err)
 	}
 	sections, ok := searcher.(docs.SectionFetcher)
 	if !ok {
-		return nil, DocsOutput{}, errf(kindValidation, "docs backend %q does not support section", "local")
+		return nil, DocsOutput{}, errf(kindValidation, "docs backend %q does not support section", docs.SearchBackend)
 	}
 	o := sections.SectionSelect(ctx, in.Library, in.Section, tokens)
 	if err := o.Err(); err != nil {
@@ -257,19 +246,14 @@ func (s *Server) docsDeps(ctx context.Context) docs.Deps {
 // and direct library lookup, and what each accepts as a library (its
 // descriptor's LibraryHelp), so no description names a provider itself.
 func docsInputSchema() *jsonschema.Schema {
-	backends := docs.SelectableBackends()
-	implemented := "implemented backends: " + configbase.JoinNames(backends)
-	if len(backends) == 1 {
-		implemented = backends[0] + " is the only implemented backend"
-	}
+	backends := docs.AvailableBackends()
 	libNames := strings.Join(docs.LibraryProviderNames(), ", ")
-	libIDs := configbase.JoinNames(docs.LibraryBackends())
 	return inputSchema[DocsInput](map[string]string{
-		"query":   docs.WithLibraryHelp("the docs search query (without library, the library is picked from it), or the library to resolve when resolve is true"),
-		"backend": "docs backend (default: the configured backend); " + implemented,
-		"library": docs.WithLibraryHelp(libNames + " library ID to fetch docs from directly, skipping the resolve step; requires the " + libIDs + " backend"),
-		"tokens":  libNames + " token budget when library is set (default 4000; local's sections default to about 1800, with or without library; set, local fits its sections to it compactly; with section, the cap of the section returned)",
-		"section": "local backend: read one section in full instead of searching: the url#anchor of a result's section field (a page URL alone returns the page's sections in order); tokens caps it (default 4000); library is optional",
+		"query":   docs.WithLibraryHelp("the docs question (search picks the library and its docs site from it unless library is set), or the library to resolve when resolve is true; not needed with section"),
+		"backend": "docs backend: " + configbase.JoinNames(backends) + " (default: the configured backend, search unless the operator chose otherwise)",
+		"library": docs.WithLibraryHelp("the library to answer from: for context7 a library ID from resolve"),
+		"tokens":  "token budget for " + strings.Join(docs.LibraryProviderNames(), " and ") + ": search answers in about 1,800 tokens unless set (set, it fits its answer to it compactly); context7 defaults to 4000; with section, the cap of the section returned (default 4000)",
+		"section": "read one section in full from the local index instead of searching: the url#anchor of a result's section field (a page URL alone returns the page's sections in order); tokens caps it (default 4000); library is optional",
 		"resolve": docs.WithLibraryHelp("resolve the query as a library name to " + libNames + " library IDs instead of searching docs"),
 	})
 }

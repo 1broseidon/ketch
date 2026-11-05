@@ -185,6 +185,9 @@ func configSetAcknowledgement(c config.Config, key, value string) string {
 		}
 		return fmt.Sprintf("set %s (%d %s)", key, count, item)
 	}
+	if key == "docs_backend" {
+		value = c.DocsBackend // a legacy name is stored as its replacement
+	}
 	return fmt.Sprintf("set %s = %s", key, value)
 }
 
@@ -242,7 +245,13 @@ func applyConfigSet(c *config.Config, key, value string) error {
 	case "code_backend":
 		return setBackend(&c.CodeBackend, "code", value, func(id string) bool { _, ok := code.Lookup(id); return ok }, config.AvailableCodeBackends())
 	case "docs_backend":
-		return setBackend(&c.DocsBackend, "docs", value, func(id string) bool { _, ok := docs.Lookup(id); return ok || id == docs.AutoBackend }, config.AvailableDocBackends())
+		// A name an earlier release accepted that has moved ("local", now
+		// part of search) is stored as its replacement, with a note.
+		if name := strings.TrimSpace(value); docs.CanonicalBackend(name) != name {
+			value = docs.CanonicalBackend(name)
+			fmt.Fprintf(os.Stderr, "note: docs backend %q is now part of %q; setting docs_backend to %s\n", name, value, value)
+		}
+		return setBackend(&c.DocsBackend, "docs", value, func(id string) bool { _, ok := docs.Lookup(id); return ok }, config.AvailableDocBackends())
 	case "url_rewrites":
 		return setURLRewrites(c, value)
 	case "spa_markers":

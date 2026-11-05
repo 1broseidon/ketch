@@ -10,7 +10,7 @@
   "limit": 5,
   "cache_ttl": "72h",
   "code_backend": "grepapp",
-  "docs_backend": "context7",
+  "docs_backend": "search",
   "context7_api_key": "fixture-docs",
   "sourcegraph_url": "https://sourcegraph.com",
   "github_token": "fixture-github",

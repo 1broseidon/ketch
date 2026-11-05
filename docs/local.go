@@ -28,8 +28,7 @@ import (
 // results' Version names.
 
 // ErrNotIndexed is a library the local docs index does not hold: a
-// refusal, so the auto chain moves on to the live backends, and the caller
-// can index it.
+// refusal the caller fixes by indexing it.
 var ErrNotIndexed = failure.New(failure.NotFound, "not_indexed", "library not indexed (ketch docs index <library|docs-url>)")
 
 // ErrIndexOutdated is a library indexed in an older index format, which
@@ -62,66 +61,6 @@ func newLocalFromConfig() *Local {
 	return NewLocal(store)
 }
 
-// Search answers a bare query; see SearchSelect.
-func (l *Local) Search(ctx context.Context, query string, limit int) ([]Result, error) {
-	o := l.SearchSelect(ctx, query, limit)
-	return o.Results, o.Err()
-}
-
-// GetDocs answers for a named library; see GetDocsSelect.
-func (l *Local) GetDocs(ctx context.Context, libraryID, query string, tokens int) ([]Result, error) {
-	o := l.GetDocsSelect(ctx, libraryID, query, tokens)
-	return o.Results, o.Err()
-}
-
-// ResolveLibrary lists the indexed libraries a name matches; see
-// ResolveSelect.
-func (l *Local) ResolveLibrary(ctx context.Context, name string, limit int) ([]LibraryMatch, error) {
-	o := l.ResolveSelect(ctx, name, limit)
-	return o.Matches, o.Err()
-}
-
-// SearchSelect answers a bare query from the indexed library it names:
-// the first of the query's readings (splitLibraryQuery) that names an
-// indexed library, unless a firmer reading before it names a library the
-// index does not hold, which the live backends should answer.
-func (l *Local) SearchSelect(ctx context.Context, query string, limit int) Outcome {
-	libs, err := l.libraries()
-	if err != nil {
-		return Answer("local", nil, err)
-	}
-	found, ok := libraryInQuery(libs, query)
-	if !ok {
-		return Answer("local", nil, fmt.Errorf("local: the query names no indexed library: %w", ErrNotIndexed))
-	}
-	lib, note := newestOf(found)
-	opts, _ := localOptionsFrom(ctx)
-	if opts.Limit <= 0 {
-		opts.Limit = limit
-	}
-	o := l.answer(ctx, lib, query, opts)
-	o.Results = Truncate(o.Results, limit)
-	return withVersionNote(o, note)
-}
-
-// GetDocsSelect answers for a library given as its docs root URL (or a
-// page under it), its spec or a name it was indexed by.
-func (l *Local) GetDocsSelect(ctx context.Context, libraryID, query string, tokens int) Outcome {
-	libs, err := l.libraries()
-	if err != nil {
-		return Answer("local", nil, err)
-	}
-	lib, note, err := pickVersion(libs, libraryID)
-	if err != nil {
-		return Answer("local", nil, err)
-	}
-	opts, ok := localOptionsFrom(ctx)
-	if !ok {
-		opts.Tokens = tokens // a direct caller's budget is its choice
-	}
-	return withVersionNote(l.answer(ctx, lib, query, opts), note)
-}
-
 // withVersionNote adds a note naming the other indexed versions to an
 // answer from the newest.
 func withVersionNote(o Outcome, note string) Outcome {
@@ -133,35 +72,6 @@ func withVersionNote(o Outcome, note string) Outcome {
 	}
 	o.Note += note
 	return o
-}
-
-// ResolveSelect lists the indexed libraries name matches, each with its
-// root as the ID.
-func (l *Local) ResolveSelect(_ context.Context, name string, limit int) Outcome {
-	libs, err := l.libraries()
-	if err != nil {
-		return Resolved("local", nil, err)
-	}
-	var matches []LibraryMatch
-	for _, lib := range MatchIndexed(libs, name) {
-		matches = append(matches, indexedMatch(lib))
-	}
-	if len(matches) == 0 {
-		err = fmt.Errorf("local: %q %w", name, ErrNotIndexed)
-	}
-	if limit > 0 && len(matches) > limit {
-		matches = matches[:limit]
-	}
-	return Resolved("local", matches, err)
-}
-
-// indexedMatch is an indexed library as a resolve match.
-func indexedMatch(lib docsindex.Library) LibraryMatch {
-	about := fmt.Sprintf("indexed %s: %d pages, %d sections", lib.Built.Format("2006-01-02"), lib.Pages, lib.Sections)
-	if !lib.Current() {
-		about = fmt.Sprintf("indexed %s in format %d: rebuild with ketch docs index %s", lib.Built.Format("2006-01-02"), lib.Format, lib.Root)
-	}
-	return LibraryMatch{ID: lib.Root, Title: lib.Title, Version: lib.Version, Packages: lib.Packages, TrustScore: lib.Trust, Evidence: append([]string{about}, lib.Evidence...)}
 }
 
 // libraries lists the indexed libraries; none when the index file does not
@@ -187,18 +97,18 @@ func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string,
 // rank is answer without the partial mark.
 func (l *Local) rank(ctx context.Context, lib docsindex.Library, query string, opts LocalOptions) Outcome {
 	if !lib.Current() {
-		return Answer("local", nil, outdatedErr(lib))
+		return Answer(SearchBackend, nil, outdatedErr(lib))
 	}
 	results, err := l.rankResults(lib, query, opts)
 	if err != nil {
-		return Answer("local", nil, fmt.Errorf("local: reading the docs index: %w", err))
+		return Answer(SearchBackend, nil, fmt.Errorf("local: reading the docs index: %w", err))
 	}
 	if len(results) == 0 {
-		return Answer("local", nil, fmt.Errorf("local: nothing in the index of %s matched: %w", lib.Root, ErrNoResults))
+		return Answer(SearchBackend, nil, fmt.Errorf("local: nothing in the index of %s matched: %w", lib.Root, ErrNoResults))
 	}
 	showUnder(results, lib)
 	pointToSections(results, opts)
-	return Answer("local", results, nil)
+	return Answer(SearchBackend, results, nil)
 }
 
 // rankResults ranks lib's sections for the query by keywords over the
@@ -224,13 +134,13 @@ func showUnder(results []Result, lib docsindex.Library) {
 }
 
 // pointToSections gives every result the reference to its section (its
-// shown URL), and, for a compact answer over MCP, ends each result that was
-// cut with the pointer to its full section: the surface has no other place
-// to show it. A CLI renders its pointer (RenderResult).
+// shown URL), and, over MCP, ends each result that was cut with the
+// pointer to its full section: the surface has no other place to show it.
+// A CLI renders its pointer (RenderResult).
 func pointToSections(results []Result, opts LocalOptions) {
 	for i, r := range results {
 		results[i].Section = r.URL
-		if opts.Tokens > 0 && opts.Hint == HintMCP {
+		if opts.Hint == HintMCP {
 			if h := SectionHint(results[i], HintMCP); h != "" {
 				results[i].Snippet += "\n\n" + h
 			}
@@ -281,13 +191,6 @@ func libraryInQuery(libs []docsindex.Library, query string) ([]docsindex.Library
 		}
 	}
 	return nil, false
-}
-
-// pickIndexed is the indexed library a library value names (the newest
-// version of several), or a not_indexed refusal.
-func pickIndexed(libs []docsindex.Library, value string) (docsindex.Library, error) {
-	lib, _, err := pickVersion(libs, value)
-	return lib, err
 }
 
 // pickVersion is the indexed library a library value names. A value with
@@ -591,8 +494,8 @@ func versionNames(want, have string) bool {
 	return want == have || strings.HasPrefix(have, want+".")
 }
 
-// probeLocal reports what the index holds, without the network.
-func probeLocal(_ context.Context, _ *http.Client, _ *config.Config) (health.Status, string) {
+// probeIndex reports what the local index holds, without the network.
+func probeIndex(_ context.Context, _ *http.Client, _ *config.Config) (health.Status, string) {
 	path, err := docsindex.DefaultPath()
 	if err != nil {
 		return health.StatusMisconfigured, err.Error()
@@ -603,22 +506,11 @@ func probeLocal(_ context.Context, _ *http.Client, _ *config.Config) (health.Sta
 		legacy = "; " + note
 	}
 	if !store.Exists() {
-		return health.StatusSkipped, "nothing indexed (ketch docs index <library|docs-url>)" + legacy
+		return health.StatusSkipped, "nothing indexed yet" + legacy
 	}
 	libs, err := store.Libraries()
 	if err != nil {
 		return health.StatusMisconfigured, fmt.Sprintf("cannot read %s: %v", path, err)
 	}
 	return health.StatusOK, fmt.Sprintf("%d libraries indexed in %s%s", len(libs), path, legacy)
-}
-
-func localProvider() Provider {
-	return Provider{
-		ID:          "local",
-		Name:        "Local index",
-		LibraryHelp: "an indexed library's name or docs root URL (ketch docs index --list)",
-		Usable:      func(*config.Config) bool { return true },
-		New:         func(*config.Config, Deps) (Searcher, error) { return newLocalFromConfig(), nil },
-		Probe:       probeLocal,
-	}
 }

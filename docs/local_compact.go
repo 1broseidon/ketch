@@ -597,7 +597,7 @@ func (c *compactFamily) result(lib docsindex.Library, secs []docsindex.Section) 
 	}
 	return Result{
 		Library: lib.Root, Version: lib.Version, Title: c.title, Breadcrumb: strings.Join(c.crumbs, " > "),
-		Snippet: b.String(), URL: webSectionOf(secs[c.fam.best], 0).URL(), Anchors: anchors, Source: "local", Truncated: cut,
+		Snippet: b.String(), URL: webSectionOf(secs[c.fam.best], 0).URL(), Anchors: anchors, Source: SearchBackend, Truncated: cut,
 	}
 }
 

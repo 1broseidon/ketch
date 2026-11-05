@@ -6,11 +6,9 @@ import (
 	"net/url"
 	"path"
 	"regexp"
-	"runtime"
 	"slices"
 	"sort"
 	"strings"
-	"sync"
 	"unicode"
 	"unicode/utf8"
 )
@@ -406,33 +404,6 @@ func exactTerms(text string, terms []string) bool {
 	return true
 }
 
-// linkCoverage is how much of the query the best-matching link names: the
-// largest share of query terms one eligible link's title, path or
-// description holds exactly. Discovery that found no page naming most of
-// the query (opaque URLs, titles that word the topic otherwise) has picked
-// candidates by guesswork.
-func linkCoverage(links []webLink, query string, root webRoot) float64 {
-	terms := queryTerms(query)
-	if len(terms) == 0 {
-		return 1
-	}
-	best := 0
-	for _, l := range links {
-		if !isResultLink(l.url) {
-			continue
-		}
-		f := newLinkFields(l, root)
-		n := 0
-		for _, t := range terms {
-			if f.matches(t, false) {
-				n++
-			}
-		}
-		best = max(best, n)
-	}
-	return float64(best) / float64(len(terms))
-}
-
 type scoredLink struct {
 	link  webLink
 	score float64
@@ -726,53 +697,6 @@ func rootVersionLabel(root webRoot) string {
 	return ""
 }
 
-// BM25 parameters and field weights. A section's heading counts three times
-// its body and its breadcrumb ancestors (page title, parent headings) once,
-// so a section titled with the query outranks one that merely mentions it.
-const (
-	bm25K1        = 1.2
-	bm25B         = 0.75
-	headingWeight = 3.0
-	crumbWeight   = 1.0
-)
-
-type scoredSection struct {
-	webSection
-	score float64
-}
-
-// rankSections scores sections against the query with BM25 (heading-boosted
-// term frequencies, scaled by the share of query terms matched, boosted when
-// the section or its page is titled exactly the query) and returns those
-// that match in their own heading or text, best first. Ties keep page
-// order, then section order, so equal input always ranks the same. A query
-// with no terms keeps every section in page order. Anchors are first
-// corrected by the ids the pages' links use (adoptLinkedAnchors).
-func rankSections(sections []webSection, query string) []scoredSection {
-	sections = adoptLinkedAnchors(sections)
-	terms := queryTerms(query)
-	if len(terms) == 0 {
-		out := make([]scoredSection, len(sections))
-		for i, s := range sections {
-			out[i] = scoredSection{webSection: s}
-		}
-		return out
-	}
-	c := newSectionCorpus(sections, terms)
-	idents, howTo := queryIdents(query), isHowTo(query)
-	var out []scoredSection
-	for i, s := range sections {
-		score, matched := c.bm25(i, terms)
-		if matched == 0 || !c.own[i] {
-			continue // matched by its breadcrumbs alone: every section of the page would be
-		}
-		score *= sectionBoost(s, terms, idents, howTo, float64(matched), c.seq[i])
-		out = append(out, scoredSection{webSection: s, score: score})
-	}
-	sort.SliceStable(out, func(i, j int) bool { return out[i].score > out[j].score })
-	return out
-}
-
 // sectionBoost is what multiplies a section's keyword score beyond BM25:
 // the share of the query's terms it names (matched of them), a heading or
 // page title that is exactly the query, a page lead whose title covers
@@ -977,275 +901,14 @@ func entryName(heading string) string {
 	return entryIdentRe.FindString(strings.TrimSpace(h))
 }
 
-// sectionCorpus holds the per-query BM25 statistics, built in memory for
-// one call and discarded with it.
-type sectionCorpus struct {
-	tf     []map[string]float64 // heading-weighted term frequency per section
-	seq    [][]string           // heading then body tokens in order, for phrases
-	own    []bool               // a query term in the section's heading or body, not only its crumbs
-	length []float64            // body length in tokens per section
-	df     map[string]int       // sections containing each query term
-	avg    float64              // mean body length
-}
-
-func newSectionCorpus(sections []webSection, terms []string) sectionCorpus {
-	c := sectionCorpus{tf: make([]map[string]float64, len(sections)), seq: make([][]string, len(sections)), own: make([]bool, len(sections)), length: make([]float64, len(sections)), df: map[string]int{}}
-	// Only the query's terms are counted: nothing else is ever looked up,
-	// and a local index ranks thousands of sections per question, which
-	// are tokenized in parallel past corpusParallel of them.
-	want := map[string]bool{}
-	for _, t := range terms {
-		want[t] = true
-	}
-	workers := 1
-	if len(sections) > corpusParallel {
-		workers = runtime.GOMAXPROCS(0)
-	}
-	var wg sync.WaitGroup
-	for w := range workers {
-		wg.Go(func() {
-			for i := w; i < len(sections); i += workers {
-				c.add(i, sections[i], want)
-			}
-		})
-	}
-	wg.Wait()
-	total := 0.0
-	for i := range sections {
-		total += c.length[i]
-		for t := range c.tf[i] {
-			c.df[t]++
-		}
-	}
-	c.avg = math.Max(total/float64(max(len(sections), 1)), 1)
-	return c
-}
-
-// corpusParallel is how many sections a corpus tokenizes on one goroutine.
-const corpusParallel = 1000
-
-// add tokenizes section i: its query-term frequencies (heading-weighted),
-// its token sequence for phrases, whether it names a term itself, and its
-// weighted length.
-func (c sectionCorpus) add(i int, s webSection, want map[string]bool) {
-	tf := map[string]float64{}
-	plain := rankTokens(s.text)
-	n := len(plain)
-	body := appendCamelWords(plain, s.text) // textTokens, its first n tokens rankTokens'
-	for _, t := range body {
-		if want[t] {
-			tf[t]++
-		}
-	}
-	heading := headingTokens(s.heading)
-	for _, t := range heading {
-		if want[t] {
-			tf[t] += headingWeight
-		}
-	}
-	c.own[i] = len(tf) > 0
-	crumbs := 0
-	for _, crumb := range s.crumbs[:max(len(s.crumbs)-1, 0)] {
-		for _, t := range rankTokens(crumb) {
-			if want[t] {
-				tf[t] += crumbWeight
-			}
-			crumbs++
-		}
-	}
-	// The length that normalizes a term's weight is the weighted
-	// pseudo-document's (BM25F): heading and breadcrumbs count too, so a
-	// two-line section does not outrank its page on the page title's words
-	// alone.
-	c.tf[i] = tf
-	c.seq[i] = append(rankTokens(s.heading), body[:n]...)
-	c.length[i] = float64(len(body)) + headingWeight*float64(len(heading)) + crumbWeight*float64(crumbs)
-}
-
-// bm25 scores section i and counts the query terms it contains.
-func (c sectionCorpus) bm25(i int, terms []string) (float64, int) {
-	n := float64(len(c.tf))
-	score, matched := 0.0, 0
-	for _, t := range terms {
-		tf := c.tf[i][t]
-		if tf == 0 {
-			continue
-		}
-		matched++
-		df := float64(c.df[t])
-		idf := math.Log(1 + (n-df+0.5)/(df+0.5))
-		score += idf * tf * (bm25K1 + 1) / (tf + bm25K1*(1-bm25B+bm25B*c.length[i]/c.avg))
-	}
-	return score, matched
-}
-
-// webSiblingRun is how many sections of one parent (a reference page's
-// list of functions, a page's run of options) may lead the results before
-// a near-equal section from elsewhere goes first.
-const webSiblingRun = 2
-
-// webSiblingTie is how close a section from elsewhere must score to the
-// next sibling to go ahead of it.
-const webSiblingTie = 0.9
-
-// diversify reorders ranked sections so a run of near-equal siblings (a
-// package's hundred "func X" entries that all mention the query's words)
-// does not bury a section from elsewhere that scores almost as well: once
-// webSiblingRun sections of one parent are placed, the next best section of
-// another parent goes first when it scores within webSiblingTie of the
-// sibling. A clearly better sibling keeps its place. Nothing is dropped.
-func diversify(ranked []scoredSection) []scoredSection {
-	out := make([]scoredSection, 0, len(ranked))
-	rest := slices.Clone(ranked)
-	placed := map[string]int{}
-	for len(rest) > 0 {
-		pick := 0
-		if g := siblingGroup(rest[0].webSection); placed[g] >= webSiblingRun {
-			for i := 1; i < len(rest) && rest[i].score >= webSiblingTie*rest[0].score; i++ {
-				if placed[siblingGroup(rest[i].webSection)] < webSiblingRun {
-					pick = i
-					break
-				}
-			}
-		}
-		placed[siblingGroup(rest[pick].webSection)]++
-		out = append(out, rest[pick])
-		rest = slices.Delete(rest, pick, pick+1)
-	}
-	return out
-}
-
-// siblingGroup names a section's parent: its page and enclosing headings.
-func siblingGroup(s webSection) string {
-	return s.pageURL + "\x00" + strings.Join(s.crumbs[:max(len(s.crumbs)-1, 0)], "\x00")
-}
-
-// dedupe drops a section whose heading and text repeat a better-ranked
-// one's: the same docs reached at two addresses (docs.rs re-exports an
-// item at clap::Arg and clap::builder::Arg; a page and its llms-full.txt
-// copy) are one answer, cited once at its first address.
-func dedupe(ranked []scoredSection) []scoredSection {
-	seen := map[string]bool{}
-	out := ranked[:0:0]
-	for _, s := range ranked {
-		key := s.heading + "\x00" + strings.Join(strings.Fields(s.text), " ")
-		if seen[key] {
-			continue
-		}
-		seen[key] = true
-		out = append(out, s)
-	}
-	return out
-}
-
 // webRelevanceRatio is how far below the top section's score a section
 // may fall and still be returned (relevant).
 const webRelevanceRatio = 0.3
-
-// relevant keeps the ranked sections that score at least webRelevanceRatio
-// of the best: a relevance cutoff rather than a count, so a query the
-// docs answer in two sections gets two, not two and eight that merely
-// share a word (a Basic Auth chunk filling out a bearer-auth answer). The
-// token budget and any limit stay ceilings on what is left.
-func relevant(ranked []scoredSection) []scoredSection {
-	if len(ranked) == 0 || ranked[0].score <= 0 {
-		return ranked
-	}
-	floor := ranked[0].score * webRelevanceRatio
-	for i, s := range ranked {
-		if s.score < floor {
-			return ranked[:i]
-		}
-	}
-	return ranked
-}
-
-// budgetResults turns ranked sections into results within the token budget
-// (see GetDocs): about webCharsPerToken bytes of snippet per token, the last
-// snippet trimmed to fit, and none longer than half of it. The first
-// section is always returned, trimmed if it alone exceeds that; a later
-// one is only trimmed when enough room is left for it to be useful.
-func budgetResults(library string, ranked []scoredSection, tokens int) []Result {
-	out, _ := budgetSections(library, ranked, tokens)
-	return out
-}
-
-// budgetSections is budgetResults that also returns the section each
-// result came from.
-func budgetSections(library string, ranked []scoredSection, tokens int) ([]Result, []webSection) {
-	if tokens <= 0 {
-		tokens = webDefaultTokens
-	}
-	remaining := math.MaxInt // a budget too large to multiply is no bound at all
-	if tokens <= math.MaxInt/webCharsPerToken {
-		remaining = tokens * webCharsPerToken
-	}
-	// No one section takes more than half the budget: a reference page's
-	// listing can run to tens of kilobytes, and the sections after it are
-	// often the answer.
-	limit := remaining
-	if remaining < math.MaxInt {
-		limit = max(remaining/2, webMinTrimBytes)
-	}
-	var out []Result
-	var used []webSection
-	for _, s := range ranked {
-		snippet := s.text
-		if room := min(limit, remaining); len(snippet) > room {
-			if len(out) > 0 && room < webMinTrimBytes {
-				break
-			}
-			if snippet = trimSnippet(snippet, room); snippet == "" {
-				break
-			}
-		}
-		remaining -= len(snippet)
-		out = append(out, Result{
-			Library:    library,
-			Title:      s.heading,
-			Breadcrumb: strings.Join(s.crumbs, " > "),
-			Snippet:    snippet,
-			URL:        s.URL(),
-			Source:     "web",
-		})
-		used = append(used, s.webSection)
-		if remaining <= 0 {
-			break
-		}
-	}
-	return out, used
-}
 
 const truncatedMarker = "\n[truncated]"
 
 // elidedMarker stands where trimForQuery left blocks out.
 const elidedMarker = "[…]"
-
-// trimForQuery cuts s to at most n bytes, like trimSnippet, but by whole
-// blocks (paragraphs, list runs, fenced code) rather than a prefix: the
-// lead block first, then the blocks that name the most query terms, each
-// whole, as many as fit, in their order in s, with elidedMarker where
-// blocks were left out. A long reference section puts its example last,
-// and a prefix cut kept the parameter table and dropped the code the
-// question asked about. Without terms, or when no block beyond the lead
-// names one, or when the lead itself does not fit, it is trimSnippet.
-func trimForQuery(s string, n int, terms []string) string {
-	blocks := textBlocks(s)
-	if len(terms) == 0 || len(blocks) < 2 || len(blocks[0])+len(truncatedMarker) > n {
-		return trimSnippet(s, n)
-	}
-	keep := map[int]bool{0: true}
-	for _, i := range blocksByTerms(blocks[1:], terms) {
-		keep[i+1] = true
-		if len(joinKept(blocks, keep))+len(truncatedMarker) > n {
-			delete(keep, i+1)
-		}
-	}
-	if len(keep) == 1 {
-		return trimSnippet(s, n) // no block naming the query fits: the prefix says more
-	}
-	return joinKept(blocks, keep) + truncatedMarker
-}
 
 // blocksByTerms returns the indices of the blocks that name any of terms,
 // those naming the most first, ties in block order.

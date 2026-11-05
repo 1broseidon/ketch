@@ -672,11 +672,6 @@ var goNameRe = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]*$`)
 type strictMissError struct {
 	err   error
 	exact []*project // the packages of exactly the reading's name
-
-	weighed bool
-	spec    string  // the most popular package, once weighed
-	repo    repoKey // the repository it names; zero for none
-	pop     int64   // its weekly downloads; -1 when they could not be read
 }
 
 func (e *strictMissError) Error() string { return e.err.Error() }
@@ -699,74 +694,4 @@ func (w *Web) strictMiss(err error, log *resolveLog) error {
 		return err
 	}
 	return &strictMissError{err: err, exact: exact}
-}
-
-// weigh reads the miss's packages' popularity, once: the most popular
-// package stands for the miss, and one whose count could not be read
-// makes the miss's unknown.
-func (e *strictMissError) weigh(ctx context.Context, w *Web) {
-	if e.weighed {
-		return
-	}
-	e.weighed = true
-	w.readPopularity(ctx, e.exact)
-	for _, p := range e.exact {
-		switch {
-		case p.popErr != nil:
-			e.spec, e.repo, e.pop = p.pkgs[0].spec(), p.repo, -1
-			return
-		case p.pop > e.pop:
-			e.spec, e.repo, e.pop = p.pkgs[0].spec(), p.repo, p.pop
-		}
-	}
-}
-
-// readingMiss is a reading's miss, and whether its name is a common word.
-type readingMiss struct {
-	miss   *strictMissError
-	common bool
-}
-
-// pastStrictMisses checks a bare query's pick against the readings that
-// named a real package but verified no docs: the pick stands only when it
-// has dominanceRatio times the downloads of each (react's 245M a week
-// against react-router's 20M does not), else the query is ambiguous
-// between them. A package from the pick's own repository (clap_derive for
-// clap) is part of it. A miss whose downloads could not be read is a
-// source that did not answer, except a common word's, which is no
-// evidence that the query is about it.
-func (w *Web) pastStrictMisses(ctx context.Context, query string, m webMatch, missed []readingMiss) error {
-	if len(missed) == 0 {
-		return nil
-	}
-	weight := w.pickWeight(ctx, m)
-	amb := &AmbiguousLibraryError{Library: query, Matches: []LibraryMatch{m.libraryMatch()}}
-	for _, rm := range missed {
-		miss := rm.miss
-		miss.weigh(ctx, w)
-		switch {
-		case miss.pop == 0, miss.pop < 0 && rm.common:
-		case m.proj != nil && !miss.repo.isZero() && m.proj.isRepo(miss.repo):
-			// The same repository's other package (clap_derive beside
-			// clap): one project, not a rival.
-		case miss.pop < 0:
-			return fmt.Errorf("web: reading %q as %s, but the downloads of %s, a package of the query's own words, could not be read; retry, or pass the library you mean", query, m.root, miss.spec)
-		case weight < 0 && miss.pop >= dominanceStars, weight >= 0 && weight < dominanceRatio*miss.pop:
-			amb.Matches = append(amb.Matches, LibraryMatch{ID: miss.spec, Title: "docs not verified, " + popularityText(miss.pop), Packages: []string{miss.spec}})
-		}
-	}
-	if len(amb.Matches) > 1 {
-		return amb
-	}
-	return nil
-}
-
-// pickWeight is the pick's weight, its popularity read first when a
-// keyless resolution has not read it; -1 when unknown.
-func (w *Web) pickWeight(ctx context.Context, m webMatch) int64 {
-	if m.proj != nil && !m.proj.popKnown && m.proj.info == nil {
-		w.readPopularity(ctx, []*project{m.proj})
-		return int64(m.proj.stars())
-	}
-	return int64(m.stars)
 }
