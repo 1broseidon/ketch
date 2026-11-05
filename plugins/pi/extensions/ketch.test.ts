@@ -247,30 +247,45 @@ describe("argument construction", () => {
 		assert.equal(calls.length, 2);
 	});
 
-	test("docs: the web backend takes library specs as they are", async () => {
+	test("docs: search takes library specs as they are, and section alone", async () => {
 		const { tools, calls } = fakePi();
-		await run(tools, "ketch_docs", { query: "middleware", backend: "web", library: "django@5.2" });
-		assert.deepEqual(calls[0].args, ["docs", "--json", "--backend=web", "--library=django@5.2", "--", "middleware"]);
-		await run(tools, "ketch_docs", { query: "@astrojs/starlight@0.30", backend: "web", resolve: true });
-		assert.deepEqual(calls[1].args, ["docs", "--json", "--backend=web", "--resolve", "--", "@astrojs/starlight@0.30"]);
-		await run(tools, "ketch_docs", { query: "how do I set retries in requests", backend: "web" });
-		assert.deepEqual(calls[2].args, ["docs", "--json", "--backend=web", "--", "how do I set retries in requests"]);
+		await run(tools, "ketch_docs", { query: "middleware", library: "django@5.2" });
+		assert.deepEqual(calls[0].args, ["docs", "--json", "--library=django@5.2", "--", "middleware"]);
+		await run(tools, "ketch_docs", { query: "@astrojs/starlight@0.30", backend: "search", resolve: true });
+		assert.deepEqual(calls[1].args, ["docs", "--json", "--backend=search", "--resolve", "--", "@astrojs/starlight@0.30"]);
+		await run(tools, "ketch_docs", { query: "how do I set retries in requests" });
+		assert.deepEqual(calls[2].args, ["docs", "--json", "--", "how do I set retries in requests"]);
+		await run(tools, "ketch_docs", { section: "https://docs.example.test/guide#rules", tokens: 2000 });
+		assert.deepEqual(calls[3].args, ["docs", "--json", "--section=https://docs.example.test/guide#rules", "--tokens=2000"]);
+
+		for (const bad of [
+			{ section: "https://docs.example.test/guide#rules", query: "q" },
+			{ section: "https://docs.example.test/guide#rules", resolve: true },
+			{},
+		]) {
+			const r = await run(tools, "ketch_docs", bad);
+			assert.equal(r.isError, true);
+			assert.match(r.content[0].text, /^\[validation\]/);
+		}
+		assert.equal(calls.length, 4);
 	});
 
-	test("docs: descriptions cover the web backend and its library specs", () => {
+	test("docs: descriptions cover search, Context7, section and library specs", () => {
 		const { tools } = fakePi();
 		const docs = tools.get("ketch_docs");
 		assert.ok(docs);
-		assert.match(docs.description, /Context7 or Web/);
+		assert.match(docs.description, /default backend, search/);
 		assert.match(docs.description, /django@5\.2/);
-		assert.match(docs.description, /Resolve a name once/);
+		assert.match(docs.description, /section/);
 		const props = docs.parameters.properties as Record<string, { description: string }>;
-		assert.match(props.backend.description, /\bweb\b/);
-		assert.match(props.backend.description, /\bauto\b/);
+		assert.match(props.backend.description, /\bsearch\b/);
+		assert.match(props.backend.description, /\bcontext7\b/);
+		assert.doesNotMatch(props.backend.description, /\bauto\b|\bweb \(/);
 		assert.match(docs.description, /anonymous quota/);
-		for (const form of ["name@version", "npm:/pypi:/crates:/go:/github:", "owner/repo", "Go module path"]) {
+		for (const form of ["name@version", "npm:/pypi:/crates:/go:/github:", "owner/repo"]) {
 			assert.ok(props.library.description.includes(form), `library description names ${form}`);
 		}
+		assert.ok(props.section, "section is a parameter");
 	});
 
 	test("scrape: single url, then every option", async () => {

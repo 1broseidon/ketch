@@ -59,7 +59,7 @@ per-call options as the MCP tools in [`mcp/`](../../mcp/):
 | --- | --- | --- |
 | `ketch_search` | `ketch search` | `query`, `backend`, `multi`, `random`, `limit`, `searxng_url`, `scrape`, `trim`, `max_chars`, `tag` |
 | `ketch_code` | `ketch code` | `query`, `backend`, `lang`, `repo`, `regexp`, `limit`, `tag` |
-| `ketch_docs` | `ketch docs` | `query`, `backend`, `library`, `tokens`, `limit`, `resolve`, `tag` |
+| `ketch_docs` | `ketch docs` | `query`, `backend`, `library`, `section`, `tokens`, `limit`, `resolve`, `tag` |
 | `ketch_scrape` | `ketch scrape` | `url` or `urls`, `selector`, `raw`, `force_browser`, `no_llms_txt`, `trim`, `max_chars`, `no_cache`, `concurrency`, `tag` |
 | `ketch_crawl` | `ketch crawl` | `url`, `depth`, `sitemap`, `allow`, `deny`, `max_pages`, `max_chars`, `no_cache`, `tag` |
 | `ketch_tag` | `ketch tag …` | `operation` (add/show/list/remove), `tag`, `urls`, `limit` |

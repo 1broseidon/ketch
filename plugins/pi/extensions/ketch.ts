@@ -127,26 +127,37 @@ const CodeParams = Type.Object({
 });
 
 const DocsParams = Type.Object({
-	query: Type.String({
-		description:
-			"the docs search query (without library, the library is picked from it), or the library to resolve when resolve is true",
-	}),
+	query: Type.Optional(
+		Type.String({
+			description:
+				"the docs question (search picks the library and its docs site from it unless library is set), or the library to resolve when resolve is true; not needed with section",
+		}),
+	),
 	backend: Type.Optional(
 		Type.String({
 			description:
-				"docs backend: context7 (curated snippets; no key needed, but keyless use has a small anonymous quota, about 200 requests a month per IP), web (reads the library's own docs site, no key), " +
-				"or auto (web first, then Context7 only when web finds no library, several, or fails) (default: the configured backend)",
+				"docs backend: search (the default: the local index, else a web search for the docs site, no key) or context7 (curated snippets; no key needed, but keyless use has a small anonymous quota, about 200 requests a month per IP) (default: the configured backend)",
 		}),
 	),
 	library: Type.Optional(
 		Type.String({
 			description:
-				"library to fetch docs from directly, skipping the resolve step: a library ID from resolve (context7: /org/repo; web: the docs root URL). " +
-				"web also takes a docs URL, or a package name: name@version (django@5.2), npm:/pypi:/crates:/go:/github: prefixes (pypi:click), owner/repo, or a Go module path; requires a backend with library operations",
+				"the library to answer from. search: a docs URL to search within, or a library name or spec to prefer (name@version such as django@5.2, npm:/pypi:/crates:/go:/github: prefixes such as pypi:click, owner/repo); a library the operator indexed answers offline. " +
+				"context7: a library ID from resolve, such as /vercel/next.js",
+		}),
+	),
+	section: Type.Optional(
+		Type.String({
+			description:
+				"read one section in full from the local index instead of searching: the url#anchor in a result's section field (a page URL alone returns the page's sections in order); no query; tokens caps it (default 4000)",
 		}),
 	),
 	tokens: Type.Optional(
-		Type.Integer({ minimum: 1, description: "library token budget when library is set (default 4000)" }),
+		Type.Integer({
+			minimum: 1,
+			description:
+				"token budget: search answers in about 1,800 tokens unless set (set, it fits its answer to it compactly); context7 defaults to 4000; with section, the cap of the section returned (default 4000)",
+		}),
 	),
 	limit: Type.Optional(
 		Type.Integer({
@@ -157,7 +168,7 @@ const DocsParams = Type.Object({
 	resolve: Type.Optional(
 		Type.Boolean({
 			description:
-				"resolve the query as a library name to library IDs instead of searching docs; web matches also carry their version, versions, package specs and the evidence for each",
+				"resolve the query as a library name instead of searching docs: Context7 library IDs, or for search the docs roots, each with its version, versions, package specs and the evidence for it",
 		}),
 	),
 	tag: Type.Optional(
@@ -524,11 +535,12 @@ export function docsArgs(p: DocsInput): string[] {
 	const args = ["docs", "--json"];
 	flag(args, "--backend", p.backend);
 	flag(args, "--library", p.library);
+	flag(args, "--section", p.section);
 	flag(args, "--tokens", p.tokens);
 	flag(args, "--limit", p.limit);
 	toggle(args, "--resolve", p.resolve);
 	flag(args, "--tag", p.tag);
-	return positional(args, p.query);
+	return p.section ? args : positional(args, p.query ?? "");
 }
 
 /**
@@ -673,18 +685,18 @@ export default function ketch(pi: ExtensionAPI): void {
 		...renderers("docs"),
 		label: "ketch docs",
 		description:
-			"Search library documentation using Context7 or Web (backend=web reads the library's own docs site, no API key; Context7 needs no key either, but keyless it runs on an anonymous quota of about 200 requests a month per IP, and a spent quota is an [upstream] error naming when it resets). " +
-			"backend=auto asks web first and Context7 only when web refuses; Context7's pick must be a library the query names, and for an ambiguous name one of web's candidates, and each result's source says which answered. " +
-			"Supports resolving a library name to library IDs (resolve=true), and fetching docs directly from a known library (library, bounded by tokens): a Context7 ID such as /vercel/next.js, " +
-			"or for web a docs URL, a package spec such as django@5.2 or pypi:click, owner/repo, or a Go module path. " +
-			"Resolve a name once and pass the returned ID as library on later calls: a name is resolved again on every call. " +
-			"A name more than one library answers to is a [validation] error listing each candidate's ID and package specs; pass one of them as library. " +
-			"A library nobody publishes, or a version its docs do not offer, is [not_found]; for a version, the error lists the ones on offer." +
+			"Search library documentation. The default backend, search, answers from the docs themselves with no API key: a library the operator indexed (ketch docs index) answers offline from the local index; otherwise ketch searches the web for the question, picks the documentation site the results agree on, reads the matching pages and keeps them in the local index, so a repeated question answers offline. " +
+			"Results are whole sections, verbatim with their code: compact for pages search read (about 1,800 tokens, or tokens), whole sections for an indexed library unless tokens is set. " +
+			"library names the library: a docs URL to search within, or a name or spec such as django@5.2 or pypi:click to prefer. " +
+			"A result cut short ends with a full-section pointer; pass its url#anchor (the result's section field) as section, with no query, to read the section in full from the local index (no network, no quota). " +
+			"backend=context7 returns Context7's curated snippets instead; Context7 needs no key either, but keyless it runs on an anonymous quota of about 200 requests a month per IP, and a spent quota is an [upstream] error naming when it resets. " +
+			"resolve=true resolves a library name to Context7 library IDs, or for search to docs roots with their versions and evidence; pass one as library." +
 			ERR_TAXONOMY,
-		promptSnippet: "ketch_docs for a library's own documentation; resolve the name once, then fetch by the returned library ID",
+		promptSnippet: "ketch_docs for a library's own documentation; ask the question, then read a cut result in full with section",
 		parameters: DocsParams,
 		async execute(_id, p, signal) {
-			if (!p.query?.trim()) return validation("query is required");
+			if (p.section && (p.resolve || p.query?.trim())) return validation("section takes no query and no resolve");
+			if (!p.section && !p.query?.trim()) return validation("query is required");
 			if (p.resolve && p.library) return validation("resolve and library are mutually exclusive");
 			if (p.resolve && p.tag) return validation("tag is not available with resolve");
 			return passthrough(pi, docsArgs(p), signal, TIMEOUT.docs);
