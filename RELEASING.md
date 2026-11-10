@@ -9,7 +9,8 @@ which does everything below. Cutting a release is:
 ```sh
 # write the vX.Y.Z section of CHANGELOG.md — it becomes the GitHub release
 # notes verbatim (prose about what changed for the user, no commit list),
-# bump NPX_PACKAGE in plugins/pi/extensions/ketch.ts to ketch-cli@X.Y.Z, then
+# bump NPX_PACKAGE in plugins/pi/extensions/ketch.ts to ketch-cli@X.Y.Z and
+# set "version" in package.json (the pi package's) to X.Y.Z, then
 git commit -m "chore(release): vX.Y.Z"
 git push origin main
 git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z
@@ -18,7 +19,13 @@ git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z
 The pi package's npx fallback pins an exact `ketch-cli` version, so it must
 move with every release. `npm test` fails until the pin matches the newest
 CHANGELOG.md version, and the release workflow refuses a tag whose pin
-differs. For the few minutes before npm publishes, `main` names a version that
+differs.
+
+The pi package's `version` in `package.json` must move with the release for
+the same reason, and `npm test` checks it there too. pi shows the CHANGELOG
+entries newer than that version after an upgrade, then records the version as
+seen. A version that stays behind replays the whole changelog on every launch.
+For the few minutes before npm publishes, `main` names a version that
 is not on the registry yet; only the npx fallback notices.
 
 The workflow has three jobs: `ref` resolves the tag, `release` runs GoReleaser
