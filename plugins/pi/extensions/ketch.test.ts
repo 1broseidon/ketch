@@ -570,10 +570,16 @@ describe("release pin", () => {
 	// The npx fallback must run the release this checkout belongs to. The
 	// chore(release) commit adds the version's CHANGELOG.md heading, so it fails
 	// here until NPX_PACKAGE is bumped in the same commit.
-	test("NPX_PACKAGE matches the newest released version in CHANGELOG.md", () => {
+	//
+	// pi shows the CHANGELOG entries newer than the package.json version it last
+	// recorded, then records that same version, so it has to move with the release
+	// or the whole changelog replays on every launch.
+	test("NPX_PACKAGE and package.json version match the newest released version in CHANGELOG.md", () => {
 		const changelog = readFileSync(new URL("../../../CHANGELOG.md", import.meta.url), "utf8");
 		const newest = changelog.match(/^## \[(\d+\.\d+\.\d+)\]/m)?.[1];
 		assert.ok(newest, "no released version heading found in CHANGELOG.md");
 		assert.equal(NPX_PACKAGE, `ketch-cli@${newest}`, `bump NPX_PACKAGE in plugins/pi/extensions/ketch.ts to ketch-cli@${newest}`);
+		const pkg = JSON.parse(readFileSync(new URL("../../../package.json", import.meta.url), "utf8"));
+		assert.equal(pkg.version, newest, `bump version in package.json to ${newest}`);
 	});
 });
