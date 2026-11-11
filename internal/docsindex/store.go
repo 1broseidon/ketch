@@ -754,6 +754,26 @@ func (s *Store) SectionsOfPages(key string, pages []string) ([]Section, error) {
 	return out, err
 }
 
+// PageOutlines returns the sections of the given pages of a library as
+// SectionsOfPages does, without their text: the pages' outlines.
+func (s *Store) PageOutlines(key string, pages []string) ([]Section, error) {
+	if len(pages) == 0 {
+		return nil, nil
+	}
+	list, err := json.Marshal(pages)
+	if err != nil {
+		return nil, err
+	}
+	var out []Section
+	err = s.view(func(db *sql.DB) error {
+		var err error
+		out, err = querySections(db, `SELECT s.id, s.page, s.ord, s.anchor, s.heading, s.crumbs, '', s.cross_version FROM sections s
+			JOIN libraries l ON l.id = s.lib WHERE l.key = ? AND s.page IN (SELECT value FROM json_each(?)) ORDER BY s.page, s.ord`, key, string(list))
+		return err
+	})
+	return out, err
+}
+
 // Hit is one full-text match: a section's ID and its score (FTS5's bm25,
 // negated: higher is better).
 type Hit struct {
@@ -766,39 +786,113 @@ type Hit struct {
 // by bm25 with the given column weights (one per FTSColumns entry). The
 // library's rows must be the store's tokenizer's (EnsureFTS).
 func (s *Store) Search(key, match string, weights []float64, limit int) ([]Hit, error) {
+	hits, err := s.SearchEach(key, []FTSQuery{{Match: match, Limit: limit}}, weights)
+	if len(hits) == 0 {
+		return nil, err
+	}
+	return hits[0], err
+}
+
+// Count is how many of a library's sections a full-text query matches
+// (FTS5 query syntax over FTSColumns), or with an empty query how many
+// sections its full-text table holds: 0 for a library the store does not
+// hold. The library's rows must be the store's tokenizer's (EnsureFTS).
+func (s *Store) Count(key, match string) (int, error) {
+	n, err := s.Counts(key, []string{match})
+	if len(n) == 0 {
+		return 0, err
+	}
+	return n[0], err
+}
+
+// Counts is Count for several queries over one open of the file, in
+// their order.
+func (s *Store) Counts(key string, matches []string) ([]int, error) {
+	out := make([]int, len(matches))
+	err := s.view(func(db *sql.DB) error {
+		t, ok, err := libraryFTS(db, key)
+		if err != nil || !ok {
+			return err
+		}
+		for i, m := range matches {
+			if m == "" {
+				err = db.QueryRow(`SELECT count(*) FROM ` + t).Scan(&out[i])
+			} else {
+				err = db.QueryRow(fmt.Sprintf(`SELECT count(*) FROM %s WHERE %s MATCH ?`, t, t), m).Scan(&out[i])
+			}
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return out, err
+}
+
+// FTSQuery is one full-text query of SearchEach: FTS5 query syntax over
+// FTSColumns, and the most hits it returns (all for a negative limit).
+type FTSQuery struct {
+	Match string
+	Limit int
+}
+
+// SearchEach is Search for several queries over one open of the file:
+// each query's hits in the order of queries.
+func (s *Store) SearchEach(key string, queries []FTSQuery, weights []float64) ([][]Hit, error) {
 	if len(weights) != len(FTSColumns) {
 		return nil, fmt.Errorf("docs index: %d column weights for %d columns", len(weights), len(FTSColumns))
 	}
-	var out []Hit
+	out := make([][]Hit, len(queries))
 	err := s.view(func(db *sql.DB) error {
-		var id int64
-		switch err := db.QueryRow(`SELECT id FROM libraries WHERE key = ?`, key).Scan(&id); {
-		case errors.Is(err, sql.ErrNoRows):
-			return nil
-		case err != nil:
+		t, ok, err := libraryFTS(db, key)
+		if err != nil || !ok {
 			return err
 		}
 		ws := make([]string, len(weights))
 		for i, w := range weights {
 			ws[i] = fmt.Sprintf("%g", w)
 		}
-		t := ftsTable(id)
-		rows, err := db.Query(fmt.Sprintf(`SELECT rowid, -bm25(%s, %s) AS score FROM %s WHERE %s MATCH ? ORDER BY score DESC, rowid LIMIT ?`,
-			t, strings.Join(ws, ", "), t, t), match, limit)
-		if err != nil {
-			return err
-		}
-		defer func() { _ = rows.Close() }()
-		for rows.Next() {
-			var h Hit
-			if err := rows.Scan(&h.ID, &h.Score); err != nil {
+		q := fmt.Sprintf(`SELECT rowid, -bm25(%s, %s) AS score FROM %s WHERE %s MATCH ? ORDER BY score DESC, rowid LIMIT ?`,
+			t, strings.Join(ws, ", "), t, t)
+		for i, fq := range queries {
+			if out[i], err = queryHits(db, q, fq.Match, fq.Limit); err != nil {
 				return err
 			}
-			out = append(out, h)
 		}
-		return rows.Err()
+		return nil
 	})
 	return out, err
+}
+
+// libraryFTS is the name of a library's full-text table; false for a
+// library the store does not hold.
+func libraryFTS(db *sql.DB, key string) (string, bool, error) {
+	var id int64
+	switch err := db.QueryRow(`SELECT id FROM libraries WHERE key = ?`, key).Scan(&id); {
+	case errors.Is(err, sql.ErrNoRows):
+		return "", false, nil
+	case err != nil:
+		return "", false, err
+	}
+	return ftsTable(id), true, nil
+}
+
+// queryHits runs one full-text query (Search's statement) and reads its hits.
+func queryHits(db *sql.DB, q, match string, limit int) ([]Hit, error) {
+	rows, err := db.Query(q, match, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	var out []Hit
+	for rows.Next() {
+		var h Hit
+		if err := rows.Scan(&h.ID, &h.Score); err != nil {
+			return nil, err
+		}
+		out = append(out, h)
+	}
+	return out, rows.Err()
 }
 
 // SectionsByID returns the sections with the given IDs (of any library),

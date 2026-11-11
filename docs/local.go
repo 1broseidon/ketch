@@ -15,11 +15,11 @@ import (
 )
 
 // The local docs backend answers from the local index (ADR-0007), with no
-// network and no model: it ranks the library's sections by keywords over
-// its full-text table (local_fts.go), groups them into families (a
-// section with the others under its H2) and returns the best five,
-// verbatim and trimmed to about 1,800 tokens (local_rank.go), or fitted
-// compactly to a caller's budget (local_compact.go).
+// network and no model, through the evidence pipeline (evidence.go): the
+// question's terms gather a pool of sections by keywords over the
+// library's full-text table (local_fts.go), the pool is cut into pieces,
+// and the pieces that add the most are chosen and printed, verbatim and
+// grouped by section, within about 1,800 tokens or the caller's budget.
 //
 // An index holds one version of a library; several versions are indexed
 // side by side. A library value with a version (name@3) answers from that
@@ -87,10 +87,12 @@ func (l *Local) libraries() ([]docsindex.Library, error) {
 	return libs, nil
 }
 
-// answer ranks lib's sections for query and renders the best families
-// within opts' budget; an answer from a library a search built is partial
-// (partialLibrary).
+// answer answers query from lib within opts' budget; an answer from a
+// library a search built is partial (partialLibrary).
 func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string, opts LocalOptions) Outcome {
+	if lib.Resolved == resolvedBySearch {
+		opts.note = partialNote(lib)
+	}
 	return partialLibrary(l.rank(ctx, lib, query, opts), lib)
 }
 
@@ -99,30 +101,32 @@ func (l *Local) rank(ctx context.Context, lib docsindex.Library, query string, o
 	if !lib.Current() {
 		return Answer(SearchBackend, nil, outdatedErr(lib))
 	}
-	results, err := l.rankResults(lib, query, opts)
+	t := TraceFrom(ctx)
+	t.ranking(lib, opts)
+	a, err := l.evidence(lib, query, opts, t)
 	if err != nil {
 		return Answer(SearchBackend, nil, fmt.Errorf("local: reading the docs index: %w", err))
 	}
-	if len(results) == 0 {
+	var o Outcome
+	switch {
+	case a.status == Refused:
+		o = Answer(SearchBackend, nil, fmt.Errorf("local: the docs of %s hold none of the question's distinctive terms (%s): %w",
+			lib.Root, strings.Join(a.notFound, ", "), ErrTermsNotFound))
+	case len(a.results) == 0:
 		return Answer(SearchBackend, nil, fmt.Errorf("local: nothing in the index of %s matched: %w", lib.Root, ErrNoResults))
+	default:
+		showUnder(a.results, lib)
+		pointToSections(a.results)
+		o = Answer(SearchBackend, a.results, nil)
+		if a.status == Partial {
+			o.Status, o.Reason = Partial, a.reason
+			for i := range o.Attempts {
+				o.Attempts[i].Status, o.Attempts[i].Reason = Partial, a.reason
+			}
+		}
 	}
-	showUnder(results, lib)
-	pointToSections(results, opts)
-	return Answer(SearchBackend, results, nil)
-}
-
-// rankResults ranks lib's sections for the query by keywords over the
-// full-text table (only the candidates' pages are read) and renders them.
-func (l *Local) rankResults(lib docsindex.Library, query string, opts LocalOptions) ([]Result, error) {
-	limit := opts.Limit
-	if limit <= 0 {
-		limit = localMaxResults
-	}
-	secs, ranked, err := l.keywordRank(lib, query)
-	if err != nil {
-		return nil, err
-	}
-	return familyResults(lib, secs, families(secs, ranked, limit, lib.Root), query, opts.Tokens, opts.Hint), nil
+	o.Library, o.Index, o.Terms, o.NotFound = lib.Root, a.index, a.terms, a.notFound
+	return o
 }
 
 // showUnder shows a re-rooted current release's results at the
@@ -134,17 +138,11 @@ func showUnder(results []Result, lib docsindex.Library) {
 }
 
 // pointToSections gives every result the reference to its section (its
-// shown URL), and, over MCP, ends each result that was cut with the
-// pointer to its full section: the surface has no other place to show it.
-// A CLI renders its pointer (RenderResult).
-func pointToSections(results []Result, opts LocalOptions) {
+// shown URL): what a follow-up fetch of a cut one takes. The answer says
+// how, once (AnswerHint).
+func pointToSections(results []Result) {
 	for i, r := range results {
 		results[i].Section = r.URL
-		if opts.Hint == HintMCP {
-			if h := SectionHint(results[i], HintMCP); h != "" {
-				results[i].Snippet += "\n\n" + h
-			}
-		}
 	}
 }
 
@@ -152,25 +150,6 @@ func pointToSections(results []Result, opts LocalOptions) {
 // anchor was settled when it was indexed, so ranking never re-slugs it.
 func webSectionOf(s docsindex.Section, i int) webSection {
 	return webSection{page: i, order: s.Order, pageURL: s.Page, heading: s.Heading, crumbs: s.Crumbs, anchor: s.Anchor, source: anchorFixed, text: s.Text, links: s.Text}
-}
-
-// fairShares splits budget among items of the given sizes max-min fairly:
-// an item smaller than an equal share gets its size, and the rest is split
-// equally among the larger ones, never below webMinTrimBytes.
-func fairShares(sizes []int, budget int) []int {
-	idx := make([]int, len(sizes))
-	for i := range idx {
-		idx[i] = i
-	}
-	sort.SliceStable(idx, func(a, b int) bool { return sizes[idx[a]] < sizes[idx[b]] })
-	shares := make([]int, len(sizes))
-	left := budget
-	for k, i := range idx {
-		equal := left / (len(idx) - k)
-		shares[i] = max(min(sizes[i], equal), webMinTrimBytes)
-		left -= min(shares[i], left)
-	}
-	return shares
 }
 
 // libraryInQuery finds the indexed library a bare query names. Readings

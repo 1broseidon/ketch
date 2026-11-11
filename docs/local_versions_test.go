@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -111,6 +112,11 @@ func TestLocalVersionsSideBySide(t *testing.T) {
 		t.Errorf("@3 top = %s:\n%s", top.URL, top.Snippet)
 	}
 	latest := l.GetDocsSelect(ctx, "vue-router", q, 0)
+	// The current docs dropped the callbacks: the answer says so.
+	if latest.Status != Partial || latest.Reason != ReasonTermsNotFound || !slices.Equal(latest.NotFound, []string{"onComplete", "onAbort", "callbacks"}) {
+		t.Errorf("no version: %s/%s not_found %v", latest.Status, latest.Reason, latest.NotFound)
+	}
+	latest.Status = Answered
 	checkAnsweredFrom(t, latest, "https://vr.example.test/", "current")
 	if !strings.Contains(latest.Note, "also indexed: v3") {
 		t.Errorf("no version: note %q", latest.Note)

@@ -163,6 +163,56 @@ type Scraper struct {
 	// browser keeps its own User-Agent minus the HeadlessChrome token (see
 	// NewBrowserConnOptions).
 	userAgentConfigured bool
+	// pageWarn receives the warnings about single pages' fetches instead
+	// of stderr when set (OnPageWarning).
+	pageWarn func(PageWarning)
+}
+
+// Kinds of PageWarning.
+const (
+	WarnJSRendered       = "js_rendered"        // a JS shell, no browser configured
+	WarnBrowserFailed    = "browser_failed"     // the browser fallback for a JS shell failed
+	WarnBrowser403       = "browser_403"        // HTTP 403, fetched with the browser (a notice)
+	WarnBrowser403Failed = "browser_403_failed" // HTTP 403, and the browser retry failed
+)
+
+// PageWarning is a warning about one page's fetch: its kind, the page
+// and the error behind it (nil for none).
+type PageWarning struct {
+	Kind string
+	URL  string
+	Err  error
+}
+
+// String is the warning as a fetch prints it to stderr.
+func (w PageWarning) String() string {
+	switch w.Kind {
+	case WarnJSRendered:
+		return fmt.Sprintf("warn: %s appears JS-rendered; configure browser for full content", w.URL)
+	case WarnBrowserFailed:
+		return fmt.Sprintf("warn: browser fallback failed for %s: %v", w.URL, w.Err)
+	case WarnBrowser403:
+		return fmt.Sprintf("notice: HTTP 403 for %s; fetched with the browser", w.URL)
+	case WarnBrowser403Failed:
+		return fmt.Sprintf("warn: browser retry after HTTP 403 failed for %s: %v", w.URL, w.Err)
+	}
+	return fmt.Sprintf("warn: %s: %s", w.URL, w.Kind)
+}
+
+// OnPageWarning sends the warnings about single pages' fetches (a
+// JS-rendered page, a browser fallback or retry) to f instead of stderr,
+// so a caller fetching many pages can fold them into one line. f may be
+// called from concurrent fetches. Set it before the first fetch.
+func (s *Scraper) OnPageWarning(f func(PageWarning)) { s.pageWarn = f }
+
+// warnPage reports a warning about one page's fetch: to the
+// OnPageWarning handler, else on stderr.
+func (s *Scraper) warnPage(w PageWarning) {
+	if s.pageWarn != nil {
+		s.pageWarn(w)
+		return
+	}
+	fmt.Fprintln(os.Stderr, w.String())
 }
 
 // NewWithRewriter creates a Scraper with an optional browser binary and
@@ -526,9 +576,9 @@ func (s *Scraper) browserFetchOrWarn(ctx context.Context, rawURL, html string) (
 		if err == nil {
 			return rendered.html, SourceBrowser, rendered.finalURL
 		}
-		fmt.Fprintf(os.Stderr, "warn: browser fallback failed for %s: %v\n", rawURL, err)
+		s.warnPage(PageWarning{Kind: WarnBrowserFailed, URL: rawURL, Err: err})
 	} else if !s.HasBrowser() {
-		fmt.Fprintf(os.Stderr, "warn: %s appears JS-rendered; configure browser for full content\n", rawURL)
+		s.warnPage(PageWarning{Kind: WarnJSRendered, URL: rawURL})
 	}
 	return html, SourceHTTPShell, ""
 }
@@ -561,10 +611,10 @@ func (s *Scraper) browserOnForbidden(ctx context.Context, fetchURL string, fetch
 	}
 	rendered, err := fetchVerified(ctx, browser, fetchURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "warn: browser retry after HTTP 403 failed for %s: %v\n", fetchURL, err)
+		s.warnPage(PageWarning{Kind: WarnBrowser403Failed, URL: fetchURL, Err: err})
 		return rendering{}, false
 	}
-	fmt.Fprintf(os.Stderr, "notice: HTTP 403 for %s; fetched with the browser\n", fetchURL)
+	s.warnPage(PageWarning{Kind: WarnBrowser403, URL: fetchURL})
 	return rendered, true
 }
 
@@ -675,10 +725,10 @@ func (s *Scraper) FetchContentWithBrowser(ctx context.Context, rawURL string) (*
 		browserErr = fmt.Errorf("browser returned unusable HTTP status %d", status)
 	}
 	if browserErr != nil {
-		fmt.Fprintf(os.Stderr, "warn: browser retry after HTTP 403 failed for %s: %v\n", rawURL, browserErr)
+		s.warnPage(PageWarning{Kind: WarnBrowser403Failed, URL: rawURL, Err: browserErr})
 		return nil, err
 	}
-	fmt.Fprintf(os.Stderr, "notice: HTTP 403 for %s; fetched with the browser\n", rawURL)
+	s.warnPage(PageWarning{Kind: WarnBrowser403, URL: rawURL})
 	return content, nil
 }
 

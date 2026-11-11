@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -32,7 +33,7 @@ import (
 //	        │       (≤ sfMaxPages, through the page cache)
 //	section them, store them in the local index under the docs root
 //	        │
-//	rank with the local index's keyword ranker, compactly
+//	answer through the local index's evidence pipeline
 //	        └──▶ partial: N pages read, and how to index the whole site
 //
 // What it reads stays in the index, so the next question those pages
@@ -156,10 +157,13 @@ func (s *SearchFirst) ResolveSelect(ctx context.Context, name string, limit int)
 }
 
 // SearchSelect answers a question from the local index when it covers
-// it, else from the docs site its web search agrees on.
+// it, else from the docs site its web search agrees on. A caller that
+// carries its options (WithLocalOptions: the CLI, MCP) caps the results
+// only by the limit they give, the budget deciding otherwise; any other
+// caller's limit caps them.
 func (s *SearchFirst) SearchSelect(ctx context.Context, query string, limit int) Outcome {
-	opts, _ := localOptionsFrom(ctx)
-	if opts.Limit <= 0 {
+	opts, ok := localOptionsFrom(ctx)
+	if !ok {
 		opts.Limit = limit
 	}
 	req := sfRequest{query: query, opts: opts}
@@ -167,7 +171,7 @@ func (s *SearchFirst) SearchSelect(ctx context.Context, query string, limit int)
 		req.spec = spec
 	}
 	o := s.answer(ctx, req)
-	o.Results = Truncate(o.Results, limit)
+	o.Results = Truncate(o.Results, opts.Limit)
 	return o
 }
 
@@ -193,14 +197,6 @@ func (s *SearchFirst) GetDocsSelect(ctx context.Context, library, query string, 
 	return s.answer(ctx, req)
 }
 
-// sfDefaultTokens is a search-first answer's budget when the caller sets
-// none, fitted compactly (local_compact.go). Docs found by search are
-// long reference and guide pages whose answer sits deep in a section: on
-// the general dev set the compact view at 1,800 tokens held the
-// required facts in 19 of 60 answers, the whole-section view in 10, at
-// the same ~1,550 tokens returned.
-const sfDefaultTokens = 1800
-
 // errContext7ID is a Context7 library ID given to search, which ketch
 // 0.20 sent to Context7 by default: the caller names the backend.
 var errContext7ID = failure.New(failure.Validation, "context7_id", "a Context7 library ID needs the context7 backend")
@@ -224,27 +220,12 @@ func isContext7ID(s string) bool {
 	return true
 }
 
-// compactByDefault gives a request without a budget the compact one.
-func compactByDefault(o LocalOptions) LocalOptions {
-	if o.Tokens <= 0 {
-		o.Tokens = sfDefaultTokens
-	}
-	return o
-}
-
-// compact is the options an answer from pages search read renders with:
-// the caller's, compact at sfDefaultTokens when they set no budget. An
-// answer from a library indexed in full (ketch docs index) takes the
-// caller's options as they are: whole sections unless a budget is set, as
-// measured on the library set (ADR-0007, amendments 3 and 8).
-func (r sfRequest) compact() LocalOptions { return compactByDefault(r.opts) }
-
 // sfRequest is one question and what it names.
 type sfRequest struct {
 	query   string
 	library string       // as given: a docs URL, a spec or a name; "" for none
 	spec    libSpec      // the library as a spec (zero for a docs URL or none)
-	opts    LocalOptions // as the caller gave them; see compact
+	opts    LocalOptions // as the caller gave them
 }
 
 // pinnedSpec is the library a question pins with a spec of its own
@@ -270,9 +251,11 @@ func (s *SearchFirst) answer(ctx context.Context, req sfRequest) Outcome {
 	defer func() { tr.write(s.trace, req, time.Since(start)) }()
 	if o, ok := s.fromIndex(ctx, req, tr); ok {
 		tr.path = "local"
+		TraceFrom(ctx).setPath(tr.path)
 		return o
 	}
 	tr.path = "search"
+	TraceFrom(ctx).setPath(tr.path)
 	return s.fromSearch(ctx, req, tr)
 }
 
@@ -353,14 +336,17 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 	if err != nil {
 		return Answer(SearchBackend, nil, err)
 	}
-	o := s.local.rank(ctx, lib, req.query, req.compact())
-	if o.Status == Answered && tr.domains == 1 {
+	note := searchNote(lib, len(pages), st)
+	opts := req.opts
+	opts.note, opts.read = note, len(pages)
+	o := s.local.rank(ctx, lib, req.query, opts)
+	if (o.Status == Answered || o.Status == Partial) && tr.domains == 1 {
 		// Only the first site read is remembered (any of its docs trees): a
 		// fallback site's answer, read because the one the hits agreed on
 		// gave nothing, is a guess the next search may do better than.
 		s.remember(lib, req.library, req.query)
 	}
-	return searchAnswered(o, lib, len(pages), st)
+	return searchAnswered(o, note)
 }
 
 // failed is a search-first call that ended before an answer, classified
@@ -372,10 +358,28 @@ func (s *SearchFirst) failed(parent, op context.Context, err error) Outcome {
 	return Answer(SearchBackend, nil, err)
 }
 
-// searchAnswered is the local ranker's answer as the search-first
-// backend's: partial, saying how much of the site it read and how to
-// index the rest.
-func searchAnswered(o Outcome, lib docsindex.Library, read int, st sfStored) Outcome {
+// searchNote says how much of lib's site a search read and how to index
+// the rest.
+func searchNote(lib docsindex.Library, read int, st sfStored) string {
+	return fmt.Sprintf("read %d pages of %s found by web search (%d new to the local index); the whole site: ketch docs index %s",
+		read, lib.Root, st.newPages, lib.Root)
+}
+
+// withReason is reason followed by the reasons in rest (", "-joined),
+// each once.
+func withReason(reason, rest string) string {
+	out := []string{reason}
+	for _, r := range strings.Split(rest, ", ") {
+		if r != "" && !slices.Contains(out, r) {
+			out = append(out, r)
+		}
+	}
+	return strings.Join(out, ", ")
+}
+
+// searchAnswered is the local index's answer as the search-first
+// backend's: partial, with note (searchNote).
+func searchAnswered(o Outcome, note string) Outcome {
 	if o.Status != Answered && o.Status != Partial {
 		for i := range o.Attempts {
 			o.Attempts[i].Backend = SearchBackend
@@ -385,17 +389,13 @@ func searchAnswered(o Outcome, lib docsindex.Library, read int, st sfStored) Out
 	for i := range o.Results {
 		o.Results[i].Source = SearchBackend
 	}
-	note := fmt.Sprintf("read %d pages of %s found by web search (%d new to the local index); the whole site: ketch docs index %s",
-		read, lib.Root, st.newPages, lib.Root)
 	return asPartial(o, SearchBackend, note)
 }
 
 // asPartial marks an answer partial with a note, as backend's.
 func asPartial(o Outcome, backend, note string) Outcome {
 	o.Status, o.Backend = Partial, backend
-	if o.Reason == "" {
-		o.Reason = ReasonPartialSite
-	}
+	o.Reason = withReason(ReasonPartialSite, o.Reason)
 	if o.Note != "" {
 		note = o.Note + "; " + note
 	}

@@ -103,8 +103,8 @@ func TestIndexBuildKeepsOneVariantPerPage(t *testing.T) {
 	if err != nil || len(secs) != lib.Sections || lib.Sections == 0 {
 		t.Errorf("stored %d sections, library %d: %v", len(secs), lib.Sections, err)
 	}
-	if _, ranked, err := NewLocal(store).keywordRank(lib, "middleware"); err != nil || len(ranked) == 0 {
-		t.Errorf("keyword ranking = %v, %v", ranked, err)
+	if g, err := NewLocal(store).gather(lib, "middleware"); err != nil || len(g.pool) == 0 {
+		t.Errorf("pool = %v, %v", g, err)
 	}
 }
 
@@ -142,16 +142,15 @@ func TestIndexRefreshStoresOnlyChangedPages(t *testing.T) {
 	}
 }
 
-// The local backend ranks a library's sections by keywords and returns
-// one result per family, best first: the section that matched under its
-// address and heading path, its code inline, and the anchors of what it
-// shows.
+// The local backend answers with one result per section, best first: the
+// section under its address and heading path, the pieces naming the
+// question, and its anchor.
 func TestLocalSectionResults(t *testing.T) {
 	f, store := exampleSite(), newStore(t)
 	buildIndex(t, f, store)
 	l := NewLocal(store)
 	o := l.GetDocsSelect(context.Background(), "example", "add middleware to a route", 0)
-	if o.Status != Answered || o.Backend != SearchBackend || o.Reason != "" || len(o.Results) == 0 || len(o.Results) > localMaxResults {
+	if o.Status != Answered || o.Backend != SearchBackend || o.Reason != "" || len(o.Results) == 0 {
 		t.Fatalf("outcome = %+v", o)
 	}
 	checkTopSection(t, o.Results[0])
@@ -174,8 +173,8 @@ func checkTopSection(t *testing.T, top Result) {
 		!slices.Equal(top.Anchors, []string{"add-middleware-to-a-route"}) {
 		t.Errorf("top result = %+v", top)
 	}
-	if !strings.Contains(top.Snippet, "app.use('/admin/*', auth())") || strings.Contains(top.Snippet, "#### ") {
-		t.Errorf("top snippet should be the section whole, its code inline:\n%s", top.Snippet)
+	if !strings.Contains(top.Snippet, "Register middleware on a route with app.use") || strings.Contains(top.Snippet, "#### ") {
+		t.Errorf("top snippet should hold the sentence naming the question:\n%s", top.Snippet)
 	}
 }
 
@@ -218,14 +217,15 @@ func TestLocalRefusals(t *testing.T) {
 	if o := l.GetDocsSelect(context.Background(), "express", "routing", 0); o.Status != Refused || o.Reason != "not_indexed" || !errors.Is(o.Err(), ErrNotIndexed) {
 		t.Errorf("unindexed library = %s/%s", o.Status, o.Reason)
 	}
-	if o := l.GetDocsSelect(context.Background(), idxRoot, "zyzzyva quokka", 0); o.Status != Refused || o.Reason != "no_results" {
-		t.Errorf("nothing matched = %s/%s", o.Status, o.Reason)
+	if o := l.GetDocsSelect(context.Background(), idxRoot, "zyzzyva quokka", 0); o.Status != Refused || o.Reason != ReasonTermsNotFound ||
+		!errors.Is(o.Err(), ErrTermsNotFound) || !slices.Equal(o.NotFound, []string{"zyzzyva", "quokka"}) || o.Index == nil || len(o.Results) != 0 {
+		t.Errorf("nothing matched = %s/%s not_found %v", o.Status, o.Reason, o.NotFound)
 	}
 	if o := l.SearchSelect(context.Background(), "how do I add middleware in express", 5); o.Reason != "not_indexed" {
 		t.Errorf("a query naming an unindexed library = %s/%s", o.Status, o.Reason)
 	}
 	o := l.SearchSelect(context.Background(), "how do I add middleware in example", 1)
-	if o.Status != Answered || len(o.Results) != 1 || !strings.HasPrefix(o.Results[0].URL, idxRoot+"guide/middleware") {
+	if o.Status != Answered || len(o.Results) != 1 || !strings.HasPrefix(o.Results[0].URL, idxRoot) {
 		t.Errorf("a query naming the indexed library = %s %d %v", o.Status, len(o.Results), o.Results)
 	}
 	empty := NewLocal(newStore(t))
@@ -276,14 +276,6 @@ func TestParseRobots(t *testing.T) {
 	}
 	if own := parseRobots([]byte("User-agent: ketch\nDisallow: /a\n\nUser-agent: *\nDisallow: /\n"), "ketch"); !own.allowed(&url.URL{Path: "/b"}) {
 		t.Error("ketch's own group must win over *")
-	}
-}
-
-// fairShares gives small items what they need and splits the rest.
-func TestFairShares(t *testing.T) {
-	got := fairShares([]int{100, 5000, 300, 5000}, 4000)
-	if got[0] != 200 || got[2] != 300 || got[1] != got[3] || got[1] < 1700 {
-		t.Errorf("shares = %v", got)
 	}
 }
 

@@ -92,9 +92,27 @@ type Result struct {
 	// url#anchor as the result's URL carries it: what a follow-up fetch of
 	// the whole section takes (ketch docs --section, the docs tool's
 	// section). Truncated is set when the result leaves text of its
-	// section out ("[…]"). Other backends leave both empty.
+	// section out. Other backends leave both empty.
 	Section   string `json:"section,omitempty"`
 	Truncated bool   `json:"truncated,omitempty"`
+	// PageTitle is the local index's title of the result's page, and
+	// HeadingPath the result's headings below it (none for a page's lead
+	// section): an answer prints a page's groups under its title. Other
+	// backends leave both empty.
+	PageTitle   string   `json:"page_title,omitempty"`
+	HeadingPath []string `json:"heading_path,omitempty"`
+	// Rows say how many rows of each table a cut result shows when not
+	// all ("option rows, 2 of 17"), and SameText where else its text sits
+	// in sections the answer does not print ("same text in 3 other
+	// sections: …"): the parts of the line under its heading (GroupLine).
+	// Other backends leave both empty.
+	Rows     []RowCount `json:"rows,omitempty"`
+	SameText *SameText  `json:"same_text,omitempty"`
+	// Contents is the local index's line ending a result that was cut:
+	// what its section holds that it left out, by name (the keys of an
+	// option table's other rows, the headings of its direct subsections).
+	// Other backends leave it empty.
+	Contents string `json:"contents,omitempty"`
 }
 
 // Searcher is the interface for docs backends.

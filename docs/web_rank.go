@@ -231,25 +231,81 @@ func undouble(s string) string {
 }
 
 // queryTerms returns the query's distinct terms in order, normalized for
-// ranking, without stopwords unless the query is nothing but stopwords.
+// ranking, without stopwords unless the query is nothing but stopwords. A
+// host name the query writes is one term, lower case (isHostName).
 func queryTerms(query string) []string {
 	var all, terms []string
 	seen := map[string]bool{}
-	for _, t := range tokenize(query) {
-		n := normTerm(t)
-		if seen[n] {
+	for _, w := range strings.Fields(query) {
+		if h := strings.ToLower(strings.Trim(w, queryQuotes+",.;:!?")); isHostName(h) {
+			if !seen[h] {
+				seen[h] = true
+				all, terms = append(all, h), append(terms, h)
+			}
 			continue
 		}
-		seen[n] = true
-		all = append(all, n)
-		if !webStopwords[t] && !rankStopwords[t] && (len(t) > 1 || unicode.IsDigit(rune(t[0]))) {
-			terms = append(terms, n)
+		for _, t := range tokenize(w) {
+			n := normTerm(t)
+			if seen[n] {
+				continue
+			}
+			seen[n] = true
+			all = append(all, n)
+			if !webStopwords[t] && !rankStopwords[t] && (len(t) > 1 || unicode.IsDigit(rune(t[0]))) {
+				terms = append(terms, n)
+			}
 		}
 	}
 	if len(terms) == 0 {
 		return all
 	}
 	return terms
+}
+
+// hostLabels are the last labels of the host names a question or a page
+// writes (example.com, docs.example.org): the common generic and country
+// top-level domains, not words that end a qualified identifier (res.json,
+// os.path).
+var hostLabels = map[string]bool{
+	"com": true, "org": true, "net": true, "edu": true, "gov": true, "io": true, "dev": true, "ai": true,
+	"co": true, "info": true, "cloud": true, "us": true, "uk": true, "de": true, "eu": true, "fr": true,
+	"jp": true, "ca": true, "au": true,
+}
+
+// hostNameRe matches a host name: two or more dot-separated labels of
+// lower-case letters, digits and inner hyphens.
+var hostNameRe = regexp.MustCompile(`^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,6}$`)
+
+// isHostName reports a host name (lower case) whose last label is a
+// top-level domain's (hostLabels): one term, never an identifier, and
+// never its labels apart (duosecurity.com does not make com a term).
+func isHostName(w string) bool {
+	if !hostNameRe.MatchString(w) {
+		return false
+	}
+	return hostLabels[w[strings.LastIndexByte(w, '.')+1:]]
+}
+
+// textHostRe matches what may be a host name in running text.
+var textHostRe = regexp.MustCompile(`(?i)[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+`)
+
+// hostTerms are the host-name terms a text names, lower case: each host
+// name it writes, and each of its parent domains down to two labels
+// (api-x.duosecurity.com names duosecurity.com too).
+func hostTerms(text string) []string {
+	if !strings.Contains(text, ".") {
+		return nil
+	}
+	var out []string
+	for _, m := range textHostRe.FindAllString(text, -1) {
+		h := strings.ToLower(m)
+		for isHostName(h) {
+			out = append(out, h)
+			i := strings.IndexByte(h, '.')
+			h = h[i+1:]
+		}
+	}
+	return out
 }
 
 func tokenSet(s string) map[string]bool {
@@ -778,7 +834,7 @@ func queryIdents(query string) []string {
 	var out []string
 	for _, w := range strings.Fields(query) {
 		w = strings.Trim(w, queryQuotes+",.;:!?")
-		if w == "" || !isCamel(w) && !strings.ContainsAny(w, "_.(") {
+		if w == "" || !isCamel(w) && !strings.ContainsAny(w, "_.(") || isHostName(strings.ToLower(w)) {
 			continue
 		}
 		w = qualifierRe.ReplaceAllString(w, "")
@@ -901,61 +957,10 @@ func entryName(heading string) string {
 	return entryIdentRe.FindString(strings.TrimSpace(h))
 }
 
-// webRelevanceRatio is how far below the top section's score a section
-// may fall and still be returned (relevant).
-const webRelevanceRatio = 0.3
-
 const truncatedMarker = "\n[truncated]"
 
 // elidedMarker stands where trimForQuery left blocks out.
 const elidedMarker = "[…]"
-
-// blocksByTerms returns the indices of the blocks that name any of terms,
-// those naming the most first, ties in block order.
-func blocksByTerms(blocks, terms []string) []int {
-	count := make([]int, len(blocks))
-	var out []int
-	for i, b := range blocks {
-		toks := map[string]bool{}
-		for _, t := range textTokens(b) {
-			toks[t] = true
-		}
-		for _, t := range terms {
-			if toks[t] {
-				count[i]++
-			}
-		}
-		if count[i] > 0 {
-			out = append(out, i)
-		}
-	}
-	sort.SliceStable(out, func(a, b int) bool { return count[out[a]] > count[out[b]] })
-	return out
-}
-
-// joinKept joins the kept blocks in their order, elidedMarker standing
-// where blocks were left out.
-func joinKept(blocks []string, keep map[int]bool) string {
-	var b strings.Builder
-	last := -1
-	for i, block := range blocks {
-		if !keep[i] {
-			continue
-		}
-		if last >= 0 {
-			b.WriteString("\n\n")
-			if i > last+1 {
-				b.WriteString(elidedMarker + "\n\n")
-			}
-		}
-		b.WriteString(block)
-		last = i
-	}
-	if last < len(blocks)-1 {
-		b.WriteString("\n\n" + elidedMarker)
-	}
-	return b.String()
-}
 
 // textBlocks splits Markdown at blank lines outside fenced code, so a
 // code block, blank lines and all, is one block.

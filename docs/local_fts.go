@@ -1,7 +1,6 @@
 package docs
 
 import (
-	"fmt"
 	"math"
 	"net/url"
 	"path"
@@ -105,7 +104,7 @@ func queryIdentKeys(query string) []string {
 	seen := map[string]bool{}
 	for _, w := range strings.Fields(query) {
 		w = strings.Trim(w, queryQuotes+",;:!?=")
-		if !isCodeIdent(w) {
+		if !isCodeIdent(w) || isHostName(strings.ToLower(strings.TrimRight(w, "."))) {
 			continue
 		}
 		for _, m := range identRe.FindAllString(w, -1) {
@@ -123,6 +122,15 @@ func queryIdentKeys(query string) []string {
 // ftsQuote quotes a term for an FTS5 query.
 func ftsQuote(t string) string { return `"` + strings.ReplaceAll(t, `"`, `""`) + `"` }
 
+// ftsTerm is a query term as an FTS5 query: quoted, and a host name as
+// the phrase of its labels as the rows hold them (rankTokens).
+func ftsTerm(t string) string {
+	if isHostName(t) {
+		return ftsQuote(strings.Join(rankTokens(t), " "))
+	}
+	return ftsQuote(t)
+}
+
 // ftsMatch is the full-text query for a question's terms: any of them
 // (bm25 rewards the sections naming more, and rarer, ones), and the whole
 // names of the identifiers it writes.
@@ -134,7 +142,7 @@ func ftsMatch(terms, idents []string) string {
 			continue
 		}
 		seen[t] = true
-		parts = append(parts, ftsQuote(t))
+		parts = append(parts, ftsTerm(t))
 	}
 	return strings.Join(parts, " OR ")
 }
@@ -208,55 +216,11 @@ func withoutFiller(terms []string) []string {
 	return out
 }
 
-// keywordRank ranks a library's sections for the query by the full-text
-// table: the candidates' sections (every section of the pages they are
-// on, so families are whole), and the relevant ones' ranking (within
-// webRelevanceRatio of the best) as indices into them, best first, scores
-// relative to the best. A section about a later version than indexed is
-// left out unless the question asks about it.
-func (l *Local) keywordRank(lib docsindex.Library, query string) ([]docsindex.Section, []rankedSection, error) {
-	q := newRankQuery(query)
-	hits, err := l.ftsHits(lib, q)
-	if err != nil || len(hits) == 0 {
-		return nil, nil, err
-	}
-	cands, err := l.store.SectionsByID(hitIDs(hits))
-	if err != nil {
-		return nil, nil, err
-	}
-	var pages []string
-	seen := map[string]bool{}
-	for _, c := range cands {
-		if !seen[c.Page] {
-			seen[c.Page] = true
-			pages = append(pages, c.Page)
-		}
-	}
-	secs, err := l.store.SectionsOfPages(lib.Key, pages)
-	if err != nil {
-		return nil, nil, err
-	}
-	return secs, relevantRanked(rerankHits(lib, secs, hits, q)), nil
-}
-
-// ftsHits are the full-text table's best sections for the query; the
-// table is rebuilt first when another normalization made it.
-func (l *Local) ftsHits(lib docsindex.Library, q rankQuery) ([]docsindex.Hit, error) {
-	if len(q.terms) == 0 {
-		return nil, nil
-	}
-	if _, err := l.store.EnsureFTS(lib.Key); err != nil {
-		return nil, fmt.Errorf("local: rebuilding the full-text index: %w", err)
-	}
-	return l.store.Search(lib.Key, ftsMatch(q.terms, q.identKeys), ftsWeights, ftsCandidates)
-}
-
-func hitIDs(hits []docsindex.Hit) []int64 {
-	ids := make([]int64, len(hits))
-	for i, h := range hits {
-		ids[i] = h.ID
-	}
-	return ids
+// rankedSection is a section (an index into the sections ranked) and
+// its score.
+type rankedSection struct {
+	sec   int
+	score float64
 }
 
 // rerankHits orders the full-text hits (sections of secs by ID): bm25
@@ -358,17 +322,6 @@ func pageBoosts(secs []docsindex.Section, ranked []rankedSection) {
 	}
 }
 
-// relevantRanked keeps the ranked sections within webRelevanceRatio of
-// the best (scores relative to it), as relevant does.
-func relevantRanked(ranked []rankedSection) []rankedSection {
-	for i, r := range ranked {
-		if r.score < webRelevanceRatio {
-			return ranked[:i]
-		}
-	}
-	return ranked
-}
-
 // termMatches counts the query terms a section names (heading, body with
 // its identifiers' words, or breadcrumb), whether it names any itself
 // (not by its breadcrumb alone), and its heading-then-prose token
@@ -389,9 +342,12 @@ func termMatches(s docsindex.Section, terms []string) (matched float64, own bool
 	for _, t := range identParts(s.Text) {
 		set[t] = true
 	}
+	for _, t := range hostTerms(s.Heading + "\n" + s.Text) {
+		set[t] = true
+	}
 	crumbs := map[string]bool{}
 	for _, c := range s.Crumbs[:max(len(s.Crumbs)-1, 0)] {
-		for _, t := range rankTokens(c) {
+		for _, t := range append(rankTokens(c), hostTerms(c)...) {
 			crumbs[t] = true
 		}
 	}

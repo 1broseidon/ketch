@@ -220,84 +220,89 @@ func askCompact(t *testing.T, l *Local, opts LocalOptions) []Result {
 }
 
 // Results carry their section reference; a result cut short says so in
-// JSON and, in a compact answer shown as text, ends with the pointer to
-// the full section; the pointer is not part of the snippet.
+// JSON and, in an answer shown as text, its source line is marked
+// "(cut)" and the answer ends with the one line saying how to read it in
+// full; the pointer is not part of the snippet.
 func TestCompactAnswerPointsToFullSection(t *testing.T) {
 	cut := askCompact(t, sectionLocal(t, ""), LocalOptions{Tokens: 300, Hint: HintCLI})
 	if len(cut) == 0 || !cut[0].Truncated {
 		t.Fatalf("the fixture's first result should be cut at 300 tokens: %+v", cut)
 	}
+	text := RenderAnswer(cut, HintCLI)
 	for _, r := range cut {
 		if r.Section != r.URL || r.Section == "" {
 			t.Errorf("section = %q, url %q", r.Section, r.URL)
 		}
-		got := RenderResult(r, HintCLI)
-		hint := "full section: ketch docs --section " + r.Section + "\n"
-		if r.Truncated != strings.HasSuffix(got, "source: "+r.URL+"\n"+hint) {
-			t.Errorf("truncated=%v but rendering is:\n%s", r.Truncated, got)
+		if r.Truncated != strings.Contains(text, "source: "+r.URL+" (cut)\n") {
+			t.Errorf("truncated=%v but rendering is:\n%s", r.Truncated, text)
 		}
-		if r.Truncated != strings.Contains(r.Snippet, elidedMarker) || strings.Contains(r.Snippet, "full section") {
+		if strings.Contains(r.Snippet, elidedMarker) || strings.Contains(r.Snippet, "full section") {
 			t.Errorf("truncated=%v, snippet:\n%s", r.Truncated, r.Snippet)
 		}
 	}
+	if strings.Count(text, AnswerHint(HintCLI)) != 1 || !strings.HasSuffix(text, "\n"+AnswerHint(HintCLI)+"\n") {
+		t.Errorf("hint line:\n%s", text)
+	}
 }
 
-// A result shown whole has no pointer, nor does an answer with no style or
-// no budget; the section reference is there either way.
+// A result shown whole (a section that fits the budget left) is not
+// marked cut, and an answer with none cut, or with no style, has no hint
+// line; the section reference is there either way.
 func TestCompactAnswerPointerAbsent(t *testing.T) {
 	l := sectionLocal(t, "")
-	for _, r := range askCompact(t, l, LocalOptions{Tokens: 100000, Hint: HintCLI}) {
-		if r.Truncated || strings.Contains(RenderResult(r, HintCLI), "full section") {
-			t.Errorf("a whole result is marked cut:\n%s", RenderResult(r, HintCLI))
-		}
+	o := l.GetDocsSelect(WithLocalOptions(context.Background(), LocalOptions{Hint: HintCLI}), secRoot, "async rules promise", 0)
+	if o.Status != Answered || len(o.Results) == 0 || o.Results[0].URL != secRoot+"guide/forms#async" {
+		t.Fatalf("outcome = %+v", o)
+	}
+	if r := o.Results[0]; r.Truncated || r.Snippet != "Async rules return a promise." || strings.Contains(RenderGroup(r, true), "(cut)") {
+		t.Errorf("a whole result is marked cut:\n%s", RenderGroup(r, true))
+	}
+	if text := RenderAnswer(o.Results[:1], HintCLI); strings.Contains(text, AnswerHint(HintCLI)) {
+		t.Errorf("a hint with nothing cut:\n%s", text)
 	}
 	for _, opts := range []LocalOptions{{Tokens: 300}, {Hint: HintCLI}} {
 		for _, r := range askCompact(t, l, opts) {
 			if r.Section == "" || strings.Contains(r.Snippet, "full section") {
 				t.Errorf("with %+v: section %q, snippet:\n%s", opts, r.Section, r.Snippet)
 			}
-			if opts.Hint == HintNone && strings.Contains(RenderResult(r, opts.Hint), "full section") {
-				t.Errorf("a pointer with no style:\n%s", RenderResult(r, opts.Hint))
-			}
 		}
 	}
-	// The default view marks a result it trimmed, without any pointer.
-	if r := askCompact(t, l, LocalOptions{Hint: HintCLI})[0]; !r.Truncated || strings.Contains(RenderResult(r, HintNone), "full section") {
-		t.Errorf("default view result: truncated=%v", r.Truncated)
+	// An answer with a group cut, but no style, has no hint line.
+	small := askCompact(t, l, LocalOptions{Tokens: 300})
+	if !small[0].Truncated || strings.Contains(RenderAnswer(small, HintNone), "full text") {
+		t.Errorf("small budget result: truncated=%v", small[0].Truncated)
 	}
 }
 
-// The pointer is counted: at every budget the rendered answer, pointers
-// included, stays within it by the estimate; without pointers the same
-// budget shows at least as much.
+// Everything printed is counted: at every budget the frontmatter and the
+// body, hint line included, stay within it by the estimate, unless the
+// budget is too small for any group (the first still prints, alone).
 func TestCompactBudgetCountsPointer(t *testing.T) {
 	l := sectionLocal(t, "")
+	const query = "default form action POST validation rules"
 	for tokens := 150; tokens <= 1200; tokens += 75 {
-		for _, style := range []HintStyle{HintCLI, HintMCP} {
-			o := l.GetDocsSelect(WithLocalOptions(context.Background(), LocalOptions{Tokens: tokens, Hint: style}), secRoot, "default form action POST validation rules", 0)
-			total := 0
-			for _, r := range o.Results {
-				if style == HintMCP {
-					total += estimateTokens(RenderSnippet(r))
-				} else {
-					total += estimateTokens(RenderResult(r, style))
-				}
-			}
-			if total > tokens {
+		for _, style := range []HintStyle{HintCLI, HintMCP, HintNone} {
+			o := l.GetDocsSelect(WithLocalOptions(context.Background(), LocalOptions{Tokens: tokens, Hint: style}), secRoot, query, 0)
+			total := estimateTokens(NewFrontmatter(query, SearchBackend, secRoot, o).Render() + RenderAnswer(o.Results, style))
+			if total > tokens && len(o.Results) > 1 {
 				t.Errorf("style %d at %d tokens: answer estimates %d", style, tokens, total)
 			}
 		}
 	}
 }
 
-// Over MCP the pointer is the docs call, at the end of the result's text.
+// Over MCP the pointer is the docs call, said once for the answer
+// (AnswerHint), never in a result's text; the section field names what
+// it takes.
 func TestCompactAnswerMCPPointer(t *testing.T) {
 	l := sectionLocal(t, "")
 	o := l.GetDocsSelect(WithLocalOptions(context.Background(), LocalOptions{Tokens: 300, Hint: HintMCP}), secRoot, "default form action POST", 0)
 	r := o.Results[0]
-	want := "\n\nfull section: docs(section=\"" + r.Section + "\")"
-	if !r.Truncated || !strings.HasSuffix(r.Snippet, elidedMarker+want) {
+	if !r.Truncated || r.Section != r.URL || strings.Contains(r.Snippet, "full section") || strings.Contains(r.Snippet, elidedMarker) {
 		t.Errorf("MCP snippet:\n%s", r.Snippet)
+	}
+	if body := RenderAnswer(o.Results, HintMCP); strings.Count(body, `docs(section="<its source>")`) != 1 || !strings.HasSuffix(body, AnswerHint(HintMCP)+"\n") {
+		t.Errorf("MCP answer:\n%s", body)
 	}
 	// The call it names fetches that section.
 	if f := fetch(t, l, "", r.Section, 0); f.Status != Answered || !strings.Contains(f.Results[0].Snippet, "export const actions") {

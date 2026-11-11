@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -59,8 +60,10 @@ func callDocsOutput(t *testing.T, session *mcpsdk.ClientSession, args map[string
 	return res, out
 }
 
-// A compact local answer ends each result it cut with the docs call that
-// reads its section, and carries the section reference and truncated.
+// A local answer says once, in its hint, how to read a result it cut in
+// full (the docs call), never in a result's text; each result carries its
+// section reference and truncated, and the answer its frontmatter's
+// fields.
 func TestDocsToolLocalCompactPointer(t *testing.T) {
 	session := localSession(t)
 	res, out := callDocsOutput(t, session, map[string]any{"query": "validate a form with a rules object", "backend": "search", "library": sectionRoot, "tokens": 120})
@@ -68,20 +71,42 @@ func TestDocsToolLocalCompactPointer(t *testing.T) {
 		t.Fatalf("compact answer: %s", toolText(res))
 	}
 	r := out.Results[0]
-	call := "full section: docs(section=\"" + r.Section + "\")"
-	if !r.Truncated || r.Section != r.URL || !strings.HasSuffix(r.Snippet, "\n\n"+call) {
-		t.Fatalf("cut result = %+v", r)
+	if !r.Truncated || r.Section != r.URL || out.Hint != docs.AnswerHint(docs.HintMCP) {
+		t.Fatalf("cut result = %+v, hint %q", r, out.Hint)
 	}
-	for _, r := range out.Results {
-		if r.Truncated != strings.Contains(r.Snippet, "full section: docs(") {
-			t.Errorf("truncated=%v, snippet:\n%s", r.Truncated, r.Snippet)
+	checkAnswerFields(t, out)
+	// At the default budget, the hint is there only when a result is cut.
+	_, plain := callDocsOutput(t, session, map[string]any{"query": "validate a form with a rules object", "library": sectionRoot})
+	if (plain.Hint != "") != docs.AnyCut(plain.Results) {
+		t.Errorf("default view: hint %q, results %+v", plain.Hint, plain.Results)
+	}
+	for _, r := range plain.Results {
+		if strings.Contains(r.Snippet, "full section") || r.Section == "" {
+			t.Errorf("default view result: %+v", r)
 		}
 	}
-	// Without tokens (whole sections) a pointer ends only a result cut.
-	_, plain := callDocsOutput(t, session, map[string]any{"query": "validate a form with a rules object", "library": sectionRoot})
-	for _, r := range plain.Results {
-		if r.Truncated != strings.Contains(r.Snippet, "full section: docs(") || r.Section == "" {
-			t.Errorf("default view result: %+v", r)
+}
+
+// A question none of whose terms the docs hold is answered by its
+// not_found: status refused, no results, not a tool error.
+func TestDocsToolLocalTermsRefusal(t *testing.T) {
+	session := localSession(t)
+	res, none := callDocsOutput(t, session, map[string]any{"query": "zyzzyva quokka", "library": sectionRoot})
+	if res.IsError || none.Status != docs.Refused || none.Reason != docs.ReasonTermsNotFound || !slices.Equal(none.NotFound, []string{"zyzzyva", "quokka"}) || len(none.Results) != 0 {
+		t.Errorf("refusal: %s %+v", toolText(res), none)
+	}
+}
+
+// checkAnswerFields checks an indexed library's answer carries its
+// frontmatter's fields, and its results their page titles and no pointer.
+func checkAnswerFields(t *testing.T, out DocsOutput) {
+	t.Helper()
+	if out.Status != docs.Answered || out.Library != sectionRoot || out.Index == nil || out.Index.Kind != docs.IndexFull || len(out.Terms) == 0 || out.NotFound == nil {
+		t.Errorf("answer fields = %+v", out)
+	}
+	for _, r := range out.Results {
+		if strings.Contains(r.Snippet, "full section") || r.PageTitle == "" {
+			t.Errorf("result: %+v", r)
 		}
 	}
 }
@@ -161,7 +186,7 @@ func TestDocsToolDescribesSection(t *testing.T) {
 		if !strings.Contains(schema.Properties["section"].Description, "url#anchor") || len(schema.Required) != 0 {
 			t.Errorf("section property %q, required %v", schema.Properties["section"].Description, schema.Required)
 		}
-		for _, want := range []string{"section field", "cut short", "no network", "[not_found]"} {
+		for _, want := range []string{"section field", "hint", "not_found", "no network", "[not_found]"} {
 			if !strings.Contains(tool.Description, want) {
 				t.Errorf("description lacks %q", want)
 			}

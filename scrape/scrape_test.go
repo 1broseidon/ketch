@@ -328,3 +328,16 @@ func (c *memCache) GetRaw(url string) (string, Source, *Page) {
 func (c *memCache) PutRaw(url string, page *Page, source Source, rawHTML string) {
 	c.pages[url], c.sources[url], c.raw[url] = page, source, rawHTML
 }
+
+// A JS shell fetched with no browser is a page warning: to the
+// OnPageWarning handler when one is set, in the words stderr gets.
+func TestOnPageWarning(t *testing.T) {
+	s := New()
+	var got []PageWarning
+	s.OnPageWarning(func(w PageWarning) { got = append(got, w) })
+	_, src, _ := s.browserFetchOrWarn(context.Background(), "https://spa.test/", "<html></html>")
+	if src != SourceHTTPShell || len(got) != 1 || got[0].Kind != WarnJSRendered || got[0].URL != "https://spa.test/" ||
+		got[0].String() != "warn: https://spa.test/ appears JS-rendered; configure browser for full content" {
+		t.Errorf("source %v, warnings %+v", src, got)
+	}
+}

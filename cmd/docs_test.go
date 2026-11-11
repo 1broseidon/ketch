@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -225,11 +226,22 @@ func TestPrintDocsResultsShowsResolvedLibrary(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			out := captureStdout(t, func() {
-				printDocsResults("middleware", "web", tc.library, docs.Outcome{Results: tc.results}, false, docs.HintNone)
+				printDocsResults(os.Stdout, "middleware", "web", tc.library, docs.Outcome{Results: tc.results}, false, docs.HintNone)
 			})
 			if !strings.Contains(out, "\n"+tc.want) || strings.Count(out, "library: ") != 1 {
 				t.Errorf("frontmatter:\n%s\nwant one %q", out, tc.want)
 			}
 		})
+	}
+}
+
+// --trace is a QA flag: it exists but help does not show it.
+func TestDocsTraceFlagHidden(t *testing.T) {
+	f := docsCmd.Flags().Lookup("trace")
+	if f == nil || !f.Hidden {
+		t.Fatalf("--trace = %+v, want a hidden flag", f)
+	}
+	if strings.Contains(docsCmd.UsageString(), "--trace") {
+		t.Error("--trace in the docs usage")
 	}
 }

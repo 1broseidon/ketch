@@ -13,11 +13,11 @@ import (
 	"github.com/1broseidon/ketch/internal/failure"
 )
 
-// Follow-up fetch (ADR-0007, amendment 4). A compact answer trims its
-// results, and the text it drops can be the one example a how-to question
-// needs. The full section is in the local index, so reading it costs no
-// network and no quota: SectionSelect returns one section by the reference
-// a result carries (url#anchor), with no ranking and no model. A compact
+// Follow-up fetch (ADR-0007, amendment 4). An answer prints pieces of its
+// sections, and the text it leaves out can be the one example a how-to
+// question needs. The full section is in the local index, so reading it
+// costs no network and no quota: SectionSelect returns one section by the
+// reference a result carries (url#anchor), with no ranking and no model. A
 // result that was cut ends with a pointer to it (SectionHint).
 
 // ErrSectionNotFound is a section reference the local docs index does not
@@ -50,7 +50,7 @@ func SectionCall(ref string, style HintStyle) string {
 	return "ketch docs --section " + ref
 }
 
-// SectionHint is the pointer a compact result ends with when it was cut:
+// SectionHint is the pointer a result ends with when it was cut:
 // one line, "" for a result shown whole or when style asks for none.
 func SectionHint(r Result, style HintStyle) string {
 	if style == HintNone || !r.Truncated || r.Section == "" {
@@ -310,7 +310,7 @@ func sectionChunks(unit []docsindex.Section, title string) []chunk {
 
 // fitChunks is how many chunks fit within tokens with r's rendering around
 // them, and the notice that ends a cut section ("" when all fit). The
-// planning keeps localTokenMargin under the cap, as compact answers do.
+// planning keeps localTokenMargin under the cap, as answers do.
 func fitChunks(lib docsindex.Library, r Result, unit []docsindex.Section, chunks []chunk, tokens int, style HintStyle) (int, string) {
 	base := estimateTokens(RenderSnippet(r))
 	total := base

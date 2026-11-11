@@ -51,7 +51,18 @@ type Outcome struct {
 	// Note explains an answered outcome's reason in words (the local index
 	// ranked by keywords, and why); empty otherwise.
 	Note string `json:"note,omitempty"`
-	err  error
+	// An answer from the local index (an indexed library, or the pages a
+	// search just read) also says what it was answered from (Library,
+	// Index), and the question's distinctive terms as written: the rare
+	// ones the library holds (identifiers the question writes, words in
+	// under 1% of its sections), with how many of its sections hold each
+	// (Terms), and those it holds nowhere (NotFound). A refusal for want
+	// of any of them carries them too.
+	Library  string      `json:"library,omitempty"`
+	Index    *IndexInfo  `json:"index,omitempty"`
+	Terms    []TermCount `json:"terms,omitempty"`
+	NotFound []string    `json:"not_found,omitempty"`
+	err      error
 }
 
 // Err is the error behind a refused or failed outcome, classified by

@@ -10,7 +10,7 @@ import (
 
 // Text helpers the local index shares between building and answering:
 // the caller's options (LocalOptions), a section's blocks (textSpans) and
-// sentences (sentenceStarts), which compact answers cut at, and the
+// sentences (sentenceStarts), which answers cut pieces at, and the
 // cross-version label a build gives a page about a later major release.
 
 // LocalOptions are a caller's choices for the local backend's answer,
@@ -20,13 +20,19 @@ type LocalOptions struct {
 	// Tokens is the budget the caller chose; 0 leaves the default
 	// (localTokens), whatever token value the call passes.
 	Tokens int
-	// Limit caps the results (0: the view's default).
+	// Limit caps the results, one per section (0: the budget decides).
 	Limit int
 	// Hint is how a surface that shows the answer as text points to the
 	// full section of a result cut short (SectionHint); HintNone leaves
-	// the pointer out and its tokens uncounted. It applies to compact
-	// answers (Tokens set) and to the cut notice of a section fetch.
+	// the pointer out and its tokens uncounted. It applies to answers and
+	// to the cut notice of a section fetch.
 	Hint HintStyle
+	// note is the note the caller adds to the answer's frontmatter (a
+	// partial answer's), which the budget covers; read, the pages a
+	// search just read when the answer is from them (0 for an indexed
+	// library), which its source line names.
+	note string
+	read int
 }
 
 type localOptionsKey struct{}
@@ -311,12 +317,22 @@ func asksAbout(query, major string) bool {
 	return false
 }
 
-// RenderSnippet is a local result as an agent reads it: "### " and its
-// heading path, its text, and its source.
+// RenderSnippet is a section fetch's result as an agent reads it (an
+// answer prints its groups with RenderAnswer): "### " and its heading
+// path, its group line when it has one, its text, its contents line
+// when it has one, and its source.
 func RenderSnippet(r Result) string {
 	path := r.Breadcrumb
 	if path == "" {
 		path = r.Title
 	}
-	return "### " + path + "\n\n" + r.Snippet + "\n\nsource: " + r.URL + "\n"
+	head := "### " + path + "\n\n"
+	if line := r.GroupLine(); line != "" {
+		head = "### " + path + "\n" + line + "\n\n"
+	}
+	tail := "\n\nsource: " + r.URL + "\n"
+	if r.Contents != "" {
+		tail = "\n\n" + r.Contents + "\nsource: " + r.URL + "\n"
+	}
+	return head + r.Snippet + tail
 }

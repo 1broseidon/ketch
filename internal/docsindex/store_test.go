@@ -183,6 +183,52 @@ func TestStoreSearchAndRebuild(t *testing.T) {
 	if err != nil || len(secs) != 1 || secs[0].Anchor != "two" {
 		t.Fatalf("SectionsByID = %+v %v", secs, err)
 	}
+	for match, want := range map[string]int{"": 3, "intro OR second": 2, "identtwo": 1, "absent": 0} {
+		if n, err := s.Count(testKey, match); err != nil || n != want {
+			t.Errorf("Count(%q) = %d %v, want %d", match, n, err, want)
+		}
+	}
+	if n, err := s.Count("https://other.test/", ""); err != nil || n != 0 {
+		t.Errorf("Count of a library not held = %d %v", n, err)
+	}
+}
+
+// Counts runs several counts over one open, an empty query counting every
+// section.
+func TestStoreCounts(t *testing.T) {
+	s := Open(filepath.Join(t.TempDir(), "docs-index.db"), upperTokens{"v1"})
+	seed(t, s)
+	if n, err := s.Counts(testKey, []string{"", "identtwo", "absent"}); err != nil || len(n) != 3 || n[0] != 3 || n[1] != 1 || n[2] != 0 {
+		t.Errorf("Counts = %v %v", n, err)
+	}
+}
+
+// SearchEach runs several queries over one open, each with its own limit
+// (none when negative), a column filter included.
+func TestStoreSearchEach(t *testing.T) {
+	s := Open(filepath.Join(t.TempDir(), "docs-index.db"), upperTokens{"v1"})
+	seed(t, s)
+	got, err := s.SearchEach(testKey, []FTSQuery{{Match: "intro OR second", Limit: 1}, {Match: "{ident} : identtwo", Limit: 5}, {Match: "{body} : identtwo", Limit: 5}}, []float64{1, 1, 1, 1})
+	if err != nil || len(got) != 3 || len(got[0]) != 1 || len(got[1]) != 1 || len(got[2]) != 0 {
+		t.Fatalf("SearchEach = %+v %v", got, err)
+	}
+	if got, err := s.SearchEach("https://other.test/", []FTSQuery{{Match: "intro", Limit: 5}}, []float64{1, 1, 1, 1}); err != nil || len(got) != 1 || got[0] != nil {
+		t.Errorf("a library not held = %+v %v", got, err)
+	}
+	all, err := s.SearchEach(testKey, []FTSQuery{{Match: "intro OR second", Limit: -1}}, []float64{1, 1, 1, 1})
+	if err != nil || len(all[0]) < 2 {
+		t.Errorf("no limit = %+v %v", all, err)
+	}
+}
+
+// PageOutlines reads pages' sections without their text.
+func TestStorePageOutlines(t *testing.T) {
+	s := Open(filepath.Join(t.TempDir(), "docs-index.db"))
+	seed(t, s)
+	secs, err := s.PageOutlines(testKey, []string{testKey + "b"})
+	if err != nil || len(secs) != 2 || secs[0].Heading != "B" || secs[1].Anchor != "two" || secs[0].Text != "" || secs[0].ID == 0 {
+		t.Errorf("outline = %+v %v", secs, err)
+	}
 }
 
 // A tokenizer change rebuilds a library's full-text rows from its stored

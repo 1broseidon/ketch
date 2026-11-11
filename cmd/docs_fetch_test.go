@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -200,5 +201,58 @@ func TestDocsFetcherBuildFailureIsPrecondition(t *testing.T) {
 				t.Fatalf("exit code = %d, want %d (precondition): %v", got.Code, ExitPrecondition, got)
 			}
 		})
+	}
+}
+
+// A docs run that reads several JS-rendered pages says so once, on
+// stderr, with a count, when it ends; nothing reaches stdout. A single
+// warning keeps the scraper's own words.
+func TestDocsFetcherFoldsPageWarnings(t *testing.T) {
+	shell := `<!doctype html><html><head><title>App</title><script id="__NEXT_DATA__" type="application/json">{"buildId":"dev","page":"/","props":{"chunks":["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]}}</script></head><body><div id="root"></div></body></html>`
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte(shell))
+	}))
+	t.Cleanup(srv.Close)
+	for _, n := range []int{3, 1} {
+		f, _ := countingFetcher(t, nil)
+		var stderr bytes.Buffer
+		f.stderr = &stderr
+		for i := range n {
+			_, _ = f.FetchPage(context.Background(), fmt.Sprintf("%s/page%d", srv.URL, i))
+		}
+		f.Close()
+		want := fmt.Sprintf("warn: %d pages appear JS-rendered (first: %s/page0); configure browser for full content\n", n, srv.URL)
+		if n == 1 {
+			want = fmt.Sprintf("warn: %s/page0 appears JS-rendered; configure browser for full content\n", srv.URL)
+		}
+		if stderr.String() != want {
+			t.Errorf("%d pages: stderr %q, want %q", n, stderr.String(), want)
+		}
+	}
+}
+
+// The folded line counts each kind of warning apart, in the order first
+// seen.
+func TestPageWarningsFlush(t *testing.T) {
+	var w pageWarnings
+	boom := errors.New("boom")
+	for _, pw := range []scrape.PageWarning{
+		{Kind: scrape.WarnBrowserFailed, URL: "https://a.test/1", Err: boom},
+		{Kind: scrape.WarnJSRendered, URL: "https://a.test/2"},
+		{Kind: scrape.WarnBrowserFailed, URL: "https://a.test/3", Err: boom},
+	} {
+		w.add(pw)
+	}
+	var out bytes.Buffer
+	w.flush(&out)
+	want := "warn: browser fallback failed for 2 pages (first: https://a.test/1: boom)\nwarn: https://a.test/2 appears JS-rendered; configure browser for full content\n"
+	if out.String() != want {
+		t.Errorf("flush:\n%s\nwant:\n%s", out.String(), want)
+	}
+	out.Reset()
+	w.flush(&out)
+	if out.Len() != 0 {
+		t.Errorf("a second flush printed %q", out.String())
 	}
 }

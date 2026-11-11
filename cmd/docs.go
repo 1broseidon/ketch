@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -20,25 +21,62 @@ import (
 var docsCmd = &cobra.Command{
 	Use:   "docs <query>",
 	Short: "Search library documentation",
-	Long: `Search library documentation. The default backend, search, answers from the docs themselves: a library indexed with ketch docs index answers offline from the local index; otherwise ketch searches the web for the question, picks the documentation site the results agree on, reads the matching pages and keeps them in the local index, so a repeated question answers offline. Results are whole sections, verbatim with their code, each with its heading path and source url#anchor; an answer from pages search read is compact (about 1,800 tokens, or --tokens), and a library indexed with ketch docs index answers with whole sections (about 1,800 tokens) unless --tokens is set. A result cut short ends with "full section: ketch docs --section <url#anchor>": --section returns that section in full from the local index (no ranking, no network); a page URL with no anchor returns the page's sections in order, cut at a block boundary within --tokens (default 4000). ` +
+	Long: `Search library documentation. The default backend, search, answers from the docs themselves: a library indexed with ketch docs index answers offline from the local index; otherwise ketch searches the web for the question, picks the documentation site the results agree on, reads the matching pages and keeps them in the local index, so a repeated question answers offline. ` +
+		`The answer's frontmatter says what it read (index: full or capped, its pages and build date; or source: search and the pages a search read), its status, the question's rare terms as written (identifiers it writes, words in under 1% of the library's sections) with the number of sections holding each (terms), and those no section holds (not_found). Status is answered; partial when a term is in not_found or the library holds only pages searches read; refused, exit 3, when no distinctive term is in the docs: the body is empty and not_found is the answer. ` +
+		`The body is the pieces of sections that name the question (paragraphs, list items, code blocks, table rows under their header), verbatim, grouped by section: a page's groups under "## <page title>", each under its heading path, ending with its source url#anchor, marked "(cut)" when the group was cut; about 1,800 tokens in all, frontmatter included, or --tokens; --limit caps the groups. An answer with a group cut ends with one line saying how to read it in full: --section returns a section in full from the local index (no ranking, no network); a page URL with no anchor returns the page's sections in order, cut at a block boundary within --tokens (default 4000). --json prints the frontmatter's fields and the results as one object. ` +
 		docs.WithLibraryHelp("--library names the library") + `.
 
 -b context7 (or ketch config set docs_backend context7 to make it the default) uses Context7's curated snippets instead. Context7 needs no key: without one it uses Context7's anonymous quota (about 200 requests a month per IP), and a key lifts it. --resolve lists a name's library IDs (Context7) or docs roots (search); pass one as --library.`,
 	Args: exitArgs(docsArgs),
-	RunE: runDocs,
+	RunE: traceDocs(runDocs),
 }
 
 func init() {
 	rootCmd.AddCommand(docsCmd)
 	docsCmd.Flags().StringP("backend", "b", cfg.DocsBackend, "docs backend: "+strings.Join(config.AvailableDocBackends(), ", "))
 	docsCmd.Flags().String("library", "", docs.WithLibraryHelp("the library to answer from"))
-	docsCmd.Flags().Int("tokens", 4000, "token budget (search: about 1,800 unless set, and set fits its answer to it compactly; context7: 4000; --section: the cap of the section returned, 4000)")
+	docsCmd.Flags().Int("tokens", 4000, "token budget (search: 1,800 unless set, frontmatter included; context7: 4000; --section: the cap of the section returned, 4000)")
 	docsCmd.Flags().IntP("limit", "l", cfg.Limit, "max number of results")
 	docsCmd.Flags().Bool("resolve", false, docs.WithLibraryHelp("resolve the query as a library name instead of searching: library IDs (context7) or docs roots (search)"))
 	docsCmd.Flags().String("tag", "", "record each result under this tag (see `ketch tag`)")
 	docsCmd.PreRunE = validateTagFlag
 	docsCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/library/snippet)")
-	docsCmd.Flags().String("section", "", "return one section in full from the local index, given as the url#anchor a result's source carries (a page URL alone returns its sections in order; no query, no ranking, no network); --tokens caps it (default 4000)")
+	docsCmd.Flags().String("section", "", "return one section in full from the local index, given as the url#anchor a group's source line carries (a page URL alone returns its sections in order; no query, no ranking, no network); --tokens caps it (default 4000)")
+	docsCmd.Flags().String("trace", "", "write how the answer was made to this file as JSON (docs.Trace; for QA)")
+	_ = docsCmd.Flags().MarkHidden("trace")
+}
+
+// traceDocs runs a docs command and, with the hidden --trace <file>, writes
+// how its answer was made (docs.Trace) to the file, whatever the outcome.
+// Without it the command runs as it is.
+func traceDocs(run func(*cobra.Command, []string) error) func(*cobra.Command, []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		path, _ := cmd.Flags().GetString("trace")
+		if path == "" {
+			return run(cmd, args)
+		}
+		ctx := cmd.Context()
+		if ctx == nil { // a command run without Execute
+			ctx = context.Background()
+		}
+		t := docs.NewTrace(strings.Join(args, " "))
+		cmd.SetContext(docs.WithTrace(ctx, t))
+		err := run(cmd, args)
+		if werr := t.Write(path, err); werr != nil {
+			fmt.Fprintf(os.Stderr, "warning: --trace: %v\n", werr)
+		}
+		return err
+	}
+}
+
+// docsStdout is where a docs command prints: stdout, also copied into its
+// trace when --trace is set.
+func docsStdout(cmd *cobra.Command) io.Writer {
+	ctx := cmd.Context()
+	if ctx == nil {
+		return os.Stdout
+	}
+	return docs.TraceFrom(ctx).Stdout(os.Stdout)
 }
 
 // docsArgs wants a query, unless --section names what to fetch.
@@ -102,19 +140,38 @@ func runDocs(cmd *cobra.Command, args []string) error {
 		o = docs.Answer(backend, results, err)
 	}
 	backend = servedDocsBackend(backend, o)
-	if err := fetcher.classify(o.Err(), "docs search failed"); err != nil {
+	docs.TraceFrom(cmd.Context()).SetOutcome(backend, o)
+	return finishDocs(cmd, fetcher, query, backend, "", o, asJSON, minimal, hint, "docs search failed")
+}
+
+// finishDocs prints an answer, or the refusal of a question none of whose
+// distinctive terms the docs hold (its frontmatter, whose not_found is the
+// answer, then the error: exit 3), and returns the error the command
+// exits with.
+func finishDocs(cmd *cobra.Command, fetcher *docsFetcher, query, backend, library string, o docs.Outcome, asJSON, minimal bool, hint docs.HintStyle, failMsg string) error {
+	err := fetcher.classify(o.Err(), failMsg)
+	if err != nil && !termsRefusal(o) {
 		return err
 	}
-
-	tagResults(cmd, docsTaggable(o.Results))
-
-	if asJSON {
-		noteOnStderr(o)
-		return json.NewEncoder(os.Stdout).Encode(o.Results)
+	if err == nil {
+		tagResults(cmd, docsTaggable(o.Results))
 	}
+	w := docsStdout(cmd)
+	switch {
+	case asJSON:
+		if jerr := json.NewEncoder(w).Encode(docs.AnswerJSON{Frontmatter: docs.NewFrontmatter(query, backend, library, o), Results: o.Results}); jerr != nil {
+			return jerr
+		}
+	default:
+		printDocsResults(w, query, backend, library, o, minimal, hint)
+	}
+	return err
+}
 
-	printDocsResults(query, backend, "", o, minimal, hint)
-	return nil
+// termsRefusal reports the local index's refusal of a question none of
+// whose distinctive terms the docs hold: it still prints its frontmatter.
+func termsRefusal(o docs.Outcome) bool {
+	return o.Status == docs.Refused && o.Index != nil
 }
 
 // docsHint is how a text answer points to the full section of a result
@@ -135,7 +192,7 @@ func docsBackendFlag(cmd *cobra.Command) string {
 }
 
 // runDocsSection returns one section of the local index in full: the
-// follow-up to a compact answer that cut it short. The section is the
+// follow-up to an answer that cut it short. The section is the
 // url#anchor a result's source carries; --library names the indexed
 // library, or the URL does. It reads the index only: no network, no
 // ranking. A section the index lacks is not_found (exit 3). The index
@@ -156,21 +213,22 @@ func runDocsSection(cmd *cobra.Command, section, library string, tokens int, asJ
 	}
 	o := sections.SectionSelect(cmd.Context(), library, section, tokens)
 	backend := servedDocsBackend(docs.SearchBackend, o)
+	docs.TraceFrom(cmd.Context()).SetOutcome(backend, o)
 	if err := fetcher.classify(o.Err(), "section fetch failed"); err != nil {
 		return err
 	}
 	tagResults(cmd, docsTaggable(o.Results))
 	if asJSON {
 		noteOnStderr(o)
-		return json.NewEncoder(os.Stdout).Encode(o.Results)
+		return json.NewEncoder(docsStdout(cmd)).Encode(o.Results)
 	}
-	printDocsResults("", backend, library, o, minimal, docs.HintNone)
+	printDocsResults(docsStdout(cmd), "", backend, library, o, minimal, docs.HintNone)
 	return nil
 }
 
 // withLocalDocsOptions carries the budget and limit the caller chose (not
 // the flags' defaults, which are Context7's), so search picks its own
-// defaults, and how its compact answer points to the full section of a
+// defaults, and how its answer points to the full section of a
 // result it cut.
 func withLocalDocsOptions(cmd *cobra.Command, tokens, limit int, hint docs.HintStyle) context.Context {
 	o := docs.LocalOptions{Hint: hint}
@@ -214,10 +272,10 @@ func runDocsResolve(cmd *cobra.Command, query string, limit int, asJSON bool) er
 	}
 
 	if asJSON {
-		return json.NewEncoder(os.Stdout).Encode(o.Matches)
+		return json.NewEncoder(docsStdout(cmd)).Encode(o.Matches)
 	}
 
-	fmt.Print(formatLibraryMatches(o.Matches))
+	_, _ = fmt.Fprint(docsStdout(cmd), formatLibraryMatches(o.Matches))
 	return nil
 }
 
@@ -279,20 +337,9 @@ func runDocsWithLibrary(cmd *cobra.Command, query, library string, tokens, limit
 		o = docs.Answer(backend, results, err)
 	}
 	backend = servedDocsBackend(backend, o)
-	if err := fetcher.classify(o.Err(), "docs fetch failed"); err != nil {
-		return err
-	}
+	docs.TraceFrom(cmd.Context()).SetOutcome(backend, o)
 	o.Results = docs.Truncate(o.Results, limit)
-
-	tagResults(cmd, docsTaggable(o.Results))
-
-	if asJSON {
-		noteOnStderr(o)
-		return json.NewEncoder(os.Stdout).Encode(o.Results)
-	}
-
-	printDocsResults(query, backend, library, o, minimal, hint)
-	return nil
+	return finishDocs(cmd, fetcher, query, backend, library, o, asJSON, minimal, hint, "docs fetch failed")
 }
 
 // servedDocsBackend is the backend the output names: the one that
@@ -305,34 +352,49 @@ func servedDocsBackend(backend string, o docs.Outcome) string {
 }
 
 // noteOnStderr says an answer's note (a partial answer's, or the other
-// indexed versions of a library) where --json and --minimal output, which carry results only, cannot.
+// indexed versions of a library) where output that carries results only
+// (--minimal, and --section's --json) cannot, and under --minimal the
+// question's terms the docs hold nowhere.
 func noteOnStderr(o docs.Outcome) {
 	if o.Note != "" {
 		fmt.Fprintf(os.Stderr, "note: %s\n", o.Note)
 	}
+	if len(o.NotFound) > 0 {
+		fmt.Fprintf(os.Stderr, "not_found: %s\n", strings.Join(o.NotFound, ", "))
+	}
 }
 
-// printDocsResults prints the results: search's sections as Markdown
-// blocks, Context7's snippets as labelled blocks.
-func printDocsResults(query, backend, library string, o docs.Outcome, minimal bool, hint docs.HintStyle) {
+// printDocsResults prints the results to w: an answer from the local
+// index as its frontmatter and its groups under their pages' titles
+// (docs.RenderAnswer), a section fetch's sections as Markdown blocks,
+// Context7's snippets as labelled blocks.
+func printDocsResults(w io.Writer, query, backend, library string, o docs.Outcome, minimal bool, hint docs.HintStyle) {
+	p := func(format string, a ...any) { _, _ = fmt.Fprintf(w, format, a...) }
 	results := o.Results
 	if minimal {
 		noteOnStderr(o)
 		for _, r := range results {
 			snippet := firstLine(r.Snippet)
-			fmt.Printf("%s\t%s\t%s\n", r.URL, minimalField(r.Library), minimalField(snippet))
+			p("%s\t%s\t%s\n", r.URL, minimalField(r.Library), minimalField(snippet))
 		}
 		return
 	}
 
-	printDocsHeader(query, backend, library, o)
-	fmt.Printf("result_count: %d\n", len(results))
-	fmt.Println("---")
+	if o.Index != nil {
+		// An answer from the local index: the frontmatter carries the
+		// verdict, the body the evidence, a page's groups under its title.
+		p("%s", docs.NewFrontmatter(query, backend, library, o).Render())
+		p("%s", docs.RenderAnswer(results, hint))
+		return
+	}
+	printDocsHeader(w, query, backend, library, o)
+	p("result_count: %d\n", len(results))
+	p("---\n")
 	if backend == docs.SearchBackend {
 		// Search results read as Markdown: heading path, the section's text
 		// with its code, source.
 		for _, r := range results {
-			fmt.Println(docs.RenderResult(r, hint))
+			p("%s\n", docs.RenderResult(r, hint))
 		}
 		return
 	}
@@ -341,38 +403,39 @@ func printDocsResults(query, backend, library string, o docs.Outcome, minimal bo
 		if r.Breadcrumb != "" {
 			label = r.Breadcrumb
 		}
-		fmt.Printf("[%s]\n", label)
-		fmt.Printf("  %s\n", r.Snippet)
-		fmt.Printf("  source: %s\n", r.URL)
-		fmt.Println()
+		p("[%s]\n", label)
+		p("  %s\n", r.Snippet)
+		p("  source: %s\n", r.URL)
+		p("\n")
 	}
 }
 
-// printDocsHeader prints the frontmatter before the results, up to the
-// result count.
-func printDocsHeader(query, backend, library string, o docs.Outcome) {
+// printDocsHeader prints the frontmatter before the results to w, up to
+// the result count.
+func printDocsHeader(w io.Writer, query, backend, library string, o docs.Outcome) {
+	p := func(format string, a ...any) { _, _ = fmt.Fprintf(w, format, a...) }
 	results := o.Results
-	fmt.Println("---")
+	p("---\n")
 	if query != "" {
-		fmt.Printf("query: %s\n", query)
+		p("query: %s\n", query)
 	}
-	fmt.Printf("backend: %s\n", backend)
+	p("backend: %s\n", backend)
 	// The results' library is the ID the backend answered from: the one a
 	// name or spec passed as --library resolved to, or the one a bare query
 	// picked. Without results, the flag is all there is.
 	if len(results) > 0 && results[0].Library != "" {
-		fmt.Printf("library: %s\n", results[0].Library)
+		p("library: %s\n", results[0].Library)
 	} else if library != "" {
-		fmt.Printf("library: %s\n", library)
+		p("library: %s\n", library)
 	}
 	if backend == docs.SearchBackend && len(results) > 0 && results[0].Version != "" {
-		fmt.Printf("version: %s\n", results[0].Version)
+		p("version: %s\n", results[0].Version)
 	}
 	if o.Status == docs.Partial {
-		fmt.Printf("status: partial (%s)\n", o.Reason)
+		p("status: partial (%s)\n", o.Reason)
 	}
 	if o.Note != "" {
-		fmt.Printf("note: %s\n", o.Note)
+		p("note: %s\n", o.Note)
 	}
 }
 
@@ -409,6 +472,62 @@ type docsFetcher struct {
 	scraper *scrape.Scraper
 	pages   *cache.Cache
 	fetcher *docsfetch.Fetcher
+	// warnings are the scraper's warnings about single pages, printed on
+	// stderr as one line per kind, with a count, when the command ends.
+	warnings pageWarnings
+	stderr   io.Writer // where Close prints them (os.Stderr when nil)
+}
+
+// pageWarnings counts the warnings a docs command's page fetches raise,
+// by kind, keeping the first of each: a search that reads two dozen
+// JS-rendered pages says so once.
+type pageWarnings struct {
+	mu    sync.Mutex
+	kinds []string // in the order first seen
+	count map[string]int
+	first map[string]scrape.PageWarning
+}
+
+func (w *pageWarnings) add(pw scrape.PageWarning) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.count == nil {
+		w.count, w.first = map[string]int{}, map[string]scrape.PageWarning{}
+	}
+	if w.count[pw.Kind] == 0 {
+		w.kinds = append(w.kinds, pw.Kind)
+		w.first[pw.Kind] = pw
+	}
+	w.count[pw.Kind]++
+}
+
+// flush prints one line per kind of warning to out: a single warning as
+// the scraper words it, several with their count and the first.
+func (w *pageWarnings) flush(out io.Writer) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	for _, k := range w.kinds {
+		n, first := w.count[k], w.first[k]
+		if n == 1 {
+			_, _ = fmt.Fprintln(out, first.String())
+			continue
+		}
+		var line string
+		switch k {
+		case scrape.WarnJSRendered:
+			line = fmt.Sprintf("warn: %d pages appear JS-rendered (first: %s); configure browser for full content", n, first.URL)
+		case scrape.WarnBrowserFailed:
+			line = fmt.Sprintf("warn: browser fallback failed for %d pages (first: %s: %v)", n, first.URL, first.Err)
+		case scrape.WarnBrowser403:
+			line = fmt.Sprintf("notice: HTTP 403 for %d pages (first: %s); fetched with the browser", n, first.URL)
+		case scrape.WarnBrowser403Failed:
+			line = fmt.Sprintf("warn: browser retry after HTTP 403 failed for %d pages (first: %s: %v)", n, first.URL, first.Err)
+		default:
+			line = fmt.Sprintf("warn: %d pages: %s (first: %s)", n, k, first.URL)
+		}
+		_, _ = fmt.Fprintln(out, line)
+	}
+	w.kinds, w.count, w.first = nil, nil, nil
 }
 
 func (f *docsFetcher) FetchRaw(ctx context.Context, url string) (docs.RawContent, error) {
@@ -460,6 +579,7 @@ func (f *docsFetcher) get() (*docsfetch.Fetcher, error) {
 		f.err = err
 		return nil, err
 	}
+	s.OnPageWarning(f.warnings.add)
 	f.scraper = s
 	f.pages = newPageCache(false)
 	f.fetcher = docsfetch.New(f.scraper, f.pages)
@@ -486,7 +606,8 @@ func (f *docsFetcher) classify(err error, msg string) error {
 }
 
 // Close releases the scraper and page cache if a fetch built them; it never
-// builds them. Later fetches fail with errDocsFetcherClosed.
+// builds them. Later fetches fail with errDocsFetcherClosed. The fetches'
+// warnings about single pages go to stderr, one line per kind.
 func (f *docsFetcher) Close() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -494,6 +615,11 @@ func (f *docsFetcher) Close() {
 		f.scraper.Close()
 		f.pages.Close()
 	}
+	out := f.stderr
+	if out == nil {
+		out = os.Stderr
+	}
+	f.warnings.flush(out)
 	f.closed = true
 	f.scraper, f.pages, f.fetcher = nil, nil, nil
 }

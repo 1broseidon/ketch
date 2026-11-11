@@ -2,6 +2,7 @@ package cmd_test
 
 import (
 	"encoding/json"
+	"github.com/1broseidon/ketch/docs"
 	"maps"
 	"slices"
 	"strings"
@@ -47,12 +48,26 @@ func checkLocalTop(t *testing.T, site *fixtureSite, fx docsFixture, library stri
 	if code != 0 {
 		t.Fatalf("docs exited %d: %s", code, stderr)
 	}
-	var results []struct {
-		docsResult
-		Anchors []string `json:"anchors"`
+	var answer struct {
+		Status string `json:"status"`
+		Index  *struct {
+			Kind  string `json:"kind"`
+			Pages int    `json:"pages"`
+			Built string `json:"built"`
+		} `json:"index"`
+		Terms   []struct{ Term string } `json:"terms"`
+		Results []struct {
+			docsResult
+			Anchors   []string `json:"anchors"`
+			PageTitle string   `json:"page_title"`
+		} `json:"results"`
 	}
-	if err := json.Unmarshal([]byte(out), &results); err != nil || len(results) == 0 {
+	if err := json.Unmarshal([]byte(out), &answer); err != nil || len(answer.Results) == 0 {
 		t.Fatalf("results %q: %v", out, err)
+	}
+	results := answer.Results
+	if !answerFieldsOK(answer.Status, answer.Index != nil && answer.Index.Kind == "full" && answer.Index.Pages > 0 && answer.Index.Built != "", len(answer.Terms), results[0].PageTitle) {
+		t.Errorf("answer fields = %+v", answer)
 	}
 	if top := results[0]; !strings.HasPrefix(top.URL, site.URL+fx.page) || !slices.Contains(top.Anchors, fx.anchor) || top.Source != "search" || top.Library != library {
 		t.Errorf("top result = %+v, want the section %s#%s from the index", top, fx.page, fx.anchor)
@@ -60,15 +75,51 @@ func checkLocalTop(t *testing.T, site *fixtureSite, fx docsFixture, library stri
 	if strings.Contains(stderr, "ranked by keywords") {
 		t.Errorf("keyword ranking is the only ranking, not a note: %q", stderr)
 	}
-	// The text output renders results as Markdown.
-	top := results[0]
-	code, out, stderr = cli(t, "docs", "--library", library, fx.query)
-	if code != 0 || !strings.Contains(out, "### "+top.Breadcrumb+"\n\n") || !strings.Contains(out, "\n\nsource: "+top.URL+"\n") {
+	checkLocalText(t, fx, library, results[0].PageTitle, results[0].URL)
+}
+
+// checkLocalText: the text output renders the answer as Markdown, the
+// frontmatter, then the top result (url) under its page's title.
+func checkLocalText(t *testing.T, fx docsFixture, library, pageTitle, url string) {
+	t.Helper()
+	code, out, stderr := cli(t, "docs", "--library", library, fx.query)
+	if code != 0 || !strings.Contains(out, "\n---\n## "+pageTitle+"\n\n") || !strings.Contains(out, "\n\nsource: "+url) ||
+		!strings.Contains(out, "\nstatus: answered\n") || strings.Contains(out, "result_count") {
 		t.Errorf("section output (exit %d):\n%s%s", code, out, stderr)
 	}
 	if code, _, stderr = cli(t, "docs", "--snippets", "--library", library, fx.query); code == 0 || !strings.Contains(stderr, "unknown flag") {
 		t.Errorf("--snippets exited %d (%s), want an unknown flag", code, stderr)
 	}
+	if code, out, _ = cli(t, "docs", "--minimal", "--library", library, fx.query); code != 0 || !strings.Contains(out, url+"\t") || strings.Contains(out, "---") {
+		t.Errorf("--minimal (exit %d):\n%s", code, out)
+	}
+	checkTermsRefusal(t, library)
+}
+
+// checkTermsRefusal: a question none of whose terms the docs hold exits 3
+// with its frontmatter printed, status refused, its not_found the answer,
+// and no body; --json says the same as fields.
+func checkTermsRefusal(t *testing.T, library string) {
+	t.Helper()
+	code, out, _ := cli(t, "docs", "--library", library, "zyzzyva quokka")
+	if code != 3 || !strings.Contains(out, "\nstatus: refused (terms_not_found)\nterms: {}\nnot_found: [zyzzyva, quokka]\n---\n") || !strings.HasSuffix(out, "---\n") {
+		t.Errorf("refusal (exit %d):\n%s", code, out)
+	}
+	code, out, _ = cli(t, "--json", "docs", "--library", library, "zyzzyva quokka")
+	var answer struct {
+		Status   string   `json:"status"`
+		NotFound []string `json:"not_found"`
+		Results  []any    `json:"results"`
+	}
+	if err := json.Unmarshal([]byte(out), &answer); err != nil || code != 3 || answer.Status != "refused" || !slices.Equal(answer.NotFound, []string{"zyzzyva", "quokka"}) || len(answer.Results) != 0 {
+		t.Errorf("--json refusal (exit %d): %s %v", code, out, err)
+	}
+}
+
+// answerFieldsOK reports an answer's JSON fields as an indexed library's
+// answer has them: answered, its index, its terms, a page title.
+func answerFieldsOK(status string, index bool, terms int, pageTitle string) bool {
+	return status == "answered" && index && terms > 0 && pageTitle != ""
 }
 
 // checkIndexLifecycle re-runs the build (nothing changed, nothing
@@ -113,17 +164,29 @@ type sectionResult struct {
 	Anchors   []string `json:"anchors"`
 }
 
+// decodeSectionResults reads the results of an answer's --json (an
+// object holding them) or a section fetch's (an array).
 func decodeSectionResults(t *testing.T, out string) []sectionResult {
 	t.Helper()
 	var rs []sectionResult
-	if err := json.Unmarshal([]byte(out), &rs); err != nil || len(rs) == 0 {
+	var err error
+	if strings.HasPrefix(out, "{") {
+		var answer struct {
+			Results []sectionResult `json:"results"`
+		}
+		err = json.Unmarshal([]byte(out), &answer)
+		rs = answer.Results
+	} else {
+		err = json.Unmarshal([]byte(out), &rs)
+	}
+	if err != nil || len(rs) == 0 {
 		t.Fatalf("results %q: %v", out, err)
 	}
 	return rs
 }
 
-// checkSectionFollowUp asserts the follow-up to a compact answer: a result
-// carries the reference to its section, a cut one (in a compact answer
+// checkSectionFollowUp asserts the follow-up to an answer: a result
+// carries the reference to its section, a cut one (in an answer
 // shown as text) ends with the command that fetches it, one shown whole
 // does not, and --section returns the section from the index in the shape
 // of a result, by the reference or with the library; an unknown anchor
@@ -139,23 +202,27 @@ func checkSectionFollowUp(t *testing.T, site *fixtureSite, fx docsFixture, libra
 	checkSectionRefusals(t, site, fx, top)
 }
 
-// checkPointers: a small budget cuts results; the text output points to
-// each cut one's full section, JSON marks it and carries no pointer.
+// checkPointers: a small budget cuts results; the text output marks each
+// cut one's source "(cut)" and ends with one line saying how to read a
+// cut group in full; JSON marks it and carries no pointer.
 func checkPointers(t *testing.T, fx docsFixture, library string) {
 	t.Helper()
-	text := mustCLI(t, "docs", "--library", library, "--tokens", "110", fx.query)
-	for _, r := range decodeSectionResults(t, mustCLI(t, "--json", "docs", "--library", library, "--tokens", "110", fx.query)) {
-		hint := "source: " + r.URL + "\nfull section: ketch docs --section " + r.Section + "\n"
-		if r.Truncated != strings.Contains(text, hint) || strings.Contains(r.Snippet, "full section") {
-			t.Errorf("truncated=%v but the text output is:\n%s", r.Truncated, text)
+	for _, tokens := range []string{"110", ""} {
+		args := []string{"docs", "--library", library, fx.query}
+		if tokens != "" {
+			args = append(args, "--tokens", tokens)
 		}
-	}
-	// The default view, whole sections, points to a section only where it
-	// cut one.
-	whole := mustCLI(t, "docs", "--library", library, fx.query)
-	for _, r := range decodeSectionResults(t, mustCLI(t, "--json", "docs", "--library", library, fx.query)) {
-		if r.Truncated != strings.Contains(whole, "full section: ketch docs --section "+r.Section+"\n") {
-			t.Errorf("default view: truncated=%v but the text output is:\n%s", r.Truncated, whole)
+		text := mustCLI(t, args...)
+		cut := false
+		for _, r := range decodeSectionResults(t, mustCLI(t, append([]string{"--json"}, args...)...)) {
+			cut = cut || r.Truncated
+			if r.Truncated != strings.Contains(text, "source: "+r.URL+" (cut)\n") || strings.Contains(r.Snippet, "full section") {
+				t.Errorf("--tokens %q: truncated=%v but the text output is:\n%s", tokens, r.Truncated, text)
+			}
+		}
+		hint := docs.AnswerHint(docs.HintCLI)
+		if cut != strings.HasSuffix(text, "\n"+hint+"\n") || strings.Count(text, hint) > 1 || strings.Contains(text, "full section:") {
+			t.Errorf("--tokens %q: cut=%v but the text output is:\n%s", tokens, cut, text)
 		}
 	}
 }
