@@ -132,7 +132,10 @@ type Frontmatter struct {
 	// section under Scope does: not in not_found, which means nowhere in
 	// the library.
 	OutsideScope []string `json:"outside_scope,omitempty"`
-	Note         string   `json:"note,omitempty"`
+	// IndexedNear are the indexed libraries near a library value that
+	// named none: the indexed_near line.
+	IndexedNear []NearLibrary `json:"indexed_near,omitempty"`
+	Note        string        `json:"note,omitempty"`
 	// section marks a section fetch's frontmatter (SectionFrontmatter),
 	// which prints its page line ("page: 2 of 4", page) where an answer's
 	// prints its verdict.
@@ -144,7 +147,7 @@ type Frontmatter struct {
 // backend; library is the library the caller named, printed when no
 // result names the one answered from.
 func NewFrontmatter(query, backend, library string, o Outcome) Frontmatter {
-	f := Frontmatter{Query: query, Backend: backend, Library: library, Scope: o.Scope, Index: o.Index, Stale: o.Stale, Status: o.Status, Reason: o.Reason, Note: o.Note}
+	f := Frontmatter{Query: query, Backend: backend, Library: library, Scope: o.Scope, Index: o.Index, Stale: o.Stale, Status: o.Status, Reason: o.Reason, Note: o.Note, IndexedNear: o.IndexedNear}
 	if len(o.Results) > 0 && o.Results[0].Library != "" {
 		f.Library = o.Results[0].Library
 	}
@@ -227,6 +230,7 @@ func (f Frontmatter) Render() string {
 	} else {
 		f.writeVerdict(&b)
 	}
+	b.WriteString(nearLine(f.IndexedNear))
 	if f.Note != "" {
 		b.WriteString("note: " + f.Note + "\n")
 	}
@@ -281,6 +285,43 @@ func yamlScalar(s string) string {
 		return strconv.Quote(s)
 	}
 	return s
+}
+
+// nearLine is the frontmatter's indexed_near line, a YAML flow mapping
+// from each near library's title to its root: "indexed_near: {Django
+// Project: https://docs.djangoproject.com/en/6.1/}"; a library without a
+// title, or one whose title another shares, goes by its root without the
+// scheme. "" for none.
+func nearLine(near []NearLibrary) string {
+	if len(near) == 0 {
+		return ""
+	}
+	titles := map[string]int{}
+	for _, n := range near {
+		titles[n.Title]++
+	}
+	parts := make([]string, len(near))
+	for i, n := range near {
+		key := n.Title
+		if key == "" || titles[key] > 1 {
+			key = strings.TrimPrefix(strings.TrimPrefix(n.Library, "https://"), "http://")
+		}
+		parts[i] = yamlScalar(key) + ": " + refScalar(n.Library)
+	}
+	return "indexed_near: {" + strings.Join(parts, ", ") + "}\n"
+}
+
+// NearHint is the line an answer ends with when its library value named
+// no indexed library and some are near (indexed_near), in style's words;
+// "" for HintNone.
+func NearHint(style HintStyle) string {
+	switch style {
+	case HintCLI:
+		return "library not indexed under that name: pass one of the indexed_near roots as --library"
+	case HintMCP:
+		return "library not indexed under that name: pass one of the indexed_near roots as library"
+	}
+	return ""
 }
 
 // AnswerHint is the last line of an answer with a group cut, in style's

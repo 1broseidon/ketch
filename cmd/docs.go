@@ -446,6 +446,12 @@ func printDocsResults(w io.Writer, query, backend, library string, o docs.Outcom
 		// verdict, the body the evidence, a page's groups under its title.
 		p("%s", docs.NewFrontmatter(query, backend, library, o).Render())
 		p("%s", docs.RenderAnswer(results, hint))
+		if h := docs.NearHint(hint); h != "" && len(o.IndexedNear) > 0 {
+			if !docs.AnyCut(results) {
+				p("\n")
+			}
+			p("%s\n", h)
+		}
 		return
 	}
 	printDocsHeader(w, query, backend, library, o)

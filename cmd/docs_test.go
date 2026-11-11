@@ -254,6 +254,20 @@ func TestPrintDocsResultsDefinedInFrontmatter(t *testing.T) {
 	}
 }
 
+// An answer to a library value that named no indexed library prints the
+// libraries near it in the frontmatter and ends by saying to pass one.
+func TestPrintDocsResultsIndexedNear(t *testing.T) {
+	o := docs.Outcome{Status: docs.Partial, Reason: docs.ReasonPartialSite, Index: &docs.IndexInfo{Source: docs.SearchBackend, PagesRead: 3},
+		IndexedNear: []docs.NearLibrary{{Title: "Cisco Duo", Library: "https://duo.com/docs/"}},
+		Results:     []docs.Result{{Library: "https://other.example.test/", PageTitle: "Other", URL: "https://other.example.test/a", Snippet: "Text."}}}
+	out := captureStdout(t, func() {
+		printDocsResults(os.Stdout, "failmode", docs.SearchBackend, "duo unix", o, false, docs.HintCLI)
+	})
+	if !strings.Contains(out, "\nindexed_near: {Cisco Duo: https://duo.com/docs/}\n") || !strings.HasSuffix(out, "source: https://other.example.test/a\n\n"+docs.NearHint(docs.HintCLI)+"\n") {
+		t.Errorf("output:\n%s", out)
+	}
+}
+
 // --trace is a QA flag: it exists but help does not show it.
 func TestDocsTraceFlagHidden(t *testing.T) {
 	f := docsCmd.Flags().Lookup("trace")

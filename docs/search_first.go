@@ -188,6 +188,11 @@ func (s *SearchFirst) ResolveSelect(ctx context.Context, name string, limit int)
 	if strings.TrimSpace(name) == "" {
 		return Resolved(SearchBackend, nil, fmt.Errorf("search: no library is indexed (ketch docs index <docs-url>); give a library name to resolve its docs root: %w", ErrNotIndexed))
 	}
+	if strings.ContainsAny(strings.TrimSpace(name), " \t") {
+		// A name of several words is a product's name, not a package
+		// registries hold: the index is all that can answer it.
+		return Resolved(SearchBackend, nil, fmt.Errorf("search: no indexed library is named %q, and a name with spaces is not a package name to resolve: give a package name or a docs URL: %w", name, ErrNotIndexed))
+	}
 	matches, err := s.web.ResolveLibrary(ctx, name, limit)
 	return Resolved(SearchBackend, matches, err)
 }
@@ -293,10 +298,25 @@ func (s *SearchFirst) answer(ctx context.Context, req sfRequest) Outcome {
 	}
 	tr.path = "search"
 	TraceFrom(ctx).setPath(tr.path)
+	near := s.near(req)
 	if o, ok := s.fromRead(ctx, req, tr); ok {
+		return withNear(o, req.library, near)
+	}
+	return withNear(s.fromSearch(ctx, req, tr), req.library, near)
+}
+
+// withNear gives o the indexed libraries near the library value: an
+// answer carries them (indexed_near), a refusal or failure names them in
+// its error, so the next call can name one.
+func withNear(o Outcome, value string, near []NearLibrary) Outcome {
+	if len(near) == 0 {
 		return o
 	}
-	return s.fromSearch(ctx, req, tr)
+	o.IndexedNear = near
+	if o.err != nil && o.Index == nil && o.Status != Found && o.Status != Partial {
+		o.err = fmt.Errorf("%w; %s", o.err, nearNote(value, near))
+	}
+	return o
 }
 
 // fromSearch answers from the site the question's search agrees on.

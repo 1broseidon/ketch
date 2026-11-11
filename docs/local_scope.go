@@ -38,11 +38,16 @@ var (
 
 // scopeOf is the scope a library value gives lib: the value (its
 // fragment dropped) when it is a docs URL below lib's root or the address
-// lib is shown under; "" for the root itself, a name or a spec.
+// lib is shown under, with its scheme or without; "" for the root itself,
+// a name or a spec.
 func scopeOf(lib docsindex.Library, value string) string {
 	value = strings.TrimSpace(value)
 	if !isHTTPURL(value) {
-		return ""
+		u, ok := bareURL(value) // a docs URL without its scheme
+		if !ok {
+			return ""
+		}
+		value = u
 	}
 	page, _, _ := strings.Cut(value, "#")
 	u, err := url.Parse(page)

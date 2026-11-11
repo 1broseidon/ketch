@@ -188,6 +188,9 @@ func pickVersion(libs []docsindex.Library, value string) (docsindex.Library, str
 				name, version, strings.Join(versionList(others), ", "), name, version, ErrNotIndexed)
 		}
 	}
+	if near := nearIndexed(libs, value); len(near) > 0 {
+		return docsindex.Library{}, "", fmt.Errorf("local: %q %w; %s", value, ErrNotIndexed, nearNote(value, near))
+	}
 	return docsindex.Library{}, "", fmt.Errorf("local: %q %w", value, ErrNotIndexed)
 }
 
@@ -293,7 +296,8 @@ func webRootOf(raw string) webRoot {
 // MatchIndexed returns the indexed libraries a library value names: a
 // docs URL at or under an indexed root (or an indexed root under it), a
 // root key, or a name or spec one was indexed by ([eco:]name[@version];
-// with a version, only libraries indexed at a version it names).
+// with a version, only libraries indexed at a version it names); last, a
+// docs URL written without its scheme (auth0.com/docs) as that URL.
 func MatchIndexed(libs []docsindex.Library, value string) []docsindex.Library {
 	value = strings.TrimSpace(value)
 	for _, l := range libs {
@@ -310,7 +314,40 @@ func MatchIndexed(libs []docsindex.Library, value string) []docsindex.Library {
 		// as a comparison key.
 		spec = libSpec{raw: value, name: value}
 	}
-	return matchSpec(libs, spec)
+	found := matchSpec(libs, spec)
+	if len(found) == 0 {
+		// A docs URL written without its scheme (auth0.com/docs) that no
+		// name or package matches: compared as the URL it names.
+		if u, ok := bareURL(value); ok {
+			return matchSpec(libs, libSpec{raw: u, url: u})
+		}
+	}
+	return found
+}
+
+// bareURL is a value shaped host[/path] with no scheme (auth0.com/docs,
+// react.dev) as the https URL it names: a host of two labels or more
+// whose last is letters only, and no spaces, ecosystem prefix, scope or
+// version.
+func bareURL(value string) (string, bool) {
+	value = strings.TrimSpace(value)
+	if value == "" || strings.ContainsAny(value, " \t@:") || strings.Contains(value, "://") {
+		return "", false
+	}
+	host, _, _ := strings.Cut(value, "/")
+	labels := strings.Split(strings.ToLower(host), ".")
+	if len(labels) < 2 || slices.Contains(labels, "") {
+		return "", false
+	}
+	tld := labels[len(labels)-1]
+	if len(tld) < 2 || strings.Trim(tld, "abcdefghijklmnopqrstuvwxyz") != "" {
+		return "", false
+	}
+	u := "https://" + value
+	if !isHTTPURL(u) {
+		return "", false
+	}
+	return u, true
 }
 
 // matchSpec returns the libraries spec names: by a docs URL at or under
@@ -333,8 +370,12 @@ func matchSpec(libs []docsindex.Library, spec libSpec) []docsindex.Library {
 		return out
 	}
 	keys := map[string]bool{libraryKey(spec.name): true}
+	scope := ""
 	if i := strings.LastIndex(spec.name, "/"); i >= 0 {
 		keys[libraryKey(spec.name[i+1:])] = true
+		if strings.HasPrefix(spec.name, "@") {
+			scope = libraryKey(spec.name[1:i])
+		}
 	}
 	delete(keys, "")
 	out = matchNames(libs, spec, keys)
@@ -344,6 +385,19 @@ func matchSpec(libs []docsindex.Library, spec libSpec) []docsindex.Library {
 		if stems := releaseStems(keys); len(stems) > 0 {
 			out = matchNames(libs, spec, stems)
 		}
+	}
+	if scope != "" {
+		// A scoped package's last part names the framework it is for as
+		// often as the package (react in @testing-library/react): a
+		// library it names must go by the scope too (astro of
+		// @astrojs/starlight at starlight.astro.build), unless the whole
+		// name is its own.
+		out = slices.DeleteFunc(out, func(l docsindex.Library) bool {
+			primary, specific, host := libraryNameTiers(l)
+			all := slices.Concat(primary, specific, host, hostNames(webRootOf(l.Root).u))
+			return !slices.Contains(all, libraryKey(spec.name)) && !hasPackage(l.Packages, spec) &&
+				!slices.ContainsFunc(all, func(n string) bool { return libraryKey(n) == scope })
+		})
 	}
 	return withProject(libs, out, spec.version)
 }
@@ -369,12 +423,28 @@ func matchNames(libs []docsindex.Library, spec libSpec, keys map[string]bool) []
 			tiers[2] = append(tiers[2], l)
 		}
 	}
-	for _, t := range tiers {
+	for i, t := range tiers {
 		if len(t) > 0 {
+			if i == 2 && !oneProject(t) {
+				// A host label several projects' docs share (palletsprojects
+				// for Click and Flask) names none of them.
+				return nil
+			}
 			return t
 		}
 	}
 	return nil
+}
+
+// oneProject reports libraries that are all one project's docs, at one
+// version or several (projectRoot).
+func oneProject(libs []docsindex.Library) bool {
+	for _, l := range libs[1:] {
+		if projectRoot(l) != projectRoot(libs[0]) {
+			return false
+		}
+	}
+	return true
 }
 
 // releaseStems are the keys that end in a major release number, without

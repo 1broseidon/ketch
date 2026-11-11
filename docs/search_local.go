@@ -50,6 +50,25 @@ func (s *SearchFirst) named(libs []docsindex.Library, req sfRequest) []docsindex
 	return found
 }
 
+// near is the indexed libraries near the library value a request gives
+// that names none (nearIndexed); none without a library value.
+func (s *SearchFirst) near(req sfRequest) []NearLibrary {
+	if req.library == "" {
+		return nil
+	}
+	libs, err := s.local.libraries()
+	if err != nil {
+		return nil
+	}
+	var current []docsindex.Library
+	for _, l := range libs {
+		if l.Current() {
+			current = append(current, l)
+		}
+	}
+	return nearIndexed(current, req.library)
+}
+
 // sfTrace is one search-first call's path, written when KETCH_DOCS_TRACE
 // is set: for measuring, never part of the answer.
 type sfTrace struct {

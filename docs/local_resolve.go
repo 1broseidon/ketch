@@ -1,6 +1,7 @@
 package docs
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
 
@@ -49,22 +50,114 @@ func indexedNamed(libs []docsindex.Library, query string) []docsindex.Library {
 	if isHTTPURL(query) {
 		return matchSpec(libs, libSpec{raw: query, url: query})
 	}
-	q := strings.ToLower(query)
-	var whole, word []docsindex.Library
+	return looseNamed(libs, query)
+}
+
+// looseNamed is the libraries a name holds loosely: those a field of
+// which holds the whole query, else those whose name, title or site name
+// the query holds compared as keys (vercel ai sdk holds AI SDK), else
+// those a field of which holds one of its words.
+func looseNamed(libs []docsindex.Library, query string) []docsindex.Library {
+	q := strings.ToLower(strings.TrimSpace(query))
+	qk := libraryKey(q)
+	var whole, keyed, word []docsindex.Library
 	words := resolveWords(q)
 	for _, lib := range libs {
 		fields := resolveFields(lib)
 		switch {
 		case anyHolds(fields, q):
 			whole = append(whole, lib)
+		case keyHeld(qk, lib):
+			keyed = append(keyed, lib)
 		case anyWordHeld(fields, words):
 			word = append(word, lib)
 		}
 	}
-	if len(whole) > 0 {
+	switch {
+	case len(whole) > 0:
 		return whole
+	case len(keyed) > 0:
+		return keyed
 	}
 	return word
+}
+
+// keyHeld reports a query key that holds the library's title, site name
+// or one of its full names (libraryNameTiers) as a key of four letters or
+// more: "vercel ai sdk" holds AI SDK. A secondary name (a host label, a
+// path segment such as github.com) does not count.
+func keyHeld(qk string, lib docsindex.Library) bool {
+	if len(qk) < 4 {
+		return false
+	}
+	primary, _, _ := libraryNameTiers(lib)
+	for _, k := range append([]string{libraryKey(lib.Title), libraryKey(lib.SiteName)}, primary...) {
+		if len(k) >= 4 && !genericNames[k] && strings.Contains(qk, k) {
+			return true
+		}
+	}
+	return false
+}
+
+// nearMax is the most indexed libraries an answer lists as near.
+const nearMax = 5
+
+// NearLibrary is an indexed library near a library value that names none:
+// its title and its root, the value to pass as library.
+type NearLibrary struct {
+	Title   string `json:"title"`
+	Library string `json:"library"`
+}
+
+// nearIndexed is the indexed libraries near a library value that names
+// none (design/docs-evidence.md, Round 11), for the caller to pick from,
+// never answered from: for a URL (with its scheme or without), those on
+// its host; else, or when none is, those the value holds loosely
+// (looseNamed). None when more than nearMax are.
+func nearIndexed(libs []docsindex.Library, value string) []NearLibrary {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
+	}
+	var found []docsindex.Library
+	u := value
+	if b, ok := bareURL(value); ok {
+		u = b
+	}
+	if isHTTPURL(u) {
+		if r, err := parseWebRoot(u); err == nil {
+			host := scopeHost(r.u)
+			for _, l := range libs {
+				if lr, err := parseWebRoot(l.Root); err == nil && scopeHost(lr.u) == host {
+					found = append(found, l)
+				}
+			}
+		}
+	}
+	if len(found) == 0 {
+		found = looseNamed(libs, value)
+	}
+	if len(found) == 0 || len(found) > nearMax {
+		return nil
+	}
+	out := make([]NearLibrary, len(found))
+	for i, l := range found {
+		out[i] = NearLibrary{Title: firstNonEmpty(l.Title, l.SiteName), Library: l.Root}
+	}
+	return out
+}
+
+// nearNote is the sentence a refusal ends with when indexed libraries
+// are near the value it was given.
+func nearNote(value string, near []NearLibrary) string {
+	parts := make([]string, len(near))
+	for i, n := range near {
+		parts[i] = n.Library
+		if n.Title != "" {
+			parts[i] = n.Title + " " + n.Library
+		}
+	}
+	return fmt.Sprintf("indexed near %q: %s; pass one of these roots as library", value, strings.Join(parts, ", "))
 }
 
 // resolveFields are what a library answers to, lower case.

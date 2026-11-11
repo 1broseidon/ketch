@@ -76,7 +76,11 @@ type Outcome struct {
 	// read again (no network, a timeout, --offline). "unverified, built
 	// <date>"; empty when every cited page is fresh or was checked.
 	Stale string `json:"stale,omitempty"`
-	err   error
+	// IndexedNear are the indexed libraries near a library value that
+	// named none, when the outcome came from elsewhere (design/docs-evidence.md,
+	// Round 11): what to pass as library next. Never answered from.
+	IndexedNear []NearLibrary `json:"indexed_near,omitempty"`
+	err         error
 }
 
 // Err is the error behind a refused or failed outcome, classified by

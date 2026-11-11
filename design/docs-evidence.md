@@ -503,6 +503,63 @@ Then the flow tests again on the default build, three runs per scenario, so the 
 
 Eight to sixteen scenarios per flow cannot carry a rate. The flow runs move to `ketch-bench` with a set of about 300.
 
+### Round 11: library names
+
+**The problem.** In the `ketch-bench` flow run of `f67ea6d` (306 cases, a pin of 135 libraries), Sonnet callers passed a `library` value that meant an indexed library and got a web search instead in 85 calls. Two shapes. Product names: the index stores Django as `Django Project`, Gin as `Gin Web Framework`, Ansible as `Ansible Community`; the primary name was the whole name squashed (`djangoproject`), and the words of a multi-word name were kept out of every tier, so `ansible` did not even match its own host label. URLs without a scheme: `auth0.com/docs` was read as a Go module path and never compared with the indexed roots. A wrong library answered silently is worse than a miss, so every rule below was measured for what it gets wrong as well as what it gets right.
+
+**Measurement set.** Every `library` and `resolve` value the Sonnet and Haiku callers passed in that run (959 calls, Context7 calls left out), paired with the indexed root it means, read from the case's roots; a value naming no indexed library (an MDN URL, `jenkins`) means none. 369 distinct values: 312 `library`, 57 `resolve`. They are split by the site they mean, tune or confirm, as the cases are. It is `docs/testdata/names/pinned.json` (values, the roots they mean, and the pinned libraries' stored metadata), run by `TestLibraryNamesMeasured`. Right: the library the question path picks is one the value means; wrong: it picks another; none: it picks nothing. A `resolve` value is right when the listing holds the root. The twin sites of one library (requests at two hosts, tokio's site and its docs.rs docs) both count as right.
+
+| | Tune right | Tune wrong | Tune none | Confirm right | Confirm wrong | Confirm none |
+|---|---|---|---|---|---|---|
+| `library`, before | 138 | 2 | 28 (1 means none) | 106 | 1 | 37 (5 mean none) |
+| `library`, after | 156 | 0 | 12 (1) | 117 | 0 | 27 (5) |
+| `resolve`, before | 29 | 0 | 5 | 21 | 0 | 2 |
+| `resolve`, after | 30 | 0 | 4 | 21 | 0 | 2 |
+
+By calls rather than distinct values, `library` right went from 425 to 474 on tune and 278 to 307 on confirm, wrong from 6 to 0. Of the 85 Sonnet calls that fell through, 55 now answer from the library they meant. The three wrong ones before: `okta` and `Okta` picked Okta's end-user help site over its developer docs, and `@testing-library/react` picked React's docs.
+
+**Negatives**, 31 written by hand, each with the pinned libraries as they are or with one taken out or put in: `react` with only React Router, `vue` with only Vue Router, `router`, `django` and `rest` with only Django REST framework, `spring` with only Spring Boot, `google` and `cloud` with only Google Cloud Storage, `redis` with only Go Redis, `@tanstack/react-query` with TanStack Query out, and against the pin as it is `api`, `docs`, `testing`, `rust`, `tanstack`, `cloudflare`, `hashicorp`, `aws`, `amazon`, `android`, `atlassian`, `github`, `cisco`, `ietf`, `freedesktop`, `hugging face`, `uptrace`, `palletsprojects`, `tiangolo`, `python` and `go`. None may name a library; each may list some as near. Before: 13 named one (`rust` a docs.rs crate, `tanstack` TanStack Query, `github` GitHub Actions, `python` Instructor, `uptrace` Bun, and so on). After: none. `TestLibraryNamesNegatives` holds them.
+
+**Rules kept.** All from the stored metadata at question time; no index is rebuilt. "Alone" is the rule over the old matcher, "out" is all rules but this one; counts are distinct `library` values right on tune / confirm, or negatives named.
+
+| Rule | Alone | Out |
+|---|---|---|
+| a. Descriptor words: a site name or title left with one word once its descriptor words go is a primary name (`django`, `gin`, `ansible`, `heroku`, `grafana`, `temporal`, `polars`, `rocket`). `Vue Router` keeps two words. | +4 / +8 | −2 / −6 |
+| b. The word of a multi-word site name that is the host's one distinctive label, when the root's path names nothing, is a secondary name (`duo` of Cisco Duo at duo.com/docs/, `langchain`, `encore`, `slack`) | +5 / +2 | −3 / 0 |
+| c. A value shaped `host[/path]` that no name or package matches is compared as `https://` + value with the indexed roots, at, under or over; under is a scope, as with a URL. `go.uber.org/zap` still matches by its name. | +7 / +3 | −7 / −3 |
+| Site name joined to a path name is a primary name (`githubactions` for GitHub at /en/actions/, `tanstackquery`, `reduxtoolkit`) | +4 / 0 | −4 / 0 |
+| f. A `resolve` name is compared as one key too (`vercel ai sdk` holds AI SDK); a name with spaces none matches is `[not_found]` from the index instead of the registries' `[validation]` | `resolve` +1 / 0 | −1 / 0 |
+| Guard: a site-wide name (the site name, a host label, the descriptor name) names a library documented under a path of its own only when the path names it too: `hashicorp` is not Terraform, `tanstack` not TanStack Query, `rust` not a docs.rs crate, `okta` not the help site at /oie/ | fixes the 2 tune wrongs; 8 negatives | 8 negatives named |
+| Guard: a host label several projects' libraries share names none of them (`palletsprojects`, `uptrace`, `tiangolo`) | 5 negatives | 3 named |
+| Guard: a module path's host and owner segments are not names (`redis` in /github.com/redis/go-redis/) | 1 negative | 1 named |
+| Guard: a language label beside another distinctive label is not a name (`python` in python.useinstructor.com) | 1 negative | 1 named |
+| Guard: the last part of a scoped package (`react` of `@testing-library/react`) names only a library that goes by the scope too (`astro` of `@astrojs/starlight`) | the 1 confirm wrong | 1 wrong |
+
+The scoped-package guard was found by the wrong it fixes on the confirm half, so confirm does not test it independently. `spec` and `specs` joined the path words that name nothing (`docs`, `api`), so that openid.net/specs/ keeps its host's name under the first guard.
+
+Descriptor words: doc, docs, documentation, guide, guides, reference, project, community, web, framework, dev, developer, developers, center, labs, platform, user, official. It is a list of its own beside `genericNames`, because `genericNames` holds library, sdk and api, and stripping those makes `testing` name Testing Library and `ai` name AI SDK.
+
+**Rules dropped.** Rule b as first written, the first word of a multi-word name that is also a host label or a path segment, named `query` for TanStack Query and `rest` for Django REST framework through their path segments; only the host-label half was kept. A containment test for the guard (a path name holding the site name) let `cloudflare` name Cloudflare One and `amazon` name Amazon S3; it now needs the same name, the name with a release number (`psycopg3`), or the end of the name (`kit` of SvelteKit).
+
+**d.** The live path resolves a name through a registry only for a pinned spec (an ecosystem prefix or a version), in parallel with the web search, and uses the root as a site preference. When the site it then reads is under an indexed root, it already answers from the index. It never resolves before searching, so with the network down it never runs. Resolving first would add registry latency to every unmatched name; not added.
+
+**e. `indexed_near`.** When a library value names no indexed library, the indexed libraries near it are listed: for a URL, with its scheme or without, those on its host; else, or when none is, those `resolve`'s loose match finds (the value whole in a field, then as a key, then one of its words). One to five, never more, and none of them is answered from. The answer from elsewhere carries them in the frontmatter, `indexed_near: {Cisco Duo: https://duo.com/docs/}` (a title two share, or none, gives way to the root without its scheme), the same in `--json` and MCP as `[{title, library}]`, and ends with a line saying to pass one of those roots as `library` (the MCP `hint`). A refusal or failure, with the network down or the search empty, names them at the end of its error. Of the 33 `library` values still unmatched that mean an indexed library, 29 list it (tune 9 of 11, confirm 20 of 22). The four that do not: `ai` and `regex rust` (no near list), and two module paths, for which other modules or GitHub's docs are listed.
+
+**Still unmatched**, by design or for now: versioned or moved URLs (`docs.djangoproject.com/en/stable/…` against /en/6.1/, `docs.ansible.com/ansible/latest/` against /projects/ansible/latest/, `docs.sqlalchemy.org/en/20/`), which `indexed_near` lists; product names inside a vendor's docs (`duo unix`, `Duo Authentication Proxy`, `stripe cli`); package names unlike the site's (`mem0ai`, `testcontainers-go`); concepts (`JWT`, `PKCE`, `oauth` for RFCs). Two guards cannot hold on the pin: `gitlab` names GitLab CI docs, whose root /ci/ reads as a locale and so names nothing; `query` names TanStack Query, whose stored title is TanStack alone, through its path.
+
+**Bare questions.** The same names decide which indexed library a question with no `library` names. Over the 460 question-only calls of the same run: the library the question means 286 before, 347 after; another library 18 before, 3 after (all three the twin site of the library meant); none 156 before, 110 after. None that named the right library before names another or none now.
+
+**Check tier.** `docs check` with this build against the pin: 190 of 291 answered, 214 answered or led, 20 of 30 not covered, 0 cases changed from `baseline-docs-check.json`.
+
+**Flows.** Sonnet caller, one run each of the 63 cases where a run of `f67ea6d` passed a `library` value that fell through to a web search, Opus judge, network denied:
+
+| Build | Facts stated | Right | Median calls | Calls in all | Median tokens read | Runs that reached a web search |
+|---|---|---|---|---|---|---|
+| `f67ea6d` | 56 of 63 | 48 of 63 | 3 | 202 | 2,897 | 63 (69 calls) |
+| this round | 58 of 63 | 54 of 63 | 1 | 109 | 2,667 | 22 (23 calls) |
+
+With the network denied, a web search fails, so `indexed_near` reached the callers only in the refusal's error: 19 of the 23 errors named near libraries, and in 15 the caller's next call passed one of their roots (`duo unix` to duo.com/docs/, `mem0ai` to docs.mem0.ai, `https://docs.sqlalchemy.org/en/20/` to /en/21/). The four without one were the MDN URL twice, `jenkins` and a call with no library. The MCP tool description used in this run did not yet name `indexed_near`.
+
 ## Storage
 
 Agreed on 2026-11-10, the check in point 4 included.

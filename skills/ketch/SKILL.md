@@ -148,6 +148,7 @@ file; test labs must set `KETCH_TAGS_PATH` as well as isolating the page cache.
 | `(cut, N of M tokens)` on a `source:` line | the group shows part of its section | `ketch docs --section <that source>` if you need the rest |
 | `…` in a group | text left out of a cut group | never fill it in from memory: read it with `--section`, or say it was cut |
 | `scope: <url>` | the answer is from the pages at or under that URL only; `library` is the root | `outside_scope` lists your terms the library holds elsewhere: ask the root for them |
+| `indexed_near: {title: root}` | your `--library` named no indexed library; these indexed ones are near it, and the answer came from elsewhere | if one is what you meant, ask again with its root as `--library` |
 | `also in this section: …` | what a cut group left out, by name | use one of those names in your next call |
 | `index: …, built <date>`, `source: search, N pages read`, or `stale: unverified, built <date>` | how old the evidence is: the index's build date; pages read now (`, cached`: read by the same question within `cache_ttl`); cited pages that could not be checked | say so if the answer depends on it being current |
 
@@ -180,7 +181,7 @@ The question spans products.
 4. Combine. Cite each claim's `source:`. Say what no source covered.
 5. A source you will ask again: propose `ketch docs index <site>` to the operator (CLI only; it writes the local index). It then answers from the index, offline too (`stale: unverified` when the cited pages cannot be checked).
 
-Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` with `page` for the next page, and `docs(resolve=true)` with an optional `query`; `defined_in` is a list of `{term, section}`, a cut result has `truncated` and `contents`, an indexed match `indexed: true`. pi's `ketch_docs` takes the same, without `page`.
+Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` with `page` for the next page, and `docs(resolve=true)` with an optional `query`; `defined_in` is a list of `{term, section}`, `indexed_near` a list of `{title, library}`, a cut result has `truncated` and `contents`, an indexed match `indexed: true`. pi's `ketch_docs` takes the same, without `page`.
 
 ## Token budgets
 

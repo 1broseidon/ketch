@@ -695,6 +695,19 @@ func mergeNames(a, b []string) []string {
 // a longer name the library goes by (router and vue for Vue Router, query
 // for TanStack Query, rest for Django REST framework) is never a name: it
 // names something else, often another library.
+//
+// Round 11 (design/docs-evidence.md) adds, from the same metadata: the one
+// word a site name or title keeps once its descriptor words go (django of
+// Django Project, gin of Gin Web Framework) and a site's name joined to a
+// product's path (githubactions for GitHub at /en/actions/) as primary
+// names; the word of a multi-word site name that is the host's one
+// distinctive label (duo of Cisco Duo at duo.com) as a secondary name. A
+// site-wide name (the site name, a host label) names a library documented
+// under a path of its own only when the path names it too (namesRootPath),
+// a host label several projects share names none of them, and neither a
+// module path's owner (redis in /github.com/redis/go-redis/) nor a
+// language label beside another (python in python.useinstructor.com) is a
+// name.
 func libraryNames(l docsindex.Library) (primary, secondary []string) {
 	primary, specific, host := libraryNameTiers(l)
 	return primary, append(specific, host...)
@@ -725,9 +738,13 @@ func libraryNameTiers(l docsindex.Library) (primary, specific, host []string) {
 			*into = append(*into, k)
 		}
 	}
+	root, _ := parseWebRoot(l.Root)
+	paths := pathNames(root)
 	var tails []string
 	for _, n := range full {
-		add(&primary, libraryKey(n))
+		if k := libraryKey(n); n != l.SiteName || namesRootPath(k, paths) {
+			add(&primary, k)
+		}
 		tail := n
 		if i := strings.LastIndex(n, "/"); i >= 0 { // @scope/pkg, owner/repo, a module path
 			tail = n[i+1:]
@@ -735,18 +752,133 @@ func libraryNameTiers(l docsindex.Library) (primary, specific, host []string) {
 		}
 		addWords(tail)
 	}
-	root, _ := parseWebRoot(l.Root)
-	for _, n := range append(tails, pathNames(root)...) {
+	for _, n := range []string{title, l.SiteName} {
+		if k := descriptorName(n); k != "" && namesRootPath(k, paths) {
+			add(&primary, k)
+			delete(words, k)
+		}
+	}
+	if len(paths) > 0 {
+		// A site's name before a product's path names the product
+		// (GitHub and /actions/: GitHub Actions; TanStack and /query/).
+		for _, n := range []string{title, l.SiteName} {
+			site := libraryKey(n)
+			if d := descriptorName(n); d != "" {
+				site = d
+			}
+			if site != "" && !genericNames[site] {
+				for _, p := range paths {
+					if pk := libraryKey(p); pk != "" && !strings.HasPrefix(pk, site) {
+						add(&primary, site+pk)
+					}
+				}
+			}
+		}
+	}
+	if k := soleSiteWord(title, l.SiteName, root, paths); k != "" {
+		add(&specific, k)
+	}
+	for _, n := range append(tails, paths...) {
 		if k := libraryKey(n); !words[k] {
 			add(&specific, k)
 		}
 	}
 	for _, n := range hostNames(root.u) {
-		if k := libraryKey(n); !words[k] {
+		if k := libraryKey(n); !words[k] && namesRootPath(k, paths) {
 			add(&host, k)
 		}
 	}
 	return primary, specific, host
+}
+
+// descriptorWords are the words a docs site's name adds to its product's
+// name (Django Project, Gin Web Framework, Ansible Community, Heroku Dev
+// Center, Grafana Labs, Temporal Platform, Polars user guide, Okta
+// Developer). Library, SDK and API are not among them: Testing Library is
+// not testing, AI SDK not ai.
+var descriptorWords = map[string]bool{
+	"doc": true, "docs": true, "documentation": true, "guide": true, "guides": true, "reference": true,
+	"project": true, "community": true, "web": true, "framework": true, "dev": true, "developer": true,
+	"developers": true, "center": true, "labs": true, "platform": true, "user": true, "official": true,
+}
+
+// descriptorName is the one word left of a multi-word site name or title
+// once its descriptor words go (django of Django Project), as a key; ""
+// when none or more than one is left: Vue Router stays two words.
+func descriptorName(name string) string {
+	parts := nameWords(name)
+	if len(parts) < 2 {
+		return ""
+	}
+	var kept []string
+	for _, p := range parts {
+		if k := libraryKey(p); !descriptorWords[k] {
+			kept = append(kept, k)
+		}
+	}
+	if len(kept) != 1 || len(kept[0]) < 2 {
+		return ""
+	}
+	return kept[0]
+}
+
+// namesRootPath reports a site-wide name k that may name the library at
+// the root with these path names: one whose path names nothing (the
+// site's own docs), or names k (docs.ansible.com/projects/ansible/,
+// grafana.com/docs/grafana/), k with a release number (/psycopg3/ for
+// psycopg) or the end of k (/kit/ for SvelteKit). A site's name names
+// a product documented under its own path only when it is the product's
+// name: HashiCorp is not Terraform (developer.hashicorp.com/terraform/),
+// TanStack not TanStack Query (tanstack.com/query/), Rust not one crate on
+// docs.rs.
+func namesRootPath(k string, paths []string) bool {
+	if len(paths) == 0 {
+		return true
+	}
+	for _, p := range paths {
+		if pk := libraryKey(p); pk == k || strings.HasPrefix(pk, k) && isDigits(pk[len(k):]) || len(pk) >= 3 && strings.HasSuffix(k, pk) {
+			return true
+		}
+	}
+	return false
+}
+
+// soleSiteWord is the word of a multi-word site name or title that is
+// the one distinctive label of the docs host, when the root's path names
+// nothing (duo of Cisco Duo at duo.com/docs/, langchain of Docs by
+// LangChain at docs.langchain.com); "" otherwise. Vue Router at
+// router.vuejs.org has two such labels, Spring Boot at
+// docs.spring.io/spring-boot/ and TanStack Query at tanstack.com/query/ a
+// path naming the product: none gets one.
+func soleSiteWord(title, siteName string, root webRoot, paths []string) string {
+	if len(paths) > 0 {
+		return ""
+	}
+	labels := map[string]bool{}
+	for _, h := range hostNames(root.u) {
+		if k := libraryKey(h); k != "" {
+			labels[k] = true
+		}
+	}
+	if len(labels) != 1 {
+		return ""
+	}
+	for _, name := range []string{title, siteName} {
+		parts := nameWords(name)
+		if len(parts) < 2 {
+			continue
+		}
+		for _, p := range parts {
+			k := libraryKey(p)
+			if len(k) < 3 || genericNames[k] || descriptorWords[k] || languageWords[k] {
+				continue
+			}
+			if labels[k] {
+				return k
+			}
+		}
+	}
+	return ""
 }
 
 // fullNames are a library's identities as written: its aliases, the name
@@ -777,6 +909,7 @@ var pathNoise = map[string]bool{
 	"current": true, "oss": true, "python": true, "py": true, "js": true, "javascript": true, "typescript": true,
 	"ts": true, "go": true, "golang": true, "rust": true, "java": true, "ruby": true, "php": true, "dotnet": true,
 	"reference": true, "api": true, "guide": true, "manual": true, "html": true, "index": true, "home": true,
+	"spec": true, "specs": true,
 }
 
 // pathNames are a root's path segments that may name its library (bs4 in
@@ -787,14 +920,41 @@ func pathNames(root webRoot) []string {
 		return nil
 	}
 	var out []string
-	for _, seg := range pathSegments(root.prefix) {
+	segs := pathSegments(root.prefix)
+	for i, seg := range segs {
 		ls := strings.ToLower(seg)
 		if _, version := segmentLabel(ls); pathNoise[ls] || version || localeRe.MatchString(ls) {
+			continue
+		}
+		if modulePathOwner(segs, i) {
 			continue
 		}
 		out = append(out, seg)
 	}
 	return out
+}
+
+// modulePathOwner reports the segment at i a module path's host or owner
+// (pkg.go.dev/github.com/redis/go-redis/v9/: github.com and redis): a
+// segment that is a host, or follows one with more after it. Only the
+// module's own name names it; redis is not go-redis.
+func modulePathOwner(segs []string, i int) bool {
+	for j := 0; j < i; j++ {
+		if strings.Contains(segs[j], ".") {
+			return i < lastNamed(segs)
+		}
+	}
+	return strings.Contains(segs[i], ".") && i < lastNamed(segs)
+}
+
+// lastNamed is the index of the last segment that is not a version.
+func lastNamed(segs []string) int {
+	for i := len(segs) - 1; i >= 0; i-- {
+		if _, version := segmentLabel(strings.ToLower(segs[i])); !version {
+			return i
+		}
+	}
+	return -1
 }
 
 // IndexedNames are the names a query may call an indexed library by
@@ -826,8 +986,17 @@ func hostNames(u *url.URL) []string {
 		return nil
 	}
 	labels := strings.Split(scopeHost(u), ".")
+	distinct := 0
+	for _, l := range labels[:max(len(labels)-1, 0)] {
+		if _, version := segmentLabel(l); !hostWords[l] && !version && !languageWords[l] {
+			distinct++
+		}
+	}
 	var out []string
 	for _, l := range labels[:max(len(labels)-1, 0)] {
+		if languageWords[l] && distinct > 0 {
+			continue // python in python.useinstructor.com names the language, not Instructor
+		}
 		if _, version := segmentLabel(l); !hostWords[l] && !version {
 			out = append(out, l) // v3 in v3.router.vuejs.org names a version, not the library
 			if rest := withoutLanguageWord(l); rest != "" {

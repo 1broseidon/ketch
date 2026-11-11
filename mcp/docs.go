@@ -61,14 +61,17 @@ type DocsOutput struct {
 	Terms   []docs.TermCount `json:"terms,omitzero"`
 	// DefinedIn names, for a listed term no result defines, a section
 	// that does.
-	DefinedIn    []docs.DefinedIn    `json:"defined_in,omitempty"`
-	NotFound     []string            `json:"not_found,omitzero"`
-	OutsideScope []string            `json:"outside_scope,omitempty"`
-	Note         string              `json:"note,omitempty"`
-	Hint         string              `json:"hint,omitempty"`
-	Results      []docs.Result       `json:"results,omitempty"`
-	Matches      []docs.LibraryMatch `json:"matches,omitempty"`
-	Backend      string              `json:"backend,omitempty"`
+	DefinedIn    []docs.DefinedIn `json:"defined_in,omitempty"`
+	NotFound     []string         `json:"not_found,omitzero"`
+	OutsideScope []string         `json:"outside_scope,omitempty"`
+	// IndexedNear are the indexed libraries near a library value that
+	// named none, the roots to pass as library next.
+	IndexedNear []docs.NearLibrary  `json:"indexed_near,omitempty"`
+	Note        string              `json:"note,omitempty"`
+	Hint        string              `json:"hint,omitempty"`
+	Results     []docs.Result       `json:"results,omitempty"`
+	Matches     []docs.LibraryMatch `json:"matches,omitempty"`
+	Backend     string              `json:"backend,omitempty"`
 }
 
 // fromOutcome renders a found or partial outcome, or the local
@@ -83,6 +86,13 @@ func fromOutcome(o docs.Outcome) DocsOutput {
 		if docs.AnyCut(o.Results) {
 			out.Hint = docs.AnswerHint(docs.HintMCP)
 		}
+	}
+	if len(o.IndexedNear) > 0 {
+		out.IndexedNear = o.IndexedNear
+		if out.Hint != "" {
+			out.Hint += "; "
+		}
+		out.Hint += docs.NearHint(docs.HintMCP)
 	}
 	return out
 }
@@ -99,12 +109,12 @@ func (s *Server) registerDocsTool() {
 		Name:        "docs",
 		InputSchema: docsInputSchema(),
 		Description: "Library documentation: evidence and a verdict, no model; you decide the next call. An indexed library answers from the local index; otherwise a web search picks a docs site and reads up to 24 of its pages, saving nothing." +
-			" library: a docs root as resolve lists it; a deeper URL narrows the answer to the pages under it (scope; outside_scope: your terms only elsewhere in the library); to read one page, use section." +
+			" library: a docs root as resolve lists it; a deeper URL narrows the answer to the pages under it (scope; outside_scope: your terms only elsewhere in the library); to read one page, use section. indexed_near: your library named no indexed one; these are near it: pass one as library." +
 			" Read the verdict first. status: found (evidence matching the question, not a promise that it answers); partial, reason terms_not_found (not_found: your terms nowhere in this source) or partial_site (pages a search read); refused (nothing here matches: stop asking this source; not a tool error). terms: your rare terms, with the sections holding each. defined_in: [{term, section}], where a term is defined when that section is not shown. index: kind, pages, built (or source search); stale: cited pages could not be checked (offline skips the check): say so if it matters." +
 			" results: verbatim pieces of sections, best first (page_title, heading_path, url, section), about 1,800 tokens in all: leave tokens unset unless a result is too long to read. truncated (shown_tokens of section_tokens) marks a cut one, contents names what it left out, … marks text left out: never fill it in from memory; read it with section, or say it was cut. State only what a result prints; say anything else is not documented here." +
 			" Lookup: docs(query=\"<question>\", library=\"<docs root>\"). The fact is printed: answer, citing each result's url. The result you need is truncated, or defined_in names it: docs(section=\"<its section field>\") once, then answer; a long section comes a page at a time (the hint gives the next call). Otherwise Follow." +
 			" Follow (the docs use other words): ask again in words the last call printed (a name in contents, a heading, a defined_in target), or read that section; never rephrase blind. After three calls to one source, stop: say what you tried and that it does not cover this." +
-			" Survey (the question spans products): docs(resolve=true) lists the indexed sources (query narrows it; a name none matches is looked up on the web): ask it before calling a source unknown. Split the question by owner; for every not_found term, ask the indexed source that owns it before saying it is not covered. One Lookup or Follow per source, run together; combine, cite each claim, say what no source covered." +
+			" Survey (the question spans products): docs(resolve=true) lists the indexed sources (query narrows it): ask it before calling a source unknown. Split the question by owner; for every not_found term, ask the indexed source that owns it before saying it is not covered. One Lookup or Follow per source, run together; combine, cite each claim, say what no source covered." +
 			" section: a url#anchor, or a page URL for its sections in order. backend context7 gives Context7's snippets instead, library a Context7 ID from resolve; its keyless quota is small (a spent one is [upstream] naming the reset)." +
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
