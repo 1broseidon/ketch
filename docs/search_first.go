@@ -14,7 +14,6 @@ import (
 
 	"github.com/1broseidon/ketch/health"
 	config "github.com/1broseidon/ketch/internal/configbase"
-	"github.com/1broseidon/ketch/internal/docsindex"
 	"github.com/1broseidon/ketch/internal/failure"
 	"github.com/1broseidon/ketch/search"
 )
@@ -23,24 +22,31 @@ import (
 // about any documentation, not only a package's. Context7 starts from a
 // library name and looks up its docs; this one starts from the question:
 //
-//	the local index covers it? ──yes──▶ answer offline (local)
+//	the request names an indexed library? ──yes──▶ answer from the index (local)
+//	        │no
+//	the same question read within cache_ttl? ──yes──▶ the same site and pages, from the page cache
 //	        │no
 //	web search (the question, and the question + "documentation")
 //	        │
 //	docs pages only; the site most of their weight agrees on
 //	        │       (none: no_docs_found; split: ambiguous_site)
+//	an indexed library holds the site? ──yes──▶ answer from the index
+//	        │no
 //	fetch the hit pages and close siblings from the site's own lists
 //	        │       (≤ sfMaxPages, through the page cache)
-//	section them, store them in the local index under the docs root
+//	section them into a library held in memory for this call
 //	        │
 //	answer through the local index's evidence pipeline
 //	        └──▶ partial: N pages read, and how to index the whole site
 //
-// What it reads stays in the index, so the next question those pages
-// answer is answered offline. A library the request names (--library, or
-// name@version in the question) is a preference among the hits' sites,
-// never a requirement: a site its name or its resolved docs root matches
-// weighs more, and the version it asks for picks the tree.
+// A question saves nothing (search_read.go): the pages it read stay in the
+// page cache under cache_ttl, with what a repeat needs to skip the search,
+// and `ketch docs index` is the only command that writes the index. An
+// answer from the index checks the pages it cites first (index_fresh.go).
+// A library the request names (--library, or name@version in the
+// question) is a preference among the hits' sites, never a requirement: a
+// site its name or its resolved docs root matches weighs more, and the
+// version it asks for picks the tree.
 
 // SearchBackend is the search backend's ID: the default docs backend.
 const SearchBackend = "search"
@@ -103,7 +109,18 @@ type SearchFirst struct {
 	maxPages, maxHits int
 	timeout           time.Duration
 	trace             io.Writer // nil: no trace
+	// ttl is cache_ttl: how long a page read counts as current. An indexed
+	// page last read longer ago is read again before an answer cites it.
+	ttl time.Duration
+	now func() time.Time
+	// checkTimeout bounds the check of an indexed answer's cited pages
+	// (freshCheckTimeout).
+	checkTimeout time.Duration
 }
+
+// sfDefaultTTL is the page cache's TTL when cache_ttl does not parse, as
+// the page cache takes it (cache.NewFromConfig).
+const sfDefaultTTL = time.Hour
 
 // NewSearchFirst builds the backend over the web internals (fetcher, web
 // search, registries, discovery) and the local index.
@@ -111,11 +128,15 @@ func NewSearchFirst(w *Web, l *Local) *SearchFirst {
 	w.concurrency = sfConcurrency
 	w.sitemapBudget = sfDiscoverBudget / 2
 	w.probeTimeout = sfDiscoverBudget
-	return &SearchFirst{web: w, local: l, maxPages: sfMaxPages, maxHits: sfMaxHitPages, timeout: sfTimeout}
+	return &SearchFirst{web: w, local: l, maxPages: sfMaxPages, maxHits: sfMaxHitPages, timeout: sfTimeout,
+		ttl: sfDefaultTTL, now: time.Now, checkTimeout: freshCheckTimeout}
 }
 
 func newSearchFirstFromConfig(c *config.Config, deps Deps) *SearchFirst {
 	s := NewSearchFirst(newWebFromConfig(c, deps), newLocalFromConfig())
+	if ttl, err := time.ParseDuration(c.CacheTTL); err == nil && ttl > 0 {
+		s.ttl = ttl
+	}
 	if os.Getenv("KETCH_DOCS_TRACE") != "" {
 		s.trace = os.Stderr
 	}
@@ -126,12 +147,6 @@ var (
 	_ SelectingSearcher = (*SearchFirst)(nil)
 	_ SectionFetcher    = (*SearchFirst)(nil)
 )
-
-// SectionSelect reads one section from the local index; see
-// Local.SectionSelect.
-func (s *SearchFirst) SectionSelect(ctx context.Context, library, ref string, tokens, page int) Outcome {
-	return s.local.SectionSelect(ctx, library, ref, tokens, page)
-}
 
 // Search answers a question; see SearchSelect.
 func (s *SearchFirst) Search(ctx context.Context, query string, limit int) ([]Result, error) {
@@ -244,7 +259,8 @@ func pinnedSpec(query string) (libSpec, bool) {
 	return libSpec{}, false
 }
 
-// answer is the whole state machine: the local index, else search.
+// answer is the whole state machine: the local index, else the question's
+// read within cache_ttl, else search.
 func (s *SearchFirst) answer(ctx context.Context, req sfRequest) Outcome {
 	start := time.Now()
 	tr := &sfTrace{}
@@ -256,6 +272,9 @@ func (s *SearchFirst) answer(ctx context.Context, req sfRequest) Outcome {
 	}
 	tr.path = "search"
 	TraceFrom(ctx).setPath(tr.path)
+	if o, ok := s.fromRead(ctx, req, tr); ok {
+		return o
+	}
 	return s.fromSearch(ctx, req, tr)
 }
 
@@ -288,7 +307,7 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 			tr.domains++
 		}
 		o = s.readSite(ctx, cctx, site, prof, req, tr)
-		if o.Status == Partial || cctx.Err() != nil {
+		if answered(o) || cctx.Err() != nil {
 			return o
 		}
 		if len(site.alts) > 0 {
@@ -316,37 +335,37 @@ const (
 	sfMaxReads = 4
 )
 
-// readSite reads one site's pages, keeps them, and answers from them.
+// readSite answers from one site: from the indexed library that holds it,
+// else from its pages, read and held in memory. An answer is kept in the
+// question cache (saveRead) for a repeat within cache_ttl.
 func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *siteProfile, req sfRequest, tr *sfTrace) Outcome {
 	if tr.site == "" {
 		tr.site, tr.siteHits = site.root.String(), len(site.hits)
 	}
 	tr.sites++
+	if lib, ok := s.indexedOver(site.root); ok {
+		tr.local = lib.Root
+		o := s.answerIndexed(ctx, lib, req.query, req.opts, "")
+		if answered(o) {
+			s.saveRead(req, sfRead{Root: site.root.String()})
+		}
+		return o
+	}
 	links, disallowed := s.plan(cctx, site, prof, req.query)
 	if len(links) == 0 && disallowed > 0 {
 		return Answer(SearchBackend, nil, fmt.Errorf("search: %s's robots.txt disallows the %d pages found: %w", site.root, disallowed, errDisallowed))
 	}
-	pages, failed := s.fetch(cctx, site.root, links)
+	pages, by, failed := s.fetch(cctx, site.root, links)
 	tr.planned, tr.fetched, tr.failed = tr.planned+len(links), tr.fetched+len(pages), tr.failed+failed
 	if len(pages) == 0 {
 		return s.failed(ctx, cctx, fmt.Errorf("search: none of the %d pages of %s could be read: %w", len(links), site.root, ErrNotFound))
 	}
-	lib, st, err := s.keep(site, prof, pages)
-	tr.stored = st
-	if err != nil {
-		return Answer(SearchBackend, nil, err)
+	title, name := readTitle(site.root, prof)
+	o := s.answerRead(ctx, site.root, title, name, pages, req)
+	if answered(o) {
+		s.saveRead(req, readOf(site.root, title, name, pages, by))
 	}
-	note := searchNote(lib, len(pages), st)
-	opts := req.opts
-	opts.note, opts.read = note, len(pages)
-	o := s.local.rank(ctx, lib, req.query, opts)
-	if (o.Status == Found || o.Status == Partial) && tr.domains == 1 {
-		// Only the first site read is remembered (any of its docs trees): a
-		// fallback site's answer, read because the one the hits agreed on
-		// gave nothing, is a guess the next search may do better than.
-		s.remember(lib, req.library, req.query)
-	}
-	return searchAnswered(o, note)
+	return o
 }
 
 // failed is a search-first call that ended before an answer, classified
@@ -358,11 +377,10 @@ func (s *SearchFirst) failed(parent, op context.Context, err error) Outcome {
 	return Answer(SearchBackend, nil, err)
 }
 
-// searchNote says how much of lib's site a search read and how to index
-// the rest.
-func searchNote(lib docsindex.Library, read int, st sfStored) string {
-	return fmt.Sprintf("read %d pages of %s found by web search (%d new to the local index); the whole site: ketch docs index %s",
-		read, lib.Root, st.newPages, lib.Root)
+// searchNote says how much of the site at root a search read and how to
+// index all of it.
+func searchNote(root string, read int) string {
+	return fmt.Sprintf("read %d pages of %s found by web search; the whole site: ketch docs index %s", read, root, root)
 }
 
 // withReason is reason followed by the reasons in rest (", "-joined),
@@ -648,7 +666,7 @@ func (s *SearchFirst) hitProfile(ctx context.Context, site sfSite) *siteProfile 
 // the search surface's providers) and has no fixed endpoint. It reports
 // what the local index holds.
 func probeSearch(ctx context.Context, client *http.Client, c *config.Config) (health.Status, string) {
-	const keyless = "keyless: web search, then the docs site it finds, kept in the local index"
+	const keyless = "keyless: web search, then the docs site it finds (pages kept in the page cache for cache_ttl)"
 	status, index := probeIndex(ctx, client, c)
 	if status == health.StatusMisconfigured {
 		return status, index

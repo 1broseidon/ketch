@@ -16,9 +16,12 @@ import (
 // Follow-up fetch (ADR-0007, amendment 4). An answer prints pieces of its
 // sections, and the text it leaves out can be the one example a how-to
 // question needs. The full section is in the local index, so reading it
-// costs no network and no quota: SectionSelect returns one section by the
-// reference a result carries (url#anchor), with no ranking and no model. A
-// result that was cut ends with a pointer to it (SectionHint).
+// costs no quota: SectionSelect returns one section by the reference a
+// result carries (url#anchor), with no ranking and no model. A result that
+// was cut ends with a pointer to it (SectionHint). The search backend
+// checks the page as an answer's cited pages are checked, and reads a page
+// no index holds (one a question read) through the page cache
+// (SearchFirst.SectionSelect).
 
 // ErrSectionNotFound is a section reference the local docs index does not
 // hold: a page it has no sections for, or an anchor that page lacks.
@@ -86,40 +89,48 @@ type SectionFetcher interface {
 // first). A reference the index does not hold is not_found; a library it
 // does not hold, not_indexed; a page past the last, a validation error.
 func (l *Local) SectionSelect(ctx context.Context, library, ref string, tokens, pageNo int) Outcome {
+	o, _, _ := l.sectionRead(ctx, library, ref, tokens, pageNo)
+	return o
+}
+
+// sectionRead is SectionSelect, with the library that holds the page and
+// the address it stores the page under; a zero library when none holds
+// it.
+func (l *Local) sectionRead(ctx context.Context, library, ref string, tokens, pageNo int) (Outcome, docsindex.Library, string) {
 	page, anchor, err := parseSectionRef(ref)
 	if err != nil {
-		return Answer(SearchBackend, nil, err)
+		return Answer(SearchBackend, nil, err), docsindex.Library{}, ""
 	}
 	libs, err := l.libraries()
 	if err != nil {
-		return Answer(SearchBackend, nil, err)
+		return Answer(SearchBackend, nil, err), docsindex.Library{}, ""
 	}
 	cands, note := librariesHolding(libs, page), ""
 	if strings.TrimSpace(library) != "" {
 		var lib docsindex.Library
 		if lib, note, err = pickVersion(libs, library); err != nil {
-			return Answer(SearchBackend, nil, err)
+			return Answer(SearchBackend, nil, err), docsindex.Library{}, ""
 		}
 		cands = []docsindex.Library{lib}
 	}
 	opts, _ := localOptionsFrom(ctx)
 	for _, lib := range cands {
 		if !lib.Current() {
-			return Answer(SearchBackend, nil, outdatedErr(lib))
+			return Answer(SearchBackend, nil, outdatedErr(lib)), docsindex.Library{}, ""
 		}
 		secs, err := l.pageSections(lib, page)
 		if err != nil {
-			return Answer(SearchBackend, nil, fmt.Errorf("local: reading the docs index: %w", err))
+			return Answer(SearchBackend, nil, fmt.Errorf("local: reading the docs index: %w", err)), docsindex.Library{}, ""
 		}
 		if len(secs) == 0 {
 			continue
 		}
-		return withVersionNote(fetchSection(lib, secs, anchor, library, tokens, pageNo, opts.Hint), note)
+		return withVersionNote(fetchSection(lib, secs, anchor, library, tokens, pageNo, opts.Hint), note), lib, secs[0].Page
 	}
 	if strings.TrimSpace(library) != "" {
-		return Answer(SearchBackend, nil, fmt.Errorf("local: the index of %s has no page %s: %w", cands[0].Root, page, ErrSectionNotFound))
+		return Answer(SearchBackend, nil, fmt.Errorf("local: the index of %s has no page %s: %w", cands[0].Root, page, ErrSectionNotFound)), docsindex.Library{}, ""
 	}
-	return Answer(SearchBackend, nil, fmt.Errorf("local: no indexed library holds %s (ketch docs index --list): %w", page, ErrSectionNotFound))
+	return Answer(SearchBackend, nil, fmt.Errorf("local: no indexed library holds %s (ketch docs index --list): %w", page, ErrSectionNotFound)), docsindex.Library{}, ""
 }
 
 // parseSectionRef splits a section reference into its page URL and its

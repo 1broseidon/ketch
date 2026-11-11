@@ -13,7 +13,9 @@ import (
 // page links, discovered within sfDiscoverBudget, and the top hit's nav),
 // the ones whose titles and paths name the question first, then those
 // beside a hit in the nav; at most maxPages, robots.txt honoured, other
-// releases' copies of a page left out.
+// releases' copies of a page left out. A page is told apart as the index
+// planner tells it (pageIdentity: x, x/, x.html, x.md, x/index and an llms/
+// mirror are one page), so it is read once, at the address listed first.
 
 // plan lists the pages to read, hits first.
 // It reports how many pages robots.txt kept it from.
@@ -25,7 +27,7 @@ func (s *SearchFirst) plan(ctx context.Context, site sfSite, prof *siteProfile, 
 	seen := map[string]bool{}
 	disallowed := 0
 	add := func(l webLink) bool {
-		k := displayKey(l.url)
+		k := pageIdentity(l.url, root, true)
 		if seen[k] || !root.contains(l.url) || !isResultLink(l.url) {
 			return false
 		}
@@ -62,7 +64,7 @@ func (s *SearchFirst) plan(ctx context.Context, site sfSite, prof *siteProfile, 
 			add(near[i])
 		}
 	}
-	return inHand(out, disc.pages), disallowed
+	return inHand(out, disc.pages, root), disallowed
 }
 
 // profileLinks are a page profile's links into root, as candidates.
@@ -99,20 +101,20 @@ func nearLinks(nav, hits []webLink, n int) []webLink {
 }
 
 // inHand gives each link the page llms-full.txt already holds for it.
-func inHand(links []webLink, pages []webPage) []webLink {
+func inHand(links []webLink, pages []webPage, root webRoot) []webLink {
 	if len(pages) == 0 {
 		return links
 	}
 	held := map[string]*webPage{}
 	for i := range pages {
 		if u, err := url.Parse(pages[i].URL); err == nil {
-			if _, ok := held[displayKey(u)]; !ok {
-				held[displayKey(u)] = &pages[i]
+			if k := pageIdentity(u, root, true); held[k] == nil {
+				held[k] = &pages[i]
 			}
 		}
 	}
 	for i, l := range links {
-		if p, ok := held[displayKey(l.url)]; ok {
+		if p, ok := held[pageIdentity(l.url, root, true)]; ok {
 			links[i].page = p
 		}
 	}
@@ -120,9 +122,10 @@ func inHand(links []webLink, pages []webPage) []webLink {
 }
 
 // fetch reads the planned pages, sfConcurrency at a time, each within
-// sfPageTimeout and all within ctx; the pages that arrived in plan order
-// (copies of another's text dropped) and how many failed.
-func (s *SearchFirst) fetch(ctx context.Context, root webRoot, links []webLink) ([]webPage, int) {
+// sfPageTimeout and all within ctx: the pages that arrived in plan order,
+// one per page (pageIdentity) and none whose text another's is, each with
+// the link it was read by, and how many failed.
+func (s *SearchFirst) fetch(ctx context.Context, root webRoot, links []webLink) ([]webPage, []webLink, int) {
 	pages := make([]*webPage, len(links))
 	sem := make(chan struct{}, sfConcurrency)
 	var wg sync.WaitGroup
@@ -147,19 +150,26 @@ func (s *SearchFirst) fetch(ctx context.Context, root webRoot, links []webLink) 
 	}
 	wg.Wait()
 	var out []webPage
+	var by []webLink
 	failed := 0
 	seen := map[string]bool{}
-	for _, p := range pages {
-		switch {
-		case p == nil || unreadShell(p):
+	texts := map[[32]byte]bool{}
+	for i, p := range pages {
+		if p == nil || unreadShell(p) {
 			failed++
-		case !seen[p.URL]:
-			seen[p.URL] = true
+			continue
+		}
+		k := p.URL
+		if u, err := url.Parse(p.URL); err == nil {
+			k = pageIdentity(u, root, true)
+		}
+		if t := contentKey(*p); !seen[k] && !texts[t] {
+			seen[k], texts[t] = true, true
 			out = append(out, *p)
+			by = append(by, links[i])
 		}
 	}
-	out, _ = uniqueContent(out)
-	return out, failed
+	return out, by, failed
 }
 
 // sfShellWords is how many words an unrendered JS shell's text must have
@@ -171,9 +181,4 @@ const sfShellWords = 50
 // no text: no page at all to a reader without a browser.
 func unreadShell(p *webPage) bool {
 	return p.shell && len(strings.Fields(p.Markdown)) < sfShellWords
-}
-
-// sfStored is what one search-first call added to the index.
-type sfStored struct {
-	newPages, changed, unchanged int
 }

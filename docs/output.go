@@ -18,6 +18,7 @@ import (
 //	library: <root>
 //	version: <the indexed version, when the library has one>
 //	index: <full|capped|search>, <N> pages, built <date>   (or, for pages a search just read: source: search, N pages read)
+//	stale: unverified, built <date>   (only when a cited page older than cache_ttl could not be read again)
 //	status: found | partial (<reason>) | refused (<reason>)
 //	terms: {<term as written>: <sections holding it>, ...}
 //	not_found: [<term as written>, ...]
@@ -106,6 +107,7 @@ type Frontmatter struct {
 	Library string      `json:"library,omitempty"`
 	Version string      `json:"version,omitempty"`
 	Index   *IndexInfo  `json:"index,omitempty"`
+	Stale   string      `json:"stale,omitempty"`
 	Status  Status      `json:"status,omitempty"`
 	Reason  string      `json:"reason,omitempty"`
 	Terms   []TermCount `json:"terms,omitzero"`
@@ -122,7 +124,7 @@ type Frontmatter struct {
 // backend; library is the library the caller named, printed when no
 // result names the one answered from.
 func NewFrontmatter(query, backend, library string, o Outcome) Frontmatter {
-	f := Frontmatter{Query: query, Backend: backend, Library: library, Index: o.Index, Status: o.Status, Reason: o.Reason, Note: o.Note}
+	f := Frontmatter{Query: query, Backend: backend, Library: library, Index: o.Index, Stale: o.Stale, Status: o.Status, Reason: o.Reason, Note: o.Note}
 	if len(o.Results) > 0 && o.Results[0].Library != "" {
 		f.Library = o.Results[0].Library
 	}
@@ -174,6 +176,9 @@ func (f Frontmatter) Render() string {
 	}
 	if f.Index != nil {
 		b.WriteString(f.Index.line() + "\n")
+	}
+	if f.Stale != "" {
+		b.WriteString("stale: " + f.Stale + "\n")
 	}
 	if f.Index != nil || f.Status == Partial {
 		b.WriteString("status: " + string(f.Status))

@@ -249,7 +249,7 @@ func uniqueContent(pages []webPage) ([]webPage, int) {
 	seen := map[[32]byte]bool{}
 	out := pages[:0:0]
 	for _, p := range pages {
-		k := sha256.Sum256([]byte(strings.Join(strings.Fields(p.Markdown), " ")))
+		k := contentKey(p)
 		if seen[k] {
 			continue
 		}
@@ -257,6 +257,12 @@ func uniqueContent(pages []webPage) ([]webPage, int) {
 		out = append(out, p)
 	}
 	return out, len(pages) - len(out)
+}
+
+// contentKey identifies a page's text, whitespace aside: two pages with
+// one key are one text (uniqueContent).
+func contentKey(p webPage) [32]byte {
+	return sha256.Sum256([]byte(strings.Join(strings.Fields(p.Markdown), " ")))
 }
 
 // siteNameSeps split a page title into its parts ("Home • Angular",

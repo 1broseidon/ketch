@@ -29,7 +29,7 @@ func localSession(t *testing.T) *mcpsdk.ClientSession {
 	store := docsindex.Open(path)
 	page := sectionRoot + "guide/forms"
 	filler := strings.Repeat("Unrelated prose about the history of the project and its many contributors. ", 30)
-	pages := []docsindex.PageData{{Page: docsindex.Page{URL: page, Title: "Forms", Hash: "f"}, Sections: []docsindex.Section{
+	pages := []docsindex.PageData{{Page: docsindex.Page{URL: page, Title: "Forms", Hash: "f", Fetched: time.Now().UTC()}, Sections: []docsindex.Section{
 		{Page: page, Order: 0, Heading: "Forms", Crumbs: []string{"Forms"}, Text: "Forms collect input."},
 		{Page: page, Order: 1, Anchor: "validation", Heading: "Validation", Crumbs: []string{"Forms", "Validation"}, Text: "Validate a form with a rules object. " + filler},
 		{Page: page, Order: 2, Anchor: "rules", Heading: "Rules", Crumbs: []string{"Forms", "Validation", "Rules"}, Text: "A rule is a function. " + filler + "\n\n```js\nname: (v) => (v.length < 2 ? 'Too short' : null),\n```"},
@@ -220,7 +220,7 @@ func TestDocsToolDescribesSection(t *testing.T) {
 		if !strings.Contains(schema.Properties["page"].Description, "with section") {
 			t.Errorf("page property %q", schema.Properties["page"].Description)
 		}
-		for _, want := range []string{"section field", "hint", "not_found", "no network", "[not_found]", "page=N"} {
+		for _, want := range []string{"section field", "hint", "not_found", "page cache", "[not_found]", "page=N", "stale", "offline"} {
 			if !strings.Contains(tool.Description, want) {
 				t.Errorf("description lacks %q", want)
 			}

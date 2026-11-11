@@ -22,9 +22,9 @@ import (
 var docsCmd = &cobra.Command{
 	Use:   "docs <query>",
 	Short: "Search library documentation",
-	Long: `Search library documentation. The default backend, search, answers from the docs themselves: a library indexed with ketch docs index answers offline from the local index; otherwise ketch searches the web for the question, picks the documentation site the results agree on, reads the matching pages and keeps them in the local index, so a repeated question answers offline. ` +
-		`The answer's frontmatter says what it read (index: full or capped, its pages and build date; or source: search and the pages a search read), its status, the question's rare terms as written (identifiers it writes, words in under 1% of the library's sections or in at most 25 of them) with the number of sections holding each (terms), and those no section holds (not_found). Status is found (evidence matching the question, not a promise that it answers); partial when a term is in not_found or the library holds only pages searches read; refused, exit 3, when no distinctive term is in the docs: the body is empty and not_found is the answer. ` +
-		`The body is the pieces of sections that name the question (paragraphs, list items, code blocks, table rows under their header), verbatim, grouped by section: a page's groups under "## <page title>", each under its heading path, ending with its source url#anchor, marked "(cut, N of M tokens)" with how much of its section it shows when the group was cut; a section longer than a page (` + strconv.Itoa(docs.AnswerPageTokens) + ` tokens) is never printed whole: its group shows its best pieces up to a page, in page order; a page's groups print in rank order, the page with the best group first; about 1,800 tokens in all, frontmatter included, or --tokens; --limit caps the groups. An answer with a group cut ends with one line saying how to read it in full: --section returns a section from the local index (no ranking, no network), whole when it fits --tokens (default 4000), else a page of that size at a time, broken at a block boundary: the output says page N of M and its last line is the command for the next page (--page N); a page URL with no anchor returns the page's sections in order, paged alike. When a term in terms is the first cell of a table row (an option's row) in a section the answer does not print, a last line names that section, for --section: "defined in: <term> → <url#anchor>" (at most three). --json prints the frontmatter's fields and the results as one object. ` +
+	Long: `Search library documentation. The default backend, search, answers from the docs themselves: a library indexed with ketch docs index answers offline from the local index; otherwise ketch searches the web for the question, picks the documentation site the results agree on, reads the matching pages and answers from them; it saves nothing: the pages stay in the page cache for cache_ttl, so the same question again within it does no search and no fetch, and ketch docs index is what keeps a site. ` +
+		`The answer's frontmatter says what it read (index: full or capped, its pages and build date; or source: search and the pages a search read), its status, the question's rare terms as written (identifiers it writes, words in under 1% of the library's sections or in at most 25 of them) with the number of sections holding each (terms), and those no section holds (not_found). Status is found (evidence matching the question, not a promise that it answers); partial when a term is in not_found or the answer is from pages a search read; refused, exit 3, when no distinctive term is in the docs: the body is empty and not_found is the answer. ` +
+		`The body is the pieces of sections that name the question (paragraphs, list items, code blocks, table rows under their header), verbatim, grouped by section: a page's groups under "## <page title>", each under its heading path, ending with its source url#anchor, marked "(cut, N of M tokens)" with how much of its section it shows when the group was cut; a section longer than a page (` + strconv.Itoa(docs.AnswerPageTokens) + ` tokens) is never printed whole: its group shows its best pieces up to a page, in page order; a page's groups print in rank order, the page with the best group first; about 1,800 tokens in all, frontmatter included, or --tokens; --limit caps the groups. An answer from the index first reads again the pages it cites that were read longer ago than cache_ttl (at most 3 seconds; a page that changed is sectioned again in the index); when one cannot be read the frontmatter says stale: unverified, built <date>, and --offline skips the check. An answer with a group cut ends with one line saying how to read it in full: --section returns a section from the local index (no ranking), or of a page a search read, through the page cache; whole when it fits --tokens (default 4000), else a page of that size at a time, broken at a block boundary: the output says page N of M and its last line is the command for the next page (--page N); a page URL with no anchor returns the page's sections in order, paged alike. When a term in terms is the first cell of a table row (an option's row) in a section the answer does not print, a last line names that section, for --section: "defined in: <term> → <url#anchor>" (at most three). --json prints the frontmatter's fields and the results as one object. ` +
 		docs.WithLibraryHelp("--library names the library") + `.
 
 -b context7 (or ketch config set docs_backend context7 to make it the default) uses Context7's curated snippets instead. Context7 needs no key: without one it uses Context7's anonymous quota (about 200 requests a month per IP), and a key lifts it. --resolve lists a name's library IDs (Context7) or docs roots (search); pass one as --library.`,
@@ -42,7 +42,8 @@ func init() {
 	docsCmd.Flags().String("tag", "", "record each result under this tag (see `ketch tag`)")
 	docsCmd.PreRunE = validateTagFlag
 	docsCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/library/snippet)")
-	docsCmd.Flags().String("section", "", "return one section from the local index, given as the url#anchor a group's source line carries (a page URL alone returns its sections in order; no query, no ranking, no network): whole when it fits --tokens (default 4000), else one page of that size at a time (--page)")
+	docsCmd.Flags().String("section", "", "return one section, given as the url#anchor a group's source line carries (a page URL alone returns its sections in order; no query, no ranking): from the local index, or for a page a search read, from the page through the page cache; whole when it fits --tokens (default 4000), else one page of that size at a time (--page)")
+	docsCmd.Flags().Bool("offline", false, "answer from the local index without reading again the cited pages older than cache_ttl (the frontmatter says stale: when one is)")
 	docsCmd.Flags().Int("page", 0, "with --section: the page of a section longer than --tokens to return (default 1; the output says page N of M and gives the command for the next)")
 	docsCmd.Flags().String("trace", "", "write how the answer was made to this file as JSON (docs.Trace; for QA)")
 	_ = docsCmd.Flags().MarkHidden("trace")
@@ -203,8 +204,9 @@ func docsBackendFlag(cmd *cobra.Command) string {
 // runDocsSection returns one section of the local index in full: the
 // follow-up to an answer that cut it short. The section is the
 // url#anchor a result's source carries; --library names the indexed
-// library, or the URL does. It reads the index only: no network, no
-// ranking. A section the index lacks is not_found (exit 3). The index
+// library, or the URL does. It reads the index, no ranking; a page no
+// indexed library holds (one a search read) is read through the page
+// cache. A section that is nowhere is not_found (exit 3). The index
 // belongs to search, whichever backend is the configured default; only an
 // explicit -b another backend is refused.
 func runDocsSection(cmd *cobra.Command, section, library string, tokens, page int, asJSON, minimal bool) error {
@@ -244,6 +246,7 @@ func runDocsSection(cmd *cobra.Command, section, library string, tokens, page in
 // result it cut.
 func withLocalDocsOptions(cmd *cobra.Command, tokens, limit int, hint docs.HintStyle) context.Context {
 	o := docs.LocalOptions{Hint: hint}
+	o.Offline, _ = cmd.Flags().GetBool("offline")
 	if cmd.Flags().Changed("tokens") {
 		o.Tokens = tokens
 	}
@@ -364,12 +367,15 @@ func servedDocsBackend(backend string, o docs.Outcome) string {
 }
 
 // noteOnStderr says an answer's note (a partial answer's, or the other
-// indexed versions of a library) where output that carries results only
-// (--minimal, and --section's --json) cannot, and under --minimal the
-// question's terms the docs hold nowhere.
+// indexed versions of a library) and its stale line where output that
+// carries results only (--minimal, and --section's --json) cannot, and
+// under --minimal the question's terms the docs hold nowhere.
 func noteOnStderr(o docs.Outcome) {
 	if o.Note != "" {
 		fmt.Fprintf(os.Stderr, "note: %s\n", o.Note)
+	}
+	if o.Stale != "" {
+		fmt.Fprintf(os.Stderr, "stale: %s\n", o.Stale)
 	}
 	if len(o.NotFound) > 0 {
 		fmt.Fprintf(os.Stderr, "not_found: %s\n", strings.Join(o.NotFound, ", "))
@@ -447,6 +453,9 @@ func printDocsHeader(w io.Writer, query, backend, library string, o docs.Outcome
 	}
 	if backend == docs.SearchBackend && len(results) > 0 && results[0].Version != "" {
 		p("version: %s\n", results[0].Version)
+	}
+	if o.Stale != "" {
+		p("stale: %s\n", o.Stale)
 	}
 	if o.Status == docs.Partial {
 		p("status: partial (%s)\n", o.Reason)

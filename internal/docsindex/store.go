@@ -4,7 +4,9 @@
 // (modernc.org/sqlite: no CGO). Like the bbolt stores it is opened for one
 // operation at a time (ADR-0006) and never held between calls; SQLite's
 // write-ahead log lets queries from MCP servers and the CLI read while an
-// indexing run writes.
+// indexing run writes. The same tables can be held in memory for one call
+// (OpenMemory): the pages a question read, ranked as a library and never
+// written to the file.
 //
 // Each indexed docs root is a library: a row of metadata, its pages, its
 // sections, and a full-text index of its own (an FTS5 table per library,
@@ -32,6 +34,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	_ "modernc.org/sqlite" // the database/sql driver "sqlite"
@@ -96,20 +99,7 @@ type Library struct {
 	// page's title, "Vue Router", "Beautiful Soup"): a name the library
 	// answers to.
 	SiteName string `json:"site_name,omitempty"`
-	// Asked are the questions the search-first backend answered from this
-	// library, newest last: a question asked again is answered from here
-	// without searching.
-	Asked []Asked `json:"asked,omitempty"`
 }
-
-// Asked is one question answered from a library.
-type Asked struct {
-	Question string `json:"q"`
-	Library  string `json:"lib,omitempty"` // the library the request named, as given
-}
-
-// MaxAsked caps the questions a library remembers.
-const MaxAsked = 200
 
 // Current reports whether the library is in the format this code reads.
 func (l Library) Current() bool { return l.Format == FormatVersion }
@@ -121,8 +111,10 @@ type Page struct {
 	Hash     string `json:"hash"` // of the page's title and Markdown, as fetched
 	Sections int    `json:"sections"`
 	// Version is the library version the page was indexed under, Fetched
-	// when it was stored, and Source how it came in ("index": a docs
-	// index build; "search": a search-first question).
+	// when its content was last read and found to be what is stored, and
+	// Source how it came in ("index": a docs index build; "search": the
+	// pages a question read, held in memory, or a library an earlier
+	// ketch's question stored).
 	Version string    `json:"version,omitempty"`
 	Fetched time.Time `json:"fetched_at,omitzero"`
 	Source  string    `json:"source,omitempty"`
@@ -186,10 +178,13 @@ func (plainTokens) Row(s Section) [4]string {
 }
 
 // Store is the index file at a path. It holds no handle: every method
-// opens the file for one operation.
+// opens the file for one operation. A store in memory (OpenMemory) is the
+// exception: it holds one connection, which keeps its database alive,
+// until Close.
 type Store struct {
 	path string
 	tok  Tokenizer
+	mem  *sql.DB // the connection that keeps an in-memory store alive; nil for a file
 }
 
 // busyTimeout bounds how long an operation waits for another
@@ -204,6 +199,36 @@ func Open(path string, tok ...Tokenizer) *Store {
 		s.tok = tok[0]
 	}
 	return s
+}
+
+// memStores names in-memory stores apart within the process.
+var memStores atomic.Int64
+
+// OpenMemory returns a store held in memory, its full-text rows made by
+// tok, with the same tables and queries as a file: a library that lives
+// for one call (the pages a question read). Each store is its own
+// database; Close releases it.
+func OpenMemory(tok ...Tokenizer) (*Store, error) {
+	s := Open(fmt.Sprintf("/ketch-docs-%d-%d", os.Getpid(), memStores.Add(1)), tok...)
+	db, err := sql.Open("sqlite", "file:"+s.path+"?vfs=memdb")
+	if err != nil {
+		return nil, fmt.Errorf("docs index in memory: %w", err)
+	}
+	if err := db.Ping(); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("docs index in memory: %w", err)
+	}
+	s.mem = db
+	return s, nil
+}
+
+// Close releases an in-memory store and everything in it; for a file it
+// does nothing.
+func (s *Store) Close() {
+	if s != nil && s.mem != nil {
+		_ = s.mem.Close()
+		s.mem = nil
+	}
 }
 
 // DefaultPath is the index file: KETCH_DOCS_INDEX_PATH when set, else
@@ -250,6 +275,9 @@ func (s *Store) Path() string { return s.path }
 // Exists reports whether the file exists: a missing one holds nothing,
 // and reading it costs a stat.
 func (s *Store) Exists() bool {
+	if s.mem != nil {
+		return true
+	}
 	_, err := os.Stat(s.path)
 	return err == nil
 }
@@ -257,6 +285,9 @@ func (s *Store) Exists() bool {
 // Size is the file's size in bytes, its write-ahead log included (0 when
 // missing).
 func (s *Store) Size() int64 {
+	if s.mem != nil {
+		return 0
+	}
 	var n int64
 	for _, p := range []string{s.path, s.path + "-wal"} {
 		if fi, err := os.Stat(p); err == nil {
@@ -305,6 +336,9 @@ var sqliteMagic = []byte("SQLite format 3\x00")
 
 // checkFile fails for a file at the path that is not a SQLite database.
 func (s *Store) checkFile() error {
+	if s.mem != nil {
+		return nil
+	}
 	f, err := os.Open(s.path)
 	if err != nil {
 		return nil // missing: created on write
@@ -333,6 +367,10 @@ func (s *Store) dsn(write bool) string {
 		q.Add("_pragma", "journal_mode(WAL)")
 		q.Set("_txlock", "immediate")
 	}
+	if s.mem != nil {
+		q.Set("vfs", "memdb")
+		return "file:" + s.path + "?" + q.Encode()
+	}
 	return "file:" + filepath.ToSlash(s.path) + "?" + q.Encode()
 }
 
@@ -342,7 +380,7 @@ func (s *Store) open(write bool) (*sql.DB, error) {
 	if err := s.checkFile(); err != nil {
 		return nil, err
 	}
-	if write {
+	if write && s.mem == nil {
 		if err := os.MkdirAll(filepath.Dir(s.path), 0o700); err != nil {
 			return nil, fmt.Errorf("prepare docs index: %w", err)
 		}
@@ -506,30 +544,72 @@ func (s *Store) Remove(key string) (found bool, err error) {
 	return found, err
 }
 
+// pageCols are the columns queryPages reads, from pages p.
+const pageCols = `p.url, p.title, p.hash, p.version, p.fetched_at, p.source, p.sections`
+
 // Pages returns a library's stored pages by URL.
 func (s *Store) Pages(key string) (map[string]Page, error) {
 	out := map[string]Page{}
 	err := s.view(func(db *sql.DB) error {
-		rows, err := db.Query(`SELECT p.url, p.title, p.hash, p.version, p.fetched_at, p.source, p.sections
-			FROM pages p JOIN libraries l ON l.id = p.lib WHERE l.key = ?`, key)
-		if err != nil {
-			return err
-		}
-		defer func() { _ = rows.Close() }()
-		for rows.Next() {
-			var p Page
-			var fetched int64
-			if err := rows.Scan(&p.URL, &p.Title, &p.Hash, &p.Version, &fetched, &p.Source, &p.Sections); err != nil {
-				return err
-			}
-			if fetched > 0 {
-				p.Fetched = time.Unix(fetched, 0).UTC()
-			}
-			out[p.URL] = p
-		}
-		return rows.Err()
+		return queryPages(db, out, `SELECT `+pageCols+` FROM pages p JOIN libraries l ON l.id = p.lib WHERE l.key = ?`, key)
 	})
 	return out, err
+}
+
+// PagesOf returns the stored pages among urls of a library, by URL: an
+// index lookup per page, not a pass over the library.
+func (s *Store) PagesOf(key string, urls []string) (map[string]Page, error) {
+	out := map[string]Page{}
+	if len(urls) == 0 {
+		return out, nil
+	}
+	list, err := json.Marshal(urls)
+	if err != nil {
+		return nil, err
+	}
+	err = s.view(func(db *sql.DB) error {
+		return queryPages(db, out, `SELECT `+pageCols+` FROM pages p JOIN libraries l ON l.id = p.lib
+			WHERE l.key = ? AND p.url IN (SELECT value FROM json_each(?))`, key, string(list))
+	})
+	return out, err
+}
+
+// queryPages runs a page query (pageCols) and reads its rows into out.
+func queryPages(db *sql.DB, out map[string]Page, q string, args ...any) error {
+	rows, err := db.Query(q, args...)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var p Page
+		var fetched int64
+		if err := rows.Scan(&p.URL, &p.Title, &p.Hash, &p.Version, &fetched, &p.Source, &p.Sections); err != nil {
+			return err
+		}
+		if fetched > 0 {
+			p.Fetched = time.Unix(fetched, 0).UTC()
+		}
+		out[p.URL] = p
+	}
+	return rows.Err()
+}
+
+// TouchPages records that pages of a library were read at t and found
+// unchanged: their fetch time only, nothing else.
+func (s *Store) TouchPages(key string, urls []string, t time.Time) error {
+	if len(urls) == 0 {
+		return nil
+	}
+	list, err := json.Marshal(urls)
+	if err != nil {
+		return err
+	}
+	return s.update(func(tx *sql.Tx) error {
+		_, err := tx.Exec(`UPDATE pages SET fetched_at = ? WHERE lib = (SELECT id FROM libraries WHERE key = ?)
+			AND url IN (SELECT value FROM json_each(?))`, t.Unix(), key, string(list))
+		return err
+	})
 }
 
 // PutPages writes pages with their sections and full-text rows in one

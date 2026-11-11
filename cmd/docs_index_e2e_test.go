@@ -32,6 +32,7 @@ func TestDocsIndexFixtureSitesCLI(t *testing.T) {
 			checkLocalTop(t, site, fx, library)
 			checkSectionFollowUp(t, site, fx, library)
 			checkIndexLifecycle(t, library)
+			checkIndexFreshness(t, library, fx.query)
 			mustCLI(t, "docs", "index", "--remove", library)
 			if out := mustCLI(t, "--json", "docs", "index", "--list"); strings.Contains(out, library) {
 				t.Errorf("after --remove the index still lists %s: %s", library, out)
@@ -149,6 +150,26 @@ func checkIndexLifecycle(t *testing.T, library string) {
 	if err := json.Unmarshal([]byte(mustCLI(t, "--json", "docs", "index", "--list")), &listed); err != nil || len(listed) != 1 || listed[0].Root != library {
 		t.Errorf("--list = %+v (%v)", listed, err)
 	}
+}
+
+// checkIndexFreshness asserts an answer from the index checks the pages
+// it cites against cache_ttl: none read again while fresh; with every page
+// older than the TTL (1ns), --offline prints the answer marked stale and a
+// check that reads them again (from the fixture site, unchanged) does not.
+func checkIndexFreshness(t *testing.T, library, query string) {
+	t.Helper()
+	if out := mustCLI(t, "docs", "--offline", "--library", library, query); strings.Contains(out, "\nstale: ") {
+		t.Errorf("fresh pages, --offline: stale line printed:\n%s", out)
+	}
+	t.Setenv("KETCH_CACHE_TTL", "1ns")
+	out := mustCLI(t, "docs", "--offline", "--library", library, query)
+	if !strings.Contains(out, "\nstale: unverified, built ") {
+		t.Errorf("pages older than the TTL, --offline: no stale line:\n%s", out)
+	}
+	if out := mustCLI(t, "--json", "docs", "--library", library, query); strings.Contains(out, `"stale"`) {
+		t.Errorf("pages read again and unchanged: still stale: %s", out)
+	}
+	t.Setenv("KETCH_CACHE_TTL", "")
 }
 
 // checkIndexScope fails when the build fetched what the web backend must

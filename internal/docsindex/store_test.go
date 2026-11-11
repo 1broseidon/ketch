@@ -318,3 +318,58 @@ INSERT INTO vectors(section, windows) VALUES(1, x'0000');`)
 		t.Errorf("sections = %+v %v", secs, err)
 	}
 }
+
+// A store in memory is a store like a file's, for as long as it is open:
+// each its own, nothing on disk, gone on Close.
+func TestStoreInMemory(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+	a, err := OpenMemory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := OpenMemory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer b.Close()
+	seed(t, a)
+	if hits, err := a.Search(testKey, "second", []float64{1, 1, 1, 1}, 5); err != nil || len(hits) != 1 {
+		t.Fatalf("search in memory: %v %v", hits, err)
+	}
+	if libs, err := a.Libraries(); err != nil || len(libs) != 1 || a.Size() != 0 {
+		t.Fatalf("libraries in memory: %v %v", libs, err)
+	}
+	if libs, err := b.Libraries(); err != nil || len(libs) != 0 {
+		t.Errorf("another in-memory store sees %d libraries (%v)", len(libs), err)
+	}
+	if entries, _ := os.ReadDir(dir); len(entries) != 0 {
+		t.Errorf("an in-memory store wrote %d files", len(entries))
+	}
+	a.Close()
+	if a.Exists() {
+		t.Error("a closed in-memory store still exists")
+	}
+}
+
+// PagesOf reads the pages asked for; TouchPages moves their fetch time
+// and nothing else.
+func TestStorePagesOfAndTouch(t *testing.T) {
+	s := Open(filepath.Join(t.TempDir(), "docs-index.db"))
+	seed(t, s)
+	got, err := s.PagesOf(testKey, []string{testKey + "a", testKey + "missing"})
+	if err != nil || len(got) != 1 || got[testKey+"a"].Hash != "h-a" {
+		t.Fatalf("PagesOf = %+v, %v", got, err)
+	}
+	at := time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC)
+	if err := s.TouchPages(testKey, []string{testKey + "a"}, at); err != nil {
+		t.Fatal(err)
+	}
+	all, _ := s.Pages(testKey)
+	if !all[testKey+"a"].Fetched.Equal(at) || all[testKey+"a"].Hash != "h-a" || all[testKey+"b"].Fetched.Equal(at) {
+		t.Errorf("after TouchPages: %+v", all)
+	}
+	if secs, _ := s.PageSections(testKey, testKey+"a"); len(secs) != 1 {
+		t.Errorf("TouchPages changed the sections: %v", secs)
+	}
+}

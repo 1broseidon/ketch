@@ -9,7 +9,7 @@ import (
 
 // The evidence pipeline (design/docs-evidence.md): how the local index
 // answers a question, from a library indexed in full or from the pages a
-// search just read and stored, in four stages with narrow boundaries.
+// search just read, held in memory, in four stages with narrow boundaries.
 //
 //	gather  (*Local).gather:  library, question  → *gathered: terms with counts, the pool of sections, cleaned
 //	sort    sortPool:          pool sections      → *sorted: pieces, labelled, folded

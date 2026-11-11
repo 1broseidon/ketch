@@ -25,7 +25,7 @@ ketch reads the site's own page lists (llms.txt and llms-full.txt, its sitemaps,
 
 A root that stands for a release (its page redirects or points as canonical to a numbered release's root, as duckdb.org/docs/stable/ does to /docs/2.0/) is indexed at that release, and so is an unversioned root whose pages or llms.txt sit in release directories right below it (the release llms.txt lists, else the newest; results show the unversioned addresses when the release's pages name them canonical). A version's own host whose page lists are an app shell is given its current host's paths to try.
 
-Running it again refreshes the library: pages are fetched again (through the page cache) and only the ones whose content changed are sectioned again.`,
+Running it again refreshes the library: pages are fetched again (through the page cache) and only the ones whose content changed are sectioned again. A library is its docs root whatever the scheme, "www." or trailing slash it is written with: indexing http://x/docs/ refreshes https://x/docs/ (the form given last stays). Only this command adds libraries or pages to the index: a question saves nothing.`,
 	Args: exitArgs(cobra.MaximumNArgs(1)),
 	RunE: runDocsIndex,
 }
@@ -142,11 +142,15 @@ func indexedLibrary(store *docsindex.Store, value string) (docsindex.Library, er
 	return docsindex.Library{}, exitErrf(ExitValidation, "%q names %d indexed libraries; pass one's docs root: %s", value, len(found), strings.Join(keys, ", "))
 }
 
+// runDocsIndexList lists the indexed libraries: those ketch docs index
+// built (a library an earlier ketch stored for a question is not one; the
+// next build removes it, and --remove takes it by its root).
 func runDocsIndexList(store *docsindex.Store, asJSON bool) error {
 	libs, err := store.Libraries()
 	if err != nil {
 		return upstreamErr(err, "reading the docs index failed")
 	}
+	libs = docs.Readable(libs)
 	if asJSON {
 		if libs == nil {
 			libs = []docsindex.Library{}

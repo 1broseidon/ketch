@@ -135,8 +135,6 @@ func TestEvidenceStatus(t *testing.T) {
 	}
 	l, lib := evLocal(t, secs)
 	ctx := context.Background()
-	built := lib
-	built.Resolved = resolvedBySearch
 	for _, c := range []struct {
 		lib      docsindex.Library
 		query    string
@@ -148,8 +146,6 @@ func TestEvidenceStatus(t *testing.T) {
 		{lib, "default form action", Found, "", nil, IndexFull},
 		{lib, "default form action use_enhance", Partial, ReasonTermsNotFound, []string{"use_enhance"}, IndexFull},
 		{lib, "use_enhance zyzzyva", Refused, ReasonTermsNotFound, []string{"use_enhance", "zyzzyva"}, IndexFull},
-		// A library a search built is partial for that too, both reasons said.
-		{built, "default form action use_enhance", Partial, ReasonPartialSite + ", " + ReasonTermsNotFound, []string{"use_enhance"}, IndexSearch},
 	} {
 		o := l.answer(ctx, c.lib, c.query, LocalOptions{})
 		refused := c.status == Refused

@@ -75,7 +75,8 @@ func withVersionNote(o Outcome, note string) Outcome {
 }
 
 // libraries lists the indexed libraries; none when the index file does not
-// exist (a stat, no open).
+// exist (a stat, no open). A library an earlier ketch stored as a
+// question's by-product (BuiltBySearch) is never read.
 func (l *Local) libraries() ([]docsindex.Library, error) {
 	if l.store == nil || !l.store.Exists() {
 		return nil, nil
@@ -84,20 +85,11 @@ func (l *Local) libraries() ([]docsindex.Library, error) {
 	if err != nil {
 		return nil, fmt.Errorf("local: reading the docs index: %w", err)
 	}
-	return libs, nil
+	return Readable(libs), nil
 }
 
-// answer answers query from lib within opts' budget; an answer from a
-// library a search built is partial (partialLibrary).
+// answer answers query from lib within opts' budget.
 func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string, opts LocalOptions) Outcome {
-	if lib.Resolved == resolvedBySearch {
-		opts.note = partialNote(lib)
-	}
-	return partialLibrary(l.rank(ctx, lib, query, opts), lib)
-}
-
-// rank is answer without the partial mark.
-func (l *Local) rank(ctx context.Context, lib docsindex.Library, query string, opts LocalOptions) Outcome {
 	if !lib.Current() {
 		return Answer(SearchBackend, nil, outdatedErr(lib))
 	}
@@ -492,5 +484,5 @@ func probeIndex(_ context.Context, _ *http.Client, _ *config.Config) (health.Sta
 	if err != nil {
 		return health.StatusMisconfigured, fmt.Sprintf("cannot read %s: %v", path, err)
 	}
-	return health.StatusOK, fmt.Sprintf("%d libraries indexed in %s%s", len(libs), path, legacy)
+	return health.StatusOK, fmt.Sprintf("%d libraries indexed in %s%s", len(Readable(libs)), path, legacy)
 }

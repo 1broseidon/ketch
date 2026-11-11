@@ -8,24 +8,36 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/1broseidon/ketch/internal/docsindex"
 	"github.com/1broseidon/ketch/internal/failure"
 	"github.com/1broseidon/ketch/search"
 )
 
-// searchFirstOver is the backend over a fake site, a fake web search
-// answering every query with hits, and a store.
+// searchFirstOver is the backend over a fake site behind a fake page
+// cache, a fake web search answering every query with hits, and a store.
 func searchFirstOver(t *testing.T, f *fakeFetcher, hits []search.Result) (*SearchFirst, *docsindex.Store, *atomic.Int32) {
 	t.Helper()
+	s, _, store, searches := searchFirstCached(t, f, hits)
+	return s, store, searches
+}
+
+// searchFirstCached is searchFirstOver with its page cache, whose clock
+// is the backend's.
+func searchFirstCached(t *testing.T, f *fakeFetcher, hits []search.Result) (*SearchFirst, *fakePageCache, *docsindex.Store, *atomic.Int32) {
+	t.Helper()
 	store := newStore(t)
+	c := newFakePageCache(f, time.Hour)
 	var searches atomic.Int32
-	w := NewWeb(f)
+	w := NewWeb(c)
 	w.sites = siteSearchFunc(func(context.Context, string, int) ([]search.Result, error) {
 		searches.Add(1)
 		return hits, nil
 	})
-	return NewSearchFirst(w, NewLocal(store)), store, &searches
+	s := NewSearchFirst(w, NewLocal(store))
+	s.ttl, s.now = c.ttl, c.clock
+	return s, c, store, &searches
 }
 
 func hit(u, title string) search.Result { return search.Result{URL: u, Title: title} }
@@ -44,12 +56,12 @@ func exampleHits() []search.Result {
 
 // A question is answered from the docs site its hits agree on: the hit
 // pages and their siblings are read (robots.txt, other locales and
-// releases left out), kept in the local index under the site's docs root,
-// and ranked there; the answer is partial and says how to index the rest.
-// Asked again, the index answers without searching.
+// releases left out) and ranked as a library held in memory; the answer
+// is partial and says how to index the rest. Nothing is written to the
+// docs index.
 func TestSearchFirstAnswersFromTheSite(t *testing.T) {
 	f := exampleSite()
-	s, store, searches := searchFirstOver(t, f, exampleHits())
+	s, store, _ := searchFirstOver(t, f, exampleHits())
 	o := s.SearchSelect(context.Background(), "add middleware to a route", 0)
 	if o.Status != Partial || o.Reason != ReasonPartialSite || o.Backend != SearchBackend {
 		t.Fatalf("outcome = %s/%s from %q (%v), want partial/%s from search", o.Status, o.Reason, o.Backend, o.Err(), ReasonPartialSite)
@@ -57,19 +69,14 @@ func TestSearchFirstAnswersFromTheSite(t *testing.T) {
 	if len(o.Results) == 0 || !strings.HasPrefix(o.Results[0].URL, idxRoot+"guide/middleware") {
 		t.Fatalf("top result = %+v, want the middleware page", o.Results)
 	}
-	if !strings.Contains(o.Note, "ketch docs index "+idxRoot) {
-		t.Errorf("note = %q, want the command that indexes the whole site", o.Note)
+	if o.Note != "read 3 pages of "+idxRoot+" found by web search; the whole site: ketch docs index "+idxRoot {
+		t.Errorf("note = %q, want the pages read and the command that indexes the whole site", o.Note)
+	}
+	if o.Index == nil || o.Index.Source != SearchBackend || o.Index.PagesRead != 3 {
+		t.Errorf("index = %+v, want source: search, 3 pages read", o.Index)
 	}
 	checkNeverRead(t, f)
-	checkSearchLibrary(t, store)
-	before := searches.Load()
-	again := s.SearchSelect(context.Background(), "add middleware to a route", 0)
-	if searches.Load() != before {
-		t.Errorf("asked again, the question searched the web; the local index holds the answer")
-	}
-	if again.Status != Partial || again.Backend != SearchBackend || len(again.Results) == 0 {
-		t.Errorf("again = %s from %q with %d results, want a partial local answer", again.Status, again.Backend, len(again.Results))
-	}
+	checkNothingStored(t, store)
 }
 
 func checkNeverRead(t *testing.T, f *fakeFetcher) {
@@ -81,43 +88,60 @@ func checkNeverRead(t *testing.T, f *fakeFetcher) {
 	}
 }
 
-func checkSearchLibrary(t *testing.T, store *docsindex.Store) {
+// checkNothingStored fails when a question wrote the docs index.
+func checkNothingStored(t *testing.T, store *docsindex.Store) {
 	t.Helper()
-	lib, found, err := store.Library(idxRoot)
-	if err != nil || !found || lib.Resolved != resolvedBySearch || lib.Pages == 0 || lib.Sections == 0 {
-		t.Fatalf("stored library = %+v (found %v, %v), want one built by search with pages and sections", lib, found, err)
+	if store.Exists() {
+		libs, err := store.Libraries()
+		t.Fatalf("a question wrote the docs index: %d libraries (%v)", len(libs), err)
 	}
 }
 
-// A question with the same terms as one answered before is answered from
-// the same library, without searching; one about something else searches.
-func TestSearchFirstRemembersQuestions(t *testing.T) {
-	s, store, searches := searchFirstOver(t, exampleSite(), exampleHits())
-	if o := s.SearchSelect(context.Background(), "add middleware to a route", 0); o.Status != Partial {
-		t.Fatalf("first answer = %s (%v)", o.Status, o.Err())
+// A question asked again within cache_ttl (its terms the same, whatever
+// the filler) reads what the first read from the cache: no web search,
+// no page fetch, the same answer. One about something else, or the same
+// words naming a library, searches; after the TTL the question searches
+// and reads again.
+func TestSearchFirstRepeatWithinTTL(t *testing.T) {
+	f := exampleSite()
+	s, c, store, searches := searchFirstCached(t, f, exampleHits())
+	ctx := context.Background()
+	first := s.SearchSelect(ctx, "add middleware to a route", 0)
+	if first.Status != Partial {
+		t.Fatalf("first answer = %s (%v)", first.Status, first.Err())
 	}
-	lib, _, _ := store.Library(idxRoot)
-	if len(lib.Asked) != 1 || lib.Asked[0].Question != "add middleware to a route" {
-		t.Fatalf("asked = %+v, want the question remembered", lib.Asked)
+	searched, fetched := searches.Load(), len(f.called())
+	again := s.SearchSelect(ctx, "How do I add middleware to a route?", 0)
+	if searches.Load() != searched || len(f.called()) != fetched {
+		t.Errorf("asked again: %d searches and %d fetches; want none", searches.Load()-searched, len(f.called())-fetched)
 	}
-	before := searches.Load()
-	if o := s.SearchSelect(context.Background(), "Add middleware to a route?", 0); o.Backend != SearchBackend || searches.Load() != before {
-		t.Errorf("the question again: backend %q, %d searches; want the local index", o.Backend, searches.Load()-before)
+	if again.Status != Partial || again.Note != first.Note || !sameURLs(again.Results, first.Results) || again.Index.PagesRead != first.Index.PagesRead {
+		t.Errorf("again = %s %q %v, want the first answer", again.Status, again.Note, resultURLs(again.Results))
 	}
-	if s.SearchSelect(context.Background(), "fetch handler runtime", 0); searches.Load() == before {
+	if s.SearchSelect(ctx, "fetch handler runtime", 0); searches.Load() == searched {
 		t.Error("another question was answered without searching")
 	}
-	// Remembered with the library the request named: the same words about
-	// a named library are another request until asked of it once.
-	before = searches.Load()
-	if s.GetDocsSelect(context.Background(), idxRoot, "add middleware to a route", 0); searches.Load() == before {
-		t.Error("a question asked bare answered the request naming a library from memory")
+	searched = searches.Load()
+	if s.GetDocsSelect(ctx, idxRoot, "add middleware to a route", 0); searches.Load() == searched {
+		t.Error("the same words naming a library were answered from the bare question's read")
 	}
-	before = searches.Load()
-	if o := s.GetDocsSelect(context.Background(), idxRoot, "add middleware to a route", 0); searches.Load() != before || o.Backend != SearchBackend {
-		t.Errorf("asked again of the same library: backend %q, %d searches; want the local index", o.Backend, searches.Load()-before)
+	c.advance(time.Hour + time.Minute)
+	searched, fetched = searches.Load(), len(f.called())
+	if o := s.SearchSelect(ctx, "add middleware to a route", 0); o.Status != Partial || searches.Load() == searched || len(f.called()) == fetched {
+		t.Errorf("after the TTL: %s, %d searches, %d fetches; want a search and pages read again", o.Status, searches.Load()-searched, len(f.called())-fetched)
 	}
+	checkNothingStored(t, store)
 }
+
+func resultURLs(rs []Result) []string {
+	var out []string
+	for _, r := range rs {
+		out = append(out, r.URL)
+	}
+	return out
+}
+
+func sameURLs(a, b []Result) bool { return slices.Equal(resultURLs(a), resultURLs(b)) && len(a) > 0 }
 
 // Hits that are never docs (forges, Q&A, posts) are no site: refused as
 // no_docs_found. An empty search is the search failing, not the web

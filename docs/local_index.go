@@ -274,6 +274,10 @@ func (w *Web) index(ctx context.Context, store *docsindex.Store, req IndexReques
 	if err != nil {
 		return report, err
 	}
+	replaced, err := replacedBy(store, target.root, b.key)
+	if err != nil {
+		return report, err
+	}
 	lib := docsindex.Library{
 		Key: b.key, Library: req.Library, Title: target.title, Root: target.root.String(), Version: target.version,
 		Requested: target.spec.version, Resolved: target.resolved, Evidence: target.evidence, Trust: target.trust, Packages: target.packages,
@@ -283,8 +287,16 @@ func (w *Web) index(ctx context.Context, store *docsindex.Store, req IndexReques
 		DisplayRoot: target.display, Seeds: plan.seeds, SiteName: siteName,
 	}
 	lib.Aliases = mergeNames(b.prev.Aliases, req.Names)
+	for _, r := range replaced {
+		if !BuiltBySearch(r) {
+			lib.Aliases = mergeNames(lib.Aliases, r.Aliases)
+		}
+	}
 	lib.Names = IndexedNames(lib)
 	if err := store.PutLibrary(lib); err != nil {
+		return report, err
+	}
+	if err := removeReplaced(store, replaced, say); err != nil {
 		return report, err
 	}
 	report.Library = lib
@@ -446,10 +458,23 @@ type indexBuild struct {
 	// version and title are the indexed version's label and the library's
 	// title, which label cross-version sections (crossVersion).
 	version, title string
-	// source is how the pages came in: "index" (a build) or "search".
+	// source is how the pages came in: "index" (a build) or "search" (the
+	// pages a question read, held in memory). at is when they were read
+	// (zero: now).
 	source string
+	at     time.Time
 
 	prev docsindex.Library // the library as stored before, if it was
+	// same are the stored pages diff found unchanged: read again now.
+	same []string
+}
+
+// readAt is when the build's pages were read.
+func (b *indexBuild) readAt() time.Time {
+	if b.at.IsZero() {
+		return time.Now().UTC()
+	}
+	return b.at.UTC()
 }
 
 // write sections the pages, stores the new and changed ones in batches
@@ -463,6 +488,9 @@ func (b *indexBuild) write(pages []webPage, failed []string) (IndexReport, error
 	}
 	todo := b.diff(pages, stored, &report)
 	if err := putPageBatches(b.store, b.key, todo); err != nil {
+		return report, err
+	}
+	if err := b.store.TouchPages(b.key, b.same, b.readAt()); err != nil {
 		return report, err
 	}
 	for _, pd := range todo {
@@ -486,11 +514,18 @@ func (b *indexBuild) begin() (map[string]docsindex.Page, error) {
 	if err != nil {
 		return nil, err
 	}
-	if found && !prev.Current() {
+	switch {
+	case found && !prev.Current():
 		b.say("index format changed: rebuilding")
 		if _, err := b.store.Remove(b.key); err != nil {
 			return nil, err
 		}
+	case found && BuiltBySearch(prev):
+		b.say("replacing the pages earlier questions stored at this root")
+		if _, err := b.store.Remove(b.key); err != nil {
+			return nil, err
+		}
+		prev = docsindex.Library{}
 	}
 	b.prev = prev
 	return b.store.Pages(b.key)
@@ -517,6 +552,7 @@ func (b *indexBuild) diff(pages []webPage, stored map[string]docsindex.Page, rep
 		case had && old.Hash == hash:
 			report.Unchanged++
 			report.Library.Sections += old.Sections
+			b.same = append(b.same, p.URL)
 			continue
 		case had:
 			report.Changed++
@@ -574,7 +610,7 @@ func (b *indexBuild) pageData(p webPage, hash string, secs []webSection) docsind
 	if source == "" {
 		source = "index"
 	}
-	pd := docsindex.PageData{Page: docsindex.Page{URL: p.URL, Title: p.Title, Hash: hash, Sections: len(secs), Version: b.version, Fetched: time.Now().UTC(), Source: source}}
+	pd := docsindex.PageData{Page: docsindex.Page{URL: p.URL, Title: p.Title, Hash: hash, Sections: len(secs), Version: b.version, Fetched: b.readAt(), Source: source}}
 	pageTexts := []string{p.Title, pathWords(p.URL, b.key)}
 	for i, s := range secs {
 		pd.Sections = append(pd.Sections, docsindex.Section{
@@ -777,6 +813,40 @@ func withoutLanguageWord(label string) string {
 		return ""
 	}
 	return strings.Join(kept, "-")
+}
+
+// replacedBy lists the libraries a build at root (under key) replaces:
+// another library at the same docs root, however it is written (a scheme,
+// "www." or a trailing slash aside: sameRootURL), and every library an
+// earlier ketch stored as a question's by-product (BuiltBySearch), which
+// the first build after it removes.
+func replacedBy(store *docsindex.Store, root webRoot, key string) ([]docsindex.Library, error) {
+	libs, err := store.Libraries()
+	if err != nil {
+		return nil, err
+	}
+	var out []docsindex.Library
+	for _, l := range libs {
+		if l.Key != key && (BuiltBySearch(l) || sameRootURL(l.Root, root)) {
+			out = append(out, l)
+		}
+	}
+	return out, nil
+}
+
+// removeReplaced removes the libraries a build replaced, saying which.
+func removeReplaced(store *docsindex.Store, libs []docsindex.Library, say func(string, ...any)) error {
+	for _, l := range libs {
+		if _, err := store.Remove(l.Key); err != nil {
+			return err
+		}
+		if BuiltBySearch(l) {
+			say("removed %s: pages earlier questions stored, which are no longer kept", l.Key)
+		} else {
+			say("removed %s: the same docs root as this library", l.Key)
+		}
+	}
+	return nil
 }
 
 // putPageBatches writes pages indexWriteBatch to a transaction, in URL

@@ -106,7 +106,7 @@
     "surface": "docs",
     "backend": "search",
     "status": "ok",
-    "detail": "keyless: web search, then the docs site it finds, kept in the local index; nothing indexed yet",
+    "detail": "keyless: web search, then the docs site it finds (pages kept in the page cache for cache_ttl); nothing indexed yet",
     "latency_ms": 0
   },
   {

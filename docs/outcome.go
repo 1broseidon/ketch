@@ -66,7 +66,12 @@ type Outcome struct {
 	// DefinedIn names where listed terms no printed result defines are
 	// defined (design/docs-evidence.md, Round 8).
 	DefinedIn []DefinedIn `json:"defined_in,omitempty"`
-	err       error
+	// Stale says an answer from an indexed library could not check what it
+	// cites: a cited page last read longer ago than cache_ttl could not be
+	// read again (no network, a timeout, --offline). "unverified, built
+	// <date>"; empty when every cited page is fresh or was checked.
+	Stale string `json:"stale,omitempty"`
+	err   error
 }
 
 // Err is the error behind a refused or failed outcome, classified by
