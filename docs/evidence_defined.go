@@ -20,15 +20,16 @@ import (
 // printed, whole or cut, the frontmatter names one: a
 // defining section on a page the answer prints, else the one Gather ranks
 // highest, ties in pool order. One per term, at most definedMax, in the
-// order the question writes them, after the answer's body
-// (DefinedInLines; --json and the docs tool carry them as defined_in):
+// order the question writes them, on the frontmatter's defined_in line
+// after not_found (definedInLine; --json and the docs tool carry them as
+// defined_in):
 //
-//	defined in: failmode → https://duo.com/docs/duounix#duo-configuration-options
+//	defined_in: {failmode: https://duo.com/docs/duounix#duo-configuration-options}
 //
 // It is a lead, not a ranking rule: it adds no section to the walk and
 // changes no group. It is counted in the budget.
 
-// definedMax is the most terms an answer's defined-in lines name.
+// definedMax is the most terms an answer's defined_in line names.
 const definedMax = 3
 
 // DefinedIn is a section that defines a term of the question and that

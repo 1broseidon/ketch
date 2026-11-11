@@ -142,14 +142,14 @@ const DocsParams = Type.Object({
 	library: Type.Optional(
 		Type.String({
 			description:
-				"the library to answer from. search: a docs URL to search within, or a library name or spec to prefer (name@version such as django@5.2, npm:/pypi:/crates:/go:/github: prefixes such as pypi:click, owner/repo); a library the operator indexed answers offline. " +
+				"the library to answer from. search: a docs URL to search within, or a library name or spec to prefer (name@version such as django@5.2, npm:/pypi:/crates:/go:/github: prefixes such as pypi:click, owner/repo); a library the operator indexed answers from the local index. " +
 				"context7: a library ID from resolve, such as /vercel/next.js",
 		}),
 	),
 	section: Type.Optional(
 		Type.String({
 			description:
-				"read one section in full from the local index instead of searching: the url#anchor in a result's section field (a page URL alone returns the page's sections in order); no query; tokens caps it (default 4000)",
+				"read one section instead of searching: the url#anchor in a result's section field or a defined_in entry (a page URL alone returns the page's sections in order), from the local index or, for a page a search read, through the page cache; no query; a section longer than tokens (default 4000) returns its first page (page and pages say so): raise tokens to read more",
 		}),
 	),
 	tokens: Type.Optional(
@@ -685,10 +685,10 @@ export default function ketch(pi: ExtensionAPI): void {
 		...renderers("docs"),
 		label: "ketch docs",
 		description:
-			"Search library documentation. The default backend, search, answers from the docs themselves with no API key: a library the operator indexed (ketch docs index) answers offline from the local index; otherwise ketch searches the web for the question, picks the documentation site the results agree on, reads the matching pages and keeps them in the local index, so a repeated question answers offline. " +
-			"Results are whole sections, verbatim with their code: compact for pages search read (about 1,800 tokens, or tokens), whole sections for an indexed library unless tokens is set. " +
+			"Search library documentation. The default backend, search, answers from the docs themselves with no API key: a library the operator indexed (ketch docs index) answers from the local index; otherwise ketch searches the web for the question, picks the documentation site the results agree on, reads the matching pages and answers from them. Nothing is saved (only ketch docs index adds libraries or pages): the same question again within cache_ttl is answered from the page cache. " +
+			"The answer is evidence and a verdict: status found (evidence matching the question, not a promise that it answers), partial (reason terms_not_found: not_found names your terms this source lacks; or partial_site: pages a search read) or refused (nothing here matches); defined_in names the section defining a term no result shows; stale says the cited pages could not be checked. Results are the matching pieces of sections, verbatim, about 1,800 tokens in all unless tokens is set. " +
 			"library names the library: a docs URL to search within, or a name or spec such as django@5.2 or pypi:click to prefer. " +
-			"A result cut short ends with a full-section pointer; pass its url#anchor (the result's section field) as section, with no query, to read the section in full from the local index (no network, no quota). " +
+			"A cut result is marked truncated (shown_tokens of section_tokens); to read it, or a defined_in target, pass its url#anchor (the result's section field) as section, with no query. " +
 			"backend=context7 returns Context7's curated snippets instead; Context7 needs no key either, but keyless it runs on an anonymous quota of about 200 requests a month per IP, and a spent quota is an [upstream] error naming when it resets. " +
 			"resolve=true resolves a library name to Context7 library IDs, or for search to docs roots with their versions and evidence; pass one as library." +
 			ERR_TAXONOMY,

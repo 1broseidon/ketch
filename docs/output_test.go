@@ -26,14 +26,16 @@ func TestFrontmatterOrder(t *testing.T) {
 	if got := f.Render(); got != want {
 		t.Errorf("frontmatter:\n%s\nwant:\n%s", got, want)
 	}
-	answered := Frontmatter{Query: "q", Backend: SearchBackend, Library: "L", Index: searchRead(12), Status: Found, Terms: []TermCount{}, NotFound: []string{}}
+	answered := Frontmatter{Query: "q", Backend: SearchBackend, Library: "L", Index: searchRead(12, false), Status: Found, Terms: []TermCount{}, NotFound: []string{}}
 	if got := answered.Render(); got != "---\nquery: q\nbackend: search\nlibrary: L\nsource: search, 12 pages read\nstatus: found\nterms: {}\nnot_found: []\n---\n" {
 		t.Errorf("answered from pages read:\n%s", got)
 	}
+	if got := searchRead(12, true).line(); got != "source: search, 12 pages read, cached" {
+		t.Errorf("a repeat from the question cache: %q", got)
+	}
 	capped := indexInfo(docsindex.Library{Pages: 400, Capped: true})
-	built := indexInfo(docsindex.Library{Pages: 9, Resolved: resolvedBySearch})
-	if capped.line() != "index: capped, 400 pages" || built.line() != "index: search, 9 pages" {
-		t.Errorf("index lines %q, %q", capped.line(), built.line())
+	if capped.line() != "index: capped, 400 pages" {
+		t.Errorf("index line %q", capped.line())
 	}
 	legacy := Frontmatter{Query: "q", Backend: "context7", Library: "/x/y", Status: Found}
 	if got := legacy.Render(); got != "---\nquery: q\nbackend: context7\nlibrary: /x/y\n---\n" {

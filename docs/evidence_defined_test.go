@@ -100,21 +100,24 @@ func TestPickDefined(t *testing.T) {
 	}
 }
 
-// The defined-in lines follow the body, one per term, and are not in the
-// frontmatter; --json carries them as defined_in, and nothing for none.
+// defined_in is one frontmatter line after not_found, a flow mapping from
+// each term to its section, and nothing follows the body; --json carries
+// it as defined_in, and nothing for none.
 func TestDefinedInOutput(t *testing.T) {
 	defs := []DefinedIn{{Term: "failmode", Section: "https://duo.com/docs/duounix#duo-configuration-options"}, {Term: "x", Section: "u#a"}}
-	want := "\ndefined in: failmode → https://duo.com/docs/duounix#duo-configuration-options\ndefined in: x → u#a\n"
-	if got := DefinedInLines(defs); got != want {
-		t.Errorf("lines:\n%q\nwant:\n%q", got, want)
-	}
-	if DefinedInLines(nil) != "" {
-		t.Error("lines for none")
-	}
 	f := Frontmatter{Query: "q", Backend: SearchBackend, Library: "L", Index: &IndexInfo{Kind: IndexFull, Pages: 2}, Status: Found,
 		Terms: []TermCount{{"failmode", 74}}, NotFound: []string{}, DefinedIn: defs}
+	want := "---\nquery: q\nbackend: search\nlibrary: L\nindex: full, 2 pages\nstatus: found\nterms: {failmode: 74}\nnot_found: []\n" +
+		"defined_in: {failmode: https://duo.com/docs/duounix#duo-configuration-options, x: u#a}\n---\n"
+	if got := f.Render(); got != want {
+		t.Errorf("frontmatter:\n%s\nwant:\n%s", got, want)
+	}
+	f.DefinedIn = nil
 	if got := f.Render(); strings.Contains(got, "defined") {
-		t.Errorf("in the frontmatter:\n%s", got)
+		t.Errorf("a line for none:\n%s", got)
+	}
+	if got := definedInLine([]DefinedIn{{Term: "a:b", Section: "https://x.test/a b#c,d"}}); got != `defined_in: {"a:b": "https://x.test/a b#c,d"}`+"\n" {
+		t.Errorf("quoted: %s", got)
 	}
 	o := Outcome{Status: Found, Index: &IndexInfo{Kind: IndexFull}, DefinedIn: defs[1:]}
 	b, _ := json.Marshal(NewFrontmatter("q", SearchBackend, "", o))
@@ -155,7 +158,7 @@ func TestEvidenceDefinedIn(t *testing.T) {
 	if len(a.definedIn) != 1 || a.definedIn[0] != (DefinedIn{Term: "quokka", Section: evRoot + "ref#options"}) {
 		t.Fatalf("defined_in %+v", a.definedIn)
 	}
-	total := estimateTokens(a.frontmatter(lib, "zebra quokka", "").Render() + RenderAnswer(a.results, HintNone) + DefinedInLines(a.definedIn))
+	total := estimateTokens(a.frontmatter(lib, "zebra quokka", "").Render() + RenderAnswer(a.results, HintNone))
 	if total > 300 {
 		t.Errorf("printed %d tokens, budget 300", total)
 	}

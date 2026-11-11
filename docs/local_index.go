@@ -463,10 +463,16 @@ type indexBuild struct {
 	// (zero: now).
 	source string
 	at     time.Time
+	// alone sections each page with anchors from its own links only, not
+	// every page's (adoptLinkedAnchors): the pages a question read, whose
+	// sections --section later finds from the one page alone.
+	alone bool
 
 	prev docsindex.Library // the library as stored before, if it was
-	// same are the stored pages diff found unchanged: read again now.
-	same []string
+	// same are the stored pages diff found unchanged: read again now;
+	// resourced, those of them now read another way (url → pageSource).
+	same      []string
+	resourced map[string]string
 }
 
 // readAt is when the build's pages were read.
@@ -491,6 +497,9 @@ func (b *indexBuild) write(pages []webPage, failed []string) (IndexReport, error
 		return report, err
 	}
 	if err := b.store.TouchPages(b.key, b.same, b.readAt()); err != nil {
+		return report, err
+	}
+	if err := b.store.SetPageSources(b.key, b.resourced); err != nil {
 		return report, err
 	}
 	for _, pd := range todo {
@@ -532,17 +541,22 @@ func (b *indexBuild) begin() (map[string]docsindex.Page, error) {
 }
 
 // diff sections every page (anchors corrected by the links of all of
-// them) and returns the new and changed ones, ready to store; unchanged
+// them, or with alone of each page's own) and returns the new and changed ones, ready to store; unchanged
 // pages are counted with what they already hold.
 func (b *indexBuild) diff(pages []webPage, stored map[string]docsindex.Page, report *IndexReport) []docsindex.PageData {
-	var sections []webSection
-	for i, p := range pages {
-		sections = append(sections, splitSections(p, i)...)
-	}
-	sections = adoptLinkedAnchors(sections)
 	byPage := make([][]webSection, len(pages))
-	for _, s := range sections {
-		byPage[s.page] = append(byPage[s.page], s)
+	if b.alone {
+		for i, p := range pages {
+			byPage[i] = pageSections(p)
+		}
+	} else {
+		var sections []webSection
+		for i, p := range pages {
+			sections = append(sections, splitSections(p, i)...)
+		}
+		for _, s := range adoptLinkedAnchors(sections) {
+			byPage[s.page] = append(byPage[s.page], s)
+		}
 	}
 	var todo []docsindex.PageData
 	for i, p := range pages {
@@ -553,6 +567,12 @@ func (b *indexBuild) diff(pages []webPage, stored map[string]docsindex.Page, rep
 			report.Unchanged++
 			report.Library.Sections += old.Sections
 			b.same = append(b.same, p.URL)
+			if src := b.pageSource(p); old.Source != src {
+				if b.resourced == nil {
+					b.resourced = map[string]string{}
+				}
+				b.resourced[p.URL] = src
+			}
 			continue
 		case had:
 			report.Changed++
@@ -606,11 +626,7 @@ func countMissing(failed []string, stored map[string]docsindex.Page) int {
 // path names a migration to a later major labels every section; a page
 // that does not, the sections whose own headings do.
 func (b *indexBuild) pageData(p webPage, hash string, secs []webSection) docsindex.PageData {
-	source := b.source
-	if source == "" {
-		source = "index"
-	}
-	pd := docsindex.PageData{Page: docsindex.Page{URL: p.URL, Title: p.Title, Hash: hash, Sections: len(secs), Version: b.version, Fetched: b.readAt(), Source: source}}
+	pd := docsindex.PageData{Page: docsindex.Page{URL: p.URL, Title: p.Title, Hash: hash, Sections: len(secs), Version: b.version, Fetched: b.readAt(), Source: b.pageSource(p)}}
 	pageTexts := []string{p.Title, pathWords(p.URL, b.key)}
 	for i, s := range secs {
 		pd.Sections = append(pd.Sections, docsindex.Section{
@@ -620,6 +636,33 @@ func (b *indexBuild) pageData(p webPage, hash string, secs []webSection) docsind
 	}
 	return pd
 }
+
+// How a page's text was read, as its stored source names it after where
+// the page came in (pageSource): the freshness check reads it the same way.
+const (
+	readHTML  = "html"  // the page at its URL, through the page pipeline
+	readMD    = "md"    // a Markdown source at the address that follows
+	readChunk = "chunk" // a chunk of the llms file at the address that follows
+)
+
+// pageSource is the source a page is stored with: how it came in ("index"
+// for a build, "search" for the pages a question read) and how its text
+// was read: "index html", "index md https://x.test/a.md", "index chunk
+// https://x.test/llms-full.txt".
+func (b *indexBuild) pageSource(p webPage) string {
+	source := b.source
+	if source == "" {
+		source = "index"
+	}
+	if p.via == "" {
+		return source + " " + readHTML
+	}
+	return source + " " + p.via
+}
+
+// pageSections are a page's sections, its anchors corrected by its own
+// links only: what --section finds from that page alone.
+func pageSections(p webPage) []webSection { return adoptLinkedAnchors(splitSections(p, 0)) }
 
 // pageHash identifies a page's content as fetched.
 func pageHash(p webPage) string {

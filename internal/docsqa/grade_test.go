@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"slices"
 	"strings"
 	"testing"
 
@@ -101,13 +102,13 @@ func TestLedByCutGroup(t *testing.T) {
 	}
 }
 
-// A fact is led by a defined-in line when its source section is one's
-// target (by page identity), kept apart from a cut group's lead; a case
-// whose facts are led one each way is led either way.
+// A fact is led by a defined_in entry, as the frontmatter prints it, when
+// its source section is the entry's target (by page identity), kept apart
+// from a cut group's lead; a case whose facts are led one each way is led
+// either way.
 func TestLedByDefinedIn(t *testing.T) {
-	raw := `{"status": "found", "output": {"text": "---\nquery: q\n---\nbody", "tokens": 20,
-	  "groups": [{"section": "https://x.test/docs/p#a", "cut": true}],
-	  "defined_in": [{"term": "failmode", "section": "https://x.test/docs/o.html#options"}]}}`
+	raw := `{"status": "found", "output": {"text": "---\nquery: q\nnot_found: []\ndefined_in: {failmode: https://x.test/docs/o.html#options}\n---\nbody", "tokens": 20,
+	  "groups": [{"section": "https://x.test/docs/p#a", "cut": true}]}}`
 	var tr trace
 	if err := json.Unmarshal([]byte(raw), &tr); err != nil {
 		t.Fatal(err)
@@ -132,6 +133,19 @@ func TestLedByDefinedIn(t *testing.T) {
 	rep.total()
 	if rep.Totals.LedByDefined != (tally{1, 2}) || rep.Totals.AnsweredOrLedAny != (tally{1, 2}) || rep.Totals.AnsweredOrLed != (tally{0, 2}) {
 		t.Errorf("totals = %+v", rep.Totals)
+	}
+}
+
+// The defined_in line is read as printed, its scalars plain or quoted;
+// one after the frontmatter is not read.
+func TestPrintedDefinedIn(t *testing.T) {
+	got := printedDefinedIn("---\nterms: {a: 1}\ndefined_in: {failmode: https://x.test/o#opts, \"a:b\": \"https://x.test/a b#c, d\"}\n---\nbody\n")
+	want := []definedEntry{{"failmode", "https://x.test/o#opts"}, {"a:b", "https://x.test/a b#c, d"}}
+	if !slices.Equal(got, want) {
+		t.Errorf("printedDefinedIn = %+v, want %+v", got, want)
+	}
+	if got := printedDefinedIn("---\nquery: q\n---\nbody\ndefined_in: {x: y}\n"); len(got) != 0 {
+		t.Errorf("read past the frontmatter: %+v", got)
 	}
 }
 

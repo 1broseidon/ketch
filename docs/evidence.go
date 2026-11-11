@@ -87,7 +87,7 @@ func (l *Local) evidence(lib docsindex.Library, query string, opts LocalOptions,
 	v := verdict(g.written, g.sections)
 	a := &evidenceAnswer{terms: v.found, notFound: v.notFound, status: Found, index: indexInfo(lib)}
 	if opts.read > 0 {
-		a.index = searchRead(opts.read)
+		a.index = searchRead(opts.read, opts.cached)
 	}
 	var reasons []string
 	if opts.note != "" {
@@ -169,7 +169,7 @@ func fitResults(lib docsindex.Library, s *sorted, r *ranked, hint HintStyle, def
 			shown[i].URL = shownURL(lib, out[i].URL)
 		}
 		picked := pickDefined(s, defs, r.plans)
-		total := estimateTokens(RenderAnswer(shown, hint) + DefinedInLines(definedLines(lib, s, picked)))
+		total := estimateTokens(RenderAnswer(shown, hint)) + estimateTokens(definedInLine(definedLines(lib, s, picked)))
 		if total <= r.budget || len(r.plans) <= 1 {
 			return out, picked
 		}

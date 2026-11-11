@@ -239,8 +239,9 @@ func TestDocsAmbiguousLibraryReachesCallerIntact(t *testing.T) {
 	}
 }
 
-// The library, resolve and query descriptions, and the tool's own, say what
-// each library provider accepts as a library, from its descriptor.
+// The library, resolve and query descriptions say what each library
+// provider accepts as a library, from its descriptor; the tool's own
+// description leaves that to them.
 func TestDocsDescriptionsJoinLibraryHelp(t *testing.T) {
 	var helps []string
 	for _, id := range docs.LibraryBackends() {
@@ -257,17 +258,6 @@ func TestDocsDescriptionsJoinLibraryHelp(t *testing.T) {
 			if !strings.Contains(args["docs"][arg], want) {
 				t.Errorf("docs.%s description %q does not mention %q", arg, args["docs"][arg], want)
 			}
-		}
-	}
-
-	session := docsSession(t, fixtureFallback{testutil.NewFixtureTransport()})
-	tools, err := session.ListTools(context.Background(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, tool := range tools.Tools {
-		if tool.Name == "docs" && !strings.Contains(tool.Description, helps[0]) {
-			t.Errorf("docs tool description %q does not mention %q", tool.Description, helps[0])
 		}
 	}
 }

@@ -293,22 +293,32 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 	sites := chooseSites(docs, prefs)
 	tr.cands = siteList(sites)
 	var o Outcome
+	var read sfRead
+	// keep is the outcome returned, its read kept in the question cache
+	// for a repeat within cache_ttl when the outcome is one the evidence
+	// pipeline decided (an answer, or a refusal for want of the terms).
+	keep := func(o Outcome) Outcome {
+		if read.Root != "" && kept(o) {
+			s.saveRead(req, read)
+		}
+		return o
+	}
 	for range sfMaxReads {
 		var site sfSite
 		var prof *siteProfile
 		site, prof, sites, err = s.chooseSite(cctx, sites, req, prefs)
 		if err != nil {
 			if o.Status != "" {
-				return o // the site read before says more than the rest's refusal
+				return keep(o) // the site read before says more than the rest's refusal
 			}
 			return s.failed(ctx, cctx, err)
 		}
 		if !site.retry {
 			tr.domains++
 		}
-		o = s.readSite(ctx, cctx, site, prof, req, tr)
+		o, read = s.readSite(ctx, cctx, site, prof, req, tr)
 		if answered(o) || cctx.Err() != nil {
-			return o
+			return keep(o)
 		}
 		if len(site.alts) > 0 {
 			// Nothing readable in this docs tree (JS shells no browser
@@ -320,10 +330,10 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 			continue
 		}
 		if o.Reason == reasonDisallowed || len(sites) == 0 || tr.domains >= sfMaxSites {
-			return o // a site that closes its docs to robots is still the site
+			return keep(o) // a site that closes its docs to robots is still the site
 		}
 	}
-	return o
+	return keep(o)
 }
 
 // sfMaxSites is how many sites (domains) one question reads: the next is
@@ -336,36 +346,29 @@ const (
 )
 
 // readSite answers from one site: from the indexed library that holds it,
-// else from its pages, read and held in memory. An answer is kept in the
-// question cache (saveRead) for a repeat within cache_ttl.
-func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *siteProfile, req sfRequest, tr *sfTrace) Outcome {
+// else from its pages, read and held in memory. It returns the read a
+// repeat within cache_ttl would answer from (no Root when nothing was
+// read), which fromSearch keeps.
+func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *siteProfile, req sfRequest, tr *sfTrace) (Outcome, sfRead) {
 	if tr.site == "" {
 		tr.site, tr.siteHits = site.root.String(), len(site.hits)
 	}
 	tr.sites++
 	if lib, ok := s.indexedOver(site.root); ok {
 		tr.local = lib.Root
-		o := s.answerIndexed(ctx, lib, req.query, req.opts, "")
-		if answered(o) {
-			s.saveRead(req, sfRead{Root: site.root.String()})
-		}
-		return o
+		return s.answerIndexed(ctx, lib, req.query, req.opts, ""), sfRead{Root: site.root.String()}
 	}
 	links, disallowed := s.plan(cctx, site, prof, req.query)
 	if len(links) == 0 && disallowed > 0 {
-		return Answer(SearchBackend, nil, fmt.Errorf("search: %s's robots.txt disallows the %d pages found: %w", site.root, disallowed, errDisallowed))
+		return Answer(SearchBackend, nil, fmt.Errorf("search: %s's robots.txt disallows the %d pages found: %w", site.root, disallowed, errDisallowed)), sfRead{}
 	}
 	pages, by, failed := s.fetch(cctx, site.root, links)
 	tr.planned, tr.fetched, tr.failed = tr.planned+len(links), tr.fetched+len(pages), tr.failed+failed
 	if len(pages) == 0 {
-		return s.failed(ctx, cctx, fmt.Errorf("search: none of the %d pages of %s could be read: %w", len(links), site.root, ErrNotFound))
+		return s.failed(ctx, cctx, fmt.Errorf("search: none of the %d pages of %s could be read: %w", len(links), site.root, ErrNotFound)), sfRead{}
 	}
 	title, name := readTitle(site.root, prof)
-	o := s.answerRead(ctx, site.root, title, name, pages, req)
-	if answered(o) {
-		s.saveRead(req, readOf(site.root, title, name, pages, by))
-	}
-	return o
+	return s.answerRead(ctx, site.root, title, name, pages, req), readOf(site.root, title, name, pages, by)
 }
 
 // failed is a search-first call that ended before an answer, classified

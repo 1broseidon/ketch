@@ -389,7 +389,7 @@ func (w *Web) indexFiles(ctx context.Context, root webRoot, llms llmsTxt, index 
 				continue
 			}
 			seenPage[pageURL] = true
-			pages = append(pages, webPage{URL: pageURL, Title: chunk.title, Markdown: capText(chunk.body, w.maxPageBytes), markdown: true})
+			pages = append(pages, webPage{URL: pageURL, Title: chunk.title, Markdown: capText(chunk.body, w.maxPageBytes), markdown: true, via: readChunk + " " + served[i].String()})
 		}
 		for _, l := range markdownLinks(string(body), root, served[i]) {
 			if isResultLink(l.url) && !seenLink[linkKey(l.url)] {
@@ -650,7 +650,7 @@ func (w *Web) fullText(ctx context.Context, root webRoot, llms llmsTxt, tried *[
 			continue
 		}
 		title := firstNonEmpty(chunk.title, llms.title, pathTitle(full.Path))
-		pages = append(pages, webPage{URL: pageURL, Title: title, Markdown: capText(chunk.body, w.maxPageBytes), markdown: true})
+		pages = append(pages, webPage{URL: pageURL, Title: title, Markdown: capText(chunk.body, w.maxPageBytes), markdown: true, via: readChunk + " " + full.String()})
 	}
 	// Results should link to pages. When most chunks name none (Hono's file
 	// has no per-page URLs, or its titles are shared) and llms.txt lists
@@ -1207,7 +1207,7 @@ func (w *Web) readPage(ctx context.Context, root webRoot, u *url.URL) (rootInfo,
 	case err == nil:
 		md := markdownRootInfo(page.Markdown, firstNonEmpty(info.title, cleanPageTitle(page.Title)), root, at, w.maxPageBytes)
 		md.description, md.generator, md.scripts = info.description, info.generator, info.scripts
-		md.page.Anchors, md.page.markdown = page.Anchors, false
+		md.page.Anchors, md.page.markdown, md.page.via = page.Anchors, false, ""
 		return md, nil
 	case rawErr != nil:
 		return info, err
@@ -1220,7 +1220,7 @@ func (w *Web) readPage(ctx context.Context, root webRoot, u *url.URL) (rootInfo,
 func markdownRootInfo(md, title string, root webRoot, u *url.URL, maxBytes int) rootInfo {
 	fmTitle, md := stripFrontmatter(capText(md, maxBytes))
 	info := rootInfo{title: firstNonEmpty(title, fmTitle, firstH1(md)), at: u, links: markdownLinks(md, root, u)}
-	info.page = &webPage{URL: u.String(), Title: info.title, Markdown: md, markdown: true}
+	info.page = &webPage{URL: u.String(), Title: info.title, Markdown: md, markdown: true, via: readMD + " " + u.String()}
 	return info
 }
 

@@ -163,6 +163,10 @@ func (w *Web) fetchOne(ctx context.Context, root webRoot, link webLink) (*webPag
 	}
 	md = capText(md, w.maxPageBytes)
 	fmTitle, md := stripFrontmatter(md)
+	via := ""
+	if fromRaw {
+		via = readMD + " " + from.String()
+	}
 	return &webPage{
 		URL:      displayURL(from),
 		Title:    firstNonEmpty(fmTitle, cleanPageTitle(title), link.title, pathTitle(from.Path)),
@@ -170,6 +174,7 @@ func (w *Web) fetchOne(ctx context.Context, root webRoot, link webLink) (*webPag
 		Anchors:  anchors,
 		markdown: fromRaw,
 		shell:    shell,
+		via:      via,
 	}, nil
 }
 

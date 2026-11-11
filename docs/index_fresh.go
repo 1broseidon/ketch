@@ -26,12 +26,28 @@ import (
 // never read. A --section read from the index follows the same rule for
 // its one page.
 //
+// Same source, or no verdict: a page is read again the way its text was
+// stored (its source: the page itself, its Markdown source, or its chunk
+// of an llms file), never another way. A page that cannot be read that
+// way again counts as unverified; a page an older build stored without
+// saying how is unverified unless its own page or its Markdown variant
+// (x.md) still holds the text stored.
+//
+// A failed check backs off: a page whose check failed or timed out is not
+// read again for checkBackoff, and answers citing it meanwhile are
+// unverified. The failure is kept in the page cache (ResolutionCache),
+// so it holds across calls; without a page cache there is no back-off.
+//
 // A whole refresh stays `ketch docs index` again: pages added to a site
 // since the build are not seen until then, and the build date says how
 // old the index is.
 
 // freshCheckTimeout bounds the whole check of one answer's cited pages.
 const freshCheckTimeout = 3 * time.Second
+
+// checkBackoff is how long a page whose check failed is not read again:
+// otherwise a throttled site would be fetched on every answer.
+const checkBackoff = 15 * time.Minute
 
 // answerIndexed answers query from lib, an indexed library, once its
 // cited pages are checked (verify), with note (other indexed versions).
@@ -113,9 +129,10 @@ func (s *SearchFirst) stalePages(lib docsindex.Library, pages []string) ([]docsi
 }
 
 // recheck reads the stale pages again, all at once, within
-// s.checkTimeout: an unchanged page has its fetch time updated, a changed
-// one is sectioned again in lib's index. It reports whether any changed
-// and whether any could not be read or stored.
+// s.checkTimeout, each the way it was stored (reread), but those whose
+// check failed within checkBackoff: an unchanged page has its fetch time
+// updated, a changed one is sectioned again in lib's index. It reports
+// whether any changed and whether any could not be read or stored.
 func (s *SearchFirst) recheck(ctx context.Context, lib docsindex.Library, stale []docsindex.Page) (changed, failed bool) {
 	root, err := parseWebRoot(lib.Root)
 	if err != nil {
@@ -124,9 +141,14 @@ func (s *SearchFirst) recheck(ctx context.Context, lib docsindex.Library, stale 
 	cctx, cancel := context.WithTimeout(ctx, s.checkTimeout)
 	defer cancel()
 	got := make([]reread, len(stale))
+	files := &llmsFiles{}
 	var wg sync.WaitGroup
 	for i, p := range stale {
-		wg.Go(func() { got[i] = s.reread(cctx, root, p) })
+		if s.backedOff(lib, p.URL) {
+			got[i] = reread{skipped: true}
+			continue
+		}
+		wg.Go(func() { got[i] = s.reread(cctx, root, p, files) })
 	}
 	wg.Wait()
 	now := s.now().UTC()
@@ -138,10 +160,13 @@ func (s *SearchFirst) recheck(ctx context.Context, lib docsindex.Library, stale 
 		switch {
 		case r.page == nil:
 			failed = true
+			if !r.skipped {
+				s.noteFailed(lib, stale[i].URL)
+			}
 		case r.same:
 			same = append(same, stale[i].URL)
 		default:
-			pd := b.pageData(*r.page, pageHash(*r.page), adoptLinkedAnchors(splitSections(*r.page, 0)))
+			pd := b.pageData(*r.page, pageHash(*r.page), pageSections(*r.page))
 			delta += pd.Page.Sections - stale[i].Sections
 			todo = append(todo, pd)
 		}
@@ -158,44 +183,176 @@ func (s *SearchFirst) recheck(ctx context.Context, lib docsindex.Library, stale 
 	return true, failed
 }
 
-// reread is a stored page read again: its text at the address the index
-// holds it under (nil when it could not be read), and whether that is the
-// text stored.
-type reread struct {
-	page *webPage
-	same bool
+// checkFailedVersion versions the page cache's entries for failed checks.
+const checkFailedVersion = "docs-check-failed/v1"
+
+func checkFailedKey(lib docsindex.Library, page string) string {
+	return checkFailedVersion + "|" + lib.Key + "|" + page
 }
 
-// reread reads a stored page again, as a build reads it: through the page
-// pipeline, and when that text is not the stored one, from its Markdown
-// variant (x.md), which a build reads instead for a site whose llms.txt
-// lists it, or whose llms-full.txt the stored text came from. A page is
-// unchanged when either text is the stored one; changed, it takes the
-// Markdown variant's text when there is one.
-func (s *SearchFirst) reread(ctx context.Context, root webRoot, p docsindex.Page) reread {
+// backedOff reports a page of lib whose check failed less than
+// checkBackoff ago.
+func (s *SearchFirst) backedOff(lib docsindex.Library, page string) bool {
+	rc := s.web.resolutionCache()
+	if rc == nil {
+		return false
+	}
+	raw, ok := rc.GetResolution(checkFailedKey(lib, page))
+	if !ok {
+		return false
+	}
+	at, err := time.Parse(time.RFC3339Nano, raw)
+	return err == nil && s.now().Sub(at) < checkBackoff
+}
+
+// noteFailed records that the check of a page of lib failed now.
+func (s *SearchFirst) noteFailed(lib docsindex.Library, page string) {
+	if rc := s.web.resolutionCache(); rc != nil {
+		rc.PutResolution(checkFailedKey(lib, page), s.now().UTC().Format(time.RFC3339Nano))
+	}
+}
+
+// reread is a stored page read again: its text at the address the index
+// holds it under (nil when it could not be read the way it was stored, or
+// was not read: skipped, backed off), and whether that is the text stored.
+type reread struct {
+	page    *webPage
+	same    bool
+	skipped bool
+}
+
+// reread reads a stored page again the way its source says it was read
+// (pageSource): the page through the page pipeline, its Markdown source
+// as raw text, or its chunk of an llms file (files: each file read once
+// per check). A page stored before its source said how is the same when
+// its page or its Markdown variant (x.md) holds the text stored, and
+// unverified otherwise: it is never replaced by text read another way.
+func (s *SearchFirst) reread(ctx context.Context, root webRoot, p docsindex.Page, files *llmsFiles) reread {
 	u, err := url.Parse(p.URL)
 	if err != nil {
 		return reread{}
 	}
-	read := func(u *url.URL) *webPage {
-		wp, err := s.web.fetchOne(ctx, root, webLink{url: u, title: p.Title})
-		if err != nil || unreadShell(wp) {
-			return nil
+	form, from := storedForm(p.Source)
+	var page *webPage
+	switch form {
+	case readHTML:
+		page = s.readHTML(ctx, root, p, u)
+	case readMD:
+		page = s.readMarkdown(ctx, root, p, from)
+	case readChunk:
+		page = files.chunk(ctx, s.web, root, p, from)
+	default:
+		if page = s.readHTML(ctx, root, p, u); page != nil && pageHash(*page) == p.Hash {
+			return reread{page: page, same: true}
 		}
-		page := *wp
-		page.URL = p.URL // the address the index holds it under
-		return &page
+		if mu, ok := markdownVariant(u); ok {
+			if md := s.readMarkdown(ctx, root, p, mu.String()); md != nil && pageHash(*md) == p.Hash {
+				return reread{page: md, same: true}
+			}
+		}
+		return reread{}
 	}
-	page := read(u)
-	if page != nil && pageHash(*page) == p.Hash {
-		return reread{page: page, same: true}
+	if page == nil {
+		return reread{}
 	}
-	if mu, ok := markdownVariant(u); ok {
-		if md := read(mu); md != nil && md.markdown {
-			return reread{page: md, same: pageHash(*md) == p.Hash}
+	return reread{page: page, same: pageHash(*page) == p.Hash}
+}
+
+// storedForm is how a stored page's text was read, from its source
+// (pageSource): the form and the address it was read from; "" for a page
+// stored before its source said.
+func storedForm(source string) (form, from string) {
+	_, rest, _ := strings.Cut(source, " ")
+	form, from, _ = strings.Cut(rest, " ")
+	switch form {
+	case readHTML, readMD, readChunk:
+		return form, from
+	}
+	return "", ""
+}
+
+// readHTML is a stored page read again as the page at u, through the page
+// pipeline, at the address the index holds it under; nil when that fails
+// or gives a JS shell no browser rendered.
+func (s *SearchFirst) readHTML(ctx context.Context, root webRoot, p docsindex.Page, u *url.URL) *webPage {
+	wp, err := s.web.fetchOne(ctx, root, webLink{url: u, title: p.Title})
+	if err != nil || unreadShell(wp) || wp.via != "" {
+		return nil
+	}
+	page := *wp
+	page.URL = p.URL
+	return &page
+}
+
+// readMarkdown is a stored page read again from its Markdown source at
+// from, as raw text (FetchRaw), as a build reads one; nil when that fails,
+// leaves the docs root, or the server answers with HTML.
+func (s *SearchFirst) readMarkdown(ctx context.Context, root webRoot, p docsindex.Page, from string) *webPage {
+	mu, err := url.Parse(from)
+	if err != nil || from == "" {
+		return nil
+	}
+	raw, err := s.web.fetcher.FetchRaw(ctx, from)
+	if err != nil {
+		return nil
+	}
+	served, err := servedFrom(mu, raw.URL, root.contains)
+	if err != nil || looksLikeHTML(raw.Body, raw.ContentType) {
+		return nil
+	}
+	fmTitle, md := stripFrontmatter(capText(string(raw.Body), s.web.maxPageBytes))
+	return &webPage{URL: p.URL, Title: firstNonEmpty(fmTitle, p.Title), Markdown: md, markdown: true, via: readMD + " " + served.String()}
+}
+
+// llmsFiles are the llms files one check reads, each once.
+type llmsFiles struct {
+	mu    sync.Mutex
+	files map[string]*llmsFile
+}
+
+// llmsFile is one llms file as a check read it: its chunks and where it
+// was served from; none when it could not be read.
+type llmsFile struct {
+	once   sync.Once
+	chunks []fullChunk
+	served *url.URL
+}
+
+// chunk is a stored page read again from its chunk of the llms file at
+// from: the chunk holding the text stored, else the one naming the page
+// by its URL line; nil when the file cannot be read (or has outgrown
+// maxFullBytes) or no chunk is the page's.
+func (f *llmsFiles) chunk(ctx context.Context, w *Web, root webRoot, p docsindex.Page, from string) *webPage {
+	f.mu.Lock()
+	if f.files == nil {
+		f.files = map[string]*llmsFile{}
+	}
+	file, ok := f.files[from]
+	if !ok {
+		file = &llmsFile{}
+		f.files[from] = file
+	}
+	f.mu.Unlock()
+	file.once.Do(func() {
+		body, served, ok := w.probe(ctx, root, from)
+		if ok && len(body) <= w.maxFullBytes {
+			file.chunks, file.served = splitFullText(string(body)), served
+		}
+	})
+	var named *webPage
+	for _, c := range file.chunks {
+		if strings.TrimSpace(c.body) == "" {
+			continue
+		}
+		page := webPage{URL: p.URL, Title: firstNonEmpty(c.title, p.Title), Markdown: capText(c.body, w.maxPageBytes), markdown: true, via: readChunk + " " + from}
+		if pageHash(page) == p.Hash {
+			return &page
+		}
+		if u, how := fullPageURL(c, file.served, root, nil); named == nil && how == chunkInScope && u == p.URL {
+			named = &page
 		}
 	}
-	return reread{page: page}
+	return named
 }
 
 // markdownVariant is the Markdown source llms.txt generators publish
@@ -272,7 +429,7 @@ func (s *SearchFirst) readSection(ctx context.Context, library, ref string, toke
 		}
 	}
 	b := &indexBuild{key: root.String()}
-	secs := b.pageData(*wp, "", adoptLinkedAnchors(splitSections(*wp, 0))).Sections
+	secs := b.pageData(*wp, "", pageSections(*wp)).Sections
 	if len(secs) == 0 {
 		return Answer(SearchBackend, nil, fmt.Errorf("search: %s has no sections: %w", page, ErrSectionNotFound))
 	}

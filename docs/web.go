@@ -466,6 +466,13 @@ type webPage struct {
 	// shell marks a page known to be an unrendered JS shell (no browser
 	// rendered it): its text is what the server sent before scripts ran.
 	shell bool
+	// via is where the text came from when it is not the page at URL read
+	// through the page pipeline: "md <url>", a Markdown source (x.md, or
+	// the raw text a server sent for the page's address), or "chunk <url>",
+	// a chunk of an llms file (llms-full.txt, an llms.txt index file). The
+	// index records it (pageSource), and its check reads a page the same
+	// way (index_fresh.go).
+	via string
 }
 
 // webLink is a candidate page found during discovery.

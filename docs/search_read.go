@@ -3,6 +3,7 @@ package docs
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"slices"
@@ -44,8 +45,10 @@ func Readable(libs []docsindex.Library) []docsindex.Library {
 
 // readLibrary holds pages read under root as a library in memory, with
 // the tables, sections and full-text rows an indexed library has, so the
-// evidence pipeline answers from it as from the index. The caller closes
-// the Local's store.
+// evidence pipeline answers from it as from the index. Each page is
+// sectioned from itself alone (indexBuild.alone), as --section on it
+// sections it again (readSection), so every reference an answer prints
+// resolves. The caller closes the Local's store.
 func readLibrary(root webRoot, title, siteName string, pages []webPage) (*Local, docsindex.Library, error) {
 	store, err := docsindex.OpenMemory(ftsTokenizer{})
 	if err != nil {
@@ -53,7 +56,7 @@ func readLibrary(root webRoot, title, siteName string, pages []webPage) (*Local,
 	}
 	key := root.String()
 	label, _ := rootVersion(root)
-	b := &indexBuild{store: store, key: key, version: label, title: title, source: resolvedBySearch}
+	b := &indexBuild{store: store, key: key, version: label, title: title, source: resolvedBySearch, alone: true}
 	var report IndexReport
 	todo := b.diff(pages, nil, &report)
 	if err := putPageBatches(store, key, todo); err != nil {
@@ -239,10 +242,11 @@ func (s *SearchFirst) loadRead(req sfRequest) (sfRead, webRoot, bool) {
 }
 
 // fromRead answers a question read before, within the TTL, as it was
-// answered: from the indexed library that holds its docs root, else from
-// the same pages, read again through the page cache (no web search, no
-// site pick, no discovery). It reports false when there is no read to
-// repeat or it no longer answers, and the question is searched.
+// answered or refused: from the indexed library that holds its docs root,
+// else from the same pages, read again through the page cache (no web
+// search, no site pick, no discovery), the source line saying cached. It
+// reports false when there is no read to repeat or it no longer gives an
+// outcome the cache keeps (kept), and the question is searched.
 func (s *SearchFirst) fromRead(ctx context.Context, req sfRequest, tr *sfTrace) (Outcome, bool) {
 	r, root, ok := s.loadRead(req)
 	if !ok {
@@ -251,7 +255,7 @@ func (s *SearchFirst) fromRead(ctx context.Context, req sfRequest, tr *sfTrace) 
 	if lib, ok := s.indexedOver(root); ok {
 		tr.cached, tr.local = true, lib.Root
 		o := s.answerIndexed(ctx, lib, req.query, req.opts, "")
-		return o, answered(o)
+		return o, kept(o)
 	}
 	if len(r.Pages) == 0 {
 		return Outcome{}, false
@@ -275,12 +279,22 @@ func (s *SearchFirst) fromRead(ctx context.Context, req sfRequest, tr *sfTrace) 
 	if len(pages) == 0 {
 		return Outcome{}, false
 	}
+	req.opts.cached = true
 	o := s.answerRead(ctx, root, r.Title, r.SiteName, pages, req)
-	return o, answered(o)
+	return o, kept(o)
 }
 
 // answered reports an outcome with results to print.
 func answered(o Outcome) bool { return o.Status == Found || o.Status == Partial }
+
+// kept reports an outcome the question cache keeps the read of, and a
+// repeat within cache_ttl gives again without searching: an answer, or
+// the evidence pipeline's refusal (none of the question's distinctive
+// terms in the docs, or nothing in them matched).
+func kept(o Outcome) bool {
+	err := o.Err()
+	return answered(o) || o.Status == Refused && (errors.Is(err, ErrTermsNotFound) || errors.Is(err, ErrNoResults))
+}
 
 // indexedOver is the indexed library (one `docs index` built, in the
 // current format) whose docs root holds root, the narrowest of several.

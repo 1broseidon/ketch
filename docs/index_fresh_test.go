@@ -3,6 +3,7 @@ package docs
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -205,8 +206,8 @@ func TestIndexReplacesSearchBuiltLibraries(t *testing.T) {
 	}
 	pages, _ := store.Pages(idxRoot)
 	for u, p := range pages {
-		if p.Source != "index" {
-			t.Errorf("%s stored with source %q", u, p.Source)
+		if p.Source != "index html" {
+			t.Errorf("%s stored with source %q, want index html", u, p.Source)
 		}
 	}
 }
@@ -260,8 +261,10 @@ func TestReadLibraryIsInMemory(t *testing.T) {
 }
 
 // A page an index read from its Markdown source (llms.txt's x.md) is
-// checked against that source, not against the rendered page: unchanged,
-// it stays as it is.
+// checked against that source, never the rendered page: unchanged, it
+// stays as it is; changed, it is sectioned again from the source; when
+// the source cannot be read, the answer is unverified and the page keeps
+// its text, though the rendered page could be read.
 func TestIndexCheckMarkdownSource(t *testing.T) {
 	f := mintlifySite()
 	s, c, store, _ := searchFirstCached(t, f, nil)
@@ -269,15 +272,180 @@ func TestIndexCheckMarkdownSource(t *testing.T) {
 	if _, err := IndexLibrary(context.Background(), &config.Config{}, Deps{Fetcher: f}, store, IndexRequest{Library: root}); err != nil {
 		t.Fatal(err)
 	}
-	page := root + "guides/content-collections"
+	page, source := root+"guides/content-collections", root+"guides/content-collections.md"
 	before, _ := store.PagesOf(root, []string{page})
+	if before[page].Source != "index md "+source {
+		t.Fatalf("stored with source %q, want its Markdown source named", before[page].Source)
+	}
+	ctx := context.Background()
+	const q = "define a collection schema"
 	c.advance(2 * time.Hour)
-	o := s.GetDocsSelect(context.Background(), root, "define a collection schema", 0)
+	o := s.GetDocsSelect(ctx, root, q, 0)
 	if o.Status != Found || o.Stale != "" || len(o.Results) == 0 {
 		t.Fatalf("answer %s stale %q (%v)", o.Status, o.Stale, o.Err())
 	}
 	after, _ := store.PagesOf(root, []string{page})
 	if after[page].Hash != before[page].Hash || !after[page].Fetched.After(before[page].Fetched) {
 		t.Errorf("page %+v, was %+v: want the same text, checked now", after[page], before[page])
+	}
+
+	f.raw[source] = md(strings.Replace(f.raw[source].body, "is type-checked", "is type-checked at build time", 1))
+	c.advance(2 * time.Hour)
+	if o := s.GetDocsSelect(ctx, root, q, 0); o.Stale != "" || !strings.Contains(snippets(o), "at build time") {
+		t.Errorf("changed source: stale %q, printed:\n%s", o.Stale, snippets(o))
+	}
+
+	delete(f.raw, source)
+	c.advance(2 * time.Hour)
+	o = s.GetDocsSelect(ctx, root, q, 0)
+	if !strings.HasPrefix(o.Stale, "unverified, built ") || !strings.Contains(snippets(o), "at build time") {
+		t.Errorf("source gone: stale %q, printed:\n%s", o.Stale, snippets(o))
+	}
+	if secs, _ := store.Sections(root); slices.ContainsFunc(secs, func(s docsindex.Section) bool { return strings.Contains(s.Text, "rendered") }) {
+		t.Error("the page was replaced by its rendered text")
+	}
+}
+
+func snippets(o Outcome) string {
+	var b strings.Builder
+	for _, r := range o.Results {
+		b.WriteString(r.Snippet + "\n")
+	}
+	return b.String()
+}
+
+// fullSite is a site whose pages come from llms-full.txt chunks; its
+// rendered pages say something else.
+func fullSite() *fakeFetcher {
+	return &fakeFetcher{raw: map[string]fakeRaw{
+		"https://full.test/llms.txt": plain("# Full\n\n> Docs for Full.\n\n- [Setup](https://full.test/docs/setup)\n- [Config](https://full.test/docs/config)\n"),
+		"https://full.test/llms-full.txt": plain("---\ntitle: Setup\nurl: \"https://full.test/docs/setup\"\n---\n\nInstall Full with the installer, then run full init.\n\n## Options\n\nPass --verbose to full init to see every step.\n\n" +
+			"---\ntitle: Config\nurl: \"https://full.test/docs/config\"\n---\n\nConfigure Full in full.toml with the retries key.\n"),
+	}, pages: map[string]fakePage{
+		"https://full.test/docs/setup":  {title: "Setup", markdown: "# Setup\n\nrendered setup text, full init verbose\n"},
+		"https://full.test/docs/config": {title: "Config", markdown: "# Config\n\nrendered config text\n"},
+	}}
+}
+
+// A page an index took from an llms-full.txt chunk is checked against the
+// file again, read once per check: unchanged, it stays; changed, it is
+// sectioned again from its chunk; the file gone, the answer is unverified
+// and the page is never replaced by its rendered text.
+func TestIndexCheckLLMSFullChunk(t *testing.T) {
+	f := fullSite()
+	s, c, store, _ := searchFirstCached(t, f, nil)
+	const root, full = "https://full.test/docs/", "https://full.test/llms-full.txt"
+	if _, err := IndexLibrary(context.Background(), &config.Config{}, Deps{Fetcher: f}, store, IndexRequest{Library: root}); err != nil {
+		t.Fatal(err)
+	}
+	page := root + "setup"
+	stored, _ := store.PagesOf(root, []string{page})
+	if stored[page].Source != "index chunk "+full {
+		t.Fatalf("stored with source %q, want its llms-full.txt chunk named", stored[page].Source)
+	}
+	ctx := context.Background()
+	const q = "full init verbose"
+	c.advance(2 * time.Hour)
+	before := len(f.called())
+	o := s.GetDocsSelect(ctx, root, q, 0)
+	if o.Status != Found || o.Stale != "" {
+		t.Fatalf("answer %s stale %q (%v)", o.Status, o.Stale, o.Err())
+	}
+	for _, call := range f.called()[before:] {
+		if strings.HasPrefix(call, "page ") {
+			t.Errorf("read %s: a chunk is checked against its file, not the page", call)
+		}
+	}
+
+	f.raw[full] = plain(strings.Replace(f.raw[full].body, "to see every step", "to print every step", 1))
+	c.advance(2 * time.Hour)
+	if o := s.GetDocsSelect(ctx, root, q, 0); o.Stale != "" || !strings.Contains(snippets(o), "print every step") {
+		t.Errorf("changed chunk: stale %q, printed:\n%s", o.Stale, snippets(o))
+	}
+
+	delete(f.raw, full)
+	c.advance(2 * time.Hour)
+	o = s.GetDocsSelect(ctx, root, q, 0)
+	if !strings.HasPrefix(o.Stale, "unverified, built ") || strings.Contains(snippets(o), "rendered") || !strings.Contains(snippets(o), "print every step") {
+		t.Errorf("file gone: stale %q, printed:\n%s", o.Stale, snippets(o))
+	}
+}
+
+// A page an older build stored without saying how it was read is the same
+// when its page still holds the text stored, and otherwise unverified: it
+// is never sectioned again from text that may have come another way.
+func TestIndexCheckUnsaidSource(t *testing.T) {
+	s, c, f, store := indexedSearchFirst(t)
+	pages, _ := store.Pages(idxRoot)
+	legacy := map[string]string{}
+	for u := range pages {
+		legacy[u] = "index"
+	}
+	if err := store.SetPageSources(idxRoot, legacy); err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	c.advance(2 * time.Hour)
+	if o := s.GetDocsSelect(ctx, idxRoot, freshQuestion, 0); o.Status != Found || o.Stale != "" {
+		t.Fatalf("unchanged: %s stale %q (%v)", o.Status, o.Stale, o.Err())
+	}
+	page := idxRoot + "guide/middleware"
+	f.pages[page] = fakePage{title: "Middleware", markdown: "# Middleware\n\n## Add middleware to a route\n\nRegister middleware on a route, the new way.\n"}
+	c.advance(2 * time.Hour)
+	o := s.GetDocsSelect(ctx, idxRoot, freshQuestion, 0)
+	if !strings.HasPrefix(o.Stale, "unverified, built ") || strings.Contains(snippets(o), "the new way") {
+		t.Errorf("changed, source unsaid: stale %q, printed:\n%s", o.Stale, snippets(o))
+	}
+}
+
+// A failed check backs off: inside checkBackoff the page is not read
+// again and answers citing it are unverified; after it, it is read.
+func TestIndexCheckBacksOff(t *testing.T) {
+	s, c, f, _ := indexedSearchFirst(t)
+	ctx := context.Background()
+	c.advance(2 * time.Hour)
+	f.fail = errors.New("status 429: too many requests")
+	before := len(f.called())
+	if o := s.GetDocsSelect(ctx, idxRoot, freshQuestion, 0); !strings.HasPrefix(o.Stale, "unverified") || len(pageCalls(f, before)) == 0 {
+		t.Fatalf("failed check: stale %q, read %v", o.Stale, pageCalls(f, before))
+	}
+	f.fail = nil
+	c.advance(checkBackoff - time.Minute)
+	before = len(f.called())
+	if o := s.GetDocsSelect(ctx, idxRoot, freshQuestion, 0); !strings.HasPrefix(o.Stale, "unverified") || len(pageCalls(f, before)) != 0 {
+		t.Errorf("inside the back-off: stale %q, read %v; want unverified and nothing read", o.Stale, pageCalls(f, before))
+	}
+	if o := s.SectionSelect(ctx, "", idxRoot+"guide/middleware#add-middleware-to-a-route", 0, 0); !strings.HasPrefix(o.Stale, "unverified") || len(pageCalls(f, before)) != 0 {
+		t.Errorf("a section inside the back-off: stale %q, read %v", o.Stale, pageCalls(f, before))
+	}
+	c.advance(2 * time.Minute)
+	before = len(f.called())
+	if o := s.GetDocsSelect(ctx, idxRoot, freshQuestion, 0); o.Stale != "" || len(pageCalls(f, before)) == 0 {
+		t.Errorf("after the back-off: stale %q, read %v; want the pages read and verified", o.Stale, pageCalls(f, before))
+	}
+}
+
+// A build that finds a page unchanged but stored without saying how it was
+// read records how it is read now, and counts it unchanged.
+func TestIndexBuildRecordsUnsaidSource(t *testing.T) {
+	f, store := exampleSite(), newStore(t)
+	buildIndex(t, f, store)
+	pages, _ := store.Pages(idxRoot)
+	legacy := map[string]string{}
+	for u := range pages {
+		legacy[u] = "index"
+	}
+	if err := store.SetPageSources(idxRoot, legacy); err != nil {
+		t.Fatal(err)
+	}
+	r := buildIndex(t, f, store)
+	if r.Changed != 0 || r.New != 0 || r.Unchanged != len(pages) {
+		t.Errorf("report %+v, want every page unchanged", r)
+	}
+	after, _ := store.Pages(idxRoot)
+	for u, p := range after {
+		if p.Source != "index html" {
+			t.Errorf("%s: source %q after the build, want index html", u, p.Source)
+		}
 	}
 }

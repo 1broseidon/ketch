@@ -118,6 +118,7 @@ func TestSearchFirstRepeatWithinTTL(t *testing.T) {
 	if again.Status != Partial || again.Note != first.Note || !sameURLs(again.Results, first.Results) || again.Index.PagesRead != first.Index.PagesRead {
 		t.Errorf("again = %s %q %v, want the first answer", again.Status, again.Note, resultURLs(again.Results))
 	}
+	checkCached(t, first, again)
 	if s.SearchSelect(ctx, "fetch handler runtime", 0); searches.Load() == searched {
 		t.Error("another question was answered without searching")
 	}
@@ -131,6 +132,43 @@ func TestSearchFirstRepeatWithinTTL(t *testing.T) {
 		t.Errorf("after the TTL: %s, %d searches, %d fetches; want a search and pages read again", o.Status, searches.Load()-searched, len(f.called())-fetched)
 	}
 	checkNothingStored(t, store)
+}
+
+// A question the pages it read refuse (none of its distinctive terms in
+// them) is kept like an answered one: asked again within cache_ttl it is
+// refused again without a search or a fetch, its source line saying
+// cached.
+func TestSearchFirstRefusalWithinTTL(t *testing.T) {
+	f := exampleSite()
+	s, c, store, searches := searchFirstCached(t, f, exampleHits())
+	ctx := context.Background()
+	const q = "zookeeper quorum"
+	first := s.SearchSelect(ctx, q, 0)
+	if first.Status != Refused || !errors.Is(first.Err(), ErrTermsNotFound) || first.Index == nil || first.Index.Cached {
+		t.Fatalf("first = %s (%v) index %+v, want refused for want of the terms", first.Status, first.Err(), first.Index)
+	}
+	searched, fetched := searches.Load(), len(f.called())
+	again := s.SearchSelect(ctx, q, 0)
+	if searches.Load() != searched || len(f.called()) != fetched {
+		t.Errorf("asked again: %d searches and %d fetches; want none", searches.Load()-searched, len(f.called())-fetched)
+	}
+	if again.Status != Refused || !slices.Equal(again.NotFound, first.NotFound) || again.Index == nil || !again.Index.Cached {
+		t.Errorf("again = %s not_found %v index %+v, want the same refusal, cached", again.Status, again.NotFound, again.Index)
+	}
+	c.advance(time.Hour + time.Minute)
+	if s.SearchSelect(ctx, q, 0); searches.Load() == searched {
+		t.Error("after the TTL the refusal was repeated without searching")
+	}
+	checkNothingStored(t, store)
+}
+
+// checkCached fails unless only the repeat says it was answered from the
+// question cache: its source line ends with cached.
+func checkCached(t *testing.T, first, again Outcome) {
+	t.Helper()
+	if first.Index.Cached || !again.Index.Cached || !strings.Contains(NewFrontmatter("q", SearchBackend, "", again).Render(), "\nsource: search, 3 pages read, cached\n") {
+		t.Errorf("index %+v then %+v: want only the repeat to say cached", first.Index, again.Index)
+	}
 }
 
 func resultURLs(rs []Result) []string {

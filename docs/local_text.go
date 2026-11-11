@@ -34,9 +34,11 @@ type LocalOptions struct {
 	// note is the note the caller adds to the answer's frontmatter (a
 	// partial answer's), which the budget covers; read, the pages a
 	// search just read when the answer is from them (0 for an indexed
-	// library), which its source line names.
-	note string
-	read int
+	// library), which its source line names, and cached that they are a
+	// repeat's, from the question cache.
+	note   string
+	read   int
+	cached bool
 }
 
 type localOptionsKey struct{}

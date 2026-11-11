@@ -428,7 +428,7 @@ func TestCompactBudgetCountsPointer(t *testing.T) {
 	for tokens := 150; tokens <= 1200; tokens += 75 {
 		for _, style := range []HintStyle{HintCLI, HintMCP, HintNone} {
 			o := l.GetDocsSelect(WithLocalOptions(context.Background(), LocalOptions{Tokens: tokens, Hint: style}), secRoot, query, 0)
-			total := estimateTokens(NewFrontmatter(query, SearchBackend, secRoot, o).Render() + RenderAnswer(o.Results, style) + DefinedInLines(o.DefinedIn))
+			total := estimateTokens(NewFrontmatter(query, SearchBackend, secRoot, o).Render() + RenderAnswer(o.Results, style))
 			if total > tokens && len(o.Results) > 1 {
 				t.Errorf("style %d at %d tokens: answer estimates %d", style, tokens, total)
 			}

@@ -543,7 +543,7 @@ func TestEvidenceDefaults(t *testing.T) {
 	if o.Status != Found || len(o.Results) == 0 {
 		t.Fatalf("outcome = %+v", o)
 	}
-	total := estimateTokens(NewFrontmatter("default form action POST", SearchBackend, "", o).Render() + RenderAnswer(o.Results, HintNone) + DefinedInLines(o.DefinedIn))
+	total := estimateTokens(NewFrontmatter("default form action POST", SearchBackend, "", o).Render() + RenderAnswer(o.Results, HintNone))
 	if total > localTokens {
 		t.Errorf("default answer %d tokens", total)
 	}
@@ -945,9 +945,9 @@ func TestSplitEntryLines(t *testing.T) {
 }
 
 // printedTokens is what a's answer to query from lib prints within opts:
-// its frontmatter, its body and its defined-in lines.
+// its frontmatter (its defined_in line included) and its body.
 func printedTokens(lib docsindex.Library, query string, a *evidenceAnswer, opts LocalOptions) int {
-	return estimateTokens(a.frontmatter(lib, query, opts.note).Render() + RenderAnswer(a.results, opts.Hint) + DefinedInLines(a.definedIn))
+	return estimateTokens(a.frontmatter(lib, query, opts.note).Render() + RenderAnswer(a.results, opts.Hint))
 }
 
 // One page, one address, in the pool: a page the library stores at two

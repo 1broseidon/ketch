@@ -235,6 +235,25 @@ func TestPrintDocsResultsShowsResolvedLibrary(t *testing.T) {
 	}
 }
 
+// An answer's defined_in is a frontmatter line after not_found; nothing
+// follows the body.
+func TestPrintDocsResultsDefinedInFrontmatter(t *testing.T) {
+	const ref = "https://duo.com/docs/duounix#duo-configuration-options"
+	o := docs.Outcome{Status: docs.Found, Index: &docs.IndexInfo{Kind: docs.IndexFull, Pages: 734, Built: "2026-11-10"},
+		Terms: []docs.TermCount{{Term: "failmode", Sections: 3}}, DefinedIn: []docs.DefinedIn{{Term: "failmode", Section: ref}},
+		Results: []docs.Result{{Library: "https://duo.com/docs/", PageTitle: "Duo Unix", HeadingPath: []string{"Fail mode"}, URL: "https://duo.com/docs/duounix#fail-mode", Snippet: "Fail safe or secure."}}}
+	out := captureStdout(t, func() {
+		printDocsResults(os.Stdout, "failmode", docs.SearchBackend, "", o, false, docs.HintCLI)
+	})
+	fm, body, ok := strings.Cut(strings.TrimPrefix(out, "---\n"), "\n---\n")
+	if !ok || !strings.HasSuffix(fm, "not_found: []\ndefined_in: {failmode: "+ref+"}") {
+		t.Errorf("frontmatter:\n%s", out)
+	}
+	if strings.Contains(body, "defined") || !strings.HasSuffix(body, "source: https://duo.com/docs/duounix#fail-mode\n") {
+		t.Errorf("body:\n%s", body)
+	}
+}
+
 // --trace is a QA flag: it exists but help does not show it.
 func TestDocsTraceFlagHidden(t *testing.T) {
 	f := docsCmd.Flags().Lookup("trace")

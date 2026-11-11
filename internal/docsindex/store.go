@@ -114,7 +114,10 @@ type Page struct {
 	// when its content was last read and found to be what is stored, and
 	// Source how it came in ("index": a docs index build; "search": the
 	// pages a question read, held in memory, or a library an earlier
-	// ketch's question stored).
+	// ketch's question stored), then how its text was read: "html" (the
+	// page itself), "md <url>" (a Markdown source), "chunk <url>" (a chunk
+	// of an llms file); "index" alone for a page stored before that was
+	// recorded.
 	Version string    `json:"version,omitempty"`
 	Fetched time.Time `json:"fetched_at,omitzero"`
 	Source  string    `json:"source,omitempty"`
@@ -609,6 +612,27 @@ func (s *Store) TouchPages(key string, urls []string, t time.Time) error {
 		_, err := tx.Exec(`UPDATE pages SET fetched_at = ? WHERE lib = (SELECT id FROM libraries WHERE key = ?)
 			AND url IN (SELECT value FROM json_each(?))`, t.Unix(), key, string(list))
 		return err
+	})
+}
+
+// SetPageSources records how unchanged pages of a library are now read
+// (url → source), nothing else.
+func (s *Store) SetPageSources(key string, sources map[string]string) error {
+	if len(sources) == 0 {
+		return nil
+	}
+	return s.update(func(tx *sql.Tx) error {
+		st, err := tx.Prepare(`UPDATE pages SET source = ? WHERE lib = (SELECT id FROM libraries WHERE key = ?) AND url = ?`)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = st.Close() }()
+		for u, src := range sources {
+			if _, err := st.Exec(src, key, u); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 

@@ -65,10 +65,6 @@ type trace struct {
 			Section string `json:"section"`
 			Cut     bool   `json:"cut"`
 		} `json:"groups"`
-		DefinedIn []struct {
-			Term    string `json:"term"`
-			Section string `json:"section"`
-		} `json:"defined_in"`
 	} `json:"output"`
 }
 
@@ -232,11 +228,12 @@ func grade(r *caseResult, c qaCase, t *trace) {
 func gradeFacts(r *caseResult, c qaCase, t *trace, printed string) bool {
 	r.Facts = []factResult{}
 	r.Answered = len(c.Facts) > 0
-	cut, defined := cutGroups(t, c.Library), definedTargets(t, c.Library)
+	defs := printedDefinedIn(t.Output.Text)
+	cut, defined := cutGroups(t, c.Library), definedTargets(defs, c.Library)
 	either := maps.Clone(cut)
 	maps.Copy(either, defined)
-	for _, d := range t.Output.DefinedIn {
-		r.DefinedIn = append(r.DefinedIn, d.Section)
+	for _, d := range defs {
+		r.DefinedIn = append(r.DefinedIn, d.section)
 	}
 	r.LedByCut, r.LedByDefined = len(c.Facts) > 0, len(c.Facts) > 0
 	led := len(c.Facts) > 0
@@ -275,14 +272,73 @@ func cutGroups(t *trace, root string) map[string]bool {
 	return out
 }
 
-// definedTargets are the sections the output's defined_in entries name,
-// keyed as cutGroups keys them.
-func definedTargets(t *trace, root string) map[string]bool {
+// definedTargets are the sections defined_in entries name, keyed as
+// cutGroups keys them.
+func definedTargets(defs []definedEntry, root string) map[string]bool {
 	out := map[string]bool{}
-	for _, d := range t.Output.DefinedIn {
-		out[sectionKey(d.Section, root)] = true
+	for _, d := range defs {
+		out[sectionKey(d.section, root)] = true
 	}
 	return out
+}
+
+// definedEntry is one entry of a printed defined_in line.
+type definedEntry struct{ term, section string }
+
+// printedDefinedIn reads the defined_in line of the frontmatter printed in
+// text, as a caller reads it: "defined_in: {failmode: <url#anchor>, ...}",
+// each key and value plain or double-quoted; none without one.
+func printedDefinedIn(text string) []definedEntry {
+	fm, _, ok := strings.Cut(strings.TrimPrefix(text, "---\n"), "\n---\n")
+	if !ok || !strings.HasPrefix(text, "---\n") {
+		return nil
+	}
+	var line string
+	for l := range strings.SplitSeq(fm, "\n") {
+		if rest, ok := strings.CutPrefix(l, "defined_in: "); ok {
+			line = rest
+		}
+	}
+	line = strings.TrimSuffix(strings.TrimPrefix(line, "{"), "}")
+	var out []definedEntry
+	for _, entry := range splitFlow(line, ", ") {
+		kv := splitFlow(entry, ": ")
+		if len(kv) < 2 {
+			continue
+		}
+		out = append(out, definedEntry{term: flowScalar(kv[0]), section: flowScalar(strings.Join(kv[1:], ": "))})
+	}
+	return out
+}
+
+// splitFlow splits s at sep outside double quotes.
+func splitFlow(s, sep string) []string {
+	var out []string
+	quoted, start := false, 0
+	for i := 0; i < len(s); i++ {
+		switch {
+		case s[i] == '\\' && quoted:
+			i++
+		case s[i] == '"':
+			quoted = !quoted
+		case !quoted && strings.HasPrefix(s[i:], sep):
+			out = append(out, s[start:i])
+			start = i + len(sep)
+			i += len(sep) - 1
+		}
+	}
+	if s != "" {
+		out = append(out, s[start:])
+	}
+	return out
+}
+
+// flowScalar is a flow collection's scalar, unquoted.
+func flowScalar(s string) string {
+	if u, err := strconv.Unquote(s); err == nil {
+		return u
+	}
+	return s
 }
 
 // sectionKey is a section reference (url#anchor) as one section of the

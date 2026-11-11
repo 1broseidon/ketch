@@ -244,3 +244,32 @@ func TestSectionOfARedirectedPage(t *testing.T) {
 		t.Errorf("section of the redirected page: %s (%v), %v fetched", sec.Status, sec.Err(), f.called()[before:])
 	}
 }
+
+// Every reference an answer from the pages a search read prints (each
+// group's source, each defined_in target) resolves with --section from
+// its page alone, with no network: the pages are sectioned from
+// themselves, not with anchors other pages' links taught. Here the
+// routing page links to the middleware page's sections with case-keeping
+// ids, which, taken across pages, would rename every middleware anchor.
+func TestSearchAnswerReferencesResolve(t *testing.T) {
+	f := exampleSite()
+	routing := f.pages[idxRoot+"guide/routing"]
+	routing.markdown += "\nSee [Add middleware to a route](/docs/guide/middleware#Add-Middleware-To-A-Route) and [Writing middleware](/docs/guide/middleware#Writing-Middleware).\n"
+	f.pages[idxRoot+"guide/routing"] = routing
+	s, _, _, _ := searchFirstCached(t, f, exampleHits())
+	ctx := WithLocalOptions(context.Background(), LocalOptions{Hint: HintCLI, Tokens: 4000})
+	o := s.SearchSelect(ctx, "add middleware to a route path parameter writing middleware", 0)
+	if o.Status != Partial || len(o.Results) < 2 {
+		t.Fatalf("answer %s (%v): %v", o.Status, o.Err(), resultURLs(o.Results))
+	}
+	refs := resultURLs(o.Results)
+	for _, d := range o.DefinedIn {
+		refs = append(refs, d.Section)
+	}
+	f.fail = errors.New("dial tcp: network is unreachable")
+	for _, ref := range refs {
+		if sec := s.SectionSelect(ctx, "", ref, 0, 0); sec.Status != Found || len(sec.Results) == 0 {
+			t.Errorf("--section %s: %s (%v)", ref, sec.Status, sec.Err())
+		}
+	}
+}

@@ -17,11 +17,12 @@ import (
 //	backend: search
 //	library: <root>
 //	version: <the indexed version, when the library has one>
-//	index: <full|capped|search>, <N> pages, built <date>   (or, for pages a search just read: source: search, N pages read)
+//	index: <full|capped>, <N> pages, built <date>   (or, for pages a search read: source: search, N pages read[, cached])
 //	stale: unverified, built <date>   (only when a cited page older than cache_ttl could not be read again)
 //	status: found | partial (<reason>) | refused (<reason>)
 //	terms: {<term as written>: <sections holding it>, ...}
 //	not_found: [<term as written>, ...]
+//	defined_in: {<term as written>: <url#anchor of a section defining it>, ...}   (only when there is one)
 //	note: <what a partial answer says in words, other indexed versions>
 //	---
 //	## <page title>
@@ -36,41 +37,36 @@ import (
 //
 //	full text of a group marked (cut): <the call that returns it>
 //
-//	defined in: <term as written> → <url#anchor of a section defining it>
-//
 // Groups of one page print together under its title, pages in the order
 // of their best group, a page's groups in rank order. The last line
 // is printed once, when a group was cut, in the surface's words
-// (HintStyle). The defined-in lines follow, one per listed term that no
-// printed section defines (evidence_defined.go): pointers, like the hint
-// line, so they come after the evidence and cost nothing before it. The
-// budget covers everything printed.
+// (HintStyle). defined_in names, for each listed term that no printed
+// section defines, a section that does (evidence_defined.go): a lead the
+// caller steers by, so it is in the frontmatter. The budget covers
+// everything printed.
 
 // Index kinds, as the index line names them.
 const (
 	IndexFull   = "full"   // indexed by ketch docs index, every page discovery listed
 	IndexCapped = "capped" // indexed by ketch docs index, the page cap leaving some out
-	IndexSearch = "search" // pages earlier questions' web searches read, kept
 )
 
 // IndexInfo is what an answer was answered from: an indexed library
-// (Kind, Pages, Built), or the pages a search just read (Source "search",
-// PagesRead).
+// (Kind, Pages, Built), or the pages a search read (Source "search",
+// PagesRead, and Cached for a repeat answered from the question cache).
 type IndexInfo struct {
 	Kind      string `json:"kind,omitempty"`
 	Pages     int    `json:"pages,omitempty"`
 	Built     string `json:"built,omitempty"` // the build date, 2006-01-02
 	Source    string `json:"source,omitempty"`
 	PagesRead int    `json:"pages_read,omitempty"`
+	Cached    bool   `json:"cached,omitempty"`
 }
 
 // indexInfo is lib as the index line names it.
 func indexInfo(lib docsindex.Library) *IndexInfo {
 	kind := IndexFull
-	switch {
-	case lib.Resolved == resolvedBySearch:
-		kind = IndexSearch
-	case lib.Capped:
+	if lib.Capped {
 		kind = IndexCapped
 	}
 	info := &IndexInfo{Kind: kind, Pages: lib.Pages}
@@ -80,16 +76,22 @@ func indexInfo(lib docsindex.Library) *IndexInfo {
 	return info
 }
 
-// searchRead is the source of an answer from the pages a search just read.
-func searchRead(pages int) *IndexInfo {
-	return &IndexInfo{Source: SearchBackend, PagesRead: pages}
+// searchRead is the source of an answer from the pages a search read,
+// cached when a repeat read them from the question cache.
+func searchRead(pages int, cached bool) *IndexInfo {
+	return &IndexInfo{Source: SearchBackend, PagesRead: pages, Cached: cached}
 }
 
 // line is the frontmatter line naming what was read: "index: full, 734
-// pages, built 2026-11-10" or "source: search, 12 pages read".
+// pages, built 2026-11-10", "source: search, 12 pages read", or for a
+// repeat from the question cache "source: search, 12 pages read, cached".
 func (i *IndexInfo) line() string {
 	if i.Source != "" {
-		return fmt.Sprintf("source: %s, %d pages read", i.Source, i.PagesRead)
+		s := fmt.Sprintf("source: %s, %d pages read", i.Source, i.PagesRead)
+		if i.Cached {
+			s += ", cached"
+		}
+		return s
 	}
 	s := fmt.Sprintf("index: %s, %d pages", i.Kind, i.Pages)
 	if i.Built != "" {
@@ -112,9 +114,7 @@ type Frontmatter struct {
 	Reason  string      `json:"reason,omitempty"`
 	Terms   []TermCount `json:"terms,omitzero"`
 	// DefinedIn names, for a listed term that no printed section defines,
-	// a section that does (evidence_defined.go). --json carries it here;
-	// the text prints it after the body (DefinedInLines), not in the
-	// frontmatter.
+	// a section that does (evidence_defined.go): the defined_in line.
 	DefinedIn []DefinedIn `json:"defined_in,omitempty"`
 	NotFound  []string    `json:"not_found,omitzero"`
 	Note      string      `json:"note,omitempty"`
@@ -190,6 +190,7 @@ func (f Frontmatter) Render() string {
 	if f.Index != nil {
 		b.WriteString("terms: " + termsFlow(f.Terms) + "\n")
 		b.WriteString("not_found: " + listFlow(f.NotFound) + "\n")
+		b.WriteString(definedInLine(f.DefinedIn))
 	}
 	if f.Note != "" {
 		b.WriteString("note: " + f.Note + "\n")
@@ -273,19 +274,29 @@ func RenderAnswer(results []Result, style HintStyle) string {
 	return b.String()
 }
 
-// DefinedInLines is what an answer prints after its body for defs: a
-// blank line, then "defined in: <term> → <url#anchor>" for each; "" for
-// none.
-func DefinedInLines(defs []DefinedIn) string {
+// definedInLine is the frontmatter's defined_in line for defs, a YAML
+// flow mapping from each term as written to its section's url#anchor:
+// "defined_in: {failmode: https://duo.com/docs/duounix#duo-configuration-options}";
+// "" for none.
+func definedInLine(defs []DefinedIn) string {
 	if len(defs) == 0 {
 		return ""
 	}
-	var b strings.Builder
-	b.WriteString("\n")
-	for _, d := range defs {
-		b.WriteString("defined in: " + d.Term + " → " + d.Section + "\n")
+	parts := make([]string, len(defs))
+	for i, d := range defs {
+		parts[i] = yamlScalar(d.Term) + ": " + refScalar(d.Section)
 	}
-	return b.String()
+	return "defined_in: {" + strings.Join(parts, ", ") + "}\n"
+}
+
+// refScalar is a url#anchor as a plain YAML scalar inside a flow
+// collection (its colon and hash are not followed or preceded by a
+// space), or double-quoted when it holds what would end one.
+func refScalar(s string) string {
+	if s == "" || strings.ContainsAny(s, ",[]{}\"' \t") {
+		return strconv.Quote(s)
+	}
+	return s
 }
 
 // pageOf is a result's page: its URL without the anchor.

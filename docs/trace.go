@@ -63,8 +63,7 @@ import (
 //	                          its defined_in entry names (line, empty for none)
 //	output                    text exactly as printed to stdout, its estimated tokens (and the body's,
 //	                          after the frontmatter), and the budget the answer was fitted to; index,
-//	                          terms and not_found as the frontmatter states them, defined_in as the
-//	                          answer's defined-in lines name them; groups: each printed
+//	                          terms, not_found and defined_in as the frontmatter states them; groups: each printed
 //	                          group in printed order with section (url#anchor), page_title,
 //	                          heading_path (below the title), cut, and for a cut group shown_tokens
 //	                          and section_tokens (its text's tokens, its whole section's)

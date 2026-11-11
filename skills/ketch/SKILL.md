@@ -35,7 +35,7 @@ Use only these terms in ketch output.
 | **surface** | One of the five research operations: `search`, `code`, `docs`, `scrape`, `crawl` |
 | **tag** | A label filed across surfaces: search hits, code hits, docs chunks, scraped pages, crawled pages. Not a research surface — it answers "what did I already find?", not "what is out there?" |
 | **transport** | How a surface is called: the CLI binary (default), the optional MCP tools, or the pi package's `ketch_*` tools (which run the CLI) |
-| **backend** | The provider behind a surface: auto (default; a fallback chain, not a provider)/brave/ddg/searxng/exa/firecrawl/keenable/tavily/tinyfish/parallel/serpbase/degoog/serply/youcom (search), grepapp/sourcegraph/github (code), context7/web/auto (docs; auto = web, then Context7) |
+| **backend** | The provider behind a surface: auto (default; a fallback chain, not a provider)/brave/ddg/searxng/exa/firecrawl/keenable/tavily/tinyfish/parallel/serpbase/degoog/serply/youcom (search), grepapp/sourcegraph/github (code), search/context7 (docs; search is the default) |
 | **operator action** | A system-managing or diagnostic command — `config set`, `cache`, `browser install`, background crawls, `doctor` — CLI-only by design |
 | **error prefix** | The stable class on every ketch error: CLI exit codes 2–6, mirrored as the bracketed prefix opening every MCP tool error — `[validation]`, `[not_found]`, `[upstream]`, `[precondition]`, `[cancelled]` |
 | **fan-out** | How many queries are searched and URLs scraped under one plan |
@@ -134,6 +134,52 @@ stderr (structured under `--json`), and MCP returns `warnings`. A failed write
 does not discard the useful research result. Durable bookmarks use a separate
 file; test labs must set `KETCH_TAGS_PATH` as well as isolating the page cache.
 
+## Docs flows
+
+`ketch docs` prints evidence and a verdict. It has no model: you decide what to do next. Read the frontmatter first.
+
+| You see | It means | Do |
+|---|---|---|
+| `status: found` | evidence matching the question is printed; not a promise that it answers | read the groups |
+| `terms_not_found` in `status: partial (…)` | some of your terms are nowhere in this source | read `not_found`; ask another source for those terms |
+| `partial_site` in `status: partial (…)` | the answer is from pages a web search just read, not from an index | read the groups; the `note` names the command that indexes the site |
+| `status: refused` | nothing here matches (exit 3) | stop asking this source |
+| `defined_in: {term: ref}` | where a term is defined, when that section was not printed | `ketch docs --section <ref>` |
+| `(cut, N of M tokens)` on a `source:` line | the group shows part of its section | `ketch docs --section <that source>` if you need the rest |
+| `also in this section: …` | what a cut group left out, by name | use one of those names in your next call |
+| `index: …, built <date>`, `source: search, N pages read`, or `stale: unverified, built <date>` | how old the evidence is: the index's build date; pages read now (`, cached`: read by the same question within `cache_ttl`); cited pages that could not be checked | say so if the answer depends on it being current |
+
+### Lookup
+
+One question about one library or product.
+
+1. `ketch docs "<question>" --library <name or docs URL>`
+2. The fact is printed: answer, citing each `source:`.
+3. The group you need is cut, or `defined_in` names it: `ketch docs --section <ref>` once, then answer. A section longer than a page prints `page: 1 of N` and ends with a `next page:` command; run it only if the fact is not on this page.
+4. Otherwise, Follow.
+
+### Follow
+
+The docs use other words than the question.
+
+1. Take one thing the last call printed: a name from an `also in this section:` line, a heading, a `defined_in` target.
+2. Ask again in those words, or read that section with `--section`.
+3. After three calls to one source, stop. Say what you tried and that this source does not cover it.
+
+Every call after the first uses something the last one printed. Do not rephrase blind.
+
+### Survey
+
+The question spans products.
+
+1. Split it by owner. A first call's `not_found` shows which terms belong to another source.
+2. A docs site you do not know: `ketch docs --resolve <name>`.
+3. One Lookup or Follow per source. The calls are independent: run them together.
+4. Combine. Cite each claim's `source:`. Say what no source covered.
+5. A source you will ask again: propose `ketch docs index <site>` to the operator (CLI only; it writes the local index). It then answers from the index, offline too (`stale: unverified` when the cited pages cannot be checked).
+
+Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` with `page` for the next page, and `docs(query=<name>, resolve=true)`; `defined_in` is a list of `{term, section}`, a cut result has `truncated` and `contents`. pi's `ketch_docs` takes the same, without `page`.
+
 ## Token budgets
 
 | Call | Bound with | Measured cost |
@@ -163,7 +209,7 @@ Situations → class: unknown backend, `regexp` on github → `[validation]`. Se
 Detail for each lives in `references/surfaces.md`.
 
 - Scraping a **bare domain** auto-probes `/llms.txt` and may silently return that instead of the homepage — the `title` field reveals the swap; `no_llms_txt` opts out.
-- `docs` (default backend `search`) answers from the library's own docs: ask the question, naming the library (or pass `library`: a name, `name@version`, or a docs URL). A result cut short ends with a `full section` pointer — pass its `url#anchor` as `section` (no query) to read the rest from the local index, offline, instead of re-asking with more `tokens`. Answers from pages search just read are `status: partial` with a note; `ketch docs index <library>` (operator, CLI) makes a library answer offline. `backend: context7` is the curated alternative: resolve the name → **vet the matches** → fetch by `library` ID; Context7's resolve never returns empty, so check the name, not just the trust score, and its keyless quota is small.
+- `docs` (default backend `search`) answers from the library's own docs: ask the question, naming the library (or pass `library`: a name, `name@version`, or a docs URL), and follow **Docs flows**. A question saves nothing: the pages a web search read stay in the page cache for `cache_ttl`, so the same question again does no search (`source: search, N pages read, cached`); only `ketch docs index <library>` (operator, CLI) adds a library to the local index. `backend: context7` is the curated alternative: resolve the name → **vet the matches** → fetch by `library` ID; Context7's resolve never returns empty, so check the name, not just the trust score, and its keyless quota is small.
 - Batch scrape reports per-URL failures inside a successful call: `isError=false` with `results[].error` set. Check every entry.
 - `regexp` works on grepapp and sourcegraph only; github rejects it with a pointer to those backends.
 - Background crawls (`--background`, `status`, `stop`) are CLI-only; the MCP `crawl` is synchronous and capped.
@@ -183,8 +229,8 @@ Detail for each lives in `references/surfaces.md`.
 **BAD:** Fetch Context7 docs from resolve's first match because its trust score is high, even though its name is not the library you asked about.
 **GOOD:** Vet name + snippet count + trust; if no match names the intended library, say so instead of fetching junk docs.
 
-**BAD:** Ask `docs` again with a bigger `tokens` because the result you need ends in `[…]`.
-**GOOD:** Follow its pointer: `docs {section: "<url#anchor>"}` returns that section in full from the local index, offline.
+**BAD:** Ask `docs` again with a bigger `tokens` because the group you need is marked `(cut, N of M tokens)`.
+**GOOD:** Read that section: `ketch docs --section <its source>` (MCP `docs {section: "<url#anchor>"}`) returns it whole, a page at a time when long, from the local index or, for a page a search read, through the page cache.
 
 ## Reference loading
 
