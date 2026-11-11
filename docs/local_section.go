@@ -72,18 +72,20 @@ func RenderResult(r Result, style HintStyle) string {
 // SectionFetcher is a backend that returns one section in full.
 type SectionFetcher interface {
 	// SectionSelect returns the section ref names (url#anchor; a page URL
-	// alone names the page's sections), capped at tokens. library names
+	// alone names the page's sections): whole when it fits within tokens,
+	// else its page'th page of that size (0 is the first). library names
 	// the indexed library, or is empty when ref's URL says which.
-	SectionSelect(ctx context.Context, library, ref string, tokens int) Outcome
+	SectionSelect(ctx context.Context, library, ref string, tokens, page int) Outcome
 }
 
 // SectionSelect reads one section of an indexed library from the index:
 // the section ref names with the subsections under it (an H2 is its
-// family), or the page's sections in order when ref has no anchor, all cut
-// at a block boundary within tokens (localSectionTokens when 0). A
-// reference the index does not hold is not_found; a library it does not
-// hold, not_indexed.
-func (l *Local) SectionSelect(ctx context.Context, library, ref string, tokens int) Outcome {
+// family), or the page's sections in order when ref has no anchor, whole
+// when it fits within tokens (localSectionTokens when 0), else read in
+// pages of that size (fetchSection), pageNo the one returned (0 the
+// first). A reference the index does not hold is not_found; a library it
+// does not hold, not_indexed; a page past the last, a validation error.
+func (l *Local) SectionSelect(ctx context.Context, library, ref string, tokens, pageNo int) Outcome {
 	page, anchor, err := parseSectionRef(ref)
 	if err != nil {
 		return Answer(SearchBackend, nil, err)
@@ -112,7 +114,7 @@ func (l *Local) SectionSelect(ctx context.Context, library, ref string, tokens i
 		if len(secs) == 0 {
 			continue
 		}
-		return withVersionNote(fetchSection(lib, secs, anchor, tokens, opts.Hint), note)
+		return withVersionNote(fetchSection(lib, secs, anchor, library, tokens, pageNo, opts.Hint), note)
 	}
 	if strings.TrimSpace(library) != "" {
 		return Answer(SearchBackend, nil, fmt.Errorf("local: the index of %s has no page %s: %w", cands[0].Root, page, ErrSectionNotFound))
@@ -227,16 +229,24 @@ func sectionUnit(secs []docsindex.Section, anchor string) (unit []docsindex.Sect
 	return secs[i:end], true
 }
 
-// fetchSection renders the unit anchor names as one result, cut at a block
-// boundary within tokens.
-func fetchSection(lib docsindex.Library, secs []docsindex.Section, anchor string, tokens int, style HintStyle) Outcome {
+// fetchSection renders the unit anchor names as one result: whole when
+// it fits within tokens, else the page'th (from 1; 0 is the first) of the
+// pages it reads in at that size, in reading order, each ending at a block
+// boundary (never inside a code block or a table row; a table continued
+// from the page before repeats its header), with the call that reads the
+// next one (Result.Next, in style's words; library and tokens as the
+// caller gave them). A page past the last is a validation error naming
+// how many there are.
+func fetchSection(lib docsindex.Library, secs []docsindex.Section, anchor, library string, tokens, page int, style HintStyle) Outcome {
 	unit, ok := sectionUnit(secs, anchor)
 	if !ok {
 		return Answer(SearchBackend, nil, fmt.Errorf("local: %s has no section #%s (sections: %s): %w", shownURL(lib, secs[0].Page), anchor, anchorList(secs), ErrSectionNotFound))
 	}
+	asked := tokens
 	if tokens <= 0 {
 		tokens = localSectionTokens
 	}
+	page = max(page, 1)
 	head := unit[0]
 	ref := shownURL(lib, secs[0].Page)
 	if anchor != "" {
@@ -244,14 +254,95 @@ func fetchSection(lib docsindex.Library, secs []docsindex.Section, anchor string
 	}
 	title, crumbs := head.Heading, strings.Join(head.Crumbs, " > ")
 	r := Result{Library: lib.Root, Version: lib.Version, Title: title, Breadcrumb: crumbs, URL: ref, Section: ref, Source: SearchBackend}
-	chunks := sectionChunks(unit, title)
-	shown, cut := fitChunks(lib, r, unit, chunks, tokens, style)
-	r.Snippet = joinChunks(chunks[:shown], cut)
-	for _, c := range chunks[:shown] {
-		r.Anchors = appendAnchor(r.Anchors, unit[c.part].Anchor)
+	// A page's room: the cap with the answers' margin, less what is
+	// printed around the text (heading, source, page and next-page lines).
+	room := tokens - tokens/localTokenMargin - estimateTokens(RenderSnippet(r)) - estimateTokens(pageLine(99, 99)+"\n"+nextPageLine(PageCall(ref, library, asked, 99, style))+"\n")
+	chunks := sectionChunks(unit, title, room)
+	pages := pageBreaks(chunks, room)
+	whole := estimateTokens(RenderSnippet(r)) - 1
+	for _, c := range chunks {
+		whole += c.cost
 	}
-	r.Truncated = cut != ""
+	if whole <= tokens {
+		pages = [][]int{allChunks(chunks)}
+	}
+	if page > len(pages) {
+		return Answer(SearchBackend, nil, fmt.Errorf("local: %s: page %d of %s at %d tokens a page: %w", ref, page, plural(len(pages), "page"), tokens, errSectionPage))
+	}
+	shown := pages[page-1]
+	r.Snippet = joinPage(chunks, shown)
+	for _, c := range shown {
+		r.Anchors = appendAnchor(r.Anchors, unit[chunks[c].part].Anchor)
+	}
+	if len(pages) > 1 {
+		r.Truncated, r.Page, r.Pages = true, page, len(pages)
+		if page < len(pages) {
+			r.Next = PageCall(ref, library, asked, page+1, style)
+		}
+	}
 	return Answer(SearchBackend, []Result{r}, nil)
+}
+
+// errSectionPage is a page of a section past its last.
+var errSectionPage = failure.New(failure.Validation, "invalid_page", "past the last page")
+
+// plural is n with its noun: "1 page", "3 pages".
+func plural(n int, noun string) string {
+	if n == 1 {
+		return "1 " + noun
+	}
+	return strconv.Itoa(n) + " " + noun + "s"
+}
+
+// PageCall is the call that reads page of the section ref in style's words
+// (a command line for HintNone as well), with library and tokens when the
+// caller gave them (tokens 0: the default).
+func PageCall(ref, library string, tokens, page int, style HintStyle) string {
+	p := strconv.Itoa(page)
+	if style == HintMCP {
+		call := `docs(section="` + ref + `"`
+		if library != "" {
+			call += `, library="` + library + `"`
+		}
+		if tokens > 0 && tokens != localSectionTokens {
+			call += ", tokens=" + strconv.Itoa(tokens)
+		}
+		return call + ", page=" + p + ")"
+	}
+	call := "ketch docs --section " + ref
+	if library != "" {
+		call += " --library " + library
+	}
+	if tokens > 0 && tokens != localSectionTokens {
+		call += " --tokens " + strconv.Itoa(tokens)
+	}
+	return call + " --page " + p
+}
+
+// pageLine is the line a page of a section fetch is headed by: "page: 2 of 4".
+func pageLine(page, pages int) string {
+	return "page: " + strconv.Itoa(page) + " of " + strconv.Itoa(pages)
+}
+
+// PageLine is r's page line ("page: 2 of 4"), "" for a section fetch of
+// one page.
+func PageLine(r Result) string {
+	if r.Pages <= 1 {
+		return ""
+	}
+	return pageLine(r.Page, r.Pages)
+}
+
+// nextPageLine is the last line of a page with one after it.
+func nextPageLine(call string) string { return "next page: " + call }
+
+// NextPageLine is r's last line: the call for its next page; "" for the
+// last page or a section of one.
+func NextPageLine(r Result) string {
+	if r.Next == "" {
+		return ""
+	}
+	return nextPageLine(r.Next)
 }
 
 // appendAnchor adds a section's anchor to a result's, once, in order.
@@ -280,100 +371,129 @@ func anchorList(secs []docsindex.Section) string {
 	return strings.Join(out, ", ")
 }
 
-// chunk is a block of a unit's text a fetched section can end after: a
-// paragraph, a list, a code block whole, or a part's heading with its
-// first block.
+// chunk is a block of a unit's text a page can end after: a paragraph,
+// a list, a code block whole, or a part's heading with its first block;
+// a block longer than a page is cut into its lines (a table into its
+// rows, a list into its items), code blocks whole.
 type chunk struct {
-	part int // the unit's section it belongs to
-	text string
-	cost int
+	part   int // the unit's section it belongs to
+	text   string
+	sep    string // what joins it to the chunk before: a blank line, or a line break inside a block
+	header string // a table row's header and delimiter rows, repeated when a page opens on it
+	cost   int
 }
 
 // sectionChunks cuts a unit into chunks in order; a part's heading
-// ("#### ", but the title's own) leads its first block.
-func sectionChunks(unit []docsindex.Section, title string) []chunk {
+// ("#### ", but the title's own) leads its first block. A block over room
+// tokens is cut into its lines (blockLines).
+func sectionChunks(unit []docsindex.Section, title string, room int) []chunk {
 	var out []chunk
 	for p, s := range unit {
 		blocks := textBlocks(s.Text)
+		lead := ""
 		if p > 0 || s.Heading != title {
 			if len(blocks) == 0 {
 				blocks = []string{""}
 			}
-			blocks[0] = strings.TrimRight("#### "+s.Heading+"\n\n"+blocks[0], "\n")
+			lead = "#### " + s.Heading + "\n\n"
 		}
-		for _, b := range blocks {
-			out = append(out, chunk{part: p, text: b, cost: estimateTokens(b) + 1})
+		for i, b := range blocks {
+			parts, header := []string{b}, ""
+			if estimateTokens(b) > room {
+				parts, header = blockLines(b)
+			}
+			for k, t := range parts {
+				c := chunk{part: p, text: t, sep: "\n\n"}
+				if k > 0 {
+					c.sep, c.header = "\n", header
+				}
+				if i == 0 && k == 0 {
+					c.text = strings.TrimRight(lead+t, "\n")
+				}
+				c.cost = estimateTokens(c.text) + 1
+				out = append(out, c)
+			}
 		}
 	}
 	return out
 }
 
-// fitChunks is how many chunks fit within tokens with r's rendering around
-// them, and the notice that ends a cut section ("" when all fit). The
-// planning keeps localTokenMargin under the cap, as answers do.
-func fitChunks(lib docsindex.Library, r Result, unit []docsindex.Section, chunks []chunk, tokens int, style HintStyle) (int, string) {
-	base := estimateTokens(RenderSnippet(r))
-	total := base
-	for _, c := range chunks {
-		total += c.cost
+// blockLines cuts a block into the runs of lines a page may end between,
+// joined by line breaks: a line not indented starts a run (a list item,
+// a table row, a paragraph's line), an indented one continues the run
+// before it, and a fenced code block is one run with whatever leads into
+// it. A table's header and delimiter rows lead its first row, and are
+// returned as its header.
+func blockLines(b string) (runs []string, header string) {
+	lines := strings.Split(b, "\n")
+	if len(lines) > 2 && strings.HasPrefix(strings.TrimSpace(lines[0]), "|") && delimiterRowRe.MatchString(lines[1]) {
+		header = lines[0] + "\n" + lines[1]
+		lines = append([]string{header + "\n" + lines[2]}, lines[3:]...)
 	}
-	if total <= tokens {
-		return len(chunks), ""
-	}
-	limit := tokens - tokens/localTokenMargin
-	whole := total - base
-	used := base + estimateTokens(cutNotice(lib, unit, len(unit)-1, tokens, whole, style)) + 1
-	n := 0
-	for n < len(chunks) && used+chunks[n].cost <= limit {
-		used += chunks[n].cost
-		n++
-	}
-	if n == 0 {
-		// One block larger than the whole cap: cut it, fence closed.
-		room := max((limit-used)*3, webMinTrimBytes)
-		chunks[0].text = strings.TrimSuffix(trimSnippet(chunks[0].text, room), truncatedMarker)
-		n = 1
-	}
-	notice := func(n int) string {
-		return cutNotice(lib, unit, chunks[min(n, len(chunks)-1)].part, tokens, whole, style)
-	}
-	// The per-chunk sums run a little under the joined text's.
-	for n > 1 {
-		r.Snippet = joinChunks(chunks[:n], notice(n))
-		if estimateTokens(RenderSnippet(r)) <= tokens {
-			break
+	var fence fenceState
+	for i, line := range lines {
+		inFence := fence.n > 0
+		fence.step(line)
+		continues := inFence || strings.HasPrefix(line, " ") || strings.HasPrefix(line, "\t") && !isListLine(line)
+		if i == 0 || continues {
+			if i == 0 {
+				runs = append(runs, line)
+			} else {
+				runs[len(runs)-1] += "\n" + line
+			}
+			continue
 		}
-		n--
+		runs = append(runs, line)
 	}
-	return n, notice(n)
+	return runs, header
 }
 
-// joinChunks is the chunks as paragraphs, then the cut notice if any.
-func joinChunks(chunks []chunk, notice string) string {
-	parts := make([]string, 0, len(chunks)+1)
-	for _, c := range chunks {
-		parts = append(parts, c.text)
+// pageBreaks parts the chunks into pages of at most room tokens each, in
+// order, each holding at least one chunk; a page that opens on a table's
+// row counts its repeated header.
+func pageBreaks(chunks []chunk, room int) [][]int {
+	var pages [][]int
+	used := 0
+	for i, c := range chunks {
+		cost := c.cost
+		if len(pages) == 0 || used+cost > room {
+			if c.header != "" {
+				cost += estimateTokens(c.header) + 1
+			}
+			if len(pages) == 0 || len(pages[len(pages)-1]) > 0 {
+				pages = append(pages, nil)
+				used = 0
+			}
+		}
+		pages[len(pages)-1] = append(pages[len(pages)-1], i)
+		used += cost
 	}
-	if notice != "" {
-		parts = append(parts, notice)
-	}
-	return strings.Join(parts, "\n\n")
+	return pages
 }
 
-// cutNotice ends a cut section: "[…]", the cap, and where to read on, the
-// unit's next section not shown whole (its reference) or, when the cut is
-// in the first, a larger cap.
-func cutNotice(lib docsindex.Library, unit []docsindex.Section, part, tokens, whole int, style HintStyle) string {
-	if part > 0 {
-		ref := sectionRef(lib, unit[part])
-		if unit[part].Anchor == "" {
-			ref = shownURL(lib, unit[part].Page)
+// allChunks is every chunk's index, in order: a section on one page.
+func allChunks(chunks []chunk) []int {
+	out := make([]int, len(chunks))
+	for i := range out {
+		out[i] = i
+	}
+	return out
+}
+
+// joinPage is the text of the chunks of one page (ids, in order): each
+// joined to the one before as the text joins them, the first with its
+// table's header when the page continues a table.
+func joinPage(chunks []chunk, ids []int) string {
+	var b strings.Builder
+	for k, i := range ids {
+		c := chunks[i]
+		switch {
+		case k > 0:
+			b.WriteString(c.sep)
+		case c.header != "":
+			b.WriteString(c.header + "\n")
 		}
-		return elidedMarker + " cut at " + strconv.Itoa(tokens) + " tokens; next section: " + SectionCall(ref, style)
+		b.WriteString(c.text)
 	}
-	flag := "--tokens"
-	if style == HintMCP {
-		flag = "tokens"
-	}
-	return elidedMarker + " cut at " + strconv.Itoa(tokens) + " tokens; the section is about " + strconv.Itoa(whole) + ": raise " + flag
+	return b.String()
 }

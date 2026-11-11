@@ -27,7 +27,16 @@ const (
 	// localTokenMargin: an answer is planned to 1/localTokenMargin under
 	// its budget, about the estimate's error on a whole answer.
 	localTokenMargin = 32
+	// answerPageTokens is the page size (design/docs-evidence.md, Round
+	// 7, Pages): a section longer than this is never printed whole in an
+	// answer; its group shows its best pieces up to this many tokens, and
+	// --section reads the rest a page at a time.
+	answerPageTokens = 400
 )
+
+// AnswerPageTokens is the page size of an answer from the local index: a
+// section longer is never printed whole (the surfaces' help says it).
+const AnswerPageTokens = answerPageTokens
 
 // evidenceAnswer is the pipeline's answer: the results in printed
 // order, the question's terms as written that the library holds and the
@@ -73,7 +82,7 @@ func (l *Local) evidence(lib docsindex.Library, query string, opts LocalOptions,
 	}
 	t.gathered(g)
 	v := verdict(g.written, g.sections)
-	a := &evidenceAnswer{terms: v.found, notFound: v.notFound, status: Answered, index: indexInfo(lib)}
+	a := &evidenceAnswer{terms: v.found, notFound: v.notFound, status: Found, index: indexInfo(lib)}
 	if opts.read > 0 {
 		a.index = searchRead(opts.read)
 	}

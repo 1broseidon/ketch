@@ -113,6 +113,19 @@ type Result struct {
 	// option table's other rows, the headings of its direct subsections).
 	// Other backends leave it empty.
 	Contents string `json:"contents,omitempty"`
+	// ShownTokens and SectionTokens are how much of its section a cut
+	// result of the local index shows: its text's tokens and the whole
+	// section's ("cut, 310 of 1,640 tokens"). Page and Pages are the page
+	// a section fetch (--section) returns and how many the section has at
+	// that page size, for a section longer than one page. Other backends
+	// leave them zero.
+	ShownTokens   int `json:"shown_tokens,omitempty"`
+	SectionTokens int `json:"section_tokens,omitempty"`
+	Page          int `json:"page,omitempty"`
+	Pages         int `json:"pages,omitempty"`
+	// Next is the call that reads a section fetch's next page, in the
+	// surface's words; empty on the last page.
+	Next string `json:"next,omitempty"`
 }
 
 // Searcher is the interface for docs backends.

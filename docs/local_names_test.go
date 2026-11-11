@@ -141,7 +141,7 @@ func TestLocalRefusesComponentWord(t *testing.T) {
 	if o := l.SearchSelect(ctx, "vue v-model on a custom component", 5); o.Status != Refused || o.Reason != "not_indexed" {
 		t.Errorf("bare vue query = %s/%s (%d results)", o.Status, o.Reason, len(o.Results))
 	}
-	if o := l.GetDocsSelect(ctx, "vue-router", "router.push", 0); o.Status != Answered {
+	if o := l.GetDocsSelect(ctx, "vue-router", "router.push", 0); o.Status != Found {
 		t.Errorf("--library vue-router = %s/%s", o.Status, o.Reason)
 	}
 }

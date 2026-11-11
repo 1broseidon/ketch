@@ -69,13 +69,25 @@ func checkLocalTop(t *testing.T, site *fixtureSite, fx docsFixture, library stri
 	if !answerFieldsOK(answer.Status, answer.Index != nil && answer.Index.Kind == "full" && answer.Index.Pages > 0 && answer.Index.Built != "", len(answer.Terms), results[0].PageTitle) {
 		t.Errorf("answer fields = %+v", answer)
 	}
-	if top := results[0]; !strings.HasPrefix(top.URL, site.URL+fx.page) || !slices.Contains(top.Anchors, fx.anchor) || top.Source != "search" || top.Library != library {
-		t.Errorf("top result = %+v, want the section %s#%s from the index", top, fx.page, fx.anchor)
+	// The best section's page prints first, its sections in page order:
+	// the fixture's section is on it.
+	at := slices.IndexFunc(results, func(r struct {
+		docsResult
+		Anchors   []string `json:"anchors"`
+		PageTitle string   `json:"page_title"`
+	}) bool {
+		return slices.Contains(r.Anchors, fx.anchor)
+	})
+	if at < 0 {
+		t.Fatalf("no result is the section %s#%s: %+v", fx.page, fx.anchor, results)
+	}
+	if top := results[at]; !strings.HasPrefix(top.URL, site.URL+fx.page) || !strings.HasPrefix(results[0].URL, site.URL+fx.page) || top.Source != "search" || top.Library != library {
+		t.Errorf("top result = %+v, want the section %s#%s from the index, on the page printed first", top, fx.page, fx.anchor)
 	}
 	if strings.Contains(stderr, "ranked by keywords") {
 		t.Errorf("keyword ranking is the only ranking, not a note: %q", stderr)
 	}
-	checkLocalText(t, fx, library, results[0].PageTitle, results[0].URL)
+	checkLocalText(t, fx, library, results[0].PageTitle, results[at].URL)
 }
 
 // checkLocalText: the text output renders the answer as Markdown, the
@@ -84,7 +96,7 @@ func checkLocalText(t *testing.T, fx docsFixture, library, pageTitle, url string
 	t.Helper()
 	code, out, stderr := cli(t, "docs", "--library", library, fx.query)
 	if code != 0 || !strings.Contains(out, "\n---\n## "+pageTitle+"\n\n") || !strings.Contains(out, "\n\nsource: "+url) ||
-		!strings.Contains(out, "\nstatus: answered\n") || strings.Contains(out, "result_count") {
+		!strings.Contains(out, "\nstatus: found\n") || strings.Contains(out, "result_count") {
 		t.Errorf("section output (exit %d):\n%s%s", code, out, stderr)
 	}
 	if code, _, stderr = cli(t, "docs", "--snippets", "--library", library, fx.query); code == 0 || !strings.Contains(stderr, "unknown flag") {
@@ -117,9 +129,9 @@ func checkTermsRefusal(t *testing.T, library string) {
 }
 
 // answerFieldsOK reports an answer's JSON fields as an indexed library's
-// answer has them: answered, its index, its terms, a page title.
+// answer has them: found, its index, its terms, a page title.
 func answerFieldsOK(status string, index bool, terms int, pageTitle string) bool {
-	return status == "answered" && index && terms > 0 && pageTitle != ""
+	return status == "found" && index && terms > 0 && pageTitle != ""
 }
 
 // checkIndexLifecycle re-runs the build (nothing changed, nothing
@@ -193,7 +205,14 @@ func decodeSectionResults(t *testing.T, out string) []sectionResult {
 // exits 3, a malformed reference 2.
 func checkSectionFollowUp(t *testing.T, site *fixtureSite, fx docsFixture, library string) {
 	t.Helper()
-	top := decodeSectionResults(t, mustCLI(t, "--json", "docs", "--library", library, fx.query))[0]
+	rs := decodeSectionResults(t, mustCLI(t, "--json", "docs", "--library", library, fx.query))
+	top := rs[0]
+	for _, r := range rs {
+		if slices.Contains(r.Anchors, fx.anchor) {
+			top = r
+			break
+		}
+	}
 	if top.Section != top.URL || !strings.Contains(top.Section, site.URL+fx.page) {
 		t.Errorf("section = %q, url %q", top.Section, top.URL)
 	}
@@ -203,7 +222,7 @@ func checkSectionFollowUp(t *testing.T, site *fixtureSite, fx docsFixture, libra
 }
 
 // checkPointers: a small budget cuts results; the text output marks each
-// cut one's source "(cut)" and ends with one line saying how to read a
+// cut one's source "(cut, N of M tokens)" and ends with one line saying how to read a
 // cut group in full; JSON marks it and carries no pointer.
 func checkPointers(t *testing.T, fx docsFixture, library string) {
 	t.Helper()
@@ -216,7 +235,7 @@ func checkPointers(t *testing.T, fx docsFixture, library string) {
 		cut := false
 		for _, r := range decodeSectionResults(t, mustCLI(t, append([]string{"--json"}, args...)...)) {
 			cut = cut || r.Truncated
-			if r.Truncated != strings.Contains(text, "source: "+r.URL+" (cut)\n") || strings.Contains(r.Snippet, "full section") {
+			if r.Truncated != strings.Contains(text, "source: "+r.URL+" (cut, ") || strings.Contains(r.Snippet, "full section") {
 				t.Errorf("--tokens %q: truncated=%v but the text output is:\n%s", tokens, r.Truncated, text)
 			}
 		}
@@ -263,5 +282,34 @@ func checkSectionRefusals(t *testing.T, site *fixtureSite, fx docsFixture, top s
 	}
 	if code, _, _ := cli(t, "docs", "-b", "context7", "--section", top.Section); code != 2 {
 		t.Errorf("--section on the context7 backend: exit %d", code)
+	}
+	checkSectionPages(t, top)
+}
+
+// checkSectionPages: a section longer than --tokens is read a page at a
+// time, the header saying which and the last line the next page's
+// command, which reads it; a page past the last, --page 0 and --page
+// without --section exit 2.
+func checkSectionPages(t *testing.T, top sectionResult) {
+	t.Helper()
+	out := mustCLI(t, "docs", "--section", top.Section, "--tokens", "60")
+	if !strings.Contains(out, "\npage: 1 of ") {
+		t.Fatalf("--tokens 60:\n%s", out)
+	}
+	next := "ketch docs --section " + top.Section + " --tokens 60 --page 2"
+	if !strings.HasSuffix(out, "\nnext page: "+next+"\n") {
+		t.Errorf("last line is not the next page's command:\n%s", out)
+	}
+	if two := mustCLI(t, "docs", "--section", top.Section, "--tokens", "60", "--page", "2"); !strings.Contains(two, "\npage: 2 of ") || two == out {
+		t.Errorf("--page 2:\n%s", two)
+	}
+	for _, args := range [][]string{
+		{"docs", "--section", top.Section, "--tokens", "60", "--page", "999"},
+		{"docs", "--section", top.Section, "--page", "0"},
+		{"docs", "--page", "2", "forms"},
+	} {
+		if code, _, stderr := cli(t, args...); code != 2 {
+			t.Errorf("%v: exit %d, %s", args, code, stderr)
+		}
 	}
 }

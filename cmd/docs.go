@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -22,8 +23,8 @@ var docsCmd = &cobra.Command{
 	Use:   "docs <query>",
 	Short: "Search library documentation",
 	Long: `Search library documentation. The default backend, search, answers from the docs themselves: a library indexed with ketch docs index answers offline from the local index; otherwise ketch searches the web for the question, picks the documentation site the results agree on, reads the matching pages and keeps them in the local index, so a repeated question answers offline. ` +
-		`The answer's frontmatter says what it read (index: full or capped, its pages and build date; or source: search and the pages a search read), its status, the question's rare terms as written (identifiers it writes, words in under 1% of the library's sections) with the number of sections holding each (terms), and those no section holds (not_found). Status is answered; partial when a term is in not_found or the library holds only pages searches read; refused, exit 3, when no distinctive term is in the docs: the body is empty and not_found is the answer. ` +
-		`The body is the pieces of sections that name the question (paragraphs, list items, code blocks, table rows under their header), verbatim, grouped by section: a page's groups under "## <page title>", each under its heading path, ending with its source url#anchor, marked "(cut)" when the group was cut; about 1,800 tokens in all, frontmatter included, or --tokens; --limit caps the groups. An answer with a group cut ends with one line saying how to read it in full: --section returns a section in full from the local index (no ranking, no network); a page URL with no anchor returns the page's sections in order, cut at a block boundary within --tokens (default 4000). --json prints the frontmatter's fields and the results as one object. ` +
+		`The answer's frontmatter says what it read (index: full or capped, its pages and build date; or source: search and the pages a search read), its status, the question's rare terms as written (identifiers it writes, words in under 1% of the library's sections or in at most 25 of them) with the number of sections holding each (terms), and those no section holds (not_found). Status is found (evidence matching the question, not a promise that it answers); partial when a term is in not_found or the library holds only pages searches read; refused, exit 3, when no distinctive term is in the docs: the body is empty and not_found is the answer. ` +
+		`The body is the pieces of sections that name the question (paragraphs, list items, code blocks, table rows under their header), verbatim, grouped by section: a page's groups under "## <page title>", each under its heading path, ending with its source url#anchor, marked "(cut, N of M tokens)" with how much of its section it shows when the group was cut; a section longer than a page (` + strconv.Itoa(docs.AnswerPageTokens) + ` tokens) is never printed whole: its group shows its best pieces up to a page, in page order; a page's groups print in page order; about 1,800 tokens in all, frontmatter included, or --tokens; --limit caps the groups. An answer with a group cut ends with one line saying how to read it in full: --section returns a section from the local index (no ranking, no network), whole when it fits --tokens (default 4000), else a page of that size at a time, broken at a block boundary: the output says page N of M and its last line is the command for the next page (--page N); a page URL with no anchor returns the page's sections in order, paged alike. --json prints the frontmatter's fields and the results as one object. ` +
 		docs.WithLibraryHelp("--library names the library") + `.
 
 -b context7 (or ketch config set docs_backend context7 to make it the default) uses Context7's curated snippets instead. Context7 needs no key: without one it uses Context7's anonymous quota (about 200 requests a month per IP), and a key lifts it. --resolve lists a name's library IDs (Context7) or docs roots (search); pass one as --library.`,
@@ -35,13 +36,14 @@ func init() {
 	rootCmd.AddCommand(docsCmd)
 	docsCmd.Flags().StringP("backend", "b", cfg.DocsBackend, "docs backend: "+strings.Join(config.AvailableDocBackends(), ", "))
 	docsCmd.Flags().String("library", "", docs.WithLibraryHelp("the library to answer from"))
-	docsCmd.Flags().Int("tokens", 4000, "token budget (search: 1,800 unless set, frontmatter included; context7: 4000; --section: the cap of the section returned, 4000)")
+	docsCmd.Flags().Int("tokens", 4000, "token budget (search: 1,800 unless set, frontmatter included; context7: 4000; --section: the page size of the section returned, 4000)")
 	docsCmd.Flags().IntP("limit", "l", cfg.Limit, "max number of results")
 	docsCmd.Flags().Bool("resolve", false, docs.WithLibraryHelp("resolve the query as a library name instead of searching: library IDs (context7) or docs roots (search)"))
 	docsCmd.Flags().String("tag", "", "record each result under this tag (see `ketch tag`)")
 	docsCmd.PreRunE = validateTagFlag
 	docsCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/library/snippet)")
-	docsCmd.Flags().String("section", "", "return one section in full from the local index, given as the url#anchor a group's source line carries (a page URL alone returns its sections in order; no query, no ranking, no network); --tokens caps it (default 4000)")
+	docsCmd.Flags().String("section", "", "return one section from the local index, given as the url#anchor a group's source line carries (a page URL alone returns its sections in order; no query, no ranking, no network): whole when it fits --tokens (default 4000), else one page of that size at a time (--page)")
+	docsCmd.Flags().Int("page", 0, "with --section: the page of a section longer than --tokens to return (default 1; the output says page N of M and gives the command for the next)")
 	docsCmd.Flags().String("trace", "", "write how the answer was made to this file as JSON (docs.Trace; for QA)")
 	_ = docsCmd.Flags().MarkHidden("trace")
 }
@@ -99,11 +101,18 @@ func runDocs(cmd *cobra.Command, args []string) error {
 	hint := docsHint(backend, asJSON || minimal)
 	cmd.SetContext(withLocalDocsOptions(cmd, tokens, limit, hint))
 
+	page, _ := cmd.Flags().GetInt("page")
 	if section, _ := cmd.Flags().GetString("section"); section != "" {
 		if resolve {
 			return exitErrf(ExitValidation, "--section cannot be combined with --resolve")
 		}
-		return runDocsSection(cmd, section, library, tokens, asJSON, minimal)
+		if cmd.Flags().Changed("page") && page < 1 {
+			return exitErrf(ExitValidation, "--page is a page number from 1 (got %d)", page)
+		}
+		return runDocsSection(cmd, section, library, tokens, page, asJSON, minimal)
+	}
+	if cmd.Flags().Changed("page") {
+		return exitErrf(ExitValidation, "--page needs --section: it picks a page of the section returned")
 	}
 
 	if resolve {
@@ -198,7 +207,7 @@ func docsBackendFlag(cmd *cobra.Command) string {
 // ranking. A section the index lacks is not_found (exit 3). The index
 // belongs to search, whichever backend is the configured default; only an
 // explicit -b another backend is refused.
-func runDocsSection(cmd *cobra.Command, section, library string, tokens int, asJSON, minimal bool) error {
+func runDocsSection(cmd *cobra.Command, section, library string, tokens, page int, asJSON, minimal bool) error {
 	if backend := docsBackendFlag(cmd); cmd.Flags().Changed("backend") && backend != docs.SearchBackend {
 		return exitErrf(ExitValidation, "--section reads the local docs index, which the %s backend does not use (drop -b %s)", backend, backend)
 	}
@@ -211,7 +220,10 @@ func runDocsSection(cmd *cobra.Command, section, library string, tokens int, asJ
 	if !ok {
 		return exitErrf(ExitValidation, "docs backend %q does not support --section", docs.SearchBackend)
 	}
-	o := sections.SectionSelect(cmd.Context(), library, section, tokens)
+	if !cmd.Flags().Changed("tokens") {
+		tokens = 0 // the default page size, which the next page's command need not name
+	}
+	o := sections.SectionSelect(cmd.Context(), library, section, tokens, page)
 	backend := servedDocsBackend(docs.SearchBackend, o)
 	docs.TraceFrom(cmd.Context()).SetOutcome(backend, o)
 	if err := fetcher.classify(o.Err(), "section fetch failed"); err != nil {
@@ -392,9 +404,13 @@ func printDocsResults(w io.Writer, query, backend, library string, o docs.Outcom
 	p("---\n")
 	if backend == docs.SearchBackend {
 		// Search results read as Markdown: heading path, the section's text
-		// with its code, source.
+		// with its code, source; a page of a section fetch ends with the
+		// command for the next.
 		for _, r := range results {
 			p("%s\n", docs.RenderResult(r, hint))
+			if next := docs.NextPageLine(r); next != "" {
+				p("%s\n", next)
+			}
 		}
 		return
 	}
@@ -436,6 +452,11 @@ func printDocsHeader(w io.Writer, query, backend, library string, o docs.Outcome
 	}
 	if o.Note != "" {
 		p("note: %s\n", o.Note)
+	}
+	if len(results) == 1 {
+		if line := docs.PageLine(results[0]); line != "" {
+			p("%s\n", line)
+		}
 	}
 }
 

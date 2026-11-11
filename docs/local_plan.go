@@ -304,13 +304,63 @@ func roundRobin(links []webLink, root webRoot) []webLink {
 // rendered pages too: the same docs a second time.
 func dropMirrors(links []webLink, root webRoot) []webLink {
 	mirror := func(l webLink) bool {
-		segs := pathSegments(strings.TrimPrefix(l.url.Path, root.prefix))
-		return len(segs) > 1 && strings.EqualFold(segs[0], "llms")
+		_, ok := mirroredPage(l.url, root)
+		return ok
 	}
 	if !slices.ContainsFunc(links, func(l webLink) bool { return !mirror(l) }) {
 		return links
 	}
 	return slices.DeleteFunc(links, mirror)
+}
+
+// mirroredPage is the page a link to an llms.txt text mirror (a page
+// under an llms directory right below root: mantine.dev/llms/core/modal)
+// stands for (mantine.dev/core/modal), and whether u is one.
+func mirroredPage(u *url.URL, root webRoot) (*url.URL, bool) {
+	rest, ok := strings.CutPrefix(u.Path, root.prefix)
+	segs := pathSegments(rest)
+	if !ok || len(segs) < 2 || !strings.EqualFold(segs[0], "llms") {
+		return u, false
+	}
+	out := *u
+	out.Path, out.RawPath = root.prefix+strings.Join(segs[1:], "/"), ""
+	if strings.HasSuffix(rest, "/") {
+		out.Path += "/"
+	}
+	return &out, true
+}
+
+// samePageKey is the planner's notion of one page: the links whose key is
+// the same are one page however the site spells it (displayKey: host
+// without www., no scheme, trailing slash or Markdown extension; then
+// .html and a closing /index set aside: x, x/, x.html, x.md, x/index and
+// x/index.html are one). uniquePages keeps one link per key; dropMirrors
+// sets an llms/ mirror aside (mirroredPage).
+func samePageKey(u *url.URL) string {
+	k := strings.Replace(displayKey(u), ".html?", "?", 1)
+	return strings.Replace(k, "/index?", "?", 1)
+}
+
+// pageIdentity is one page however a library stores it, as the planner
+// tells pages apart: samePageKey of the page an llms/ mirror below root
+// stands for, or of the page itself.
+func pageIdentity(u *url.URL, root webRoot, rootOK bool) string {
+	if rootOK {
+		u, _ = mirroredPage(u, root)
+	}
+	return samePageKey(u)
+}
+
+// PageIdentity is page (a URL) as one page of the library at root, however
+// the library stores it (pageIdentity): what the QA runner matches printed
+// groups on.
+func PageIdentity(page, root string) string {
+	u, err := url.Parse(page)
+	if err != nil {
+		return page
+	}
+	r, rerr := parseWebRoot(root)
+	return pageIdentity(u, r, rerr == nil)
 }
 
 // candidateLinks lists every page discovery named, pages in hand first:
@@ -339,14 +389,14 @@ func candidateLinks(site webSite, root webRoot) []webLink {
 	return out
 }
 
-// uniquePages keeps one link per displayed page (x, x.md and x.html are
-// one), the first listed, except that llms-full.txt's chunks of one page
-// are joined into one page in hand.
+// uniquePages keeps one link per page (samePageKey: x, x/, x.md, x.html
+// and x/index are one), the first listed, except that llms-full.txt's
+// chunks of one page are joined into one page in hand.
 func uniquePages(links []webLink) []webLink {
 	at := map[string]int{}
 	var out []webLink
 	for _, l := range links {
-		k := strings.Replace(displayKey(l.url), ".html?", "?", 1)
+		k := samePageKey(l.url)
 		i, seen := at[k]
 		switch {
 		case !seen:

@@ -18,7 +18,7 @@ import (
 //	library: <root>
 //	version: <the indexed version, when the library has one>
 //	index: <full|capped|search>, <N> pages, built <date>   (or, for pages a search just read: source: search, N pages read)
-//	status: answered | partial (<reason>) | refused (<reason>)
+//	status: found | partial (<reason>) | refused (<reason>)
 //	terms: {<term as written>: <sections holding it>, ...}
 //	not_found: [<term as written>, ...]
 //	note: <what a partial answer says in words, other indexed versions>
@@ -31,12 +31,12 @@ import (
 //	<verbatim text>
 //
 //	<contents line: what a cut group left out>
-//	source: <url#anchor> (cut)
+//	source: <url#anchor> (cut, <tokens shown> of <the section's> tokens)
 //
 //	full text of a group marked (cut): <the call that returns it>
 //
 // Groups of one page print together under its title, pages in the order
-// of their best group, groups in rank order within a page. The last line
+// of their best group, a page's groups in page order. The last line
 // is printed once, when a group was cut, in the surface's words
 // (HintStyle). The budget covers everything printed.
 
@@ -281,8 +281,8 @@ const topOfPage = "(top of page)"
 // RenderGroup is one group as printed under its page's title: its
 // heading path below the title ("### a > b"; a page's lead section has
 // none, or topOfPage when it is not the page's first group), its group
-// line, its text, its contents line and its source line, " (cut)" when
-// it was cut.
+// line, its text, its contents line and its source line, with how much
+// of its section it shows when it was cut (cutNote).
 func RenderGroup(r Result, firstOfPage bool) string {
 	var b strings.Builder
 	switch {
@@ -303,10 +303,32 @@ func RenderGroup(r Result, firstOfPage bool) string {
 	}
 	b.WriteString("source: " + r.URL)
 	if r.Truncated {
-		b.WriteString(" (cut)")
+		b.WriteString(cutNote(r))
 	}
 	b.WriteString("\n")
 	return b.String()
+}
+
+// cutNote is what a cut group's source line ends with: " (cut, 310 of
+// 1,640 tokens)", how much of its section it shows; " (cut)" when that is
+// not known.
+func cutNote(r Result) string {
+	if r.SectionTokens <= 0 {
+		return " (cut)"
+	}
+	return " (cut, " + groupDigits(r.ShownTokens) + " of " + groupDigits(r.SectionTokens) + " tokens)"
+}
+
+// groupDigits is n with its thousands set apart by commas: 1,640.
+func groupDigits(n int) string {
+	s := strconv.Itoa(n)
+	if n < 0 {
+		return "-" + groupDigits(-n)
+	}
+	for i := len(s) - 3; i > 0; i -= 3 {
+		s = s[:i] + "," + s[i:]
+	}
+	return s
 }
 
 // RowCount is how many of a table's rows a cut group shows: "option

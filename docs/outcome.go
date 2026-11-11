@@ -8,8 +8,9 @@ import (
 type Status string
 
 const (
-	// Answered: results the caller can use.
-	Answered Status = "answered"
+	// Found: results the caller can use: evidence matching the question
+	// was found (the backend cannot know that it answers).
+	Found Status = "found"
 	// Partial: results, but the backend knows it could not finish (a budget
 	// cut discovery short, the best candidate page failed). The results are
 	// real; there may be better ones.
@@ -48,14 +49,14 @@ type Outcome struct {
 	Results  []Result       `json:"results"`
 	Matches  []LibraryMatch `json:"matches,omitempty"`
 	Attempts []Attempt      `json:"attempts,omitempty"`
-	// Note explains an answered outcome's reason in words (the local index
+	// Note explains a found outcome's reason in words (the local index
 	// ranked by keywords, and why); empty otherwise.
 	Note string `json:"note,omitempty"`
 	// An answer from the local index (an indexed library, or the pages a
 	// search just read) also says what it was answered from (Library,
 	// Index), and the question's distinctive terms as written: the rare
 	// ones the library holds (identifiers the question writes, words in
-	// under 1% of its sections), with how many of its sections hold each
+	// under 1% of its sections or in at most 25), with how many of its sections hold each
 	// (Terms), and those it holds nowhere (NotFound). A refusal for want
 	// of any of them carries them too.
 	Library  string      `json:"library,omitempty"`
@@ -68,7 +69,7 @@ type Outcome struct {
 // Err is the error behind a refused or failed outcome, classified by
 // internal/failure, and nil when the outcome has results.
 func (o Outcome) Err() error {
-	if o.Status == Answered || o.Status == Partial {
+	if o.Status == Found || o.Status == Partial {
 		return nil
 	}
 	return o.err
@@ -94,7 +95,7 @@ func (o Outcome) Failures() []Attempt {
 }
 
 // Answer records one backend's search or docs call as an Outcome: results
-// are answered, no results a refusal (ErrNoResults), and an error refused or
+// are found, no results a refusal (ErrNoResults), and an error refused or
 // failed by its failure class.
 func Answer(backend string, results []Result, err error) Outcome {
 	a := attempt(backend, len(results), err)
@@ -113,7 +114,7 @@ func Resolved(backend string, matches []LibraryMatch, err error) Outcome {
 // included, is a failure (the call could not finish).
 func attempt(backend string, n int, err error) Attempt {
 	if err == nil && n > 0 {
-		return Attempt{Backend: backend, Status: Answered}
+		return Attempt{Backend: backend, Status: Found}
 	}
 	if err == nil {
 		err = ErrNoResults
@@ -136,7 +137,7 @@ func finish(final Attempt, results []Result, matches []LibraryMatch, attempts []
 		results = []Result{}
 	}
 	o := Outcome{Status: final.Status, Reason: final.Reason, Results: results, Matches: matches, Attempts: attempts, err: final.err}
-	if final.Status == Answered || final.Status == Partial {
+	if final.Status == Found || final.Status == Partial {
 		o.Backend = final.Backend
 		o.Reason = ""
 	}

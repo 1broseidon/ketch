@@ -2,6 +2,10 @@ package docs
 
 import (
 	"fmt"
+	"maps"
+	"net/url"
+	"slices"
+	"strings"
 
 	"github.com/1broseidon/ketch/internal/docsindex"
 )
@@ -147,11 +151,89 @@ func (l *Local) gather(lib docsindex.Library, query string) (*gathered, error) {
 	if err != nil {
 		return nil, err
 	}
+	hits = oneAddress(lib, secs, hits)
 	g.pool, g.ordered = poolOf(lib, q, g.terms, secs, hits)
 	for i := range g.pool {
 		g.pool[i].Section = cleanSection(g.pool[i].Section)
 	}
 	return g, nil
+}
+
+// oneAddress makes a page the library stores at two addresses (x and
+// x.html, a trailing slash, x/index, an llms/ mirror below the root, www.:
+// pageIdentity, the planner's notion of one page) one page in the hits,
+// before they become the pool: each section of it is cited at the address
+// the library lists first (its lowest section ID among secs), and
+// sections of one page with the same anchor and heading path
+// (sectionPlace) are one section, that address's, in each list at the
+// first place either holds. A section moved to that address has its page
+// changed in secs.
+func oneAddress(lib docsindex.Library, secs map[int64]docsindex.Section, hits [][]docsindex.Hit) [][]docsindex.Hit {
+	root, rerr := parseWebRoot(lib.Root)
+	ids := slices.Sorted(maps.Keys(secs))
+	first := map[string]string{} // page identity: the address listed first
+	key := make(map[int64]string, len(ids))
+	for _, id := range ids {
+		s := secs[id]
+		u, err := url.Parse(s.Page)
+		if err != nil {
+			continue
+		}
+		page := pageIdentity(u, root, rerr == nil)
+		if _, ok := first[page]; !ok {
+			first[page] = s.Page
+		}
+		key[id] = page + "\x00" + sectionPlace(s)
+	}
+	rep := map[string]int64{} // section key: the ID that stands for it
+	same := make(map[int64]int64, len(ids))
+	moved := false
+	for _, id := range ids {
+		k, ok := key[id]
+		if !ok {
+			same[id] = id
+			continue
+		}
+		r, seen := rep[k]
+		if !seen {
+			r, rep[k] = id, id
+			s := secs[id]
+			page, _, _ := strings.Cut(k, "\x00")
+			if addr := first[page]; addr != s.Page {
+				s.Page, moved = addr, true
+				secs[id] = s
+			}
+		}
+		if r != id {
+			moved = true
+		}
+		same[id] = r
+	}
+	if !moved {
+		return hits
+	}
+	out := make([][]docsindex.Hit, len(hits))
+	for i, list := range hits {
+		seen := map[int64]bool{}
+		for _, h := range list {
+			r, ok := same[h.ID]
+			if !ok {
+				r = h.ID
+			}
+			if !seen[r] {
+				seen[r] = true
+				out[i] = append(out[i], docsindex.Hit{ID: r, Score: h.Score})
+			}
+		}
+	}
+	return out
+}
+
+// sectionPlace is where a section sits on its page, as two copies of the
+// page agree on it: its anchor and its heading path (a page may give
+// several sections one anchor: nginx's #content).
+func sectionPlace(s docsindex.Section) string {
+	return s.Anchor + "\x00" + s.Heading + "\x00" + strings.Join(s.Crumbs, "\x00")
 }
 
 // termMatch is the full-text query for a term's own list: the sections

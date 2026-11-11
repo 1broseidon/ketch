@@ -426,9 +426,110 @@ func TestEvidenceGenerousBudget(t *testing.T) {
 	if err != nil || len(a.results) != 2 || tr.Rank.Stop.Reason != "end" {
 		t.Fatalf("a generous budget: %+v %v stop %+v", a, err, tr.Rank.Stop)
 	}
+	// Every section prints whole but one longer than a page, which shows a
+	// page of its best pieces and says how much of it that is.
 	for _, r := range a.results {
-		if r.Truncated || tr.Rank.Sections[0].Printed != "whole" {
-			t.Errorf("a generous budget cut a section:\n%s", r.Snippet)
+		if r.Truncated != overPage(r.SectionTokens) || r.Truncated && (r.ShownTokens > answerPageTokens || r.ShownTokens <= 0) {
+			t.Errorf("a generous budget: truncated=%v, %d of %d tokens:\n%s", r.Truncated, r.ShownTokens, r.SectionTokens, r.Snippet)
+		}
+	}
+	if !a.results[0].Truncated && tr.Rank.Sections[0].Printed != "whole" {
+		t.Errorf("first section printed %q", tr.Rank.Sections[0].Printed)
+	}
+}
+
+// A section longer than a page is never printed whole, whatever the
+// budget: it opens cut and takes its best pieces at once up to a page,
+// in page order; one at or under a page prints whole when it fits. The
+// source line of a cut group says how much of its section it shows.
+func TestEvidencePageCap(t *testing.T) {
+	long := []string{}
+	for i := range 40 {
+		long = append(long, fmt.Sprintf("Paragraph %d says the alpha option matters, with more words around it to count.", i))
+	}
+	secs := []docsindex.Section{
+		evSection("long", 0, "long", []string{"Long", "Alpha"}, strings.Join(long, "\n\n")),
+		evSection("short", 0, "short", []string{"Short", "Alpha"}, "The alpha option, in short."),
+	}
+	l, lib := evLocal(t, secs)
+	tr := NewTrace("alpha option")
+	tr.ranking(lib, LocalOptions{Tokens: 100000})
+	a, err := l.evidence(lib, "alpha option", LocalOptions{Tokens: 100000}, tr)
+	if err != nil || len(a.results) != 2 {
+		t.Fatalf("results = %+v %v", a, err)
+	}
+	cut, whole := cutAndWhole(a.results)
+	if cut == nil || whole == nil || !strings.HasSuffix(cut.URL, "#long") || cut.SectionTokens <= answerPageTokens ||
+		cut.ShownTokens > answerPageTokens || cut.ShownTokens < answerPageTokens/2 || cut.ShownTokens != estimateTokens(cut.Snippet) {
+		t.Fatalf("cut %+v whole %+v", cut, whole)
+	}
+	inPageOrder(t, cut.Snippet, 40)
+	want := fmt.Sprintf("source: %s (cut, %s of %s tokens)\n", cut.URL, groupDigits(cut.ShownTokens), groupDigits(cut.SectionTokens))
+	if g := RenderGroup(*cut, true); !strings.HasSuffix(g, want) {
+		t.Errorf("cut group's source line, want %q:\n%s", want, g)
+	}
+	if g := RenderGroup(*whole, true); !strings.HasSuffix(g, "source: "+whole.URL+"\n") {
+		t.Errorf("whole group's source line:\n%s", g)
+	}
+	if tr.Rank.PageTokens != answerPageTokens {
+		t.Errorf("trace page_tokens %d", tr.Rank.PageTokens)
+	}
+}
+
+// cutAndWhole are the last cut result and the last whole one.
+func cutAndWhole(results []Result) (cut, whole *Result) {
+	for i := range results {
+		if results[i].Truncated {
+			cut = &results[i]
+		} else {
+			whole = &results[i]
+		}
+	}
+	return cut, whole
+}
+
+// inPageOrder fails unless the "Paragraph N says" of text, of n, are in
+// page order.
+func inPageOrder(t *testing.T, text string, n int) {
+	t.Helper()
+	last := -1
+	for i := range n {
+		if at := strings.Index(text, fmt.Sprintf("Paragraph %d says", i)); at >= 0 {
+			if at < last {
+				t.Errorf("paragraph %d out of page order", i)
+			}
+			last = at
+		}
+	}
+}
+
+// A section longer than a page that is one piece (a code block, never
+// cut) prints whole, not marked cut: nothing of it is left out.
+func TestEvidencePageOnePiece(t *testing.T) {
+	code := "```go\n" + strings.Repeat("alpha := option() // a line of code\n", 80) + "```"
+	l, lib := evLocal(t, []docsindex.Section{evSection("code", 0, "code", []string{"Code", "Alpha"}, code)})
+	a, err := l.evidence(lib, "alpha option", LocalOptions{Tokens: 100000}, nil)
+	if err != nil || len(a.results) != 1 || !overPage(estimateTokens(code)) {
+		t.Fatalf("results = %+v %v", a, err)
+	}
+	if r := a.results[0]; r.Truncated || r.Snippet != code || r.SectionTokens != 0 {
+		t.Errorf("one piece over a page: truncated=%v, %d of %d", r.Truncated, r.ShownTokens, r.SectionTokens)
+	}
+}
+
+// A cut group's size reads with thousands set apart; one with no size
+// known is "(cut)".
+func TestCutNote(t *testing.T) {
+	for _, c := range []struct {
+		r    Result
+		want string
+	}{
+		{Result{Truncated: true, ShownTokens: 310, SectionTokens: 1640}, " (cut, 310 of 1,640 tokens)"},
+		{Result{Truncated: true, ShownTokens: 1200, SectionTokens: 1234567}, " (cut, 1,200 of 1,234,567 tokens)"},
+		{Result{Truncated: true}, " (cut)"},
+	} {
+		if got := cutNote(c.r); got != c.want {
+			t.Errorf("cutNote(%+v) = %q, want %q", c.r, got, c.want)
 		}
 	}
 }
@@ -439,7 +540,7 @@ func TestEvidenceDefaults(t *testing.T) {
 	l, lib := evLocal(t, compactSectionsUnder(evRoot+"forms"))
 	ctx := context.Background()
 	o := l.answer(ctx, lib, "default form action POST", LocalOptions{})
-	if o.Status != Answered || len(o.Results) == 0 {
+	if o.Status != Found || len(o.Results) == 0 {
 		t.Fatalf("outcome = %+v", o)
 	}
 	total := estimateTokens(NewFrontmatter("default form action POST", SearchBackend, "", o).Render() + RenderAnswer(o.Results, HintNone))
@@ -747,7 +848,7 @@ func TestWalkPassesOver(t *testing.T) {
 	r := evRanked(s, g, 0, 0)
 	pp := &planner{lib: lib, s: s, r: r, pages: map[string]bool{}}
 	short := pp.render(plan{sec: 0, whole: true}) + pp.overhead(plan{sec: 0, whole: true})
-	r.budget = 2*short + 2
+	r.budget = 2*short + 8 // the cut group's source line says its size
 	printSections(lib, s, r, HintNone)
 	if len(r.plans) != 2 || r.plans[1].sec != 1 || len(r.plans[1].pieces) != 1 || s.pieces[r.plans[1].pieces[0]].text != "Alpha once more." || r.stop != "budget" {
 		t.Errorf("tight budget: plans %+v passed %v stop %q", r.plans, r.passed, r.stop)
@@ -846,4 +947,63 @@ func TestSplitEntryLines(t *testing.T) {
 // its frontmatter and its body.
 func printedTokens(lib docsindex.Library, query string, a *evidenceAnswer, opts LocalOptions) int {
 	return estimateTokens(a.frontmatter(lib, query, opts.note).Render() + RenderAnswer(a.results, opts.Hint))
+}
+
+// One page, one address, in the pool: a page the library stores at two
+// addresses (x and x.html, a trailing slash, x/index, an llms/ mirror
+// below the root, www.) is one page, though its copies' text differ in
+// a link (two fetches, two spellings): its sections print once, at the
+// address the library lists first, under one page title; sections of one
+// page that share an anchor but not a heading stay apart.
+func TestGatherOneAddress(t *testing.T) {
+	text := "Mock a module with the zorblat [API](/api/vi), and its factory."
+	copyText := "Mock a module with the zorblat [API](/api/vi.html), and its factory."
+	for _, second := range []string{"guide/modules.html", "guide/modules/", "llms/guide/modules", "guide/modules/index"} {
+		first := "guide/modules"
+		if second == "guide/modules/index" {
+			first = "guide/modules/"
+		}
+		secs := []docsindex.Section{
+			evSection(first, 0, "mocking", []string{"Mocking Modules", "Mocking a Module"}, text),
+			evSection(first, 1, "browser", []string{"Mocking Modules", "Browser Mode"}, "In browser mode zorblat works [too](/x)."),
+			evSection(second, 0, "mocking", []string{"Mocking Modules", "Mocking a Module"}, copyText),
+			evSection(second, 1, "browser", []string{"Mocking Modules", "Browser Mode"}, "In browser mode zorblat works [too](/x.html)."),
+			evSection("other", 0, "content", []string{"Other", "One"}, "Zorblat elsewhere, one."),
+			evSection("other", 1, "content", []string{"Other", "Two"}, "Zorblat elsewhere, two."),
+		}
+		l, lib := evLocal(t, secs)
+		a, err := l.evidence(lib, "zorblat module", LocalOptions{Tokens: 100000}, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		seen := map[string]bool{}
+		titles := 0
+		for _, r := range a.results {
+			key := r.PageTitle + "\x00" + strings.Join(r.HeadingPath, ">")
+			if seen[key] {
+				t.Errorf("%s: %s printed twice", second, key)
+			}
+			seen[key] = true
+			if r.PageTitle == "Mocking Modules" && !strings.HasPrefix(r.URL, evRoot+first+"#") {
+				t.Errorf("%s: printed at %s, not at the address listed first", second, r.URL)
+			}
+		}
+		for _, line := range strings.Split(RenderAnswer(a.results, HintNone), "\n") {
+			if line == "## Mocking Modules" {
+				titles++
+			}
+		}
+		if titles != 1 || !seen["Other\x00One"] || !seen["Other\x00Two"] {
+			t.Errorf("%s: page titles %d, results %v", second, titles, seen)
+		}
+	}
+	// www. and the scheme are one host.
+	secs := []docsindex.Section{
+		evSection("guide/a", 0, "x", []string{"A", "X"}, "Zorblat once."),
+		{Page: strings.Replace(evRoot, "https://", "http://www.", 1) + "guide/a", Anchor: "x", Heading: "X", Crumbs: []string{"A", "X"}, Text: "Zorblat [once](/o.html)."},
+	}
+	l, lib := evLocal(t, secs)
+	if a, err := l.evidence(lib, "zorblat", LocalOptions{Tokens: 100000}, nil); err != nil || len(a.results) != 1 {
+		t.Errorf("www. copy: %+v %v", a, err)
+	}
 }

@@ -116,7 +116,7 @@ func TestLocalVersionsSideBySide(t *testing.T) {
 	if latest.Status != Partial || latest.Reason != ReasonTermsNotFound || !slices.Equal(latest.NotFound, []string{"onComplete", "onAbort", "callbacks"}) {
 		t.Errorf("no version: %s/%s not_found %v", latest.Status, latest.Reason, latest.NotFound)
 	}
-	latest.Status = Answered
+	latest.Status = Found
 	checkAnsweredFrom(t, latest, "https://vr.example.test/", "current")
 	if !strings.Contains(latest.Note, "also indexed: v3") {
 		t.Errorf("no version: note %q", latest.Note)
@@ -146,7 +146,7 @@ func checkCrossVersionLabels(t *testing.T, store *docsindex.Store, key string) {
 // prefix and labelled version.
 func checkAnsweredFrom(t *testing.T, o Outcome, prefix, version string) {
 	t.Helper()
-	if o.Status != Answered || len(o.Results) == 0 {
+	if o.Status != Found || len(o.Results) == 0 {
 		t.Fatalf("outcome = %+v", o)
 	}
 	for _, r := range o.Results {

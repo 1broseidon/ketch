@@ -142,18 +142,23 @@ func TestIndexRefreshStoresOnlyChangedPages(t *testing.T) {
 	}
 }
 
-// The local backend answers with one result per section, best first: the
-// section under its address and heading path, the pieces naming the
-// question, and its anchor.
+// The local backend answers with one result per section, the best one's
+// page first and a page's results in page order: the section under its
+// address and heading path, the pieces naming the question, and its
+// anchor.
 func TestLocalSectionResults(t *testing.T) {
 	f, store := exampleSite(), newStore(t)
 	buildIndex(t, f, store)
 	l := NewLocal(store)
 	o := l.GetDocsSelect(context.Background(), "example", "add middleware to a route", 0)
-	if o.Status != Answered || o.Backend != SearchBackend || o.Reason != "" || len(o.Results) == 0 {
+	if o.Status != Found || o.Backend != SearchBackend || o.Reason != "" || len(o.Results) == 0 {
 		t.Fatalf("outcome = %+v", o)
 	}
-	checkTopSection(t, o.Results[0])
+	top := slices.IndexFunc(o.Results, func(r Result) bool { return strings.HasSuffix(r.URL, "#add-middleware-to-a-route") })
+	if top < 0 || pageOf(o.Results[0]) != pageOf(o.Results[top]) {
+		t.Fatalf("the best section's page is not printed first: %+v", o.Results)
+	}
+	checkTopSection(t, o.Results[top])
 	seen := map[string]bool{}
 	for _, r := range o.Results {
 		if seen[r.URL] {
@@ -200,7 +205,7 @@ func TestLocalKeywordRanking(t *testing.T) {
 	buildIndex(t, f, store)
 	l := NewLocal(store)
 	o := l.GetDocsSelect(context.Background(), idxRoot, "path parameter", 0)
-	if o.Status != Answered || o.Reason != "" || o.Note != "" || o.Attempts[0].Reason != "" {
+	if o.Status != Found || o.Reason != "" || o.Note != "" || o.Attempts[0].Reason != "" {
 		t.Fatalf("outcome = %+v", o)
 	}
 	if o.Results[0].URL != idxRoot+"guide/routing#path-parameters" {
@@ -225,7 +230,7 @@ func TestLocalRefusals(t *testing.T) {
 		t.Errorf("a query naming an unindexed library = %s/%s", o.Status, o.Reason)
 	}
 	o := l.SearchSelect(context.Background(), "how do I add middleware in example", 1)
-	if o.Status != Answered || len(o.Results) != 1 || !strings.HasPrefix(o.Results[0].URL, idxRoot) {
+	if o.Status != Found || len(o.Results) != 1 || !strings.HasPrefix(o.Results[0].URL, idxRoot) {
 		t.Errorf("a query naming the indexed library = %s %d %v", o.Status, len(o.Results), o.Results)
 	}
 	empty := NewLocal(newStore(t))

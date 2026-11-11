@@ -38,7 +38,8 @@ import (
 //	sort                      pieces: id, section (url#anchor), kind, role (its page's), text (cleaned,
 //	                          verbatim), tokens (estimated, separator included), folded (the ids folded
 //	                          into it) or folded_into (the id it was folded into)
-//	rank                      budget (the tokens planned, frontmatter and margin out), used, stop
+//	rank                      budget (the tokens planned, frontmatter and margin out), page_tokens (the
+//	                          page size: a longer section is never printed whole; 0 for none), used, stop
 //	                          (reason "budget" when a piece was passed over for room, else "end"),
 //	                          sections (index for index with gather's pool: section, order (its rank
 //	                          in Gather, as fusion uses it), best_piece and best_rank (its best piece
@@ -61,7 +62,8 @@ import (
 //	                          after the frontmatter), and the budget the answer was fitted to; index,
 //	                          terms and not_found as the frontmatter states them; groups: each printed
 //	                          group in printed order with section (url#anchor), page_title,
-//	                          heading_path (below the title) and cut
+//	                          heading_path (below the title), cut, and for a cut group shown_tokens
+//	                          and section_tokens (its text's tokens, its whole section's)
 //
 // When a call answers more than once (a remembered question that no longer
 // answers, a second site), the stages hold the last answer.
@@ -148,11 +150,14 @@ type tracePiece struct {
 }
 
 type traceRank struct {
-	Budget   int                `json:"budget"`
-	Used     int                `json:"used"`
-	Stop     traceStop          `json:"stop"`
-	Sections []traceSectionRank `json:"sections"`
-	Pieces   []traceChoice      `json:"pieces"`
+	Budget int `json:"budget"`
+	// PageTokens is the page size: a section longer is never printed
+	// whole (0: none).
+	PageTokens int                `json:"page_tokens"`
+	Used       int                `json:"used"`
+	Stop       traceStop          `json:"stop"`
+	Sections   []traceSectionRank `json:"sections"`
+	Pieces     []traceChoice      `json:"pieces"`
 }
 
 type traceStop struct {
@@ -209,10 +214,12 @@ type traceOutput struct {
 }
 
 type traceGroup struct {
-	Section     string   `json:"section"`
-	PageTitle   string   `json:"page_title"`
-	HeadingPath []string `json:"heading_path,omitempty"`
-	Cut         bool     `json:"cut"`
+	Section       string   `json:"section"`
+	PageTitle     string   `json:"page_title"`
+	HeadingPath   []string `json:"heading_path,omitempty"`
+	Cut           bool     `json:"cut"`
+	ShownTokens   int      `json:"shown_tokens,omitempty"`
+	SectionTokens int      `json:"section_tokens,omitempty"`
 }
 
 // EstimateTokens is the token estimate the trace's output tokens and every
@@ -256,7 +263,8 @@ func (t *Trace) SetOutcome(backend string, o Outcome) {
 	}
 	t.Output.Index, t.Output.Terms, t.Output.NotFound, t.Output.Groups = o.Index, o.Terms, o.NotFound, nil
 	for _, r := range o.Results {
-		t.Output.Groups = append(t.Output.Groups, traceGroup{Section: r.URL, PageTitle: r.PageTitle, HeadingPath: r.HeadingPath, Cut: r.Truncated})
+		t.Output.Groups = append(t.Output.Groups, traceGroup{Section: r.URL, PageTitle: r.PageTitle, HeadingPath: r.HeadingPath, Cut: r.Truncated,
+			ShownTokens: r.ShownTokens, SectionTokens: r.SectionTokens})
 	}
 }
 
@@ -370,7 +378,7 @@ func (t *Trace) ranked(s *sorted, g *gathered, r *ranked) {
 	for i := range t.Terms.List {
 		t.Terms.List[i].Weight, t.Terms.List[i].Distinctive = r.weights[i], r.distinct[i]
 	}
-	t.Rank = &traceRank{Budget: r.budget, Used: r.used, Stop: traceStop{Reason: r.stop},
+	t.Rank = &traceRank{Budget: r.budget, PageTokens: answerPageTokens, Used: r.used, Stop: traceStop{Reason: r.stop},
 		Sections: make([]traceSectionRank, len(s.secs)), Pieces: make([]traceChoice, len(s.pieces))}
 	for id, sc := range r.scores {
 		t.Rank.Pieces[id] = traceScore(g, r, id, sc)

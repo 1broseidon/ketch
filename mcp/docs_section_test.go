@@ -101,7 +101,7 @@ func TestDocsToolLocalTermsRefusal(t *testing.T) {
 // frontmatter's fields, and its results their page titles and no pointer.
 func checkAnswerFields(t *testing.T, out DocsOutput) {
 	t.Helper()
-	if out.Status != docs.Answered || out.Library != sectionRoot || out.Index == nil || out.Index.Kind != docs.IndexFull || len(out.Terms) == 0 || out.NotFound == nil {
+	if out.Status != docs.Found || out.Library != sectionRoot || out.Index == nil || out.Index.Kind != docs.IndexFull || len(out.Terms) == 0 || out.NotFound == nil {
 		t.Errorf("answer fields = %+v", out)
 	}
 	for _, r := range out.Results {
@@ -117,7 +117,7 @@ func TestDocsToolLocalSectionFetch(t *testing.T) {
 	session := localSession(t)
 	ref := sectionRoot + "guide/forms#rules"
 	res, full := callDocsOutput(t, session, map[string]any{"section": ref, "backend": "search"})
-	if res.IsError || len(full.Results) != 1 || full.Backend != docs.SearchBackend || full.Status != docs.Answered {
+	if res.IsError || len(full.Results) != 1 || full.Backend != docs.SearchBackend || full.Status != docs.Found {
 		t.Fatalf("section fetch: %s %+v", toolText(res), full)
 	}
 	got := full.Results[0]
@@ -127,13 +127,44 @@ func TestDocsToolLocalSectionFetch(t *testing.T) {
 	}
 }
 
-// A page URL returns the page's sections, cut at a block with the next
-// section named.
+// A section longer than tokens is read a page at a time: the result
+// says which page of how many, and the hint gives the call for the next
+// page (page), with the page size given; the last page has none.
 func TestDocsToolLocalSectionPage(t *testing.T) {
 	session := localSession(t)
-	res, page := callDocsOutput(t, session, map[string]any{"section": sectionRoot + "guide/forms", "tokens": 100})
-	if res.IsError || len(page.Results) != 1 || !page.Results[0].Truncated || !strings.Contains(page.Results[0].Snippet, `next section: docs(section="`+sectionRoot+"guide/forms#") {
-		t.Errorf("page fetch: %s %+v", toolText(res), page)
+	ref := sectionRoot + "guide/forms"
+	res, first := callDocsOutput(t, session, map[string]any{"section": ref, "tokens": 100})
+	if res.IsError || len(first.Results) != 1 {
+		t.Fatalf("page fetch: %s", toolText(res))
+	}
+	r := first.Results[0]
+	next := `docs(section="` + ref + `", tokens=100, page=2)`
+	if !r.Truncated || r.Page != 1 || r.Pages < 2 || r.Next != next || first.Hint != "next page: "+next {
+		t.Fatalf("page 1: %s", toolText(res))
+	}
+	res, last := callDocsOutput(t, session, map[string]any{"section": ref, "tokens": 100, "page": r.Pages})
+	if res.IsError || last.Results[0].Page != r.Pages || last.Results[0].Next != "" || last.Hint != "" || last.Results[0].Snippet == r.Snippet {
+		t.Errorf("last page: %s", toolText(res))
+	}
+}
+
+// A page past the last, a negative page, and a page without a section
+// are [validation].
+func TestDocsToolLocalSectionPageErrors(t *testing.T) {
+	session := localSession(t)
+	ref := sectionRoot + "guide/forms"
+	_, first := callDocsOutput(t, session, map[string]any{"section": ref, "tokens": 100})
+	if len(first.Results) != 1 {
+		t.Fatal("no page")
+	}
+	for _, args := range []map[string]any{
+		{"section": ref, "tokens": 100, "page": first.Results[0].Pages + 1},
+		{"section": ref, "page": -1},
+		{"query": "forms", "page": 2},
+	} {
+		if res, _ := callDocsOutput(t, session, args); !res.IsError || !strings.HasPrefix(toolText(res), "[validation]") {
+			t.Errorf("docs %v: isError=%v %q, want [validation]", args, res.IsError, toolText(res))
+		}
 	}
 }
 
@@ -186,7 +217,10 @@ func TestDocsToolDescribesSection(t *testing.T) {
 		if !strings.Contains(schema.Properties["section"].Description, "url#anchor") || len(schema.Required) != 0 {
 			t.Errorf("section property %q, required %v", schema.Properties["section"].Description, schema.Required)
 		}
-		for _, want := range []string{"section field", "hint", "not_found", "no network", "[not_found]"} {
+		if !strings.Contains(schema.Properties["page"].Description, "with section") {
+			t.Errorf("page property %q", schema.Properties["page"].Description)
+		}
+		for _, want := range []string{"section field", "hint", "not_found", "no network", "[not_found]", "page=N"} {
 			if !strings.Contains(tool.Description, want) {
 				t.Errorf("description lacks %q", want)
 			}

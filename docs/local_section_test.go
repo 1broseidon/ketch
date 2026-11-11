@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -61,7 +62,7 @@ func compactSectionsAt(page, _ string) []docsindex.Section {
 
 func fetch(t *testing.T, l *Local, library, ref string, tokens int) Outcome {
 	t.Helper()
-	return l.SectionSelect(WithLocalOptions(context.Background(), LocalOptions{Hint: HintCLI}), library, ref, tokens)
+	return l.SectionSelect(WithLocalOptions(context.Background(), LocalOptions{Hint: HintCLI}), library, ref, tokens, 0)
 }
 
 func mustContain(t *testing.T, text string, wants ...string) {
@@ -79,7 +80,7 @@ func TestSectionFetchFamily(t *testing.T) {
 	l := sectionLocal(t, "")
 	ref := secRoot + "guide/forms#validation"
 	o := fetch(t, l, "", ref, 0)
-	if o.Status != Answered || len(o.Results) != 1 || o.Backend != SearchBackend {
+	if o.Status != Found || len(o.Results) != 1 || o.Backend != SearchBackend {
 		t.Fatalf("outcome = %+v", o)
 	}
 	r := o.Results[0]
@@ -118,7 +119,7 @@ func TestSectionFetchPage(t *testing.T) {
 		last = i
 	}
 	// A trailing slash or .html is the same page.
-	if r2 := fetch(t, l, "", secRoot+"guide/forms/", 0); r2.Status != Answered {
+	if r2 := fetch(t, l, "", secRoot+"guide/forms/", 0); r2.Status != Found {
 		t.Errorf("trailing slash = %s %v", r2.Status, r2.Err())
 	}
 }
@@ -150,48 +151,191 @@ func TestSectionFetchRefusals(t *testing.T) {
 	}
 }
 
-// A fetch is capped at a block boundary within the cap, ends with "[…]"
-// and where to read on, and says so in Truncated: the next section when
-// the cut falls after the first, a larger cap when it falls in the first.
-func TestSectionFetchCap(t *testing.T) {
+// A section longer than the page size is read in pages: each ends at a
+// block boundary (never inside a code block), says which page of how many
+// it is, and, but the last, gives the call for the next page, with the
+// page size the caller set; read in order, the pages are the section.
+// Each fits the page size as printed, header and next-page lines in.
+func TestSectionFetchPages(t *testing.T) {
 	l := sectionLocal(t, "")
-	o := fetch(t, l, "", secRoot+"guide/forms#long", 90)
-	r := o.Results[0]
-	if !r.Truncated || !strings.Contains(r.Snippet, "Paragraph 0") || strings.Contains(r.Snippet, "Paragraph 11") ||
-		!strings.Contains(r.Snippet, "\n\n"+elidedMarker+" cut at 90 tokens; the section is about ") || !strings.Contains(r.Snippet, ": raise --tokens") {
-		t.Errorf("cut in the first section:\n%s", r.Snippet)
+	ref := secRoot + "guide/forms#long"
+	whole := fetch(t, l, "", ref, 0).Results[0]
+	if whole.Truncated || whole.Pages != 0 || whole.Next != "" || PageLine(whole) != "" || NextPageLine(whole) != "" {
+		t.Fatalf("a section that fits one page: %+v", whole)
 	}
-	if got := estimateTokens(RenderSnippet(r)); got > 90 {
-		t.Errorf("estimate %d over the cap", got)
+	pages := readPages(t, l, ref, 90, HintCLI)
+	if len(pages) < 3 {
+		t.Fatalf("pages at 90 tokens: %d", len(pages))
 	}
-	if strings.Contains(r.Snippet, "Paragraph 5 of the long section explains one more detail of the feature at length, with words to count.\n\nParagraph 6 of the long section explains one more detail of the feature at length, with words to") {
-		t.Errorf("cut inside a paragraph")
+	var texts []string
+	for n, r := range pages {
+		checkPage(t, r, n+1, len(pages), ref, 90)
+		texts = append(texts, r.Snippet)
 	}
-	page := fetch(t, l, "", secRoot+"guide/forms", 110).Results[0]
-	if !page.Truncated || !strings.HasSuffix(page.Snippet, "next section: ketch docs --section "+secRoot+"guide/forms#"+nextAnchor(page.Snippet)) {
-		t.Errorf("cut after the first section:\n%s", page.Snippet)
+	if strings.Join(texts, "\n\n") != whole.Snippet {
+		t.Errorf("the pages in order are not the section:\n%s", strings.Join(texts, "\n\n"))
 	}
-	if got := estimateTokens(RenderSnippet(page)); got > 110 {
-		t.Errorf("page estimate %d over the cap", got)
+}
+
+// A page past the last is a validation error naming how many there are;
+// a page URL with no anchor pages through the page's sections in order;
+// over MCP the next page is the docs call, with the library given; a code
+// block is never cut, at any page size.
+func TestSectionFetchPagesMore(t *testing.T) {
+	l := sectionLocal(t, "")
+	ref := secRoot + "guide/forms#long"
+	pages := readPages(t, l, ref, 90, HintCLI)
+	o := l.SectionSelect(WithLocalOptions(context.Background(), LocalOptions{Hint: HintCLI}), "", ref, 90, len(pages)+1)
+	if o.Status != Refused || o.Reason != "invalid_page" || o.Kind() != failure.Validation || !strings.Contains(o.Err().Error(), fmt.Sprintf("of %d pages", len(pages))) {
+		t.Errorf("past the end = %s/%s %v", o.Status, o.Reason, o.Err())
 	}
-	// The MCP wording is the docs call.
-	mcp := l.SectionSelect(WithLocalOptions(context.Background(), LocalOptions{Hint: HintMCP}), "", secRoot+"guide/forms", 110).Results[0]
-	if !strings.Contains(mcp.Snippet, `next section: docs(section="`+secRoot+"guide/forms#") {
-		t.Errorf("MCP notice:\n%s", mcp.Snippet)
+	if o := l.SectionSelect(WithLocalOptions(context.Background(), LocalOptions{Hint: HintCLI}), "", secRoot+"guide/forms#rules", 0, 2); o.Reason != "invalid_page" || !strings.Contains(o.Err().Error(), "of 1 page ") {
+		t.Errorf("page 2 of a section of one = %s/%s %v", o.Status, o.Reason, o.Err())
 	}
-	// A code block is never cut inside: the fences stay balanced at every cap.
+	// A page URL with no anchor pages through the page's sections in order.
+	page := readPages(t, l, secRoot+"guide/forms", 110, HintCLI)
+	all := ""
+	for _, r := range page {
+		all += r.Snippet + "\n\n"
+	}
+	last := -1
+	for _, want := range []string{"Forms collect input.", "#### Validation", "#### Rules", "#### Async", "#### Submitting", "#### Long", "last()"} {
+		i := strings.Index(all, want)
+		if i <= last {
+			t.Errorf("%q out of order or missing across %d pages", want, len(page))
+		}
+		last = i
+	}
+	// The MCP wording is the docs call; the library given is named in it.
+	mcp := l.SectionSelect(WithLocalOptions(context.Background(), LocalOptions{Hint: HintMCP}), secRoot, secRoot+"guide/forms", 110, 1).Results[0]
+	if mcp.Next != `docs(section="`+secRoot+`guide/forms", library="`+secRoot+`", tokens=110, page=2)` {
+		t.Errorf("MCP next = %q", mcp.Next)
+	}
+	// A code block is never cut inside: the fences stay balanced on every
+	// page at every size.
 	for tokens := 20; tokens < 400; tokens += 15 {
-		r := fetch(t, l, "", secRoot+"guide/forms", tokens).Results[0]
-		if strings.Count(r.Snippet, "```")%2 != 0 {
-			t.Errorf("cap %d left a fence open:\n%s", tokens, r.Snippet)
+		for _, r := range readPages(t, l, secRoot+"guide/forms", tokens, HintCLI) {
+			balancedFences(t, r)
 		}
 	}
 }
 
-// nextAnchor is the anchor a "next section:" notice at the end of text names.
-func nextAnchor(text string) string {
-	_, a, _ := strings.Cut(text[strings.LastIndex(text, "next section:"):], "#")
-	return a
+// checkPage checks page n of pages of the section ref read at tokens a
+// page: its page line, its next-page call, its size as printed, its
+// fences.
+func checkPage(t *testing.T, r Result, n, pages int, ref string, tokens int) {
+	t.Helper()
+	if !r.Truncated || r.Page != n || r.Pages != pages || PageLine(r) != fmt.Sprintf("page: %d of %d", n, pages) {
+		t.Errorf("page %d: %+v", n, r)
+	}
+	want := ""
+	if n < pages {
+		want = fmt.Sprintf("ketch docs --section %s --tokens %d --page %d", ref, tokens, n+1)
+	}
+	if r.Next != want || NextPageLine(r) != "" && NextPageLine(r) != "next page: "+want {
+		t.Errorf("page %d next = %q, want %q", n, r.Next, want)
+	}
+	if got := estimateTokens(RenderSnippet(r) + PageLine(r) + "\n" + NextPageLine(r) + "\n"); got > tokens {
+		t.Errorf("page %d estimates %d tokens", n, got)
+	}
+	balancedFences(t, r)
+}
+
+// balancedFences fails when a page of a section fetch leaves a code
+// fence open.
+func balancedFences(t *testing.T, r Result) {
+	t.Helper()
+	if strings.Count(r.Snippet, "```")%2 != 0 {
+		t.Errorf("page %d of %d leaves a fence open:\n%s", r.Page, r.Pages, r.Snippet)
+	}
+}
+
+// checkTablePage checks a page of TestSectionPagesTable's section: rows
+// only under their table's header (repeated on a page that continues the
+// table), an item with its continuation line; seen counts the rows.
+func checkTablePage(t *testing.T, r Result, header string, seen map[string]int) {
+	t.Helper()
+	lines := strings.Split(r.Snippet, "\n")
+	for k, line := range lines {
+		if strings.HasPrefix(line, "| `key_") {
+			seen[line]++
+			if k == 0 || !strings.HasPrefix(lines[k-1], "| `key_") && !strings.HasPrefix(lines[k-1], "|---") {
+				t.Errorf("page %d: a row away from its table:\n%s", r.Page, r.Snippet)
+			}
+		}
+		if strings.HasPrefix(line, "  and goes on") && (k == 0 || !strings.HasPrefix(lines[k-1], "- item")) {
+			t.Errorf("page %d: an item cut from its continuation:\n%s", r.Page, r.Snippet)
+		}
+	}
+	if strings.Contains(r.Snippet, "| `key_") && !strings.HasPrefix(r.Snippet, header+"\n") && !strings.HasPrefix(r.Snippet, "The options.") {
+		t.Errorf("page %d: a table page not headed by the header:\n%s", r.Page, r.Snippet)
+	}
+}
+
+// readPages reads every page of ref at tokens a page.
+func readPages(t *testing.T, l *Local, ref string, tokens int, style HintStyle) []Result {
+	t.Helper()
+	var out []Result
+	for n := 1; ; n++ {
+		o := l.SectionSelect(WithLocalOptions(context.Background(), LocalOptions{Hint: style}), "", ref, tokens, n)
+		if len(o.Results) != 1 {
+			t.Fatalf("page %d: %s %v", n, o.Status, o.Err())
+		}
+		out = append(out, o.Results[0])
+		if o.Results[0].Pages <= n {
+			return out
+		}
+		if n > 200 {
+			t.Fatal("no last page")
+		}
+	}
+}
+
+// A table longer than a page breaks between rows, and a page that
+// continues it opens with its header row; a list breaks between items,
+// an item's continuation lines and a fenced block whole.
+func TestSectionPagesTable(t *testing.T) {
+	page := "https://t.test/docs/options"
+	var rows []string
+	for i := range 40 {
+		rows = append(rows, fmt.Sprintf("| `key_%d` | Optional | What key %d does, in a sentence or so. |", i, i))
+	}
+	header := "| Key | Required? | Description |\n|---|---|---|"
+	var items []string
+	for i := range 20 {
+		items = append(items, fmt.Sprintf("- item %d says a thing\n  and goes on", i))
+	}
+	items = append(items, "```sh\nrun --this\nrun --that\n```")
+	secs := []docsindex.Section{{Page: page, Anchor: "opts", Heading: "Options", Crumbs: []string{"Options"},
+		Text: "The options.\n\n" + header + "\n" + strings.Join(rows, "\n") + "\n\n" + strings.Join(items, "\n")}}
+	lib := docsindex.Library{Root: "https://t.test/docs/"}
+	var got []Result
+	for n := 1; ; n++ {
+		o := fetchSection(lib, secs, "opts", "", 150, n, HintCLI)
+		if len(o.Results) != 1 {
+			t.Fatalf("page %d: %v", n, o.Err())
+		}
+		got = append(got, o.Results[0])
+		if o.Results[0].Next == "" {
+			break
+		}
+	}
+	if len(got) < 3 {
+		t.Fatalf("pages: %d", len(got))
+	}
+	seen := map[string]int{}
+	for _, r := range got {
+		checkTablePage(t, r, header, seen)
+		balancedFences(t, r)
+	}
+	for _, row := range rows {
+		if seen[row] != 1 {
+			t.Errorf("row %q printed %d times", row, seen[row])
+		}
+	}
+	if !strings.HasSuffix(got[len(got)-1].Snippet, "```sh\nrun --this\nrun --that\n```") {
+		t.Errorf("last page:\n%s", got[len(got)-1].Snippet)
+	}
 }
 
 // A library shown under unversioned addresses is fetched by the address
@@ -213,7 +357,7 @@ func TestSectionFetchDisplayRoot(t *testing.T) {
 func askCompact(t *testing.T, l *Local, opts LocalOptions) []Result {
 	t.Helper()
 	o := l.GetDocsSelect(WithLocalOptions(context.Background(), opts), secRoot, "default form action POST", 0)
-	if o.Status != Answered {
+	if o.Status != Found {
 		t.Fatalf("outcome = %s %v", o.Status, o.Err())
 	}
 	return o.Results
@@ -221,7 +365,7 @@ func askCompact(t *testing.T, l *Local, opts LocalOptions) []Result {
 
 // Results carry their section reference; a result cut short says so in
 // JSON and, in an answer shown as text, its source line is marked
-// "(cut)" and the answer ends with the one line saying how to read it in
+// "(cut, N of M tokens)" and the answer ends with the one line saying how to read it in
 // full; the pointer is not part of the snippet.
 func TestCompactAnswerPointsToFullSection(t *testing.T) {
 	cut := askCompact(t, sectionLocal(t, ""), LocalOptions{Tokens: 300, Hint: HintCLI})
@@ -233,7 +377,7 @@ func TestCompactAnswerPointsToFullSection(t *testing.T) {
 		if r.Section != r.URL || r.Section == "" {
 			t.Errorf("section = %q, url %q", r.Section, r.URL)
 		}
-		if r.Truncated != strings.Contains(text, "source: "+r.URL+" (cut)\n") {
+		if r.Truncated != strings.Contains(text, "source: "+r.URL+" (cut, ") || r.Truncated && !strings.Contains(text, "source: "+r.URL+cutNote(r)+"\n") {
 			t.Errorf("truncated=%v but rendering is:\n%s", r.Truncated, text)
 		}
 		if strings.Contains(r.Snippet, elidedMarker) || strings.Contains(r.Snippet, "full section") {
@@ -251,13 +395,14 @@ func TestCompactAnswerPointsToFullSection(t *testing.T) {
 func TestCompactAnswerPointerAbsent(t *testing.T) {
 	l := sectionLocal(t, "")
 	o := l.GetDocsSelect(WithLocalOptions(context.Background(), LocalOptions{Hint: HintCLI}), secRoot, "async rules promise", 0)
-	if o.Status != Answered || len(o.Results) == 0 || o.Results[0].URL != secRoot+"guide/forms#async" {
+	at := slices.IndexFunc(o.Results, func(r Result) bool { return r.URL == secRoot+"guide/forms#async" })
+	if o.Status != Found || at < 0 {
 		t.Fatalf("outcome = %+v", o)
 	}
-	if r := o.Results[0]; r.Truncated || r.Snippet != "Async rules return a promise." || strings.Contains(RenderGroup(r, true), "(cut)") {
+	if r := o.Results[at]; r.Truncated || r.Snippet != "Async rules return a promise." || strings.Contains(RenderGroup(r, true), "(cut") {
 		t.Errorf("a whole result is marked cut:\n%s", RenderGroup(r, true))
 	}
-	if text := RenderAnswer(o.Results[:1], HintCLI); strings.Contains(text, AnswerHint(HintCLI)) {
+	if text := RenderAnswer(o.Results[at:at+1], HintCLI); strings.Contains(text, AnswerHint(HintCLI)) {
 		t.Errorf("a hint with nothing cut:\n%s", text)
 	}
 	for _, opts := range []LocalOptions{{Tokens: 300}, {Hint: HintCLI}} {
@@ -305,7 +450,7 @@ func TestCompactAnswerMCPPointer(t *testing.T) {
 		t.Errorf("MCP answer:\n%s", body)
 	}
 	// The call it names fetches that section.
-	if f := fetch(t, l, "", r.Section, 0); f.Status != Answered || !strings.Contains(f.Results[0].Snippet, "export const actions") {
+	if f := fetch(t, l, "", r.Section, 0); f.Status != Found || !strings.Contains(f.Results[0].Snippet, "export const actions") {
 		t.Errorf("following the pointer: %s %v", f.Status, f.Err())
 	}
 }

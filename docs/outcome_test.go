@@ -21,7 +21,7 @@ func TestAnswerStates(t *testing.T) {
 		reason  string
 		kind    failure.Kind
 	}{
-		{"answered", []Result{{Title: "x"}}, nil, Answered, "", 0},
+		{"found", []Result{{Title: "x"}}, nil, Found, "", 0},
 		{"empty is a refusal", nil, nil, Refused, "no_results", failure.NotFound},
 		{"not found", nil, fmt.Errorf("web: library %q %w", "zz", ErrNotFound), Refused, "not_found", failure.NotFound},
 		{"no library named", nil, fmt.Errorf("web: %w", ErrLibraryRequired), Refused, "library_required", failure.Validation},
@@ -36,7 +36,7 @@ func TestAnswerStates(t *testing.T) {
 			if o.Status != tc.status || o.Reason != tc.reason || o.Kind() != tc.kind {
 				t.Errorf("Answer = %s/%q/%v, want %s/%q/%v", o.Status, o.Reason, o.Kind(), tc.status, tc.reason, tc.kind)
 			}
-			if (o.Err() == nil) != (tc.status == Answered) {
+			if (o.Err() == nil) != (tc.status == Found) {
 				t.Errorf("Err() = %v for status %s", o.Err(), o.Status)
 			}
 			if o.Results == nil {

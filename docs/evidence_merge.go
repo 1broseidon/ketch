@@ -9,7 +9,8 @@ import (
 )
 
 // Merge (design/docs-evidence.md, Rank): each plan is printed as one group
-// under its section's heading path, in the order the sections opened. A
+// under its section's heading path, a page's groups together in page
+// order, pages in the order their first section opened. A
 // whole section is its text. A cut one is its pieces in page order:
 // neighbours joined by the text between them, "…" where text was skipped,
 // rows of one table under its one header; it says how many rows of a
@@ -28,8 +29,9 @@ type group struct {
 }
 
 // groupsOf are the plans as groups in printed order: the groups of one
-// page together, pages in the order of their first group taken, and
-// groups in the order they were taken within a page.
+// page together, pages in the order of their first group taken, and a
+// page's groups in page order (a child section that outranks its parent
+// prints after it, as the page reads).
 func groupsOf(s *sorted, r *ranked) []group {
 	out := make([]group, len(r.plans))
 	first := map[string]int{} // page: its first plan
@@ -41,7 +43,10 @@ func groupsOf(s *sorted, r *ranked) []group {
 		}
 	}
 	slices.SortStableFunc(out, func(a, b group) int {
-		return cmp.Compare(first[s.secs[a.sec].Page], first[s.secs[b.sec].Page])
+		if c := cmp.Compare(first[s.secs[a.sec].Page], first[s.secs[b.sec].Page]); c != 0 {
+			return c
+		}
+		return cmp.Compare(s.secs[a.sec].Order, s.secs[b.sec].Order)
 	})
 	return out
 }
@@ -63,11 +68,14 @@ func renderGroup(lib docsindex.Library, s *sorted, g group) Result {
 		URL: webSectionOf(sec.Section, 0).URL(), Anchors: []string{sec.Anchor}, Source: SearchBackend,
 	}
 	r.PageTitle, r.HeadingPath = pageTitle(sec.Section), headingBelow(sec.Section)
-	if g.whole {
+	if g.whole || len(g.pieces) == len(sec.pieces) {
+		// A group holding every piece of its section is the section: a
+		// section longer than a page that is one code block prints it whole.
 		r.Snippet = sec.Text
 	} else {
 		r.Snippet = joinPieces(s, sec, g.pieces)
 		r.Truncated = true
+		r.ShownTokens, r.SectionTokens = estimateTokens(r.Snippet), sec.tokens
 		r.Contents = contentsLine(sectionKeys(s, g.sec, g.pieces), sec.subs)
 		r.Rows = tableRows(s, sec, g.pieces)
 	}

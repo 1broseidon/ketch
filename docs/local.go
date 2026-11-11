@@ -64,7 +64,7 @@ func newLocalFromConfig() *Local {
 // withVersionNote adds a note naming the other indexed versions to an
 // answer from the newest.
 func withVersionNote(o Outcome, note string) Outcome {
-	if note == "" || (o.Status != Answered && o.Status != Partial) {
+	if note == "" || (o.Status != Found && o.Status != Partial) {
 		return o
 	}
 	if o.Note != "" {

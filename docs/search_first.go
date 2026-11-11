@@ -129,8 +129,8 @@ var (
 
 // SectionSelect reads one section from the local index; see
 // Local.SectionSelect.
-func (s *SearchFirst) SectionSelect(ctx context.Context, library, ref string, tokens int) Outcome {
-	return s.local.SectionSelect(ctx, library, ref, tokens)
+func (s *SearchFirst) SectionSelect(ctx context.Context, library, ref string, tokens, page int) Outcome {
+	return s.local.SectionSelect(ctx, library, ref, tokens, page)
 }
 
 // Search answers a question; see SearchSelect.
@@ -340,7 +340,7 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 	opts := req.opts
 	opts.note, opts.read = note, len(pages)
 	o := s.local.rank(ctx, lib, req.query, opts)
-	if (o.Status == Answered || o.Status == Partial) && tr.domains == 1 {
+	if (o.Status == Found || o.Status == Partial) && tr.domains == 1 {
 		// Only the first site read is remembered (any of its docs trees): a
 		// fallback site's answer, read because the one the hits agreed on
 		// gave nothing, is a guess the next search may do better than.
@@ -380,7 +380,7 @@ func withReason(reason, rest string) string {
 // searchAnswered is the local index's answer as the search-first
 // backend's: partial, with note (searchNote).
 func searchAnswered(o Outcome, note string) Outcome {
-	if o.Status != Answered && o.Status != Partial {
+	if o.Status != Found && o.Status != Partial {
 		for i := range o.Attempts {
 			o.Attempts[i].Backend = SearchBackend
 		}

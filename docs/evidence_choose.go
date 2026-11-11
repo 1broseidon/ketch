@@ -93,15 +93,22 @@ type planner struct {
 
 // printSections walks the candidates in fused order within the budget. A
 // piece whose section is not printed yet opens it: the section prints
-// whole when it fits the budget left, else cut to the piece; a later piece
-// of a cut section joins it when it fits. A piece that does not fit, and
-// one that would open a group past --limit's, is passed over and the
-// walk goes on: a later, smaller one may fit. The first section always
-// prints something, so an answer is never empty for want of room.
+// whole when it fits the budget left and a page (answerPageTokens), else
+// cut to the piece. A section longer than a page then takes its best
+// pieces at once, in the walk's order, while its text stays within a
+// page and the answer within the budget: a page of it. A later piece of a
+// cut section joins it when it fits. A piece that does not fit, and one
+// that would open a group past --limit's, is passed over and the walk
+// goes on: a later, smaller one may fit. The first section always prints
+// something, so an answer is never empty for want of room.
 func printSections(lib docsindex.Library, s *sorted, r *ranked, hint HintStyle) {
 	p := &planner{lib: lib, hint: hint, s: s, r: r, left: r.budget, shown: make([]bool, len(s.pieces)), pages: map[string]bool{}}
 	r.passed, r.stop = map[int]string{}, "end"
-	at := map[int]int{} // section: its plan
+	at := map[int]int{}      // section: its plan
+	bySec := map[int][]int{} // section: its candidates in the walk's order
+	for _, id := range r.walk {
+		bySec[s.pieces[id].sec] = append(bySec[s.pieces[id].sec], id)
+	}
 	for _, id := range r.walk {
 		i := s.pieces[id].sec
 		if p.shown[id] {
@@ -124,15 +131,29 @@ func printSections(lib docsindex.Library, s *sorted, r *ranked, hint HintStyle) 
 			delete(r.passed, i)
 			at[i] = len(r.plans)
 			p.take(pl)
+			if !pl.whole && overPage(s.secs[i].tokens) {
+				p.fill(&r.plans[at[i]], bySec[i])
+			}
+		}
+	}
+}
+
+// fill grows pl, a section longer than a page just opened, with its
+// candidates (ids, in the walk's order) not shown yet, each that fits.
+func (p *planner) fill(pl *plan, ids []int) {
+	for _, id := range ids {
+		if !p.shown[id] {
+			p.grow(pl, id)
 		}
 	}
 }
 
 // open is what section i prints when piece id opens it, within the
-// budget left: whole when it fits, else cut to the piece; false when
-// that does not fit either (unless it is the first section).
+// budget left: whole when it fits and is no longer than a page
+// (answerPageTokens), else cut to the piece; false when that does not fit
+// either (unless it is the first section).
 func (p *planner) open(i, id int) (plan, bool) {
-	if p.s.secs[i].tokens <= p.left {
+	if t := p.s.secs[i].tokens; t <= p.left && !overPage(t) {
 		pl := plan{sec: i, whole: true}
 		if pl.cost = p.render(pl) + p.overhead(pl); pl.cost <= p.left {
 			return pl, true
@@ -158,13 +179,18 @@ func (p *planner) overhead(pl plan) int {
 }
 
 // grow adds piece id to pl, cut, when the answer stays within the budget
-// with it; false when it does not fit.
+// with it and, for a section longer than a page, the group's text within
+// a page; false when it does not fit the budget.
 func (p *planner) grow(pl *plan, id int) bool {
 	if pl.whole {
 		return true
 	}
 	grown := plan{sec: pl.sec, pieces: append(slices.Clone(pl.pieces), id)}
 	slices.Sort(grown.pieces)
+	sec := p.s.secs[pl.sec]
+	if overPage(sec.tokens) && estimateTokens(joinPieces(p.s, sec, grown.pieces)) > answerPageTokens {
+		return true // a page is full: the walk goes on, the budget is not what stopped it
+	}
 	grown.cost = pl.cost + p.render(grown) - p.render(*pl)
 	if grown.cost-pl.cost > p.left {
 		return false
@@ -173,6 +199,12 @@ func (p *planner) grow(pl *plan, id int) bool {
 	*pl = grown
 	p.show([]int{id})
 	return true
+}
+
+// overPage reports a section of tokens longer than a page: never printed
+// whole in an answer (answerPageTokens; 0 sets no page).
+func overPage(tokens int) bool {
+	return answerPageTokens > 0 && tokens > answerPageTokens
 }
 
 // render is what printing pl's group costs, as the answer shows it under

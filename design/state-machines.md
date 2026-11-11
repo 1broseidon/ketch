@@ -36,7 +36,7 @@ the rule.
 Explicit form: one `Outcome` type for every docs request.
 
 ```
-status:     answered | partial | refused | failed
+status:     found | partial | refused | failed
 reason:     (refused) no_library_named | ambiguous | not_verified | no_version |
             below_floor | nothing_indexed | prohibited
             (failed)  upstream | rate_limited | timeout | cancelled
@@ -111,7 +111,7 @@ similarity". Fetch.md machine 1, with machines 2 and 4 folded in.
    degraded picks are cached; `finish` drops a match whose version probe
    errored before `pickUnique` and does not log it, so a transient failure on
    the stronger project hands the pick to a lesser one, and that is cached.
-   Explicit form: cache only `Outcome{status: answered, complete: true}`.
+   Explicit form: cache only `Outcome{status: found, complete: true}`.
 8. **Discovery ladder and deadline** (retrieval.md 4). A probe timeout looks
    like a 404 (web_fetch.go:119-125), so latency decides which source answers;
    a sitemap cut at its 8 s budget is used as complete; timeouts stack

@@ -273,3 +273,42 @@ func TestSplitReleases(t *testing.T) {
 		t.Error("a versioned root split")
 	}
 }
+
+// One page, one address: the planner's notion of one page (samePageKey,
+// with an llms/ mirror below the root as the page it mirrors) holds every
+// form a site or an index spells one page in, and tells other pages apart.
+func TestPageIdentity(t *testing.T) {
+	const root = "https://v.test/docs/"
+	same := [][]string{
+		{"https://v.test/docs/guide/modules", "https://v.test/docs/guide/modules.html"},
+		{"https://v.test/docs/guide/modules", "https://v.test/docs/guide/modules/"},
+		{"https://v.test/docs/guide/", "https://v.test/docs/guide/index"},
+		{"https://v.test/docs/guide/", "https://v.test/docs/guide/index.html"},
+		{"https://v.test/docs/guide/modules", "https://v.test/docs/guide/modules.md"},
+		{"https://v.test/docs/guide/modules", "https://v.test/docs/llms/guide/modules"},
+		{"https://v.test/docs/guide/modules", "https://www.v.test/docs/guide/modules"},
+		{"https://v.test/docs/guide/modules", "http://v.test/docs/guide/modules"},
+	}
+	for _, p := range same {
+		if a, b := PageIdentity(p[0], root), PageIdentity(p[1], root); a != b {
+			t.Errorf("%s and %s are one page: %q, %q", p[0], p[1], a, b)
+		}
+	}
+	other := [][]string{
+		{"https://v.test/docs/guide/modules", "https://v.test/docs/guide/module"},
+		{"https://v.test/docs/guide/modules", "https://v.test/docs/api/modules"},
+		{"https://v.test/docs/guide/modules", "https://v.test/docs/guide/modules?v=2"},
+		{"https://v.test/docs/llms", "https://v.test/docs/"},
+		{"https://v.test/docs/guide/llms/x", "https://v.test/docs/guide/x"}, // llms/ below the root's own directory only
+	}
+	for _, p := range other {
+		if a, b := PageIdentity(p[0], root), PageIdentity(p[1], root); a == b {
+			t.Errorf("%s and %s are two pages, both %q", p[0], p[1], a)
+		}
+	}
+	// The planner keeps the first listed of one page's addresses.
+	links := uniquePages(linksOf(t, "https://m.test/guide/", "https://m.test/guide/index.html", "https://m.test/guide/index", "https://m.test/guide/watch.html", "https://m.test/guide/watch/"))
+	if got := urlsOf(links); !slices.Equal(got, []string{"https://m.test/guide/", "https://m.test/guide/watch.html"}) {
+		t.Errorf("kept %v", got)
+	}
+}

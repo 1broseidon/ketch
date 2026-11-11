@@ -10,7 +10,6 @@ import (
 	"sort"
 	"strings"
 	"unicode"
-	"unicode/utf8"
 )
 
 // webStopwords are dropped from queries (never from documents): they carry
@@ -957,8 +956,6 @@ func entryName(heading string) string {
 	return entryIdentRe.FindString(strings.TrimSpace(h))
 }
 
-const truncatedMarker = "\n[truncated]"
-
 // elidedMarker stands where trimForQuery left blocks out.
 const elidedMarker = "[…]"
 
@@ -985,48 +982,4 @@ func textBlocks(s string) []string {
 	}
 	flush()
 	return blocks
-}
-
-// trimSnippet cuts s to at most n bytes including the "[truncated]" marker,
-// preferring a line or word boundary and closing a code fence the cut left
-// open. It returns "" when n leaves no room for content.
-func trimSnippet(s string, n int) string {
-	limit := n - len(truncatedMarker)
-	for range 3 {
-		if limit <= 0 {
-			return ""
-		}
-		cut := cutText(s, limit)
-		var fence fenceState
-		for _, line := range strings.Split(cut, "\n") {
-			fence.step(line)
-		}
-		closer := ""
-		if c := fence.closer(); c != "" {
-			closer = "\n" + c
-		}
-		if cut != "" && len(cut)+len(closer)+len(truncatedMarker) <= n {
-			return cut + closer + truncatedMarker
-		}
-		limit = n - len(truncatedMarker) - len(closer) - 1
-	}
-	return ""
-}
-
-// cutText returns at most n bytes of s, on a rune boundary, backed off to
-// the last line break (or space) in the second half of the cut.
-func cutText(s string, n int) string {
-	if n >= len(s) {
-		return s
-	}
-	for n > 0 && !utf8.RuneStart(s[n]) {
-		n--
-	}
-	cut := s[:n]
-	if i := strings.LastIndexByte(cut, '\n'); i > len(cut)/2 {
-		cut = cut[:i]
-	} else if i := strings.LastIndexByte(cut, ' '); i > len(cut)/2 {
-		cut = cut[:i]
-	}
-	return strings.TrimRight(cut, " \t\n")
 }

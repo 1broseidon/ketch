@@ -55,7 +55,7 @@ func TestTraceOfIndexedAnswer(t *testing.T) {
 
 func checkTrace(t *testing.T, tokens int, got *Trace, printed string) {
 	t.Helper()
-	if got.Library != idxRoot || got.Status != Answered || got.Output.Text != printed || got.Output.Tokens == 0 {
+	if got.Library != idxRoot || got.Status != Found || got.Output.Text != printed || got.Output.Tokens == 0 {
 		t.Errorf("tokens %d: header = %q %q, output %d tokens", tokens, got.Library, got.Status, got.Output.Tokens)
 	}
 	checkTraceTerms(t, tokens, got)

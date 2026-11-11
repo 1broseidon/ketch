@@ -74,14 +74,6 @@ func (f *fenceState) step(line string) bool {
 	return false
 }
 
-// closer returns the line that closes the open fence, or "" when none is.
-func (f fenceState) closer() string {
-	if f.n == 0 {
-		return ""
-	}
-	return strings.Repeat(string(f.char), f.n)
-}
-
 // fenceMarker parses a fence line: up to three spaces of indent, then three
 // or more backticks or tildes. A backtick fence's info string may not
 // contain a backtick (that is inline code, not a fence).

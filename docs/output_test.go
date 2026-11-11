@@ -26,8 +26,8 @@ func TestFrontmatterOrder(t *testing.T) {
 	if got := f.Render(); got != want {
 		t.Errorf("frontmatter:\n%s\nwant:\n%s", got, want)
 	}
-	answered := Frontmatter{Query: "q", Backend: SearchBackend, Library: "L", Index: searchRead(12), Status: Answered, Terms: []TermCount{}, NotFound: []string{}}
-	if got := answered.Render(); got != "---\nquery: q\nbackend: search\nlibrary: L\nsource: search, 12 pages read\nstatus: answered\nterms: {}\nnot_found: []\n---\n" {
+	answered := Frontmatter{Query: "q", Backend: SearchBackend, Library: "L", Index: searchRead(12), Status: Found, Terms: []TermCount{}, NotFound: []string{}}
+	if got := answered.Render(); got != "---\nquery: q\nbackend: search\nlibrary: L\nsource: search, 12 pages read\nstatus: found\nterms: {}\nnot_found: []\n---\n" {
 		t.Errorf("answered from pages read:\n%s", got)
 	}
 	capped := indexInfo(docsindex.Library{Pages: 400, Capped: true})
@@ -35,7 +35,7 @@ func TestFrontmatterOrder(t *testing.T) {
 	if capped.line() != "index: capped, 400 pages" || built.line() != "index: search, 9 pages" {
 		t.Errorf("index lines %q, %q", capped.line(), built.line())
 	}
-	legacy := Frontmatter{Query: "q", Backend: "context7", Library: "/x/y", Status: Answered}
+	legacy := Frontmatter{Query: "q", Backend: "context7", Library: "/x/y", Status: Found}
 	if got := legacy.Render(); got != "---\nquery: q\nbackend: context7\nlibrary: /x/y\n---\n" {
 		t.Errorf("legacy:\n%s", got)
 	}
@@ -73,7 +73,7 @@ func TestWrittenTerms(t *testing.T) {
 	}
 }
 
-// The terms decide the status: answered when every distinctive term has
+// The terms decide the status: found when every distinctive term has
 // a hit, partial when one has none (listed in not_found, as written),
 // refused when none has; a common term is not listed.
 func TestTermVerdict(t *testing.T) {
@@ -86,7 +86,7 @@ func TestTermVerdict(t *testing.T) {
 		return out
 	}
 	if v := verdict(terms(5, 900, 7), 1000); v.refused || v.partial || len(v.notFound) != 0 || !slices.Equal(v.found, []TermCount{{"a", 5}, {"c", 7}}) {
-		t.Errorf("answered: %+v", v)
+		t.Errorf("found: %+v", v)
 	}
 	if v := verdict(terms(5, 0), 1000); v.refused || !v.partial || !slices.Equal(v.notFound, []string{"b"}) {
 		t.Errorf("partial: %+v", v)
@@ -100,9 +100,8 @@ func TestTermVerdict(t *testing.T) {
 }
 
 // The frontmatter's terms list only identifiers and words in under 1% of
-// the library's sections (at most 3 sections in a library under 100): a
-// distinctive word every 20th section holds is not listed, and the
-// refusal still reads it.
+// the library's sections or in at most 25 of them: a distinctive word in
+// 26 of 1,000 sections is not listed, and the refusal still reads it.
 func TestTermsShown(t *testing.T) {
 	terms := func(counts ...int) []writtenTerm {
 		var out []writtenTerm
@@ -112,20 +111,20 @@ func TestTermsShown(t *testing.T) {
 		markDistinctive(out, 1000)
 		return out
 	}
-	if v := verdict(terms(9, 10, 50), 1000); v.refused || !slices.Equal(v.found, []TermCount{{"a", 9}}) {
-		t.Errorf("words in 1%% or more of the sections are not listed: %+v", v)
+	if v := verdict(terms(9, 25, 26, 50), 1000); v.refused || !slices.Equal(v.found, []TermCount{{"a", 9}, {"b", 25}}) {
+		t.Errorf("words in 1%% or more and over 25 of the sections are not listed: %+v", v)
 	}
 	if v := verdict(terms(50), 1000); v.refused || len(v.found) != 0 {
 		t.Errorf("an unlisted distinctive word still answers: %+v", v)
 	}
-	small := []writtenTerm{{text: "a", sections: 3}, {text: "b", sections: 4}, {text: "c", ident: true, sections: 40}}
+	small := []writtenTerm{{text: "a", sections: 3}, {text: "b", sections: 20}, {text: "c", ident: true, sections: 40}}
 	markDistinctive(small, 60)
 	if v := verdict(small, 60); !slices.Equal(v.found, []TermCount{{"a", 3}, {"c", 40}}) {
 		t.Errorf("small library: %+v", v)
 	}
 }
 
-// Through the index: an answer whose terms are all there is answered; one
+// Through the index: an answer whose terms are all there is found; one
 // naming a term the docs lack is partial and says which; one naming none
 // of theirs is refused with an empty body, its not_found the answer.
 func TestEvidenceStatus(t *testing.T) {
@@ -146,7 +145,7 @@ func TestEvidenceStatus(t *testing.T) {
 		notFound []string
 		kind     string
 	}{
-		{lib, "default form action", Answered, "", nil, IndexFull},
+		{lib, "default form action", Found, "", nil, IndexFull},
 		{lib, "default form action use_enhance", Partial, ReasonTermsNotFound, []string{"use_enhance"}, IndexFull},
 		{lib, "use_enhance zyzzyva", Refused, ReasonTermsNotFound, []string{"use_enhance", "zyzzyva"}, IndexFull},
 		// A library a search built is partial for that too, both reasons said.
@@ -162,7 +161,7 @@ func TestEvidenceStatus(t *testing.T) {
 }
 
 // An answer prints a page's groups together under its title, pages in
-// the order of their best group and groups in rank order within a page;
+// the order of their best group and a page's groups in page order;
 // a group's heading is its path below the title; a cut group's source
 // says so; one hint line ends an answer with a cut group, in the
 // surface's words, and none ends one without.
@@ -170,12 +169,12 @@ func TestRenderAnswer(t *testing.T) {
 	secs := []docsindex.Section{
 		evSection("a", 0, "", []string{"Page A"}, "Lead of A."),
 		evSection("b", 0, "x", []string{"Page B", "X"}, "B's X."),
-		evSection("a", 1, "y", []string{"Page A", "Part", "Y"}, "A's Y."),
+		evSection("a", 1, "y", []string{"Page A", "Part", "Y"}, "A's Y.\n\nMore of Y, left out."),
 	}
 	s := sortPool(secs, evRoot)
 	r := &ranked{plans: []plan{{sec: 2, pieces: []int{s.secs[2].pieces[0]}}, {sec: 1, whole: true}, {sec: 0, whole: true}}}
 	gs := groupsOf(s, r)
-	if len(gs) != 3 || gs[0].sec != 2 || gs[1].sec != 0 || gs[2].sec != 1 {
+	if len(gs) != 3 || gs[0].sec != 0 || gs[1].sec != 2 || gs[2].sec != 1 {
 		t.Fatalf("printed order %+v", gs)
 	}
 	lib := docsindex.Library{Root: evRoot}
@@ -183,18 +182,19 @@ func TestRenderAnswer(t *testing.T) {
 	for _, g := range gs {
 		results = append(results, renderGroup(lib, s, g))
 	}
-	want := "## Page A\n\n### Part > Y\n\nA's Y.\n\nsource: " + evRoot + "a#y (cut)\n\n" +
-		"### " + topOfPage + "\n\nLead of A.\n\nsource: " + evRoot + "a\n\n" +
+	cut := fmt.Sprintf(" (cut, %d of %d tokens)", estimateTokens("A's Y."), estimateTokens("A's Y.\n\nMore of Y, left out."))
+	want := "## Page A\n\nLead of A.\n\nsource: " + evRoot + "a\n\n" +
+		"### Part > Y\n\nA's Y.\n\nsource: " + evRoot + "a#y" + cut + "\n\n" +
 		"## Page B\n\n### X\n\nB's X.\n\nsource: " + evRoot + "b#x\n"
 	if got := RenderAnswer(results, HintNone); got != want {
 		t.Errorf("answer:\n%s\nwant:\n%s", got, want)
 	}
 	for _, style := range []HintStyle{HintCLI, HintMCP} {
 		got := RenderAnswer(results, style)
-		if got != want+"\n"+AnswerHint(style)+"\n" || strings.Count(got, "(cut)") != 2 {
+		if got != want+"\n"+AnswerHint(style)+"\n" || strings.Count(got, "(cut") != 2 {
 			t.Errorf("style %d:\n%s", style, got)
 		}
-		if whole := RenderAnswer(results[1:], style); strings.Contains(whole, "(cut)") {
+		if whole := RenderAnswer(slices.Delete(slices.Clone(results), 1, 2), style); strings.Contains(whole, "(cut") {
 			t.Errorf("no cut group, style %d:\n%s", style, whole)
 		}
 	}
@@ -240,7 +240,7 @@ func TestAnswerJSONShape(t *testing.T) {
 		t.Errorf("group line %q", got)
 	}
 	// An answer with every term found still says not_found: [].
-	empty, _ := json.Marshal(NewFrontmatter("q", SearchBackend, "", Outcome{Status: Answered, Index: &IndexInfo{Kind: IndexFull}}))
+	empty, _ := json.Marshal(NewFrontmatter("q", SearchBackend, "", Outcome{Status: Found, Index: &IndexInfo{Kind: IndexFull}}))
 	if !strings.Contains(string(empty), `"not_found":[]`) || !strings.Contains(string(empty), `"terms":[]`) {
 		t.Errorf("empty lists: %s", empty)
 	}

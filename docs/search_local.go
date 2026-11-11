@@ -52,7 +52,7 @@ func (s *SearchFirst) fromAsked(ctx context.Context, libs []docsindex.Library, r
 		return Outcome{}, false
 	}
 	o := s.local.answer(ctx, lib, req.query, req.opts)
-	return o, o.Status == Answered || o.Status == Partial
+	return o, o.Status == Found || o.Status == Partial
 }
 
 // named is the fully indexed libraries a request names: its library, or
@@ -141,7 +141,7 @@ func (s *SearchFirst) remember(lib docsindex.Library, library, query string) {
 // partialLibrary marks the local backend's answer from a library a search
 // built: it holds only the pages earlier questions read.
 func partialLibrary(o Outcome, lib docsindex.Library) Outcome {
-	if lib.Resolved != resolvedBySearch || o.Status != Answered && o.Status != Partial {
+	if lib.Resolved != resolvedBySearch || o.Status != Found && o.Status != Partial {
 		return o
 	}
 	return asPartial(o, o.Backend, partialNote(lib))

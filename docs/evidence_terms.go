@@ -130,13 +130,14 @@ func markDistinctive(wts []writtenTerm, n int) {
 
 // Terms shown: the frontmatter's terms lists, of the distinctive terms
 // found, the identifiers the question writes and the words in under
-// 1/shownShare of the library's sections; in a library too small for
-// that to be one section, the words in at most shownFew. A word every
-// tenth section holds tells the caller nothing; the refusal and
-// not_found keep reading every distinctive term.
+// 1/shownShare of the library's sections or in at most shownFew of them
+// (password in 3 of 292 sections is worth naming). A word every tenth
+// section holds tells the caller nothing; the refusal and not_found keep
+// reading every distinctive term, and a term with no hit is in not_found
+// only.
 const (
 	shownShare = 100
-	shownFew   = 3
+	shownFew   = 25
 )
 
 // shownTerm reports a written term found in a library of n sections that
@@ -147,10 +148,8 @@ func shownTerm(wt writtenTerm, n int) bool {
 		return false
 	case wt.ident:
 		return true
-	case n < shownShare:
-		return wt.sections <= shownFew
 	}
-	return wt.sections*shownShare < n
+	return wt.sections*shownShare < n || wt.sections <= shownFew
 }
 
 // termVerdict is what the written terms say about an answer: the
