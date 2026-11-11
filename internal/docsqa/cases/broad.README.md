@@ -76,3 +76,7 @@ Of 110 candidates on the 36 sites indexed, `-verify` dropped 15:
 | Quote differs from the index in its words, not its markup (stripe: "the exact UTF-8 string Stripe sent") | 1 |
 
 Docker (400 pages, 400 sections of about 170 bytes) and pydantic AI (254 of 361 pages under 300 bytes, from `llms-full.txt`) index without page bodies; neither contributes a case.
+
+## Code-live
+
+`code-live.json`: 11 bare coding questions from the live web-search run of 2026-11-10 (`/tmp/ketch-code-check/run.py`), on the tune side (`split: tune`, kind `code-live`). Each is run with `--library` against the partial library that run stored (about 24 pages each, read for that one question), copied into a sandbox of its own with the libraries' `resolved: search` mark taken off, so that `--library` answers from the index and never searches. Quotes verified against the stored pages with `-verify`. Dropped: `polars-group-by` ("Simply list all of the expressions you want inside the function agg."), which is in the Polars user guide, not in the 24 API reference pages stored.

@@ -60,6 +60,10 @@ type trace struct {
 		Text   string `json:"text"`
 		Tokens int    `json:"tokens"`
 		Budget int    `json:"budget"`
+		Groups []struct {
+			Section string `json:"section"`
+			Cut     bool   `json:"cut"`
+		} `json:"groups"`
 	} `json:"output"`
 }
 
@@ -98,12 +102,18 @@ type caseResult struct {
 	Leads    []leadResult     `json:"leads,omitempty"`
 	NotFound []notFoundResult `json:"not_found"`
 	// Answered is every fact printed (false for a case of none), Led every
-	// lead printed (false for a case of none). BeforeFact is the tokens
-	// printed before the first fact found in the output starts, nil when
-	// none is printed.
+	// lead printed (false for a case of none). LedByCut is every fact
+	// printed or led by a cut group (its source section printed as a group
+	// cut, with its source line; false for a case of none), LedEither Led
+	// or LedByCut. BeforeFact is the tokens printed before the first fact
+	// found in the output starts, nil when none is printed. Groups is how
+	// many groups were printed.
 	Answered   bool `json:"answered"`
 	Led        bool `json:"led"`
+	LedByCut   bool `json:"led_by_cut_group"`
+	LedEither  bool `json:"led_either"`
 	BeforeFact *int `json:"tokens_before_fact"`
+	Groups     int  `json:"groups"`
 }
 
 // leadResult is whether the output prints a lead.
@@ -144,6 +154,9 @@ type factResult struct {
 	// budget.
 	Output  bool `json:"output"`
 	Printed bool `json:"printed"`
+	// CutGroup: every quote (of one alternative) is printed or its source
+	// section is printed as a cut group.
+	CutGroup bool `json:"cut_group"`
 }
 
 type pieceInfo struct {
@@ -166,7 +179,7 @@ type notFoundResult struct {
 
 // grade checks c's facts and not_found terms against its trace.
 func grade(r *caseResult, c qaCase, t *trace) {
-	r.Status, r.Path, r.Tokens = t.Status, t.Path, t.Output.Tokens
+	r.Status, r.Path, r.Tokens, r.Groups = statusName(t.Status), t.Path, t.Output.Tokens, len(t.Output.Groups)
 	if t.Rank != nil && t.Rank.Stop != nil {
 		r.Stop = t.Rank.Stop.Reason
 	}
@@ -180,10 +193,14 @@ func grade(r *caseResult, c qaCase, t *trace) {
 	printed, at := normalizeAt(t.Output.Text)
 	r.Facts = []factResult{}
 	r.Answered = len(c.Facts) > 0
+	cut := cutGroups(t, c.Library)
+	r.LedByCut = len(c.Facts) > 0
 	for _, f := range c.Facts {
 		fr := gradeFact(f, t, printed, r.InBudget)
+		fr.CutGroup = ledByCut(f, printed, cut, c.Library)
 		r.Facts = append(r.Facts, fr)
 		r.Answered = r.Answered && fr.Printed
+		r.LedByCut = r.LedByCut && fr.CutGroup
 	}
 	if first := firstFact(c.Facts, printed); first >= 0 {
 		n := docs.EstimateTokens(t.Output.Text[:at[first]])
@@ -195,10 +212,54 @@ func grade(r *caseResult, c qaCase, t *trace) {
 		r.Leads = append(r.Leads, leadResult{Lead: l, Printed: ok})
 		r.Led = r.Led && ok
 	}
+	r.LedEither = r.Led || r.LedByCut
 	r.NotFound = []notFoundResult{}
 	for _, term := range c.NotFound {
 		r.NotFound = append(r.NotFound, notFoundResult{Term: term, Stated: statesNotFound(t.Output.Text, term)})
 	}
+}
+
+// statusName is a status as the runner names it: "answered", which
+// builds before round 7 printed for found, is read as "found".
+func statusName(s string) string {
+	if s == "answered" {
+		return "found"
+	}
+	return s
+}
+
+// cutGroups are the sections the output prints as cut groups, by page
+// identity in the library at root (docs.PageIdentity) and anchor.
+func cutGroups(t *trace, root string) map[string]bool {
+	out := map[string]bool{}
+	for _, g := range t.Output.Groups {
+		if g.Cut {
+			out[sectionKey(g.Section, root)] = true
+		}
+	}
+	return out
+}
+
+// sectionKey is a section reference (url#anchor) as one section of the
+// library at root, however the library stores its page.
+func sectionKey(ref, root string) string {
+	page, anchor, _ := strings.Cut(ref, "#")
+	return docs.PageIdentity(page, root) + "#" + anchor
+}
+
+// ledByCut reports a fact one of whose alternatives has every quote
+// printed or its source section printed as a cut group (cut).
+func ledByCut(f fact, printed string, cut map[string]bool, root string) bool {
+	for _, alt := range f.alternatives() {
+		ok := true
+		for _, a := range alt {
+			ok = ok && (strings.Contains(printed, normalize(a.Quote)) || cut[sectionKey(a.Source, root)])
+		}
+		if ok {
+			return true
+		}
+	}
+	return false
 }
 
 // firstFact is where the first quote of any of facts starts in printed
@@ -517,11 +578,15 @@ type totals struct {
 	Rank     tally `json:"rank"`
 	Output   tally `json:"output"`
 	NotFound tally `json:"not_found"`
-	// Answered counts the cases with facts, Led those with leads,
-	// AnsweredOrLed those with either; MeanTokens is the mean of every
-	// case's printed tokens.
+	// Answered counts the cases with facts, Led those with leads (led by
+	// their words), LedByCut those with facts (led by cut groups),
+	// LedEither those with either (led by words or cut groups), and
+	// AnsweredOrLed those with either (answered, or led either way);
+	// MeanTokens is the mean of every case's printed tokens.
 	Answered      tally `json:"answered"`
 	Led           tally `json:"led"`
+	LedByCut      tally `json:"led_by_cut_group"`
+	LedEither     tally `json:"led_either"`
 	AnsweredOrLed tally `json:"answered_or_led"`
 	MeanTokens    int   `json:"mean_tokens"`
 	// Statuses counts the answered cases (every fact printed) by the
@@ -568,8 +633,12 @@ func (r *report) total() {
 		if len(c.Leads) > 0 {
 			r.Totals.Led.add(c.Led)
 		}
+		if len(c.Facts) > 0 {
+			r.Totals.LedByCut.add(c.LedByCut)
+		}
 		if len(c.Facts) > 0 || len(c.Leads) > 0 {
-			r.Totals.AnsweredOrLed.add(c.Answered || c.Led)
+			r.Totals.LedEither.add(c.Led || c.LedByCut)
+			r.Totals.AnsweredOrLed.add(c.Answered || c.Led || c.LedByCut)
 		}
 		r.Totals.MeanTokens += c.Tokens
 	}
@@ -605,23 +674,23 @@ func printTable(w io.Writer, r *report) {
 	}
 	t := r.Totals
 	p("%-18s %-44s %-6s %-5s %-6s %-6s %-6s\n", "totals", "", frac(t.Gather), "", frac(t.Sort), frac(t.Rank), frac(t.Output))
-	p("\n%-18s %-8s %-8s %7s %13s %7s\n", "case", "answered", "led", "tokens", "before fact", "ms")
+	p("\n%-18s %-8s %-8s %-8s %7s %13s %7s\n", "case", "answered", "led", "led cut", "tokens", "before fact", "ms")
 	for _, c := range r.Results {
 		answered, led, before := yesNo(c.Answered, len(c.Facts) > 0), yesNo(c.Led, len(c.Leads) > 0), "-"
 		if c.BeforeFact != nil {
 			before = strconv.Itoa(*c.BeforeFact)
 		}
-		p("%-18s %-8s %-8s %7d %13s %7d\n", c.ID, answered, led, c.Tokens, before, c.WallMS)
+		p("%-18s %-8s %-8s %-8s %7d %13s %7d\n", c.ID, answered, led, yesNo(c.LedByCut, len(c.Facts) > 0), c.Tokens, before, c.WallMS)
 	}
-	p("%-18s %-8s %-8s %7d   answered or led %s\n", "totals", frac(t.Answered), frac(t.Led), t.MeanTokens, frac(t.AnsweredOrLed))
+	p("%-18s %-8s %-8s %-8s %7d   led either way %s, answered or led %s\n", "totals", frac(t.Answered), frac(t.Led), frac(t.LedByCut), t.MeanTokens, frac(t.LedEither), frac(t.AnsweredOrLed))
 	p("%-18s %s\n", "answered, status", statusShares(t.Statuses))
 }
 
 // statusShares is the answered cases' statuses with their counts, in the
-// outcomes' order: "answered 30, partial 2, refused 0".
+// outcomes' order: "found 30, partial 2, refused 0".
 func statusShares(m map[string]int) string {
 	var parts []string
-	for _, s := range []string{"answered", "partial", "refused", "failed"} {
+	for _, s := range []string{"found", "partial", "refused", "failed"} {
 		parts = append(parts, fmt.Sprintf("%s %d", s, m[s]))
 	}
 	return strings.Join(parts, ", ")

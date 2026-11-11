@@ -56,6 +56,51 @@ func TestGrade(t *testing.T) {
 	}
 }
 
+// A fact not printed is led by a cut group when its source section is
+// printed as a group cut (the page however the library stores it, the
+// same anchor); a whole group or another anchor does not lead. A case is
+// led by cut groups when every fact is printed or led so; answered or led
+// counts either. A results file of a build before round 7 reads
+// "answered" as found.
+func TestLedByCutGroup(t *testing.T) {
+	raw := `{"status": "found", "output": {"text": "---\nquery: q\n---\nthe printed fact", "tokens": 20,
+	  "groups": [{"section": "https://www.x.test/docs/p.html#a", "cut": true}, {"section": "https://x.test/docs/q#b", "cut": false}]}}`
+	var tr trace
+	if err := json.Unmarshal([]byte(raw), &tr); err != nil {
+		t.Fatal(err)
+	}
+	const root = "https://x.test/docs/"
+	for _, c := range []struct {
+		facts []fact
+		led   bool
+	}{
+		{[]fact{{Quote: "absent", Source: root + "p#a"}}, true},
+		{[]fact{{Quote: "absent", Source: root + "p/#a"}, {Quote: "the printed fact", Source: root + "z#z"}}, true},
+		{[]fact{{Quote: "absent", Source: root + "q#b"}}, false},
+		{[]fact{{Quote: "absent", Source: root + "p#c"}}, false},
+		{[]fact{{Alternatives: [][]anchor{{{Quote: "absent", Source: root + "z#z"}}, {{Quote: "absent", Source: root + "p#a"}}}}}, true},
+	} {
+		var r caseResult
+		grade(&r, qaCase{ID: "x", Library: root, Budget: 1800, Facts: c.facts}, &tr)
+		if r.LedByCut != c.led || r.LedEither != c.led || r.Answered || r.Groups != 2 {
+			t.Errorf("facts %+v: led by cut %v, either %v, groups %d", c.facts, r.LedByCut, r.LedEither, r.Groups)
+		}
+	}
+	rep := &report{Results: []caseResult{{LedByCut: true, Facts: []factResult{{}}}, {Answered: true, Facts: []factResult{{}}}, {Facts: []factResult{{}}}}}
+	rep.total()
+	if rep.Totals.LedByCut != (tally{1, 3}) || rep.Totals.LedEither != (tally{1, 3}) || rep.Totals.AnsweredOrLed != (tally{2, 3}) {
+		t.Errorf("totals = %+v", rep.Totals)
+	}
+	if statusName("answered") != "found" || statusName("partial") != "partial" {
+		t.Error("status names")
+	}
+	var old caseResult
+	grade(&old, qaCase{ID: "x", Budget: 1800}, &trace{Status: "answered"})
+	if old.Status != "found" {
+		t.Errorf("a trace saying answered (before round 7) reads as found: %q", old.Status)
+	}
+}
+
 // A fact reports what Rank did with its piece's section, when the trace
 // says.
 func TestGradeSection(t *testing.T) {

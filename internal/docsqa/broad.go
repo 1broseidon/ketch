@@ -260,6 +260,9 @@ func compare(w io.Writer, paths, labels []string, split string) error {
 			return fmt.Errorf("%s: %w", p, err)
 		}
 		r.Results = slices.DeleteFunc(r.Results, func(c caseResult) bool { return !inSplit(c.Split, split) })
+		for k := range r.Results {
+			r.Results[k].Status = statusName(r.Results[k].Status)
+		}
 		runs = append(runs, &r)
 		if i >= len(labels) {
 			labels = append(labels, strings.TrimSuffix(filepath.Base(p), ".json"))
@@ -343,9 +346,9 @@ func compareCases(pr printer, runs []*report, labels, ids []string, byID []map[s
 
 // compareTotals prints each run's totals.
 func compareTotals(pr printer, runs []*report, labels []string) {
-	pr("\n%-10s %10s %10s %8s %8s %13s %8s %13s  %s\n", "run", "answered", "ans|led", "mean tok", "med tok", "med before", "med ms", "not_found", "answered, by status")
+	pr("\n%-10s %10s %10s %10s %10s %8s %8s %13s %8s %13s  %s\n", "run", "answered", "led words", "led cut", "ans|led", "mean tok", "med tok", "med before", "med ms", "not_found", "answered, by status")
 	for i, r := range runs {
-		var answered, withFacts, either, withEither int
+		var answered, withFacts, either, withEither, words, withLeads, cut int
 		var tokens, before, ms []int
 		var nf tally
 		statuses := map[string]int{}
@@ -357,9 +360,18 @@ func compareTotals(pr printer, runs []*report, labels []string) {
 					statuses[c.Status]++
 				}
 			}
+			if len(c.Leads) > 0 {
+				withLeads++
+				if c.Led {
+					words++
+				}
+			}
+			if c.LedByCut {
+				cut++
+			}
 			if len(c.Facts) > 0 || len(c.Leads) > 0 {
 				withEither++
-				if c.Answered || c.Led {
+				if c.Answered || c.Led || c.LedByCut {
 					either++
 				}
 			}
@@ -372,7 +384,8 @@ func compareTotals(pr printer, runs []*report, labels []string) {
 				nf.add(n.Stated)
 			}
 		}
-		pr("%-10s %10s %10s %8d %8s %13s %8s %13s  %s\n", clip(labels[i], 10), fmt.Sprintf("%d/%d", answered, withFacts),
+		pr("%-10s %10s %10s %10s %10s %8d %8s %13s %8s %13s  %s\n", clip(labels[i], 10), fmt.Sprintf("%d/%d", answered, withFacts),
+			fmt.Sprintf("%d/%d", words, withLeads), fmt.Sprintf("%d/%d", cut, withFacts),
 			fmt.Sprintf("%d/%d", either, withEither), mean(tokens), median(tokens), median(before), median(ms), frac(nf), statusShares(statuses))
 	}
 }
