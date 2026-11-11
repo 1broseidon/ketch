@@ -485,6 +485,24 @@ Decided from the first run.
 
 Then the flow tests again on the default build, three runs per scenario, so the rates come with their spread.
 
+**Result**, 2026-11-10, three runs per scenario. A scenario counts when at least two of its three runs do.
+
+| Flow | Caller | Facts stated | Right | Median calls | Median tokens read |
+|---|---|---|---|---|---|
+| Lookup | Sonnet | 10 of 10 | 9 of 10 | 1 | 2,546 |
+| Follow | Sonnet | 15 of 16 | 14 of 16 | 1 | 2,478 |
+| Survey | Sonnet | 4 of 8 | 3 of 8 | 2 | 5,016 |
+| sample of 12 | Haiku | 12 of 12 | 9 of 12 | 1 | 2,591 |
+
+- **The `…` wording worked where there is one source.** Lookup went from 6 right of 10 to 9. It also turned one first-run "right" into "missing", correctly: the fact had never been printed.
+- **Survey did not improve.** Invented claims rose there (7 of 24 runs). Eight scenarios is too few to read more into it.
+- **No caller asked what is indexed, and none routed a `not_found` term**, in 138 runs. The harness lists the sources in the system prompt, so `resolve` had nothing to add; and a caller whose first query does not write `pam_sss` gets no `not_found` to route.
+- **A deeper URL as `library`** was passed in 8 runs and scoped every time, with no silent widening.
+- **Cleaning before tokenising cost one QA case in each half** (tune 46 to 45 answered, confirm 29 to 28). The counts are now right: `pam_duo` is in 50 sections, not 48, because two distribution sections wrote it `pam\_duo`. Those sections then lead the pool again. The count stays right; the loss is the near-copy problem, which is still open.
+- **Re-tokenising an older index** takes about a second on a 13,883-section library, once.
+
+Eight to sixteen scenarios per flow cannot carry a rate. The flow runs move to `ketch-bench` with a set of about 300.
+
 ## Storage
 
 Agreed on 2026-11-10, the check in point 4 included.
