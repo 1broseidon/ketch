@@ -700,15 +700,15 @@ func gradeCall(g *flowGrade, calls []flowCall, i int, question string, libs []do
 	g.TokensRead += c.Tokens
 	g.Errors += b2i(c.IsError)
 	var res docsResult
+	var in callInput
+	_ = json.Unmarshal(c.Input, &in)
 	text = c.Result
 	if json.Unmarshal([]byte(c.Result), &res) == nil {
 		text = strings.Join(jsonStrings(c.Result), "\n")
 		c.Status, c.Reason = res.Status, res.Reason
-		c.WebSearch = res.Index != nil && (res.Index.Source == "search" || res.Index.PagesRead > 0) || res.Reason == "partial_site"
+		c.WebSearch = webSearched(in, res)
 		urls = resultURLs(res)
 	}
-	var in callInput
-	_ = json.Unmarshal(c.Input, &in)
 	c.Source = callSource(in, res, libs)
 	if c.Source != "" {
 		g.PerSource[c.Source]++
@@ -721,6 +721,18 @@ func gradeCall(g *flowGrade, calls []flowCall, i int, question string, libs []do
 		g.Signals[sig]++
 	}
 	return text, urls
+}
+
+// webSearched reports a result read from a web search: an answer whose
+// index is source search (pages_read) or whose reason is partial_site. A
+// section read is not one: since round 10 it says what it was read from
+// as an answer does, and a page no index holds is read through the page
+// cache (source search, 1 page read), never by searching.
+func webSearched(in callInput, res docsResult) bool {
+	if in.Section != "" {
+		return false
+	}
+	return res.Index != nil && (res.Index.Source == "search" || res.Index.PagesRead > 0) || res.Reason == "partial_site"
 }
 
 // jsonStrings is every string value in the JSON text s, in document

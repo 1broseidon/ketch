@@ -103,7 +103,7 @@ func TestIndexBuildKeepsOneVariantPerPage(t *testing.T) {
 	if err != nil || len(secs) != lib.Sections || lib.Sections == 0 {
 		t.Errorf("stored %d sections, library %d: %v", len(secs), lib.Sections, err)
 	}
-	if g, err := NewLocal(store).gather(lib, "middleware"); err != nil || len(g.pool) == 0 {
+	if g, err := NewLocal(store).gather(lib, "middleware", nil); err != nil || len(g.pool) == 0 {
 		t.Errorf("pool = %v, %v", g, err)
 	}
 }

@@ -16,12 +16,14 @@ import (
 //	query: <the question>
 //	backend: search
 //	library: <root>
+//	scope: <a URL below the root the answer is limited to, when library named one>
 //	version: <the indexed version, when the library has one>
 //	index: <full|capped>, <N> pages, built <date>   (or, for pages a search read: source: search, N pages read[, cached])
 //	stale: unverified, built <date>   (only when a cited page older than cache_ttl could not be read again)
 //	status: found | partial (<reason>) | refused (<reason>)
 //	terms: {<term as written>: <sections holding it>, ...}
 //	not_found: [<term as written>, ...]
+//	outside_scope: [<term as written>, ...]   (only with scope: terms the library holds, none of them under it)
 //	defined_in: {<term as written>: <url#anchor of a section defining it>, ...}   (only when there is one)
 //	note: <what a partial answer says in words, other indexed versions>
 //	---
@@ -87,13 +89,19 @@ func searchRead(pages int, cached bool) *IndexInfo {
 // repeat from the question cache "source: search, 12 pages read, cached".
 func (i *IndexInfo) line() string {
 	if i.Source != "" {
-		s := fmt.Sprintf("source: %s, %d pages read", i.Source, i.PagesRead)
+		s := fmt.Sprintf("source: %s, %s read", i.Source, plural(i.PagesRead, "page"))
 		if i.Cached {
 			s += ", cached"
 		}
 		return s
 	}
-	s := fmt.Sprintf("index: %s, %d pages", i.Kind, i.Pages)
+	return "index: " + i.Summary()
+}
+
+// Summary is what an indexed library holds, as its index line says it:
+// "full, 734 pages, built 2026-11-10".
+func (i *IndexInfo) Summary() string {
+	s := fmt.Sprintf("%s, %d pages", i.Kind, i.Pages)
 	if i.Built != "" {
 		s += ", built " + i.Built
 	}
@@ -104,9 +112,12 @@ func (i *IndexInfo) line() string {
 // results and what --json and the docs tool carry as fields, in this
 // order.
 type Frontmatter struct {
-	Query   string      `json:"query,omitempty"`
-	Backend string      `json:"backend"`
-	Library string      `json:"library,omitempty"`
+	Query   string `json:"query,omitempty"`
+	Backend string `json:"backend"`
+	Library string `json:"library,omitempty"`
+	// Scope is the URL below the library's root the answer was limited
+	// to: a library URL deeper than an indexed root.
+	Scope   string      `json:"scope,omitempty"`
 	Version string      `json:"version,omitempty"`
 	Index   *IndexInfo  `json:"index,omitempty"`
 	Stale   string      `json:"stale,omitempty"`
@@ -117,28 +128,54 @@ type Frontmatter struct {
 	// a section that does (evidence_defined.go): the defined_in line.
 	DefinedIn []DefinedIn `json:"defined_in,omitempty"`
 	NotFound  []string    `json:"not_found,omitzero"`
-	Note      string      `json:"note,omitempty"`
+	// OutsideScope are the distinctive terms the library holds that no
+	// section under Scope does: not in not_found, which means nowhere in
+	// the library.
+	OutsideScope []string `json:"outside_scope,omitempty"`
+	Note         string   `json:"note,omitempty"`
+	// section marks a section fetch's frontmatter (SectionFrontmatter),
+	// which prints its page line ("page: 2 of 4", page) where an answer's
+	// prints its verdict.
+	section bool
+	page    string
 }
 
 // NewFrontmatter is the frontmatter of o, an answer to query from
 // backend; library is the library the caller named, printed when no
 // result names the one answered from.
 func NewFrontmatter(query, backend, library string, o Outcome) Frontmatter {
-	f := Frontmatter{Query: query, Backend: backend, Library: library, Index: o.Index, Stale: o.Stale, Status: o.Status, Reason: o.Reason, Note: o.Note}
+	f := Frontmatter{Query: query, Backend: backend, Library: library, Scope: o.Scope, Index: o.Index, Stale: o.Stale, Status: o.Status, Reason: o.Reason, Note: o.Note}
 	if len(o.Results) > 0 && o.Results[0].Library != "" {
 		f.Library = o.Results[0].Library
 	}
-	if o.Library != "" && f.Library == "" {
-		f.Library = o.Library
+	if o.Library != "" && (f.Library == "" || o.Index != nil) {
+		f.Library = o.Library // the root an answer from the index was made from, not the value named
 	}
 	if backend == SearchBackend && len(o.Results) > 0 {
 		f.Version = o.Results[0].Version
 	}
 	if o.Index != nil {
-		f.Terms, f.NotFound, f.DefinedIn = nonNil(o.Terms), o.NotFound, o.DefinedIn
+		f.Terms, f.NotFound, f.DefinedIn, f.OutsideScope = nonNil(o.Terms), o.NotFound, o.DefinedIn, o.OutsideScope
 		if f.NotFound == nil {
 			f.NotFound = []string{}
 		}
+	}
+	return f
+}
+
+// SectionFrontmatter is the frontmatter of o, a section fetch (--section,
+// the docs tool's section) from backend: what an answer's says of its
+// source (backend, library, version, index or source, stale) and, for a
+// section read a page at a time, its page line in place of the verdict;
+// library is the library the caller named, printed when no result names
+// the one read from. Its JSON fields are an answer's, without terms or
+// not_found.
+func SectionFrontmatter(backend, library string, o Outcome) Frontmatter {
+	f := NewFrontmatter("", backend, library, o)
+	f.Terms, f.NotFound, f.DefinedIn, f.OutsideScope, f.Reason = nil, nil, nil, nil, ""
+	f.section = true
+	if len(o.Results) == 1 {
+		f.page = PageLine(o.Results[0])
 	}
 	return f
 }
@@ -171,6 +208,9 @@ func (f Frontmatter) Render() string {
 	if f.Library != "" {
 		b.WriteString("library: " + f.Library + "\n")
 	}
+	if f.Scope != "" {
+		b.WriteString("scope: " + f.Scope + "\n")
+	}
 	if f.Version != "" {
 		b.WriteString("version: " + f.Version + "\n")
 	}
@@ -180,6 +220,24 @@ func (f Frontmatter) Render() string {
 	if f.Stale != "" {
 		b.WriteString("stale: " + f.Stale + "\n")
 	}
+	if f.section {
+		if f.page != "" {
+			b.WriteString(f.page + "\n")
+		}
+	} else {
+		f.writeVerdict(&b)
+	}
+	if f.Note != "" {
+		b.WriteString("note: " + f.Note + "\n")
+	}
+	b.WriteString("---\n")
+	return b.String()
+}
+
+// writeVerdict writes an answer's verdict lines: its status (an answer
+// from the local index, or a partial one), then for an answer from the
+// index its terms, not_found, outside_scope and defined_in.
+func (f Frontmatter) writeVerdict(b *strings.Builder) {
 	if f.Index != nil || f.Status == Partial {
 		b.WriteString("status: " + string(f.Status))
 		if f.Reason != "" {
@@ -187,16 +245,15 @@ func (f Frontmatter) Render() string {
 		}
 		b.WriteString("\n")
 	}
-	if f.Index != nil {
-		b.WriteString("terms: " + termsFlow(f.Terms) + "\n")
-		b.WriteString("not_found: " + listFlow(f.NotFound) + "\n")
-		b.WriteString(definedInLine(f.DefinedIn))
+	if f.Index == nil {
+		return
 	}
-	if f.Note != "" {
-		b.WriteString("note: " + f.Note + "\n")
+	b.WriteString("terms: " + termsFlow(f.Terms) + "\n")
+	b.WriteString("not_found: " + listFlow(f.NotFound) + "\n")
+	if len(f.OutsideScope) > 0 {
+		b.WriteString("outside_scope: " + listFlow(f.OutsideScope) + "\n")
 	}
-	b.WriteString("---\n")
-	return b.String()
+	b.WriteString(definedInLine(f.DefinedIn))
 }
 
 // termsFlow is terms as a YAML flow mapping: {failmode: 74, pam_duo: 48}.

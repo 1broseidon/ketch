@@ -86,7 +86,23 @@ func (s *SearchFirst) answerRead(ctx context.Context, root webRoot, title, siteN
 	note := searchNote(lib.Root, len(pages))
 	opts := req.opts
 	opts.note, opts.read = note, len(pages)
+	opts.scope = readScope(root, req.library)
 	return searchAnswered(l.answer(ctx, lib, req.query, opts), note)
+}
+
+// readScope is the scope of an answer from pages read under root, for a
+// request whose library is a docs URL below the docs tree it is on (a
+// page or a section of a site): root, the URL as the site read, whose
+// pages are all the answer was made from. "" for any other request: the
+// root read is then the docs tree itself.
+func readScope(root webRoot, library string) string {
+	if !isHTTPURL(library) {
+		return ""
+	}
+	if tree := docsTree(root.u); tree.String() != root.String() && tree.contains(root.u) {
+		return root.String()
+	}
+	return ""
 }
 
 // readTitle is the title and name of the site at root, from its top

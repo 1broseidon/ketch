@@ -130,7 +130,7 @@ const DocsParams = Type.Object({
 	query: Type.Optional(
 		Type.String({
 			description:
-				"the docs question (search picks the library and its docs site from it unless library is set), or the library to resolve when resolve is true; not needed with section",
+				"the docs question (search picks the library and its docs site from it unless library is set), or the library to resolve when resolve is true (search: optional; none lists every indexed library); not needed with section",
 		}),
 	),
 	backend: Type.Optional(
@@ -142,7 +142,7 @@ const DocsParams = Type.Object({
 	library: Type.Optional(
 		Type.String({
 			description:
-				"the library to answer from. search: a docs URL to search within, or a library name or spec to prefer (name@version such as django@5.2, npm:/pypi:/crates:/go:/github: prefixes such as pypi:click, owner/repo); a library the operator indexed answers from the local index. " +
+				"the library to answer from. search: a docs root as resolve lists it, or a library name or spec to prefer (name@version such as django@5.2, npm:/pypi:/crates:/go:/github: prefixes such as pypi:click, owner/repo); a library the operator indexed answers from the local index, and a URL below its root narrows the answer to the pages under it (scope); a docs URL not indexed is searched within. " +
 				"context7: a library ID from resolve, such as /vercel/next.js",
 		}),
 	),
@@ -156,7 +156,7 @@ const DocsParams = Type.Object({
 		Type.Integer({
 			minimum: 1,
 			description:
-				"token budget: search answers in about 1,800 tokens unless set (set, it fits its answer to it compactly); context7 defaults to 4000; with section, the cap of the section returned (default 4000)",
+				"token budget: search answers in about 1,800 tokens unless set (leave it unset unless a result is too long to read); context7 defaults to 4000; with section, the cap of the section returned (default 4000)",
 		}),
 	),
 	limit: Type.Optional(
@@ -168,7 +168,7 @@ const DocsParams = Type.Object({
 	resolve: Type.Optional(
 		Type.Boolean({
 			description:
-				"resolve the query as a library name instead of searching docs: Context7 library IDs, or for search the docs roots, each with its version, versions, package specs and the evidence for it",
+				"resolve the query as a library name instead of searching docs: Context7 library IDs; search answers from the local index first, with no network (the indexed libraries the query names, every one with no query, each marked indexed), else resolves the name to docs roots with their version, versions, package specs and evidence",
 		}),
 	),
 	tag: Type.Optional(
@@ -687,16 +687,17 @@ export default function ketch(pi: ExtensionAPI): void {
 		description:
 			"Search library documentation. The default backend, search, answers from the docs themselves with no API key: a library the operator indexed (ketch docs index) answers from the local index; otherwise ketch searches the web for the question, picks the documentation site the results agree on, reads the matching pages and answers from them. Nothing is saved (only ketch docs index adds libraries or pages): the same question again within cache_ttl is answered from the page cache. " +
 			"The answer is evidence and a verdict: status found (evidence matching the question, not a promise that it answers), partial (reason terms_not_found: not_found names your terms this source lacks; or partial_site: pages a search read) or refused (nothing here matches); defined_in names the section defining a term no result shows; stale says the cited pages could not be checked. Results are the matching pieces of sections, verbatim, about 1,800 tokens in all unless tokens is set. " +
-			"library names the library: a docs URL to search within, or a name or spec such as django@5.2 or pypi:click to prefer. " +
-			"A cut result is marked truncated (shown_tokens of section_tokens); to read it, or a defined_in target, pass its url#anchor (the result's section field) as section, with no query. " +
+			"library names the library: a docs root as resolve lists it, or a name or spec such as django@5.2 or pypi:click to prefer; a URL below an indexed root narrows the answer to the pages under it (scope); to read one page, use section. " +
+			"A cut result is marked truncated (shown_tokens of section_tokens); to read it, or a defined_in target, pass its url#anchor (the result's section field) as section, with no query. … marks text left out: never fill it in from memory; read it with section, or say it was cut. State only what a result prints; say anything else is not documented here. Leave tokens unset unless a result is too long to read. " +
 			"backend=context7 returns Context7's curated snippets instead; Context7 needs no key either, but keyless it runs on an anonymous quota of about 200 requests a month per IP, and a spent quota is an [upstream] error naming when it resets. " +
-			"resolve=true resolves a library name to Context7 library IDs, or for search to docs roots with their versions and evidence; pass one as library." +
+			"resolve=true lists the indexed libraries (query narrows it; a name none matches is resolved on the web to docs roots, or Context7 library IDs): ask it before calling a source unknown, and for every not_found term ask the indexed source that owns it before saying it is not covered." +
 			ERR_TAXONOMY,
 		promptSnippet: "ketch_docs for a library's own documentation; ask the question, then read a cut result in full with section",
 		parameters: DocsParams,
 		async execute(_id, p, signal) {
 			if (p.section && (p.resolve || p.query?.trim())) return validation("section takes no query and no resolve");
-			if (!p.section && !p.query?.trim()) return validation("query is required");
+			// search's resolve with no query lists every indexed library
+			if (!p.section && !(p.resolve && p.backend !== "context7") && !p.query?.trim()) return validation("query is required");
 			if (p.resolve && p.library) return validation("resolve and library are mutually exclusive");
 			if (p.resolve && p.tag) return validation("tag is not available with resolve");
 			return passthrough(pi, docsArgs(p), signal, TIMEOUT.docs);

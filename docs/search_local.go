@@ -35,7 +35,9 @@ func (s *SearchFirst) fromIndex(ctx context.Context, req sfRequest, tr *sfTrace)
 	}
 	lib, note := newestOf(found)
 	tr.local = lib.Root
-	return s.answerIndexed(ctx, lib, req.query, req.opts, note), true
+	opts := req.opts
+	opts.scope = scopeOf(lib, req.library)
+	return s.answerIndexed(ctx, lib, req.query, opts, note), true
 }
 
 // named is the indexed libraries a request names: its library, or the

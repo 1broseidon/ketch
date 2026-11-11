@@ -36,6 +36,7 @@ type writtenTerm struct {
 	// it is in a text that names every term of one of them.
 	forms       [][]string
 	sections    int // the library's sections holding any of its forms
+	inScope     int // of them, those under the answer's scope (scoped answers only)
 	distinctive bool
 }
 

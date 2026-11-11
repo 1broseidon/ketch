@@ -101,6 +101,12 @@ func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string,
 	}
 	var o Outcome
 	switch {
+	case a.status == Refused && a.reason == ReasonScopeEmpty:
+		o = Answer(SearchBackend, nil, fmt.Errorf("local: no indexed page of %s is at or under %s: %w", lib.Root, a.scope, ErrScopeEmpty))
+		o.Note = fmt.Sprintf("no indexed page of %s is at or under %s; library %s answers from all of it", lib.Root, a.scope, lib.Root)
+	case a.status == Refused && a.reason == ReasonTermsOutsideScope:
+		o = Answer(SearchBackend, nil, fmt.Errorf("local: no page of %s under %s holds the question's distinctive terms (%s), which the library holds elsewhere: %w",
+			lib.Root, a.scope, strings.Join(a.outside, ", "), ErrTermsOutsideScope))
 	case a.status == Refused:
 		o = Answer(SearchBackend, nil, fmt.Errorf("local: the docs of %s hold none of the question's distinctive terms (%s): %w",
 			lib.Root, strings.Join(a.notFound, ", "), ErrTermsNotFound))
@@ -118,7 +124,7 @@ func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string,
 		}
 	}
 	o.Library, o.Index, o.Terms, o.NotFound = lib.Root, a.index, a.terms, a.notFound
-	o.DefinedIn = a.definedIn
+	o.Scope, o.OutsideScope, o.DefinedIn = a.scope, a.outside, a.definedIn
 	return o
 }
 

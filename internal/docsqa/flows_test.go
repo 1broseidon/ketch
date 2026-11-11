@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/1broseidon/ketch/docs"
 	"github.com/1broseidon/ketch/internal/docsindex"
 )
 
@@ -176,5 +177,26 @@ func TestParseStream(t *testing.T) {
 func TestResultText(t *testing.T) {
 	if got := resultText(json.RawMessage(`[{"type":"text","text":"a"},{"type":"image"},{"type":"text","text":"b"}]`)); got != "a\nb" {
 		t.Fatalf("resultText = %q", got)
+	}
+}
+
+// A result read from a web search stops a batch; a section read through
+// the page cache, which says source search as an answer would, does not.
+func TestWebSearched(t *testing.T) {
+	read := &docs.IndexInfo{Source: "search", PagesRead: 1}
+	cases := []struct {
+		in   callInput
+		res  docsResult
+		want bool
+	}{
+		{callInput{Query: "q"}, docsResult{Index: read}, true},
+		{callInput{Query: "q"}, docsResult{Reason: "partial_site"}, true},
+		{callInput{Query: "q"}, docsResult{Index: &docs.IndexInfo{Kind: "full", Pages: 3}}, false},
+		{callInput{Section: "https://x.test/a#b"}, docsResult{Index: read}, false},
+	}
+	for _, c := range cases {
+		if got := webSearched(c.in, c.res); got != c.want {
+			t.Errorf("webSearched(%+v, %+v) = %v, want %v", c.in, c.res, got, c.want)
+		}
 	}
 }

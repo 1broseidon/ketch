@@ -912,16 +912,57 @@ func (s *Store) Count(key, match string) (int, error) {
 // Counts is Count for several queries over one open of the file, in
 // their order.
 func (s *Store) Counts(key string, matches []string) ([]int, error) {
+	return s.counts(key, nil, matches)
+}
+
+// Scope is a set of a library's sections (by ID) that CountsIn and
+// SearchEachIn read alone: the sections of the pages under a URL below
+// the library's root. An empty Scope holds no section.
+type Scope struct {
+	IDs []int64
+}
+
+// CountsIn is Counts over the sections of scope only.
+func (s *Store) CountsIn(key string, scope Scope, matches []string) ([]int, error) {
+	return s.counts(key, &scope, matches)
+}
+
+// scopeArg is a scope as the JSON list its queries bind: "[]" for an
+// empty one.
+func scopeArg(scope *Scope) (string, error) {
+	ids := scope.IDs
+	if ids == nil {
+		ids = []int64{}
+	}
+	b, err := json.Marshal(ids)
+	return string(b), err
+}
+
+// counts is Counts over the library's sections, or scope's when it is
+// not nil.
+func (s *Store) counts(key string, scope *Scope, matches []string) ([]int, error) {
 	out := make([]int, len(matches))
+	var list string
+	if scope != nil {
+		var err error
+		if list, err = scopeArg(scope); err != nil {
+			return nil, err
+		}
+	}
 	err := s.view(func(db *sql.DB) error {
 		t, ok, err := libraryFTS(db, key)
 		if err != nil || !ok {
 			return err
 		}
 		for i, m := range matches {
-			if m == "" {
+			switch {
+			case scope != nil && m == "":
+				err = db.QueryRow(`SELECT count(*) FROM `+t+` WHERE rowid IN (SELECT value FROM json_each(?))`, list).Scan(&out[i])
+			case scope != nil:
+				err = db.QueryRow(fmt.Sprintf(`SELECT count(*) FROM %s WHERE %s MATCH ? AND rowid IN (SELECT value FROM json_each(?))`, t, t), m, list).Scan(&out[i])
+			case m == "":
 				err = db.QueryRow(`SELECT count(*) FROM ` + t).Scan(&out[i])
-			} else {
+			default:
 				err = db.QueryRow(fmt.Sprintf(`SELECT count(*) FROM %s WHERE %s MATCH ?`, t, t), m).Scan(&out[i])
 			}
 			if err != nil {
@@ -943,8 +984,27 @@ type FTSQuery struct {
 // SearchEach is Search for several queries over one open of the file:
 // each query's hits in the order of queries.
 func (s *Store) SearchEach(key string, queries []FTSQuery, weights []float64) ([][]Hit, error) {
+	return s.searchEach(key, nil, queries, weights)
+}
+
+// SearchEachIn is SearchEach over the sections of scope only, scored as
+// within the whole library (bm25 reads the library's statistics).
+func (s *Store) SearchEachIn(key string, scope Scope, queries []FTSQuery, weights []float64) ([][]Hit, error) {
+	return s.searchEach(key, &scope, queries, weights)
+}
+
+// searchEach is SearchEach over the library's sections, or scope's when
+// it is not nil.
+func (s *Store) searchEach(key string, scope *Scope, queries []FTSQuery, weights []float64) ([][]Hit, error) {
 	if len(weights) != len(FTSColumns) {
 		return nil, fmt.Errorf("docs index: %d column weights for %d columns", len(weights), len(FTSColumns))
+	}
+	var list string
+	if scope != nil {
+		var err error
+		if list, err = scopeArg(scope); err != nil {
+			return nil, err
+		}
 	}
 	out := make([][]Hit, len(queries))
 	err := s.view(func(db *sql.DB) error {
@@ -956,10 +1016,18 @@ func (s *Store) SearchEach(key string, queries []FTSQuery, weights []float64) ([
 		for i, w := range weights {
 			ws[i] = fmt.Sprintf("%g", w)
 		}
-		q := fmt.Sprintf(`SELECT rowid, -bm25(%s, %s) AS score FROM %s WHERE %s MATCH ? ORDER BY score DESC, rowid LIMIT ?`,
-			t, strings.Join(ws, ", "), t, t)
+		within := ""
+		if scope != nil {
+			within = ` AND rowid IN (SELECT value FROM json_each(?))`
+		}
+		q := fmt.Sprintf(`SELECT rowid, -bm25(%s, %s) AS score FROM %s WHERE %s MATCH ?%s ORDER BY score DESC, rowid LIMIT ?`,
+			t, strings.Join(ws, ", "), t, t, within)
 		for i, fq := range queries {
-			if out[i], err = queryHits(db, q, fq.Match, fq.Limit); err != nil {
+			args := []any{fq.Match}
+			if scope != nil {
+				args = append(args, list)
+			}
+			if out[i], err = queryHits(db, q, append(args, fq.Limit)...); err != nil {
 				return err
 			}
 		}
@@ -982,8 +1050,8 @@ func libraryFTS(db *sql.DB, key string) (string, bool, error) {
 }
 
 // queryHits runs one full-text query (Search's statement) and reads its hits.
-func queryHits(db *sql.DB, q, match string, limit int) ([]Hit, error) {
-	rows, err := db.Query(q, match, limit)
+func queryHits(db *sql.DB, q string, args ...any) ([]Hit, error) {
+	rows, err := db.Query(q, args...)
 	if err != nil {
 		return nil, err
 	}

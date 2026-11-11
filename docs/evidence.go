@@ -54,6 +54,10 @@ type evidenceAnswer struct {
 	status    Status
 	reason    string
 	index     *IndexInfo
+	// scope is the URL the answer is limited to (local_scope.go), and
+	// outside the distinctive terms the library holds only outside it.
+	scope   string
+	outside []string
 }
 
 // ReasonTermsNotFound is the reason of an answer that names terms of the
@@ -72,35 +76,32 @@ func (a *evidenceAnswer) frontmatter(lib docsindex.Library, query, note string) 
 	if nf == nil {
 		nf = []string{}
 	}
-	return Frontmatter{Query: query, Backend: SearchBackend, Library: lib.Root, Version: lib.Version, Index: a.index,
-		Status: a.status, Reason: a.reason, Terms: nonNil(a.terms), NotFound: nf, DefinedIn: a.definedIn, Note: note}
+	return Frontmatter{Query: query, Backend: SearchBackend, Library: lib.Root, Scope: a.scope, Version: lib.Version, Index: a.index,
+		Status: a.status, Reason: a.reason, Terms: nonNil(a.terms), NotFound: nf, OutsideScope: a.outside, DefinedIn: a.definedIn, Note: note}
 }
 
 // evidence answers query from lib within opts, recording each stage in t
 // (nil: no trace).
 func (l *Local) evidence(lib docsindex.Library, query string, opts LocalOptions, t *Trace) (*evidenceAnswer, error) {
-	g, err := l.gather(lib, query)
+	var scope *docsindex.Scope
+	if opts.scope != "" {
+		sc, err := l.scopeSections(lib, opts.scope)
+		if err != nil {
+			return nil, err
+		}
+		scope = &sc
+	}
+	g, err := l.gather(lib, query, scope)
 	if err != nil {
 		return nil, err
 	}
 	t.gathered(g)
 	v := verdict(g.written, g.sections)
-	a := &evidenceAnswer{terms: v.found, notFound: v.notFound, status: Found, index: indexInfo(lib)}
+	a := &evidenceAnswer{terms: v.found, notFound: v.notFound, status: Found, index: indexInfo(lib), scope: opts.scope}
 	if opts.read > 0 {
 		a.index = searchRead(opts.read, opts.cached)
 	}
-	var reasons []string
-	if opts.note != "" {
-		reasons = append(reasons, ReasonPartialSite)
-	}
-	if v.partial {
-		reasons = append(reasons, ReasonTermsNotFound)
-	}
-	if len(reasons) > 0 {
-		a.status, a.reason = Partial, strings.Join(reasons, ", ")
-	}
-	if v.refused {
-		a.status, a.reason = Refused, ReasonTermsNotFound
+	if a.judge(v, scope, g.written, opts.note != ""); a.status == Refused {
 		return a, nil
 	}
 	pool := make([]docsindex.Section, len(g.pool))
@@ -130,6 +131,40 @@ func (l *Local) evidence(lib docsindex.Library, query string, opts LocalOptions,
 		t.notShown(notShown(g.written, a.results))
 	}
 	return a, nil
+}
+
+// judge sets a's status and reason from the terms' verdict v, the scope
+// (nil for none) and its written terms' counts under it, and whether the
+// answer is from pages a search read (site): refused when no distinctive
+// term is in the library, no indexed page is under the scope, or no
+// distinctive term is under it; else partial for each of terms not found,
+// terms outside the scope and a site read, or found.
+func (a *evidenceAnswer) judge(v termVerdict, scope *docsindex.Scope, written []writtenTerm, site bool) {
+	inScope := true // some distinctive term is under the scope
+	if scope != nil {
+		a.outside, inScope = outsideScope(written)
+	}
+	var reasons []string
+	if site {
+		reasons = append(reasons, ReasonPartialSite)
+	}
+	if v.partial {
+		reasons = append(reasons, ReasonTermsNotFound)
+	}
+	if len(a.outside) > 0 {
+		reasons = append(reasons, ReasonTermsOutsideScope)
+	}
+	if len(reasons) > 0 {
+		a.status, a.reason = Partial, strings.Join(reasons, ", ")
+	}
+	switch {
+	case v.refused:
+		a.status, a.reason = Refused, ReasonTermsNotFound
+	case scope != nil && len(scope.IDs) == 0:
+		a.status, a.reason, a.outside = Refused, ReasonScopeEmpty, nil
+	case !inScope:
+		a.status, a.reason = Refused, ReasonTermsOutsideScope
+	}
 }
 
 // sectionOrder is a pool section's rank in the whole question's ordering

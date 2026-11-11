@@ -47,23 +47,28 @@ type DocsInput struct {
 // answer from the index could not read again a cited page older than
 // cache_ttl ("unverified, built <date>").
 type DocsOutput struct {
-	Warnings []string         `json:"warnings,omitempty"`
-	Library  string           `json:"library,omitempty"`
-	Version  string           `json:"version,omitempty"`
-	Index    *docs.IndexInfo  `json:"index,omitempty"`
-	Stale    string           `json:"stale,omitempty"`
-	Status   docs.Status      `json:"status,omitempty"`
-	Reason   string           `json:"reason,omitempty"`
-	Terms    []docs.TermCount `json:"terms,omitzero"`
+	Warnings []string `json:"warnings,omitempty"`
+	Library  string   `json:"library,omitempty"`
+	// Scope is the URL below the library's root an answer was limited to,
+	// and OutsideScope the distinctive terms the library holds that no
+	// section under it does.
+	Scope   string           `json:"scope,omitempty"`
+	Version string           `json:"version,omitempty"`
+	Index   *docs.IndexInfo  `json:"index,omitempty"`
+	Stale   string           `json:"stale,omitempty"`
+	Status  docs.Status      `json:"status,omitempty"`
+	Reason  string           `json:"reason,omitempty"`
+	Terms   []docs.TermCount `json:"terms,omitzero"`
 	// DefinedIn names, for a listed term no result defines, a section
 	// that does.
-	DefinedIn []docs.DefinedIn    `json:"defined_in,omitempty"`
-	NotFound  []string            `json:"not_found,omitzero"`
-	Note      string              `json:"note,omitempty"`
-	Hint      string              `json:"hint,omitempty"`
-	Results   []docs.Result       `json:"results,omitempty"`
-	Matches   []docs.LibraryMatch `json:"matches,omitempty"`
-	Backend   string              `json:"backend,omitempty"`
+	DefinedIn    []docs.DefinedIn    `json:"defined_in,omitempty"`
+	NotFound     []string            `json:"not_found,omitzero"`
+	OutsideScope []string            `json:"outside_scope,omitempty"`
+	Note         string              `json:"note,omitempty"`
+	Hint         string              `json:"hint,omitempty"`
+	Results      []docs.Result       `json:"results,omitempty"`
+	Matches      []docs.LibraryMatch `json:"matches,omitempty"`
+	Backend      string              `json:"backend,omitempty"`
 }
 
 // fromOutcome renders a found or partial outcome, or the local
@@ -73,7 +78,7 @@ func fromOutcome(o docs.Outcome) DocsOutput {
 	if o.Index != nil {
 		f := docs.NewFrontmatter("", docs.SearchBackend, "", o)
 		out.Library, out.Version, out.Index, out.Terms, out.NotFound = f.Library, f.Version, f.Index, f.Terms, f.NotFound
-		out.DefinedIn = f.DefinedIn
+		out.Scope, out.OutsideScope, out.DefinedIn = f.Scope, f.OutsideScope, f.DefinedIn
 		out.Backend = docs.SearchBackend
 		if docs.AnyCut(o.Results) {
 			out.Hint = docs.AnswerHint(docs.HintMCP)
@@ -93,13 +98,14 @@ func (s *Server) registerDocsTool() {
 	mcpsdk.AddTool(s.mcp, &mcpsdk.Tool{
 		Name:        "docs",
 		InputSchema: docsInputSchema(),
-		Description: "Library documentation: evidence and a verdict, no model; you decide the next call. A library the operator indexed (ketch docs index) answers from the local index; otherwise the question is web-searched, the docs site its hits agree on is read (up to 24 pages) and nothing is saved (only ketch docs index adds libraries or pages): the same question within the operator's cache_ttl is answered from the page cache (index.cached)." +
-			" Read the verdict first. status: found (evidence matching the question, not a promise that it answers); partial, reason terms_not_found (not_found lists your terms this source lacks: ask another source for them) or partial_site (pages a search read; note names the command indexing the site); refused (nothing here matches: stop asking this source; not a tool error). terms: your rare terms, with the sections holding each. defined_in: [{term, section}], where a term is defined when that section is not shown. index: kind, pages, built, or source search and pages_read; stale: \"unverified, built <date>\" when cited pages older than cache_ttl could not be read again (offline: true skips that check): say so if the answer depends on it being current." +
-			" results: verbatim pieces of sections, best first, a page's together (page_title, heading_path, url, section); truncated, with shown_tokens of section_tokens, marks a cut one, and contents names what it left out; about 1,800 tokens in all unless tokens is set; limit caps results." +
-			" Lookup (one question, one library): docs(query=\"<question>\", library=\"<name or docs URL>\"). The fact is printed: answer, citing each result's url. The result you need is truncated, or defined_in names it: docs(section=\"<its section field>\") once, then answer; a long section comes a page at a time (page and pages; the hint gives the next call, page=N). Otherwise Follow." +
+		Description: "Library documentation: evidence and a verdict, no model; you decide the next call. An indexed library answers from the local index; otherwise a web search picks a docs site and reads up to 24 of its pages, saving nothing." +
+			" library: a docs root as resolve lists it; a deeper URL narrows the answer to the pages under it (scope; outside_scope: your terms only elsewhere in the library); to read one page, use section." +
+			" Read the verdict first. status: found (evidence matching the question, not a promise that it answers); partial, reason terms_not_found (not_found: your terms nowhere in this source) or partial_site (pages a search read); refused (nothing here matches: stop asking this source; not a tool error). terms: your rare terms, with the sections holding each. defined_in: [{term, section}], where a term is defined when that section is not shown. index: kind, pages, built (or source search); stale: cited pages could not be checked (offline skips the check): say so if it matters." +
+			" results: verbatim pieces of sections, best first (page_title, heading_path, url, section), about 1,800 tokens in all: leave tokens unset unless a result is too long to read. truncated (shown_tokens of section_tokens) marks a cut one, contents names what it left out, … marks text left out: never fill it in from memory; read it with section, or say it was cut. State only what a result prints; say anything else is not documented here." +
+			" Lookup: docs(query=\"<question>\", library=\"<docs root>\"). The fact is printed: answer, citing each result's url. The result you need is truncated, or defined_in names it: docs(section=\"<its section field>\") once, then answer; a long section comes a page at a time (the hint gives the next call). Otherwise Follow." +
 			" Follow (the docs use other words): ask again in words the last call printed (a name in contents, a heading, a defined_in target), or read that section; never rephrase blind. After three calls to one source, stop: say what you tried and that it does not cover this." +
-			" Survey (the question spans products): split it by owner (not_found shows which terms belong elsewhere); docs(query=\"<name>\", resolve=true) finds a docs root to pass as library; one Lookup or Follow per source, run together; combine, cite each claim, say what no source covered." +
-			" section reads the local index, or a page a search read through the page cache; a page URL alone gives its sections in order; an unknown one is [not_found]. backend context7 (or the operator's docs_backend) gives Context7's snippets instead, library a Context7 ID from resolve; its keyless quota is small (a spent one is [upstream] naming the reset)." +
+			" Survey (the question spans products): docs(resolve=true) lists the indexed sources (query narrows it; a name none matches is looked up on the web): ask it before calling a source unknown. Split the question by owner; for every not_found term, ask the indexed source that owns it before saying it is not covered. One Lookup or Follow per source, run together; combine, cite each claim, say what no source covered." +
+			" section: a url#anchor, or a page URL for its sections in order. backend context7 gives Context7's snippets instead, library a Context7 ID from resolve; its keyless quota is small (a spent one is [upstream] naming the reset)." +
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in DocsInput) (*mcpsdk.CallToolResult, DocsOutput, error) {
@@ -110,12 +116,12 @@ func (s *Server) registerDocsTool() {
 		if in.Section != "" {
 			return s.docsSection(ctx, in, diagnostics)
 		}
-		if err := validQuery(in); err != nil {
-			return nil, DocsOutput{}, err
-		}
 		backend := docs.CanonicalBackend(in.Backend)
 		if backend == "" {
 			backend = s.cfg.DocsBackend
+		}
+		if err := validQuery(in, backend); err != nil {
+			return nil, DocsOutput{}, err
 		}
 		limit := in.Limit
 		if limit <= 0 {
@@ -172,12 +178,14 @@ func (s *Server) registerDocsTool() {
 }
 
 // validQuery checks a docs call that asks a question (no section): it
-// needs a query, and takes no page.
-func validQuery(in DocsInput) error {
+// needs a query, and takes no page. Search's resolve takes none: it then
+// lists every indexed library.
+func validQuery(in DocsInput, backend string) error {
 	if in.Page != 0 {
 		return errf(kindValidation, "page needs section: it picks a page of the section returned")
 	}
-	if in.Query == "" {
+	listsIndexed := in.Resolve && docs.ResolveBackend(backend) == docs.SearchBackend
+	if in.Query == "" && !listsIndexed {
 		return errf(kindValidation, "query is required")
 	}
 	return nil
@@ -211,12 +219,22 @@ func (s *Server) docsSection(ctx context.Context, in DocsInput, diagnostics *tag
 		return nil, DocsOutput{}, upstreamErrf(err, "section fetch failed")
 	}
 	s.recordResults(ctx, in.Tag, docsTagged(o.Results))
-	out := fromOutcome(o)
+	out := fromSection(o)
+	out.Warnings = diagnostics.values()
+	return nil, out, nil
+}
+
+// fromSection renders a section fetch with the fields an answer says of
+// its source (docs.SectionFrontmatter: library, version, index or source,
+// stale), the section as the one result, and the next page's call as the
+// hint.
+func fromSection(o docs.Outcome) DocsOutput {
+	f := docs.SectionFrontmatter(docs.SearchBackend, "", o)
+	out := DocsOutput{Library: f.Library, Version: f.Version, Index: f.Index, Stale: f.Stale, Status: o.Status, Note: o.Note, Results: o.Results, Backend: f.Backend}
 	if len(o.Results) == 1 {
 		out.Hint = docs.NextPageLine(o.Results[0])
 	}
-	out.Warnings = diagnostics.values()
-	return nil, out, nil
+	return out
 }
 
 // docsResolve maps a library name or spec to library IDs, returning at most
@@ -305,14 +323,14 @@ func docsInputSchema() *jsonschema.Schema {
 	backends := docs.AvailableBackends()
 	libNames := strings.Join(docs.LibraryProviderNames(), ", ")
 	return inputSchema[DocsInput](map[string]string{
-		"query":   docs.WithLibraryHelp("the docs question (search picks the library and its docs site from it unless library is set), or the library to resolve when resolve is true; not needed with section"),
+		"query":   docs.WithLibraryHelp("the docs question (search picks the library and its docs site from it unless library is set), or the library to resolve when resolve is true (search: optional; none lists every indexed library); not needed with section"),
 		"backend": "docs backend: " + configbase.JoinNames(backends) + " (default: the configured backend, search unless the operator chose otherwise)",
 		"library": docs.WithLibraryHelp("the library to answer from: for context7 a library ID from resolve"),
-		"tokens":  "token budget for " + strings.Join(docs.LibraryProviderNames(), " and ") + ": search answers in 1,800 tokens unless set; context7 defaults to 4000; with section, the page size of the section returned (default 4000)",
-		"section": "read one section in full instead of searching: the url#anchor of a result's section field (a page URL alone returns the page's sections in order), from the local index or, for a page a search read, the page through the page cache; whole when it fits tokens (default 4000), else a page of that size at a time (page); library is optional",
+		"tokens":  "token budget for " + strings.Join(docs.LibraryProviderNames(), " and ") + ": search answers in 1,800 tokens unless set (leave it unset unless a result is too long to read); context7 defaults to 4000; with section, the page size of the section returned (default 4000)",
+		"section": "read one section in full instead of searching: the url#anchor of a result's section field or a defined_in entry (a page URL alone returns the page's sections in order: how to read one page), from the local index or, for a page a search read, the page through the page cache; whole when it fits tokens (default 4000), else a page of that size at a time (page); library is optional",
 		"offline": "answer from the local index without reading again the cited pages older than cache_ttl (stale says so when one is)",
 		"page":    "with section: the page of a section longer than tokens to return (default 1); the hint gives the call for the next",
-		"resolve": docs.WithLibraryHelp("resolve the query as a library name to " + libNames + " library IDs instead of searching docs"),
+		"resolve": docs.WithLibraryHelp("resolve the query as a library name to " + libNames + " library IDs instead of searching docs; search answers from the local index first (the indexed libraries the query names, every one with no query, each marked indexed), with no network, and resolves a name none matches to its docs roots"),
 	})
 }
 

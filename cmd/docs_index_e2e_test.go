@@ -30,6 +30,7 @@ func TestDocsIndexFixtureSitesCLI(t *testing.T) {
 			checkIndexScope(t, site, fx)
 
 			checkLocalTop(t, site, fx, library)
+			checkResolveAndScope(t, site, fx, library)
 			checkSectionFollowUp(t, site, fx, library)
 			checkIndexLifecycle(t, library)
 			checkIndexFreshness(t, library, fx.query)
@@ -82,7 +83,7 @@ func checkLocalTop(t *testing.T, site *fixtureSite, fx docsFixture, library stri
 	if at < 0 {
 		t.Fatalf("no result is the section %s#%s: %+v", fx.page, fx.anchor, results)
 	}
-	if top := results[at]; !strings.HasPrefix(top.URL, site.URL+fx.page) || !strings.HasPrefix(results[0].URL, site.URL+fx.page) || top.Source != "search" || top.Library != library {
+	if top := results[at]; !strings.HasPrefix(top.URL, site.URL+fx.page) || !strings.HasPrefix(results[0].URL, site.URL+fx.page) || top.Source != "" || top.Library != library {
 		t.Errorf("top result = %+v, want the section %s#%s from the index, on the page printed first", top, fx.page, fx.anchor)
 	}
 	if strings.Contains(stderr, "ranked by keywords") {
@@ -273,18 +274,45 @@ func checkPointers(t *testing.T, fx docsFixture, library string) {
 func checkSectionFetch(t *testing.T, site *fixtureSite, fx docsFixture, library string, top sectionResult) {
 	t.Helper()
 	for _, args := range [][]string{{"--section", top.Section}, {"--library", library, "--section", top.Section}} {
-		got := decodeSectionResults(t, mustCLI(t, append([]string{"--json", "docs"}, args...)...))[0]
-		if got.URL != top.URL || got.Section != top.Section || got.Source != "search" || got.Library != library || got.Truncated || !slices.Contains(got.Anchors, fx.anchor) {
+		raw := mustCLI(t, append([]string{"--json", "docs"}, args...)...)
+		got := decodeSectionResults(t, raw)[0]
+		if got.URL != top.URL || got.Section != top.Section || got.Source != "" || got.Library != library || got.Truncated || !slices.Contains(got.Anchors, fx.anchor) {
 			t.Errorf("--section %v = %+v\nwant the section %s whole", args, got, top.Section)
 		}
+		checkSectionJSON(t, raw, library)
 	}
+	checkSectionText(t, top, library)
+	if page := decodeSectionResults(t, mustCLI(t, "--json", "docs", "--section", site.URL+fx.page))[0]; page.URL != site.URL+fx.page || !slices.Contains(page.Anchors, fx.anchor) {
+		t.Errorf("page = %+v", page)
+	}
+}
+
+// checkSectionJSON: --section --json is an answer's object, with the
+// frontmatter's fields of the source and no verdict, and its results
+// name no backend.
+func checkSectionJSON(t *testing.T, raw, library string) {
+	t.Helper()
+	var head struct {
+		Backend, Library string
+		Index            *struct{ Kind string }
+		Terms            *[]any `json:"terms"`
+	}
+	if err := json.Unmarshal([]byte(raw), &head); err != nil || head.Backend != "search" || head.Library != library || head.Index == nil || head.Index.Kind != "full" || head.Terms != nil || strings.Contains(raw, `"source":"search"`) {
+		t.Errorf("--section --json = %s (%v)\nwant backend, library and index, no terms, no per-result source", raw, err)
+	}
+}
+
+// checkSectionText: --section prints an answer's lines about its source
+// (no result_count, no verdict), then the section under its heading path.
+func checkSectionText(t *testing.T, top sectionResult, library string) {
+	t.Helper()
 	section := decodeSectionResults(t, mustCLI(t, "--json", "docs", "--section", top.Section))[0]
 	out := mustCLI(t, "docs", "--section", top.Section)
 	if !strings.Contains(out, "### "+section.Breadcrumb+"\n\n"+section.Snippet) || !strings.Contains(out, "\n\nsource: "+top.URL+"\n") || strings.Contains(out, "query:") {
 		t.Errorf("--section text output:\n%s", out)
 	}
-	if page := decodeSectionResults(t, mustCLI(t, "--json", "docs", "--section", site.URL+fx.page))[0]; page.URL != site.URL+fx.page || !slices.Contains(page.Anchors, fx.anchor) {
-		t.Errorf("page = %+v", page)
+	if !strings.HasPrefix(out, "---\nbackend: search\nlibrary: "+library+"\nindex: full, ") || strings.Contains(out, "result_count") || strings.Contains(out, "status:") {
+		t.Errorf("--section frontmatter, want an answer's source lines and no result_count:\n%s", out)
 	}
 }
 
@@ -332,5 +360,26 @@ func checkSectionPages(t *testing.T, top sectionResult) {
 		if code, _, stderr := cli(t, args...); code != 2 {
 			t.Errorf("%v: exit %d, %s", args, code, stderr)
 		}
+	}
+}
+
+// checkResolveAndScope: --resolve with no name lists the indexed library
+// from the index, marked indexed; a page URL as --library answers from
+// that page, printing the root as library and the page as scope; a URL
+// under the root that no indexed page is under is refused, exit 3.
+func checkResolveAndScope(t *testing.T, site *fixtureSite, fx docsFixture, library string) {
+	t.Helper()
+	for _, args := range [][]string{{"docs", "--resolve"}, {"docs", "--resolve", ""}} {
+		if out := mustCLI(t, args...); !strings.HasPrefix(out, library+"  ") || !strings.Contains(out, "(indexed: yes, full, ") {
+			t.Errorf("%v:\n%s", args, out)
+		}
+	}
+	page := site.URL + fx.page
+	out := mustCLI(t, "docs", "--library", page, fx.query)
+	if !strings.Contains(out, "\nlibrary: "+library+"\nscope: "+page+"\n") || strings.Contains(out, "source: "+site.URL+"/elsewhere") {
+		t.Errorf("--library %s:\n%s", page, out)
+	}
+	if code, out, _ := cli(t, "docs", "--library", library+"no/such/page", fx.query); code != 3 || !strings.Contains(out, "status: refused (scope_empty)") {
+		t.Errorf("empty scope: exit %d\n%s", code, out)
 	}
 }

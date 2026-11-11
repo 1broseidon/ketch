@@ -117,11 +117,9 @@ func TestDocsToolLocalSectionFetch(t *testing.T) {
 	session := localSession(t)
 	ref := sectionRoot + "guide/forms#rules"
 	res, full := callDocsOutput(t, session, map[string]any{"section": ref, "backend": "search"})
-	if res.IsError || len(full.Results) != 1 || full.Backend != docs.SearchBackend || full.Status != docs.Found {
-		t.Fatalf("section fetch: %s %+v", toolText(res), full)
-	}
+	checkSectionFields(t, res, full)
 	got := full.Results[0]
-	if got.URL != ref || got.Section != ref || got.Source != docs.SearchBackend || got.Library != sectionRoot || got.Truncated ||
+	if got.URL != ref || got.Section != ref || got.Library != sectionRoot || got.Truncated ||
 		!strings.Contains(got.Snippet, "name: (v) => (v.length < 2 ? 'Too short' : null),") || strings.Contains(got.Snippet, "full section") {
 		t.Errorf("section result = %+v", got)
 	}
@@ -217,10 +215,13 @@ func TestDocsToolDescribesSection(t *testing.T) {
 		if !strings.Contains(schema.Properties["section"].Description, "url#anchor") || len(schema.Required) != 0 {
 			t.Errorf("section property %q, required %v", schema.Properties["section"].Description, schema.Required)
 		}
-		if !strings.Contains(schema.Properties["page"].Description, "with section") {
-			t.Errorf("page property %q", schema.Properties["page"].Description)
+		if p := schema.Properties["page"].Description; !strings.Contains(p, "with section") || !strings.Contains(p, "hint") {
+			t.Errorf("page property %q", p)
 		}
-		for _, want := range []string{"section field", "hint", "not_found", "page cache", "[not_found]", "page=N", "stale", "offline"} {
+		if !strings.Contains(schema.Properties["section"].Description, "page cache") {
+			t.Errorf("section property %q lacks the page cache", schema.Properties["section"].Description)
+		}
+		for _, want := range []string{"section field", "hint", "not_found", "[not_found]", "stale", "offline", "…", "scope", "resolve=true", "leave tokens unset"} {
 			if !strings.Contains(tool.Description, want) {
 				t.Errorf("description lacks %q", want)
 			}
@@ -228,4 +229,49 @@ func TestDocsToolDescribesSection(t *testing.T) {
 		return
 	}
 	t.Fatal("no docs tool")
+}
+
+// checkSectionFields: a section fetch carries an answer's fields of its
+// source (library, index), no verdict, and its result names no backend.
+func checkSectionFields(t *testing.T, res *mcpsdk.CallToolResult, full DocsOutput) {
+	t.Helper()
+	if res.IsError || len(full.Results) != 1 || full.Backend != docs.SearchBackend || full.Status != docs.Found ||
+		full.Library != sectionRoot || full.Index == nil || full.Index.Kind != docs.IndexFull || full.Terms != nil || full.NotFound != nil {
+		t.Fatalf("section fetch: %s %+v", toolText(res), full)
+	}
+	if strings.Contains(toolText(res), `"source":`) {
+		t.Errorf("a result names its backend: %s", toolText(res))
+	}
+}
+
+// resolve=true with no query lists the indexed libraries, from the index
+// alone, and with one those it names; Context7's still needs a query.
+func TestDocsToolResolveIndexed(t *testing.T) {
+	session := localSession(t)
+	res, out := callDocsOutput(t, session, map[string]any{"resolve": true})
+	if res.IsError || len(out.Matches) != 1 || out.Matches[0].ID != sectionRoot || !out.Matches[0].Indexed || out.Matches[0].Index == nil || out.Matches[0].Index.Pages != 1 {
+		t.Fatalf("resolve with no query: %s %+v", toolText(res), out)
+	}
+	if res, out = callDocsOutput(t, session, map[string]any{"resolve": true, "query": "example"}); res.IsError || len(out.Matches) != 1 || !out.Matches[0].Indexed {
+		t.Fatalf("resolve example: %s", toolText(res))
+	}
+	if res, _ := callDocsOutput(t, session, map[string]any{"resolve": true, "backend": "context7"}); !res.IsError || !strings.Contains(toolText(res), "query is required") {
+		t.Errorf("context7 resolve with no query: %s, want query is required", toolText(res))
+	}
+}
+
+// A library URL below an indexed root answers from the pages under it,
+// and says so (scope), the library being the root; one no indexed page
+// is under is refused, the note naming the root.
+func TestDocsToolScope(t *testing.T) {
+	session := localSession(t)
+	page := sectionRoot + "guide/forms"
+	res, out := callDocsOutput(t, session, map[string]any{"query": "validate a form with rules", "library": page})
+	if res.IsError || out.Library != sectionRoot || out.Scope != page || len(out.Results) == 0 {
+		t.Fatalf("scoped answer: %s %+v", toolText(res), out)
+	}
+	res, out = callDocsOutput(t, session, map[string]any{"query": "validate a form with rules", "library": sectionRoot + "guide/nothing"})
+	if res.IsError || out.Status != docs.Refused || out.Reason != docs.ReasonScopeEmpty || !strings.Contains(out.Note, "no indexed page of "+sectionRoot) {
+		t.Errorf("empty scope: %s %+v, want a refusal naming the root", toolText(res), out)
+	}
 }

@@ -3,37 +3,32 @@
     "library": "/websites/celeryq_dev_en_stable",
     "title": "Retry a task with app.Task.retry()",
     "snippet": "Use self.retry(exc=exc) inside a task bound with bind=True to re-execute the task on recoverable errors. The retry call raises a Retry exception, so code after it is not reached unless throw=False. The exc argument passes exception info used in logs and task results.\n\n```python\n@app.task(bind=True)\ndef send_twitter_status(self, oauth, tweet):\n    try:\n        twitter = Twitter(oauth)\n        twitter.update_status(tweet)\n    except (Twitter.FailWhaleError, Twitter.LoginError) as exc:\n        raise self.retry(exc=exc)\n```",
-    "url": "https://docs.celeryq.dev/en/stable/userguide/tasks.html",
-    "source": "context7"
+    "url": "https://docs.celeryq.dev/en/stable/userguide/tasks.html"
   },
   {
     "library": "/websites/celeryq_dev_en_stable",
     "title": "Retry a task with countdown",
     "snippet": "Demonstrates how to use the retry method within a task to handle exceptions, such as a Twitter API failure, by scheduling a retry in 5 minutes.\n\n```python\n>>> from imaginary_twitter_lib import Twitter\n>>> from proj.celery import app\n```\n\n```python\n>>> @app.task(bind=True)\n... def tweet(self, auth, message):\n...     twitter = Twitter(oauth=auth)\n...     try:\n...         twitter.post_status_update(message)\n...     except twitter.FailWhale as exc:\n...         # Retry in 5 minutes.\n...         raise self.retry(countdown=60 * 5, exc=exc)\n```",
-    "url": "https://docs.celeryq.dev/en/stable/reference/celery.app.task.html",
-    "source": "context7"
+    "url": "https://docs.celeryq.dev/en/stable/reference/celery.app.task.html"
   },
   {
     "library": "/websites/celeryq_dev_en_stable",
     "title": "celery.app.task > retry",
     "breadcrumb": "celery.app.task > retry",
     "snippet": "retry(_args =None_, _kwargs =None_, _exc =None_, _throw =True_, _eta =None_, _countdown =None_, _max_retries =None_, _** options_)[source]¶\n    \nRetry the task, adding it to the back of the queue.\nExample\n```\n>>> from imaginary_twitter_lib import Twitter\n>>> from proj.celery import app\n\n```\n\n```\n>>> @app.task(bind=True)\n... def tweet(self, auth, message):\n...     twitter = Twitter(oauth=auth)\n...     try:\n...         twitter.post_status_update(message)\n...     except twitter.FailWhale as exc:\n...         # Retry in 5 minutes.\n...         raise self.retry(countdown=60 * 5, exc=exc)\n\n```\n\nNote\nAlthough the task will never return above as retry raises an exception to notify the worker, we use raise in front of the retry to convey that the rest of the block won’t be executed. \n\nParameters:\n    \n  * **args** (_Tuple_) – Positional arguments to retry with.\n  * **kwargs** (_Dict_) – Keyword arguments to retry with.\n  * **exc** (_Exception_) – \nCustom exception to report when the max retry limit has been exceeded (default: `MaxRetriesExceededError`).\nIf this argument is set and retry is called while an exception was raised (`sys.exc_info()` is set) it will attempt to re-raise the current exception.\nIf no exception was raised it will raise the `exc` argument provided.\n  * **countdown** (_float_) – Time in seconds to delay the retry for.\n  * **eta** (_datetime_) – Explicit time and date to run the retry at.\n  * **max_retries** (_int_) – If set, overrides the default retry limit for this execution. Changes to this parameter don’t propagate to subsequent task retry attempts. A value of `None`, means “use the default”, so if you want infinite retries you’d have to set the `max_retries` attribute of the task to `None` first.\n  * **time_limit** (_int_) – If set, overrides the default time limit.\n  * **soft_time_limit** (_int_) – If set, overrides the default soft time limit.\n  * **throw** (_bool_) – If this is `False`, don’t raise the `Retry` exception, that tells the worker to mark the task as being retried. Note that this means the task will be marked as failed if the task raises an exception, or successful if it returns after the retry call.\n  * ****options** (_Any_) – Extra options to pass on to `apply_async()`.\n\n\n\nRaises:\n    \n**celery.exceptions.Retry** – To tell the worker that the task has been re-sent for retry. This always happens, unless the throw keyword argument has been explicitly set to `False`, and is considered normal operation. ",
-    "url": "https://docs.celeryq.dev/en/stable/reference/celery.app.task.html",
-    "source": "context7"
+    "url": "https://docs.celeryq.dev/en/stable/reference/celery.app.task.html"
   },
   {
     "library": "/websites/celeryq_dev_en_stable",
     "title": "Retrying > Automatic retry for known exceptions",
     "breadcrumb": "Retrying > Automatic retry for known exceptions",
     "snippet": "### Automatic retry for known exceptions\nAdded in version 4.0.\nSometimes you just want to retry a task whenever a particular exception is raised.\nFortunately, you can tell Celery to automatically retry a task using autoretry_for argument in the `app.task()` decorator:\n```\nfrom twitter.exceptions import FailWhaleError\n\n@app.task(autoretry_for=(FailWhaleError,))\ndef refresh_timeline(user):\n    return twitter.refresh_timeline(user)\n\n```\n\nIf you want to specify custom arguments for an internal `retry()` call, pass retry_kwargs argument to `app.task()` decorator:\n```\n@app.task(autoretry_for=(FailWhaleError,),\n          retry_kwargs={'max_retries': 5})\ndef refresh_timeline(user):\n    return twitter.refresh_timeline(user)\n\n```\n\nThis is provided as an alternative to manually handling the exceptions, and the example above will do the same as wrapping the task body in a `try` … `except` statement:\n```\n@app.task\ndef refresh_timeline(user):\n    try:\n        twitter.refresh_timeline(user)\n    except FailWhaleError as exc:\n        raise refresh_timeline.retry(exc=exc, max_retries=5)\n\n```\n\nIf you want to automatically retry on any error, simply use:\n```\n@app.task(autoretry_for=(Exception,))\ndef x():\n    ...\n\n```\n\nAdded in version 4.2.\nIf your tasks depend on another service, like making a request to an API, then it’s a good idea to use exponential backoff to avoid overwhelming the service with your requests. Fortunately, Celery’s automatic retry support makes it easy. Just specify the `retry_backoff` argument, like this:\n```\nfrom requests.exceptions import RequestException\n\n@app.task(autoretry_for=(RequestException,), retry_backoff=True)\ndef x():\n    ...\n\n```\n\nBy default, this exponential backoff will also introduce random jitter to avoid having all the tasks run at the same moment. It will also cap the maximum backoff delay to 10 minutes. All these settings can be customized via options documented below.\nAdded in version 4.4.\nYou can also set autoretry_for, max_retries, retry_backoff, retry_backoff_max and retry_jitter options in class-based tasks:\n```\nclass BaseTaskWithRetry(Task):\n    autoretry_for = (TypeError,)\n    max_retries = 5\n    retry_backoff = True\n    retry_backoff_max = 700\n    retry_jitter = False\n```",
-    "url": "https://docs.celeryq.dev/en/stable/userguide/tasks.html",
-    "source": "context7"
+    "url": "https://docs.celeryq.dev/en/stable/userguide/tasks.html"
   },
   {
     "library": "/websites/celeryq_dev_en_stable",
     "title": "Automatic retry on any exception",
     "snippet": "Use autoretry_for=(Exception,) to automatically retry the task on any error. The task body is a placeholder with an ellipsis.\n\n```python\n@app.task(autoretry_for=(Exception,))\ndef x():\n    ...\n```",
-    "url": "https://docs.celeryq.dev/en/stable/userguide/tasks.html",
-    "source": "context7"
+    "url": "https://docs.celeryq.dev/en/stable/userguide/tasks.html"
   }
 ]

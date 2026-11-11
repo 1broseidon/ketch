@@ -67,6 +67,11 @@ type LibraryMatch struct {
 	// Packages are the library's package and repository specs, each usable
 	// as the library (pypi:click, github:pallets/click).
 	Packages []string `json:"packages,omitempty"`
+	// Indexed marks a library the local index holds (search's resolve
+	// answers from it first, local_resolve.go), and Index what it holds:
+	// full or capped, its pages and build date.
+	Indexed bool       `json:"indexed,omitempty"`
+	Index   *IndexInfo `json:"index,omitempty"`
 }
 
 type context7SearchResponse struct {

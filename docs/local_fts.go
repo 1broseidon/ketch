@@ -26,15 +26,22 @@ import (
 // rendering follow (local_rank.go).
 
 // ftsVersion names the normalization of the full-text rows: rows made by
-// another version are rebuilt from the stored sections on first use.
-const ftsVersion = "k1"
+// another version are rebuilt from the stored sections on first use, with
+// no fetching (Store.EnsureFTS, which Gather calls). k2: a row is made from
+// the section as cleaned for printing (cleanSection), so a no-op escape
+// (service\_err) no longer hides a term the printed text shows.
+const ftsVersion = "k2"
 
 // ftsTokenizer makes the full-text rows.
 type ftsTokenizer struct{}
 
 func (ftsTokenizer) Version() string { return ftsVersion }
 
+// Row is a section's full-text row, made from the section as an answer
+// prints it (cleanSection): counts, terms, not_found and the pool then
+// read the same text the caller reads.
 func (ftsTokenizer) Row(s docsindex.Section) [4]string {
+	s = cleanSection(s)
 	var crumbs []string
 	for _, c := range s.Crumbs[:max(len(s.Crumbs)-1, 0)] {
 		crumbs = append(crumbs, rankTokens(c)...)

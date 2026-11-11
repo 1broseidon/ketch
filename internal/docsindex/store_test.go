@@ -221,6 +221,31 @@ func TestStoreSearchEach(t *testing.T) {
 	}
 }
 
+// CountsIn and SearchEachIn read a scope's sections alone; an empty scope
+// holds none.
+func TestStoreScoped(t *testing.T) {
+	s := Open(filepath.Join(t.TempDir(), "docs-index.db"), upperTokens{"v1"})
+	seed(t, s)
+	all, err := s.Search(testKey, "intro OR second OR identtwo", []float64{1, 1, 1, 1}, 10)
+	if err != nil || len(all) < 2 {
+		t.Fatalf("Search = %+v %v", all, err)
+	}
+	one := Scope{IDs: []int64{all[0].ID}}
+	got, err := s.SearchEachIn(testKey, one, []FTSQuery{{Match: "intro OR second OR identtwo", Limit: 10}}, []float64{1, 1, 1, 1})
+	if err != nil || len(got[0]) != 1 || got[0][0] != all[0] {
+		t.Errorf("SearchEachIn = %+v %v, want %+v alone, scored as in the library", got, err, all[0])
+	}
+	if n, err := s.CountsIn(testKey, one, []string{"", "intro OR second OR identtwo", "absent"}); err != nil || n[0] != 1 || n[1] != 1 || n[2] != 0 {
+		t.Errorf("CountsIn = %v %v", n, err)
+	}
+	if got, err := s.SearchEachIn(testKey, Scope{}, []FTSQuery{{Match: "intro", Limit: 10}}, []float64{1, 1, 1, 1}); err != nil || len(got[0]) != 0 {
+		t.Errorf("empty scope = %+v %v", got, err)
+	}
+	if n, err := s.CountsIn(testKey, Scope{}, []string{"", "intro"}); err != nil || n[0] != 0 || n[1] != 0 {
+		t.Errorf("empty scope counts = %v %v", n, err)
+	}
+}
+
 // PageOutlines reads pages' sections without their text.
 func TestStorePageOutlines(t *testing.T) {
 	s := Open(filepath.Join(t.TempDir(), "docs-index.db"))

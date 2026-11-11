@@ -125,7 +125,11 @@ func (l *Local) sectionRead(ctx context.Context, library, ref string, tokens, pa
 		if len(secs) == 0 {
 			continue
 		}
-		return withVersionNote(fetchSection(lib, secs, anchor, library, tokens, pageNo, opts.Hint), note), lib, secs[0].Page
+		o := fetchSection(lib, secs, anchor, library, tokens, pageNo, opts.Hint)
+		if o.Err() == nil {
+			o.Library, o.Index = lib.Root, indexInfo(lib)
+		}
+		return withVersionNote(o, note), lib, secs[0].Page
 	}
 	if strings.TrimSpace(library) != "" {
 		return Answer(SearchBackend, nil, fmt.Errorf("local: the index of %s has no page %s: %w", cands[0].Root, page, ErrSectionNotFound)), docsindex.Library{}, ""
@@ -253,6 +257,11 @@ func fetchSection(lib docsindex.Library, secs []docsindex.Section, anchor, libra
 	if !ok {
 		return Answer(SearchBackend, nil, fmt.Errorf("local: %s has no section #%s (sections: %s): %w", shownURL(lib, secs[0].Page), anchor, anchorList(secs), ErrSectionNotFound))
 	}
+	// Printed as an answer prints its pieces: cleaned (cleanSection).
+	unit = slices.Clone(unit)
+	for i := range unit {
+		unit[i] = cleanSection(unit[i])
+	}
 	asked := tokens
 	if tokens <= 0 {
 		tokens = localSectionTokens
@@ -263,7 +272,7 @@ func fetchSection(lib docsindex.Library, secs []docsindex.Section, anchor, libra
 	if anchor != "" {
 		ref = sectionRef(lib, head)
 	}
-	title, crumbs := head.Heading, strings.Join(head.Crumbs, " > ")
+	title, crumbs := head.Heading, strings.Join(distinctCrumbs(head.Crumbs), " > ")
 	r := Result{Library: lib.Root, Version: lib.Version, Title: title, Breadcrumb: crumbs, URL: ref, Section: ref, Source: SearchBackend}
 	// A page's room: the cap with the answers' margin, less what is
 	// printed around the text (heading, source, page and next-page lines).
@@ -292,6 +301,19 @@ func fetchSection(lib docsindex.Library, secs []docsindex.Section, anchor, libra
 		}
 	}
 	return Answer(SearchBackend, []Result{r}, nil)
+}
+
+// distinctCrumbs is a heading path without a heading that repeats the
+// one before it: a page whose title is its first heading's text
+// ("4.1. Configuration file syntax") stores that text twice.
+func distinctCrumbs(crumbs []string) []string {
+	var out []string
+	for _, c := range crumbs {
+		if len(out) == 0 || out[len(out)-1] != c {
+			out = append(out, c)
+		}
+	}
+	return out
 }
 
 // errSectionPage is a page of a section past its last.

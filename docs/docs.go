@@ -87,7 +87,10 @@ type Result struct {
 	// holds, in page order ("" for a page's lead section); other backends
 	// leave it empty.
 	Anchors []string `json:"anchors,omitempty"`
-	Source  string   `json:"source"` // the backend: "search" | "context7"
+	// Source is the backend that made the result ("search" | "context7"):
+	// not printed, since an answer's backend says it once for all its
+	// results, and no answer mixes backends.
+	Source string `json:"-"`
 	// Section is the local index's reference to this result's section,
 	// url#anchor as the result's URL carries it: what a follow-up fetch of
 	// the whole section takes (ketch docs --section, the docs tool's

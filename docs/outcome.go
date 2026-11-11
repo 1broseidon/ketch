@@ -59,10 +59,15 @@ type Outcome struct {
 	// under 1% of its sections or in at most 25), with how many of its sections hold each
 	// (Terms), and those it holds nowhere (NotFound). A refusal for want
 	// of any of them carries them too.
-	Library  string      `json:"library,omitempty"`
-	Index    *IndexInfo  `json:"index,omitempty"`
-	Terms    []TermCount `json:"terms,omitempty"`
-	NotFound []string    `json:"not_found,omitempty"`
+	Library string `json:"library,omitempty"`
+	// Scope is the URL below the library's root the answer was limited to
+	// (a library URL deeper than an indexed root), and OutsideScope the
+	// distinctive terms the library holds but no section under it does.
+	Scope        string      `json:"scope,omitempty"`
+	Index        *IndexInfo  `json:"index,omitempty"`
+	Terms        []TermCount `json:"terms,omitempty"`
+	NotFound     []string    `json:"not_found,omitempty"`
+	OutsideScope []string    `json:"outside_scope,omitempty"`
 	// DefinedIn names where listed terms no printed result defines are
 	// defined (design/docs-evidence.md, Round 8).
 	DefinedIn []DefinedIn `json:"defined_in,omitempty"`

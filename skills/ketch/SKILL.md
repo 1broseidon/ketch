@@ -141,11 +141,13 @@ file; test labs must set `KETCH_TAGS_PATH` as well as isolating the page cache.
 | You see | It means | Do |
 |---|---|---|
 | `status: found` | evidence matching the question is printed; not a promise that it answers | read the groups |
-| `terms_not_found` in `status: partial (…)` | some of your terms are nowhere in this source | read `not_found`; ask another source for those terms |
+| `terms_not_found` in `status: partial (…)` | some of your terms are nowhere in this source | read `not_found`; ask the indexed source that owns those terms (Survey) |
 | `partial_site` in `status: partial (…)` | the answer is from pages a web search just read, not from an index | read the groups; the `note` names the command that indexes the site |
 | `status: refused` | nothing here matches (exit 3) | stop asking this source |
 | `defined_in: {term: ref}` | where a term is defined, when that section was not printed | `ketch docs --section <ref>` |
 | `(cut, N of M tokens)` on a `source:` line | the group shows part of its section | `ketch docs --section <that source>` if you need the rest |
+| `…` in a group | text left out of a cut group | never fill it in from memory: read it with `--section`, or say it was cut |
+| `scope: <url>` | the answer is from the pages at or under that URL only; `library` is the root | `outside_scope` lists your terms the library holds elsewhere: ask the root for them |
 | `also in this section: …` | what a cut group left out, by name | use one of those names in your next call |
 | `index: …, built <date>`, `source: search, N pages read`, or `stale: unverified, built <date>` | how old the evidence is: the index's build date; pages read now (`, cached`: read by the same question within `cache_ttl`); cited pages that could not be checked | say so if the answer depends on it being current |
 
@@ -153,8 +155,8 @@ file; test labs must set `KETCH_TAGS_PATH` as well as isolating the page cache.
 
 One question about one library or product.
 
-1. `ketch docs "<question>" --library <name or docs URL>`
-2. The fact is printed: answer, citing each `source:`.
+1. `ketch docs "<question>" --library <docs root>`: a root as `ketch docs --resolve` lists it. A deeper URL narrows the answer to the pages under it (`scope:`); to read one page, `ketch docs --section <page URL>`. Leave `--tokens` unset unless a result is too long to read.
+2. The fact is printed: answer, citing each `source:`. State only what the output prints; say anything else is not documented here.
 3. The group you need is cut, or `defined_in` names it: `ketch docs --section <ref>` once, then answer. A section longer than a page prints `page: 1 of N` and ends with a `next page:` command; run it only if the fact is not on this page.
 4. Otherwise, Follow.
 
@@ -172,13 +174,13 @@ Every call after the first uses something the last one printed. Do not rephrase 
 
 The question spans products.
 
-1. Split it by owner. A first call's `not_found` shows which terms belong to another source.
-2. A docs site you do not know: `ketch docs --resolve <name>`.
+1. Ask what is indexed before saying a source is unknown: `ketch docs --resolve` lists every indexed library, `--resolve <name>` those matching it (from the index, offline; a name none matches is looked up on the web).
+2. Split the question by owner. For every `not_found` term, ask the indexed source that owns it before saying it is not covered.
 3. One Lookup or Follow per source. The calls are independent: run them together.
 4. Combine. Cite each claim's `source:`. Say what no source covered.
 5. A source you will ask again: propose `ketch docs index <site>` to the operator (CLI only; it writes the local index). It then answers from the index, offline too (`stale: unverified` when the cited pages cannot be checked).
 
-Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` with `page` for the next page, and `docs(query=<name>, resolve=true)`; `defined_in` is a list of `{term, section}`, a cut result has `truncated` and `contents`. pi's `ketch_docs` takes the same, without `page`.
+Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` with `page` for the next page, and `docs(resolve=true)` with an optional `query`; `defined_in` is a list of `{term, section}`, a cut result has `truncated` and `contents`, an indexed match `indexed: true`. pi's `ketch_docs` takes the same, without `page`.
 
 ## Token budgets
 

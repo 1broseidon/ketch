@@ -24,10 +24,10 @@ var docsCmd = &cobra.Command{
 	Short: "Search library documentation",
 	Long: `Search library documentation. The default backend, search, answers from the docs themselves: a library indexed with ketch docs index answers offline from the local index; otherwise ketch searches the web for the question, picks the documentation site the results agree on, reads the matching pages and answers from them. A question saves nothing: the pages stay in the page cache for cache_ttl, so the same question again within it, answered or refused, does no search and no fetch (its source line ends with cached); only ketch docs index adds libraries or pages. ` +
 		`The answer's frontmatter says what it read (index: full or capped, its pages and build date; or source: search and the pages a search read), its status, the question's rare terms as written (identifiers it writes, words in under 1% of the library's sections or in at most 25 of them) with the number of sections holding each (terms), and those no section holds (not_found); for a term in terms that is the first cell of a table row (an option's row) in a section the answer does not print, defined_in names that section for --section (defined_in: {<term>: <url#anchor>}, at most three). Status is found (evidence matching the question, not a promise that it answers); partial when a term is in not_found or the answer is from pages a search read; refused, exit 3, when no distinctive term is in the docs: the body is empty and not_found is the answer. ` +
-		`The body is the pieces of sections that name the question (paragraphs, list items, code blocks, table rows under their header), verbatim, grouped by section: a page's groups under "## <page title>", each under its heading path, ending with its source url#anchor, marked "(cut, N of M tokens)" with how much of its section it shows when the group was cut; a section longer than a page (` + strconv.Itoa(docs.AnswerPageTokens) + ` tokens) is never printed whole: its group shows its best pieces up to a page, in page order; a page's groups print in rank order, the page with the best group first; about 1,800 tokens in all, frontmatter included, or --tokens; --limit caps the groups. An answer from the index first reads again the pages it cites that were read longer ago than cache_ttl, each the way it was stored (the page, its Markdown source or its llms-full.txt chunk; at most 3 seconds; a page that changed is sectioned again in the index); when one cannot be read that way, or its check failed in the last 15 minutes, the frontmatter says stale: unverified, built <date>; --offline skips the check. An answer with a group cut ends with one line saying how to read it in full: --section returns a section from the local index (no ranking), or of a page a search read, through the page cache; whole when it fits --tokens (default 4000), else a page of that size at a time, broken at a block boundary: the output says page N of M and its last line is the command for the next page (--page N); a page URL with no anchor returns the page's sections in order, paged alike. --json prints the frontmatter's fields and the results as one object. ` +
+		`The body is the pieces of sections that name the question (paragraphs, list items, code blocks, table rows under their header), verbatim, grouped by section: a page's groups under "## <page title>", each under its heading path, ending with its source url#anchor, marked "(cut, N of M tokens)" with how much of its section it shows when the group was cut; a section longer than a page (` + strconv.Itoa(docs.AnswerPageTokens) + ` tokens) is never printed whole: its group shows its best pieces up to a page, in page order; a page's groups print in rank order, the page with the best group first; about 1,800 tokens in all, frontmatter included, or --tokens; --limit caps the groups. An answer from the index first reads again the pages it cites that were read longer ago than cache_ttl, each the way it was stored (the page, its Markdown source or its llms-full.txt chunk; at most 3 seconds; a page that changed is sectioned again in the index); when one cannot be read that way, or its check failed in the last 15 minutes, the frontmatter says stale: unverified, built <date>; --offline skips the check. An answer with a group cut ends with one line saying how to read it in full: --section returns a section from the local index (no ranking), or of a page a search read, through the page cache; whole when it fits --tokens (default 4000), else a page of that size at a time, broken at a block boundary: the frontmatter says what it was read from (library, index or source, stale) and page N of M, and its last line is the command for the next page (--page N); a page URL with no anchor returns the page's sections in order, paged alike. A --library URL below an indexed root answers from the pages under it only (scope: in the frontmatter; outside_scope: the distinctive terms the library holds elsewhere); no indexed page under it is refused, exit 3. --json prints the frontmatter's fields and the results as one object. ` +
 		docs.WithLibraryHelp("--library names the library") + `.
 
--b context7 (or ketch config set docs_backend context7 to make it the default) uses Context7's curated snippets instead. Context7 needs no key: without one it uses Context7's anonymous quota (about 200 requests a month per IP), and a key lifts it. --resolve lists a name's library IDs (Context7) or docs roots (search); pass one as --library.`,
+-b context7 (or ketch config set docs_backend context7 to make it the default) uses Context7's curated snippets instead. Context7 needs no key: without one it uses Context7's anonymous quota (about 200 requests a month per IP), and a key lifts it. --resolve lists a name's library IDs (Context7) or docs roots (search: the indexed libraries the name matches first, from the index with no network, every one with no name; else the web's resolution); pass one as --library.`,
 	Args: exitArgs(docsArgs),
 	RunE: traceDocs(runDocs),
 }
@@ -38,7 +38,7 @@ func init() {
 	docsCmd.Flags().String("library", "", docs.WithLibraryHelp("the library to answer from"))
 	docsCmd.Flags().Int("tokens", 4000, "token budget (search: 1,800 unless set, frontmatter included; context7: 4000; --section: the page size of the section returned, 4000)")
 	docsCmd.Flags().IntP("limit", "l", cfg.Limit, "max number of results")
-	docsCmd.Flags().Bool("resolve", false, docs.WithLibraryHelp("resolve the query as a library name instead of searching: library IDs (context7) or docs roots (search)"))
+	docsCmd.Flags().Bool("resolve", false, docs.WithLibraryHelp("resolve the query as a library name instead of searching: library IDs (context7) or docs roots (search: indexed libraries first, offline; no name lists every one)"))
 	docsCmd.Flags().String("tag", "", "record each result under this tag (see `ketch tag`)")
 	docsCmd.PreRunE = validateTagFlag
 	docsCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/library/snippet)")
@@ -82,9 +82,13 @@ func docsStdout(cmd *cobra.Command) io.Writer {
 	return docs.TraceFrom(ctx).Stdout(os.Stdout)
 }
 
-// docsArgs wants a query, unless --section names what to fetch.
+// docsArgs wants a query, unless --section names what to fetch or
+// --resolve lists what is indexed (no name: every indexed library).
 func docsArgs(cmd *cobra.Command, args []string) error {
 	if section, _ := cmd.Flags().GetString("section"); section != "" {
+		return nil
+	}
+	if resolve, _ := cmd.Flags().GetBool("resolve"); resolve && docs.ResolveBackend(docsBackendFlag(cmd)) == docs.SearchBackend {
 		return nil
 	}
 	return cobra.MinimumNArgs(1)(cmd, args)
@@ -232,12 +236,30 @@ func runDocsSection(cmd *cobra.Command, section, library string, tokens, page in
 		return err
 	}
 	tagResults(cmd, docsTaggable(o.Results))
-	if asJSON {
-		noteOnStderr(o)
-		return json.NewEncoder(docsStdout(cmd)).Encode(o.Results)
+	w := docsStdout(cmd)
+	switch {
+	case asJSON:
+		return json.NewEncoder(w).Encode(docs.AnswerJSON{Frontmatter: docs.SectionFrontmatter(backend, library, o), Results: o.Results})
+	case minimal:
+		printDocsResults(w, "", backend, library, o, true, docs.HintNone)
+	default:
+		printSection(w, backend, library, o)
 	}
-	printDocsResults(docsStdout(cmd), "", backend, library, o, minimal, docs.HintNone)
 	return nil
+}
+
+// printSection prints a section fetch: the frontmatter an answer's says
+// of its source (docs.SectionFrontmatter: backend, library, index or
+// source, stale, the page line of a section read a page at a time), then
+// the section as Markdown, ending with the command for the next page.
+func printSection(w io.Writer, backend, library string, o docs.Outcome) {
+	_, _ = fmt.Fprint(w, docs.SectionFrontmatter(backend, library, o).Render())
+	for _, r := range o.Results {
+		_, _ = fmt.Fprintf(w, "%s\n", docs.RenderResult(r, docs.HintNone))
+		if next := docs.NextPageLine(r); next != "" {
+			_, _ = fmt.Fprintf(w, "%s\n", next)
+		}
+	}
 }
 
 // withLocalDocsOptions carries the budget and limit the caller chose (not
@@ -304,6 +326,10 @@ func runDocsResolve(cmd *cobra.Command, query string, limit int, asJSON bool) er
 func formatLibraryMatches(matches []docs.LibraryMatch) string {
 	var b strings.Builder
 	for _, m := range matches {
+		if m.Indexed {
+			b.WriteString(indexedMatchLine(m))
+			continue
+		}
 		if len(m.Evidence) == 0 && m.Version == "" && len(m.Packages) == 0 {
 			fmt.Fprintf(&b, "%s  %s  (snippets: %d, trust: %.1f)\n", m.ID, m.Title, m.TotalSnippets, m.TrustScore)
 			continue
@@ -329,6 +355,23 @@ func formatLibraryMatches(matches []docs.LibraryMatch) string {
 		}
 	}
 	return b.String()
+}
+
+// indexedMatchLine is a library of the local index as --resolve prints
+// it: its root, title and what its index holds, marked indexed.
+func indexedMatchLine(m docs.LibraryMatch) string {
+	line := m.ID
+	if m.Title != "" {
+		line += "  " + m.Title
+	}
+	about := "indexed: yes"
+	if m.Index != nil {
+		about += ", " + m.Index.Summary()
+	}
+	if m.Version != "" {
+		about += ", version: " + m.Version
+	}
+	return line + "  (" + about + ")\n"
 }
 
 // runDocsWithLibrary fetches docs for a known library ID. tokens bounds what

@@ -39,6 +39,10 @@ type LocalOptions struct {
 	note   string
 	read   int
 	cached bool
+	// scope is the URL below an indexed library's root that the caller
+	// gave as its library (fromIndex): the answer is made from the pages
+	// at or under it only ("" for the whole library).
+	scope string
 }
 
 type localOptionsKey struct{}

@@ -299,7 +299,7 @@ func TestGatherPool(t *testing.T) {
 		{Page: evRoot + "c", Heading: "Retries in v5", Crumbs: []string{"Migrating to v5", "Retries in v5"}, Text: "Retry failed requests with max_retries.", CrossVersion: "5"},
 		evSection("d", 0, "", []string{"Forms"}, "Call `form.validateField('name')` to check one field."),
 	})
-	g, err := l.gather(lib, "retry failed requests max_retries")
+	g, err := l.gather(lib, "retry failed requests max_retries", nil)
 	if err != nil || len(g.pool) == 0 || poolURLs(g)[0] != "b" || g.pool[0].score != 1 || g.pool[0].via != "question" {
 		t.Fatalf("pool = %v %v", poolURLs(g), err)
 	}
@@ -323,7 +323,7 @@ func TestGatherIdentifier(t *testing.T) {
 		evSection("d", 0, "", []string{"Forms"}, "Call `form.validateField('name')` to check one field."),
 	})
 	for _, q := range []string{"validateField", "validate field", "form.validateField"} {
-		if g, err := l.gather(lib, q); err != nil || len(g.pool) == 0 || poolURLs(g)[0] != "d" {
+		if g, err := l.gather(lib, q, nil); err != nil || len(g.pool) == 0 || poolURLs(g)[0] != "d" {
 			t.Errorf("%q: pool = %v %v", q, poolURLs(g), err)
 		}
 	}
@@ -337,7 +337,7 @@ func TestGatherPriors(t *testing.T) {
 		evSection("guide/route-guards", 0, "", []string{"Route guards"}, "Add a route guard to run a function before navigation."),
 		evSection("guide/install", 0, "", []string{"Install"}, "Use the installer you want."),
 	})
-	g, err := l.gather(lib, "how do I use a route guard")
+	g, err := l.gather(lib, "how do I use a route guard", nil)
 	if err != nil || len(g.pool) == 0 || poolURLs(g)[0] != "guide/route-guards" {
 		t.Fatalf("pool = %v %v", poolURLs(g), err)
 	}
@@ -359,7 +359,7 @@ func TestGatherTermLists(t *testing.T) {
 		secs = append(secs, evSection(fmt.Sprintf("gamma/%d", i), 0, "", []string{fmt.Sprintf("Other %d", i)}, "This long section names gamma once."+filler))
 	}
 	l, lib := evLocal(t, secs)
-	g, err := l.gather(lib, "alpha beta gamma")
+	g, err := l.gather(lib, "alpha beta gamma", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -592,7 +592,7 @@ func TestGatherScoresEveryPoolSection(t *testing.T) {
 		secs = append(secs, evSection(fmt.Sprintf("gamma/%d", i), 0, "", []string{fmt.Sprintf("Other %d", i)}, "This long section names gamma once."+filler))
 	}
 	l, lib := evLocal(t, secs)
-	g, err := l.gather(lib, "alpha beta gamma")
+	g, err := l.gather(lib, "alpha beta gamma", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -695,7 +695,7 @@ func TestHostNameGather(t *testing.T) {
 		evSection("a", 0, "", []string{"Network"}, "Allow outbound HTTPS to api-x1.duosecurity.com from the host."),
 		evSection("b", 0, "", []string{"Domains"}, "Any .com domain will do, and com is a word."),
 	})
-	g, err := l.gather(lib, "duosecurity.com unreachable")
+	g, err := l.gather(lib, "duosecurity.com unreachable", nil)
 	if err != nil || len(g.terms) != 2 || g.terms[0].term != "duosecurity.com" || g.terms[0].sections != 1 || len(g.pool) != 1 {
 		t.Fatalf("terms %+v pool %v %v", g.terms, poolURLs(g), err)
 	}

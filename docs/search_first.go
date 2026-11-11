@@ -160,13 +160,34 @@ func (s *SearchFirst) GetDocs(ctx context.Context, library, query string, tokens
 	return o.Results, o.Err()
 }
 
-// ResolveLibrary resolves a name to its docs root (Web.ResolveLibrary).
+// ResolveLibrary resolves a name to its docs roots; see ResolveSelect.
 func (s *SearchFirst) ResolveLibrary(ctx context.Context, name string, limit int) ([]LibraryMatch, error) {
-	return s.web.ResolveLibrary(ctx, name, limit)
+	o := s.ResolveSelect(ctx, name, limit)
+	return o.Matches, o.Err()
 }
 
-// ResolveSelect resolves a name to its docs root (Web.ResolveLibrary).
+// ResolveSelect resolves a name to its docs roots: the indexed libraries
+// it names, with no network (local_resolve.go; an empty name lists every
+// one); when none, the roots a resolution finds (Web.ResolveLibrary). A
+// caller that carries its options (the CLI, MCP) caps the indexed ones
+// only by the limit it gives.
 func (s *SearchFirst) ResolveSelect(ctx context.Context, name string, limit int) Outcome {
+	indexed, err := s.local.resolveIndexed(name)
+	if err != nil {
+		return Resolved(SearchBackend, nil, err)
+	}
+	if len(indexed) > 0 {
+		if opts, ok := localOptionsFrom(ctx); ok {
+			limit = opts.Limit
+		}
+		if limit > 0 && len(indexed) > limit {
+			indexed = indexed[:limit]
+		}
+		return Resolved(SearchBackend, indexed, nil)
+	}
+	if strings.TrimSpace(name) == "" {
+		return Resolved(SearchBackend, nil, fmt.Errorf("search: no library is indexed (ketch docs index <docs-url>); give a library name to resolve its docs root: %w", ErrNotIndexed))
+	}
 	matches, err := s.web.ResolveLibrary(ctx, name, limit)
 	return Resolved(SearchBackend, matches, err)
 }
@@ -681,7 +702,7 @@ func searchProvider() Provider {
 	return Provider{
 		ID:          SearchBackend,
 		Name:        "Search",
-		LibraryHelp: "a docs URL to search within, or a library name or name@version to prefer; a library indexed with ketch docs index answers offline",
+		LibraryHelp: "a docs root as resolve lists it, or a library name or name@version to prefer; a URL below an indexed root narrows the answer to the pages under it (scope), a docs URL not indexed is searched within; a library indexed with ketch docs index answers offline",
 		Usable:      func(*config.Config) bool { return true },
 		New:         func(c *config.Config, deps Deps) (Searcher, error) { return newSearchFirstFromConfig(c, deps), nil },
 		Probe:       probeSearch,

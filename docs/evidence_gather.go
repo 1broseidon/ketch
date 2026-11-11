@@ -91,8 +91,10 @@ func evidenceTerms(q rankQuery) []evidenceTerm {
 }
 
 // gather collects the pool of lib's sections for query, with the terms'
-// counts.
-func (l *Local) gather(lib docsindex.Library, query string) (*gathered, error) {
+// counts: the pool from the sections of scope alone when it is not nil,
+// the counts the library's, and each written term's count under scope
+// beside them.
+func (l *Local) gather(lib docsindex.Library, query string, scope *docsindex.Scope) (*gathered, error) {
 	q := newRankQuery(query)
 	g := &gathered{query: q, terms: evidenceTerms(q)}
 	g.written = writtenTerms(query, g.terms)
@@ -127,12 +129,15 @@ func (l *Local) gather(lib docsindex.Library, query string) (*gathered, error) {
 		}
 		writtenAt[i] = k
 	}
-	hits, err := l.store.SearchEach(lib.Key, queries, ftsWeights)
+	hits, err := l.searchIn(lib, scope, queries)
 	if err != nil {
 		return nil, err
 	}
 	n, err := l.store.Counts(lib.Key, counts)
 	if err != nil {
+		return nil, err
+	}
+	if err := l.countInScope(lib, scope, g.written); err != nil {
 		return nil, err
 	}
 	g.sections = n[0]
@@ -157,6 +162,35 @@ func (l *Local) gather(lib docsindex.Library, query string) (*gathered, error) {
 		g.pool[i].Section = cleanSection(g.pool[i].Section)
 	}
 	return g, nil
+}
+
+// searchIn runs the full-text queries over lib's sections, or scope's
+// alone when it is not nil.
+func (l *Local) searchIn(lib docsindex.Library, scope *docsindex.Scope, queries []docsindex.FTSQuery) ([][]docsindex.Hit, error) {
+	if scope != nil {
+		return l.store.SearchEachIn(lib.Key, *scope, queries, ftsWeights)
+	}
+	return l.store.SearchEach(lib.Key, queries, ftsWeights)
+}
+
+// countInScope counts each written term's sections under scope, when
+// there is one.
+func (l *Local) countInScope(lib docsindex.Library, scope *docsindex.Scope, written []writtenTerm) error {
+	if scope == nil {
+		return nil
+	}
+	matches := make([]string, len(written))
+	for i, wt := range written {
+		matches[i] = wt.match
+	}
+	in, err := l.store.CountsIn(lib.Key, *scope, matches)
+	if err != nil {
+		return err
+	}
+	for i := range written {
+		written[i].inScope = in[i]
+	}
+	return nil
 }
 
 // oneAddress makes a page the library stores at two addresses (x and
