@@ -229,7 +229,7 @@ func TestFoldLineSkipsPrinted(t *testing.T) {
 	lib := docsindex.Library{Root: evRoot}
 	r := evRanked(s, g, 600, 0)
 	printSections(lib, s, r, HintNone)
-	res := fitResults(lib, s, r, HintNone)
+	res, _ := fitResults(lib, s, r, HintNone, nil)
 	if len(res) != 2 || !res[0].Truncated || res[1].Truncated {
 		t.Fatalf("want P cut and Q whole: %+v", res)
 	}
@@ -543,7 +543,7 @@ func TestEvidenceDefaults(t *testing.T) {
 	if o.Status != Found || len(o.Results) == 0 {
 		t.Fatalf("outcome = %+v", o)
 	}
-	total := estimateTokens(NewFrontmatter("default form action POST", SearchBackend, "", o).Render() + RenderAnswer(o.Results, HintNone))
+	total := estimateTokens(NewFrontmatter("default form action POST", SearchBackend, "", o).Render() + RenderAnswer(o.Results, HintNone) + DefinedInLines(o.DefinedIn))
 	if total > localTokens {
 		t.Errorf("default answer %d tokens", total)
 	}
@@ -864,7 +864,8 @@ func checkRendered(t *testing.T, lib docsindex.Library, s *sorted, r *ranked) {
 	for _, pl := range r.plans {
 		used += pl.cost
 	}
-	total := estimateTokens(RenderAnswer(fitResults(lib, s, r, HintNone), HintNone))
+	res, _ := fitResults(lib, s, r, HintNone, nil)
+	total := estimateTokens(RenderAnswer(res, HintNone))
 	if used != r.used || total > used || used-total > 4*len(r.plans) || used > r.budget || len(r.dropped) != 0 {
 		t.Errorf("used %d (%d), rendered %d, dropped %d", used, r.used, total, len(r.dropped))
 	}
@@ -944,9 +945,9 @@ func TestSplitEntryLines(t *testing.T) {
 }
 
 // printedTokens is what a's answer to query from lib prints within opts:
-// its frontmatter and its body.
+// its frontmatter, its body and its defined-in lines.
 func printedTokens(lib docsindex.Library, query string, a *evidenceAnswer, opts LocalOptions) int {
-	return estimateTokens(a.frontmatter(lib, query, opts.note).Render() + RenderAnswer(a.results, opts.Hint))
+	return estimateTokens(a.frontmatter(lib, query, opts.note).Render() + RenderAnswer(a.results, opts.Hint) + DefinedInLines(a.definedIn))
 }
 
 // One page, one address, in the pool: a page the library stores at two

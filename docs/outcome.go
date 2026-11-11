@@ -63,7 +63,10 @@ type Outcome struct {
 	Index    *IndexInfo  `json:"index,omitempty"`
 	Terms    []TermCount `json:"terms,omitempty"`
 	NotFound []string    `json:"not_found,omitempty"`
-	err      error
+	// DefinedIn names where listed terms no printed result defines are
+	// defined (design/docs-evidence.md, Round 8).
+	DefinedIn []DefinedIn `json:"defined_in,omitempty"`
+	err       error
 }
 
 // Err is the error behind a refused or failed outcome, classified by

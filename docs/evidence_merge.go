@@ -9,8 +9,8 @@ import (
 )
 
 // Merge (design/docs-evidence.md, Rank): each plan is printed as one group
-// under its section's heading path, a page's groups together in page
-// order, pages in the order their first section opened. A
+// under its section's heading path, a page's groups together in the
+// order they were taken, pages in the order their first section opened. A
 // whole section is its text. A cut one is its pieces in page order:
 // neighbours joined by the text between them, "…" where text was skipped,
 // rows of one table under its one header; it says how many rows of a
@@ -29,9 +29,10 @@ type group struct {
 }
 
 // groupsOf are the plans as groups in printed order: the groups of one
-// page together, pages in the order of their first group taken, and a
-// page's groups in page order (a child section that outranks its parent
-// prints after it, as the page reads).
+// page together, pages in the order of their first group taken, and
+// groups in the order they were taken within a page (rank order: page
+// order put the fact later on the confirm half, design/docs-evidence.md,
+// Round 7).
 func groupsOf(s *sorted, r *ranked) []group {
 	out := make([]group, len(r.plans))
 	first := map[string]int{} // page: its first plan
@@ -43,10 +44,7 @@ func groupsOf(s *sorted, r *ranked) []group {
 		}
 	}
 	slices.SortStableFunc(out, func(a, b group) int {
-		if c := cmp.Compare(first[s.secs[a.sec].Page], first[s.secs[b.sec].Page]); c != 0 {
-			return c
-		}
-		return cmp.Compare(s.secs[a.sec].Order, s.secs[b.sec].Order)
+		return cmp.Compare(first[s.secs[a.sec].Page], first[s.secs[b.sec].Page])
 	})
 	return out
 }

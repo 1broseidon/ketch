@@ -161,7 +161,7 @@ func TestEvidenceStatus(t *testing.T) {
 }
 
 // An answer prints a page's groups together under its title, pages in
-// the order of their best group and a page's groups in page order;
+// the order of their best group and groups in rank order within a page;
 // a group's heading is its path below the title; a cut group's source
 // says so; one hint line ends an answer with a cut group, in the
 // surface's words, and none ends one without.
@@ -174,7 +174,7 @@ func TestRenderAnswer(t *testing.T) {
 	s := sortPool(secs, evRoot)
 	r := &ranked{plans: []plan{{sec: 2, pieces: []int{s.secs[2].pieces[0]}}, {sec: 1, whole: true}, {sec: 0, whole: true}}}
 	gs := groupsOf(s, r)
-	if len(gs) != 3 || gs[0].sec != 0 || gs[1].sec != 2 || gs[2].sec != 1 {
+	if len(gs) != 3 || gs[0].sec != 2 || gs[1].sec != 0 || gs[2].sec != 1 {
 		t.Fatalf("printed order %+v", gs)
 	}
 	lib := docsindex.Library{Root: evRoot}
@@ -183,8 +183,8 @@ func TestRenderAnswer(t *testing.T) {
 		results = append(results, renderGroup(lib, s, g))
 	}
 	cut := fmt.Sprintf(" (cut, %d of %d tokens)", estimateTokens("A's Y."), estimateTokens("A's Y.\n\nMore of Y, left out."))
-	want := "## Page A\n\nLead of A.\n\nsource: " + evRoot + "a\n\n" +
-		"### Part > Y\n\nA's Y.\n\nsource: " + evRoot + "a#y" + cut + "\n\n" +
+	want := "## Page A\n\n### Part > Y\n\nA's Y.\n\nsource: " + evRoot + "a#y" + cut + "\n\n" +
+		"### " + topOfPage + "\n\nLead of A.\n\nsource: " + evRoot + "a\n\n" +
 		"## Page B\n\n### X\n\nB's X.\n\nsource: " + evRoot + "b#x\n"
 	if got := RenderAnswer(results, HintNone); got != want {
 		t.Errorf("answer:\n%s\nwant:\n%s", got, want)
@@ -194,7 +194,7 @@ func TestRenderAnswer(t *testing.T) {
 		if got != want+"\n"+AnswerHint(style)+"\n" || strings.Count(got, "(cut") != 2 {
 			t.Errorf("style %d:\n%s", style, got)
 		}
-		if whole := RenderAnswer(slices.Delete(slices.Clone(results), 1, 2), style); strings.Contains(whole, "(cut") {
+		if whole := RenderAnswer(results[1:], style); strings.Contains(whole, "(cut") {
 			t.Errorf("no cut group, style %d:\n%s", style, whole)
 		}
 	}

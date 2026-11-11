@@ -35,10 +35,15 @@ import (
 //
 //	full text of a group marked (cut): <the call that returns it>
 //
+//	defined in: <term as written> → <url#anchor of a section defining it>
+//
 // Groups of one page print together under its title, pages in the order
-// of their best group, a page's groups in page order. The last line
+// of their best group, a page's groups in rank order. The last line
 // is printed once, when a group was cut, in the surface's words
-// (HintStyle). The budget covers everything printed.
+// (HintStyle). The defined-in lines follow, one per listed term that no
+// printed section defines (evidence_defined.go): pointers, like the hint
+// line, so they come after the evidence and cost nothing before it. The
+// budget covers everything printed.
 
 // Index kinds, as the index line names them.
 const (
@@ -96,16 +101,21 @@ func (i *IndexInfo) line() string {
 // results and what --json and the docs tool carry as fields, in this
 // order.
 type Frontmatter struct {
-	Query    string      `json:"query,omitempty"`
-	Backend  string      `json:"backend"`
-	Library  string      `json:"library,omitempty"`
-	Version  string      `json:"version,omitempty"`
-	Index    *IndexInfo  `json:"index,omitempty"`
-	Status   Status      `json:"status,omitempty"`
-	Reason   string      `json:"reason,omitempty"`
-	Terms    []TermCount `json:"terms,omitzero"`
-	NotFound []string    `json:"not_found,omitzero"`
-	Note     string      `json:"note,omitempty"`
+	Query   string      `json:"query,omitempty"`
+	Backend string      `json:"backend"`
+	Library string      `json:"library,omitempty"`
+	Version string      `json:"version,omitempty"`
+	Index   *IndexInfo  `json:"index,omitempty"`
+	Status  Status      `json:"status,omitempty"`
+	Reason  string      `json:"reason,omitempty"`
+	Terms   []TermCount `json:"terms,omitzero"`
+	// DefinedIn names, for a listed term that no printed section defines,
+	// a section that does (evidence_defined.go). --json carries it here;
+	// the text prints it after the body (DefinedInLines), not in the
+	// frontmatter.
+	DefinedIn []DefinedIn `json:"defined_in,omitempty"`
+	NotFound  []string    `json:"not_found,omitzero"`
+	Note      string      `json:"note,omitempty"`
 }
 
 // NewFrontmatter is the frontmatter of o, an answer to query from
@@ -123,7 +133,7 @@ func NewFrontmatter(query, backend, library string, o Outcome) Frontmatter {
 		f.Version = o.Results[0].Version
 	}
 	if o.Index != nil {
-		f.Terms, f.NotFound = nonNil(o.Terms), o.NotFound
+		f.Terms, f.NotFound, f.DefinedIn = nonNil(o.Terms), o.NotFound, o.DefinedIn
 		if f.NotFound == nil {
 			f.NotFound = []string{}
 		}
@@ -254,6 +264,21 @@ func RenderAnswer(results []Result, style HintStyle) string {
 	}
 	if h := AnswerHint(style); h != "" && AnyCut(results) {
 		b.WriteString("\n" + h + "\n")
+	}
+	return b.String()
+}
+
+// DefinedInLines is what an answer prints after its body for defs: a
+// blank line, then "defined in: <term> → <url#anchor>" for each; "" for
+// none.
+func DefinedInLines(defs []DefinedIn) string {
+	if len(defs) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString("\n")
+	for _, d := range defs {
+		b.WriteString("defined in: " + d.Term + " → " + d.Section + "\n")
 	}
 	return b.String()
 }

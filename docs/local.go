@@ -126,6 +126,7 @@ func (l *Local) rank(ctx context.Context, lib docsindex.Library, query string, o
 		}
 	}
 	o.Library, o.Index, o.Terms, o.NotFound = lib.Root, a.index, a.terms, a.notFound
+	o.DefinedIn = a.definedIn
 	return o
 }
 

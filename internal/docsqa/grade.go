@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"maps"
 	"slices"
 	"strconv"
 	"strings"
@@ -64,6 +65,10 @@ type trace struct {
 			Section string `json:"section"`
 			Cut     bool   `json:"cut"`
 		} `json:"groups"`
+		DefinedIn []struct {
+			Term    string `json:"term"`
+			Section string `json:"section"`
+		} `json:"defined_in"`
 	} `json:"output"`
 }
 
@@ -105,15 +110,22 @@ type caseResult struct {
 	// lead printed (false for a case of none). LedByCut is every fact
 	// printed or led by a cut group (its source section printed as a group
 	// cut, with its source line; false for a case of none), LedEither Led
-	// or LedByCut. BeforeFact is the tokens printed before the first fact
-	// found in the output starts, nil when none is printed. Groups is how
-	// many groups were printed.
-	Answered   bool `json:"answered"`
-	Led        bool `json:"led"`
-	LedByCut   bool `json:"led_by_cut_group"`
-	LedEither  bool `json:"led_either"`
-	BeforeFact *int `json:"tokens_before_fact"`
-	Groups     int  `json:"groups"`
+	// or LedByCut. LedByDefined is every fact printed or led by a
+	// defined_in entry (its source section is one's target, by page
+	// identity and anchor; false for a case of none). LedAny is every
+	// lead printed, or every fact printed or led by a cut group or a
+	// defined_in entry. BeforeFact is the tokens printed before the first
+	// fact found in the output starts, nil when none is printed. Groups is
+	// how many groups were printed, DefinedIn the defined_in entries' targets.
+	Answered     bool     `json:"answered"`
+	Led          bool     `json:"led"`
+	LedByCut     bool     `json:"led_by_cut_group"`
+	LedByDefined bool     `json:"led_by_defined_in"`
+	LedEither    bool     `json:"led_either"`
+	LedAny       bool     `json:"led_any"`
+	BeforeFact   *int     `json:"tokens_before_fact"`
+	Groups       int      `json:"groups"`
+	DefinedIn    []string `json:"defined_in,omitempty"`
 }
 
 // leadResult is whether the output prints a lead.
@@ -155,8 +167,12 @@ type factResult struct {
 	Output  bool `json:"output"`
 	Printed bool `json:"printed"`
 	// CutGroup: every quote (of one alternative) is printed or its source
-	// section is printed as a cut group.
-	CutGroup bool `json:"cut_group"`
+	// section is printed as a cut group. DefinedIn: likewise, printed or
+	// its source section the target of a defined_in entry. Led: printed,
+	// or either.
+	CutGroup  bool `json:"cut_group"`
+	DefinedIn bool `json:"defined_in"`
+	Led       bool `json:"led"`
 }
 
 type pieceInfo struct {
@@ -191,17 +207,7 @@ func grade(r *caseResult, c qaCase, t *trace) {
 		}
 	}
 	printed, at := normalizeAt(t.Output.Text)
-	r.Facts = []factResult{}
-	r.Answered = len(c.Facts) > 0
-	cut := cutGroups(t, c.Library)
-	r.LedByCut = len(c.Facts) > 0
-	for _, f := range c.Facts {
-		fr := gradeFact(f, t, printed, r.InBudget)
-		fr.CutGroup = ledByCut(f, printed, cut, c.Library)
-		r.Facts = append(r.Facts, fr)
-		r.Answered = r.Answered && fr.Printed
-		r.LedByCut = r.LedByCut && fr.CutGroup
-	}
+	ledFacts := gradeFacts(r, c, t, printed)
 	if first := firstFact(c.Facts, printed); first >= 0 {
 		n := docs.EstimateTokens(t.Output.Text[:at[first]])
 		r.BeforeFact = &n
@@ -213,10 +219,39 @@ func grade(r *caseResult, c qaCase, t *trace) {
 		r.Led = r.Led && ok
 	}
 	r.LedEither = r.Led || r.LedByCut
+	r.LedAny = r.Led || ledFacts
 	r.NotFound = []notFoundResult{}
 	for _, term := range c.NotFound {
 		r.NotFound = append(r.NotFound, notFoundResult{Term: term, Stated: statesNotFound(t.Output.Text, term)})
 	}
+}
+
+// gradeFacts grades c's facts into r: printed, and led by a cut group, by
+// a defined-in line, or by either; it reports every fact printed or led
+// either way (false for a case of none).
+func gradeFacts(r *caseResult, c qaCase, t *trace, printed string) bool {
+	r.Facts = []factResult{}
+	r.Answered = len(c.Facts) > 0
+	cut, defined := cutGroups(t, c.Library), definedTargets(t, c.Library)
+	either := maps.Clone(cut)
+	maps.Copy(either, defined)
+	for _, d := range t.Output.DefinedIn {
+		r.DefinedIn = append(r.DefinedIn, d.Section)
+	}
+	r.LedByCut, r.LedByDefined = len(c.Facts) > 0, len(c.Facts) > 0
+	led := len(c.Facts) > 0
+	for _, f := range c.Facts {
+		fr := gradeFact(f, t, printed, r.InBudget)
+		fr.CutGroup = ledByCut(f, printed, cut, c.Library)
+		fr.DefinedIn = ledByCut(f, printed, defined, c.Library)
+		fr.Led = ledByCut(f, printed, either, c.Library)
+		r.Facts = append(r.Facts, fr)
+		r.Answered = r.Answered && fr.Printed
+		r.LedByCut = r.LedByCut && fr.CutGroup
+		r.LedByDefined = r.LedByDefined && fr.DefinedIn
+		led = led && fr.Led
+	}
+	return led
 }
 
 // statusName is a status as the runner names it: "answered", which
@@ -240,6 +275,16 @@ func cutGroups(t *trace, root string) map[string]bool {
 	return out
 }
 
+// definedTargets are the sections the output's defined_in entries name,
+// keyed as cutGroups keys them.
+func definedTargets(t *trace, root string) map[string]bool {
+	out := map[string]bool{}
+	for _, d := range t.Output.DefinedIn {
+		out[sectionKey(d.Section, root)] = true
+	}
+	return out
+}
+
 // sectionKey is a section reference (url#anchor) as one section of the
 // library at root, however the library stores its page.
 func sectionKey(ref, root string) string {
@@ -248,7 +293,8 @@ func sectionKey(ref, root string) string {
 }
 
 // ledByCut reports a fact one of whose alternatives has every quote
-// printed or its source section printed as a cut group (cut).
+// printed or its source section among cut (the sections printed as cut
+// groups, or those defined_in entries name).
 func ledByCut(f fact, printed string, cut map[string]bool, root string) bool {
 	for _, alt := range f.alternatives() {
 		ok := true
@@ -588,7 +634,11 @@ type totals struct {
 	LedByCut      tally `json:"led_by_cut_group"`
 	LedEither     tally `json:"led_either"`
 	AnsweredOrLed tally `json:"answered_or_led"`
-	MeanTokens    int   `json:"mean_tokens"`
+	// LedByDefined counts the cases with facts led by defined_in entries;
+	// AnsweredOrLedAny those answered, or led any of the three ways.
+	LedByDefined     tally `json:"led_by_defined_in"`
+	AnsweredOrLedAny tally `json:"answered_or_led_any"`
+	MeanTokens       int   `json:"mean_tokens"`
 	// Statuses counts the answered cases (every fact printed) by the
 	// status the output states: a status the caller can trust says
 	// answered when the answer is there.
@@ -630,20 +680,28 @@ func (r *report) total() {
 			}
 			r.Totals.Statuses[c.Status]++
 		}
-		if len(c.Leads) > 0 {
-			r.Totals.Led.add(c.Led)
-		}
-		if len(c.Facts) > 0 {
-			r.Totals.LedByCut.add(c.LedByCut)
-		}
-		if len(c.Facts) > 0 || len(c.Leads) > 0 {
-			r.Totals.LedEither.add(c.Led || c.LedByCut)
-			r.Totals.AnsweredOrLed.add(c.Answered || c.Led || c.LedByCut)
-		}
+		r.Totals.leads(c)
 		r.Totals.MeanTokens += c.Tokens
 	}
 	if len(r.Results) > 0 {
 		r.Totals.MeanTokens /= len(r.Results)
+	}
+}
+
+// leads counts c's leads: by its words, by cut groups, by defined-in
+// lines, and answered or led.
+func (t *totals) leads(c caseResult) {
+	if len(c.Leads) > 0 {
+		t.Led.add(c.Led)
+	}
+	if len(c.Facts) > 0 {
+		t.LedByCut.add(c.LedByCut)
+		t.LedByDefined.add(c.LedByDefined)
+	}
+	if len(c.Facts) > 0 || len(c.Leads) > 0 {
+		t.LedEither.add(c.Led || c.LedByCut)
+		t.AnsweredOrLed.add(c.Answered || c.Led || c.LedByCut)
+		t.AnsweredOrLedAny.add(c.Answered || c.LedAny)
 	}
 }
 

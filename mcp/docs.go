@@ -44,19 +44,22 @@ type DocsInput struct {
 // (NotFound), and when a
 // result was cut, Hint: how to read a cut result in full.
 type DocsOutput struct {
-	Warnings []string            `json:"warnings,omitempty"`
-	Library  string              `json:"library,omitempty"`
-	Version  string              `json:"version,omitempty"`
-	Index    *docs.IndexInfo     `json:"index,omitempty"`
-	Status   docs.Status         `json:"status,omitempty"`
-	Reason   string              `json:"reason,omitempty"`
-	Terms    []docs.TermCount    `json:"terms,omitzero"`
-	NotFound []string            `json:"not_found,omitzero"`
-	Note     string              `json:"note,omitempty"`
-	Hint     string              `json:"hint,omitempty"`
-	Results  []docs.Result       `json:"results,omitempty"`
-	Matches  []docs.LibraryMatch `json:"matches,omitempty"`
-	Backend  string              `json:"backend,omitempty"`
+	Warnings []string         `json:"warnings,omitempty"`
+	Library  string           `json:"library,omitempty"`
+	Version  string           `json:"version,omitempty"`
+	Index    *docs.IndexInfo  `json:"index,omitempty"`
+	Status   docs.Status      `json:"status,omitempty"`
+	Reason   string           `json:"reason,omitempty"`
+	Terms    []docs.TermCount `json:"terms,omitzero"`
+	// DefinedIn names, for a listed term no result defines, a section
+	// that does.
+	DefinedIn []docs.DefinedIn    `json:"defined_in,omitempty"`
+	NotFound  []string            `json:"not_found,omitzero"`
+	Note      string              `json:"note,omitempty"`
+	Hint      string              `json:"hint,omitempty"`
+	Results   []docs.Result       `json:"results,omitempty"`
+	Matches   []docs.LibraryMatch `json:"matches,omitempty"`
+	Backend   string              `json:"backend,omitempty"`
 }
 
 // fromOutcome renders a found or partial outcome, or the local
@@ -66,6 +69,7 @@ func fromOutcome(o docs.Outcome) DocsOutput {
 	if o.Index != nil {
 		f := docs.NewFrontmatter("", docs.SearchBackend, "", o)
 		out.Library, out.Version, out.Index, out.Terms, out.NotFound = f.Library, f.Version, f.Index, f.Terms, f.NotFound
+		out.DefinedIn = f.DefinedIn
 		out.Backend = docs.SearchBackend
 		if docs.AnyCut(o.Results) {
 			out.Hint = docs.AnswerHint(docs.HintMCP)
@@ -87,8 +91,9 @@ func (s *Server) registerDocsTool() {
 		InputSchema: docsInputSchema(),
 		Description: "Search library documentation. The default backend, search, answers from the docs themselves: a library the operator indexed (ketch docs index) answers offline from the local index; otherwise ketch searches the web for the question, picks the documentation site the results agree on, reads the matching pages and keeps them in the local index, so a repeated question answers offline (status partial, with a note naming the site and how to index all of it)." +
 			" An answer says what it read (library; index: kind full or capped, pages, built; or source search and pages_read), its status and reason, terms (the question's rare terms as written: identifiers it writes and words in under 1% of the library's sections or in at most 25 of them, each with the number of sections holding it) and not_found (those no section holds). Status is found (evidence matching the question, not a promise that it answers); partial when not_found is not empty (reason terms_not_found) or the library holds only pages searches read; refused when no distinctive term is in the docs: no results, not_found is the answer (not a tool error)." +
-			" Results are the pieces of sections that name the question (paragraphs, list items, code blocks whole, table rows under their header), verbatim, one result per section in printed order, a page's results together in page order (page_title, heading_path below it, anchors, url, section; rows: how many rows of a table it shows; same_text: where else the same text sits; contents names what a cut result's section holds that it left out; truncated when it was cut, with shown_tokens of section_tokens: how much of its section it shows; a section longer than " + strconv.Itoa(docs.AnswerPageTokens) + " tokens is never shown whole: its result is its best pieces up to that, in page order), at most about 1,800 tokens in all unless tokens is set; limit caps the results. A library indexed at several versions answers from the newest (each result's version says which) unless library names one as name@version." +
+			" Results are the pieces of sections that name the question (paragraphs, list items, code blocks whole, table rows under their header), verbatim, one result per section in printed order, best first, a page's results together (page_title, heading_path below it, anchors, url, section; rows: how many rows of a table it shows; same_text: where else the same text sits; contents names what a cut result's section holds that it left out; truncated when it was cut, with shown_tokens of section_tokens: how much of its section it shows; a section longer than " + strconv.Itoa(docs.AnswerPageTokens) + " tokens is never shown whole: its result is its best pieces up to that, in page order), at most about 1,800 tokens in all unless tokens is set; limit caps the results. A library indexed at several versions answers from the newest (each result's version says which) unless library names one as name@version." +
 			docs.WithLibraryHelp(" library names the library to answer from") + "." +
+			" defined_in lists, for a term in terms that is the first cell of a table row (an option's row) in a section no result shows, that section (term, section: url#anchor to pass as section; at most three)." +
 			" To read a result in full, pass section instead of a query: the url#anchor in the result's section field; when a result was cut, the answer's hint says so once. Use it when a cut result is the right section but the code or detail you need is missing; it reads the local index only (no network, no quota, milliseconds). It returns the section with the subsections under it (an H2 is its whole family), or a page's sections in order for a URL with no anchor: whole when it fits tokens (default 4000), else one page of that size, broken at a block boundary, the result saying page and pages and the hint giving the call for the next page (page=N; a page past the last is [validation]); library is optional (the URL names it); an unknown URL or anchor is [not_found]." +
 			" Backend context7 (or the operator's docs_backend) returns Context7's curated snippets instead; resolve maps a name to " + strings.Join(docs.LibraryProviderNames(), " or ") + " library IDs (docs roots for search), and library takes one. Context7 needs no key: without one it runs on Context7's anonymous quota (about 200 requests a month per IP; a spent quota is an [upstream] error naming when it resets), and a key lifts it." +
 			errTaxonomy,

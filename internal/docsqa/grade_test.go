@@ -101,6 +101,40 @@ func TestLedByCutGroup(t *testing.T) {
 	}
 }
 
+// A fact is led by a defined-in line when its source section is one's
+// target (by page identity), kept apart from a cut group's lead; a case
+// whose facts are led one each way is led either way.
+func TestLedByDefinedIn(t *testing.T) {
+	raw := `{"status": "found", "output": {"text": "---\nquery: q\n---\nbody", "tokens": 20,
+	  "groups": [{"section": "https://x.test/docs/p#a", "cut": true}],
+	  "defined_in": [{"term": "failmode", "section": "https://x.test/docs/o.html#options"}]}}`
+	var tr trace
+	if err := json.Unmarshal([]byte(raw), &tr); err != nil {
+		t.Fatal(err)
+	}
+	const root = "https://x.test/docs/"
+	for _, c := range []struct {
+		facts             []fact
+		defined, cut, any bool
+	}{
+		{[]fact{{Quote: "absent", Source: root + "o#options"}}, true, false, true},
+		{[]fact{{Quote: "absent", Source: root + "p#a"}}, false, true, true},
+		{[]fact{{Quote: "absent", Source: root + "o#options"}, {Quote: "absent", Source: root + "p#a"}}, false, false, true},
+		{[]fact{{Quote: "absent", Source: root + "o#other"}}, false, false, false},
+	} {
+		var r caseResult
+		grade(&r, qaCase{ID: "x", Library: root, Budget: 1800, Facts: c.facts}, &tr)
+		if r.LedByDefined != c.defined || r.LedByCut != c.cut || r.LedAny != c.any || len(r.DefinedIn) != 1 {
+			t.Errorf("facts %+v: defined %v cut %v any %v", c.facts, r.LedByDefined, r.LedByCut, r.LedAny)
+		}
+	}
+	rep := &report{Results: []caseResult{{LedByDefined: true, LedAny: true, Facts: []factResult{{}}}, {Facts: []factResult{{}}}}}
+	rep.total()
+	if rep.Totals.LedByDefined != (tally{1, 2}) || rep.Totals.AnsweredOrLedAny != (tally{1, 2}) || rep.Totals.AnsweredOrLed != (tally{0, 2}) {
+		t.Errorf("totals = %+v", rep.Totals)
+	}
+}
+
 // A fact reports what Rank did with its piece's section, when the trace
 // says.
 func TestGradeSection(t *testing.T) {

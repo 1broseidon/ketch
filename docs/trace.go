@@ -57,10 +57,14 @@ import (
 //	                          with ident (an identifier the question writes), sections (holding any
 //	                          of its forms: match, the full-text query) and distinctive; not_shown:
 //	                          the distinctive ones the library holds that no printed group names in
-//	                          its text or heading path (a measurement: the status does not read it)
+//	                          its text or heading path (a measurement: the status does not read it);
+//	                          defined: each term the frontmatter lists, with the pool sections that
+//	                          define it (sections), whether one of them is printed, and the section
+//	                          its defined_in entry names (line, empty for none)
 //	output                    text exactly as printed to stdout, its estimated tokens (and the body's,
 //	                          after the frontmatter), and the budget the answer was fitted to; index,
-//	                          terms and not_found as the frontmatter states them; groups: each printed
+//	                          terms and not_found as the frontmatter states them, defined_in as the
+//	                          answer's defined-in lines name them; groups: each printed
 //	                          group in printed order with section (url#anchor), page_title,
 //	                          heading_path (below the title), cut, and for a cut group shown_tokens
 //	                          and section_tokens (its text's tokens, its whole section's)
@@ -99,6 +103,14 @@ type traceTerms struct {
 	List     []traceTerm        `json:"list"`
 	Written  []traceWrittenTerm `json:"written"`
 	NotShown []string           `json:"not_shown"`
+	Defined  []traceDefined     `json:"defined"`
+}
+
+type traceDefined struct {
+	Term     string   `json:"term"`
+	Sections []string `json:"sections"`
+	Printed  bool     `json:"printed"`
+	Line     string   `json:"line,omitempty"`
 }
 
 type traceWrittenTerm struct {
@@ -209,6 +221,7 @@ type traceOutput struct {
 	Budget     int          `json:"budget"`
 	Index      *IndexInfo   `json:"index,omitempty"`
 	Terms      []TermCount  `json:"terms,omitempty"`
+	DefinedIn  []DefinedIn  `json:"defined_in,omitempty"`
 	NotFound   []string     `json:"not_found,omitempty"`
 	Groups     []traceGroup `json:"groups,omitempty"`
 }
@@ -262,6 +275,7 @@ func (t *Trace) SetOutcome(backend string, o Outcome) {
 		t.Error = err.Error()
 	}
 	t.Output.Index, t.Output.Terms, t.Output.NotFound, t.Output.Groups = o.Index, o.Terms, o.NotFound, nil
+	t.Output.DefinedIn = o.DefinedIn
 	for _, r := range o.Results {
 		t.Output.Groups = append(t.Output.Groups, traceGroup{Section: r.URL, PageTitle: r.PageTitle, HeadingPath: r.HeadingPath, Cut: r.Truncated,
 			ShownTokens: r.ShownTokens, SectionTokens: r.SectionTokens})
@@ -350,6 +364,25 @@ func (t *Trace) notShown(terms []string) {
 		return
 	}
 	t.Terms.NotShown = append([]string{}, terms...)
+}
+
+// defined records where the listed terms are defined in the pool, and
+// the section each defined_in entry names.
+func (t *Trace) defined(s *sorted, defs []definedTerm) {
+	if t == nil || t.Terms == nil {
+		return
+	}
+	t.Terms.Defined = []traceDefined{}
+	for _, d := range defs {
+		td := traceDefined{Term: d.term, Sections: []string{}, Printed: d.printed}
+		for _, i := range d.defs {
+			td.Sections = append(td.Sections, webSectionOf(s.secs[i].Section, 0).URL())
+		}
+		if d.target >= 0 {
+			td.Line = webSectionOf(s.secs[d.target].Section, 0).URL()
+		}
+		t.Terms.Defined = append(t.Terms.Defined, td)
+	}
 }
 
 // sorted records Sort's pieces.

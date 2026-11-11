@@ -43,14 +43,17 @@ const AnswerPageTokens = answerPageTokens
 // frontmatter lists (shownTerm, with their counts), the distinctive ones
 // it holds nowhere, and the status
 // and reason the terms decide (refused when no distinctive term has a
-// hit: no results; partial when one has none).
+// hit: no results; partial when one has none), and where the listed
+// terms are defined when the answer prints no section that defines them
+// (evidence_defined.go).
 type evidenceAnswer struct {
-	results  []Result
-	terms    []TermCount
-	notFound []string
-	status   Status
-	reason   string
-	index    *IndexInfo
+	results   []Result
+	terms     []TermCount
+	notFound  []string
+	definedIn []DefinedIn
+	status    Status
+	reason    string
+	index     *IndexInfo
 }
 
 // ReasonTermsNotFound is the reason of an answer that names terms of the
@@ -70,7 +73,7 @@ func (a *evidenceAnswer) frontmatter(lib docsindex.Library, query, note string) 
 		nf = []string{}
 	}
 	return Frontmatter{Query: query, Backend: SearchBackend, Library: lib.Root, Version: lib.Version, Index: a.index,
-		Status: a.status, Reason: a.reason, Terms: nonNil(a.terms), NotFound: nf, Note: note}
+		Status: a.status, Reason: a.reason, Terms: nonNil(a.terms), NotFound: nf, DefinedIn: a.definedIn, Note: note}
 }
 
 // evidence answers query from lib within opts, recording each stage in t
@@ -118,8 +121,11 @@ func (l *Local) evidence(lib docsindex.Library, query string, opts LocalOptions,
 	}
 	plan := budget - budget/localTokenMargin - estimateTokens(a.frontmatter(lib, query, opts.note).Render())
 	r := rank(lib, s, g, plan, opts.Limit, opts.Hint)
-	a.results = fitResults(lib, s, r, opts.Hint)
+	var defs []definedTerm
+	a.results, defs = fitResults(lib, s, r, opts.Hint, definitions(s, g.written, g.sections))
+	a.definedIn = definedLines(lib, s, defs)
 	t.ranked(s, g, r)
+	t.defined(s, defs)
 	if t != nil {
 		t.notShown(notShown(g.written, a.results))
 	}
@@ -147,10 +153,12 @@ func rank(lib docsindex.Library, s *sorted, g *gathered, budget, limit int, hint
 	return r
 }
 
-// fitResults renders the plans in printed order; while the printed
-// answer's estimate is over the planned budget (the per-group sums run a
-// little under the joined text's), the last plan opened is dropped.
-func fitResults(lib docsindex.Library, s *sorted, r *ranked, hint HintStyle) []Result {
+// fitResults renders the plans in printed order, with the defined_in
+// lines they leave (pickDefined of defs); while the printed answer's
+// estimate, those lines included, is over the planned budget (the
+// per-group sums run a little under the joined text's), the last plan
+// opened is dropped.
+func fitResults(lib docsindex.Library, s *sorted, r *ranked, hint HintStyle, defs []definedTerm) ([]Result, []definedTerm) {
 	for {
 		groups := groupsOf(s, r)
 		out := make([]Result, len(groups))
@@ -160,9 +168,10 @@ func fitResults(lib docsindex.Library, s *sorted, r *ranked, hint HintStyle) []R
 			shown[i] = out[i]
 			shown[i].URL = shownURL(lib, out[i].URL)
 		}
-		total := estimateTokens(RenderAnswer(shown, hint))
+		picked := pickDefined(s, defs, r.plans)
+		total := estimateTokens(RenderAnswer(shown, hint) + DefinedInLines(definedLines(lib, s, picked)))
 		if total <= r.budget || len(r.plans) <= 1 {
-			return out
+			return out, picked
 		}
 		n := len(r.plans) - 1
 		r.dropped = append(r.dropped, r.plans[n])
