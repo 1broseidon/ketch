@@ -319,6 +319,17 @@ Next, measured under the Protocol:
 - **Status.** Measure whether "a distinctive term that the library has is in nothing printed" separates unanswered cases from answered ones. If it does, that is a second partial reason (`terms_not_shown`). The rename of `answered` is decided in Round 7.
 - **`terms`** lists identifiers the question writes and words in under 1% of the library's sections.
 
+### Round 6
+
+Measured 2026-11-10. No case changed between rounds 5 and 6 on any of the 97.
+
+- **Siblings: rejected.** Every form tied or lost. Siblings that match the same terms are the common case, not the edge: on tune, 317 clusters formed and 32 of the members set aside held a gold quote. A question that names a page's topic matches every subsection of that page. The one confirm run lost a case. Even where the options section rose from 35th to 10th, duo-failmode stayed unanswered: the room freed went to other sections printed whole (602 tokens for one of them).
+- **`terms_not_shown`: rejected.** It marked 5 of 14 unanswered tune cases and 4 of 39 answered ones. Nothing measured separates the cases whose fact is printed from the rest, which is the reason for the rename in Round 7.
+- **`terms` at 1% is too tight.** 31 of 55 tune answers print `terms: {}`; `password`, in 3 of 292 sections, is not listed. It becomes: an identifier the question writes, or a word in under 1% of the library's sections or in at most 25 of them.
+- **Kept:** the same-text line no longer names a section printed in the same answer. The frontmatter's median cost fell from 73.5 to 63.5 tokens.
+
+What three rounds agree on: duo-failmode is lost to whole sections taking the budget, not to where its row ranks. That is the case for Pages.
+
 ### Round 7
 
 Decided on 2026-11-10, after a live run of 12 coding questions through web search (old build 8 answered, round 5 build 9, none lost; results in `/tmp/ketch-code-check`).
@@ -334,6 +345,36 @@ Decided on 2026-11-10, after a live run of 12 coding questions through web searc
 - **Measure.** Page sizes 400, 600, 800 and 1,200 tokens on the tune half, with the 12 live coding questions added to it. A fact that sits in a group printed cut, with its source, counts as led. Reported per size: answered or led, answered alone, tokens before the first fact, tokens printed. Earlier caps lost one or two answers on tune and were dropped; this asks the question again with led counted and the new cases in.
 
 **Order within a page.** When a child section outranks its parent, the fact can land late (Celery: 97 tokens in on the old build, 1,139 on round 5). Measure printing a page's groups in page order against rank order.
+
+**Result**, 2026-11-10. `found`, one page one address, the `terms` rule and `--section` paging (`--page N`, `page: N of M`, a `next page:` line, table headers repeated) are built. Eleven of the 12 live coding questions joined the tune half, which is now 64 cases; with confirm's 44 the set is 108.
+
+| Half | Build | Answered | Led by a cut group | Answered or led | Median tokens before the first fact |
+|---|---|---|---|---|---|
+| tune | old | 39 | 0 | 39 | 187 |
+| tune | round 6 | 48 | 3 | 52 | 258 |
+| tune | round 7, page 400 | 46 | 8 | 55 | 292 |
+| confirm | old | 25 | 0 | 25 | 161 |
+| confirm | round 6 | 31 | 1 | 32 | 127 |
+| confirm | round 7, page 400 | 29 | 3 | 32 | 263 |
+
+Page sizes on tune, answered and answered-or-led: none 48 and 52; 300, 43 and 55; 400, 46 and 55; 600, 46 and 53; 800, 47 and 52; 1,200, 49 and 52.
+
+- **The page size is provisional.** At 400 a page trades answers for leads: on tune two fewer answered and three more answered or led; on confirm two fewer answered and a tie. Every lost answer is led by a cut group with its size, one exact call away. Whether that trade is good is not a question the quote checks can settle. It is settled by the flow tests, where a model makes the calls and the count is calls and tokens to a right answer, run against a build with no page size as well.
+- **Rank order within a page, not page order.** Page order was earlier on tune (287 against 336 tokens before the first fact) and later on confirm (263 against 124). It goes back to rank order.
+- **Pages did not answer duo-failmode** at any size, and the answer printed gives no exact next call: every pointer leads to another distribution's section.
+- **The search path still stores one page at two addresses** (`docs/search_pages.go` tells pages apart by `displayKey`). Gather now treats them as one; the store should not hold both.
+
+### Round 8
+
+**Defined in.** For a rare term the question writes, the place that defines it is worth a line even when its section did not win the budget. A term is defined where it is the first cell of a table row, a definition-list term, or in a section's own heading. When such a section is not among the groups printed, the answer says where it is:
+
+```
+defined in: failmode → https://duo.com/docs/duounix#duo-configuration-options
+```
+
+One line per term at most, for the terms `terms` lists; among several defining sections, the one on a page already printed, else the one Gather ranks highest. This is a lead, not a ranking rule: it adds no section to the walk. Measured under the Protocol with a fact counted as led when its source section is named on such a line.
+
+**Also in this round:** rank order within a page; one address per page at the source, in the search path's store; a build with no page size kept beside the default for the flow tests.
 
 ## Storage
 
