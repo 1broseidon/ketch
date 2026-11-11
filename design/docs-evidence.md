@@ -459,6 +459,19 @@ Today a question answered through web search stores the pages it read as a libra
 4. **An index checks what it cites.** Before printing, any cited page last fetched longer ago than `cache_ttl` is fetched again, at most the handful an answer cites, at once. A changed page is split again and the answer is ranked once more. With no network the answer prints with `stale: unverified, built <date>`. `--offline` skips the check.
 5. **A whole refresh stays manual.** `ketch docs index <site>` again, which already re-sections only changed pages. Pages added to a site since the build are not seen until then; the build date is how a caller knows.
 
+**Built** on 2026-11-11 (branch `feat/docs-storage`), with these measurements from live runs: a first question through web search 1.9 to 2.0 s; the same question again with the network blocked 0.02 to 0.08 s, byte-identical; nothing in the index afterwards; the freshness check added about 0.22 s for three cited pages; with the network blocked the answer printed `stale: unverified, built 2026-11-11`.
+
+How the open points were settled:
+
+- **The pages a question reads** are held in an in-memory store with the index's own schema for the length of the call, so Gather, Sort, Rank and Output are the same code as for an indexed library.
+- **A repeat** is served from a question entry in the page cache (the docs root and the page list) under `cache_ttl`. A refused question is cached too, so a caller repeating it does not search again.
+- **`--section` on a page no index holds** reads it through the page cache and sections it on the fly.
+- **The check writes.** It updates `fetched_at`, and re-sections a changed page. So the rule is worded: only `ketch docs index` adds libraries or pages.
+- **Same source, or no verdict.** A page is checked the way it was stored. A page stored from Markdown or from an `llms-full.txt` chunk is not replaced by its HTML text; if it cannot be read the same way again, it counts as unverified.
+- **A failed check backs off.** A page whose check failed or timed out is not tried again for 15 minutes; answers citing it say `stale: unverified` meanwhile. Otherwise a throttled site would be fetched on every answer.
+- **`cached`.** A repeat says so: `source: search, 24 pages read, cached`.
+- **Libraries a search once built** are ignored when reading and removed by the next build. No release shipped them.
+
 ## QA
 
 A case is a real question with a known answer.
