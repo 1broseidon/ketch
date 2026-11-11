@@ -1,0 +1,52 @@
+[
+  {
+    "id": "duo-failmode",
+    "question": "pam_duo failmode safe secure when Duo service is unreachable",
+    "library": "https://duo.com/docs/",
+    "facts": [
+      {"quote": "fail \"safe\" (allow access) or \"secure\" (deny access)", "source": "https://duo.com/docs/duounix#duo-configuration-options"}
+    ],
+    "not_found": [],
+    "budget": 1800
+  },
+  {
+    "id": "duo-fallback",
+    "question": "Duo Unix pam_duo PAM configuration pam_sss fallback when duosecurity.com cannot be reached",
+    "library": "https://duo.com/docs/",
+    "facts": [
+      {"quote": "fail \"safe\" (allow access) or \"secure\" (deny access)", "source": "https://duo.com/docs/duounix#duo-configuration-options"},
+      {"quote": "the configured failmode is triggered", "source": "https://duo.com/docs/duounix#duo-configuration-options"}
+    ],
+    "leads": ["failmode"],
+    "not_found": ["pam_sss"],
+    "budget": 1800
+  },
+  {
+    "id": "duo-service-err",
+    "question": "pam_duo PAM_SERVICE_ERR return value",
+    "library": "https://duo.com/docs/",
+    "facts": [],
+    "not_found": ["PAM_SERVICE_ERR"],
+    "budget": 1800
+  },
+  {
+    "id": "duo-verified-push",
+    "question": "enable Verified Duo Push for Duo Unix",
+    "library": "https://duo.com/docs/",
+    "facts": [
+      {"quote": "Set `verified_push=yes` in your local Duo configuration", "source": "https://duo.com/docs/duounix#verified-duo-push-for-duo-unix"}
+    ],
+    "not_found": [],
+    "budget": 1800
+  },
+  {
+    "id": "duo-pam-order",
+    "question": "where does pam_duo go in the PAM stack",
+    "library": "https://duo.com/docs/",
+    "facts": [
+      {"quote": "place `pam_duo` directly after `pam_unix`", "source": "https://duo.com/docs/duounix#pam-configuration"}
+    ],
+    "not_found": [],
+    "budget": 1800
+  }
+]
