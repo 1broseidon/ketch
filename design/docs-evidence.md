@@ -376,6 +376,77 @@ One line per term at most, for the terms `terms` lists; among several defining s
 
 **Also in this round:** rank order within a page; one address per page at the source, in the search path's store; a build with no page size kept beside the default for the flow tests.
 
+**Result**, 2026-11-11. Over all 108 cases: answered 75, led 13 (1 by words, 11 by a cut group, 1 by a defined-in line), answered or led 88; the old build 64. Rank order within a page restored confirm's median tokens before the first fact to 124.
+
+- **A definition is an exact first cell.** A table row whose first cell is the term, markup and case aside. The wider rule (a definition-list term, the section's own heading, loose matching) printed lines that were wrong about half the time: `safe` to an RDP safe-mode FAQ, `stack` to a Stack Overflow SSO page. The exact rule printed 3 lines in 108 answers: duo-failmode's (right, and the case is now led), a `kubectl drain` row (plausible), and one wrong.
+- **duo-failmode is led.** The line's target read with `--section` is one page of 2,111 tokens holding the `failmode` and `https_timeout` rows. Two calls, the second exact.
+- **The line goes in the frontmatter**, as `defined_in: {failmode: <url#anchor>}`. The build printed it after the body to save 3 tokens before the first fact on confirm; a caller steers by the frontmatter, and a lead that sits after 1,700 tokens of noise is in the wrong place.
+- **Candidates come from the pool only**, and the pool misses most exact definitions (4 of the 7 tune terms that have one). No case suffers yet. A store query for row keys would fix it and waits for evidence that it matters.
+- **Page size**, both builds from one tree: over 108 cases, 400 answers 75 and leads 13; none answers 79 and leads 6. Still provisional.
+
+## Flows
+
+The model runs the flows; ketch gives it the signals. So the flows are taught where the model reads: the ketch skill file and the MCP tool description. The design note with the diagrams is `ketch-flows` (2026-11-10).
+
+### Recipes
+
+This is the text for the skill file. The MCP description carries the same three recipes in a few lines each, with `docs(...)` calls in place of the commands.
+
+```markdown
+## Docs flows
+
+`ketch docs` prints evidence and a verdict. It has no model: you decide what to do next. Read the frontmatter first.
+
+| You see | It means | Do |
+|---|---|---|
+| `status: found` | evidence matching the question is printed; not a promise that it answers | read the groups |
+| `status: partial (terms_not_found)` | some of your terms are nowhere in this source | read `not_found`; ask another source for those terms |
+| `status: refused` | nothing here matches | stop asking this source |
+| `defined_in: {term: ref}` | where a term is defined, when that section was not printed | `ketch docs --section <ref>` |
+| `(cut, N of M tokens)` on a `source:` line | the group shows part of its section | `ketch docs --section <that source>` if you need the rest |
+| `also in this section: …` | what a cut group left out, by name | use one of those names in your next call |
+| `index: …, built <date>` or `stale: unverified` | how old the evidence is | say so if the answer depends on it being current |
+
+### Lookup
+
+One question about one library or product.
+
+1. `ketch docs "<question>" --library <name or docs URL>`
+2. The fact is printed: answer, citing each `source:`.
+3. The group you need is cut, or `defined_in` names it: `ketch docs --section <ref>` once, then answer.
+4. Otherwise, Follow.
+
+### Follow
+
+The docs use other words than the question.
+
+1. Take one thing the last call printed: a name from an `also in this section:` line, a heading, a `defined_in` target.
+2. Ask again in those words, or read that section with `--section`.
+3. After three calls to one source, stop. Say what you tried and that this source does not cover it.
+
+Every call after the first uses something the last one printed. Do not rephrase blind.
+
+### Survey
+
+The question spans products.
+
+1. Split it by owner. A first call's `not_found` shows which terms belong to another source.
+2. A docs site you do not know: `ketch docs --resolve <name>`.
+3. One Lookup or Follow per source. The calls are independent: run them together.
+4. Combine. Cite each claim's `source:`. Say what no source covered.
+5. A source you will ask again: `ketch docs index <site>` once. It then answers offline.
+```
+
+### Flow tests
+
+The quote checks ask whether one call printed the fact. A flow test asks what the caller needed to get the answer right.
+
+- **Caller.** A model given only the recipes and the `docs` tool of ketch's own MCP server, in a sandbox with built indexes. Sonnet runs every scenario; Haiku runs a sample, as a weaker caller.
+- **Scenario.** A question, the sources it may use, the facts a right answer states, and for some, the fact that no source covers a part of it. About ten per flow, drawn from the open cases and the live coding questions; Survey scenarios need two or three sources.
+- **Measures.** Right or wrong, judged against the scenario's facts; calls made; tokens of tool output read; whether it stopped when the recipes say to stop; whether every claim cites a source that holds it.
+- **Builds.** The default build and the build with no page size, on the same scenarios. This is where the page size is settled.
+- **Gate.** Reported per flow. No release before the Lookup and Follow scenarios are right at a rate we would put in the README, with the median calls beside it.
+
 ## Storage
 
 Agreed on 2026-11-10, the check in point 4 included.
