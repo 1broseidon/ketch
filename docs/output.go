@@ -37,7 +37,7 @@ import (
 //	<contents line: what a cut group left out>
 //	source: <url#anchor> (cut, <tokens shown> of <the section's> tokens)
 //
-//	full text of a group marked (cut): <the call that returns it>
+//	N groups above are cut and their hidden text is unread: <the call that reads it> before stating what it says
 //
 // Groups of one page print together under its title, pages in the order
 // of their best group, a page's groups in rank order. The last line
@@ -184,9 +184,11 @@ func SectionFrontmatter(backend, library string, o Outcome) Frontmatter {
 }
 
 // AnswerJSON is an answer as ketch docs --json prints it: the
-// frontmatter's fields, then the results in printed order.
+// frontmatter's fields, the hint when a result was cut (JSONHint), then
+// the results in printed order.
 type AnswerJSON struct {
 	Frontmatter
+	Hint    string   `json:"hint,omitempty"`
 	Results []Result `json:"results"`
 }
 
@@ -324,27 +326,66 @@ func NearHint(style HintStyle) string {
 	return ""
 }
 
-// AnswerHint is the last line of an answer with a group cut, in style's
-// words: how to get a cut group's full text; "" for HintNone.
-func AnswerHint(style HintStyle) string {
+// AnswerHint is the last line of an answer with cut groups, cut of them,
+// in style's words: their hidden text is unread, and the call that reads
+// it comes before saying what it says (design/docs-evidence.md, Round
+// 12); "" for HintNone or none cut. It states a fact, not an option: a
+// caller offered the full text as an option filled the gap from memory.
+func AnswerHint(style HintStyle, cut int) string {
+	if cut <= 0 {
+		return ""
+	}
 	switch style {
 	case HintCLI:
-		return "full text of a group marked (cut): ketch docs --section <its source>"
+		return cutCount(cut, "group above is", "groups above are") + " cut and " + its(cut) + " hidden text is unread: run ketch docs --section <its source> before stating what it says"
 	case HintMCP:
-		return `full text of a group marked (cut): docs(section="<its source>")`
+		return cutCount(cut, "result is", "results are") + ` truncated and ` + its(cut) + ` hidden text is unread: read docs(section="<its section>") before stating what it says`
 	}
 	return ""
 }
 
+// JSONHint is the hint of an answer printed by --json with cut results,
+// cut of them: AnswerHint's words for results that carry their section.
+func JSONHint(cut int) string {
+	if cut <= 0 {
+		return ""
+	}
+	return cutCount(cut, "result is", "results are") + " truncated and " + its(cut) + " hidden text is unread: run ketch docs --section <its section> before stating what it says"
+}
+
+func cutCount(n int, one, many string) string {
+	if n == 1 {
+		return "1 " + one
+	}
+	return strconv.Itoa(n) + " " + many
+}
+
+func its(n int) string {
+	if n == 1 {
+		return "its"
+	}
+	return "their"
+}
+
+// hintCutPlan is the count an answer's hint is planned with, before the
+// walk knows how many groups it cuts: the plural, the longer wording.
+const hintCutPlan = 2
+
 // AnyCut reports a result that was cut: an answer that ends with its
 // hint line (AnswerHint).
 func AnyCut(results []Result) bool {
+	return CutCount(results) > 0
+}
+
+// CutCount is how many of results were cut.
+func CutCount(results []Result) int {
+	n := 0
 	for _, r := range results {
 		if r.Truncated {
-			return true
+			n++
 		}
 	}
-	return false
+	return n
 }
 
 // RenderAnswer is an answer's body as printed: its groups under their
@@ -366,7 +407,7 @@ func RenderAnswer(results []Result, style HintStyle) string {
 		}
 		b.WriteString(RenderGroup(r, first))
 	}
-	if h := AnswerHint(style); h != "" && AnyCut(results) {
+	if h := AnswerHint(style, CutCount(results)); h != "" {
 		b.WriteString("\n" + h + "\n")
 	}
 	return b.String()

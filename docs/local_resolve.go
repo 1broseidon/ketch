@@ -111,9 +111,12 @@ type NearLibrary struct {
 
 // nearIndexed is the indexed libraries near a library value that names
 // none (design/docs-evidence.md, Round 11), for the caller to pick from,
-// never answered from: for a URL (with its scheme or without), those on
-// its host; else, or when none is, those the value holds loosely
-// (looseNamed). None when more than nearMax are.
+// never answered from: for a URL (with its scheme or without, a Go module
+// path too), those on its host, else those its path names (pathNamed);
+// else, or when none is, those the value holds loosely (looseNamed). A
+// path that names a library keeps its host's name out: github.com/
+// testcontainers/testcontainers-go is near Testcontainers, not GitHub's
+// docs. None when more than nearMax are.
 func nearIndexed(libs []docsindex.Library, value string) []NearLibrary {
 	value = strings.TrimSpace(value)
 	if value == "" {
@@ -132,6 +135,9 @@ func nearIndexed(libs []docsindex.Library, value string) []NearLibrary {
 					found = append(found, l)
 				}
 			}
+			if len(found) == 0 {
+				found = pathNamed(libs, r.u.Path)
+			}
 		}
 	}
 	if len(found) == 0 {
@@ -143,6 +149,34 @@ func nearIndexed(libs []docsindex.Library, value string) []NearLibrary {
 	out := make([]NearLibrary, len(found))
 	for i, l := range found {
 		out[i] = NearLibrary{Title: firstNonEmpty(l.Title, l.SiteName), Library: l.Root}
+	}
+	return out
+}
+
+// pathNamed is the libraries a URL's path names: those one of whose
+// names (libraryNameTiers' first two tiers), title or site name, as a key
+// that is not a generic word, the path's key holds (four letters or more)
+// or one of its segments is (three).
+func pathNamed(libs []docsindex.Library, path string) []docsindex.Library {
+	path = strings.ToLower(path)
+	pk := libraryKey(path)
+	if pk == "" {
+		return nil
+	}
+	segs := map[string]bool{}
+	for _, seg := range strings.Split(path, "/") {
+		segs[libraryKey(seg)] = true
+	}
+	var out []docsindex.Library
+	for _, lib := range libs {
+		primary, secondary, _ := libraryNameTiers(lib)
+		keys := append(append([]string{libraryKey(lib.Title), libraryKey(lib.SiteName)}, primary...), secondary...)
+		for _, k := range keys {
+			if len(k) >= 3 && !genericNames[k] && (len(k) >= 4 && strings.Contains(pk, k) || segs[k]) {
+				out = append(out, lib)
+				break
+			}
+		}
 	}
 	return out
 }

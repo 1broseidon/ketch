@@ -560,6 +560,83 @@ Descriptor words: doc, docs, documentation, guide, guides, reference, project, c
 
 With the network denied, a web search fails, so `indexed_near` reached the callers only in the refusal's error: 19 of the 23 errors named near libraries, and in 15 the caller's next call passed one of their roots (`duo unix` to duo.com/docs/, `mem0ai` to docs.mem0.ai, `https://docs.sqlalchemy.org/en/20/` to /en/21/). The four without one were the MDN URL twice, `jenkins` and a call with no library. The MCP tool description used in this run did not yet name `indexed_near`.
 
+### Round 12: cuts and guidance
+
+**The problem.** In the `ketch-bench` flow run of `694b112`, callers state the required facts in about 90% of runs and are right in about 75%: the gap is a claim the printed text does not support. All 107 runs with facts stated and right false were classified:
+
+| Class | Runs | What happened |
+|---|---|---|
+| Filled a gap | 33 | The claim is about text the output visibly cut. 23: a `…` cut the sentence or row that explains a printed code block or row. 9: a huge section shown as a sliver (an RFC indexed as one section, nginx's 15,919-token Directives section at 400 tokens; one snippet ends mid-sentence). 1: an `also in this section` name not followed. In all 33 the caller had calls left and the hint to read the cut group, and did not use it. |
+| Misread | 16 | 5 at a cut: the cut removed what the next printed line depends on (`…` right before "*or* an object that implements…"; a dropped signature, so the next description reads as the function above's). 3: near-identical sibling sections merged. 8: plain misreading. |
+| Outside knowledge | 41 | Something from memory, mostly true, stated as if the docs said it; 16 weakly invited by a heading, breadcrumb or index entry naming a concept without its text, or a code example with no explanation. |
+| Judge too strict | 17 | Out of scope. |
+
+**Cuts that keep what explains the printed text.** Pieces are still ranked alone; some are no longer printed alone. A piece brings the piece right before it in its section, and a cut group that takes it takes both (at most four pieces, transitively):
+
+- **A code block brings its lead-in**: the piece right before it when that piece ends in a colon ("…using the `terraform providers lock` command:").
+- **A connective brings what it depends on**: a piece opening with `or`, `otherwise`, `alternatively`, `in that case`, `in this case`, `this`, `these` or `the above` (after a list marker or emphasis, case aside) brings the piece before it.
+- **A definition head is one piece with its description**: a one-line paragraph of at most 80 tokens that is not code, a list, a table, a quote or a heading and does not end like a sentence (a signature such as `PIL.ImageOps.fit(image, size, …) → Image`, a term with its type such as `mode string (Optional, default: single)`, a term in code alone on its line) opens the first piece of the prose paragraph after it. A label line before prose ("Menu") is now part of that paragraph's first piece too: requiring a code mark, a parenthesis or an identifier in the head tied on every answer and put the first fact four tokens later on confirm, so the simpler rule stayed.
+- **What a piece brings is charged to the budget, not to the page.** A long section is still cut to 400 tokens of chosen pieces; the lead-ins and heads they bring come on top.
+
+Measured on the docsqa sets (answered, answered or led; tune of 64, confirm of 44) and the bench check tier (tune of 170, confirm of 121, against `baseline-docs-check.json`):
+
+| Build | docsqa tune | docsqa confirm | check tune | check confirm |
+|---|---|---|---|---|
+| `694b112` | 45, 55 | 28, 31 | 116, 135 | 74, 79 |
+| code brings its lead-in, outside the page | 46, 55 | 28, 31 | 119, 135 | 74, 79 |
+| connectives | 45, 55 | 29, 31 | 115, 135 | 75, 79 |
+| definition heads | 46, 55 | 28, 31 | 119, 136 | 74, 79 |
+| all three, outside the page | **48, 55** | **29, 31** | **122, 136** | **75, 79** |
+| all three, charged to the page | 46, 55 | 27, 31 | | |
+| all but the lead-in rule | 47, 55 | 29, 31 | 119, 136 | 75, 79 |
+| all but connectives | 47, 55 | 28, 31 | 122, 136 | 74, 79 |
+| all but heads | 47, 55 | 29, 31 | 119, 135 | 75, 79 |
+| connectives without `this`/`these` | 47, 55 | 29, 31 | 122, 136 | 75, 79 |
+
+Each kept rule loses when taken out. Dropped, each for a loss on a half:
+
+- **A lead-in brings its code**, both directions: docsqa confirm 28 to 27 answered, as a long block paid for by its lead-in pushed the fact out of a 400-token page. With the code outside the page: tune 45 to 44 answered and one case no longer led.
+- **A colon lead-in and whatever block follows travel together**, both directions: confirm 28 to 25. One direction only (any block brings its lead-in, lists and quotes too): check confirm 74 to 73.
+- **A lead-in is never printed alone**, with the kept rules: docsqa tune 48 to 44, check 197 to 186 answered. Lead-ins often hold the fact.
+- **A piece that does not fit with what it brings prints alone**: confirm 29 to 28 with connectives, 27 to 26 with the lead-in rule.
+
+Cost in tokens. Answers fill the budget either way: mean tokens printed moved by one or two (docsqa 1,687 to 1,685 tune, 1,675 to 1,673 confirm; check 1,899 to 1,898). What the rules spend shows as fewer groups: the check tier printed 2,175 groups in 376 answers before and 2,137 with the three rules (the lead-in rule alone 2,152, connectives 2,174, heads 2,180), and 182 cut groups show more than 400 tokens, against 40. Median tokens before the first fact: docsqa 312 to 312.5 on tune, 125 to 126 on confirm; check 250 to 259 on tune, 148 on confirm before and after.
+
+**Mid-sentence cuts.** Only one cause was found: an RFC's HTML is a series of preformatted blocks, one per printed page, so its text is a run of code blocks with a page footer and header between them, and a page break falls inside a sentence. Each page is one piece. Joining adjacent blocks at question time would make the whole RFC one piece; the fix belongs to index time, with the coarse sections below. A scan of the 1,340 `…` gaps in the check tier found no other sentence cut in two: the gaps that end without punctuation follow code, table rows or labels, and those that start in lower case are descriptions whose term line was a label dropped as no piece (nginx's njs reference: `r.requestText`, then "client request body if…"), which the head rule now prints together.
+
+**Replay.** For each run of the classification whose cut is not a huge section (24 filled a gap, 5 misread at a cut), the caller's first call was replayed through the MCP server against the pinned index, network denied, on `694b112` and on this round's build. One misread run (sibling PAM examples relabelled) has no single explaining text; of the other 28, the explaining sentence or row is printed now in 7 and before in none: a code block's lead-in in 5, a connective's antecedent in 1, a definition head in 1. In 10 of those runs the old output printed a piece without what it depends on (code without its lead-in, "This object…" without its object, a description under another function's signature, a bare `Default:`); in the new output that never happens: 7 print the context, 3 no longer print the piece. The 9 huge-section runs print it in neither build, nor do the two Flask runs among the 28 (84 tokens shown of a 5,662-token API section). The kept rules cannot reach the rest: a sentence after a code block, a row of another table, text of another section.
+
+**Guidance.** Two rules of use, in the MCP description, the skill's Docs flows and pi's tool description:
+
+1. Text behind `…`, or in a truncated result, is unread: read it with `section` before stating what it says, or say you did not read it.
+2. Whatever the answer says that no result prints is the caller's own knowledge: label it so, never cite the docs for it.
+
+The second replaces "state only what a result prints; say anything else is not documented here", which asked callers to deny what they know instead of labelling it. The hint states the fact instead of offering an option, once per answer, only when something was cut, with the count:
+
+```
+2 groups above are cut and their hidden text is unread: run ketch docs --section <its source> before stating what it says
+```
+
+MCP `hint`: `2 results are truncated and their hidden text is unread: read docs(section="<its section>") before stating what it says`. `--json` now carries a `hint` too, in the CLI's words with `<its section>`. With `indexed_near`, MCP and `--json` add its line after `; ` as before. The description is 686 estimated tokens (691 before): it dropped "to read one page, use section" (the `section` argument says it), the index line's "or source search" and the Context7 quota's reset detail.
+
+**Bugs.**
+
+- **HTML in code was stripped at question time.** Sort's cleaning removed tags with a class or style attribute inside code blocks (meant for leaked `<span class="toreplace">`), so a Beautiful Soup example printed `# []` where the docs show `# [<p class="body strikeout"></p>]`. The stored text is right. Code blocks are no longer cleaned at all: HTML in them is the example's, and a tag an extractor leaked cannot be told from one. The leaked spans in Duo's code blocks (454 sections of the pin) now print as stored; that leak is an index-time extraction bug, not fixed here. Cost: bs4-mirror goes from answered to led in the check tier, because the real HTML makes its section 786 tokens instead of 496 and it is now cut at 400.
+- **`indexed_near` through a code host's name.** `github.com/testcontainers/testcontainers-go` listed GitHub's own docs through the keyed match on "github". A URL or module path on a host no indexed library is on is now near what its path names first: a library one of whose names, title or site name the path's key holds (four letters or more) or one of its segments is (three letters: `bun` in `uptrace/bun`, not `man` in `slash-commands`). Only when the path names nothing does the loose match run on the whole value, host included, so `go.temporal.io/sdk` still lists Temporal's docs. Dropping the host from the loose match altogether, as first proposed, lost 3 of the 33 unmatched values that mean a library (Slack's API URLs, Temporal's module path) and added 12 listings for values that mean none, through generic path words (`http`, `status`); `socket` sent a Slack URL to a WebSocket library. On the Round 11 measurement set: the library meant is listed for 29 of 33 values before, 30 now; other libraries listed beside it 18 before, 9 now; listings for values that mean none 3 before and after (one AWS URL listing the AWS guides on its host). A repository path that names no indexed library still lists the host's docs.
+- **`resolve` with free text** that matches nothing now ends: "resolve with no name lists every indexed library". It does: 135 libraries on the pin, CLI and MCP.
+- **`defined_in` at an unrelated section.** The term `shutdown` was the first cell of a table of restricted Valkey commands; the exact-first-cell rule has no notion of what the section is about. A defining section must now also name another of the question's distinctive terms, in its text or heading path, when the question has one. Every docsqa and check-tier answer is unchanged. The line is gone from the Heroku question and from 5 check-tier answers (`context` to a Svelte options table twice, `dark` to a Tailwind quick reference, `React` to a Vite template table, `retries` to a RADIUS page); `am` moved from one Stripe tax table to another, still wrong; `duo-failmode`'s and `kubectl drain`'s lines stay, and three wrong ones with them (`silences`, `page`, `Deployment`), whose sections hold another of the question's terms. Requiring a description cell in the defining row instead (three words or more) also removed the Heroku line but kept the Svelte lines.
+
+**Coarse sections**, report only. Sections are cut at index time by `splitSections` (`docs/web_sections.go`), at ATX headings in the extracted Markdown only: H1 to H3 always, deeper headings for an API entry or inside a section over 4,000 bytes. nginx marks each directive with an anchor before a table, with no heading, so `ngx_http_core_module`'s Directives is one section of 62,863 bytes; an RFC's numbered headings are lines inside preformatted text, so each RFC is one section (163,948 bytes for RFC 6749). The pin holds 414 sections over 16,000 bytes, about 4,000 tokens, of 248,158.
+
+A section with no headings past a size could be split at two structural marks the page carries:
+
+- inner anchors whose id names the entry after them: nginx's `client_max_body_size` anchor, with no text, precedes the table whose first code is `client_max_body_size size;`;
+- numbered headings in plain text: a line opening with `4.1.4.` that matches the text of the page's anchor `section-4.1.4` (`4.1.4. "exp" (Expiration Time) Claim`). Joining an RFC's page blocks and dropping the page footers and headers between them belongs to the same pass and removes the mid-sentence cuts.
+
+Each new section takes the anchor's id, so `--section url#anchor` reaches it. Nothing needs fetching: the pinned index's `pages` table holds no page bodies, but the pin's page cache does. It holds, for each fetched page, the extracted Markdown and the page's anchors (id and text), not the raw HTML: 15,056 entries; for nginx's core module 91,280 bytes of Markdown and 159 anchors, its directives among them; for RFC 7519, 63,227 bytes and 127 anchors with section numbers and titles. A re-split is a rebuild from that cache into a new pin, not a change to the current one.
+
+**Tests changed on purpose.** `TestSplitText` and `TestSplitParagraphs`: a label line before prose heads that paragraph instead of being dropped. `TestCleanText`: code blocks keep their HTML. `TestEvidenceDefinedIn`: its options row now names the question's other term. The hint tests: the new wording, with a count.
+
 ## Storage
 
 Agreed on 2026-11-10, the check in point 4 included.

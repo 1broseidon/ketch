@@ -189,7 +189,7 @@ func TestRenderAnswer(t *testing.T) {
 	}
 	for _, style := range []HintStyle{HintCLI, HintMCP} {
 		got := RenderAnswer(results, style)
-		if got != want+"\n"+AnswerHint(style)+"\n" || strings.Count(got, "(cut") != 2 {
+		if got != want+"\n"+AnswerHint(style, 1)+"\n" || strings.Count(got, "(cut") != 1 {
 			t.Errorf("style %d:\n%s", style, got)
 		}
 		if whole := RenderAnswer(results[1:], style); strings.Contains(whole, "(cut") {
@@ -199,8 +199,24 @@ func TestRenderAnswer(t *testing.T) {
 	if got := headingBelow(evSection("m", 0, "d", []string{"Module m", "Module m", "Directives"}, "x")); !slices.Equal(got, []string{"Directives"}) {
 		t.Errorf("a heading repeating the title: %q", got)
 	}
-	if !strings.Contains(AnswerHint(HintCLI), "ketch docs --section") || !strings.Contains(AnswerHint(HintMCP), "docs(section=") || AnswerHint(HintNone) != "" {
-		t.Error("hint wording")
+	for _, c := range []struct {
+		style HintStyle
+		cut   int
+		want  string
+	}{
+		{HintCLI, 1, "1 group above is cut and its hidden text is unread: run ketch docs --section <its source> before stating what it says"},
+		{HintCLI, 3, "3 groups above are cut and their hidden text is unread: run ketch docs --section <its source> before stating what it says"},
+		{HintMCP, 1, `1 result is truncated and its hidden text is unread: read docs(section="<its section>") before stating what it says`},
+		{HintMCP, 2, `2 results are truncated and their hidden text is unread: read docs(section="<its section>") before stating what it says`},
+		{HintCLI, 0, ""},
+		{HintNone, 2, ""},
+	} {
+		if got := AnswerHint(c.style, c.cut); got != c.want {
+			t.Errorf("AnswerHint(%d, %d) = %q, want %q", c.style, c.cut, got, c.want)
+		}
+	}
+	if got := JSONHint(2); got != "2 results are truncated and their hidden text is unread: run ketch docs --section <its section> before stating what it says" || JSONHint(0) != "" {
+		t.Errorf("JSONHint = %q", got)
 	}
 }
 

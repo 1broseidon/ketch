@@ -191,7 +191,7 @@ func (s *SearchFirst) ResolveSelect(ctx context.Context, name string, limit int)
 	if strings.ContainsAny(strings.TrimSpace(name), " \t") {
 		// A name of several words is a product's name, not a package
 		// registries hold: the index is all that can answer it.
-		return Resolved(SearchBackend, nil, fmt.Errorf("search: no indexed library is named %q, and a name with spaces is not a package name to resolve: give a package name or a docs URL: %w", name, ErrNotIndexed))
+		return Resolved(SearchBackend, nil, fmt.Errorf("search: no indexed library is named %q, and a name with spaces is not a package name to resolve: give a package name or a docs URL; resolve with no name lists every indexed library: %w", name, ErrNotIndexed))
 	}
 	matches, err := s.web.ResolveLibrary(ctx, name, limit)
 	return Resolved(SearchBackend, matches, err)

@@ -145,7 +145,8 @@ func TestNearLine(t *testing.T) {
 // A resolve name with spaces is answered from the index, compared as a
 // key (vercel ai sdk holds AI SDK); when nothing indexed matches it, the
 // refusal says so without going to the registries, which take package
-// names only.
+// names only, and says that resolve with no name lists every indexed
+// library, which it does.
 func TestResolveNameWithSpaces(t *testing.T) {
 	s, searches := nearSearchFirst(t, exampleHits())
 	ctx := WithLocalOptions(context.Background(), LocalOptions{})
@@ -153,10 +154,52 @@ func TestResolveNameWithSpaces(t *testing.T) {
 		t.Errorf("vercel ai sdk = %v (%v)", indexedIDs(o.Matches), o.Err())
 	}
 	o := s.ResolveSelect(ctx, "zzz qqq", 5)
-	if o.Status != Refused || o.Kind().String() != "not_found" || !strings.Contains(o.Err().Error(), "not a package name") {
+	if o.Status != Refused || o.Kind().String() != "not_found" || !strings.Contains(o.Err().Error(), "not a package name") ||
+		!strings.Contains(o.Err().Error(), "resolve with no name lists every indexed library") {
 		t.Errorf("unindexed name with spaces = %s %v", o.Status, o.Err())
+	}
+	if o := s.ResolveSelect(ctx, "", 0); o.Err() != nil || len(o.Matches) == 0 {
+		t.Errorf("resolve with no name = %v (%v), want every indexed library", indexedIDs(o.Matches), o.Err())
 	}
 	if searches() != 0 {
 		t.Errorf("resolve searched %d times", searches())
+	}
+}
+
+// A URL or module path on a host no indexed library is on is near what its
+// path names, not what its host names: a repository on a code host lists
+// the project's docs, not the code host's own. A three-letter name counts
+// only as a whole path segment. A path that names nothing leaves the
+// value's loose match as it was, host included.
+func TestNearPathOverHost(t *testing.T) {
+	lib := func(root, title string) docsindex.Library {
+		return docsindex.Library{Key: root, Root: root, Library: root, Title: title, SiteName: title, Format: docsindex.FormatVersion}
+	}
+	libs := []docsindex.Library{
+		lib("https://docs.github.test/en/actions/", "GitHub"),
+		lib("https://golang.testcontainers.test/", "Testcontainers for Go"),
+		lib("https://bun.uptrace.test/", "Bun"),
+		lib("https://docs.temporal.test/", "Temporal"),
+		lib("https://www.freedesktop.test/software/systemd/man/", "systemd.index"),
+	}
+	for _, c := range []struct {
+		value string
+		want  []string
+	}{
+		{"github.test/testcontainers/testcontainers-go/modules/compose", []string{"https://golang.testcontainers.test/"}},
+		{"https://github.test/testcontainers/testcontainers-go", []string{"https://golang.testcontainers.test/"}},
+		{"github.test/uptrace/bun", []string{"https://bun.uptrace.test/"}},
+		{"go.temporal.test/sdk", []string{"https://docs.temporal.test/"}},
+	} {
+		var got []string
+		for _, n := range nearIndexed(libs, c.value) {
+			got = append(got, n.Library)
+		}
+		if !slices.Equal(got, c.want) {
+			t.Errorf("nearIndexed(%q) = %v, want %v", c.value, got, c.want)
+		}
+	}
+	if got := pathNamed(libs, "/interactivity/slash-commands"); len(got) != 0 {
+		t.Errorf("a three-letter name inside a word names %v", got)
 	}
 }

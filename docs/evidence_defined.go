@@ -12,7 +12,9 @@ import (
 // frontmatter's terms lists, the section that defines it is worth naming
 // even when it did not win the budget. A pool section defines a term when
 // a table row's first cell is the term (definesExactly: markup, a call's
-// arguments and a flag's dashes aside). A cell that merely holds the term,
+// arguments and a flag's dashes aside) and the section names another of
+// the question's distinctive terms, when it has one (reachesOther, Round
+// 12). A cell that merely holds the term,
 // a definition-list term and the section's own heading were measured as
 // well (design/docs-evidence.md, Round 8): they won one case more on the
 // tune half and none on confirm, and about half the lines they printed
@@ -51,19 +53,44 @@ type definedTerm struct {
 }
 
 // definitions finds, for each written term the frontmatter's terms lists
-// (listedTerms), the pool sections of s defining it.
+// (listedTerms), the pool sections of s defining it that the question's
+// other terms reach (reachesOther): a table whose first cell is the term
+// in a section about something else (SHUTDOWN in a list of restricted
+// commands, for a question about a shutdown timeout) defines nothing the
+// question asks.
 func definitions(s *sorted, wts []writtenTerm, n int) []definedTerm {
 	var out []definedTerm
 	for _, wt := range listedTerms(wts, n) {
 		d := definedTerm{term: wt.text, target: -1}
 		for i := range s.secs {
-			if definesTerm(s, i, wt) {
+			if definesTerm(s, i, wt) && reachesOther(s, i, wts, wt) {
 				d.defs = append(d.defs, i)
 			}
 		}
 		out = append(out, d)
 	}
 	return out
+}
+
+// reachesOther reports section i of s naming, in its text or heading path,
+// a distinctive written term the library holds other than wt; true when
+// the question has no such term (design/docs-evidence.md, Round 12).
+func reachesOther(s *sorted, i int, wts []writtenTerm, wt writtenTerm) bool {
+	var others []writtenTerm
+	for _, o := range wts {
+		if o.text != wt.text && o.distinctive && o.sections > 0 {
+			others = append(others, o)
+		}
+	}
+	if len(others) == 0 {
+		return true
+	}
+	sec := s.secs[i]
+	toks := pieceTokens(sec.Text)
+	for t := range headingSet(append(append([]string{}, sec.Crumbs...), sec.Heading)...) {
+		toks[t] = true
+	}
+	return slices.ContainsFunc(others, func(o writtenTerm) bool { return namesTerm(toks, o) })
 }
 
 // listedTerms are the written terms of a library of n sections that the

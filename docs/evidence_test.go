@@ -44,20 +44,21 @@ func evRanked(s *sorted, g *gathered, budget, limit int) *ranked {
 	return r
 }
 
-// Cleaning takes out what extraction leaked, and nothing else: tags keep
-// their text, <br></br> is one line break (in a table row the break a cell
-// holds), a code block loses only presentational markup and an HTML block
-// none, badge and tracking image lines go, escapes that change nothing go
-// but inline code and meaningful escapes stay. It is pure: cleaning twice
-// is cleaning once.
+// Cleaning takes out what extraction leaked, and nothing else: tags in
+// prose keep their text, <br></br> is one line break (in a table row the
+// break a cell holds), a code block is never touched (its HTML is the
+// example's: a parser's output in a comment), badge and tracking image
+// lines go, escapes that change nothing go but inline code and meaningful
+// escapes stay. It is pure: cleaning twice is cleaning once.
 func TestCleanText(t *testing.T) {
 	for _, c := range []struct{ in, want string }{
 		{`Set <span class="toreplace">KEY</span> here.`, "Set KEY here."},
 		{"one<br></br>two", "one\ntwo"},
 		{"| a | x<br></br>y |", "| a | x<br>y |"},
-		{"```\nikey = <span class=\"toreplace\">INTEGRATION_KEY</span>\n<span class=\"variable\">auth requisite\nauth sufficient pam_duo.so</span>\nend<br/>line\n```",
-			"```\nikey = INTEGRATION_KEY\nauth requisite\nauth sufficient pam_duo.so\nend\nline\n```"},
+		{"```\nikey = <span class=\"toreplace\">INTEGRATION_KEY</span>\nend<br/>line\n```", "```\nikey = <span class=\"toreplace\">INTEGRATION_KEY</span>\nend<br/>line\n```"},
+		{"```\ncss_soup.find_all(\"p\", class_=\"body\")\n# [<p class=\"body strikeout\"></p>]\n```", "```\ncss_soup.find_all(\"p\", class_=\"body\")\n# [<p class=\"body strikeout\"></p>]\n```"},
 		{"```html\n<span class=\"x\">a</span>\n```", "```html\n<span class=\"x\">a</span>\n```"},
+		{"Text <b>bold</b>\n\n```py\n# [<b class=\"x\">y</b>]\n```\n\nAfter <i>it</i>.", "Text bold\n\n```py\n# [<b class=\"x\">y</b>]\n```\n\nAfter it."},
 		{"```\ngit clone <url>\nconst a = <div>x</div>\n```", "```\ngit clone <url>\nconst a = <div>x</div>\n```"},
 		{"Run ketch docs <query> now.", "Run ketch docs <query> now."},
 		{"Intro\n[![build](https://ci.test/b.svg)](https://ci.test) [![cov](https://c.test/c.svg)](https://c.test)\n![](https://t.test/p.gif)\nText", "Intro\nText"},
@@ -86,7 +87,8 @@ func TestCleanText(t *testing.T) {
 // blocks with their tab label, notes and table rows; a table is never one
 // piece, each body row keeping its table (whose header row is its
 // context), a row whose first cell is code an option row; a delimiter row
-// in the body is no row; labels are no piece.
+// in the body is no row; a label before code is the code's, and a short
+// line that does not end like a sentence heads the paragraph after it.
 func TestSplitText(t *testing.T) {
 	text := "Configure the module:\n\n| Key | Required? | Description |\n|---|---|---|\n| `failmode` | Optional | Fail safe or secure. |\n| Timeout | Optional | Seconds to wait. |\n|---|\n\n" +
 		"Steps:\n\n1. Install it.\n2. Configure it.\n\n- one item\n  continued\n- two\n\nNote: Restart after changes.\n\n> **Warning:** Back up first.\n\n" +
@@ -109,7 +111,7 @@ func TestSplitText(t *testing.T) {
 		"note:> **Warning:** Back up first.",
 		"prose:Run this:",
 		"example:shell\n\n```sh\nmake install\n```",
-		"prose:A sentence here. Another one follows.",
+		"prose:Short label\n\nA sentence here. Another one follows.",
 	}
 	if !slices.Equal(got, want) {
 		t.Fatalf("pieces:\n got %q\nwant %q", got, want)
@@ -561,7 +563,8 @@ func compactSectionsUnder(page string) []docsindex.Section {
 }
 
 // A paragraph is one piece; one past sortParagraphTokens is cut into its
-// sentences, and a label paragraph is none.
+// sentences, and a label paragraph is none unless it heads the paragraph
+// after it.
 func TestSplitParagraphs(t *testing.T) {
 	short := "First sentence here. Second sentence here.\nSame paragraph, next line."
 	if ps, _ := splitText(short); len(ps) != 1 || ps[0].kind != kindProse || ps[0].text != short {
@@ -574,8 +577,11 @@ func TestSplitParagraphs(t *testing.T) {
 	if ps, _ := splitText(long); len(ps) != 20 || ps[0].text != "This sentence has a few more words in it." {
 		t.Errorf("long paragraph: %d pieces, first %q", len(ps), ps[0].text)
 	}
-	if ps, _ := splitText("Menu\n\nA real sentence follows."); len(ps) != 1 || ps[0].text != "A real sentence follows." {
-		t.Errorf("label: %+v", ps)
+	if ps, _ := splitText("Menu\n\nA real sentence follows."); len(ps) != 1 || ps[0].text != "Menu\n\nA real sentence follows." {
+		t.Errorf("head: %+v", ps)
+	}
+	if ps, _ := splitText("Menu\n\n- an item"); len(ps) != 1 || ps[0].text != "- an item" {
+		t.Errorf("label before a list: %+v", ps)
 	}
 }
 

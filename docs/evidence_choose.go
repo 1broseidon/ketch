@@ -14,6 +14,7 @@ type plan struct {
 	whole  bool
 	pieces []int
 	cost   int
+	with   []int // pieces printed only because a chosen piece brings them (unitOf): not charged to the page
 }
 
 // ranked is Rank's output: the terms' weights and which are distinctive,
@@ -159,7 +160,12 @@ func (p *planner) open(i, id int) (plan, bool) {
 			return pl, true
 		}
 	}
-	pl := plan{sec: i, pieces: []int{id}}
+	pl := plan{sec: i, pieces: unitOf(p.s, id)}
+	for _, w := range pl.pieces {
+		if w != id {
+			pl.with = append(pl.with, w)
+		}
+	}
 	pl.cost = p.render(pl) + p.overhead(pl)
 	return pl, pl.cost <= p.left || len(p.r.plans) == 0
 }
@@ -173,7 +179,7 @@ func (p *planner) overhead(pl plan) int {
 		n += estimateTokens("## "+pageTitle(sec.Section)+"\n\n") + 1
 	}
 	if !pl.whole && !p.cut {
-		n += hintTokens(AnswerHint(p.hint))
+		n += hintTokens(AnswerHint(p.hint, hintCutPlan))
 	}
 	return n
 }
@@ -185,10 +191,16 @@ func (p *planner) grow(pl *plan, id int) bool {
 	if pl.whole {
 		return true
 	}
-	grown := plan{sec: pl.sec, pieces: append(slices.Clone(pl.pieces), id)}
+	add := []int{id}
+	for _, w := range unitOf(p.s, id) {
+		if w != id && !slices.Contains(pl.pieces, w) {
+			add = append(add, w)
+		}
+	}
+	grown := plan{sec: pl.sec, pieces: append(slices.Clone(pl.pieces), add...), with: append(slices.Clone(pl.with), add[1:]...)}
 	slices.Sort(grown.pieces)
 	sec := p.s.secs[pl.sec]
-	if overPage(sec.tokens) && estimateTokens(joinPieces(p.s, sec, grown.pieces)) > answerPageTokens {
+	if overPage(sec.tokens) && pageTokens(p.s, sec, grown) > answerPageTokens {
 		return true // a page is full: the walk goes on, the budget is not what stopped it
 	}
 	grown.cost = pl.cost + p.render(grown) - p.render(*pl)
@@ -197,8 +209,18 @@ func (p *planner) grow(pl *plan, id int) bool {
 	}
 	p.spend(grown.cost - pl.cost)
 	*pl = grown
-	p.show([]int{id})
+	p.show(add)
 	return true
+}
+
+// pageTokens is what pl's group of sec charges to a page: its text, less
+// the pieces printed only because a chosen piece brings them.
+func pageTokens(s *sorted, sec sortedSection, pl plan) int {
+	n := estimateTokens(joinPieces(s, sec, pl.pieces))
+	for _, w := range pl.with {
+		n -= s.pieces[w].tokens
+	}
+	return n
 }
 
 // overPage reports a section of tokens longer than a page: never printed

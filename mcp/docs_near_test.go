@@ -17,7 +17,7 @@ func TestFromOutcomeIndexedNear(t *testing.T) {
 		t.Errorf("out = near %v, hint %q", out.IndexedNear, out.Hint)
 	}
 	o.Results = []docs.Result{{URL: "https://x.example.test/a", Truncated: true}}
-	if out := fromOutcome(o); !strings.HasPrefix(out.Hint, docs.AnswerHint(docs.HintMCP)+"; ") || !strings.HasSuffix(out.Hint, docs.NearHint(docs.HintMCP)) {
+	if out := fromOutcome(o); !strings.HasPrefix(out.Hint, docs.AnswerHint(docs.HintMCP, 1)+"; ") || !strings.HasSuffix(out.Hint, docs.NearHint(docs.HintMCP)) {
 		t.Errorf("hint with a cut result = %q", out.Hint)
 	}
 }

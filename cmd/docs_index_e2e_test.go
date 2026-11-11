@@ -244,8 +244,9 @@ func checkSectionFollowUp(t *testing.T, site *fixtureSite, fx docsFixture, libra
 }
 
 // checkPointers: a small budget cuts results; the text output marks each
-// cut one's source "(cut, N of M tokens)" and ends with one line saying how to read a
-// cut group in full; JSON marks it and carries no pointer.
+// cut one's source "(cut, N of M tokens)" and ends with one line saying
+// the cut groups are unread and how to read them; JSON marks each and
+// carries the same line as its hint.
 func checkPointers(t *testing.T, fx docsFixture, library string) {
 	t.Helper()
 	for _, tokens := range []string{"110", ""} {
@@ -254,16 +255,25 @@ func checkPointers(t *testing.T, fx docsFixture, library string) {
 			args = append(args, "--tokens", tokens)
 		}
 		text := mustCLI(t, args...)
-		cut := false
-		for _, r := range decodeSectionResults(t, mustCLI(t, append([]string{"--json"}, args...)...)) {
-			cut = cut || r.Truncated
+		jsonOut := mustCLI(t, append([]string{"--json"}, args...)...)
+		cut := 0
+		for _, r := range decodeSectionResults(t, jsonOut) {
+			if r.Truncated {
+				cut++
+			}
 			if r.Truncated != strings.Contains(text, "source: "+r.URL+" (cut, ") || strings.Contains(r.Snippet, "full section") {
 				t.Errorf("--tokens %q: truncated=%v but the text output is:\n%s", tokens, r.Truncated, text)
 			}
 		}
-		hint := docs.AnswerHint(docs.HintCLI)
-		if cut != strings.HasSuffix(text, "\n"+hint+"\n") || strings.Count(text, hint) > 1 || strings.Contains(text, "full section:") {
+		hint := docs.AnswerHint(docs.HintCLI, cut)
+		if (cut > 0) != (hint != "" && strings.HasSuffix(text, "\n"+hint+"\n")) || hint != "" && strings.Count(text, hint) > 1 || strings.Contains(text, "full section:") {
 			t.Errorf("--tokens %q: cut=%v but the text output is:\n%s", tokens, cut, text)
+		}
+		var answer struct {
+			Hint string `json:"hint"`
+		}
+		if err := json.Unmarshal([]byte(jsonOut), &answer); err != nil || answer.Hint != docs.JSONHint(cut) {
+			t.Errorf("--tokens %q: --json hint %q (%v), want %q", tokens, answer.Hint, err, docs.JSONHint(cut))
 		}
 	}
 }

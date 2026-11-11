@@ -9,12 +9,12 @@ import (
 // section's text, taken out as the section enters the pool, so an index
 // built before these rules is cleaned too. Otherwise the text is verbatim.
 //
-//   - HTML tags keep their text: <span class="toreplace">X</span> is X,
-//     and <br></br> is a line break (in a table row, where a line break
-//     ends the row, the one a cell can hold: <br>). In a code block only
-//     presentational markup is markup: a tag carrying a class or style
-//     attribute, its closing tag and <br>; a code block in a markup
-//     language (html, xml, jsx...) keeps every tag, which is its code.
+//   - HTML tags in prose keep their text: <span class="toreplace">X</span>
+//     is X, and <br></br> is a line break (in a table row, where a line
+//     break ends the row, the one a cell can hold: <br>). A code block is
+//     never touched: HTML in it is the example's own (a parser's output, a
+//     template), and a tag an extractor leaked there cannot be told from
+//     one.
 //   - A line that is only badge or tracking images (an image inside a
 //     link, or one with no alt text) goes.
 //   - A Markdown escape that changes nothing goes: pam\_duo is pam_duo.
@@ -32,9 +32,7 @@ func cleanText(s string) string {
 	lines := strings.Split(s, "\n")
 	out := make([]string, 0, len(lines))
 	var fence fenceState
-	markup := false
-	open := map[string]int{} // presentational tags removed in the open code block, by name
-	inComment := false       // inside an MDX comment that spans lines
+	inComment := false // inside an MDX comment that spans lines
 	for _, line := range lines {
 		inFence := fence.n > 0
 		if !inFence && (inComment || strings.Contains(line, "{/*")) {
@@ -44,16 +42,7 @@ func cleanText(s string) string {
 			}
 		}
 		switch isFence := fence.step(line); {
-		case isFence && !inFence: // the opening line
-			markup = markupFence(line)
-			clear(open)
-			out = append(out, line)
-		case isFence && fence.n == 0: // the closing line
-			out = append(out, line)
-		case isFence:
-			if !markup {
-				line = cleanCodeLine(line, open)
-			}
+		case isFence: // a code block, its fences included, is code: it stays as it is
 			out = append(out, line)
 		case badgeLine(line), jsxTagLine(line):
 		default:
@@ -164,32 +153,6 @@ func isWordByte(c byte) bool {
 	return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9'
 }
 
-// cleanCodeLine takes presentational markup out of a code line: a tag
-// with a class or style attribute (counted in open, so its closing tag
-// goes too, on this line or a later one), and <br> as a line break.
-func cleanCodeLine(line string, open map[string]int) string {
-	if strings.IndexByte(line, '<') < 0 {
-		return line
-	}
-	line = brPairRe.ReplaceAllString(line, "<br>")
-	return leakedTagRe.ReplaceAllStringFunc(line, func(tag string) string {
-		if brRe.MatchString(tag) {
-			return "\n"
-		}
-		m := leakedTagRe.FindStringSubmatch(tag)
-		name := strings.ToLower(m[2])
-		switch {
-		case m[1] == "/" && open[name] > 0:
-			open[name]--
-			return ""
-		case m[1] == "" && presentationalRe.MatchString(m[3]):
-			open[name]++
-			return ""
-		}
-		return tag
-	})
-}
-
 var (
 	// leakedTagRe matches an HTML tag: its slash (closing), name and
 	// attributes.
@@ -199,10 +162,7 @@ var (
 	// one break.
 	brRe     = regexp.MustCompile(`(?i)^(?:<br\s*/?>|</br>)$`)
 	brPairRe = regexp.MustCompile(`(?i)<br\s*/?>\s*</br>`)
-	// presentationalRe matches attributes that make a tag presentational
-	// markup rather than code: a class or a style.
-	presentationalRe = regexp.MustCompile(`(?i)(?:^|\s)(?:class|style)\s*=`)
-	altRe            = regexp.MustCompile(`(?i)\balt\s*=\s*"([^"]*)"`)
+	altRe    = regexp.MustCompile(`(?i)\balt\s*=\s*"([^"]*)"`)
 	// imageRe matches a Markdown image, optionally the whole text of a
 	// link: its opening bracket, alt text and the link's closing part.
 	imageRe = regexp.MustCompile(`(\[)?!\[([^\]]*)\]\([^)]*\)(\]\([^)]*\))?`)
@@ -218,19 +178,6 @@ var proseTags = map[string]bool{
 	"i": true, "img": true, "ins": true, "kbd": true, "mark": true, "nobr": true, "p": true, "s": true,
 	"section": true, "small": true, "span": true, "strike": true, "strong": true, "sub": true, "summary": true,
 	"sup": true, "tt": true, "u": true, "wbr": true,
-}
-
-// markupFence reports a code fence whose language is a markup language,
-// whose tags are its code.
-func markupFence(line string) bool {
-	_, _, info, _ := fenceMarker(line)
-	lang := strings.ToLower(strings.Trim(strings.Fields(info + " x")[0], "{}."))
-	switch lang {
-	case "html", "htm", "xhtml", "xml", "svg", "jsx", "tsx", "vue", "svelte", "astro", "mdx", "markdown", "md",
-		"erb", "php", "handlebars", "hbs", "liquid", "njk", "jinja", "jinja2", "django", "twig", "ejs", "razor", "cshtml", "aspx":
-		return true
-	}
-	return false
 }
 
 // badgeLine reports a line that is only badge or tracking images: every

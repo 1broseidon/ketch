@@ -65,6 +65,7 @@ type piece struct {
 	def        string // its defining position: a row's first cell, the definition term (definitionTerm) opening an item or paragraph
 	into       int    // the id of the piece it was folded into; -1 for none
 	folded     []int  // the ids of the pieces folded into it
+	with       []int  // the ords of its section's pieces it brings when printed (linkPieces)
 }
 
 // table is a table of a section: its header and delimiter rows (empty for
@@ -201,11 +202,15 @@ var faqRe = regexp.MustCompile(`(?i)(?:^|[^a-z])faqs?(?:[^a-z]|$)|frequently ask
 // each code block (with the tab label right before it), each paragraph
 // (each sentence of a long one), each list item, each table body row, each
 // quote; a paragraph opening with Note, Warning or Important is one note.
-// Headings and labels (a tab's name, "Menu") inside the text are not
-// pieces. A piece's table is an index among these tables.
+// Headings and labels (a tab's name) inside the text are not pieces; a
+// definition head (headsNext: a one-line paragraph that does not end like
+// a sentence, such as a signature) opens the first piece of the prose
+// paragraph after it. Each piece then names the pieces it brings when
+// printed (linkPieces). A piece's table is an index among these tables.
 func splitText(text string) ([]piece, []table) {
 	sp := &splitter{text: text}
 	spans := textSpans(text)
+	head := -1 // the start of a definition head waiting for its paragraph
 	for g, span := range spans {
 		switch {
 		case span.code:
@@ -216,10 +221,25 @@ func splitText(text string) ([]piece, []table) {
 			sp.add(kindExample, g, start, span.end)
 		case span.label && g+1 < len(spans) && spans[g+1].code:
 			// joined to the code after it
+		case headsNext(text, spans, g):
+			head = span.start
 		default:
+			n := len(sp.pieces)
 			sp.block(g, span.start, span.end)
+			if head >= 0 {
+				// the head opens the paragraph's first piece
+				if len(sp.pieces) > n {
+					p := &sp.pieces[n]
+					p.start, p.text = head, text[head:p.end]
+					p.tokens = estimateTokens(p.text) + 1
+				} else {
+					sp.block(g-1, spans[g-1].start, spans[g-1].end)
+				}
+				head = -1
+			}
 		}
 	}
+	linkPieces(sp.pieces, text)
 	return sp.pieces, sp.tables
 }
 

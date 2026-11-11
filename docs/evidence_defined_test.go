@@ -129,8 +129,9 @@ func TestDefinedInOutput(t *testing.T) {
 	}
 }
 
-// Through the pipeline: the options row's section is passed over for
-// sections that take the budget, and the frontmatter names it; the
+// Through the pipeline: the options row's section (which the question's
+// other term reaches) is passed over for sections that take the budget,
+// and the frontmatter names it; the
 // answer stays within its budget, and the trace records it.
 func TestEvidenceDefinedIn(t *testing.T) {
 	filler := strings.Repeat("The zebra service restarts when the zebra daemon is told to, and logs it. ", 12)
@@ -138,7 +139,7 @@ func TestEvidenceDefinedIn(t *testing.T) {
 		evSection("guide", 0, "one", []string{"Guide", "Zebra one"}, "Zebra quokka steps. "+filler),
 		evSection("guide", 1, "two", []string{"Guide", "Zebra two"}, "Zebra quokka steps again. "+filler),
 		evSection("guide", 2, "three", []string{"Guide", "Zebra three"}, "Zebra quokka steps once more. "+filler),
-		evSection("ref", 0, "options", []string{"Reference", "Options"}, "| Key | Description |\n|---|---|\n| `quokka` | What to do when the service is down. |"),
+		evSection("ref", 0, "options", []string{"Reference", "Options"}, "| Key | Description |\n|---|---|\n| `quokka` | What to do when the zebra service is down. |"),
 	}
 	for i := range 100 {
 		secs = append(secs, evSection("other", i, fmt.Sprintf("o%d", i), []string{"Other", "Part"}, "Unrelated words about something else entirely."))
@@ -164,5 +165,38 @@ func TestEvidenceDefinedIn(t *testing.T) {
 	}
 	if d := tr.Terms.Defined; len(d) != 2 || d[0].Term != "zebra" || d[0].Line != "" || d[1].Line != evRoot+"ref#options" || d[1].Printed {
 		t.Errorf("trace %+v", d)
+	}
+}
+
+// A table whose first cell is the term defines it for the question only
+// when the question's other distinctive terms reach its section: SHUTDOWN
+// in a list of restricted commands is no definition for a question about
+// a shutdown timeout and SIGTERM. A question with no other distinctive
+// term keeps every exact first cell.
+func TestDefinedReachesOther(t *testing.T) {
+	s := sortPool([]docsindex.Section{
+		evSection("redis", 0, "perms", []string{"Key-Value Store", "Connection Permissions"}, "Every command but:\n\n| Restricted |\n|---|\n| `CONFIG` |\n| `SHUTDOWN` |"),
+		evSection("dynos", 0, "shutdown", []string{"Dynos", "Graceful shutdown"}, "| Event | Meaning |\n|---|---|\n| shutdown | The dyno gets SIGTERM, then SIGKILL after 30 seconds. |"),
+	}, evRoot)
+	for i := range s.secs {
+		s.secs[i].order = i + 1
+	}
+	wts := writtenTerms("SIGTERM shutdown", evidenceTerms(newRankQuery("SIGTERM shutdown")))
+	for i := range wts {
+		wts[i].sections, wts[i].distinctive = 8, true
+	}
+	var shutdown definedTerm
+	for _, d := range definitions(s, wts, 1000) {
+		if d.term == "shutdown" {
+			shutdown = d
+		}
+	}
+	if !slices.Equal(shutdown.defs, []int{1}) {
+		t.Errorf("shutdown defined in %v, want [1]: the restricted-commands table is not about the question", shutdown.defs)
+	}
+	alone := writtenTerms("shutdown", evidenceTerms(newRankQuery("shutdown")))
+	alone[0].sections, alone[0].distinctive = 8, true
+	if d := definitions(s, alone, 1000); len(d) != 1 || !slices.Equal(d[0].defs, []int{0, 1}) {
+		t.Errorf("with no other term: %+v", d)
 	}
 }

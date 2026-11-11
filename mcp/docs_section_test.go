@@ -71,7 +71,7 @@ func TestDocsToolLocalCompactPointer(t *testing.T) {
 		t.Fatalf("compact answer: %s", toolText(res))
 	}
 	r := out.Results[0]
-	if !r.Truncated || r.Section != r.URL || out.Hint != docs.AnswerHint(docs.HintMCP) {
+	if !r.Truncated || r.Section != r.URL || out.Hint != docs.AnswerHint(docs.HintMCP, docs.CutCount(out.Results)) {
 		t.Fatalf("cut result = %+v, hint %q", r, out.Hint)
 	}
 	checkAnswerFields(t, out)
@@ -221,7 +221,7 @@ func TestDocsToolDescribesSection(t *testing.T) {
 		if !strings.Contains(schema.Properties["section"].Description, "page cache") {
 			t.Errorf("section property %q lacks the page cache", schema.Properties["section"].Description)
 		}
-		for _, want := range []string{"section field", "hint", "not_found", "[not_found]", "stale", "offline", "…", "scope", "resolve=true", "leave tokens unset"} {
+		for _, want := range []string{"section field", "hint", "not_found", "[not_found]", "stale", "offline", "…", "scope", "resolve=true", "leave tokens unset", "is unread", "your own knowledge"} {
 			if !strings.Contains(tool.Description, want) {
 				t.Errorf("description lacks %q", want)
 			}

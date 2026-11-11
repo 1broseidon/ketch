@@ -384,7 +384,7 @@ func TestCompactAnswerPointsToFullSection(t *testing.T) {
 			t.Errorf("truncated=%v, snippet:\n%s", r.Truncated, r.Snippet)
 		}
 	}
-	if strings.Count(text, AnswerHint(HintCLI)) != 1 || !strings.HasSuffix(text, "\n"+AnswerHint(HintCLI)+"\n") {
+	if hint := AnswerHint(HintCLI, CutCount(cut)); strings.Count(text, hint) != 1 || !strings.HasSuffix(text, "\n"+hint+"\n") {
 		t.Errorf("hint line:\n%s", text)
 	}
 }
@@ -402,7 +402,7 @@ func TestCompactAnswerPointerAbsent(t *testing.T) {
 	if r := o.Results[at]; r.Truncated || r.Snippet != "Async rules return a promise." || strings.Contains(RenderGroup(r, true), "(cut") {
 		t.Errorf("a whole result is marked cut:\n%s", RenderGroup(r, true))
 	}
-	if text := RenderAnswer(o.Results[at:at+1], HintCLI); strings.Contains(text, AnswerHint(HintCLI)) {
+	if text := RenderAnswer(o.Results[at:at+1], HintCLI); strings.Contains(text, "hidden text is unread") {
 		t.Errorf("a hint with nothing cut:\n%s", text)
 	}
 	for _, opts := range []LocalOptions{{Tokens: 300}, {Hint: HintCLI}} {
@@ -446,7 +446,7 @@ func TestCompactAnswerMCPPointer(t *testing.T) {
 	if !r.Truncated || r.Section != r.URL || strings.Contains(r.Snippet, "full section") || strings.Contains(r.Snippet, elidedMarker) {
 		t.Errorf("MCP snippet:\n%s", r.Snippet)
 	}
-	if body := RenderAnswer(o.Results, HintMCP); strings.Count(body, `docs(section="<its source>")`) != 1 || !strings.HasSuffix(body, AnswerHint(HintMCP)+"\n") {
+	if body := RenderAnswer(o.Results, HintMCP); strings.Count(body, `docs(section="<its section>")`) != 1 || !strings.HasSuffix(body, AnswerHint(HintMCP, CutCount(o.Results))+"\n") {
 		t.Errorf("MCP answer:\n%s", body)
 	}
 	// The call it names fetches that section.

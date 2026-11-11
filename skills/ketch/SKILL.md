@@ -138,6 +138,11 @@ file; test labs must set `KETCH_TAGS_PATH` as well as isolating the page cache.
 
 `ketch docs` prints evidence and a verdict. It has no model: you decide what to do next. Read the frontmatter first.
 
+Two rules hold for every answer:
+
+1. Text behind `…`, or in a group marked `(cut)`, is unread. Read it with `--section` before stating what it says, or say you did not read it.
+2. Whatever your answer says that no group prints is your own knowledge. Label it so; never cite the docs for it.
+
 | You see | It means | Do |
 |---|---|---|
 | `status: found` | evidence matching the question is printed; not a promise that it answers | read the groups |
@@ -145,8 +150,9 @@ file; test labs must set `KETCH_TAGS_PATH` as well as isolating the page cache.
 | `partial_site` in `status: partial (…)` | the answer is from pages a web search just read, not from an index | read the groups; the `note` names the command that indexes the site |
 | `status: refused` | nothing here matches (exit 3) | stop asking this source |
 | `defined_in: {term: ref}` | where a term is defined, when that section was not printed | `ketch docs --section <ref>` |
-| `(cut, N of M tokens)` on a `source:` line | the group shows part of its section | `ketch docs --section <that source>` if you need the rest |
-| `…` in a group | text left out of a cut group | never fill it in from memory: read it with `--section`, or say it was cut |
+| `(cut, N of M tokens)` on a `source:` line | the group shows part of its section; the rest is unread | `ketch docs --section <that source>` before stating what the rest says |
+| `…` in a group | text left out of a cut group, unread | read it with `--section`, or say you did not read it |
+| last line `N groups above are cut …` | how many groups hide unread text | the same: `--section` before stating what they hide |
 | `scope: <url>` | the answer is from the pages at or under that URL only; `library` is the root | `outside_scope` lists your terms the library holds elsewhere: ask the root for them |
 | `indexed_near: {title: root}` | your `--library` named no indexed library; these indexed ones are near it, and the answer came from elsewhere | if one is what you meant, ask again with its root as `--library` |
 | `also in this section: …` | what a cut group left out, by name | use one of those names in your next call |
@@ -157,8 +163,8 @@ file; test labs must set `KETCH_TAGS_PATH` as well as isolating the page cache.
 One question about one library or product.
 
 1. `ketch docs "<question>" --library <docs root>`: a root as `ketch docs --resolve` lists it. A deeper URL narrows the answer to the pages under it (`scope:`); to read one page, `ketch docs --section <page URL>`. Leave `--tokens` unset unless a result is too long to read.
-2. The fact is printed: answer, citing each `source:`. State only what the output prints; say anything else is not documented here.
-3. The group you need is cut, or `defined_in` names it: `ketch docs --section <ref>` once, then answer. A section longer than a page prints `page: 1 of N` and ends with a `next page:` command; run it only if the fact is not on this page.
+2. The fact is printed: answer, citing each `source:`. Anything you add that no group prints is your own knowledge: label it so.
+3. The group you need is cut, or `defined_in` names it: `ketch docs --section <ref>`, then answer. A section longer than a page prints `page: 1 of N` and ends with a `next page:` command; run it only if the fact is not on this page.
 4. Otherwise, Follow.
 
 ### Follow
@@ -181,7 +187,7 @@ The question spans products.
 4. Combine. Cite each claim's `source:`. Say what no source covered.
 5. A source you will ask again: propose `ketch docs index <site>` to the operator (CLI only; it writes the local index). It then answers from the index, offline too (`stale: unverified` when the cited pages cannot be checked).
 
-Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` with `page` for the next page, and `docs(resolve=true)` with an optional `query`; `defined_in` is a list of `{term, section}`, `indexed_near` a list of `{title, library}`, a cut result has `truncated` and `contents`, an indexed match `indexed: true`. pi's `ketch_docs` takes the same, without `page`.
+Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` with `page` for the next page, and `docs(resolve=true)` with an optional `query`; `defined_in` is a list of `{term, section}`, `indexed_near` a list of `{title, library}`, a cut result has `truncated` and `contents`, `hint` says how many are cut and that their text is unread, an indexed match `indexed: true`. pi's `ketch_docs` takes the same, without `page`.
 
 ## Token budgets
 
