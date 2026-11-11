@@ -447,6 +447,44 @@ The quote checks ask whether one call printed the fact. A flow test asks what th
 - **Builds.** The default build and the build with no page size, on the same scenarios. This is where the page size is settled.
 - **Gate.** Reported per flow. No release before the Lookup and Follow scenarios are right at a rate we would put in the README, with the median calls beside it.
 
+### First run
+
+2026-11-10, build `d54c6d3`. 34 scenarios (10 Lookup, 16 Follow of which 3 are "not covered", 8 Survey). The caller had only the MCP `docs` tool, the ketch process had no network, and an Opus judge graded each answer. "Facts" means every required fact was stated and every "not covered" was said; "right" also requires that nothing was claimed that no tool result supports.
+
+| Flow | Caller | Facts | Right | Median calls | Median tokens read |
+|---|---|---|---|---|---|
+| Lookup | Sonnet | 10 of 10 | 6 of 10 | 1 | 2,562 |
+| Follow | Sonnet | 16 of 16 | 14 of 16 | 1 | 2,518 |
+| Survey | Sonnet | 6 of 8 | 5 of 8 | 2 | 4,928 |
+| sample of 12 | Haiku | 12 of 12 | 9 of 12 | 1.5 | 2,619 |
+
+No run made more than three calls to one source. Survey calls ran in parallel in 31 of 32 runs. The founding question took two calls: the question, then the section `defined_in` named.
+
+What the transcripts show:
+
+- **The facts arrive.** Every Lookup and Follow scenario had its facts stated. Where an answer was not right, the caller had added something from memory, most often into the `…` of a cut group: 5 of 9 repeated Lookup runs on this build, 1 of 9 with no page size.
+- **`defined_in` is followed**: 8 of the 9 Sonnet runs that were offered one, 5 of 6 for Haiku.
+- **The other leads are not used.** In 104 Sonnet runs no caller read a cut section, used a name from a Contents line, paged, or asked another source for a `not_found` term. They were rarely needed for the facts; they would have prevented the invented claims and the one Survey that stopped at the first source.
+- **The Survey that stopped** was the three-source one. The caller asked Duo, read `not_found: [pam_sss]`, and never asked the Linux-PAM or SSSD sources that were indexed beside it. Nothing in the tool tells a caller which sources it has.
+- **A page URL as `library`** was passed six times and silently widened to the whole site.
+
+**The page size stays at 400.** With three runs per build on the nine scenarios where the builds disagreed: facts stated in 26 of 27 runs with pages against 20 of 27 without; invented claims in 9 against 8. One scenario with byte-identical tool output on both builds went 3 of 3 against 1 of 3, so much of the difference is the caller and the judge. The edge on facts is with pages, and the invented claims are a wording problem.
+
+### Round 10
+
+Decided from the first run.
+
+- **Say what `…` means.** The tool description and the skill: `…` marks text left out; do not fill it in; read it with `section`, or say it was cut.
+- **`library` is a root; a deeper URL is a scope.** A `library` URL below an indexed root answers only from pages under that URL, and the frontmatter says `scope: <url>`. If no indexed page is under it, the answer is refused and the note names the root. Never a silent widening.
+- **A caller can ask what is indexed.** `--resolve` answers from the local index first, with no network: the libraries whose name, title or root match, each with its root, title, page count and build date; with an empty query, all of them. Survey step 2 reads: ask what is indexed before saying a source is unknown.
+- **`not_found` routes.** Survey: for every `not_found` term, ask the indexed source that owns it before saying it is not covered.
+- **Leave `tokens` unset** unless the result is too long to read. Callers lowered it in 8 calls for no reason.
+- **Escapes must not hide a term.** `not_found: [service_err]` was printed for a section whose text holds `service\_err`. Stored text is cleaned before it is tokenised, and an index built before this re-tokenises from its stored text without fetching.
+- **`--section` prints the same frontmatter as an answer** (`library`, `index` or `source`, `stale`, `page`), without `result_count`, and its heading is not repeated.
+- **A result has no `source: search`.** In `--json` and MCP the per-result backend name goes; the answer's `backend` says it once.
+
+Then the flow tests again on the default build, three runs per scenario, so the rates come with their spread.
+
 ## Storage
 
 Agreed on 2026-11-10, the check in point 4 included.

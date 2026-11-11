@@ -26,6 +26,9 @@
 //
 // -split tune|confirm|all restricts a run or a comparison to one half of
 // the broad set (each case's split; cases/broad.README.md).
+//
+// -flows runs the flow tests instead (flows.go): a model answers each
+// scenario with only ketch's MCP docs tool, and the run is graded.
 package main
 
 import (
@@ -118,11 +121,14 @@ func main() {
 	labels := flag.String("labels", "", "with -compare: a short name per results file, comma-separated")
 	verifyOut := flag.String("verify", "", "check every quote of -cases against the sandbox's index, write the cases that can be graded here and exit; runs no question")
 	flag.Parse()
-	if *split != "all" && *split != "tune" && *split != "confirm" {
+	if !slices.Contains([]string{"all", "tune", "confirm"}, *split) {
 		fmt.Fprintln(os.Stderr, "docsqa: -split is tune, confirm or all")
 		os.Exit(2)
 	}
 	switch {
+	case *flowsPath != "":
+		exitOn(runFlows(*ketch, *only))
+		return
 	case *compareFiles != "":
 		exitOn(compare(os.Stdout, splitList(*compareFiles), splitList(*labels), *split))
 		return

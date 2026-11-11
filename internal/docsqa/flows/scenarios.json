@@ -1,0 +1,1190 @@
+[
+  {
+    "n": 1,
+    "id": "fastapi-upload",
+    "flow": "lookup",
+    "sandbox": "broad",
+    "cases": [
+      "fastapi-upload"
+    ],
+    "question": "How do I accept a file upload in a FastAPI endpoint?",
+    "facts": [
+      {
+        "case": "fastapi-upload",
+        "library": "https://fastapi.tiangolo.com/",
+        "statement": "Declare the upload as an endpoint parameter with File / UploadFile (for example `file: UploadFile`).",
+        "alternatives": [
+          [
+            {
+              "quote": "You can define files to be uploaded by the client using File.",
+              "source": "https://fastapi.tiangolo.com/tutorial/request-files/"
+            }
+          ],
+          [
+            {
+              "quote": "Define a file parameter with a type of UploadFile",
+              "source": "https://fastapi.tiangolo.com/tutorial/request-files/#file-parameters-with-uploadfile"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_covered": [],
+    "haiku": true
+  },
+  {
+    "n": 2,
+    "id": "react-effect-cleanup",
+    "flow": "lookup",
+    "sandbox": "broad",
+    "cases": [
+      "react-effect-cleanup"
+    ],
+    "question": "In React, how does a useEffect clean up after itself?",
+    "facts": [
+      {
+        "case": "react-effect-cleanup",
+        "library": "https://react.dev/",
+        "statement": "The Effect's setup function can return a cleanup function, which React calls before the Effect runs again and once more when the component unmounts.",
+        "alternatives": [
+          [
+            {
+              "quote": "Your setup function may also optionally return a cleanup function.",
+              "source": "https://react.dev/reference/react/useEffect#useeffect"
+            }
+          ],
+          [
+            {
+              "quote": "React will call your cleanup function each time before the Effect runs again, and one final time when the component unmounts",
+              "source": "https://react.dev/learn/synchronizing-with-effects#step-3-add-cleanup-if-needed"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 3,
+    "id": "kubernetes-kubectl-rollout-undo",
+    "flow": "lookup",
+    "sandbox": "broad",
+    "cases": [
+      "kubernetes-kubectl-rollout-undo"
+    ],
+    "question": "How do I roll a Kubernetes deployment back to its previous revision?",
+    "facts": [
+      {
+        "case": "kubernetes-kubectl-rollout-undo",
+        "library": "https://kubernetes.io/docs/",
+        "statement": "`kubectl rollout undo deployment/<name>` rolls the Deployment back to the previous revision.",
+        "alternatives": [
+          [
+            {
+              "quote": "Now you've decided to undo the current rollout and rollback to the previous revision:",
+              "source": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-to-a-previous-revision"
+            },
+            {
+              "quote": "kubectl rollout undo deployment/nginx-deployment",
+              "source": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-to-a-previous-revision"
+            }
+          ]
+        ]
+      },
+      {
+        "case": "kubernetes-kubectl-rollout-undo",
+        "library": "https://kubernetes.io/docs/",
+        "statement": "A specific revision can be chosen with `--to-revision=<n>`.",
+        "alternatives": [
+          [
+            {
+              "quote": "Alternatively, you can rollback to a specific revision by specifying it with --to-revision:",
+              "source": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-to-a-previous-revision"
+            },
+            {
+              "quote": "kubectl rollout undo deployment/nginx-deployment --to-revision=2",
+              "source": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-to-a-previous-revision"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_covered": [],
+    "haiku": true
+  },
+  {
+    "n": 4,
+    "id": "nginx-reload-configuration",
+    "flow": "lookup",
+    "sandbox": "broad",
+    "cases": [
+      "nginx-reload-configuration"
+    ],
+    "question": "How do I make nginx pick up a changed config without restarting it?",
+    "facts": [
+      {
+        "case": "nginx-reload-configuration",
+        "library": "https://nginx.org/en/docs/",
+        "statement": "Send the reload signal with `nginx -s reload`; changes to the configuration file are not applied until then (or a restart).",
+        "alternatives": [
+          [
+            {
+              "quote": "Changes made in the configuration file will not be applied until the command to reload configuration is sent to nginx or it is restarted.",
+              "source": "http://nginx.org/en/docs/beginners_guide.html#content"
+            },
+            {
+              "quote": "nginx -s reload",
+              "source": "http://nginx.org/en/docs/beginners_guide.html#content"
+            }
+          ]
+        ]
+      },
+      {
+        "case": "nginx-reload-configuration",
+        "library": "https://nginx.org/en/docs/",
+        "statement": "On the reload signal the master process checks the new configuration's syntax and tries to apply it.",
+        "quote": "Once the master process receives the signal to reload configuration, it checks the syntax validity of the new configuration file and tries to apply the configuration provided in it.",
+        "source": "http://nginx.org/en/docs/beginners_guide.html#content"
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 5,
+    "id": "postgresql-wal-level-logical-replication",
+    "flow": "lookup",
+    "sandbox": "broad",
+    "cases": [
+      "postgresql-wal-level-logical-replication"
+    ],
+    "question": "What wal_level does PostgreSQL need for logical replication, and what is the default?",
+    "facts": [
+      {
+        "case": "postgresql-wal-level-logical-replication",
+        "library": "https://www.postgresql.org/docs/current/",
+        "statement": "Logical replication needs `wal_level = logical` (logical adds the information logical decoding needs).",
+        "alternatives": [
+          [
+            {
+              "quote": "Finally, logical adds information necessary to support logical decoding.",
+              "source": "https://www.postgresql.org/docs/current/runtime-config-wal.html#RUNTIME-CONFIG-WAL-SETTINGS"
+            }
+          ],
+          [
+            {
+              "quote": "wal_level must be set to logical.",
+              "source": "https://www.postgresql.org/docs/current/logical-replication-config.html#LOGICAL-REPLICATION-CONFIG-PUBLISHER"
+            }
+          ]
+        ]
+      },
+      {
+        "case": "postgresql-wal-level-logical-replication",
+        "library": "https://www.postgresql.org/docs/current/",
+        "statement": "The default `wal_level` is `replica`.",
+        "quote": "The default value is replica, which writes enough data to support WAL archiving and replication, including running read-only queries on a standby server.",
+        "source": "https://www.postgresql.org/docs/current/runtime-config-wal.html#RUNTIME-CONFIG-WAL-SETTINGS"
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 6,
+    "id": "duo-authproxy-failmode",
+    "flow": "lookup",
+    "sandbox": "broad",
+    "cases": [
+      "duo-authproxy-failmode"
+    ],
+    "question": "In the Duo Authentication Proxy's authproxy.cfg, what is the difference between failmode safe and secure?",
+    "facts": [
+      {
+        "case": "duo-authproxy-failmode",
+        "library": "https://duo.com/docs/",
+        "statement": "failmode safe: when Duo's service cannot be contacted, authentication is permitted if primary authentication succeeds.",
+        "quote": "In the event that Duo's service cannot be contacted, users' authentication attempts will be permitted if primary authentication succeeds.",
+        "source": "https://duo.com/docs/authproxy-reference#radius-auto"
+      },
+      {
+        "case": "duo-authproxy-failmode",
+        "library": "https://duo.com/docs/",
+        "statement": "failmode secure: when Duo's service cannot be contacted, all authentication attempts are rejected.",
+        "quote": "In the event that Duo's service cannot be contacted, all users' authentication attempts will be rejected.",
+        "source": "https://duo.com/docs/authproxy-reference#radius-auto"
+      }
+    ],
+    "not_covered": [],
+    "haiku": true
+  },
+  {
+    "n": 7,
+    "id": "stripe-cli-listen-forward-to",
+    "flow": "lookup",
+    "sandbox": "broad",
+    "cases": [
+      "stripe-cli-listen-forward-to"
+    ],
+    "question": "How do I forward Stripe webhooks to a server on localhost with the Stripe CLI?",
+    "facts": [
+      {
+        "case": "stripe-cli-listen-forward-to",
+        "library": "https://docs.stripe.com/",
+        "statement": "Run `stripe listen --forward-to localhost:<port>/<path>` (the docs use `localhost:4242/webhook`).",
+        "alternatives": [
+          [
+            {
+              "quote": "stripe listen --forward-to localhost:4242/webhook",
+              "source": "https://docs.stripe.com/webhooks#test-locally-without-a-registered-url"
+            },
+            {
+              "quote": "This command assumes you have a localhost website on port 4242 with a POST /webhook endpoint",
+              "source": "https://docs.stripe.com/webhooks#test-locally-without-a-registered-url"
+            }
+          ]
+        ]
+      },
+      {
+        "case": "stripe-cli-listen-forward-to",
+        "library": "https://docs.stripe.com/",
+        "statement": "`stripe listen` prints a webhook signing secret to use in the webhook handler.",
+        "quote": "The stripe listen command outputs the {{WEBHOOK_SIGNING_SECRET}}. Copy this value to use when you create a handler.",
+        "source": "https://docs.stripe.com/webhooks#test-locally-without-a-registered-url"
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 8,
+    "id": "slack-slash-command-operation-timeout",
+    "flow": "lookup",
+    "sandbox": "broad",
+    "cases": [
+      "slack-slash-command-operation-timeout"
+    ],
+    "question": "Why does my Slack slash command show operation_timeout?",
+    "facts": [
+      {
+        "case": "slack-slash-command-operation-timeout",
+        "library": "https://docs.slack.dev/",
+        "statement": "Slack must receive the app's acknowledgement within 3000 ms (3 seconds) of sending the request, otherwise the user sees operation_timeout.",
+        "quote": "received by Slack within 3000 milliseconds of the original request being sent, otherwise an operation_timeout error will be displayed to the user.",
+        "source": "https://docs.slack.dev/interactivity/implementing-slash-commands#responding_basic_receipt"
+      },
+      {
+        "case": "slack-slash-command-operation-timeout",
+        "library": "https://docs.slack.dev/",
+        "statement": "The app acknowledges by sending back an HTTP 200 response (it can be empty) to the original request.",
+        "quote": "Your app can do this by sending back an empty HTTP 200 response to the original request.",
+        "source": "https://docs.slack.dev/interactivity/implementing-slash-commands#responding_basic_receipt"
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 9,
+    "id": "code-celery-retry",
+    "flow": "lookup",
+    "sandbox": "code-live",
+    "cases": [
+      "code-celery-retry"
+    ],
+    "question": "How do I make a Celery task retry when it raises an exception?",
+    "facts": [
+      {
+        "case": "code-celery-retry",
+        "library": "https://docs.celeryq.dev/en/stable/",
+        "statement": "Call the task's `retry()` method (`self.retry(...)` in a bound task) to re-execute the task after a recoverable error.",
+        "quote": "can be used to re-execute the task, for example in the event of recoverable errors.",
+        "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html#retrying"
+      }
+    ],
+    "not_covered": [],
+    "haiku": true
+  },
+  {
+    "n": 10,
+    "id": "github-actions-job-timeout-default",
+    "flow": "lookup",
+    "sandbox": "broad",
+    "cases": [
+      "github-actions-job-timeout-default"
+    ],
+    "question": "What is the default timeout for a GitHub Actions job?",
+    "facts": [
+      {
+        "case": "github-actions-job-timeout-default",
+        "library": "https://docs.github.com/en/actions/",
+        "statement": "`jobs.<job_id>.timeout-minutes` defaults to 360 minutes (after which GitHub cancels the job).",
+        "quote": "The maximum number of minutes to let a job run before GitHub automatically cancels it. Default: 360",
+        "source": "https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idtimeout-minutes"
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 11,
+    "id": "duo-failmode",
+    "flow": "follow",
+    "sandbox": "duo",
+    "cases": [
+      "duo-failmode"
+    ],
+    "question": "With Duo's pam_duo, what happens to logins when Duo's service is unreachable, and how do I control it?",
+    "facts": [
+      {
+        "case": "duo-failmode",
+        "library": "https://duo.com/docs/",
+        "statement": "pam_duo's `failmode` option: on service or configuration errors that prevent Duo authentication, `safe` allows access and `secure` denies access; the default is `safe`.",
+        "quote": "fail \"safe\" (allow access) or \"secure\" (deny access)",
+        "source": "https://duo.com/docs/duounix#duo-configuration-options"
+      }
+    ],
+    "not_covered": [],
+    "haiku": true
+  },
+  {
+    "n": 12,
+    "id": "duo-fallback",
+    "flow": "follow",
+    "sandbox": "duo",
+    "cases": [
+      "duo-fallback"
+    ],
+    "question": "We use the Linux pam_duo module. If duosecurity.com cannot be reached we want to fall back to another authenticator such as pam_sss. Is there a supported way to tell an unreachable service from a user failing login?",
+    "facts": [
+      {
+        "case": "duo-fallback",
+        "library": "https://duo.com/docs/",
+        "statement": "pam_duo's `failmode` option: on service or configuration errors that prevent Duo authentication, `safe` allows access and `secure` denies access; the default is `safe`.",
+        "quote": "fail \"safe\" (allow access) or \"secure\" (deny access)",
+        "source": "https://duo.com/docs/duounix#duo-configuration-options"
+      },
+      {
+        "case": "duo-fallback",
+        "library": "https://duo.com/docs/",
+        "statement": "`https_timeout`: when Duo takes longer than the configured number of seconds to respond, the configured failmode is triggered.",
+        "quote": "the configured failmode is triggered",
+        "source": "https://duo.com/docs/duounix#duo-configuration-options"
+      }
+    ],
+    "not_covered": [
+      "The Duo documentation does not mention pam_sss, nor a documented way to fall back to another authenticator such as pam_sss."
+    ],
+    "haiku": true
+  },
+  {
+    "n": 13,
+    "id": "duo-service-err",
+    "flow": "follow",
+    "sandbox": "duo",
+    "cases": [
+      "duo-service-err"
+    ],
+    "question": "What does pam_duo return to PAM when Duo's service cannot be reached: is it PAM_SERVICE_ERR?",
+    "facts": [],
+    "not_covered": [
+      "The Duo documentation does not mention PAM_SERVICE_ERR or say which PAM return code pam_duo returns when Duo's service cannot be reached."
+    ]
+  },
+  {
+    "n": 14,
+    "id": "sveltekit-hooks-handle",
+    "flow": "follow",
+    "sandbox": "broad",
+    "cases": [
+      "sveltekit-hooks-handle"
+    ],
+    "question": "In SvelteKit, what does the handle function in hooks.server.js receive and return?",
+    "facts": [
+      {
+        "case": "sveltekit-hooks-handle",
+        "library": "https://svelte.dev/docs/kit/",
+        "statement": "`handle` runs every time the SvelteKit server receives a request.",
+        "quote": "This function runs every time the SvelteKit server receives a request",
+        "source": "https://svelte.dev/docs/kit/hooks#handle"
+      },
+      {
+        "case": "sveltekit-hooks-handle",
+        "library": "https://svelte.dev/docs/kit/",
+        "statement": "`handle` receives an `event` (the request) and a `resolve` function that renders the route and generates a Response, and returns the Response (unimplemented, it defaults to `({ event, resolve }) => resolve(event)`).",
+        "alternatives": [
+          [
+            {
+              "quote": "If unimplemented, defaults to ({ event, resolve }) => resolve(event).",
+              "source": "https://svelte.dev/docs/kit/hooks#handle"
+            }
+          ],
+          [
+            {
+              "quote": "It receives an event object representing the request and a function called resolve, which renders the route and generates a Response.",
+              "source": "https://svelte.dev/docs/kit/hooks#handle"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 15,
+    "id": "streamlit-upload-multiple",
+    "flow": "follow",
+    "sandbox": "broad",
+    "cases": [
+      "streamlit-upload-multiple"
+    ],
+    "question": "How do I let a user upload several files at once in Streamlit?",
+    "facts": [
+      {
+        "case": "streamlit-upload-multiple",
+        "library": "https://docs.streamlit.io/",
+        "statement": "Pass `accept_multiple_files=True` to `st.file_uploader`: the user can then upload multiple files at the same time.",
+        "quote": "True: The user can upload multiple files at the same time.",
+        "source": "https://docs.streamlit.io/develop/api-reference/widgets/st.file_uploader#stfile_uploader"
+      },
+      {
+        "case": "streamlit-upload-multiple",
+        "library": "https://docs.streamlit.io/",
+        "statement": "The docs' example calls `st.file_uploader(\"Upload data\", accept_multiple_files=True, type=\"csv\")` (or the same call with these arguments).",
+        "quote": "\"Upload data\", accept_multiple_files=True, type=\"csv\"",
+        "source": "https://docs.streamlit.io/develop/api-reference/widgets/st.file_uploader#stfile_uploader"
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 16,
+    "id": "instructor-stream-partial",
+    "flow": "follow",
+    "sandbox": "broad",
+    "cases": [
+      "instructor-stream-partial"
+    ],
+    "question": "With the instructor library, how do I stream a partially filled object while the model is still responding?",
+    "facts": [
+      {
+        "case": "instructor-stream-partial",
+        "library": "https://python.useinstructor.com/",
+        "statement": "`Partial` makes a model whose fields are all Optional, so partially filled objects can be returned while streaming.",
+        "quote": "This lets us dynamically create a new class that treats all of the original model's fields as Optional.",
+        "source": "https://python.useinstructor.com/concepts/partial/"
+      },
+      {
+        "case": "instructor-stream-partial",
+        "library": "https://python.useinstructor.com/",
+        "statement": "Use `client.create_partial(...)` to get a stream of partial objects.",
+        "quote": "extraction_stream = client.create_partial(",
+        "source": "https://python.useinstructor.com/concepts/partial/#understanding-partial-responses"
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 17,
+    "id": "nginx-413-client-max-body-size",
+    "flow": "follow",
+    "sandbox": "broad",
+    "cases": [
+      "nginx-413-client-max-body-size"
+    ],
+    "question": "Why does nginx answer 413 Request Entity Too Large, and how do I raise the limit?",
+    "facts": [
+      {
+        "case": "nginx-413-client-max-body-size",
+        "library": "https://nginx.org/en/docs/",
+        "statement": "nginx returns 413 (Request Entity Too Large) when the request body exceeds `client_max_body_size`.",
+        "quote": "If the size in a request exceeds the configured value, the 413 (Request Entity Too Large) error is returned to the client.",
+        "source": "http://nginx.org/en/docs/http/ngx_http_core_module.html#directives"
+      },
+      {
+        "case": "nginx-413-client-max-body-size",
+        "library": "https://nginx.org/en/docs/",
+        "statement": "`client_max_body_size` defaults to 1m.",
+        "quote": "client_max_body_size 1m;",
+        "source": "http://nginx.org/en/docs/http/ngx_http_core_module.html#directives"
+      },
+      {
+        "case": "nginx-413-client-max-body-size",
+        "library": "https://nginx.org/en/docs/",
+        "statement": "Setting `client_max_body_size` to 0 disables the check of the request body size.",
+        "quote": "Setting size to 0 disables checking of client request body size.",
+        "source": "http://nginx.org/en/docs/http/ngx_http_core_module.html#directives"
+      }
+    ],
+    "not_covered": [],
+    "haiku": true
+  },
+  {
+    "n": 18,
+    "id": "nginx-limit-req-rate-limit",
+    "flow": "follow",
+    "sandbox": "broad",
+    "cases": [
+      "nginx-limit-req-rate-limit"
+    ],
+    "question": "How do I rate limit requests per client IP in nginx and allow a burst?",
+    "facts": [
+      {
+        "case": "nginx-limit-req-rate-limit",
+        "library": "https://nginx.org/en/docs/",
+        "statement": "Define a zone keyed on the client address, e.g. `limit_req_zone $binary_remote_addr zone=one:10m rate=1r/s;`.",
+        "quote": "limit_req_zone $binary_remote_addr zone=one:10m rate=1r/s;",
+        "source": "http://nginx.org/en/docs/http/ngx_http_limit_req_module.html#content"
+      },
+      {
+        "case": "nginx-limit-req-rate-limit",
+        "library": "https://nginx.org/en/docs/",
+        "statement": "`limit_req` with `burst` allows bursts above the rate: excess requests are delayed until the burst size is exceeded, then rejected with an error (e.g. 1 r/s on average with bursts of up to 5).",
+        "alternatives": [
+          [
+            {
+              "quote": "allow not more than 1 request per second at an average, with bursts not exceeding 5 requests.",
+              "source": "http://nginx.org/en/docs/http/ngx_http_limit_req_module.html#directives"
+            }
+          ],
+          [
+            {
+              "quote": "Excessive requests are delayed until their number exceeds the maximum burst size in which case the request is terminated with an error.",
+              "source": "http://nginx.org/en/docs/http/ngx_http_limit_req_module.html#directives"
+            }
+          ]
+        ]
+      },
+      {
+        "case": "nginx-limit-req-rate-limit",
+        "library": "https://nginx.org/en/docs/",
+        "statement": "`limit_req_status` sets the status code returned for rejected requests (default 503).",
+        "alternatives": [
+          [
+            {
+              "quote": "limit_req_status 503;",
+              "source": "http://nginx.org/en/docs/http/ngx_http_limit_req_module.html#directives"
+            },
+            {
+              "quote": "Sets the status code to return in response to rejected requests.",
+              "source": "http://nginx.org/en/docs/http/ngx_http_limit_req_module.html#directives"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 19,
+    "id": "postgresql-listen-addresses-remote",
+    "flow": "follow",
+    "sandbox": "broad",
+    "cases": [
+      "postgresql-listen-addresses-remote"
+    ],
+    "question": "PostgreSQL only accepts connections from localhost. What setting makes it listen for remote connections?",
+    "facts": [
+      {
+        "case": "postgresql-listen-addresses-remote",
+        "library": "https://www.postgresql.org/docs/current/",
+        "statement": "`listen_addresses` defaults to `localhost`, which allows only local loopback TCP/IP connections.",
+        "quote": "The default value is localhost, which allows only local TCP/IP “loopback” connections to be made.",
+        "source": "https://www.postgresql.org/docs/current/runtime-config-connection.html#RUNTIME-CONFIG-CONNECTION-SETTINGS"
+      },
+      {
+        "case": "postgresql-listen-addresses-remote",
+        "library": "https://www.postgresql.org/docs/current/",
+        "statement": "Setting `listen_addresses` to `*` listens on all available IP interfaces.",
+        "quote": "The special entry * corresponds to all available IP interfaces.",
+        "source": "https://www.postgresql.org/docs/current/runtime-config-connection.html#RUNTIME-CONFIG-CONNECTION-SETTINGS"
+      }
+    ],
+    "not_covered": [],
+    "haiku": true
+  },
+  {
+    "n": 20,
+    "id": "fastapi-enable-cors",
+    "flow": "follow",
+    "sandbox": "broad",
+    "cases": [
+      "fastapi-enable-cors"
+    ],
+    "question": "How do I enable CORS in FastAPI for specific origins?",
+    "facts": [
+      {
+        "case": "fastapi-enable-cors",
+        "library": "https://fastapi.tiangolo.com/",
+        "statement": "Add `CORSMiddleware` (`from fastapi.middleware.cors import CORSMiddleware`) to the FastAPI app.",
+        "alternatives": [
+          [
+            {
+              "quote": "from fastapi.middleware.cors import CORSMiddleware",
+              "source": "https://fastapi.tiangolo.com/tutorial/cors/#use-corsmiddleware"
+            },
+            {
+              "quote": "You can configure it in your FastAPI application using the CORSMiddleware.",
+              "source": "https://fastapi.tiangolo.com/tutorial/cors/#use-corsmiddleware"
+            }
+          ]
+        ]
+      },
+      {
+        "case": "fastapi-enable-cors",
+        "library": "https://fastapi.tiangolo.com/",
+        "statement": "`allow_origins` is the list of origins permitted to make cross-origin requests.",
+        "quote": "allow_origins - A list of origins that should be permitted to make cross-origin requests.",
+        "source": "https://fastapi.tiangolo.com/tutorial/cors/#use-corsmiddleware"
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 21,
+    "id": "code-vitest-mock-module",
+    "flow": "follow",
+    "sandbox": "code-live",
+    "cases": [
+      "code-vitest-mock-module"
+    ],
+    "question": "How do I mock a whole module in Vitest?",
+    "facts": [
+      {
+        "case": "code-vitest-mock-module",
+        "library": "https://vitest.dev/",
+        "statement": "`vi.mock` mocks a whole module.",
+        "quote": "To mock a module completely, you can use the vi.mock API.",
+        "source": "https://vitest.dev/guide/mocking/modules#mocking-a-module"
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 22,
+    "id": "kubernetes-liveness-vs-readiness-probe",
+    "flow": "follow",
+    "sandbox": "broad",
+    "cases": [
+      "kubernetes-liveness-vs-readiness-probe"
+    ],
+    "question": "What is the difference between a liveness probe and a readiness probe in Kubernetes?",
+    "facts": [
+      {
+        "case": "kubernetes-liveness-vs-readiness-probe",
+        "library": "https://kubernetes.io/docs/",
+        "statement": "When a container fails its liveness probe more times than the configured tolerance, the kubelet restarts the container.",
+        "quote": "If a container fails its liveness probe more times than the configured tolerance, the kubelet restarts that container.",
+        "source": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#liveness-probe"
+      },
+      {
+        "case": "kubernetes-liveness-vs-readiness-probe",
+        "library": "https://kubernetes.io/docs/",
+        "statement": "When the readiness probe fails, the Pod's IP address is removed from the EndpointSlices of the Services that match the Pod (it stops receiving their traffic).",
+        "quote": "If the readiness probe returns a failed state, the EndpointSlice controller removes the Pod's IP address from the EndpointSlices of all Services that match the Pod.",
+        "source": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#readiness-probe"
+      }
+    ],
+    "not_covered": [],
+    "haiku": true
+  },
+  {
+    "n": 23,
+    "id": "textual-work-decorator",
+    "flow": "follow",
+    "sandbox": "broad",
+    "cases": [
+      "textual-work-decorator"
+    ],
+    "question": "In a Textual app, how do I run a slow network request in the background without freezing the UI?",
+    "facts": [
+      {
+        "case": "textual-work-decorator",
+        "library": "https://textual.textualize.io/",
+        "statement": "Use the `@work` decorator, which turns the method into a worker (instead of calling `run_worker` manually).",
+        "quote": "run_worker manually is the work decorator, which automatically generates a worker from the decorated method.",
+        "source": "https://textual.textualize.io/guide/workers/#work-decorator"
+      },
+      {
+        "case": "textual-work-decorator",
+        "library": "https://textual.textualize.io/",
+        "statement": "The docs' example decorates the method with `@work(exclusive=True)`.",
+        "quote": "@work(exclusive=True)",
+        "source": "https://textual.textualize.io/guide/workers/#work-decorator"
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 24,
+    "id": "aws-lambda-max-timeout-and-env-var-size",
+    "flow": "follow",
+    "sandbox": "broad",
+    "cases": [
+      "aws-lambda-max-timeout-and-env-var-size"
+    ],
+    "question": "What are AWS Lambda's maximum function timeout and the size limit for environment variables?",
+    "facts": [
+      {
+        "case": "aws-lambda-max-timeout-and-env-var-size",
+        "library": "https://docs.aws.amazon.com/lambda/latest/dg/",
+        "statement": "The maximum function timeout is 900 seconds (15 minutes).",
+        "quote": "900 seconds (15 minutes). For functions using AWS Lambda Managed Instances, asynchronous invocations",
+        "source": "https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits#function-configuration-deployment-and-execution"
+      },
+      {
+        "case": "aws-lambda-max-timeout-and-env-var-size",
+        "library": "https://docs.aws.amazon.com/lambda/latest/dg/",
+        "statement": "Environment variables are limited to 4 KB in aggregate for all of a function's variables.",
+        "quote": "4 KB, for all environment variables associated with the function, in aggregate",
+        "source": "https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits#function-configuration-deployment-and-execution"
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 25,
+    "id": "neg-nginx-proxy-retry-backoff",
+    "flow": "follow",
+    "sandbox": "broad",
+    "cases": [
+      "neg-nginx-proxy-retry-backoff"
+    ],
+    "question": "How do I use nginx's proxy_retry_backoff directive to add a delay between upstream retries?",
+    "facts": [],
+    "not_covered": [
+      "nginx's documentation has no proxy_retry_backoff directive."
+    ],
+    "haiku": true
+  },
+  {
+    "n": 26,
+    "id": "neg-postgres-query-cache-size",
+    "flow": "follow",
+    "sandbox": "broad",
+    "cases": [
+      "neg-postgres-query-cache-size"
+    ],
+    "question": "What should I set PostgreSQL's query_cache_size parameter to?",
+    "facts": [],
+    "not_covered": [
+      "PostgreSQL's documentation has no query_cache_size parameter."
+    ]
+  },
+  {
+    "n": 27,
+    "id": "survey-fastapi-upload+nginx-413-client-max-body-size",
+    "flow": "survey",
+    "sandbox": "broad",
+    "cases": [
+      "fastapi-upload",
+      "nginx-413-client-max-body-size"
+    ],
+    "question": "Uploading a large file to my FastAPI app behind nginx fails with 413. How do I accept the upload in FastAPI, and which nginx setting is rejecting it?",
+    "facts": [
+      {
+        "case": "fastapi-upload",
+        "library": "https://fastapi.tiangolo.com/",
+        "statement": "Declare the upload as an endpoint parameter with File / UploadFile (for example `file: UploadFile`).",
+        "alternatives": [
+          [
+            {
+              "quote": "You can define files to be uploaded by the client using File.",
+              "source": "https://fastapi.tiangolo.com/tutorial/request-files/"
+            }
+          ],
+          [
+            {
+              "quote": "Define a file parameter with a type of UploadFile",
+              "source": "https://fastapi.tiangolo.com/tutorial/request-files/#file-parameters-with-uploadfile"
+            }
+          ]
+        ]
+      },
+      {
+        "case": "nginx-413-client-max-body-size",
+        "library": "https://nginx.org/en/docs/",
+        "statement": "nginx returns 413 (Request Entity Too Large) when the request body exceeds `client_max_body_size`.",
+        "quote": "If the size in a request exceeds the configured value, the 413 (Request Entity Too Large) error is returned to the client.",
+        "source": "http://nginx.org/en/docs/http/ngx_http_core_module.html#directives"
+      },
+      {
+        "case": "nginx-413-client-max-body-size",
+        "library": "https://nginx.org/en/docs/",
+        "statement": "`client_max_body_size` defaults to 1m.",
+        "quote": "client_max_body_size 1m;",
+        "source": "http://nginx.org/en/docs/http/ngx_http_core_module.html#directives"
+      },
+      {
+        "case": "nginx-413-client-max-body-size",
+        "library": "https://nginx.org/en/docs/",
+        "statement": "Setting `client_max_body_size` to 0 disables the check of the request body size.",
+        "quote": "Setting size to 0 disables checking of client request body size.",
+        "source": "http://nginx.org/en/docs/http/ngx_http_core_module.html#directives"
+      }
+    ],
+    "not_covered": [],
+    "haiku": true
+  },
+  {
+    "n": 28,
+    "id": "survey-slack-slash-command-operation-timeout+aws-lambda-task-timed-out-error",
+    "flow": "survey",
+    "sandbox": "broad",
+    "cases": [
+      "slack-slash-command-operation-timeout",
+      "aws-lambda-task-timed-out-error"
+    ],
+    "question": "My Slack slash command is handled by an AWS Lambda function. Slack shows operation_timeout and the Lambda log says 'Task timed out after 3.00 seconds'. What does each one mean?",
+    "facts": [
+      {
+        "case": "slack-slash-command-operation-timeout",
+        "library": "https://docs.slack.dev/",
+        "statement": "Slack must receive the app's acknowledgement within 3000 ms (3 seconds) of sending the request, otherwise the user sees operation_timeout.",
+        "quote": "received by Slack within 3000 milliseconds of the original request being sent, otherwise an operation_timeout error will be displayed to the user.",
+        "source": "https://docs.slack.dev/interactivity/implementing-slash-commands#responding_basic_receipt"
+      },
+      {
+        "case": "slack-slash-command-operation-timeout",
+        "library": "https://docs.slack.dev/",
+        "statement": "The app acknowledges by sending back an HTTP 200 response (it can be empty) to the original request.",
+        "quote": "Your app can do this by sending back an empty HTTP 200 response to the original request.",
+        "source": "https://docs.slack.dev/interactivity/implementing-slash-commands#responding_basic_receipt"
+      },
+      {
+        "case": "aws-lambda-task-timed-out-error",
+        "library": "https://docs.aws.amazon.com/lambda/latest/dg/",
+        "statement": "For the Lambda timeout, the docs' fix is to increase the function's timeout duration (the function ran longer than its configured timeout).",
+        "quote": "Increase the function timeout duration: Extend the timeout to give the Init and Invoke phases time to complete successfully.",
+        "source": "https://docs.aws.amazon.com/lambda/latest/dg/troubleshooting-invocation#lambda-function-times-out-during-init-phase-sandbox-timedout"
+      }
+    ],
+    "not_covered": [],
+    "haiku": true
+  },
+  {
+    "n": 29,
+    "id": "survey-postgresql-listen-addresses-remote+psycopg3-async-connection",
+    "flow": "survey",
+    "sandbox": "broad",
+    "cases": [
+      "postgresql-listen-addresses-remote",
+      "psycopg3-async-connection"
+    ],
+    "question": "My PostgreSQL server only listens on localhost. What do I change so my app on another host can reach it, and how do I open an async connection to it with psycopg 3?",
+    "facts": [
+      {
+        "case": "postgresql-listen-addresses-remote",
+        "library": "https://www.postgresql.org/docs/current/",
+        "statement": "`listen_addresses` defaults to `localhost`, which allows only local loopback TCP/IP connections.",
+        "quote": "The default value is localhost, which allows only local TCP/IP “loopback” connections to be made.",
+        "source": "https://www.postgresql.org/docs/current/runtime-config-connection.html#RUNTIME-CONFIG-CONNECTION-SETTINGS"
+      },
+      {
+        "case": "postgresql-listen-addresses-remote",
+        "library": "https://www.postgresql.org/docs/current/",
+        "statement": "Setting `listen_addresses` to `*` listens on all available IP interfaces.",
+        "quote": "The special entry * corresponds to all available IP interfaces.",
+        "source": "https://www.postgresql.org/docs/current/runtime-config-connection.html#RUNTIME-CONFIG-CONNECTION-SETTINGS"
+      },
+      {
+        "case": "psycopg3-async-connection",
+        "library": "https://www.psycopg.org/psycopg3/docs/",
+        "statement": "psycopg 3 has `AsyncConnection` and `AsyncCursor`, the asyncio counterparts of Connection and Cursor.",
+        "quote": "Psycopg Connection and Cursor have counterparts AsyncConnection and AsyncCursor supporting an asyncio interface.",
+        "source": "https://www.psycopg.org/psycopg3/docs/advanced/async.html#asynchronous-operations"
+      },
+      {
+        "case": "psycopg3-async-connection",
+        "library": "https://www.psycopg.org/psycopg3/docs/",
+        "statement": "Open one with `async with await psycopg.AsyncConnection.connect(...)`.",
+        "quote": "async with await psycopg.AsyncConnection.connect(",
+        "source": "https://www.psycopg.org/psycopg3/docs/advanced/async.html#asynchronous-operations"
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 30,
+    "id": "survey-stripe-cli-listen-forward-to+nextjs-app-router-route-handler",
+    "flow": "survey",
+    "sandbox": "broad",
+    "cases": [
+      "stripe-cli-listen-forward-to",
+      "nextjs-app-router-route-handler"
+    ],
+    "question": "I want Stripe webhooks delivered to my local Next.js app. How do I forward them with the Stripe CLI, and how do I create the API endpoint in the App Router?",
+    "facts": [
+      {
+        "case": "stripe-cli-listen-forward-to",
+        "library": "https://docs.stripe.com/",
+        "statement": "Run `stripe listen --forward-to localhost:<port>/<path>` (the docs use `localhost:4242/webhook`).",
+        "alternatives": [
+          [
+            {
+              "quote": "stripe listen --forward-to localhost:4242/webhook",
+              "source": "https://docs.stripe.com/webhooks#test-locally-without-a-registered-url"
+            },
+            {
+              "quote": "This command assumes you have a localhost website on port 4242 with a POST /webhook endpoint",
+              "source": "https://docs.stripe.com/webhooks#test-locally-without-a-registered-url"
+            }
+          ]
+        ]
+      },
+      {
+        "case": "stripe-cli-listen-forward-to",
+        "library": "https://docs.stripe.com/",
+        "statement": "`stripe listen` prints a webhook signing secret to use in the webhook handler.",
+        "quote": "The stripe listen command outputs the {{WEBHOOK_SIGNING_SECRET}}. Copy this value to use when you create a handler.",
+        "source": "https://docs.stripe.com/webhooks#test-locally-without-a-registered-url"
+      },
+      {
+        "case": "nextjs-app-router-route-handler",
+        "library": "https://nextjs.org/docs/",
+        "statement": "Route Handlers (a `route.js`/`route.ts` file in the app directory) create custom request handlers for a route with the Web Request and Response APIs.",
+        "quote": "Route Handlers allow you to create custom request handlers for a given route using the Web Request and Response APIs.",
+        "source": "https://nextjs.org/docs/app/api-reference/file-conventions/route"
+      },
+      {
+        "case": "nextjs-app-router-route-handler",
+        "library": "https://nextjs.org/docs/",
+        "statement": "A Route Handler exports functions named after HTTP methods; GET, POST, PUT, PATCH, DELETE, HEAD and OPTIONS are supported (a webhook endpoint exports POST).",
+        "quote": "The following HTTP methods are supported: GET, POST, PUT, PATCH, DELETE, HEAD, and OPTIONS.",
+        "source": "https://nextjs.org/docs/app/api-reference/file-conventions/route#http-methods"
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 31,
+    "id": "survey-react-effect-race+tanstack-query-invalidate-after-mutation",
+    "flow": "survey",
+    "sandbox": "broad",
+    "cases": [
+      "react-effect-race",
+      "tanstack-query-invalidate-after-mutation"
+    ],
+    "question": "I fetch data in a React useEffect and get race conditions. How does React say to avoid that, and if I move to TanStack Query, how do I refetch after a mutation succeeds?",
+    "facts": [
+      {
+        "case": "react-effect-race",
+        "library": "https://react.dev/",
+        "statement": "Use an `ignore` variable initialised to false and set to true in the Effect's cleanup, so a response that arrives late is ignored.",
+        "quote": "Note the ignore variable which is initialized to false, and is set to true during cleanup.",
+        "source": "https://react.dev/reference/react/useEffect#fetching-data-with-effects"
+      },
+      {
+        "case": "react-effect-race",
+        "library": "https://react.dev/",
+        "statement": "The docs' code: `let ignore = false;` before fetching, `if (!ignore) { ... }` around the state update, and `ignore = true;` in the cleanup.",
+        "alternatives": [
+          [
+            {
+              "quote": "let ignore = false;",
+              "source": "https://react.dev/reference/react/useEffect#fetching-data-with-effects"
+            },
+            {
+              "quote": "if (!ignore) {",
+              "source": "https://react.dev/reference/react/useEffect#fetching-data-with-effects"
+            },
+            {
+              "quote": "ignore = true;",
+              "source": "https://react.dev/reference/react/useEffect#fetching-data-with-effects"
+            }
+          ]
+        ]
+      },
+      {
+        "case": "tanstack-query-invalidate-after-mutation",
+        "library": "https://tanstack.com/query/latest/",
+        "statement": "Use `useMutation`'s `onSuccess` option together with the query client's `invalidateQueries`.",
+        "quote": "you can use useMutation's onSuccess options and the client's invalidateQueries function",
+        "source": "https://tanstack.com/query/latest/docs/framework/react/guides/invalidations-from-mutations"
+      },
+      {
+        "case": "tanstack-query-invalidate-after-mutation",
+        "library": "https://tanstack.com/query/latest/",
+        "statement": "For example `await queryClient.invalidateQueries({ queryKey: ['todos'] })`.",
+        "quote": "await queryClient.invalidateQueries({ queryKey: ['todos'] })",
+        "source": "https://tanstack.com/query/latest/docs/framework/react/guides/invalidations-from-mutations"
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 32,
+    "id": "survey-oidc-core-nonce-required+okta-custom-authz-server-groups-claim",
+    "flow": "survey",
+    "sandbox": "broad",
+    "cases": [
+      "oidc-core-nonce-required",
+      "okta-custom-authz-server-groups-claim"
+    ],
+    "question": "Is nonce required in the OpenID Connect authorization code flow, and how do I add a groups claim to tokens from an Okta custom authorization server?",
+    "facts": [
+      {
+        "case": "oidc-core-nonce-required",
+        "library": "https://openid.net/specs/",
+        "statement": "In the Authorization Code Flow, `nonce` is OPTIONAL in the authentication request.",
+        "quote": "OPTIONAL. String value used to associate a Client session with an ID Token, and to mitigate replay attacks.",
+        "source": "https://openid.net/specs/openid-connect-core-1_0.html"
+      },
+      {
+        "case": "oidc-core-nonce-required",
+        "library": "https://openid.net/specs/",
+        "statement": "In the Implicit Flow, `nonce` is REQUIRED.",
+        "alternatives": [
+          [
+            {
+              "quote": "REQUIRED. String value used to associate a Client session with an ID Token, and to mitigate replay attacks.",
+              "source": "https://openid.net/specs/openid-connect-core-1_0.html"
+            }
+          ],
+          [
+            {
+              "quote": "Use of the nonce Claim is REQUIRED for this flow.",
+              "source": "https://openid.net/specs/openid-connect-core-1_0.html"
+            }
+          ]
+        ]
+      },
+      {
+        "case": "oidc-core-nonce-required",
+        "library": "https://openid.net/specs/",
+        "statement": "If a nonce was sent in the authentication request, the ID Token must contain a `nonce` Claim, and its value must be checked against the one sent.",
+        "quote": "If a nonce value was sent in the Authentication Request, a nonce Claim MUST be present and its value checked",
+        "source": "https://openid.net/specs/openid-connect-core-1_0.html"
+      },
+      {
+        "case": "okta-custom-authz-server-groups-claim",
+        "library": "https://developer.okta.com/docs/",
+        "statement": "In the Admin Console, on the Authorization Servers tab, select the authorization server and click Claims (then add a claim).",
+        "quote": "On the Authorization Servers tab, select the name of the authorization server, and then click Claims.",
+        "source": "https://developer.okta.com/docs/guides/customize-authz-server/main/#create-claims"
+      },
+      {
+        "case": "okta-custom-authz-server-groups-claim",
+        "library": "https://developer.okta.com/docs/",
+        "statement": "Set \"Include in token type\" to Access Token (OAuth 2.0) or ID Token (OpenID Connect).",
+        "quote": "Include in token type—select Access Token (OAuth 2.0) or ID Token (OpenID Connect).",
+        "source": "https://developer.okta.com/docs/guides/customize-authz-server/main/#create-claims"
+      },
+      {
+        "case": "okta-custom-authz-server-groups-claim",
+        "library": "https://developer.okta.com/docs/",
+        "statement": "Up to 100 groups are included in the claim; if the filter matches more, the request fails.",
+        "quote": "Up to 100 groups are included in the claim. If the filter results in more than that, the request fails.",
+        "source": "https://developer.okta.com/docs/guides/customize-authz-server/main/#create-claims"
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 33,
+    "id": "survey-docusaurus-tag-docs-version+github-actions-concurrency-cancel-in-progress",
+    "flow": "survey",
+    "sandbox": "broad",
+    "cases": [
+      "docusaurus-tag-docs-version",
+      "github-actions-concurrency-cancel-in-progress"
+    ],
+    "question": "For our Docusaurus site: how do I tag a new docs version, and how do I make GitHub Actions cancel the previous run when a new commit is pushed?",
+    "facts": [
+      {
+        "case": "docusaurus-tag-docs-version",
+        "library": "https://docusaurus.io/docs/",
+        "statement": "Tag a version with `npm run docusaurus docs:version <version>` (e.g. `1.1.0`).",
+        "quote": "npm run docusaurus docs:version 1.1.0",
+        "source": "https://docusaurus.io/docs/versioning#tagging-a-new-version"
+      },
+      {
+        "case": "docusaurus-tag-docs-version",
+        "library": "https://docusaurus.io/docs/",
+        "statement": "Tagging copies the full `docs/` folder into `versioned_docs/version-<versionName>/`.",
+        "quote": "Copy the full docs/ folder contents into a new versioned_docs/version-[versionName]/ folder.",
+        "source": "https://docusaurus.io/docs/versioning#tagging-a-new-version"
+      },
+      {
+        "case": "github-actions-concurrency-cancel-in-progress",
+        "library": "https://docs.github.com/en/actions/",
+        "statement": "Use the `concurrency` key with `cancel-in-progress: true` to cancel the in-progress run when a new one starts.",
+        "quote": "To use concurrency to cancel any in-progress job or run in GitHub Actions, you can use the concurrency key with the cancel-in-progress option set to true:",
+        "source": "https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#example-using-concurrency-to-cancel-any-in-progress-job-or-run"
+      }
+    ],
+    "not_covered": []
+  },
+  {
+    "n": 34,
+    "id": "survey-duo-fallback-pam-sssd",
+    "flow": "survey",
+    "sandbox": "duo3",
+    "cases": [
+      "duo-fallback",
+      "linux-pam-sag",
+      "sssd-pam_sss"
+    ],
+    "question": "We use the Linux pam_duo module. If duosecurity.com cannot be reached we want to fall back to another authenticator such as pam_sss. Is there a supported way to tell an unreachable service from a user failing login?",
+    "facts": [
+      {
+        "case": "duo-fallback",
+        "library": "https://duo.com/docs/",
+        "statement": "pam_duo's `failmode` option: on service or configuration errors that prevent Duo authentication, `safe` allows access and `secure` denies access; the default is `safe`.",
+        "quote": "fail \"safe\" (allow access) or \"secure\" (deny access)",
+        "source": "https://duo.com/docs/duounix#duo-configuration-options"
+      },
+      {
+        "case": "linux-pam-sag",
+        "library": "https://www.chiark.greenend.org.uk/doc/libpam-doc/html/",
+        "statement": "In pam.conf / pam.d, the control field can be written as a square-bracketed list of value=action pairs, `[value1=action1 value2=action2 ...]`.",
+        "alternatives": [
+          [
+            {
+              "quote": "[value1=action1 value2=action2 ...]",
+              "source": "https://www.chiark.greenend.org.uk/doc/libpam-doc/html/sag-configuration-file.html#sag-configuration-file"
+            }
+          ],
+          [
+            {
+              "quote": "the more complicated one involves a square-bracketed selection of value=action pairs.",
+              "source": "https://www.chiark.greenend.org.uk/doc/libpam-doc/html/sag-configuration-file.html#sag-configuration-file"
+            }
+          ]
+        ]
+      },
+      {
+        "case": "linux-pam-sag",
+        "library": "https://www.chiark.greenend.org.uk/doc/libpam-doc/html/",
+        "statement": "Each value is a module return code, and `service_err` is one of the values the bracketed control syntax accepts.",
+        "alternatives": [
+          [
+            {
+              "quote": "Where valueN corresponds to the return code from the function invoked in the module for which the line is defined.",
+              "source": "https://www.chiark.greenend.org.uk/doc/libpam-doc/html/sag-configuration-file.html#sag-configuration-file"
+            },
+            {
+              "quote": "symbol_err, service_err, system_err",
+              "source": "https://www.chiark.greenend.org.uk/doc/libpam-doc/html/sag-configuration-file.html#sag-configuration-file"
+            }
+          ]
+        ]
+      },
+      {
+        "case": "sssd-pam_sss",
+        "library": "https://sssd.io/",
+        "statement": "pam_sss is SSSD's PAM module; it calls out to the running SSSD for most of its functionality.",
+        "alternatives": [
+          [
+            {
+              "quote": "It includes a PAM module, pam_sss, which can perform the tasks where pam_krb5 was previously used.",
+              "source": "https://sssd.io/docs/krb/krb-migration.html"
+            }
+          ],
+          [
+            {
+              "quote": "the module pam_sss calls out to the running SSSD itself for most functionality.",
+              "source": "https://sssd.io/docs/krb/krb-migration.html"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_covered": []
+  }
+]
