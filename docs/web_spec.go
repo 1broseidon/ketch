@@ -538,6 +538,11 @@ func (r *queryReader) head(start int) {
 			return // "parse a date ...", "set up logging ...": an imperative verb
 		}
 	}
+	if start+1 < n && nameLike(r.words[start]) && versionWordRe.MatchString(cleanQueryWord(r.words[start+1])) {
+		// A name and its number ("RFC 7636", "OAuth 2.0") may be one name
+		// (rfc7636, oauth20); a guess, so a miss reads on.
+		r.add(cleanQueryWord(r.words[start])+"-"+cleanQueryWord(r.words[start+1]), true, start, start+2, start, start+2)
+	}
 	if name, ok := hyphenJoin(r.words, start); ok && nameLike(r.words[start]) && nameLike(r.words[start+1]) {
 		r.add(name, true, start, start+2, start, start+2)
 	}

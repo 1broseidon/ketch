@@ -38,7 +38,28 @@ func loadNamesFixture(t *testing.T) namesFixture {
 	if err := json.Unmarshal(b, &f); err != nil {
 		t.Fatal(err)
 	}
+	for i, l := range f.Libraries {
+		if d, ok := pinnedDocuments[l.Root]; ok {
+			f.Libraries[i].Document, f.Libraries[i].Lead = d[0], d[1]
+		}
+	}
 	return f
+}
+
+// pinnedDocuments are the pinned one-page libraries' documents as
+// docsindex.Libraries reads them (Round 13): each page's title as the pin
+// stores it and, for a lead, a sentence written for this test that
+// spells the acronym out the way the specification's abstract does (no
+// page text is copied). The values marked "added" are names of these
+// documents written for Round 13; the rest are the callers' own, as Round
+// 11 measured them.
+var pinnedDocuments = map[string][2]string{
+	"https://datatracker.ietf.org/doc/html/rfc6749/": {"The OAuth 2.0 Authorization Framework", ""},
+	"https://datatracker.ietf.org/doc/html/rfc7519/": {"JSON Web Token (JWT)", ""},
+	"https://datatracker.ietf.org/doc/html/rfc7636/": {"Proof Key for Code Exchange by OAuth Public Clients",
+		"A public client defends against code interception with Proof Key for Code Exchange (PKCE)."},
+	"https://datatracker.ietf.org/doc/html/rfc9110/":   {"RFC 9110", ""},
+	"https://pkg.go.dev/github.com/redis/go-redis/v9/": {"redis", ""},
 }
 
 // Outcomes of one value.
@@ -168,6 +189,17 @@ func nameNegatives() []nameNegative {
 		{value: "@tanstack/react-query", drop: []string{"https://tanstack.com/query/latest/"}},
 		{value: "python"},
 		{value: "go"},
+		// Round 13: a word two documents share, a word of one document's
+		// title, a version no document has, and the host's chrome.
+		{value: "oauth"},
+		{value: "rfc"},
+		{value: "token"},
+		{value: "json"},
+		{value: "authorization"},
+		{value: "exchange"},
+		{value: "oauth 2.1"},
+		{value: "http"},
+		{value: "ietf datatracker"},
 	}
 }
 

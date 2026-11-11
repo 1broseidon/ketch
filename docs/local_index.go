@@ -542,7 +542,11 @@ func (b *indexBuild) begin() (map[string]docsindex.Page, error) {
 
 // diff sections every page (anchors corrected by the links of all of
 // them, or with alone of each page's own) and returns the new and changed ones, ready to store; unchanged
-// pages are counted with what they already hold.
+// pages are counted with what they already hold. A page whose content is
+// unchanged but which this build sections into a different number of
+// sections than the store holds (an index an earlier ketch built, before
+// coarse sections were split: Round 13) counts as changed and is stored
+// again, so a rebuild needs no new format.
 func (b *indexBuild) diff(pages []webPage, stored map[string]docsindex.Page, report *IndexReport) []docsindex.PageData {
 	byPage := make([][]webSection, len(pages))
 	if b.alone {
@@ -563,7 +567,7 @@ func (b *indexBuild) diff(pages []webPage, stored map[string]docsindex.Page, rep
 		hash := pageHash(p)
 		old, had := stored[p.URL]
 		switch {
-		case had && old.Hash == hash:
+		case had && old.Hash == hash && old.Sections == len(byPage[i]):
 			report.Unchanged++
 			report.Library.Sections += old.Sections
 			b.same = append(b.same, p.URL)
@@ -731,6 +735,7 @@ func libraryNameTiers(l docsindex.Library) (primary, specific, host []string) {
 	title, _, _ := strings.Cut(cleanPageTitle(l.Title), " - ") // "FastAPI - FastAPI" is FastAPI
 	addWords(title)
 	addWords(l.SiteName)
+	addWords(titleCore(cleanPageTitle(l.Document)))
 	seen := map[string]bool{}
 	add := func(into *[]string, k string) {
 		if len(k) >= 2 && !genericNames[k] && !seen[k] {
@@ -882,7 +887,8 @@ func soleSiteWord(title, siteName string, root webRoot, paths []string) string {
 }
 
 // fullNames are a library's identities as written: its aliases, the name
-// it was indexed by, its site's name and its packages (no ecosystem).
+// it was indexed by, its site's name and its packages (no ecosystem), and
+// for a library of one document, that document's names.
 func fullNames(l docsindex.Library) []string {
 	full := slices.Clone(l.Aliases)
 	if !isHTTPURL(l.Library) {
@@ -899,6 +905,8 @@ func fullNames(l docsindex.Library) []string {
 		}
 		full = append(full, p)
 	}
+	// A specification's own names, as keys (local_documents.go).
+	full = append(full, documentNames(l)...)
 	return full
 }
 

@@ -99,7 +99,19 @@ type Library struct {
 	// page's title, "Vue Router", "Beautiful Soup"): a name the library
 	// answers to.
 	SiteName string `json:"site_name,omitempty"`
+	// Document and Lead are never stored: for a library whose root is one
+	// page (a specification at its own address), Libraries reads that
+	// page's title and the start of its first section with the library,
+	// so a document answers to its own name, not only to its host's
+	// (design/docs-evidence.md, Round 13).
+	Document string `json:"-"`
+	Lead     string `json:"-"`
 }
+
+// documentLead is how much of a one-page library's first section
+// Libraries reads as its Lead: the title block and abstract of a
+// specification.
+const documentLead = 4000
 
 // Current reports whether the library is in the format this code reads.
 func (l Library) Current() bool { return l.Format == FormatVersion }
@@ -463,9 +475,48 @@ func (s *Store) Libraries() ([]Library, error) {
 			}
 			out = append(out, l)
 		}
-		return rows.Err()
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		return readDocuments(db, out)
 	})
 	return out, err
+}
+
+// readDocuments fills in Document and Lead for the libraries of one page.
+func readDocuments(db *sql.DB, libs []Library) error {
+	at := map[string]int{}
+	var args []any
+	for i, l := range libs {
+		if l.Pages == 1 {
+			at[l.Key] = i
+			args = append(args, l.Key)
+		}
+	}
+	if len(args) == 0 {
+		return nil
+	}
+	rows, err := db.Query(`SELECT l.key, p.title, COALESCE((SELECT substr(s.text, 1, ?) FROM sections s
+		WHERE s.lib = l.id AND s.page = p.url ORDER BY s.ord LIMIT 1), '')
+		FROM libraries l JOIN pages p ON p.lib = l.id
+		WHERE l.key IN (?`+strings.Repeat(",?", len(args)-1)+`)`, append([]any{documentLead}, args...)...)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = rows.Close() }()
+	seen := map[string]int{}
+	for rows.Next() {
+		var key, title, lead string
+		if err := rows.Scan(&key, &title, &lead); err != nil {
+			return err
+		}
+		if seen[key]++; seen[key] == 1 {
+			libs[at[key]].Document, libs[at[key]].Lead = title, lead
+		} else { // more pages than the record says: no one document
+			libs[at[key]].Document, libs[at[key]].Lead = "", ""
+		}
+	}
+	return rows.Err()
 }
 
 // Library returns the library at key.

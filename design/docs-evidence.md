@@ -637,6 +637,64 @@ Each new section takes the anchor's id, so `--section url#anchor` reaches it. No
 
 **Tests changed on purpose.** `TestSplitText` and `TestSplitParagraphs`: a label line before prose heads that paragraph instead of being dropped. `TestCleanText`: code blocks keep their HTML. `TestEvidenceDefinedIn`: its options row now names the question's other term. The hint tests: the new wording, with a count.
 
+### Round 13: coarse sections and spec names
+
+**The problems.** Two, both at index time. In the `ketch-bench` flow run of `7f57617`, 9 of 33 "filled a gap" failures came from a huge section printed as a sliver (an RFC indexed as one section, nginx's 15,919-token Directives section at 400 tokens). And 6 of 16 runs that lost facts were spec questions asked with no `library`: the question went to web search and `resolve "oauth"`, `"jwt"`, `"oidc"` to the package registries, though RFC 6749, 7519 and 7636 are indexed.
+
+**Coarse sections.** A section longer than 1,500 estimated tokens, on a page whose anchors are known, is split further at one of two structural marks; failing both it stays whole. Nothing is split by size.
+
+- **Numbered headings in preformatted text** (an RFC on datatracker). The page's code blocks separated only by blank lines are one run: joined, with the running header and footer (the first and last line of a block, digit runs aside, when at least three blocks and half of them share it) and the blank lines of the page break dropped; one blank line stays where the line before the break ends a sentence. A line at the left margin opening with a number whose title agrees with the page's anchor of that number (`section-4.1.4`, `4.1.4. "exp" (Expiration Time) Claim`) starts a part; its path is the numbering (4, 4.1, 4.1.4). Each paragraph of the joined text is a code block of its own, so an answer can print one. No sentence is cut by a page break any more.
+- **Entries the page's anchors name.** A block (after a blank line) whose first code span, or in a table row the first cell's past its label cells, is an anchor's id followed by no identifier character (nginx: `client_max_body_size size;` under the `<a name>` before it); or whose whole line is a labelled anchor's text (Sphinx's definition terms). The part's heading is the anchor's text, else its id; its path is the section's plus the entry.
+
+Each part takes its anchor (`source:` lands on the entry, `--section` reads it alone); the text before the first mark keeps the section's own heading and anchor.
+
+| Guard | What it prevents |
+|---|---|
+| A list item, a quote or a block opening with a link is no mark | a table of contents or a footnote taken for the entry it points to |
+| An id with no letter, a footnote's or citation's id (`fn1`, `cite_note-3`), an anchor whose text is a citation label (`[RFC2616]`) | a bibliography split into one section per reference (RFC 9110's references) |
+| A permalink is no mark | xml2rfc puts a pilcrow on every paragraph (openid.net drafts split per paragraph); a signature that wraps carries it on its last line (Polars: the signature cut in two) |
+| Anchors met in page order, each once; anchors the page's headings took are left alone | a back-reference or a repeated name marking a second entry |
+| One kind of anchor per section, labelled or not, whichever marks more | nginx's `reuseport` and `multipath` (labelled parameters) cutting the `listen` directive (marked by bare anchors) |
+| Numbered headings at the left margin, without dot leaders, titles agreeing with the anchor's | an RFC's table of contents and its indented numbered lists taken for headings |
+| An entry under the smallest section a page keeps joins the one before | text lost: a near-empty section is dropped |
+| At least two marks; the entries' median at least 100 tokens | a back-of-book index (PostgreSQL's, 1,537 entries of about 11 tokens) or a list of one-line members split into sections that each print whole and crowd the guide sections out |
+
+**Measured on the pin's page cache** (the build's own sectioning, run over the cached pages): 14,818 of the pin's 23,962 pages are in the cache with their anchors; 14,813 of them section exactly as stored. 3,477 of the pin's 248,158 sections are over 1,500 tokens: 2,155 on those pages, 1,322 on pages read from Markdown sources or `llms-full.txt`, whose anchors are unknown and which no rule touches. Of the 2,155, 166 are split: 3 by numbered headings (RFC 6749, 7519, 7636), 163 by entries, on 130 pages of 22 libraries; the rest have no mark that passes the guards. The pin goes from 248,158 sections to 252,698; over 4,000 tokens from 414 to 353; over 1,500 from 3,477 to 3,356. On the split pages, 3,526 sections become 8,066, median 158 tokens. A sample of 15 split sections from 15 sites (nginx, PostgreSQL, an OpenID draft, Pillow, Click, RFC 6749, pytest, Django, SQLAlchemy, Flask, Matplotlib, attrs, redis-py, websockets, Ansible), read whole with the section after each: no wrong split. An earlier sample, before the median guard, found the last entry of a definition list taking the section's closing prose (PostgreSQL's `MAINTAIN` privilege); that shape remains possible.
+
+**Check tier**, same binary on the first pin and on the re-split one (answered, answered or led):
+
+| Variant | tune of 170 | confirm of 121 |
+|---|---|---|
+| first pin | 123, 136 | 74, 80 |
+| entries' median 40 | 123, 133 | 80, 85 |
+| median 60 | 124, 134 | 81, 85 |
+| **median 100, threshold 1,500** | **126, 136** | **81, 85** |
+| median 150 | 125, 136 | 79, 84 |
+| median 100, threshold 1,000 | 126, 135 | 81, 85 |
+| median 100, threshold 3,000 | 126, 136 | 79, 84 |
+| median 100, threshold 4,000 | 126, 136 | 77, 82 |
+
+At median 40 Flask's and redis-py's API members, each printed whole as a group of its own, displaced their guides (`flask-blueprint`, `redis-py-pipeline`, tune). The tune half put the floor between 75 (Flask's members) and 115 (nginx's directives); 100 kept both halves. Thresholds from 1,500 to 4,000 tie on tune; 1,500 is the start the plan gave, and confirm agrees. The rules touch disjoint libraries: numbered headings gained 4 cases (RFC 6749, RFC 7519, `nc-jwt-recommended-lifetime`, `nc-pkce-plain-oauth21`), entries 6 (nginx twice, PostgreSQL three times, Pillow) and lost the led of `pillow-draw-text-font`, which came from a 5,909-token Methods section printed as 400 tokens that did not hold the fact. All: 197 to 207 answered, 216 to 221 answered or led; `verify` unchanged.
+
+**Rebuilds.** A page whose content is unchanged is not sectioned again by a rebuild, so an existing index would have stayed coarse. A page that this build sections into a different number of sections than the store holds now counts as changed and is stored again. No format change: an index built before keeps working, coarser.
+
+**Spec names.** The cause: a one-page library's stored title and site name are its host's (`IETF Datatracker`); the document's own title is only its page's title, which naming never read. Round 11's guard keeps the shared host label from naming any of the four RFCs, rightly. A library of one page now also answers to its document's names. `docsindex` reads the page's title and the start of its first section with the libraries (never stored, so an index built before gets them too):
+
+- the title, and the title without a leading article or a parenthesis (`jsonwebtoken`);
+- an acronym the title or the lead spells out for the title's first words: `JSON Web Token (JWT)`; "Proof Key for Code Exchange (PKCE" in the abstract, for the title `Proof Key for Code Exchange by OAuth Public Clients`. A word may give its first letter or its capitals (`OpenID` gives `OID`); a function word may give its letter or none;
+- a name with its version in the title, whole and by major: `oauth20`, `oauth2`;
+- not a name the root's path rules out (`redis`, the page title of go-redis's package page, is a module path's owner, as Round 11 decided).
+
+`resolve` matches the document's title and shows it in place of the host's. A keyword question opening with a name and a number reads them as one name too (`RFC 7636 PKCE …` is `rfc7636`), a guess, so a miss reads on.
+
+`oauth` is no name: it is a word of two titles. `resolve "oauth"` lists both RFCs; `library: "oauth"` names neither and lists both as `indexed_near`. Had a value named two documents, the rule for several matches would answer from the newer by build time with a note calling the other another version; no value does now. OpenID Connect Core is one page among 399 at openid.net/specs/, a library of many documents: `resolve "openid connect"` lists it through the host label, `oidc` names nothing.
+
+Measured: on the Round 11 set the 369 values are unchanged on `library` (156/0/12 tune, 117/0/27 confirm); on `resolve`, right goes from 30 to 32 on tune and 21 to 23 on confirm (`oauth`, `PKCE`, `JWT`), wrong stays 0. Eleven values were added for the documents' names (`rfc7519`, `RFC 6749`, `oauth 2.0`, `oauth2`, `jwt`, `json web token`, `pkce`, `RFC 7636`; `resolve` `oauth2`, `json web token`, `pkce`): all right. Nine negatives were added (`oauth`, `rfc`, `token`, `json`, `authorization`, `exchange`, `oauth 2.1`, `http`, `ietf datatracker`): none names a library. Over the 385 question-only calls of the `7f57617` flow run, 12 now name an indexed library, each the RFC the case is about; none changes to another library.
+
+**A second pin.** `.docs-index/pin2/` in the bench, built from a copy of the first pin's page cache with the network denied. `ketch docs index` cannot rebuild offline: discovery reads `llms.txt` and sitemaps raw, which the page cache never holds, and 9,140 of the 23,962 pages (Markdown sources, `llms-full.txt` chunks) have no cache entry. So the pin was copied and every page whose cached text reproduces its stored sections and which the new splitter sections differently was sectioned again through the build's own write path: 130 pages of 22 libraries; every other row is as it was. 135 libraries, 23,962 pages as in the first pin, 252,698 sections. Of the nine huge-section runs, the caller's first call (for the multi-library run, its nginx call) now prints the fact the caller guessed in all nine, against none on the first pin. The two Flask runs print it in neither: it is in `register_blueprint`'s entry, which the question does not reach. Of the six spec runs that lost facts with no `library`, five now reach the index on their first call (RFC 7636 twice, RFC 6749, RFC 7519, the PKCE question about OAuth 2.1); the OIDC run does not. The OAuth 2.1 draft is not indexed.
+
+**Not fixed here.** Duo's `<span class=…>` leaks are in Duo's own Markdown sources (`duo.com/docs/*.md`, read raw), not in the HTML extractor, which flattens highlighted `<pre>` and has tests for it; a fix belongs to the Markdown-source read (`fetchOne`, and the freshness check's `readMarkdown`). On xml2rfc pages a figure's pilcrow line before a heading is taken as that heading's permalink (`takePermalinkLine`), so RFC 9110's `4. Identifiers in HTTP` cites `#section-3.9-5`.
+
 ## Storage
 
 Agreed on 2026-11-10, the check in point 4 included.

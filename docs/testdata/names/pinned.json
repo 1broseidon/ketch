@@ -505,6 +505,17 @@
 {"arg": "resolve", "value": "@testing-library/react", "expected": ["https://testing-library.com/docs/"], "split": "confirm"},
 {"arg": "library", "value": "@testing-library/react", "expected": ["https://testing-library.com/docs/"], "split": "confirm"},
 {"arg": "library", "value": "pypi:textual", "expected": ["https://textual.textualize.io/"], "split": "tune"},
-{"arg": "library", "value": "https://tokio.rs/", "expected": ["https://docs.rs/tokio/latest/tokio/", "https://tokio.rs/"], "split": "confirm"}
+{"arg": "library", "value": "https://tokio.rs/", "expected": ["https://docs.rs/tokio/latest/tokio/", "https://tokio.rs/"], "split": "confirm"},
+{"arg": "library", "value": "rfc7519", "expected": ["https://datatracker.ietf.org/doc/html/rfc7519/"], "split": "confirm", "added": "round 13"},
+{"arg": "library", "value": "RFC 6749", "expected": ["https://datatracker.ietf.org/doc/html/rfc6749/"], "split": "confirm", "added": "round 13"},
+{"arg": "library", "value": "oauth 2.0", "expected": ["https://datatracker.ietf.org/doc/html/rfc6749/"], "split": "confirm", "added": "round 13"},
+{"arg": "library", "value": "oauth2", "expected": ["https://datatracker.ietf.org/doc/html/rfc6749/"], "split": "confirm", "added": "round 13"},
+{"arg": "library", "value": "jwt", "expected": ["https://datatracker.ietf.org/doc/html/rfc7519/"], "split": "confirm", "added": "round 13"},
+{"arg": "library", "value": "json web token", "expected": ["https://datatracker.ietf.org/doc/html/rfc7519/"], "split": "confirm", "added": "round 13"},
+{"arg": "library", "value": "pkce", "expected": ["https://datatracker.ietf.org/doc/html/rfc7636/"], "split": "tune", "added": "round 13"},
+{"arg": "library", "value": "RFC 7636", "expected": ["https://datatracker.ietf.org/doc/html/rfc7636/"], "split": "tune", "added": "round 13"},
+{"arg": "resolve", "value": "oauth2", "expected": ["https://datatracker.ietf.org/doc/html/rfc6749/"], "split": "confirm", "added": "round 13"},
+{"arg": "resolve", "value": "json web token", "expected": ["https://datatracker.ietf.org/doc/html/rfc7519/"], "split": "confirm", "added": "round 13"},
+{"arg": "resolve", "value": "pkce", "expected": ["https://datatracker.ietf.org/doc/html/rfc7636/"], "split": "tune", "added": "round 13"}
 ]
 }

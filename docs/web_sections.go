@@ -882,6 +882,10 @@ func splitSections(p webPage, pageIndex int) []webSection {
 		}
 		texts[owner[i]] = append(texts[owner[i]], b.lines...)
 	}
+	claimed := map[string]bool{}
+	for _, b := range blocks[1:] {
+		claimed[b.anchor] = true
+	}
 	var out []webSection
 	for i, b := range blocks {
 		if !b.split {
@@ -889,18 +893,29 @@ func splitSections(p webPage, pageIndex int) []webSection {
 		}
 		raw := strings.TrimSpace(strings.Join(cleanSectionLines(texts[i]), "\n"))
 		text := linkLabels(raw)
-		if len(strings.Join(strings.Fields(text), "")) < webMinSectionText {
-			continue
+		parts := sectionParts(texts[i], text, p.Anchors, claimed)
+		for _, part := range parts {
+			if len(parts) > 1 {
+				raw = strings.TrimSpace(strings.Join(cleanSectionLines(part.lines), "\n"))
+				text = linkLabels(raw)
+			}
+			if len(strings.Join(strings.Fields(text), "")) < webMinSectionText {
+				continue
+			}
+			sec := webSection{page: pageIndex, order: len(out), pageURL: p.URL, heading: title, crumbs: []string{title}, text: text, links: raw}
+			if i > 0 {
+				sec.heading, sec.anchor, sec.source = b.h.text, b.anchor, b.source
+				sec.crumbs = append(sec.crumbs, blockCrumbs(blocks, i)...)
+			}
+			if part.anchor != "" {
+				sec.heading, sec.anchor, sec.source = part.heading, part.anchor, anchorFixed
+				sec.crumbs = append(sec.crumbs, part.path...)
+			}
+			if boilerplateSection(sec.crumbs) {
+				continue
+			}
+			out = append(out, sec)
 		}
-		sec := webSection{page: pageIndex, order: len(out), pageURL: p.URL, heading: title, crumbs: []string{title}, text: text, links: raw}
-		if i > 0 {
-			sec.heading, sec.anchor, sec.source = b.h.text, b.anchor, b.source
-			sec.crumbs = append(sec.crumbs, blockCrumbs(blocks, i)...)
-		}
-		if boilerplateSection(sec.crumbs) {
-			continue
-		}
-		out = append(out, sec)
 	}
 	return out
 }

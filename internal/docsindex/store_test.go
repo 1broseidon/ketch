@@ -2,10 +2,12 @@ package docsindex
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 )
@@ -396,5 +398,44 @@ func TestStorePagesOfAndTouch(t *testing.T) {
 	}
 	if secs, _ := s.PageSections(testKey, testKey+"a"); len(secs) != 1 {
 		t.Errorf("TouchPages changed the sections: %v", secs)
+	}
+}
+
+// A library of one page carries that page's title and the start of its
+// first section as its Document and Lead, read with the libraries and
+// never stored; a library of several pages carries none.
+func TestStoreLibrariesReadOneDocument(t *testing.T) {
+	s := Open(filepath.Join(t.TempDir(), "docs-index.db"))
+	seed(t, s) // two pages
+	spec := "https://specs.example.test/rfc1/"
+	pages := []PageData{{Page: Page{URL: spec, Title: "Demo Token Format (DTF)", Hash: "h"}, Sections: []Section{
+		{Order: 0, Heading: "Demo Token Format (DTF)", Text: "Abstract. This document defines the Demo Token Format (DTF)."},
+		{Order: 1, Anchor: "section-1", Heading: "1. Introduction", Crumbs: []string{"Demo Token Format (DTF)", "1. Introduction"}, Text: "later"},
+	}}}
+	if err := s.PutPages(spec, pages); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.PutLibrary(Library{Key: spec, Root: spec, Title: "Example Host", Format: FormatVersion, Pages: 1, Sections: 2}); err != nil {
+		t.Fatal(err)
+	}
+	libs, err := s.Libraries()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, l := range libs {
+		switch l.Key {
+		case spec:
+			if l.Document != "Demo Token Format (DTF)" || l.Lead != "Abstract. This document defines the Demo Token Format (DTF)." {
+				t.Errorf("one-page library: Document %q Lead %q", l.Document, l.Lead)
+			}
+		default:
+			if l.Document != "" || l.Lead != "" {
+				t.Errorf("%s has %d pages but a document %q", l.Key, l.Pages, l.Document)
+			}
+		}
+	}
+	got, _, _ := s.Library(spec)
+	if raw, _ := json.Marshal(got); strings.Contains(string(raw), "Demo Token") {
+		t.Errorf("the document is stored: %s", raw)
 	}
 }

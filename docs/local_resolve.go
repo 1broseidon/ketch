@@ -91,7 +91,7 @@ func keyHeld(qk string, lib docsindex.Library) bool {
 		return false
 	}
 	primary, _, _ := libraryNameTiers(lib)
-	for _, k := range append([]string{libraryKey(lib.Title), libraryKey(lib.SiteName)}, primary...) {
+	for _, k := range append([]string{libraryKey(lib.Title), libraryKey(lib.SiteName), libraryKey(lib.Document)}, primary...) {
 		if len(k) >= 4 && !genericNames[k] && strings.Contains(qk, k) {
 			return true
 		}
@@ -148,7 +148,7 @@ func nearIndexed(libs []docsindex.Library, value string) []NearLibrary {
 	}
 	out := make([]NearLibrary, len(found))
 	for i, l := range found {
-		out[i] = NearLibrary{Title: firstNonEmpty(l.Title, l.SiteName), Library: l.Root}
+		out[i] = NearLibrary{Title: documentTitle(l), Library: l.Root}
 	}
 	return out
 }
@@ -196,7 +196,7 @@ func nearNote(value string, near []NearLibrary) string {
 
 // resolveFields are what a library answers to, lower case.
 func resolveFields(lib docsindex.Library) []string {
-	out := []string{lib.Root, lib.DisplayRoot, lib.Title, lib.SiteName, lib.Library}
+	out := []string{lib.Root, lib.DisplayRoot, lib.Title, lib.SiteName, lib.Library, lib.Document}
 	out = append(out, lib.Names...)
 	out = append(out, lib.Aliases...)
 	out = append(out, lib.Packages...)
@@ -245,5 +245,5 @@ func anyWordHeld(fields, words []string) bool {
 // indexedMatch is an indexed library as a resolve match: its root as the
 // ID to pass as library, its title, version, and what its index holds.
 func indexedMatch(lib docsindex.Library) LibraryMatch {
-	return LibraryMatch{ID: lib.Root, Title: firstNonEmpty(lib.Title, lib.SiteName), Version: lib.Version, Indexed: true, Index: indexInfo(lib)}
+	return LibraryMatch{ID: lib.Root, Title: documentTitle(lib), Version: lib.Version, Indexed: true, Index: indexInfo(lib)}
 }
