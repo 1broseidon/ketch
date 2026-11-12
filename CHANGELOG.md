@@ -9,6 +9,8 @@ verbatim on the GitHub release. Versions follow
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-11-12
+
 **`ketch docs` answers from the documentation itself, with no key.** Ask a question and ketch searches the web, picks the documentation site the results agree on, reads up to 24 of its pages within 45 seconds, and prints the pieces of their sections that match: paragraphs, list items, code blocks and table rows, verbatim, grouped by section, best first, in about 1,800 tokens. A library indexed with `ketch docs index` answers offline instead. A question saves nothing: the pages stay in the page cache for `cache_ttl`, and the same question again within it does no search and no fetch (its `source:` line ends `, cached`). `--library` names the docs: a docs URL, a name, or a spec such as `django@5.2`, `pypi:click` or `net/http`; a name several libraries share exits 2, listing them. `--resolve click` shows the docs root a name resolves to, with its evidence.
 
 ````console
