@@ -115,7 +115,7 @@ func readTitle(root webRoot, prof *siteProfile) (title, name string) {
 }
 
 // sfReadVersion versions the question cache's key and value.
-const sfReadVersion = "docs-question/v3"
+const sfReadVersion = "docs-question/v4"
 
 // sfRead is what the question cache keeps of a read: the docs root and,
 // unless an indexed library answered for it, the pages read in order.

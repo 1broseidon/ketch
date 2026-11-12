@@ -90,7 +90,7 @@ func TestResolvedRootOrigin(t *testing.T) {
 	if !OriginByName(o.Origin) || OriginUnverified(o.Origin) {
 		t.Errorf("origin kind wrong: %q", o.Origin)
 	}
-	if want := "origin by name: only the package name ties this site to the library; name the site you cite, or pass the docs you mean with --library " + ownRoot + " or --library " + fanRoot; OriginHint(HintCLI, o) != want {
+	if want := "origin by name: only a name ties this site to what you asked; name the site you cite, or pass the docs you mean with --library " + ownRoot + " or --library " + fanRoot; OriginHint(HintCLI, o) != want {
 		t.Errorf("hint = %q, want %q", OriginHint(HintCLI, o), want)
 	}
 	if h := OriginHint(HintMCP, o); !strings.HasSuffix(h, `library="`+ownRoot+`" or library="`+fanRoot+`"`) {
@@ -253,7 +253,7 @@ func TestSharedHostIsNotALibrary(t *testing.T) {
 	if o.Status != Found || o.Library != "https://pkg.go.dev/net/http/" {
 		t.Fatalf("outcome = %s from %q (%v), want found from pkg.go.dev/net/http/", o.Status, o.Library, o.Err())
 	}
-	if want := "verified, the search results agree on pkg.go.dev's page for net/http"; o.Origin != want {
+	if want := "verified, pkg.go.dev documents net/http in the Go standard library"; o.Origin != want {
 		t.Errorf("origin = %q, want %q", o.Origin, want)
 	}
 	for _, r := range o.Results {
@@ -420,17 +420,22 @@ func TestReadCause(t *testing.T) {
 	}
 }
 
-// Domain naming verifies a site only when its address says it is docs: a
-// fan site's domain names the thing too.
-func TestDomainNamingNeedsADocsAddress(t *testing.T) {
+// A domain that carries the name asked is a name match, never
+// verification, with or without docs in its address: the official site
+// and a fan site alike are by name.
+func TestDomainNameIsByName(t *testing.T) {
 	req := sfRequest{query: "raspberry pi enable ssh"}
 	prefs := sitePrefs{words: questionWords(req.query)}
 	official := sfSite{key: "raspberrypi.test", root: rootOf("https://www.raspberrypi.test/documentation/")}
 	fan := sfSite{key: "raspberry.test", root: rootOf("https://raspberry.test/en/"), hits: []sfHit{{u: mustURL(t, "https://raspberry.test/en/tutorials/enable-ssh")}}}
-	if got := siteOrigin(official, req, prefs).text; got != "verified, the question names its domain raspberrypi.test" {
+	if got := siteOrigin(official, req, prefs).text; got != "by name, the domain raspberrypi.test carries the name raspberrypi; nothing else confirms it as the official documentation" {
 		t.Errorf("official: %q", got)
 	}
-	if got := siteOrigin(fan, req, prefs).text; !OriginUnverified(got) {
+	lib := sfRequest{query: "enable ssh", library: "fly.io", spec: libSpec{raw: "fly.io", name: "fly.io"}}
+	if got := siteOrigin(sfSite{root: rootOf("https://docs.fly.io/")}, lib, sitePrefs{names: []string{libraryKey("fly.io")}}).text; !OriginByName(got) {
+		t.Errorf("docs.fly.io for fly.io: %q", got)
+	}
+	if got := siteOrigin(fan, req, prefs).text; !OriginByName(got) || strings.HasPrefix(got, "verified") {
 		t.Errorf("fan site: %q", got)
 	}
 }
@@ -482,5 +487,134 @@ func TestStdModuleNotDisplacedBySiblingSite(t *testing.T) {
 	}
 	if !leadOwned([]sfSite{{root: rootOf("https://docs.python.org/3/library/")}}, m) {
 		t.Error("the library tree does not")
+	}
+}
+
+// A domain named by the repository owner is a name match: the lead is
+// read, labelled by name.
+func TestOwnerNamedDomainIsByName(t *testing.T) {
+	proj := &project{repo: repoKey{owner: "libtips", name: "lib"}}
+	s := originSearch(t, originSite(), fanHits(), sfResolved{name: "lib", match: verifiedMatch("https://pkg.go.dev/github.com/libtips/lib/", "pkg.go.dev hosts the docs of go github.com/libtips/lib", proj)})
+	o := s.GetDocsSelect(context.Background(), "lib", "pool max_connections", 0)
+	if o.Library != fanRoot || o.Origin != "by name, the domain libtips.test carries the name of libtips, owner of github.com/libtips/lib; nothing else confirms it as the official documentation" {
+		t.Fatalf("outcome %s from %q, origin %q (%v)", o.Status, o.Library, o.Origin, o.Err())
+	}
+}
+
+// The resolved root holding none of the question's terms falls over to
+// the site the search results favour, in the same call; only when that
+// holds none either is the question refused.
+func TestResolvedRootFallsOver(t *testing.T) {
+	m := verifiedMatch(ownRoot, "npm lib homepage", nil)
+	s := originSearch(t, originSite(), fanHits(), sfResolved{name: "lib", match: m})
+	o := s.GetDocsSelect(context.Background(), "lib", "tuning when busy", 0)
+	if o.Status != Found || o.Library != fanRoot || !strings.HasPrefix(o.Origin, "unverified, ketch could not confirm libtips.test") ||
+		!strings.HasSuffix(o.Origin, "; "+ownRoot+", which resolve found for lib, holds none of the question's terms, so this answer is from the site the search results favour") {
+		t.Fatalf("outcome %s from %q, origin %q (%v)", o.Status, o.Library, o.Origin, o.Err())
+	}
+	o = s.GetDocsSelect(context.Background(), "lib", "zeppelin quaternion", 0)
+	if o.Status != Refused || !strings.Contains(fmt.Sprint(o.Err()), "nor does "+fanRoot+", the site the search results favour") {
+		t.Fatalf("neither: %s (%v)", o.Status, o.Err())
+	}
+}
+
+// A one-element Go standard-library package is verified by its
+// pkg.go.dev page, and goes ahead of a Go module named like it; beside a
+// library of another ecosystem it is one candidate of an ambiguity.
+func TestGoStdOneElement(t *testing.T) {
+	f := &fakeFetcher{raw: map[string]fakeRaw{
+		"https://pkg.go.dev/context": html(`<html><head><title>context package - context - Go Packages</title></head><body></body></html>`),
+	}}
+	w := NewWeb(f)
+	sm, ok := w.resolveGoStd(withFetchMemo(context.Background()), "context")
+	if !ok || sm.root.String() != "https://pkg.go.dev/context/" {
+		t.Fatalf("context: %v %+v", ok, sm)
+	}
+	module := webMatch{root: rootOf("https://pkg.go.dev/github.com/someone/context/"), packages: []string{"go:github.com/someone/context"}}
+	out := combineStd(sfResolved{name: "context"}, []*webMatch{&sm}, module, nil, "pass a deadline")
+	if out.match != &sm || len(out.candidates) != 2 {
+		t.Fatalf("beside a Go module: match %+v, candidates %d", out.match, len(out.candidates))
+	}
+	crate := webMatch{root: rootOf("https://docs.rs/context/latest/context/"), packages: []string{"crates:context"}}
+	out = combineStd(sfResolved{name: "context"}, []*webMatch{&sm}, crate, nil, "pass a deadline")
+	if out.match != nil || out.ambiguous == nil || len(out.ambiguous.Matches) != 2 {
+		t.Fatalf("beside a crate: %+v", out)
+	}
+	if out = combineStd(sfResolved{name: "context"}, []*webMatch{&sm}, crate, nil, "pass a deadline in golang"); out.match != &sm {
+		t.Fatalf("a language word: %+v", out)
+	}
+	// The search agreeing on the standard-library page settles it.
+	p := sitePrefs{resolved: combineStd(sfResolved{name: "context"}, []*webMatch{&sm}, crate, nil, "pass a deadline")}
+	if refusal := settleAmbiguity(&p, []sfSite{{root: rootOf("https://pkg.go.dev/context/")}}); refusal != nil || p.resolved.match != &sm {
+		t.Fatalf("settled: %v %+v", refusal, p.resolved.match)
+	}
+}
+
+// A named library the search agrees on no site for is refused with what
+// resolve knows by the name, never the sites the search returned; with
+// nothing resolved, the sites are named as the search's, none tied to
+// what was asked.
+func TestNamedRefusalListsResolveCandidates(t *testing.T) {
+	split := []search.Result{hit("https://one.test/a/guide", "A guide"), hit("https://two.test/b/guide", "B guide")}
+	cands := []LibraryMatch{{ID: "npm:lib", Title: "docs not verified", Packages: []string{"npm:lib"}}, crateLib}
+	s := originSearch(t, originSite(), split, sfResolved{name: "lib", candidates: cands})
+	o := s.GetDocsSelect(context.Background(), "lib", "pool max_connections", 0)
+	msg := fmt.Sprint(o.Err())
+	if o.Status != Refused || !strings.Contains(msg, `the search results agree on no site for "lib"; resolve knows it as: npm:lib (docs not verified; npm:lib), `+crateLib.ID) ||
+		strings.Contains(msg, "one.test") || failure.Classify(o.Err(), failure.Upstream).Kind != failure.Validation {
+		t.Fatalf("%s: %s", o.Status, msg)
+	}
+	o = originSearch(t, originSite(), split, sfResolved{name: "lib"}).GetDocsSelect(context.Background(), "lib", "pool max_connections", 0)
+	if msg := fmt.Sprint(o.Err()); !strings.Contains(msg, "the search results are split between several sites, none ahead and none tied to what was asked: ") || strings.Contains(msg, "documentation sites") {
+		t.Fatalf("nothing resolved: %s", msg)
+	}
+}
+
+// A domain's main host goes ahead of a sibling subdomain the question
+// does not name; a sibling it names is a project of its own.
+func TestMainHostOverSibling(t *testing.T) {
+	main, four := rootOf("https://lib.test/docs/"), rootOf("https://four.lib.test/docs/")
+	words := questionWords("lib swap attributes")
+	if !mainHostOver(main, four, words) || mainHostOver(four, main, words) {
+		t.Error("main host not preferred")
+	}
+	if mainHostOver(main, four, questionWords("lib four swap attributes")) {
+		t.Error("a named sibling lost to the main host")
+	}
+	if mainHostOver(rootOf("https://www.cloud.test/"), rootOf("https://developers.cloud.test/"), questionWords("cloud workers")) {
+		t.Error("a docs host lost to the marketing apex")
+	}
+	if !treeBetter(0.1, 0.9, main, four, "", words) {
+		t.Error("treeBetter ranks the sibling first")
+	}
+}
+
+// A package index's whole host is not the tree of one package's path,
+// and Python's page agrees with any tree of its docs host.
+func TestSameTreeAndStdAgreement(t *testing.T) {
+	if sameTree(rootOf("https://pkg.go.dev/"), rootOf("https://pkg.go.dev/fmt/")) {
+		t.Error("pkg.go.dev/ holds pkg.go.dev/fmt/ as one tree")
+	}
+	if !sameTree(rootOf("https://docs.rs/lib/latest/"), rootOf("https://docs.rs/lib/latest/lib/")) {
+		t.Error("a crate's version tree is not its tree")
+	}
+	py := &webMatch{root: rootOf("https://docs.python.org/3/library/json.html"), std: true}
+	if !stdAgrees(py, rootOf("https://docs.python.org/3.11/")) || stdAgrees(py, rootOf("https://peps.python.org/")) {
+		t.Error("Python's docs host agreement")
+	}
+	gostd := &webMatch{root: rootOf("https://pkg.go.dev/fmt/"), std: true}
+	if stdAgrees(gostd, rootOf("https://pkg.go.dev/")) || !stdAgrees(gostd, rootOf("https://pkg.go.dev/fmt/")) {
+		t.Error("Go's package path agreement")
+	}
+	if leadOwned([]sfSite{{root: rootOf("https://docs.python.org/")}}, py) {
+		t.Error("a tree over the module's page stands in for it")
+	}
+}
+
+// A package index's whole host is no site the search can favour.
+func TestSearchLeadSkipsIndexHostRoot(t *testing.T) {
+	docs := docsHits(fuseWeighted([][]search.Result{{hit("https://docs.rs/", "Docs.rs")}}, nil))
+	if l := searchLead(docs, sitePrefs{}); l != nil {
+		t.Errorf("lead = %s", l)
 	}
 }

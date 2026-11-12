@@ -359,7 +359,7 @@ func OriginHint(style HintStyle, o Outcome) string {
 	case OriginUnverified(o.Origin):
 		return "origin unverified: ketch could not confirm this site as the official documentation; name the site you cite, or pass the official docs with " + arg + quote("<docs URL>")
 	case OriginByName(o.Origin):
-		h := "origin by name: only the package name ties this site to the library; name the site you cite, or pass the docs you mean with " + arg
+		h := "origin by name: only a name ties this site to what you asked; name the site you cite, or pass the docs you mean with " + arg
 		if len(o.originRoots) < 2 {
 			return h + quote("<docs URL>")
 		}

@@ -300,9 +300,9 @@ documentation of what was asked: `origin: verified, <evidence>` (a second
 signal beyond the name: the root resolve found and the site the search
 agrees on are one project, the site is the project's own, a standard-library
 page of the language's docs, or the library names the site);
-`origin: by name, <host> documents the <ecosystem> package <name>` when only a
-registry package of the name supports it, with the site the search results
-favour when that is another; or `origin: unverified, ketch could not confirm
+`origin: by name, …` when only a name ties the site to what was asked (a
+registry package of the name, with the site the search results favour when
+that is another; a domain carrying the name); or `origin: unverified, ketch could not confirm
 <host> as the official documentation of <what>`. The last two end with a line
 saying to name the site you cite or pass the official docs with `--library`
 (for by name, both roots). Its status is `found`, or
@@ -320,11 +320,12 @@ documentation (`no_docs_found`), when none of the pages could be read (the
 error counts them per cause, such as `2 blocked (HTTP 403)` or
 `3 need JavaScript`, and names the next step), when the
 site's `robots.txt` closes them (`disallowed`), and when nothing on the pages
-matched (`no_results`); exit **2** (`[validation]`) when the hits are split
-between documentation sites with none clearly ahead (`ambiguous_site`: name
-one with `--library <docs URL>`), and when a `--library` name is shared by
-several libraries resolve verifies (`ambiguous`: each is listed with its
-packages and title; pass one). It fails with exit **4** (`[upstream]`) when
+matched (`no_results`); exit **2** (`[validation]`) when a `--library` name
+is shared by several libraries resolve verifies, or its search agrees on no
+site (each library resolve knows by the name is listed with its packages and
+title; pass one), and when, with no name resolve knows, the hits are split
+between sites with none clearly ahead (`ambiguous_site`: pass the docs you
+mean with `--library <docs URL>`). It fails with exit **4** (`[upstream]`) when
 every web search failed or came back empty (the providers are throttling:
 `search_empty`), or when no answer came within 45 seconds.
 

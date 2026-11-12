@@ -203,21 +203,42 @@ func (s *SearchFirst) ResolveSelect(ctx context.Context, name string, limit int)
 		// registries hold: the index is all that can answer it.
 		return Resolved(SearchBackend, nil, fmt.Errorf("search: no indexed library is named %q, and a name with spaces is not a package name to resolve: give a package name or a docs URL; resolve with no name lists every indexed library: %w", name, ErrNotIndexed))
 	}
-	if m, ok := s.web.resolveGoStd(withFetchMemo(ctx), strings.TrimSpace(name)); ok {
-		return Resolved(SearchBackend, []LibraryMatch{m.libraryMatch()}, nil)
+	// The standard-library pages the name is, read beside the
+	// registries' resolution and listed ahead of it.
+	name = strings.TrimSpace(name)
+	fctx := withFetchMemo(ctx)
+	std := make([]*webMatch, 2)
+	var wg sync.WaitGroup
+	if spec, perr := parseLibSpec(name); perr == nil && spec.version == "" {
+		if goStdRe.MatchString(strings.TrimPrefix(name, "go:")) && (spec.eco == ecoAny || spec.eco == ecoGitHub || strings.HasPrefix(name, "go:")) {
+			wg.Go(func() {
+				if m, ok := s.web.resolveGoStd(fctx, name); ok {
+					std[0] = &m
+				}
+			})
+		}
+		if spec.eco == ecoAny && pyStdRe.MatchString(name) {
+			wg.Go(func() {
+				if m, ok := s.web.resolvePyStd(fctx, name); ok {
+					std[1] = &m
+				}
+			})
+		}
 	}
 	matches, err := s.web.ResolveLibrary(ctx, name, limit)
-	if spec, perr := parseLibSpec(strings.TrimSpace(name)); perr == nil && spec.eco == ecoAny && spec.version == "" {
-		if m, ok := s.web.resolvePyStd(withFetchMemo(ctx), spec.raw); ok {
-			// The language's own module, listed ahead of what the
-			// registries hold under its name.
-			var amb *AmbiguousLibraryError
-			if errors.As(err, &amb) {
-				matches = amb.Matches
-			}
-			err = nil
-			matches = append([]LibraryMatch{m.libraryMatch()}, matches...)
+	wg.Wait()
+	var first []LibraryMatch
+	for _, m := range std {
+		if m != nil {
+			first = append(first, m.libraryMatch())
 		}
+	}
+	if len(first) > 0 {
+		var amb *AmbiguousLibraryError
+		if errors.As(err, &amb) {
+			matches = amb.Matches
+		}
+		matches, err = append(first, matches...), nil
 	}
 	return Resolved(SearchBackend, matches, err)
 }
@@ -416,6 +437,23 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 			site.page = m.page
 		}
 		o, read = s.readSite(ctx, cctx, site, s.hitProfile(cctx, site), req, resolvedOrigin(m, prefs.lead), tr)
+		if lead := prefs.lead; o.unread == "" && cctx.Err() == nil && termsRefused(o) && lead != nil && !m.root.contains(lead.u) && !ownSiteStrong(*lead, m) {
+			// The resolved root holds none of the question's terms and the
+			// search results favour another site: read that one in this
+			// call; refuse only when neither holds them.
+			fav := givenSite(*lead, sites)
+			org := siteOrigin(fav, req, prefs)
+			org.text += fmt.Sprintf("; %s, which resolve found for %s, holds none of the question's terms, so this answer is from the site the search results favour", m.root, prefs.resolved.name)
+			o2, read2 := s.readSite(ctx, cctx, fav, s.hitProfile(cctx, fav), req, org, tr)
+			if answered(o2) {
+				read = read2
+				return keep(o2)
+			}
+			if o.err != nil {
+				o.err = fmt.Errorf("%w; nor does %s, the site the search results favour", o.err, lead)
+			}
+			return keep(o)
+		}
 		if o.unread == "" || cctx.Err() != nil {
 			return keep(o)
 		}
@@ -430,7 +468,7 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 			if o.Status != "" {
 				return keep(o) // the site read before says more than the rest's refusal
 			}
-			return s.failed(ctx, cctx, err)
+			return s.failed(ctx, cctx, namedRefusal(err, req, prefs))
 		}
 		if !site.retry {
 			tr.domains++
@@ -467,10 +505,30 @@ func searchLead(docs []sfHit, prefs sitePrefs) *webRoot {
 		plain.roots = slices.DeleteFunc(slices.Clone(prefs.roots), func(r webRoot) bool { return r.String() == m.root.String() })
 	}
 	site, err := pickSite(chooseSites(docs, plain))
-	if err != nil {
-		return nil
+	if err != nil || site.root.prefix == "/" && indexHosted(site.root.u) {
+		return nil // a package index's whole host is no site to favour
 	}
 	return &site.root
+}
+
+// termsRefused reports the evidence pipeline's refusal: none of the
+// question's distinctive terms in the pages, or nothing in them matched.
+func termsRefused(o Outcome) bool {
+	err := o.Err()
+	return o.Status == Refused && (errors.Is(err, ErrTermsNotFound) || errors.Is(err, ErrNoResults))
+}
+
+// namedRefusal is the refusal of a question whose search agrees on no
+// site, when the request names a library: the libraries resolve knows by
+// that name, with their ecosystems and titles, never the sites the search
+// happened to return; those only when resolve knows nothing of the name.
+func namedRefusal(err error, req sfRequest, prefs sitePrefs) error {
+	if req.library == "" || isHTTPURL(req.library) || len(prefs.resolved.candidates) == 0 ||
+		!errors.Is(err, ErrAmbiguousSite) && !errors.Is(err, ErrNoDocsFound) {
+		return err
+	}
+	return fmt.Errorf("search: the search results agree on no site for %q; resolve knows it as: %s; pass one as the library (--library): %w",
+		req.library, matchList(prefs.resolved.candidates), ErrAmbiguousLibrary)
 }
 
 // leadOwned reports a leading site the search agrees on that is the site
@@ -483,8 +541,8 @@ func leadOwned(sites []sfSite, m *webMatch) bool {
 	if m.std {
 		// The language's own page for the module: only a lead at or under
 		// it stands in for it, not another site of the language's domain
-		// (peps.python.org beside docs.python.org).
-		return m.root.contains(sites[0].root.u) || sites[0].root.contains(m.root.u)
+		// (peps.python.org beside docs.python.org) nor a tree over it.
+		return m.root.contains(sites[0].root.u)
 	}
 	_, ok := siteOfProject(sites[0].root, m)
 	return ok
@@ -781,6 +839,9 @@ func servedSite(site sfSite, prof *siteProfile, sites []sfSite) (sfSite, []sfSit
 		return site, sites
 	}
 	root := docsTree(prof.served)
+	if r, ok := sharedProjectRoot(prof.served); ok {
+		root = r // a host that serves many projects re-roots at the project's path, not the host
+	}
 	top := site.hits[0]
 	top.u = prof.served
 	hits := []sfHit{top}

@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -88,10 +89,8 @@ func resolvedOrigin(m *webMatch, lead *webRoot) sfOrigin {
 	if m.std || m.agreed {
 		return verifiedOrigin(matchEvidence(m))
 	}
-	if lead != nil {
-		if _, ok := siteOfProject(*lead, m); ok {
-			return verifiedOrigin(matchEvidence(m) + ", and the search results agree")
-		}
+	if lead != nil && ownSiteStrong(*lead, m) {
+		return verifiedOrigin(matchEvidence(m) + ", and the search results agree")
 	}
 	return byNameOrigin(m, lead)
 }
@@ -102,20 +101,26 @@ type sfResolved struct {
 	name      string                 // the name resolved, as written
 	match     *webMatch              // the one docs root resolve verified
 	ambiguous *AmbiguousLibraryError // several verified, none ahead
-	bare      bool                   // a reading of a bare question (resolved strictly)
-	took      time.Duration
+	// std are the standard-library pages the name is (Go's, Python's),
+	// candidates of an ambiguity that a search agreeing on one settles.
+	std []*webMatch
+	// candidates are every library resolve knows by the name, verified or
+	// not: what a refusal lists when the search agrees on no site.
+	candidates []LibraryMatch
+	bare       bool // a reading of a bare question (resolved strictly)
+	took       time.Duration
 }
 
-// goStdRe is a name shaped like a Go standard-library import path of two
-// elements or more (net/http, encoding/json): lower-case letters and
-// digits, no dot. A one-word name (context, fmt) names too many other
-// things to be read as one.
-var goStdRe = regexp.MustCompile(`^[a-z][a-z0-9]*(?:/[a-z][a-z0-9]*)+$`)
+// goStdRe is a name shaped like a Go standard-library import path
+// (context, net/http): lower-case letters and digits, no dot. pkg.go.dev's
+// own page decides whether it is one.
+var goStdRe = regexp.MustCompile(`^[a-z][a-z0-9]*(?:/[a-z][a-z0-9]*)*$`)
 
 // resolveGoStd verifies a standard-library package by the Go package
 // index's own page for it: pkg.go.dev serves an import path whose first
 // element has no dot only for the standard library, at that path, titled
-// "<name> package - <path> - Go Packages". One page read; no registry.
+// "<name> package - <path> - Go Packages" (one element too: context, fmt).
+// One page read; no registry.
 func (w *Web) resolveGoStd(ctx context.Context, name string) (webMatch, bool) {
 	name = strings.TrimPrefix(name, "go:")
 	if !goStdRe.MatchString(name) {
@@ -127,7 +132,7 @@ func (w *Web) resolveGoStd(ctx context.Context, name string) (webMatch, bool) {
 	}
 	prof, err := w.cachedProfile(ctx, u)
 	if err != nil || prof == nil || prof.served == nil || strings.Trim(prof.served.Path, "/") != name ||
-		!strings.Contains(prof.title, " - "+name+" - ") {
+		!strings.Contains(prof.title, " - "+name+" - ") || !strings.HasSuffix(strings.TrimSpace(prof.title), "Go Packages") {
 		return webMatch{}, false
 	}
 	root, err := parseWebRoot(u.String() + "/")
@@ -204,58 +209,116 @@ func (s *SearchFirst) resolveNamed(ctx context.Context, req sfRequest) (out sfRe
 	}
 	out = sfResolved{name: spec.raw, bare: bare}
 	defer func() { out.took = time.Since(start) }()
-	std := make(chan *webMatch, 1)
-	py := make(chan *webMatch, 1)
-	goName := goStdRe.MatchString(strings.TrimPrefix(spec.raw, "go:"))
-	pyName := spec.eco == ecoAny && spec.version == "" && pyStdRe.MatchString(spec.raw)
-	if !bare && (goName || pyName) {
-		go func() {
-			defer close(std)
-			defer close(py)
-			if goName {
+	var stds []*webMatch
+	var wg sync.WaitGroup
+	if !bare && spec.version == "" {
+		goName := goStdRe.MatchString(strings.TrimPrefix(spec.raw, "go:")) && (spec.eco == ecoAny || spec.eco == ecoGitHub || strings.HasPrefix(spec.raw, "go:"))
+		pyName := spec.eco == ecoAny && pyStdRe.MatchString(spec.raw)
+		found := make([]*webMatch, 2)
+		if goName {
+			wg.Go(func() {
 				if m, ok := s.web.resolveGoStd(ctx, spec.raw); ok {
-					std <- &m
+					found[0] = &m
 				}
-			}
-			if pyName {
+			})
+		}
+		if pyName {
+			wg.Go(func() {
 				if m, ok := s.web.resolvePyStd(ctx, spec.raw); ok {
-					py <- &m
+					found[1] = &m
 				}
+			})
+		}
+		m, err := s.web.resolveOne(ctx, spec, bare)
+		wg.Wait()
+		for _, f := range found {
+			if f != nil {
+				stds = append(stds, f)
 			}
-		}()
-	} else {
-		close(std)
-		close(py)
+		}
+		return combineStd(out, stds, m, err, req.query)
 	}
 	m, err := s.web.resolveOne(ctx, spec, bare)
-	if sm := <-std; sm != nil {
-		out.match = sm // the standard library's package, whatever else goes by the name
-		return out
-	}
+	return combineStd(out, nil, m, err, req.query)
+}
+
+// combineStd is what resolve's answer (m, err) and the standard-library
+// pages the name is (stds) make of a library name. A standard-library
+// page goes ahead of a namesake in its own language's registry (a Go
+// module whose last element is the word, a PyPI package such as an old
+// backport); beside a library of another ecosystem it is one candidate
+// of an ambiguity, which a language word of the question or the search's
+// agreement settles. Every library resolve knows by the name is kept as
+// a candidate for a refusal.
+func combineStd(out sfResolved, stds []*webMatch, m webMatch, err error, query string) sfResolved {
+	out.std = stds
 	var amb *AmbiguousLibraryError
-	if pm := <-py; pm != nil {
-		// The language's own module, ahead of a same-named PyPI package
-		// (an old backport); a library of another ecosystem keeps the name.
-		switch {
-		case err == nil && m.root.u != nil && !onlyPyPI(m.packages):
-		case errors.As(err, &amb) && slices.ContainsFunc(amb.Matches, func(c LibraryMatch) bool { return isHTTPURL(c.ID) && !onlyPyPI(c.Packages) }):
-		default:
-			out.match = pm
-			return out
-		}
-	}
+	var others []LibraryMatch
 	switch {
 	case err == nil && m.root.u != nil:
-		out.match = &m
-	case errors.As(err, &amb) && !bare:
-		if i, ok := languagePick(amb.Matches, req.query); ok {
-			out.match = &webMatch{root: rootOf(amb.Matches[i].ID), title: amb.Matches[i].Title, trust: amb.Matches[i].TrustScore,
-				evidence: evidenceOf(amb.Matches[i].Evidence), packages: amb.Matches[i].Packages, stars: -1}
-			break
+		out.candidates = []LibraryMatch{m.libraryMatch()}
+		if len(stds) == 0 {
+			out.match = &m
+			return out
 		}
+		others = out.candidates
+	case errors.As(err, &amb):
+		out.candidates = slices.Clone(amb.Matches)
+		others = amb.Matches
+	}
+	if len(stds) > 0 {
+		others = slices.DeleteFunc(slices.Clone(others), func(c LibraryMatch) bool { return !isHTTPURL(c.ID) || stdNamesake(c, stds) })
+	}
+	var all []LibraryMatch
+	for _, sm := range stds {
+		all = append(all, sm.libraryMatch())
+	}
+	all = append(all, others...)
+	if len(stds) > 0 {
+		out.candidates = append(slices.Clone(all[:len(stds)]), out.candidates...)
+	}
+	switch {
+	case len(stds) == 1 && len(others) == 0:
+		out.match = stds[0] // the standard library's, whatever else goes by the name
+		return out
+	case len(stds) == 0 && amb == nil:
+		return out
+	case out.bare:
+		return out
+	}
+	if i, ok := languagePick(all, query); ok {
+		if i < len(stds) {
+			out.match = stds[i]
+		} else {
+			c := all[i]
+			out.match = &webMatch{root: rootOf(c.ID), title: c.Title, trust: c.TrustScore, evidence: evidenceOf(c.Evidence), packages: c.Packages, stars: -1}
+		}
+		return out
+	}
+	name := out.name
+	if amb != nil {
+		name = amb.Library
+	}
+	out.ambiguous = &AmbiguousLibraryError{Library: name, Matches: all}
+	if len(stds) == 0 {
 		out.ambiguous = amb
 	}
 	return out
+}
+
+// stdNamesake reports a candidate that a standard-library page found for
+// the name goes ahead of: a Go module beside Go's package, a PyPI-only
+// package beside Python's module.
+func stdNamesake(c LibraryMatch, stds []*webMatch) bool {
+	for _, sm := range stds {
+		switch {
+		case sm.root.u != nil && scopeHost(sm.root.u) == "pkg.go.dev" && slices.ContainsFunc(c.Packages, func(p string) bool { return strings.HasPrefix(p, "go:") }):
+			return true
+		case sm.root.u != nil && scopeHost(sm.root.u) == "docs.python.org" && onlyPyPI(c.Packages):
+			return true
+		}
+	}
+	return false
 }
 
 // bareReading is the first firm reading of a bare question, as
@@ -290,7 +353,8 @@ func languagePick(ms []LibraryMatch, query string) (int, bool) {
 	}
 	found := -1
 	for i, m := range ms {
-		if !slices.ContainsFunc(m.Packages, func(p string) bool { return strings.HasPrefix(p, string(ecos[0])+":") }) {
+		python := ecos[0] == ecoPyPI && strings.HasPrefix(m.ID, "https://docs.python.org/")
+		if !python && !slices.ContainsFunc(m.Packages, func(p string) bool { return strings.HasPrefix(p, string(ecos[0])+":") }) {
 			continue
 		}
 		if found >= 0 {
@@ -359,6 +423,12 @@ func settleAmbiguity(p *sitePrefs, sites []sfSite) *AmbiguousLibraryError {
 	}
 	p.resolved.ambiguous = nil
 	if len(sites) > 0 {
+		for _, sm := range p.resolved.std {
+			if stdAgrees(sm, sites[0].root) {
+				p.resolved.match = sm // the search agrees on the language's own page
+				return nil
+			}
+		}
 		found := -1
 		for i, m := range verified {
 			if !ownSiteOf(sites[0].root, m) {
@@ -416,13 +486,16 @@ func siteOfProject(root webRoot, m *webMatch) (string, bool) {
 	if m == nil || m.root.u == nil || root.u == nil {
 		return "", false
 	}
-	if m.root.contains(root.u) || root.contains(m.root.u) {
+	if sameTree(root, m.root) {
 		return matchEvidence(m), true
 	}
 	host := root.u.Hostname()
 	dom := registrableDomain(host)
 	if _, shared := sharedProjectRoot(m.root.u); !shared && !indexHosted(m.root.u) && registrableDomain(m.root.u.Hostname()) == dom {
 		return fmt.Sprintf("on %s, the site of %s", dom, matchEvidence(m)), true
+	}
+	if pkg, ok := registryDocsOf(root, m.packages); ok {
+		return fmt.Sprintf("%s's docs of %s, the package resolve found", scopeHost(root.u), pkg), true
 	}
 	p := m.proj
 	if p == nil || isNonDocsHost(host) || indexHosted(root.u) {
@@ -442,13 +515,101 @@ func siteOfProject(root webRoot, m *webMatch) (string, bool) {
 			return fmt.Sprintf("on %s, the host of go module %s", dom, pkg.name), true
 		}
 	}
-	if owner := libraryKey(p.repo.owner); len(owner) >= 3 {
-		label, _, _ := strings.Cut(dom, ".")
-		if libraryKey(label) == owner {
-			return fmt.Sprintf("on %s, the domain of %s, owner of github.com/%s", dom, p.repo.owner, p.repo.String()), true
+	if ownerNamesDomain(dom, p) {
+		return fmt.Sprintf("the domain %s carries the name of %s, owner of github.com/%s", dom, p.repo.owner, p.repo.String()), true
+	}
+	return "", false
+}
+
+// sameTree reports two docs roots one of which holds the other, except
+// a package index's whole host over one project's path: pkg.go.dev/ is
+// not pkg.go.dev/fmt/'s tree.
+func sameTree(a, b webRoot) bool {
+	over := func(x, y webRoot) bool {
+		return x.contains(y.u) && !(x.prefix == "/" && y.prefix != "/" && indexHosted(x.u))
+	}
+	return over(a, b) || over(b, a)
+}
+
+// stdAgrees reports a site the search agrees on that is the
+// standard-library page's own docs: any tree of docs.python.org for
+// Python's (the search often lands on another version's), the package's
+// path or under it on pkg.go.dev.
+func stdAgrees(sm *webMatch, lead webRoot) bool {
+	if sm.root.u == nil || lead.u == nil {
+		return false
+	}
+	if scopeHost(sm.root.u) == "docs.python.org" {
+		return scopeHost(lead.u) == "docs.python.org"
+	}
+	return sm.root.contains(lead.u)
+}
+
+// ownerNamesDomain reports a domain whose first label is the name of the
+// project's repository owner (hashicorp.com for github.com/hashicorp/...):
+// a name match, so siteOfProject's weakest tie, never verification alone.
+func ownerNamesDomain(dom string, p *project) bool {
+	owner := libraryKey(p.repo.owner)
+	label, _, _ := strings.Cut(dom, ".")
+	return len(owner) >= 3 && libraryKey(label) == owner
+}
+
+// ownSiteStrong reports siteOfProject's tie of root to m when it rests on
+// more than a name: anything but the owner's name in the domain.
+func ownSiteStrong(root webRoot, m *webMatch) bool {
+	if _, ok := siteOfProject(root, m); !ok {
+		return false
+	}
+	if sameTree(root, m.root) {
+		return true
+	}
+	dom := registrableDomain(root.u.Hostname())
+	if _, shared := sharedProjectRoot(m.root.u); !shared && !indexHosted(m.root.u) && registrableDomain(m.root.u.Hostname()) == dom {
+		return true
+	}
+	if _, ok := registryDocsOf(root, m.packages); ok {
+		return true
+	}
+	return m.proj != nil && metadataNamesDomain(dom, m.proj)
+}
+
+// registryDocsOf reports a docs tree that is a package index's docs of
+// one of packages (docs.rs/<crate>/ for crates:<crate>, pkg.go.dev/<module>
+// for go:<module>), and which.
+func registryDocsOf(root webRoot, packages []string) (string, bool) {
+	segs := pathSegments(root.prefix)
+	if root.u == nil || len(segs) == 0 {
+		return "", false
+	}
+	norm := func(s string) string { return strings.ReplaceAll(strings.ToLower(s), "_", "-") }
+	for _, p := range packages {
+		eco, name, ok := strings.Cut(p, ":")
+		switch {
+		case !ok:
+		case eco == string(ecoCrates) && scopeHost(root.u) == "docs.rs" && norm(segs[0]) == norm(name):
+			return p, true
+		case eco == string(ecoGo) && scopeHost(root.u) == "pkg.go.dev" && strings.HasPrefix(strings.Join(segs, "/")+"/", name+"/"):
+			return p, true
 		}
 	}
 	return "", false
+}
+
+// metadataNamesDomain reports a domain the project's own metadata
+// publishes: a homepage or docs URL, a Go module path's host.
+func metadataNamesDomain(dom string, p *project) bool {
+	for _, a := range ownerURLs(p) {
+		if !isNonDocsHost(a.url.Hostname()) && !indexHosted(a.url) && registrableDomain(a.url.Hostname()) == dom {
+			return true
+		}
+	}
+	for _, pkg := range p.pkgs {
+		first, _, _ := strings.Cut(pkg.name, "/")
+		if pkg.eco == ecoGo && strings.Contains(first, ".") && !isNonDocsHost(first) && registrableDomain(first) == dom {
+			return true
+		}
+	}
+	return false
 }
 
 // sharedProjectRoot is, for a page on a host that serves many unrelated
@@ -603,11 +764,14 @@ func siteOrigin(site sfSite, req sfRequest, prefs sitePrefs) sfOrigin {
 		}
 	}
 	if m := prefs.resolved.match; m != nil && m.root.u != nil {
-		if m.root.contains(site.root.u) || site.root.contains(m.root.u) {
+		if sameTree(site.root, m.root) {
 			return resolvedOrigin(m, prefs.lead)
 		}
 		if why, ok := siteOfProject(site.root, m); ok {
-			return verifiedOrigin(why)
+			if ownSiteStrong(site.root, m) {
+				return verifiedOrigin(why)
+			}
+			return byNameText(why + "; nothing else confirms it as the official documentation")
 		}
 	}
 	name := req.spec.name
@@ -615,18 +779,50 @@ func siteOrigin(site sfSite, req sfRequest, prefs sitePrefs) sfOrigin {
 		name = prefs.resolved.name
 	}
 	if registryNames(site.root, name) {
-		return verifiedOrigin(fmt.Sprintf("the search results agree on %s's page for %s", scopeHost(site.root.u), name))
-	}
-	if _, shared := sharedProjectRoot(site.root.u); !shared && !indexHosted(site.root.u) && docsSite(site) {
-		key := registrableDomain(site.root.u.Hostname())
-		if ownsDomain(key, prefs.names) || namedWithDescriptor(key, prefs.names) {
-			return verifiedOrigin("the library name is its domain " + key)
+		if segs := pathSegments(site.root.prefix); scopeHost(site.root.u) == "pkg.go.dev" && len(segs) > 0 && !strings.Contains(segs[0], ".") && strings.Join(segs, "/") == strings.Trim(name, "/") {
+			// pkg.go.dev serves a path with no host first for the standard
+			// library only: resolveGoStd's evidence, from the search's hit.
+			return verifiedOrigin(fmt.Sprintf("pkg.go.dev documents %s in the Go standard library", name))
 		}
-		if req.library == "" && ownsDomain(key, prefs.words) {
-			return verifiedOrigin("the question names its domain " + key)
+		return byNameText(fmt.Sprintf("%s documents a package named %s at its own path; nothing else confirms it is the one meant", scopeHost(site.root.u), name))
+	}
+	if _, shared := sharedProjectRoot(site.root.u); !shared && !indexHosted(site.root.u) {
+		key := registrableDomain(site.root.u.Hostname())
+		var by string
+		switch {
+		case ownsDomain(key, prefs.names) || namedWithDescriptor(key, prefs.names):
+			by = req.spec.name
+		case hostValue(req.library) && registrableDomain(strings.ToLower(req.library)) == key:
+			by = req.library // a library value written as a host (fly.io)
+		case req.library == "" && ownsDomain(key, prefs.words):
+			by = domainWord(key, prefs.words)
+		}
+		if by != "" {
+			return byNameText(fmt.Sprintf("the domain %s carries the name %s; nothing else confirms it as the official documentation", scopeHost(site.root.u), by))
 		}
 	}
 	return unverifiedOrigin(scopeHost(site.root.u), askedAbout(req))
+}
+
+// hostValue reports a library value written as a bare host name: a dot,
+// no scheme, path or space.
+func hostValue(v string) bool {
+	v = strings.TrimSpace(v)
+	return strings.Contains(v, ".") && !strings.ContainsAny(v, " /:@") && hostLikeSegment(v)
+}
+
+func byNameText(why string) sfOrigin { return sfOrigin{text: originByName + ", " + why} }
+
+// domainWord is the question word a domain's first label is (ownsDomain's
+// match), for the origin line; the label itself when none is found.
+func domainWord(domain string, words []string) string {
+	label, _, _ := strings.Cut(strings.TrimPrefix(domain, "www."), ".")
+	for _, l := range []string{label, withoutLanguageWord(label)} {
+		if k := libraryKey(l); slices.Contains(words, k) {
+			return l
+		}
+	}
+	return label
 }
 
 // namedWithDescriptor reports a domain whose first label is a name with a

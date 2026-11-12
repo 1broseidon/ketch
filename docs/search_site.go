@@ -33,7 +33,7 @@ var ErrNoDocsFound = failure.New(failure.NotFound, "no_docs_found", "no document
 // ErrAmbiguousSite is a question whose docs hits are split between sites
 // with none clearly ahead: the caller names one (a docs URL as the
 // library).
-var ErrAmbiguousSite = failure.New(failure.Validation, "ambiguous_site", "the search results point to several documentation sites")
+var ErrAmbiguousSite = failure.New(failure.Validation, "ambiguous_site", "the search results are split between several sites")
 
 const (
 	// sfRankK is the rank constant hits are weighed by: 1/(sfRankK+rank).
@@ -546,8 +546,9 @@ func chooseSites(hits []sfHit, prefs sitePrefs) []sfSite {
 	var out []sfSite
 	for _, k := range order {
 		ts := trees[k]
+		named := append(slices.Clone(prefs.words), prefs.names...)
 		sort.SliceStable(ts, func(i, j int) bool {
-			return treeBetter(ts[i].score, ts[j].score, ts[i].root, ts[j].root, prefs.version, prefs.words)
+			return treeBetter(ts[i].score, ts[j].score, ts[i].root, ts[j].root, prefs.version, named)
 		})
 		var alts []sfSite
 		for _, t := range ts {
@@ -737,6 +738,11 @@ func treeBetter(a, b float64, ra, rb webRoot, version string, words []string) bo
 	if va, vb := variantSegment(ra, words) >= 0, variantSegment(rb, words) >= 0; va != vb {
 		return vb // the main docs over an enterprise, legacy or archived copy
 	}
+	if version == "" {
+		if ma, mb := mainHostOver(ra, rb, words), mainHostOver(rb, ra, words); ma != mb {
+			return ma // the domain's main host over a sibling the question does not name
+		}
+	}
 	if version != "" {
 		va, vb := rootNamesVersion(ra, version), rootNamesVersion(rb, version)
 		if va != vb {
@@ -753,6 +759,25 @@ func treeBetter(a, b float64, ra, rb webRoot, version string, words []string) bo
 		return a > b
 	}
 	return len(ra.prefix) < len(rb.prefix)
+}
+
+// mainHostOver reports a tree on its domain's main host (the domain
+// itself, www. or docs.) beside one on a sibling subdomain of the same
+// domain whose first label is no docs host label (four.htmx.org: a
+// pre-release, a playground), when the words name the domain and not the
+// sibling's label. A sibling the question names (kafka.apache.org for a
+// Kafka question) is a project of its own.
+func mainHostOver(a, b webRoot, words []string) bool {
+	ha, hb := scopeHost(a.u), scopeHost(b.u)
+	dom := registrableDomain(ha)
+	if ha == hb || registrableDomain(hb) != dom || !(ha == dom || ha == "docs."+dom) {
+		return false
+	}
+	sibling, _, _ := strings.Cut(strings.TrimSuffix(hb, "."+dom), ".")
+	if sibling == "" || hb == dom || hb == "docs."+dom || docsHostLabels[sibling] || localeSegRe.MatchString(sibling) {
+		return false
+	}
+	return ownsDomain(dom, words) && !slices.Contains(words, libraryKey(sibling))
 }
 
 // rootNamesVersion reports a root whose host or path names version: a
@@ -793,7 +818,7 @@ func pickSite(sites []sfSite) (sfSite, error) {
 		for _, s := range sites[:min(len(sites), 4)] {
 			names = append(names, s.root.String())
 		}
-		return sfSite{}, fmt.Errorf("search: %w: %s; pass one as the library (--library <docs URL>)", ErrAmbiguousSite, strings.Join(names, ", "))
+		return sfSite{}, fmt.Errorf("search: %w, none ahead and none tied to what was asked: %s; pass the docs you mean as the library (--library <docs URL>)", ErrAmbiguousSite, strings.Join(names, ", "))
 	}
 	return top, nil
 }

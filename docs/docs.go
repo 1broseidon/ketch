@@ -40,7 +40,15 @@ type AmbiguousLibraryError struct {
 func (e *AmbiguousLibraryError) Error() string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "%s %q: %d libraries match; pass one with --library (CLI) or library (MCP): ", ErrAmbiguousLibrary, e.Library, len(e.Matches))
-	for i, m := range e.Matches {
+	b.WriteString(matchList(e.Matches))
+	return b.String()
+}
+
+// matchList names each match: its ID, then its title and package specs
+// (the ecosystem) in parentheses, comma-separated.
+func matchList(ms []LibraryMatch) string {
+	var b strings.Builder
+	for i, m := range ms {
 		if i > 0 {
 			b.WriteString(", ")
 		}
