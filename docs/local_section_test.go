@@ -454,3 +454,15 @@ func TestCompactAnswerMCPPointer(t *testing.T) {
 		t.Errorf("following the pointer: %s %v", f.Status, f.Err())
 	}
 }
+
+// Counts read as English: "1 library indexed", "2 libraries indexed".
+func TestPlural(t *testing.T) {
+	for _, c := range []struct {
+		n          int
+		noun, want string
+	}{{1, "library", "1 library"}, {2, "library", "2 libraries"}, {0, "page", "0 pages"}, {3, "key", "3 keys"}, {2, "day", "2 days"}} {
+		if got := plural(c.n, c.noun); got != c.want {
+			t.Errorf("plural(%d, %q) = %q, want %q", c.n, c.noun, got, c.want)
+		}
+	}
+}

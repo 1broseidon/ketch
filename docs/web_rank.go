@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 // webStopwords are dropped from queries (never from documents): they carry
@@ -231,12 +232,16 @@ func undouble(s string) string {
 
 // queryTerms returns the query's distinct terms in order, normalized for
 // ranking, without stopwords unless the query is nothing but stopwords. A
-// host name the query writes is one term, lower case (isHostName).
+// host name the query writes is one term, lower case (isHostName), and so
+// is a number of four digits or more, grouped or not: its digits
+// (numberTerm).
 func queryTerms(query string) []string {
 	var all, terms []string
 	seen := map[string]bool{}
 	for _, w := range strings.Fields(query) {
-		if h := strings.ToLower(strings.Trim(w, queryQuotes+",.;:!?")); isHostName(h) {
+		h := strings.ToLower(strings.Trim(w, queryQuotes+",.;:!?"))
+		if n := numberTerm(h); isHostName(h) || n != "" {
+			h = cmp.Or(n, h)
 			if !seen[h] {
 				seen[h] = true
 				all, terms = append(all, h), append(terms, h)
@@ -259,6 +264,80 @@ func queryTerms(query string) []string {
 		return all
 	}
 	return terms
+}
+
+// Numbers. Docs write a large number with its digits grouped (10,000,
+// 10 000, 10_000) as often as without (10000), and the full-text rows hold
+// a grouped number as its groups (tokenize splits 10,000 into 10 and 000).
+// A number of four digits or more that a question writes, plain or grouped
+// by commas or underscores, is one term, its digits; it matches the docs'
+// number either way: the digits whole, or its groups of three as one
+// phrase (ftsTerm), and a printed text names it when it writes it either
+// way (pieceTokens). A decimal, version, date or address (3.14, 1.2.3,
+// 2024-01-01, 10.0.0.1) is no grouped number. The rows keep no separator,
+// so the phrase also meets 10.000 and the start of 10,000,000; the rows
+// are not rebuilt for that.
+var (
+	plainNumberRe   = regexp.MustCompile(`^[1-9][0-9]{3,}$`)
+	groupedNumberRe = regexp.MustCompile(`^[1-9][0-9]{0,2}(?:(?:,[0-9]{3})+|(?:_[0-9]{3})+)$`)
+	// textNumberRe is what may be a grouped number in running text; groupedIn
+	// checks its groups and separators.
+	textNumberRe = regexp.MustCompile(`[0-9]+(?:[,_ \x{a0}\x{202f}\x{2009}][0-9]{3})+`)
+)
+
+// numberTerm is the digits of a number of four digits or more that w
+// writes (10000 for 10000, 10,000 or 10_000), "" for any other word.
+func numberTerm(w string) string {
+	switch {
+	case plainNumberRe.MatchString(w):
+		return w
+	case groupedNumberRe.MatchString(w):
+		return strings.NewReplacer(",", "", "_", "").Replace(w)
+	}
+	return ""
+}
+
+// digitGroups is a number's digits in groups of three from the right
+// (10000: 10 000), as the full-text rows hold its grouped form.
+func digitGroups(n string) []string {
+	var out []string
+	for len(n) > 3 {
+		out = append(out, n[len(n)-3:])
+		n = n[:len(n)-3]
+	}
+	out = append(out, n)
+	slices.Reverse(out)
+	return out
+}
+
+// groupedNumbers are the digits of the grouped numbers text writes
+// (10,000, 10 000, 10_000: 10000): a first group of one to three digits
+// with no leading zero, then groups of three, all behind one separator;
+// not part of a decimal or a version (1.10,000; 10,000.5).
+func groupedNumbers(text string) []string {
+	var out []string
+	for _, m := range textNumberRe.FindAllStringIndex(text, -1) {
+		s := text[m[0]:m[1]]
+		before, _ := utf8.DecodeLastRuneInString(text[:m[0]])
+		after, size := utf8.DecodeRuneInString(text[m[1]:])
+		next, _ := utf8.DecodeRuneInString(text[min(m[1]+size, len(text)):])
+		if before == '.' || unicode.IsDigit(after) || (after == '.' || after == ',') && unicode.IsDigit(next) {
+			continue
+		}
+		var seps []rune
+		groups := strings.FieldsFunc(s, func(r rune) bool {
+			if unicode.IsDigit(r) {
+				return false
+			}
+			seps = append(seps, r)
+			return true
+		})
+		if len(groups[0]) > 3 || groups[0][0] == '0' || slices.ContainsFunc(seps, func(r rune) bool { return r != seps[0] }) {
+			continue
+		}
+		out = append(out, strings.Join(groups, ""))
+	}
+	return out
 }
 
 // hostLabels are the last labels of the host names a question or a page
@@ -833,7 +912,7 @@ func queryIdents(query string) []string {
 	var out []string
 	for _, w := range strings.Fields(query) {
 		w = strings.Trim(w, queryQuotes+",.;:!?")
-		if w == "" || !isCamel(w) && !strings.ContainsAny(w, "_.(") || isHostName(strings.ToLower(w)) {
+		if w == "" || !isCamel(w) && !strings.ContainsAny(w, "_.(") || isHostName(strings.ToLower(w)) || numberTerm(w) != "" {
 			continue
 		}
 		w = qualifierRe.ReplaceAllString(w, "")

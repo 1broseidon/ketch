@@ -178,8 +178,9 @@ func headingSet(headings ...string) map[string]bool {
 
 // pieceTokens is the terms a piece's text names: its words (camel-case
 // words included), their letter-digit parts (load_in_8bit names 8 and
-// bit), the whole names of the identifiers it writes (pam_duo: pamduo)
-// and the host names it writes (hostTerms).
+// bit), the whole names of the identifiers it writes (pam_duo: pamduo),
+// the host names it writes (hostTerms) and the digits of the grouped
+// numbers it writes (10,000: 10000).
 func pieceTokens(text string) map[string]bool {
 	toks := map[string]bool{}
 	for _, t := range textTokens(text) {
@@ -187,6 +188,9 @@ func pieceTokens(text string) map[string]bool {
 		for _, part := range digitSplit(t) {
 			toks[normTerm(stem(part))] = true
 		}
+	}
+	for _, n := range groupedNumbers(text) {
+		toks[n] = true
 	}
 	for _, t := range identParts(text) {
 		toks[t] = true

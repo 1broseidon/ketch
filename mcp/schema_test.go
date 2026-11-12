@@ -94,7 +94,7 @@ func TestToolArgumentDescriptionsFollowRegistries(t *testing.T) {
 	want("search", "query", "the search query")
 	want("code", "lang", "language filter")
 	want("code", "repo", "owner/name", "exactly")
-	want("docs", "limit", "max number of results")
+	want("docs", "limit", "max number of results", "search", "context7")
 }
 
 // A description key that names no property is a programming error and must

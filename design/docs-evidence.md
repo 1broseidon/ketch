@@ -879,6 +879,16 @@ The coordinator's examples, once after: the tmux tutorial domain is `by name`; `
 - An answer routed by the search to an indexed library has no origin line; it is the caller's own index.
 - Bot challenges (HTTP 403) need a configured browser; nothing else gets through, by design.
 
+### Build 2: correctness before the release
+
+Five rules, each general. Where one differs from the text above, this holds.
+
+- **A number matches its grouped form.** A number of four digits or more the question writes, plain or grouped by commas or underscores (`10000`, `10,000`, `10_000`), is one term, its digits. It matches the docs' number either way: the digits whole, or its groups of three as one phrase (the full-text rows hold `10,000` as `10 000`), and a printed text names it when it writes it either way. A decimal, version, date or address (`3.14`, `1.2.3`, `2024-01-01`, `10.0.0.1`) is no grouped number. The rows keep no separator, so the phrase also meets `10.000` and the start of `10,000,000`; the rows are not rebuilt for that, and an index needs no rebuild.
+- **Pages a search read are no library.** On an answer from them, a common word (a stopword, question filler, a word name resolution knows as common, or an English function word) is never listed in `terms` or `not_found`: among a few pages nearly every word is in under 25 sections, and a word missing from them is missing from those pages. Identifiers and other words are judged as before; the refusal and the ranking read every term as before, and an indexed answer is unchanged. A value the question supplies that the pages do not hold (`9am`) still makes the answer partial: no general rule tells it from a term the docs should hold.
+- **Table cells keep their boundaries.** The HTML table converter writes a Markdown table only when every cell fits one row; a list, code block, quote, rule or heading in a cell, a table in a cell, a link or emphasis around the table, or a layout table made it print the rows' text with nothing between the cells. Before conversion a cell's blocks become lines of the cell (`• x`, `1. x`, a code block's lines as inline code); a table that still cannot be one prints each of its cells on its own line. Runs of line breaks in a row collapse to two.
+- **The index suggestion names the docs, not the host.** The note's `ketch docs index` names the root the search read, unless the site's own lists name more pages under it than an index holds (or it is a package index's whole host). Then it names the deepest directory holding every page the answer cites (a project's root on a host serving many), when that is narrower, no host's or locale's root and not too wide itself; else a docs tree stays, and a site's root gets no suggestion. `the whole site:` is said only of a host's root; a tree is `to index these docs:`.
+- **One page at two queries.** Two pages a search read whose addresses differ only in their query and whose headings are nearly the same (all but a tenth of the shorter list, three or more) are one page, kept at the address without a query (`zod.dev/api?id=optionals` is `zod.dev/api`). A query alone is never dropped: some sites address pages by it.
+
 ## Storage
 
 Agreed on 2026-11-10, the check in point 4 included.

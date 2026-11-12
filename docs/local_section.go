@@ -319,10 +319,13 @@ func distinctCrumbs(crumbs []string) []string {
 // errSectionPage is a page of a section past its last.
 var errSectionPage = failure.New(failure.Validation, "invalid_page", "past the last page")
 
-// plural is n with its noun: "1 page", "3 pages".
+// plural is n with its noun: "1 page", "3 pages", "2 libraries".
 func plural(n int, noun string) string {
-	if n == 1 {
+	switch {
+	case n == 1:
 		return "1 " + noun
+	case strings.HasSuffix(noun, "y") && !strings.ContainsAny(noun[max(len(noun)-2, 0):len(noun)-1], "aeiou"):
+		return strconv.Itoa(n) + " " + noun[:len(noun)-1] + "ies"
 	}
 	return strconv.Itoa(n) + " " + noun + "s"
 }

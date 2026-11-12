@@ -15,6 +15,8 @@ import (
 //     pam_sss, PAM_SERVICE_ERR, useEffect): the whole names of its parts
 //     (pamsss), not its words, which every PAM page holds;
 //   - a host name (duosecurity.com): its labels as one phrase;
+//   - a number of four digits or more, grouped or not (10000, 10,000):
+//     its digits, or its groups of three as one phrase (numberTerm);
 //   - a word joined by hyphens (retry-on-failure): its words as one
 //     phrase;
 //   - any other word: its normalized terms that are in the question's
@@ -38,6 +40,9 @@ type writtenTerm struct {
 	sections    int // the library's sections holding any of its forms
 	inScope     int // of them, those under the answer's scope (scoped answers only)
 	distinctive bool
+	// common is a common word in an answer from pages a search read
+	// (markSearchRead): never in terms or not_found.
+	common bool
 }
 
 // TermCount is a written term and the library's sections holding it.
@@ -68,6 +73,11 @@ func writtenTerms(query string, terms []evidenceTerm) []writtenTerm {
 		case isHostName(lower):
 			forms = []string{ftsTerm(lower)}
 			wt.forms = [][]string{{lower}}
+		case numberTerm(w) != "":
+			n := numberTerm(w)
+			forms = []string{ftsTerm(n)}
+			wt.forms = [][]string{{n}} // pieceTokens gives a grouped number its digits
+
 		case len(queryIdents(w)) > 0:
 			wt.ident = true
 			for _, k := range append(queryIdentKeys(w), queryIdents(w)...) {
@@ -145,13 +155,58 @@ const (
 // the frontmatter's terms lists.
 func shownTerm(wt writtenTerm, n int) bool {
 	switch {
-	case wt.sections == 0:
+	case wt.sections == 0 || wt.common:
 		return false
 	case wt.ident:
 		return true
 	}
 	return wt.sections*shownShare < n || wt.sections <= shownFew
 }
+
+// Pages a search read are no library (design/docs-evidence.md, Build 2):
+// they are the few pages one search found, so nearly every word is in
+// under shownFew of their sections, and a word missing from them is
+// missing from those pages, not from the docs. On an answer from them a
+// common word (commonTerm) is never listed in terms or not_found, so it
+// neither shows as rare nor makes the answer partial; identifiers and
+// other words are judged as in a library, and the refusal and the ranking
+// read every term as before.
+
+// markSearchRead marks the common words of an answer from pages a search
+// read.
+func markSearchRead(wts []writtenTerm) {
+	for i := range wts {
+		wts[i].common = !wts[i].ident && commonTerm(wts[i].text)
+	}
+}
+
+// commonTerm reports a written word that is plain English or the common
+// vocabulary of programming questions: a stopword or question filler
+// (what ranking drops), a word name resolution knows as common
+// (isCommonWord), or a function word (functionWords).
+func commonTerm(w string) bool {
+	k := strings.ToLower(w)
+	if isCommonWord(k) || functionWords[k] {
+		return true
+	}
+	toks := tokenize(k)
+	return len(toks) == 1 && (webStopwords[toks[0]] || rankStopwords[toks[0]] || questionFiller[normTerm(toks[0])])
+}
+
+// functionWords are the English function words and plain words commonWords
+// and the stopword lists leave out: pronouns, modals, determiners,
+// prepositions, conjunctions and the adverbs and adjectives questions are
+// phrased with. They mark a word as common for display only.
+var functionWords = wordSet(`
+whose whom whoever whatever whichever whenever wherever however itself himself herself themselves ourselves
+yourself yourselves myself oneself cannot could might may shall ought did has had was were been am his her
+hers him she he our ours us mine own such either neither nor few fewer several most least very too quite
+rather almost yet ever never often sometimes usually twice whether although though because since unless
+until till upon onto across among amongst beneath beside besides beyond despite outside past toward towards
+under underneath unlike up versus whereas thus therefore hence otherwise etc off no nobody anyone everyone
+someone everything got sure okay yes stuff lot lots basically simply specific certain particular various
+whole entire
+`)
 
 // termVerdict is what the written terms say about an answer: the
 // distinctive terms found that the frontmatter lists (shownTerm) with
@@ -178,6 +233,7 @@ func verdict(wts []writtenTerm, n int) termVerdict {
 			if shownTerm(wt, n) {
 				v.found = append(v.found, TermCount{Term: wt.text, Sections: wt.sections})
 			}
+		case wt.common: // missing from a few pages a search read says nothing
 		default:
 			v.notFound = append(v.notFound, wt.text)
 			v.partial = true

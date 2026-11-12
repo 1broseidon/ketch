@@ -239,9 +239,9 @@ func TestDocsAmbiguousLibraryReachesCallerIntact(t *testing.T) {
 	}
 }
 
-// The library, resolve and query descriptions say what each library
-// provider accepts as a library, from its descriptor; the tool's own
-// description leaves that to them.
+// The library description says what each library provider accepts as a
+// library, from its descriptor; query and resolve describe only themselves
+// and do not repeat it.
 func TestDocsDescriptionsJoinLibraryHelp(t *testing.T) {
 	var helps []string
 	for _, id := range docs.LibraryBackends() {
@@ -253,10 +253,13 @@ func TestDocsDescriptionsJoinLibraryHelp(t *testing.T) {
 		t.Fatal("no library provider declares LibraryHelp; the web backend should")
 	}
 	args := argDescriptions(t)
-	for _, arg := range []string{"query", "library", "resolve"} {
-		for _, want := range helps {
-			if !strings.Contains(args["docs"][arg], want) {
-				t.Errorf("docs.%s description %q does not mention %q", arg, args["docs"][arg], want)
+	for _, want := range helps {
+		if !strings.Contains(args["docs"]["library"], want) {
+			t.Errorf("docs.library description %q does not mention %q", args["docs"]["library"], want)
+		}
+		for _, arg := range []string{"query", "resolve"} {
+			if strings.Contains(args["docs"][arg], want) {
+				t.Errorf("docs.%s description repeats the library help: %q", arg, args["docs"][arg])
 			}
 		}
 	}

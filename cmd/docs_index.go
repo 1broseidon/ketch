@@ -15,17 +15,29 @@ import (
 var docsIndexCmd = &cobra.Command{
 	Use:   "index [<library|docs-url>]",
 	Short: "Index a library's docs site locally, so ketch docs answers about it offline",
-	Long: `Index a library's documentation once, then ketch docs answers questions about it offline: a question that names the library (or --library naming it) is answered from the index, with no network, instead of searching the web.
+	Long: `Index a library's documentation once, so ketch docs answers questions
+about it from the local index instead of searching the web.
 
-The library is a docs URL, taken as the docs root, or a library name or spec (name, name@version, npm:/pypi:/crates:/go:/github: prefixes, owner/repo), resolved to its docs root from the package registries and the project's repository (ketch docs --resolve shows the pick): a name that is ambiguous or that nothing verifies is refused with its candidates, and the docs URL of the one you mean can then be passed instead.
+The library is a docs URL, taken as the docs root, or a name: name,
+name@version, an npm:, pypi:, crates:, go: or github: prefix, or
+owner/repo. A name is resolved to its docs root (ketch docs --resolve
+shows the pick); one that is ambiguous or that nothing verifies is
+refused with its candidates, and you pass the docs URL you mean instead.
 
-One index holds one version of a library's docs. name@version (or --version) indexes that version's docs root, found with the site's own version list; with no version, the current docs. Either way only that version's tree is kept: other versions' trees below the root (/docs/2.x/, mike's version directories, a release channel such as /next/, or any tree the site's version list names) and their copies of pages are left out, as are other hosts (v3.router.vuejs.org beside router.vuejs.org) and paths outside a versioned root. Several versions of a library can be indexed side by side, each under its own docs root; a query names one with --library name@version, and without a version answers from the newest. A page in the indexed tree about a later major (a migration guide to it) is kept but labelled, and ranks lower unless the question asks about migrating.
+One index holds one version: name@version or --version picks it, else
+the current docs. Other versions' trees, other locales and other hosts
+are left out. Several versions can be indexed side by side.
 
-ketch reads the site's own page lists (llms.txt and llms-full.txt, its sitemaps, its search index and nav links), keeps the pages under the docs root in its locale and version, honours robots.txt, fetches up to --max-pages pages --concurrency at a time through the page cache (llms.txt's pages first, then guides, then the rest, API reference leaves and release notes last), drops pages whose text is another page's, splits them into heading sections (never inside code blocks), and indexes their text for full-text search (SQLite FTS5: headings weighted over body text, identifiers such as useForm, client_max_body_size or form.validateField findable by their whole name or their words). No model runs: queries rank by keywords, and a large site indexes in seconds from the page cache. --dry-run prints the pages a build would index, in order, without fetching them.
+ketch reads the site's own page lists (llms.txt, sitemaps, its search
+index, nav links), honours robots.txt and fetches up to --max-pages
+pages through the page cache. No model runs.
 
-A root that stands for a release (its page redirects or points as canonical to a numbered release's root, as duckdb.org/docs/stable/ does to /docs/2.0/) is indexed at that release, and so is an unversioned root whose pages or llms.txt sit in release directories right below it (the release llms.txt lists, else the newest; results show the unversioned addresses when the release's pages name them canonical). A version's own host whose page lists are an app shell is given its current host's paths to try.
-
-Running it again refreshes the library: pages are fetched again (through the page cache) and only the ones whose content changed are sectioned again. A library is its docs root whatever the scheme, "www." or trailing slash it is written with: indexing http://x/docs/ refreshes https://x/docs/ (the form given last stays). Only this command adds libraries or pages to the index: a question saves nothing.`,
+Running it again refreshes the library: only the pages that changed are
+sectioned again. Only this command adds libraries or pages to the index.`,
+	Example: `  ketch docs index https://docs.ollama.com/
+  ketch docs index fastapi --dry-run
+  ketch docs index --list
+  ketch docs index --remove https://docs.ollama.com/`,
 	Args: exitArgs(cobra.MaximumNArgs(1)),
 	RunE: runDocsIndex,
 }
@@ -39,7 +51,7 @@ func init() {
 	f.StringSlice("name", nil, "another name queries may call the library by (repeatable)")
 	f.Bool("list", false, "list the indexed libraries")
 	f.Bool("remove", false, "remove the named library from the index")
-	f.Bool("dry-run", false, "plan the build and print the pages it would index, in order, with their tier; fetch no page and write nothing")
+	f.Bool("dry-run", false, "print the pages a build would index, in order, with their tier; write nothing")
 }
 
 func runDocsIndex(cmd *cobra.Command, args []string) error {

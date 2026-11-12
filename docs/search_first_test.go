@@ -3,6 +3,7 @@ package docs
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/url"
 	"slices"
 	"strings"
@@ -70,8 +71,8 @@ func TestSearchFirstAnswersFromTheSite(t *testing.T) {
 	if len(o.Results) == 0 || !strings.HasPrefix(o.Results[0].URL, idxRoot+"guide/middleware") {
 		t.Fatalf("top result = %+v, want the middleware page", o.Results)
 	}
-	if o.Note != "read 3 pages of "+idxRoot+" found by web search; the whole site: ketch docs index "+idxRoot {
-		t.Errorf("note = %q, want the pages read and the command that indexes the whole site", o.Note)
+	if o.Note != "read 3 pages of "+idxRoot+" found by web search; to index these docs: ketch docs index "+idxRoot {
+		t.Errorf("note = %q, want the pages read and the command that indexes the docs tree", o.Note)
 	}
 	if o.Index == nil || o.Index.Source != SearchBackend || o.Index.PagesRead != 3 {
 		t.Errorf("index = %+v, want source: search, 3 pages read", o.Index)
@@ -385,5 +386,101 @@ func TestSearchRefusesContext7ID(t *testing.T) {
 		if isContext7ID(spec) {
 			t.Errorf("%s read as a Context7 ID", spec)
 		}
+	}
+}
+
+// The note's index suggestion: the root the search read is the library,
+// unless its site's lists name more pages under it than an index holds (or
+// it is a package index's host); then the deepest directory the cited
+// pages share, a project's root on a host serving many, when that is
+// narrower, no site's root and not too wide itself; else a docs tree stays
+// and a site's root (a host's or its locale's) gets no suggestion at all.
+func TestIndexRootSuggestion(t *testing.T) {
+	root := func(s string) webRoot {
+		r, err := parseWebRoot(s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return r
+	}
+	learn := "https://learn.microsoft.com/en-us/"
+	wideLearn := []string{learn, learn + "azure/"} // what the site's lists name too many pages under
+	for _, c := range []struct {
+		root  string
+		cited []string
+		wide  []string
+		want  string // "" for no suggestion
+	}{
+		{idxRoot, []string{idxRoot + "guide/middleware#x"}, nil, idxRoot},
+		{learn, []string{learn + "azure/storage/blobs/soft-delete-blob-overview#how", learn + "azure/storage/blobs/soft-delete-blob-enable"}, wideLearn, learn + "azure/storage/blobs/"},
+		{learn, []string{learn + "azure/azure-functions/functions-bindings-error-pages", learn + "azure/azure-functions/functions-host-json#retry"}, wideLearn, learn + "azure/azure-functions/"},
+		{learn, []string{learn + "azure/azure-functions/a", learn + "azure/reliability/b"}, wideLearn, ""},
+		{learn, []string{learn + "azure/storage/blobs/a", learn + "cli/azure/storage/account"}, wideLearn, ""},
+		{learn, []string{learn + "azure/storage/blobs/"}, wideLearn, learn + "azure/storage/"},
+		{"https://docs.ollama.com/", []string{"https://docs.ollama.com/faq#x", "https://docs.ollama.com/api/generate"}, nil, "https://docs.ollama.com/"},
+		{"https://docs.ollama.com/", []string{"https://docs.ollama.com/faq#x", "https://docs.ollama.com/api/generate"}, []string{"https://docs.ollama.com/"}, ""},
+		{"https://fastapi.example/", []string{"https://fastapi.example/tutorial/dependencies/dependencies-with-yield/#x"}, nil, "https://fastapi.example/"},
+		{"https://big.example/docs/", []string{"https://big.example/docs/functions/a", "https://big.example/docs/plans/b"}, []string{"https://big.example/docs/"}, "https://big.example/docs/"},
+		{"https://pkg.go.dev/", []string{"https://pkg.go.dev/github.com/owner/repo/sub/pkg#Func"}, nil, "https://pkg.go.dev/github.com/owner/repo/"},
+		{"https://pkg.go.dev/", []string{"https://pkg.go.dev/github.com/owner/repo#F", "https://pkg.go.dev/net/http#Client"}, nil, ""},
+	} {
+		got, ok := indexRoot(root(c.root), c.cited, c.wide)
+		if ok != (c.want != "") || ok && got.String() != c.want {
+			t.Errorf("%s %v wide=%v: %v %v, want %q", c.root, c.cited, c.wide, got, ok, c.want)
+		}
+	}
+	links := func(n int, dir string) []webLink {
+		var out []webLink
+		for i := range n {
+			u, _ := url.Parse(fmt.Sprintf("%s%d", dir, i))
+			out = append(out, webLink{url: u})
+		}
+		return out
+	}
+	if got := wideDirs(root(learn), append(links(1400, learn+"azure/storage/"), links(400, learn+"dotnet/")...)); !slices.Equal(got, []string{learn}) {
+		t.Errorf("wideDirs = %v", got)
+	}
+	if got := wideDirs(root(learn), links(1600, learn+"azure/storage/")); !slices.Equal(got, []string{learn, learn + "azure/", learn + "azure/storage/"}) {
+		t.Errorf("wideDirs = %v", got)
+	}
+	r := root(learn)
+	if n := searchNote(r, 21, root(learn+"azure/storage/blobs/"), true); n != "read 21 pages of "+learn+" found by web search; to index these docs: ketch docs index "+learn+"azure/storage/blobs/" {
+		t.Errorf("note %q", n)
+	}
+	if n := searchNote(r, 21, webRoot{}, false); n != "read 21 pages of "+learn+" found by web search" {
+		t.Errorf("no suggestion: %q", n)
+	}
+	if n := searchNote(root("https://docs.ollama.com/"), 3, root("https://docs.ollama.com/"), true); !strings.HasSuffix(n, "; the whole site: ketch docs index https://docs.ollama.com/") {
+		t.Errorf("a host's root: %q", n)
+	}
+}
+
+// A page read at two addresses that differ only in a query that scrolls
+// it (zod.dev/api?id=optionals and zod.dev/api), its copies' text not the
+// same (one from llms-full.txt, one from the HTML with the page title and
+// links in its headings), is read once, at the address without a query.
+// Pages a site addresses by query, with headings of their own, stay apart.
+func TestSearchFirstOnePageAtTwoQueries(t *testing.T) {
+	root, _ := parseWebRoot("https://x.test/")
+	page := func(u, md string) webLink {
+		pu, _ := url.Parse(u)
+		return webLink{url: pu, page: &webPage{URL: u, Markdown: md}}
+	}
+	links := []webLink{
+		page("https://x.test/api?id=one", "# Defining schemas\n\n## [One](https://x.test/api?id=one#one)\n\nHTML text.\n\n## Two\n\n## Three\n"),
+		page("https://x.test/api", "## One\n\nllms text.\n\n## Two\n\n## Three\n"),
+		page("https://x.test/api?id=two", "# Defining schemas\n\n## One\n\nOther HTML text.\n\n## Two\n\n## Three\n"),
+		page("https://x.test/wiki?page=a", "## Alpha\n\nA.\n\n## Beta\n\n## Gamma\n"),
+		page("https://x.test/wiki?page=b", "## Delta\n\nB.\n\n## Epsilon\n\n## Zeta\n"),
+	}
+	s := &SearchFirst{}
+	pages, by, _ := s.fetch(context.Background(), root, links)
+	var got []string
+	for i, p := range pages {
+		got = append(got, p.URL+" by "+by[i].url.String())
+	}
+	want := []string{"https://x.test/api by https://x.test/api", "https://x.test/wiki?page=a by https://x.test/wiki?page=a", "https://x.test/wiki?page=b by https://x.test/wiki?page=b"}
+	if !slices.Equal(got, want) {
+		t.Errorf("pages read:\n got %q\nwant %q", got, want)
 	}
 }

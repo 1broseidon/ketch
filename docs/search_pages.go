@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"path"
+	"slices"
 	"strings"
 	"sync"
 )
@@ -18,8 +19,9 @@ import (
 // mirror are one page), so it is read once, at the address listed first.
 
 // plan lists the pages to read, hits first.
-// It reports how many pages robots.txt kept it from.
-func (s *SearchFirst) plan(ctx context.Context, site sfSite, prof *siteProfile, query string) ([]webLink, int) {
+// It reports how many pages robots.txt kept it from, and the directories
+// the site's own lists name too many pages under for one index (wideDirs).
+func (s *SearchFirst) plan(ctx context.Context, site sfSite, prof *siteProfile, query string) ([]webLink, int, []string) {
 	root := site.root
 	robots := s.web.robots(ctx, root)
 	rootLabel := rootVersionLabel(root)
@@ -67,7 +69,35 @@ func (s *SearchFirst) plan(ctx context.Context, site sfSite, prof *siteProfile, 
 			add(near[i])
 		}
 	}
-	return inHand(out, disc.pages, root), disallowed
+	return inHand(out, disc.pages, root), disallowed, wideDirs(root, disc.links)
+}
+
+// wideDirs are root and the directories under it that the site's own lists
+// (discovery, within its budget: a lower bound) name more pages under than
+// an index holds (IndexDefaultMaxPages): too wide to suggest indexing whole
+// (indexRoot).
+func wideDirs(root webRoot, links []webLink) []string {
+	if len(links) <= IndexDefaultMaxPages {
+		return nil
+	}
+	count := map[string]int{}
+	for _, l := range links {
+		if !root.contains(l.url) {
+			continue
+		}
+		segs := pathSegments(l.url.Path)
+		for k := len(pathSegments(root.prefix)); k < len(segs); k++ {
+			count[segmentsPath(segs[:k])]++
+		}
+	}
+	var out []string
+	for dir, n := range count {
+		if r, err := parseWebRoot(root.origin() + dir); err == nil && n > IndexDefaultMaxPages {
+			out = append(out, r.String())
+		}
+	}
+	slices.Sort(out)
+	return out
 }
 
 // profileLinks are a page profile's links into root, as candidates.
@@ -158,6 +188,7 @@ func (s *SearchFirst) fetch(ctx context.Context, root webRoot, links []webLink) 
 	var fails readFails
 	seen := map[string]bool{}
 	texts := map[[32]byte]bool{}
+	var outlines []pageOutline // of the pages in out, at the same place
 	for i, p := range pages {
 		switch {
 		case p == nil:
@@ -175,11 +206,21 @@ func (s *SearchFirst) fetch(ctx context.Context, root webRoot, links []webLink) 
 		if u, err := url.Parse(p.URL); err == nil {
 			k = pageIdentity(u, root, true)
 		}
-		if t := contentKey(*p); !seen[k] && !texts[t] {
-			seen[k], texts[t] = true, true
-			out = append(out, *p)
-			by = append(by, links[i])
+		t := contentKey(*p)
+		if seen[k] || texts[t] {
+			continue
 		}
+		seen[k], texts[t] = true, true
+		o := outlineOf(*p)
+		if j := slices.IndexFunc(outlines, o.same); j >= 0 {
+			if strings.Contains(out[j].URL, "?") && !strings.Contains(p.URL, "?") {
+				out[j], by[j], outlines[j] = *p, links[i], o // the address without a query stands for it
+			}
+			continue // the same page at another query: read once
+		}
+		outlines = append(outlines, o)
+		out = append(out, *p)
+		by = append(by, links[i])
 	}
 	return out, by, fails
 }
@@ -215,4 +256,64 @@ const sfShellWords = 50
 // no text: no page at all to a reader without a browser.
 func unreadShell(p *webPage) bool {
 	return p.shell && len(strings.Fields(p.Markdown)) < sfShellWords
+}
+
+// One page at two queries. A site may give a page's address a query that
+// only scrolls it (zod.dev/api?id=optionals is zod.dev/api), so a search
+// finds the same page at several addresses, and the copies read can differ
+// in text (one from llms-full.txt, one from the HTML, with the page title
+// and links in its headings). Other sites address pages by query (?page=),
+// so a query is never dropped on its own: two pages read whose addresses
+// differ only in their query and whose headings are nearly the same (all
+// but a tenth of the shorter list, which holds outlineMin or more) are one
+// page, kept at the address without a query when one has none.
+const outlineMin = 3
+
+// pageOutline is a page's address without its query and its headings.
+type pageOutline struct {
+	page  string
+	heads map[string]bool
+}
+
+// outlineOf is p's outline: its headings outside code blocks, link
+// markup, case and spacing aside.
+func outlineOf(p webPage) pageOutline {
+	o := pageOutline{page: p.URL, heads: map[string]bool{}}
+	if u, err := url.Parse(p.URL); err == nil {
+		u.RawQuery, u.Fragment = "", ""
+		o.page = samePageKey(u)
+	}
+	fence := false
+	for _, line := range strings.Split(p.Markdown, "\n") {
+		t := strings.TrimSpace(line)
+		switch {
+		case strings.HasPrefix(t, "```") || strings.HasPrefix(t, "~~~"):
+			fence = !fence
+		case !fence && strings.HasPrefix(t, "#"):
+			if h := strings.TrimLeft(t, "#"); strings.HasPrefix(h, " ") {
+				h = mdLinkRe.ReplaceAllString(cleanLine(h), "$1") // discovery's link pattern: its text
+				o.heads[strings.ToLower(strings.Join(strings.Fields(h), " "))] = true
+			}
+		}
+	}
+	return o
+}
+
+// same reports two outlines of one page: the same address but its query,
+// and headings nearly the same.
+func (o pageOutline) same(k pageOutline) bool {
+	short, long := o.heads, k.heads
+	if len(short) > len(long) {
+		short, long = long, short
+	}
+	if o.page != k.page || len(short) < outlineMin {
+		return false
+	}
+	common := 0
+	for h := range short {
+		if long[h] {
+			common++
+		}
+	}
+	return common*10 >= len(short)*9
 }

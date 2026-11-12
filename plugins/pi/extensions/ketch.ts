@@ -162,7 +162,8 @@ const DocsParams = Type.Object({
 	limit: Type.Optional(
 		Type.Integer({
 			minimum: 1,
-			description: "max number of results (default: the configured limit; with library set, unbounded unless given)",
+			description:
+				"max number of results: search caps the groups only when given (unset, the token budget decides); context7 defaults to the configured limit, unbounded with library unless given",
 		}),
 	),
 	resolve: Type.Optional(

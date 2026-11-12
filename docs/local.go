@@ -562,5 +562,5 @@ func probeIndex(_ context.Context, _ *http.Client, _ *config.Config) (health.Sta
 	if err != nil {
 		return health.StatusMisconfigured, fmt.Sprintf("cannot read %s: %v", path, err)
 	}
-	return health.StatusOK, fmt.Sprintf("%d libraries indexed in %s%s", len(Readable(libs)), path, legacy)
+	return health.StatusOK, fmt.Sprintf("%s indexed in %s%s", plural(len(Readable(libs)), "library"), path, legacy)
 }

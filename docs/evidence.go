@@ -98,6 +98,9 @@ func (l *Local) evidence(lib docsindex.Library, query string, opts LocalOptions,
 	if err != nil {
 		return nil, err
 	}
+	if opts.read > 0 {
+		markSearchRead(g.written) // pages a search read are no library
+	}
 	t.gathered(g)
 	v := verdict(g.written, g.sections)
 	a := &evidenceAnswer{terms: v.found, notFound: v.notFound, status: Found, index: indexInfo(lib), scope: opts.scope, origin: opts.origin}

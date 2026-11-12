@@ -111,7 +111,7 @@ func queryIdentKeys(query string) []string {
 	seen := map[string]bool{}
 	for _, w := range strings.Fields(query) {
 		w = strings.Trim(w, queryQuotes+",;:!?=")
-		if !isCodeIdent(w) || isHostName(strings.ToLower(strings.TrimRight(w, "."))) {
+		if !isCodeIdent(w) || isHostName(strings.ToLower(strings.TrimRight(w, "."))) || numberTerm(strings.TrimRight(w, ".")) != "" {
 			continue
 		}
 		for _, m := range identRe.FindAllString(w, -1) {
@@ -129,11 +129,16 @@ func queryIdentKeys(query string) []string {
 // ftsQuote quotes a term for an FTS5 query.
 func ftsQuote(t string) string { return `"` + strings.ReplaceAll(t, `"`, `""`) + `"` }
 
-// ftsTerm is a query term as an FTS5 query: quoted, and a host name as
-// the phrase of its labels as the rows hold them (rankTokens).
+// ftsTerm is a query term as an FTS5 query: quoted, a host name as the
+// phrase of its labels as the rows hold them (rankTokens), and a number
+// (numberTerm) as its digits or its groups of three (10,000 is "10 000"
+// in the rows).
 func ftsTerm(t string) string {
-	if isHostName(t) {
+	switch {
+	case isHostName(t):
 		return ftsQuote(strings.Join(rankTokens(t), " "))
+	case numberTerm(t) == t:
+		return "(" + ftsQuote(t) + " OR " + ftsQuote(strings.Join(digitGroups(t), " ")) + ")"
 	}
 	return ftsQuote(t)
 }

@@ -227,9 +227,9 @@ func Defaults() Config {
 		Limit:       5,
 		CacheTTL:    "72h",
 		CodeBackend: "grepapp",
-		// Search answers from the docs themselves (the local index, else a
-		// web search for the docs site); context7 is the other backend.
-		DocsBackend: "search",
+		// No docs_backend: the key is retired (every docs call uses search,
+		// context7 only when a call names it), so a fresh config carries
+		// none; a value an older release stored is kept and ignored.
 
 		ExternalPDFToMDConverterTimeoutSec: 300,
 	}

@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/1broseidon/ketch/docs"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // setDocsBackend overrides the docs command's --backend flag for one test,
@@ -157,29 +159,22 @@ func TestPrintLibraryMatchesWithEvidence(t *testing.T) {
 	}
 }
 
-// The --library and --resolve help say what each library provider accepts,
-// from its descriptor: shared help text names no provider of its own.
-func TestDocsLibraryHelpFollowsDescriptors(t *testing.T) {
-	var helps []string
-	for _, id := range docs.LibraryBackends() {
-		p, _ := docs.Lookup(id)
-		if p.LibraryHelp != "" {
-			helps = append(helps, p.Name+": "+p.LibraryHelp)
-		}
-	}
-	if len(helps) == 0 {
-		t.Fatal("no library provider declares LibraryHelp; the web backend should")
-	}
-	for _, flag := range []string{"library", "resolve"} {
-		usage := docsCmd.Flags().Lookup(flag).Usage
-		for _, want := range append(helps, docs.LibraryProviderNames()...) {
-			if !strings.Contains(usage, want) {
-				t.Errorf("--%s help %q does not mention %q", flag, usage, want)
+// The docs help is short enough for a first-time caller to read: each
+// flag one line that describes only itself (--resolve no longer carries
+// --library's help), the long help a few hundred words.
+func TestDocsHelpIsShort(t *testing.T) {
+	for _, cmd := range []*cobra.Command{docsCmd, docsIndexCmd} {
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			if len(f.Usage) > 110 || strings.Contains(f.Usage, "\n") {
+				t.Errorf("%s --%s: %d characters: %q", cmd.Name(), f.Name, len(f.Usage), f.Usage)
 			}
+		})
+		if n := len(strings.Fields(cmd.Long)); n > 260 {
+			t.Errorf("%s help: %d words", cmd.Name(), n)
 		}
 	}
-	if !strings.Contains(docsCmd.Long, helps[0]) {
-		t.Errorf("docs help %q does not say what a library can be (%q)", docsCmd.Long, helps[0])
+	if help := docs.LibraryHelp(); strings.Contains(docsCmd.Flags().Lookup("resolve").Usage, help) {
+		t.Error("--resolve repeats --library's help")
 	}
 }
 

@@ -581,7 +581,7 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 		tr.local = lib.Root
 		return s.answerIndexed(ctx, lib, req.query, req.opts, ""), sfRead{Root: site.root.String()}
 	}
-	links, disallowed := s.plan(cctx, site, prof, req.query)
+	links, disallowed, wide := s.plan(cctx, site, prof, req.query)
 	if len(links) == 0 && disallowed > 0 {
 		return Answer(SearchBackend, nil, fmt.Errorf("search: %s's robots.txt disallows the %d pages found: %w", site.root, disallowed, errDisallowed)), sfRead{}
 	}
@@ -601,8 +601,8 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 	}
 	title, name := readTitle(site.root, prof)
 	r := readOf(site.root, title, name, pages, by)
-	r.Origin, r.OriginRoots = origin.text, origin.roots
-	return s.answerRead(ctx, site.root, title, name, pages, req, origin), r
+	r.Origin, r.OriginRoots, r.Wide = origin.text, origin.roots, wide
+	return s.answerRead(ctx, site.root, title, name, pages, req, origin, wide), r
 }
 
 // failed is a search-first call that ended before an answer, classified
@@ -614,10 +614,18 @@ func (s *SearchFirst) failed(parent, op context.Context, err error) Outcome {
 	return Answer(SearchBackend, nil, err)
 }
 
-// searchNote says how much of the site at root a search read and how to
-// index all of it.
-func searchNote(root string, read int) string {
-	return fmt.Sprintf("read %s of %s found by web search; the whole site: ketch docs index %s", plural(read, "page"), root, root)
+// searchNote says how much of the site at root a search read and, when
+// ok, how to index the docs at idx (indexRoot): "the whole site" for a
+// host's root, "these docs" for a tree in it.
+func searchNote(root webRoot, read int, idx webRoot, ok bool) string {
+	note := fmt.Sprintf("read %s of %s found by web search", plural(read, "page"), root)
+	switch {
+	case !ok:
+		return note
+	case idx.prefix == "/":
+		return note + "; the whole site: ketch docs index " + idx.String()
+	}
+	return note + "; to index these docs: ketch docs index " + idx.String()
 }
 
 // searchAnswered is the local index's answer as the search-first

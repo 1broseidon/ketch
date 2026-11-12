@@ -75,19 +75,92 @@ func readLibrary(root webRoot, title, siteName string, pages []webPage) (*Local,
 }
 
 // answerRead answers req from pages read under root, held in memory,
-// with the note that names the command indexing the whole site and the
-// origin siteOrigin gave the site.
-func (s *SearchFirst) answerRead(ctx context.Context, root webRoot, title, siteName string, pages []webPage, req sfRequest, origin sfOrigin) Outcome {
+// with the note that names the pages read and the command indexing the
+// docs the answer cites (indexRoot; wide: the directories too large for
+// one index), and the origin siteOrigin gave the site.
+func (s *SearchFirst) answerRead(ctx context.Context, root webRoot, title, siteName string, pages []webPage, req sfRequest, origin sfOrigin, wide []string) Outcome {
 	l, lib, err := readLibrary(root, title, siteName, pages)
 	if err != nil {
 		return Answer(SearchBackend, nil, err)
 	}
 	defer l.store.Close()
-	note := searchNote(lib.Root, len(pages))
 	opts := req.opts
-	opts.note, opts.read, opts.origin = note, len(pages), origin.text
+	// The budget is planned with the note naming root; the note printed
+	// names what the answer cites, a few tokens either way.
+	opts.note, opts.read, opts.origin = searchNote(root, len(pages), root, true), len(pages), origin.text
 	opts.scope = readScope(root, req.library)
-	return searchAnswered(l.answer(ctx, lib, req.query, opts), note, origin)
+	o := l.answer(ctx, lib, req.query, opts)
+	var cited []string
+	for _, r := range o.Results {
+		cited = append(cited, r.URL)
+	}
+	idx, ok := indexRoot(root, cited, wide)
+	return searchAnswered(o, searchNote(root, len(pages), idx, ok), origin)
+}
+
+// indexRoot is the docs root the note of an answer from pages read under
+// root suggests indexing: root, unless it is too wide for one index (its
+// site's own lists name more pages under it than an index holds: wide, or
+// it is a package index's whole host). Then it is the deepest directory
+// holding every page the answer cites, the project's root on a host that
+// serves many (sharedProjectRoot), when that is narrower, no site's root
+// (a host's or its locale's) and not too wide itself; else root when root
+// is a docs tree, and none (false) when root is a site's root.
+func indexRoot(root webRoot, cited []string, wide []string) (webRoot, bool) {
+	tooWide := func(r webRoot) bool {
+		return slices.Contains(wide, r.String()) || r.prefix == "/" && indexHosted(r.u)
+	}
+	if !tooWide(root) {
+		return root, true
+	}
+	common := commonDir(root, cited)
+	if narrow, err := parseWebRoot(root.origin() + segmentsPath(common)); err == nil {
+		if pr, ok := sharedProjectRoot(narrow.u); ok && pr.contains(narrow.u) {
+			narrow = pr
+		}
+		if narrow.String() != root.String() && !siteRoot(narrow) && !tooWide(narrow) {
+			return narrow, true
+		}
+	}
+	if siteRoot(root) {
+		return webRoot{}, false
+	}
+	return root, true
+}
+
+// commonDir is the path segments of the deepest directory holding every
+// page of cited under root, a page's directory being the one above it
+// (a page served as x/ is in its parent, not a tree of its own).
+func commonDir(root webRoot, cited []string) []string {
+	var common []string
+	first := true
+	for _, c := range cited {
+		u, err := url.Parse(c)
+		if err != nil || !root.contains(u) {
+			continue
+		}
+		dir := pathSegments(u.Path)
+		if len(dir) > 0 {
+			dir = dir[:len(dir)-1]
+		}
+		if first {
+			common, first = dir, false
+			continue
+		}
+		n := 0
+		for n < len(common) && n < len(dir) && common[n] == dir[n] {
+			n++
+		}
+		common = common[:n]
+	}
+	return common
+}
+
+// siteRoot reports a root that is a host's root or its locale's (/en-us/):
+// a whole site, as far as its path says.
+func siteRoot(r webRoot) bool {
+	segs := pathSegments(r.prefix)
+	return len(segs) == 0 || len(segs) == 1 && localeSegRe.MatchString(segs[0])
 }
 
 // readScope is the scope of an answer from pages read under root, for a
@@ -126,6 +199,9 @@ type sfRead struct {
 	Origin      string       `json:"origin,omitempty"`
 	OriginRoots []string     `json:"origin_roots,omitempty"`
 	Pages       []sfReadPage `json:"pages,omitempty"`
+	// Wide are the directories the site's own lists named too many pages
+	// under for one index (wideDirs, indexRoot).
+	Wide []string `json:"wide,omitempty"`
 }
 
 // sfReadPage is one page read: the link it was read by, the address the
@@ -298,7 +374,7 @@ func (s *SearchFirst) fromRead(ctx context.Context, req sfRequest, tr *sfTrace) 
 		return Outcome{}, false
 	}
 	req.opts.cached = true
-	o := s.answerRead(ctx, root, r.Title, r.SiteName, pages, req, sfOrigin{text: r.Origin, roots: r.OriginRoots})
+	o := s.answerRead(ctx, root, r.Title, r.SiteName, pages, req, sfOrigin{text: r.Origin, roots: r.OriginRoots}, r.Wide)
 	return o, kept(o)
 }
 

@@ -158,6 +158,106 @@ func TestEvidenceStatus(t *testing.T) {
 	}
 }
 
+// On an answer from pages a search read, terms lists no common word (a
+// handful of pages makes every word look rare there) and a common word
+// missing from the pages makes nothing partial; a rare word and an
+// identifier are listed, and a rare word missing still is partial. The
+// same library answered as an index is unchanged.
+func TestSearchReadTerms(t *testing.T) {
+	secs := []docsindex.Section{
+		evSection("lists", 0, "", []string{"Lists and non-null"}, "A list field whose items cannot be null wraps the item type in `NonNull`; the list itself can still be null."),
+		evSection("scalars", 0, "", []string{"Scalars"}, "Scalars are the leaves of a query."),
+		evSection("enums", 0, "", []string{"Enums"}, "Enums restrict a field to a set of values."),
+	}
+	for i := range 30 {
+		secs = append(secs, evSection(fmt.Sprintf("other/%d", i), 0, "", []string{fmt.Sprintf("Other %d", i)}, "Unrelated words about routing and caching."))
+	}
+	l, lib := evLocal(t, secs)
+	ctx := context.Background()
+	q := "define a list field whose items cannot be null but the list itself can with NonNull"
+	read := l.answer(ctx, lib, q, LocalOptions{read: 3})
+	names := func(o Outcome) []string {
+		var out []string
+		for _, tc := range o.Terms {
+			out = append(out, tc.Term)
+		}
+		return out
+	}
+	if got := names(read); !slices.Equal(got, []string{"NonNull"}) || read.Status != Found {
+		t.Errorf("pages read: terms %v status %s, want only the identifier", got, read.Status)
+	}
+	if got := names(l.answer(ctx, lib, q, LocalOptions{})); !slices.Contains(got, "whose") || !slices.Contains(got, "itself") {
+		t.Errorf("indexed: terms %v, want the index's rule unchanged", got)
+	}
+	if o := l.answer(ctx, lib, "list field whose items cannot be null at midnight with NonNull", LocalOptions{read: 3}); o.Status != Partial || !slices.Equal(o.NotFound, []string{"midnight"}) {
+		t.Errorf("a rare word missing: %s not_found %v", o.Status, o.NotFound)
+	}
+	if o := l.answer(ctx, lib, "list field items cannot be null anyway, NonNull", LocalOptions{read: 3}); o.Status != Found || len(o.NotFound) != 0 {
+		t.Errorf("a common word missing: %s not_found %v", o.Status, o.NotFound)
+	}
+	for w, want := range map[string]bool{"whose": true, "cannot": true, "itself": true, "add": true, "per": true, "message": true, "else": true,
+		"start": true, "stored": true, "was": true, "hobby": false, "autosquash": false, "weekday": false, "GSM-7": false, "9am": false} {
+		if commonTerm(w) != want {
+			t.Errorf("commonTerm(%q) = %v", w, !want)
+		}
+	}
+}
+
+// A number the question writes matches the same number in the docs with
+// its digits grouped or not, either way round: it counts for the term's
+// sections (found, not partial) and a printed piece writing it names it.
+// A decimal, version, date or address is no grouped number.
+func TestNumberTerms(t *testing.T) {
+	var secs []docsindex.Section
+	for i := range 30 {
+		secs = append(secs, evSection(fmt.Sprintf("other/%d", i), 0, "", []string{fmt.Sprintf("Other %d", i)}, "Unrelated words about routing and caching."))
+	}
+	ctx := context.Background()
+	for _, c := range []struct{ docs, query string }{
+		{"Analytics events: 10,000 included each month on the hobby plan.", "hobby plan includes 10000 analytics events"},
+		{"Analytics events: 10 000 included each month on the hobby plan.", "hobby plan includes 10000 analytics events"},
+		{"Analytics events: 10_000 included each month on the hobby plan.", "hobby plan includes 10000 analytics events"},
+		{"Analytics events: 10000 included each month on the hobby plan.", "hobby plan includes 10,000 analytics events"},
+		{"Analytics events: 1,000 included each month on the hobby plan.", "hobby plan includes 1000 analytics events"},
+	} {
+		l, lib := evLocal(t, append([]docsindex.Section{evSection("limits", 0, "", []string{"Limits"}, c.docs)}, secs...))
+		o := l.answer(ctx, lib, c.query, LocalOptions{})
+		if o.Status != Found || len(o.NotFound) != 0 || len(o.Results) == 0 || !strings.Contains(o.Results[0].Snippet, "included") {
+			t.Errorf("%q over %q: %s not_found %v terms %v", c.query, c.docs, o.Status, o.NotFound, o.Terms)
+		}
+		wts := writtenTerms(c.query, evidenceTerms(newRankQuery(c.query)))
+		i := slices.IndexFunc(wts, func(wt writtenTerm) bool { return strings.Contains(wt.text, "000") })
+		if i < 0 || !namesTerm(pieceTokens(c.docs), wts[i]) {
+			t.Errorf("%q: the docs' %q does not name its number: %+v", c.query, c.docs, wts)
+		}
+	}
+	l, lib := evLocal(t, append([]docsindex.Section{evSection("limits", 0, "", []string{"Limits"}, "Analytics events: 100,000 included on the hobby plan.")}, secs...))
+	if o := l.answer(ctx, lib, "hobby plan includes 10000 analytics events", LocalOptions{}); o.Status != Partial || !slices.Equal(o.NotFound, []string{"10000"}) {
+		t.Errorf("100,000 is not 10000: %s not_found %v", o.Status, o.NotFound)
+	}
+}
+
+// A decimal, version, date or address is no grouped number; a grouped
+// number in the question is one term, its digits.
+func TestNumberForms(t *testing.T) {
+	for _, w := range []string{"3.14", "1.2.3", "2024-01-01", "10.0.0.1", "0100", "123", "10,00", "1,0000", "10,000.5"} {
+		if n := numberTerm(w); n != "" {
+			t.Errorf("numberTerm(%q) = %q, want none", w, n)
+		}
+	}
+	for w, want := range map[string]string{"10000": "10000", "10,000": "10000", "10_000": "10000", "1,234,567": "1234567", "2024": "2024"} {
+		if n := numberTerm(w); n != want {
+			t.Errorf("numberTerm(%q) = %q, want %q", w, n, want)
+		}
+	}
+	if got := groupedNumbers("v1.10,000, 10,000.5, 3.14, 2024-01-01, 10.0.0.1, 2024 100, 1,000,000 and 10 000."); !slices.Equal(got, []string{"1000000", "10000"}) {
+		t.Errorf("groupedNumbers = %v", got)
+	}
+	if q := newRankQuery("limit of 10,000 events"); !slices.Contains(q.terms, "10000") || slices.Contains(q.terms, "000") || len(q.idents) != 0 {
+		t.Errorf("a grouped number is one term: %v idents %v", q.terms, q.idents)
+	}
+}
+
 // An answer prints a page's groups together under its title, pages in
 // the order of their best group and groups in rank order within a page;
 // a group's heading is its path below the title; a cut group's source

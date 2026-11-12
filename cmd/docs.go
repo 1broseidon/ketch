@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -21,33 +20,87 @@ import (
 
 var docsCmd = &cobra.Command{
 	Use:   "docs <query>",
-	Short: "Search library documentation",
-	Long: `Search library documentation. The default backend, search, answers from the docs themselves: a library indexed with ketch docs index answers offline from the local index; otherwise ketch searches the web for the question, picks the documentation site the results agree on, reads the matching pages and answers from them. A question saves nothing: the pages stay in the page cache for cache_ttl, so the same question again within it, answered or refused, does no search and no fetch (its source line ends with cached); only ketch docs index adds libraries or pages. ` +
-		`The answer's frontmatter says what it read (index: full or capped, its pages and build date; or source: search and the pages a search read, with origin: verified and its evidence; by name when only a name ties the site to what was asked (a registry package of the name, with the site the search results favour; a domain carrying the name); or unverified when ketch could not confirm the site as the official documentation of what was asked: the answer then ends with a line saying to name the site you cite or pass the official docs with --library), its status, the question's rare terms as written (identifiers it writes, words in under 1% of the library's sections or in at most 25 of them) with the number of sections holding each (terms), and those no section holds (not_found); for a term in terms that is the first cell of a table row (an option's row) in a section the answer does not print, defined_in names that section for --section (defined_in: {<term>: <url#anchor>}, at most three). Status is found (evidence matching the question, not a promise that it answers; an answer from pages a search read too, its source line says so); partial when a term is in not_found; refused, exit 3, when no distinctive term is in the docs: the body is empty and not_found is the answer. ` +
-		`The body is the pieces of sections that name the question (paragraphs, list items, code blocks, table rows under their header), verbatim, grouped by section: a page's groups under "## <page title>", each under its heading path, ending with its source url#anchor, marked "(cut, N of M tokens)" with how much of its section it shows when the group was cut; a section longer than a page (` + strconv.Itoa(docs.AnswerPageTokens) + ` tokens) is never printed whole: its group shows its best pieces up to a page, in page order; a page's groups print in rank order, the page with the best group first; about 1,800 tokens in all, frontmatter included, or --tokens; --limit caps the groups. An answer from the index first reads again the pages it cites that were read longer ago than cache_ttl, each the way it was stored (the page, its Markdown source or its llms-full.txt chunk; at most 3 seconds; a page that changed is sectioned again in the index); when one cannot be read that way, or its check failed in the last 15 minutes, the frontmatter says stale: unverified, built <date>; --offline skips the check. An answer with groups cut ends with one line saying how many are cut, that their hidden text is unread, and the --section call to run before stating what it says: --section returns a section from the local index (no ranking), or of a page a search read, through the page cache; whole when it fits --tokens (default 4000), else a page of that size at a time, broken at a block boundary: the frontmatter says what it was read from (library, index or source, stale) and page N of M, and its last line is the command for the next page (--page N); a page URL with no anchor returns the page's sections in order, paged alike. A --library URL below an indexed root answers from the pages under it only (scope: in the frontmatter; outside_scope: the distinctive terms the library holds elsewhere); no indexed page under it is refused, exit 3. --json prints the frontmatter's fields, the same line as hint when a result is cut, and the results as one object. ` +
-		docs.WithLibraryHelp("--library names the library") + `.
+	Short: "Answer a question from a library's documentation",
+	Long: `Answer a question from a library's documentation.
 
--b context7 uses Context7's curated snippets instead, for that call: search is the default of every call, and the docs_backend config key is retired (a stored value is ignored). Context7 needs no key: without one it uses Context7's anonymous quota (about 200 requests a month per IP), and a key lifts it. --resolve lists a name's library IDs (Context7) or docs roots (search: the indexed libraries the name matches first, from the index with no network, every one with no name; else the web's resolution); pass one as --library.`,
+A library indexed with ketch docs index answers from the local index.
+Otherwise ketch searches the web, picks the docs site the results agree
+on, reads up to 24 of its pages and answers from them. No key is needed.
+
+The body is the docs' own text, grouped by section under each page's
+title, each group ending with its source url#anchor. The frontmatter
+lines to read:
+
+  status      found, partial (see not_found) or refused, exit 3
+  index       an indexed answer: full or capped, its pages and build date
+  source      a live answer: search and the pages read
+  origin      live answers only: verified, by name or unverified
+  terms       your rare terms, with the sections holding each
+  not_found   your terms that no section holds
+  defined_in  the section defining a term, when no group shows it
+
+A group marked "(cut, N of M tokens)" shows part of its section. The
+rest is unread: run ketch docs --section <its source> before stating
+what it says.
+
+--library takes a name, name@version or docs URL. A name several
+libraries share is refused with them listed, exit 2, unless the search
+results settle on one.
+
+-b context7 answers from Context7's snippets instead, keyless on its
+anonymous quota. The docs_backend config key is retired.
+
+Exit codes:
+  0  an answer: found or partial
+  2  bad input, or a library name several libraries share
+  3  refused, or no docs site or section found
+  4  the web search, a page fetch or Context7 failed
+  5  a library indexed in an older format: index it again`,
+	Example: `  ketch docs "set the default context length in ollama"
+  ketch docs --library fastapi "dependencies with yield"
+  ketch docs --library https://docs.ollama.com/ "keep a model loaded in memory"
+  ketch docs --section https://docs.ollama.com/context-length#setting-context-length
+  ketch docs --resolve httpx
+  ketch docs index https://docs.ollama.com/`,
 	Args: exitArgs(docsArgs),
 	RunE: traceDocs(runDocs),
 }
 
 func init() {
 	rootCmd.AddCommand(docsCmd)
-	docsCmd.Flags().StringP("backend", "b", docs.SearchBackend, "docs backend for this call: "+strings.Join(config.AvailableDocBackends(), ", ")+" (the docs_backend config key is retired)")
-	docsCmd.Flags().String("library", "", docs.WithLibraryHelp("the library to answer from"))
-	docsCmd.Flags().Int("tokens", 4000, "token budget (search: 1,800 unless set, frontmatter included; context7: 4000; --section: the page size of the section returned, 4000)")
-	docsCmd.Flags().IntP("limit", "l", cfg.Limit, "max number of results")
-	docsCmd.Flags().Bool("resolve", false, docs.WithLibraryHelp("resolve the query as a library name instead of searching: library IDs (context7) or docs roots (search: indexed libraries first, offline; no name lists every one)"))
+	docsCmd.Flags().StringP("backend", "b", docs.SearchBackend, "docs backend for this call: "+strings.Join(config.AvailableDocBackends(), " or "))
+	docsCmd.Flags().String("library", "", "the library: a name, name@version or docs URL; context7: a library ID from --resolve")
+	docsCmd.Flags().Int("tokens", 0, "token budget (search: 1,800 with the frontmatter; context7: 4000; --section: a page, 4000)")
+	docsCmd.Flags().IntP("limit", "l", 0, "most groups (search: unset, the budget decides) or results (context7: the limit config key)")
+	docsCmd.Flags().Bool("resolve", false, "list the docs roots (indexed first) or Context7 IDs the query names, instead of answering")
 	docsCmd.Flags().String("tag", "", "record each result under this tag (see `ketch tag`)")
 	docsCmd.PreRunE = validateTagFlag
 	docsCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/library/snippet)")
-	docsCmd.Flags().String("section", "", "return one section, given as the url#anchor a group's source line carries (a page URL alone returns its sections in order; no query, no ranking): from the local index, or for a page a search read, from the page through the page cache; whole when it fits --tokens (default 4000), else one page of that size at a time (--page)")
-	docsCmd.Flags().Bool("offline", false, "answer from the local index without reading again the cited pages older than cache_ttl (the frontmatter says stale: when one is)")
-	docsCmd.Flags().Int("page", 0, "with --section: the page of a section longer than --tokens to return (default 1; the output says page N of M and gives the command for the next)")
+	docsCmd.Flags().String("section", "", "return one section by the url#anchor of a source line, a page URL for its sections; no query")
+	docsCmd.Flags().Bool("offline", false, "answer from the index without reading again cited pages older than cache_ttl")
+	docsCmd.Flags().Int("page", 0, "with --section: the page of a section longer than --tokens to return (default 1)")
 	docsCmd.Flags().String("trace", "", "write how the answer was made to this file as JSON (docs.Trace; for QA)")
 	_ = docsCmd.Flags().MarkHidden("trace")
 }
+
+// docsBounds are --tokens and --limit, or when not given Context7's
+// defaults: its budget and the limit config key. Search takes either only
+// when given (withLocalDocsOptions) and sets its own budget otherwise.
+func docsBounds(cmd *cobra.Command) (tokens, limit int) {
+	tokens, _ = cmd.Flags().GetInt("tokens")
+	if !cmd.Flags().Changed("tokens") {
+		tokens = context7Tokens
+	}
+	limit, _ = cmd.Flags().GetInt("limit")
+	if !cmd.Flags().Changed("limit") {
+		limit = cfg.Limit
+	}
+	return tokens, limit
+}
+
+// context7Tokens is the budget Context7 and --section get when --tokens is
+// not given; search's own is docs.localTokens.
+const context7Tokens = 4000
 
 // traceDocs runs a docs command and, with the hidden --trace <file>, writes
 // how its answer was made (docs.Trace) to the file, whatever the outcome.
@@ -98,8 +151,7 @@ func runDocs(cmd *cobra.Command, args []string) error {
 	query := strings.Join(args, " ")
 	backend := docsBackendFlag(cmd)
 	library, _ := cmd.Flags().GetString("library")
-	tokens, _ := cmd.Flags().GetInt("tokens")
-	limit, _ := cmd.Flags().GetInt("limit")
+	tokens, limit := docsBounds(cmd)
 	resolve, _ := cmd.Flags().GetBool("resolve")
 	asJSON, _ := cmd.Root().PersistentFlags().GetBool("json")
 	minimal, _ := cmd.Flags().GetBool("minimal")
