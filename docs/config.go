@@ -17,8 +17,8 @@ var ErrUnknownBackend = failure.New(failure.Validation, "unknown_backend", "unkn
 func NewFromConfig(c *config.Config, backend string, deps Deps) (Searcher, error) {
 	p, ok := Lookup(CanonicalBackend(backend))
 	if !ok {
-		return nil, fmt.Errorf("%w %q (available: %s; to make one the default: ketch config set docs_backend %s)",
-			ErrUnknownBackend, backend, strings.Join(AvailableBackends(), ", "), SearchBackend)
+		return nil, fmt.Errorf("%w %q (available: %s; search is the default, -b context7 asks Context7 for one call)",
+			ErrUnknownBackend, backend, strings.Join(AvailableBackends(), ", "))
 	}
 	return p.Build(c, deps)
 }

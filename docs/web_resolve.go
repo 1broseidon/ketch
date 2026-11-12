@@ -271,6 +271,11 @@ type webMatch struct {
 	oldRepo bool
 	proj    *project     // nil for a docs URL the caller passed
 	prof    *siteProfile // the root's profile
+	// std marks a standard-library module the language's own docs
+	// document (search_origin.go), page its page to read first; agreed a
+	// pick the search's agreement made (settleAmbiguity).
+	std, agreed bool
+	page        *url.URL
 }
 
 // resolveLog collects, across one resolution, why candidates were dropped

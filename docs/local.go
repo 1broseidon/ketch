@@ -110,6 +110,8 @@ func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string,
 	case a.status == Refused:
 		o = Answer(SearchBackend, nil, fmt.Errorf("local: the docs of %s hold none of the question's distinctive terms (%s): %w",
 			lib.Root, strings.Join(a.notFound, ", "), ErrTermsNotFound))
+	case len(a.results) == 0 && opts.read > 0:
+		return Answer(SearchBackend, nil, fmt.Errorf("search: nothing in the %d pages read of %s matched: %w", opts.read, lib.Root, ErrNoResults))
 	case len(a.results) == 0:
 		return Answer(SearchBackend, nil, fmt.Errorf("local: nothing in the index of %s matched: %w", lib.Root, ErrNoResults))
 	default:

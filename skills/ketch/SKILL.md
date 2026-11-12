@@ -147,7 +147,10 @@ Two rules hold for every answer:
 |---|---|---|
 | `status: found` | evidence matching the question is printed; not a promise that it answers | read the groups |
 | `terms_not_found` in `status: partial (…)` | some of your terms are nowhere in this source | read `not_found`; ask the indexed source that owns those terms (Survey) |
-| `partial_site` in `status: partial (…)` | the answer is from pages a web search just read, not from an index | read the groups; the `note` names the command that indexes the site |
+| `origin: verified, <evidence>` | a search read these pages, and two signals tie them to what you asked: the root resolve found and the site the search agrees on are one project, the site is the project's own, a standard-library page of the language's docs, or the library value names it | read the groups; the `note` names the command that indexes the site |
+| `origin: by name, <host> documents the <ecosystem> package <name>` | only a registry package of that name supports the site; `; the search results favour <root>` when the search agreed on another | name the site you cite; if the package is not what you meant, ask again with the other root (the last line gives both) as `--library` |
+| `origin: unverified, ketch could not confirm <host> as the official documentation of <what>` | nothing ketch gathered confirms the site; it may still be the official docs | name the site you cite, or ask again with the official docs as `--library` |
+| `note: could not read <root> (…)` | the site tried first gave no text (blocked, needs JavaScript, not found, …) and the answer is from the next one | weigh the origin line; the error of such a site names the next step |
 | `status: refused` | nothing here matches (exit 3) | stop asking this source |
 | `defined_in: {term: ref}` | where a term is defined, when that section was not printed | `ketch docs --section <ref>` |
 | `(cut, N of M tokens)` on a `source:` line | the group shows part of its section; the rest is unread | `ketch docs --section <that source>` before stating what the rest says |
@@ -162,7 +165,7 @@ Two rules hold for every answer:
 
 One question about one library or product.
 
-1. `ketch docs "<question>" --library <docs root>`: a root as `ketch docs --resolve` lists it. A deeper URL narrows the answer to the pages under it (`scope:`); to read one page, `ketch docs --section <page URL>`. Leave `--tokens` unset unless a result is too long to read.
+1. `ketch docs "<question>" --library <docs root or name>`: a root as `ketch docs --resolve` lists it, or a package name (answered from the docs root resolve verifies for it; a name several libraries share exits 2 listing them: pass one). A deeper URL narrows the answer to the pages under it (`scope:`); to read one page, `ketch docs --section <page URL>`. Leave `--tokens` unset unless a result is too long to read.
 2. The fact is printed: answer, citing each `source:`. Anything you add that no group prints is your own knowledge: label it so.
 3. The group you need is cut, or `defined_in` names it: `ketch docs --section <ref>`, then answer. A section longer than a page prints `page: 1 of N` and ends with a `next page:` command; run it only if the fact is not on this page.
 4. Otherwise, Follow.
@@ -187,7 +190,7 @@ The question spans products.
 4. Combine. Cite each claim's `source:`. Say what no source covered.
 5. A source you will ask again: propose `ketch docs index <site>` to the operator (CLI only; it writes the local index). It then answers from the index, offline too (`stale: unverified` when the cited pages cannot be checked).
 
-Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` with `page` for the next page, and `docs(resolve=true)` with an optional `query`; `defined_in` is a list of `{term, section}`, `indexed_near` a list of `{title, library}`, a cut result has `truncated` and `contents`, `hint` says how many are cut and that their text is unread, an indexed match `indexed: true`. pi's `ketch_docs` takes the same, without `page`.
+Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` with `page` for the next page, and `docs(resolve=true)` with an optional `query`; `defined_in` is a list of `{term, section}`, `indexed_near` a list of `{title, library}`, a cut result has `truncated` and `contents`, `hint` says how many are cut and that their text is unread (and, for an `origin` that is unverified, how to present it), an indexed match `indexed: true`. pi's `ketch_docs` takes the same, without `page`.
 
 ## Token budgets
 

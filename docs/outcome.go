@@ -80,7 +80,23 @@ type Outcome struct {
 	// named none, when the outcome came from elsewhere (design/docs-evidence.md,
 	// Round 11): what to pass as library next. Never answered from.
 	IndexedNear []NearLibrary `json:"indexed_near,omitempty"`
-	err         error
+	// Origin says whether an answer from pages a search read is from the
+	// documentation of what was asked (design/docs-evidence.md, Build 1):
+	// "verified, <evidence>"; "by name, <host> documents the <ecosystem>
+	// package <name>[; the search results favour <root>]" when only a
+	// registry package of the name supports it; or "unverified, ketch could
+	// not confirm <host> as the official documentation of <what was asked>".
+	// Empty for an answer from an indexed library, which the caller chose by
+	// indexing it.
+	Origin string `json:"origin,omitempty"`
+	err    error
+	// originRoots are, for an origin by name, the docs roots the caller
+	// can pass to choose: the resolved one, and the one the search results
+	// favour (OriginHint).
+	originRoots []string
+	// unread says why a site gave no text (its pages' causes, counted),
+	// when that is how the outcome ended: the next site's answer names it.
+	unread string
 }
 
 // Err is the error behind a refused or failed outcome, classified by

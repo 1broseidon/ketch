@@ -272,7 +272,7 @@ func TestSearchIsTheDefaultBackend(t *testing.T) {
 		}
 	}
 	for _, gone := range []string{"web", "auto"} {
-		if _, err := NewFromConfig(&config.Config{}, gone, Deps{}); !errors.Is(err, ErrUnknownBackend) || !strings.Contains(err.Error(), "ketch config set docs_backend search") {
+		if _, err := NewFromConfig(&config.Config{}, gone, Deps{}); !errors.Is(err, ErrUnknownBackend) || !strings.Contains(err.Error(), "search is the default, -b context7 asks Context7 for one call") {
 			t.Errorf("%s: %v, want an unknown backend naming the fix", gone, err)
 		}
 	}

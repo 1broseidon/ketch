@@ -101,7 +101,7 @@ func TestSearchFirstReadsAPageOnce(t *testing.T) {
 	hits := append(exampleHits(), hit(idxRoot+"guide/middleware.html", "Middleware - Example docs"), hit(idxRoot+"guide/routing/", "Routing - Example docs"))
 	s, _, _ := searchFirstOver(t, f, hits)
 	o := s.SearchSelect(context.Background(), "add middleware to a route", 0)
-	if o.Status != Partial {
+	if o.Status != Found {
 		t.Fatalf("outcome %s (%v)", o.Status, o.Err())
 	}
 	for _, c := range f.called() {
@@ -149,7 +149,7 @@ func TestSearchBuiltLibrariesAreIgnored(t *testing.T) {
 		s.SearchSelect(ctx, "add middleware to a route", 0),
 		s.GetDocsSelect(ctx, idxRoot, "add middleware to a route with auth", 0),
 	} {
-		if o.Status != Partial || o.Index == nil || o.Index.Source != SearchBackend {
+		if o.Status != Found || o.Index == nil || o.Index.Source != SearchBackend {
 			t.Errorf("outcome %s index %+v (%v), want the pages a search read", o.Status, o.Index, o.Err())
 		}
 		for _, r := range o.Results {
@@ -259,7 +259,7 @@ func TestSearchAnswerReferencesResolve(t *testing.T) {
 	s, _, _, _ := searchFirstCached(t, f, exampleHits())
 	ctx := WithLocalOptions(context.Background(), LocalOptions{Hint: HintCLI, Tokens: 4000})
 	o := s.SearchSelect(ctx, "add middleware to a route path parameter writing middleware", 0)
-	if o.Status != Partial || len(o.Results) < 2 {
+	if o.Status != Found || len(o.Results) < 2 {
 		t.Fatalf("answer %s (%v): %v", o.Status, o.Err(), resultURLs(o.Results))
 	}
 	refs := resultURLs(o.Results)

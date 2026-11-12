@@ -57,14 +57,15 @@ func exampleHits() []search.Result {
 // A question is answered from the docs site its hits agree on: the hit
 // pages and their siblings are read (robots.txt, other locales and
 // releases left out) and ranked as a library held in memory; the answer
-// is partial and says how to index the rest. Nothing is written to the
+// is found when its terms are there (the source line says a search read
+// the pages) and says how to index the rest. Nothing is written to the
 // docs index.
 func TestSearchFirstAnswersFromTheSite(t *testing.T) {
 	f := exampleSite()
 	s, store, _ := searchFirstOver(t, f, exampleHits())
 	o := s.SearchSelect(context.Background(), "add middleware to a route", 0)
-	if o.Status != Partial || o.Reason != ReasonPartialSite || o.Backend != SearchBackend {
-		t.Fatalf("outcome = %s/%s from %q (%v), want partial/%s from search", o.Status, o.Reason, o.Backend, o.Err(), ReasonPartialSite)
+	if o.Status != Found || o.Reason != "" || o.Backend != SearchBackend {
+		t.Fatalf("outcome = %s/%s from %q (%v), want found from search", o.Status, o.Reason, o.Backend, o.Err())
 	}
 	if len(o.Results) == 0 || !strings.HasPrefix(o.Results[0].URL, idxRoot+"guide/middleware") {
 		t.Fatalf("top result = %+v, want the middleware page", o.Results)
@@ -107,7 +108,7 @@ func TestSearchFirstRepeatWithinTTL(t *testing.T) {
 	s, c, store, searches := searchFirstCached(t, f, exampleHits())
 	ctx := context.Background()
 	first := s.SearchSelect(ctx, "add middleware to a route", 0)
-	if first.Status != Partial {
+	if first.Status != Found {
 		t.Fatalf("first answer = %s (%v)", first.Status, first.Err())
 	}
 	searched, fetched := searches.Load(), len(f.called())
@@ -115,7 +116,7 @@ func TestSearchFirstRepeatWithinTTL(t *testing.T) {
 	if searches.Load() != searched || len(f.called()) != fetched {
 		t.Errorf("asked again: %d searches and %d fetches; want none", searches.Load()-searched, len(f.called())-fetched)
 	}
-	if again.Status != Partial || again.Note != first.Note || !sameURLs(again.Results, first.Results) || again.Index.PagesRead != first.Index.PagesRead {
+	if again.Status != Found || again.Origin != first.Origin || again.Note != first.Note || !sameURLs(again.Results, first.Results) || again.Index.PagesRead != first.Index.PagesRead {
 		t.Errorf("again = %s %q %v, want the first answer", again.Status, again.Note, resultURLs(again.Results))
 	}
 	checkCached(t, first, again)
@@ -128,7 +129,7 @@ func TestSearchFirstRepeatWithinTTL(t *testing.T) {
 	}
 	c.advance(time.Hour + time.Minute)
 	searched, fetched = searches.Load(), len(f.called())
-	if o := s.SearchSelect(ctx, "add middleware to a route", 0); o.Status != Partial || searches.Load() == searched || len(f.called()) == fetched {
+	if o := s.SearchSelect(ctx, "add middleware to a route", 0); o.Status != Found || searches.Load() == searched || len(f.called()) == fetched {
 		t.Errorf("after the TTL: %s, %d searches, %d fetches; want a search and pages read again", o.Status, searches.Load()-searched, len(f.called())-fetched)
 	}
 	checkNothingStored(t, store)
@@ -279,6 +280,8 @@ func TestNotDocsHit(t *testing.T) {
 		"https://docs.lib.test/reference/questions":    false,
 		"https://lib.test/docs/discussions/settings":   true,
 		"https://help.lib.test/articles/configure-sso": false,
+		"https://docs.github.com/en/actions":           false,
+		"https://api.github.com/repos/o/r":             true,
 	}
 	for in, want := range cases {
 		u, _ := url.Parse(in)

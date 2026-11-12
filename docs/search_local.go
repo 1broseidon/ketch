@@ -72,8 +72,9 @@ func (s *SearchFirst) near(req sfRequest) []NearLibrary {
 // sfTrace is one search-first call's path, written when KETCH_DOCS_TRACE
 // is set: for measuring, never part of the answer.
 type sfTrace struct {
-	path, local, site, cands                                  string
-	cached                                                    bool // the question's read came from the question cache
+	path, local, site, cands, resolved                        string
+	resolveMs                                                 int64 // how long resolving the named library took (in parallel with the search)
+	cached                                                    bool  // the question's read came from the question cache
 	hits, docsHits, siteHits, sites, planned, fetched, failed int
 	domains                                                   int // the sites (domains) read; sites counts docs trees
 }
@@ -82,9 +83,22 @@ func (t *sfTrace) write(w io.Writer, req sfRequest, d time.Duration) {
 	if w == nil {
 		return
 	}
-	_, _ = fmt.Fprintf(w, "trace: search-first path=%s local=%s cached=%t hits=%d docs_hits=%d site=%s site_hits=%d sites=%d planned=%d fetched=%d failed=%d ms=%d library=%q cands=%q\n",
+	_, _ = fmt.Fprintf(w, "trace: search-first path=%s local=%s cached=%t hits=%d docs_hits=%d site=%s site_hits=%d sites=%d planned=%d fetched=%d failed=%d ms=%d resolve_ms=%d resolved=%q library=%q cands=%q\n",
 		t.path, t.local, t.cached, t.hits, t.docsHits, t.site, t.siteHits, t.sites, t.planned, t.fetched, t.failed,
-		d.Milliseconds(), req.library, t.cands)
+		d.Milliseconds(), t.resolveMs, t.resolved, req.library, t.cands)
+}
+
+// resolvedTrace is what resolve made of the named library, for the trace.
+func resolvedTrace(r sfResolved) string {
+	switch {
+	case r.match != nil:
+		return r.name + "=" + r.match.root.String()
+	case r.ambiguous != nil:
+		return fmt.Sprintf("%s=ambiguous(%d)", r.name, len(r.ambiguous.Matches))
+	case r.name != "":
+		return r.name + "=none"
+	}
+	return ""
 }
 
 // siteList names the leading sites with their weight, for the trace.

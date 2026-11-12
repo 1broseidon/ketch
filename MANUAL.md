@@ -251,7 +251,7 @@ $ ketch docs -b context7 --resolve "next.js"                        # a name →
 
 | Flag | Meaning |
 | --- | --- |
-| `--backend, -b` | `search` (default) or `context7`; `ketch config set docs_backend context7` makes Context7 the default |
+| `--backend, -b` | `search` (default) or `context7`, for this call; the `docs_backend` config key is retired, so a stored value is ignored |
 | `--library` | `search`: a docs URL to search within, or a library name or spec (below) to prefer; a library indexed with `docs index` answers offline. `context7`: a library ID from `--resolve` |
 | `--tokens` | Token budget. `search`: about 1,800 unless set; set, the answer is fitted to it compactly. `context7`: 4000. With `--section`, the cap of the section returned (4000) |
 | `--resolve` | Resolve the query as a library name instead of searching: its docs root (`search`) or Context7 IDs (`context7`) |
@@ -279,8 +279,12 @@ with their code:
    first, as does a standards body's site for a question about a spec, and a
    site's main docs go ahead of an edition or an old release (enterprise,
    legacy, a pinned release) unless the question names it. `--library` with a
-   name or spec makes the sites it names, and the docs root it resolves to,
-   weigh more; with a docs URL, that site is the one read.
+   name or spec is resolved while the search runs: the docs root resolve
+   verifies is read, unless the site the search agrees on is that project's
+   own, and a name several libraries share is refused (exit 2) with each
+   listed; with a docs URL, that site is the one read (a page URL, that page
+   first). On a host that serves many projects, such as pkg.go.dev, only the
+   named project's path is read (`net/http` is `https://pkg.go.dev/net/http/`).
 3. **It reads up to 24 pages**: the hits on that site and their neighbours in
    its own page lists, through the scrape pipeline and page cache, honouring
    `robots.txt`. When the site gives nothing readable, the same domain's next
@@ -290,21 +294,37 @@ with their code:
    keywords exactly as the local index does, and answers **compactly**: about
    1,800 tokens (or `--tokens`), four or five results.
 
-An answer from pages search read is `partial`: the output says so
-(`status: partial (partial_site)`) with a note naming the site and how many of
-its pages were read, and how to index all of it
-(`note: read 12 pages of https://site/docs/ found by web search (12 new to the local index); the whole site: ketch docs index https://site/docs/`;
-with `--json` the note goes to stderr; over MCP it is `status`, `reason` and
-`note`). A library indexed with `docs index` answers `answered`. Every result's
-`source` is `search`, and each carries `section`, the reference
-`--section` takes.
+An answer from pages search read says so on its `source:` line
+(`source: search, 12 pages read`), and says whether the site is the
+documentation of what was asked: `origin: verified, <evidence>` (a second
+signal beyond the name: the root resolve found and the site the search
+agrees on are one project, the site is the project's own, a standard-library
+page of the language's docs, or the library names the site);
+`origin: by name, <host> documents the <ecosystem> package <name>` when only a
+registry package of the name supports it, with the site the search results
+favour when that is another; or `origin: unverified, ketch could not confirm
+<host> as the official documentation of <what>`. The last two end with a line
+saying to name the site you cite or pass the official docs with `--library`
+(for by name, both roots). Its status is `found`, or
+`partial (terms_not_found)` when some of the question's terms are missing. A
+note names the site, how many of its pages were read, and how to index all of
+it
+(`note: read 12 pages of https://site/docs/ found by web search; the whole site: ketch docs index https://site/docs/`;
+`--json` and MCP carry `origin`, `status`, `reason` and `note` as fields). When
+the site read first gives no text, the note starts with `could not read <root>
+(<cause>)`, and the answer is from the next site. Each result carries
+`section`, the reference `--section` takes.
 
 It refuses, exit **3** (`[not_found]`), when the search hits hold no
-documentation (`no_docs_found`), when none of the pages could be read, when the
+documentation (`no_docs_found`), when none of the pages could be read (the
+error counts them per cause, such as `2 blocked (HTTP 403)` or
+`3 need JavaScript`, and names the next step), when the
 site's `robots.txt` closes them (`disallowed`), and when nothing on the pages
 matched (`no_results`); exit **2** (`[validation]`) when the hits are split
 between documentation sites with none clearly ahead (`ambiguous_site`: name
-one with `--library <docs URL>`). It fails with exit **4** (`[upstream]`) when
+one with `--library <docs URL>`), and when a `--library` name is shared by
+several libraries resolve verifies (`ambiguous`: each is listed with its
+packages and title; pass one). It fails with exit **4** (`[upstream]`) when
 every web search failed or came back empty (the providers are throttling:
 `search_empty`), or when no answer came within 45 seconds.
 
@@ -1047,9 +1067,11 @@ registries, and says so in the match's evidence. Context7 works
 with no key on its anonymous quota (about 200 requests a month per IP);
 `ketch doctor` shows it as `keyless` with the requests left as of the last
 Context7 response and when they renew (without spending one), and a free key via
-`ketch config set context7_api_key <key>` lifts the cap. `ketch config set
-docs_backend context7` makes Context7 the default; a config file from ketch
-0.20 that says `local` is read as `search`.
+`ketch config set context7_api_key <key>` lifts the cap. Context7 answers a
+call that names it (`-b context7`, MCP `backend: "context7"`). The
+`docs_backend` config key is retired: a stored value (often `context7`, the
+old default) is left in the file and ignored, and `ketch config set
+docs_backend` exits 2 saying so.
 
 ## Configuration
 

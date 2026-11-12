@@ -36,8 +36,8 @@ func (w *Web) profile(ctx context.Context, u *url.URL) (*siteProfile, error) {
 	if err != nil && (errors.Is(err, ErrNotFound) || errors.Is(err, errRefusedRedirect) || ctx.Err() != nil) {
 		return nil, err
 	}
-	if err == nil && !isShell(p) {
-		return p, nil
+	if err == nil && (!isShell(p) || p.movedTo != nil) {
+		return p, nil // a stub that says where the site moved is no shell to render
 	}
 	// A JS shell, or a raw fetch that failed (bot protection may still let
 	// the browser through): read the rendered page instead.
@@ -64,6 +64,7 @@ func (w *Web) rawProfile(ctx context.Context, u *url.URL) (*siteProfile, error) 
 	}
 	p := parseProfile(body, u, served)
 	target := metaRefreshTarget(body, served)
+	p.movedTo = stubMove(body, served, p, target)
 	if target == nil || scopeHost(target) != scopeHost(served) || linkKey(target) == linkKey(served) || !onlyLinksTo(p, target) {
 		return p, nil
 	}
@@ -75,6 +76,37 @@ func (w *Web) rawProfile(ctx context.Context, u *url.URL) (*siteProfile, error) 
 	next.title = firstNonEmpty(next.title, p.title)
 	next.description = firstNonEmpty(next.description, p.description)
 	return next, nil
+}
+
+// stubMaxBytes is the most a redirect stub weighs: a page that only sends
+// its reader on.
+const stubMaxBytes = 4096
+
+// stubMoveRe finds a stub's target where a parser with scripting on does
+// not: a meta refresh inside <noscript>, a canonical link, a script's
+// location.replace or location.href.
+var stubMoveRe = regexp.MustCompile(`(?i)(?:http-equiv=["']?refresh["']?\s+content=["']\s*\d+\s*;\s*url=|rel=["']canonical["']\s+href=|location\.(?:replace\(|href\s*=\s*))["']?([^"'\s)>]+)`)
+
+// stubMove is where a small page with no links but to one place sends its
+// reader, when that is another host: the address a docs site moved to
+// (an old GitHub Pages address sending its reader to the project's new host), nil
+// otherwise. refresh is the page's meta refresh target, when it has one.
+func stubMove(body []byte, served *url.URL, p *siteProfile, refresh *url.URL) *url.URL {
+	if len(body) > stubMaxBytes {
+		return nil
+	}
+	target := refresh
+	if target == nil {
+		if m := stubMoveRe.FindSubmatch(body); m != nil {
+			if u, ok := resolveRef(served, string(m[1])); ok && isWebScheme(u.Scheme) {
+				target = u
+			}
+		}
+	}
+	if target == nil || scopeHost(target) == scopeHost(served) || !isPublicWebURL(target) || !onlyLinksTo(p, target) {
+		return nil
+	}
+	return target
 }
 
 // onlyLinksTo reports a page with no links but ones to target: a redirect

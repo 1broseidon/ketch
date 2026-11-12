@@ -19,6 +19,7 @@ import (
 //	scope: <a URL below the root the answer is limited to, when library named one>
 //	version: <the indexed version, when the library has one>
 //	index: <full|capped>, <N> pages, built <date>   (or, for pages a search read: source: search, N pages read[, cached])
+//	origin: verified, <evidence> | by name, <host> documents the <ecosystem> package <name>[; the search results favour <root>] | unverified, ketch could not confirm <host> as the official documentation of <what was asked>   (pages a search read only)
 //	stale: unverified, built <date>   (only when a cited page older than cache_ttl could not be read again)
 //	status: found | partial (<reason>) | refused (<reason>)
 //	terms: {<term as written>: <sections holding it>, ...}
@@ -117,13 +118,19 @@ type Frontmatter struct {
 	Library string `json:"library,omitempty"`
 	// Scope is the URL below the library's root the answer was limited
 	// to: a library URL deeper than an indexed root.
-	Scope   string      `json:"scope,omitempty"`
-	Version string      `json:"version,omitempty"`
-	Index   *IndexInfo  `json:"index,omitempty"`
-	Stale   string      `json:"stale,omitempty"`
-	Status  Status      `json:"status,omitempty"`
-	Reason  string      `json:"reason,omitempty"`
-	Terms   []TermCount `json:"terms,omitzero"`
+	Scope   string     `json:"scope,omitempty"`
+	Version string     `json:"version,omitempty"`
+	Index   *IndexInfo `json:"index,omitempty"`
+	// Origin says whether an answer from pages a search read is from the
+	// documentation of what was asked: "verified, <evidence>" or
+	// "by name, <host> documents the <ecosystem> package <name>[; the search
+	// results favour <root>]" or "unverified, ketch could not confirm <host>
+	// as the official documentation of <what>".
+	Origin string      `json:"origin,omitempty"`
+	Stale  string      `json:"stale,omitempty"`
+	Status Status      `json:"status,omitempty"`
+	Reason string      `json:"reason,omitempty"`
+	Terms  []TermCount `json:"terms,omitzero"`
 	// DefinedIn names, for a listed term that no printed section defines,
 	// a section that does (evidence_defined.go): the defined_in line.
 	DefinedIn []DefinedIn `json:"defined_in,omitempty"`
@@ -147,7 +154,7 @@ type Frontmatter struct {
 // backend; library is the library the caller named, printed when no
 // result names the one answered from.
 func NewFrontmatter(query, backend, library string, o Outcome) Frontmatter {
-	f := Frontmatter{Query: query, Backend: backend, Library: library, Scope: o.Scope, Index: o.Index, Stale: o.Stale, Status: o.Status, Reason: o.Reason, Note: o.Note, IndexedNear: o.IndexedNear}
+	f := Frontmatter{Query: query, Backend: backend, Library: library, Scope: o.Scope, Index: o.Index, Origin: o.Origin, Stale: o.Stale, Status: o.Status, Reason: o.Reason, Note: o.Note, IndexedNear: o.IndexedNear}
 	if len(o.Results) > 0 && o.Results[0].Library != "" {
 		f.Library = o.Results[0].Library
 	}
@@ -221,6 +228,9 @@ func (f Frontmatter) Render() string {
 	}
 	if f.Index != nil {
 		b.WriteString(f.Index.line() + "\n")
+	}
+	if f.Origin != "" {
+		b.WriteString("origin: " + f.Origin + "\n")
 	}
 	if f.Stale != "" {
 		b.WriteString("stale: " + f.Stale + "\n")
@@ -322,6 +332,42 @@ func NearHint(style HintStyle) string {
 		return "library not indexed under that name: pass one of the indexed_near roots as --library"
 	case HintMCP:
 		return "library not indexed under that name: pass one of the indexed_near roots as library"
+	}
+	return ""
+}
+
+// OriginHint is the clause an answer ends with when its origin is not
+// verified, in style's words; "" for a verified one or HintNone. It says
+// only what ketch knows: it could not confirm the site as the official
+// docs (unverified), or only a package's name ties it to the library (by
+// name, with the roots to choose between). Either way the caller names
+// the site it cites, or passes the official docs as the library.
+func OriginHint(style HintStyle, o Outcome) string {
+	arg := "--library "
+	if style == HintMCP {
+		arg = "library="
+	}
+	quote := func(s string) string {
+		if style == HintMCP {
+			return `"` + s + `"`
+		}
+		return s
+	}
+	switch {
+	case style == HintNone:
+		return ""
+	case OriginUnverified(o.Origin):
+		return "origin unverified: ketch could not confirm this site as the official documentation; name the site you cite, or pass the official docs with " + arg + quote("<docs URL>")
+	case OriginByName(o.Origin):
+		h := "origin by name: only the package name ties this site to the library; name the site you cite, or pass the docs you mean with " + arg
+		if len(o.originRoots) < 2 {
+			return h + quote("<docs URL>")
+		}
+		parts := make([]string, len(o.originRoots))
+		for i, r := range o.originRoots {
+			parts[i] = arg + quote(r)
+		}
+		return h[:len(h)-len(arg)] + strings.Join(parts, " or ")
 	}
 	return ""
 }

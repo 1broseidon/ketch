@@ -15,7 +15,7 @@ import (
 // DocsInput is the input schema for the "docs" tool.
 type DocsInput struct {
 	Query   string `json:"query,omitempty" jsonschema:"the docs search query, or the library to resolve when resolve is true; not needed with section"`
-	Backend string `json:"backend,omitempty" jsonschema:"docs backend (default: the configured backend)"`
+	Backend string `json:"backend,omitempty" jsonschema:"docs backend (default: search)"`
 	Library string `json:"library,omitempty" jsonschema:"the library to answer from"`
 	Tokens  int    `json:"tokens,omitempty" jsonschema:"token budget"`
 	Limit   int    `json:"limit,omitempty" jsonschema:"max number of results (default: the configured limit; with library set, unbounded unless given)"`
@@ -52,13 +52,19 @@ type DocsOutput struct {
 	// Scope is the URL below the library's root an answer was limited to,
 	// and OutsideScope the distinctive terms the library holds that no
 	// section under it does.
-	Scope   string           `json:"scope,omitempty"`
-	Version string           `json:"version,omitempty"`
-	Index   *docs.IndexInfo  `json:"index,omitempty"`
-	Stale   string           `json:"stale,omitempty"`
-	Status  docs.Status      `json:"status,omitempty"`
-	Reason  string           `json:"reason,omitempty"`
-	Terms   []docs.TermCount `json:"terms,omitzero"`
+	Scope   string          `json:"scope,omitempty"`
+	Version string          `json:"version,omitempty"`
+	Index   *docs.IndexInfo `json:"index,omitempty"`
+	// Origin says whether an answer from pages a search read is from the
+	// documentation of what was asked: "verified, <evidence>" or
+	// "by name, <host> documents the <ecosystem> package <name>[; the search
+	// results favour <root>]" or "unverified, ketch could not confirm <host>
+	// as the official documentation of <what>".
+	Origin string           `json:"origin,omitempty"`
+	Stale  string           `json:"stale,omitempty"`
+	Status docs.Status      `json:"status,omitempty"`
+	Reason string           `json:"reason,omitempty"`
+	Terms  []docs.TermCount `json:"terms,omitzero"`
 	// DefinedIn names, for a listed term no result defines, a section
 	// that does.
 	DefinedIn    []docs.DefinedIn `json:"defined_in,omitempty"`
@@ -84,6 +90,13 @@ func fromOutcome(o docs.Outcome) DocsOutput {
 		out.Scope, out.OutsideScope, out.DefinedIn = f.Scope, f.OutsideScope, f.DefinedIn
 		out.Backend = docs.SearchBackend
 		out.Hint = docs.AnswerHint(docs.HintMCP, docs.CutCount(o.Results))
+		out.Origin = o.Origin
+		if h := docs.OriginHint(docs.HintMCP, o); h != "" && len(o.Results) > 0 {
+			if out.Hint != "" {
+				out.Hint += "; "
+			}
+			out.Hint += h
+		}
 	}
 	if len(o.IndexedNear) > 0 {
 		out.IndexedNear = o.IndexedNear
@@ -107,9 +120,9 @@ func (s *Server) registerDocsTool() {
 		Name:        "docs",
 		InputSchema: docsInputSchema(),
 		Description: "Library documentation: evidence and a verdict, no model; you decide the next call. An indexed library answers from the local index; otherwise a web search picks a docs site and reads up to 24 of its pages, saving nothing." +
-			" library: a docs root as resolve lists it; a deeper URL narrows the answer to the pages under it (scope; outside_scope: your terms only elsewhere in the library). indexed_near: your library named no indexed one; pass one of these as library." +
-			" Read the verdict first. status: found (evidence matching the question, not a promise that it answers); partial, reason terms_not_found (not_found: your terms nowhere in this source) or partial_site (pages a search read); refused (nothing here matches: stop asking this source; not a tool error). terms: your rare terms, with the sections holding each. defined_in: [{term, section}], where a term is defined when that section is not shown. index: kind, pages, built; stale: cited pages could not be checked (offline skips the check): say so if it matters." +
-			" results: verbatim pieces of sections, best first (page_title, heading_path, url, section), about 1,800 tokens in all: leave tokens unset unless a result is too long to read. truncated (shown_tokens of section_tokens) marks a cut one, contents names what it left out, … marks text left out." +
+			" library: a docs root as resolve lists it, or a name (read from the root resolve verifies; one several libraries share is refused, listing them); a deeper URL narrows the answer to the pages under it (scope; outside_scope: your terms only elsewhere in the library). indexed_near: your library named no indexed one; pass one of these as library." +
+			" Read the verdict first. status: found (evidence matching the question, not a promise that it answers); partial, reason terms_not_found (not_found: your terms nowhere in this source); refused (nothing here matches: stop asking this source; not a tool error). origin (pages a search read): verified; by name (only a package name) or unverified: name the site you cite, or pass the official docs as library. terms: your rare terms, with the sections holding each. defined_in: [{term, section}], where a term is defined when that section is not shown. index: kind, pages, built; stale: cited pages could not be checked (offline skips the check): say so if it matters." +
+			" results: verbatim pieces of sections, best first (page_title, heading_path, url, section), about 1,800 tokens: leave tokens unset unless one is too long to read. truncated (shown_tokens of section_tokens) marks a cut one, contents names what it left out, … marks text left out." +
 			" Two rules. Text behind … or in a truncated result is unread: read it with section before stating what it says, or say you did not read it. Whatever your answer says that no result prints is your own knowledge: label it so, never cite the docs for it." +
 			" Lookup: docs(query=\"<question>\", library=\"<docs root>\"). The fact is printed: answer, citing each result's url. The result you need is truncated, or defined_in names it: docs(section=\"<its section field>\"), then answer; a long section comes a page at a time (the hint gives the next call). Otherwise Follow." +
 			" Follow (the docs use other words): ask again in words the last call printed (a name in contents, a heading, a defined_in target), or read that section; never rephrase blind. After three calls to one source, stop: say what you tried and that it does not cover this." +
@@ -127,7 +140,7 @@ func (s *Server) registerDocsTool() {
 		}
 		backend := docs.CanonicalBackend(in.Backend)
 		if backend == "" {
-			backend = s.cfg.DocsBackend
+			backend = docs.SearchBackend // docs_backend is retired: Context7 only when a call names it
 		}
 		if err := validQuery(in, backend); err != nil {
 			return nil, DocsOutput{}, err
@@ -333,7 +346,7 @@ func docsInputSchema() *jsonschema.Schema {
 	libNames := strings.Join(docs.LibraryProviderNames(), ", ")
 	return inputSchema[DocsInput](map[string]string{
 		"query":   docs.WithLibraryHelp("the docs question (search picks the library and its docs site from it unless library is set), or the library to resolve when resolve is true (search: optional; none lists every indexed library); not needed with section"),
-		"backend": "docs backend: " + configbase.JoinNames(backends) + " (default: the configured backend, search unless the operator chose otherwise)",
+		"backend": "docs backend for this call: " + configbase.JoinNames(backends) + " (default: search; context7 only when named here)",
 		"library": docs.WithLibraryHelp("the library to answer from: for context7 a library ID from resolve"),
 		"tokens":  "token budget for " + strings.Join(docs.LibraryProviderNames(), " and ") + ": search answers in 1,800 tokens unless set (leave it unset unless a result is too long to read); context7 defaults to 4000; with section, the page size of the section returned (default 4000)",
 		"section": "read one section in full instead of searching: the url#anchor of a result's section field or a defined_in entry (a page URL alone returns the page's sections in order: how to read one page), from the local index or, for a page a search read, the page through the page cache; whole when it fits tokens (default 4000), else a page of that size at a time (page); library is optional",

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/1broseidon/ketch/config"
+	"github.com/1broseidon/ketch/docs"
 	"github.com/spf13/cobra"
 )
 
@@ -113,7 +114,7 @@ func runRoot(cmd *cobra.Command, _ []string) error {
 	p("\nBackends:\n")
 	p("  %-10s  %s\n", "search", joinWithDefault(config.SelectableBackends(), cfg.Backend))
 	p("  %-10s  %s\n", "code", joinWithDefault(config.AvailableCodeBackends(), cfg.CodeBackend))
-	p("  %-10s  %s\n", "docs", joinWithDefault(config.AvailableDocBackends(), cfg.DocsBackend))
+	p("  %-10s  %s\n", "docs", joinWithDefault(config.AvailableDocBackends(), docs.SearchBackend))
 
 	p("\nRun 'ketch <command> --help' for flags and examples.\n")
 	return nil

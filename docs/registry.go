@@ -28,10 +28,12 @@ type Provider struct {
 	Probe       func(context.Context, *http.Client, *config.Config) (health.Status, string)
 }
 
-// Required reports whether a failing health check must fail doctor. Selection
-// and explicitly configured credentials gate health independently of usability.
+// Required reports whether a failing health check must fail doctor: the
+// docs backend every call uses (search), or one whose credentials are
+// configured, independently of usability. A stored docs_backend no longer
+// selects one (RetiredDocsBackend).
 func (p Provider) Required(cfg *config.Config) bool {
-	if cfg.DocsBackend == p.ID {
+	if p.ID == SearchBackend {
 		return true
 	}
 	for _, setting := range p.Settings {
@@ -47,6 +49,13 @@ var providers = []Provider{
 	searchProvider(),
 	context7Provider(),
 }
+
+// RetiredDocsBackend says why the docs_backend config key does nothing:
+// search is the docs backend of every call, and Context7 answers only a
+// call that asks for it (design/docs-evidence.md, Build 1). A stored
+// value came from an older default, not a choice; it is left in the file
+// and ignored.
+const RetiredDocsBackend = "docs_backend is retired: every docs call uses search; ask for Context7 per call with -b context7 (MCP: backend \"context7\"); a stored value is left in the file and ignored"
 
 // legacyBackends maps a docs_backend value an earlier release stored to
 // the backend that serves it now. ketch 0.20 let `ketch config set

@@ -238,7 +238,7 @@ Check: the fact is among the chosen pieces.
 
 ### Output
 
-Frontmatter carries the verdict. The body carries the evidence, verbatim.
+Frontmatter carries the verdict. The body carries the evidence, verbatim. An answer from pages a search read prints `source: search, N pages read` in place of `index:`, then `origin:` (Build 1); its status is judged like an indexed answer's.
 
 ```markdown
 ---
@@ -402,6 +402,7 @@ This is the text for the skill file. The MCP description carries the same three 
 | `status: found` | evidence matching the question is printed; not a promise that it answers | read the groups |
 | `status: partial (terms_not_found)` | some of your terms are nowhere in this source | read `not_found`; ask another source for those terms |
 | `status: refused` | nothing here matches | stop asking this source |
+| `origin: by name, …` or `origin: unverified, …` | a search read these pages; only a package name supports the site, or ketch could not confirm it as the official docs (it may still be) | name the site you cite, or name the official docs with `--library` |
 | `defined_in: {term: ref}` | where a term is defined, when that section was not printed | `ketch docs --section <ref>` |
 | `(cut, N of M tokens)` on a `source:` line | the group shows part of its section | `ketch docs --section <that source>` if you need the rest |
 | `also in this section: …` | what a cut group left out, by name | use one of those names in your next call |
@@ -694,6 +695,153 @@ Measured: on the Round 11 set the 369 values are unchanged on `library` (156/0/1
 **A second pin.** `.docs-index/pin2/` in the bench, built from a copy of the first pin's page cache with the network denied. `ketch docs index` cannot rebuild offline: discovery reads `llms.txt` and sitemaps raw, which the page cache never holds, and 9,140 of the 23,962 pages (Markdown sources, `llms-full.txt` chunks) have no cache entry. So the pin was copied and every page whose cached text reproduces its stored sections and which the new splitter sections differently was sectioned again through the build's own write path: 130 pages of 22 libraries; every other row is as it was. 135 libraries, 23,962 pages as in the first pin, 252,698 sections. Of the nine huge-section runs, the caller's first call (for the multi-library run, its nginx call) now prints the fact the caller guessed in all nine, against none on the first pin. The two Flask runs print it in neither: it is in `register_blueprint`'s entry, which the question does not reach. Of the six spec runs that lost facts with no `library`, five now reach the index on their first call (RFC 7636 twice, RFC 6749, RFC 7519, the PKCE question about OAuth 2.1); the OIDC run does not. The OAuth 2.1 draft is not indexed.
 
 **Not fixed here.** Duo's `<span class=…>` leaks are in Duo's own Markdown sources (`duo.com/docs/*.md`, read raw), not in the HTML extractor, which flattens highlighted `<pre>` and has tests for it; a fix belongs to the Markdown-source read (`fetchOne`, and the freshness check's `readMarkdown`). On xml2rfc pages a figure's pilcrow line before a heading is taken as that heading's permalink (`takePermalinkLine`), so RFC 9110's `4. Identifiers in HTTP` cites `#section-3.9-5`.
+
+### Build 1: right source or say so
+
+**What real use showed.** Until this build every round was measured on a benchmark that denies ketch the network, so only the indexed path was tested. Two agents then used a build on topics the benchmark never saw. The indexed path was instant and right. The live path (nothing indexed: search the web, pick a docs site, read pages) answered 8 of 13 questions on the first call, and every failure was about the source. Four classes:
+
+1. A `--library` name the resolver verifies was not used by the question. `--resolve sqlx` lists a crate's docs on docs.rs and a Go module's on pkg.go.dev, trust 8 each; the question refused with four blogs as "documentation sites".
+2. A shared host was read as one library. `--library net/http` answered from `library: https://pkg.go.dev/`, every section from a stranger's tutorial repository on that host.
+3. A third-party site answered with nothing to tell it from official docs (a tutorial site for a Raspberry Pi question), and the official site's failure said only "not found".
+4. A library URL naming one archived man page returned nothing and no reason.
+
+A wrong-source answer looks exactly like a right one. Every rule below is general: none names a site, product or question.
+
+**A. A library name uses what resolve knows.** The cause: `prefs` resolved a name only for a pinned spec (a version or an ecosystem prefix), and even then used the root as a boost among the hits' sites. Now a `--library` name no indexed library matches is resolved beside the web search (within 6 s; the Round 11 rules stand, so a name that matches an indexed library never reaches a registry):
+
+- One verified docs root: that root is read first (from the index if it is indexed, else its own page, its hits and its lists), unless the site the search agrees on is that project's own (below), which then answers.
+- Several: the search's leading site settles it when it is the own docs site, not a package index's page, of exactly one candidate (gorm.io is `go:gorm.io/gorm`'s, beside an older module and a namesake crate). Otherwise two or more candidates with a verified root refuse the question, `[validation]`, exit 2, listing each root with its packages (the ecosystem) and title: `ambiguous library "sqlx": 2 libraries match; pass one with --library (CLI) or library (MCP): https://pkg.go.dev/github.com/<owner>/sqlx/ (sqlx package - github.com/<owner>/sqlx - Go Packages; go:github.com/<owner>/sqlx, github:<owner>/sqlx), https://docs.rs/sqlx/latest/sqlx/ (sqlx - Rust; crates:sqlx, github:<org>/sqlx)`. One verified among unverified packages means resolve was not sure: the search answers as before (homebrew: a namesake crate beside two packages with no docs). A language word in the question picks the candidate of its ecosystem (`… in rust`).
+- A Go standard-library path of two elements or more (`net/http`, `encoding/json`) is verified by pkg.go.dev's own page at that path (`pkg.go.dev documents net/http in the Go standard library`), beside resolve; `--resolve net/http` lists it too.
+- A bare question's first firm reading (a name its syntax puts there; not a guess from joined words, not a common word) is resolved the same way, strictly: an exact package name, its own docs site, trust 5. An ambiguity there is ignored.
+- A verified root that gives no text gives way to the search's sites, and the answer's note says `could not read <root> (…), so this answer is from the next site`. Its docs not holding the terms is the answer.
+
+"The project's own site" (`siteOfProject`): at, under or over the verified root; on its registrable domain when that root is not on a shared host; on a domain the project's metadata publishes (homepage, docs URL), its Go module's host, or its repository owner's name (`developer.hashicorp.com` for `github.com/hashicorp/nomad`).
+
+Latency: resolving runs beside the search, so it costs what it takes past the search. Over the 19 `--library` probes below, resolve took a median 1.45 s (p90 3.6 s, max 5.6 s) beside searches of about 1 to 1.5 s; the calls' median went from 2.14 to 2.24 s, the mean from 3.24 to 3.31 s. A repeat answers from the resolution cache. Bare questions: 0 to 0.5 s of strict resolution, median call 2.68 s before, 1.99 s after (the searches differ run to run).
+
+**B. A shared host is not a library.** A host that serves many unrelated projects is read one project at a time, decided by structure, not a list of hosts (`sharedProjectRoot`):
+
+- a path whose first element is itself a host name (a module path: pkg.go.dev, a Go docs mirror, a module proxy) is one project per module: the host and owner and repository on a code forge, else the host and one element (`go.uber.org/zap`);
+- a package index's docs host as resolve already knows them (`indexHosted`: docs.rs, pkg.go.dev, pythonhosted.org): on pkg.go.dev a path with no host first is a standard-library package, its whole import path; docs.rs keeps its version segment's per-crate root;
+- the library name written as a path (`net/http`) is the root on such a host, and a single name is a project path on any host whose hits sit under two or more different first path elements, unless the name is the host's own label (`react` on react.dev).
+
+Each project root is a site of its own, so strangers' paths neither add weight to it nor get read. `library:` prints the root used: `https://pkg.go.dev/net/http/`. The only list involved is resolve's existing three registry docs hosts; code forges, npm and PyPI were already dropped as never being docs.
+
+**C. Say where the answer came from.** A new frontmatter line on every answer from pages a search read, after `source:`, the same field `origin` in `--json` and MCP. Three values, because a wrong `verified` is worse than no label:
+
+```
+origin: verified, docs.rs hosts the docs of crates chrono (resolve, trust 8.0), and the search results agree
+origin: verified, pkg.go.dev documents encoding/json in the Go standard library (resolve, trust 8.0)
+origin: verified, on hashicorp.com, the domain of hashicorp, owner of github.com/hashicorp/nomad
+origin: by name, docs.rs documents the crates package esp32; the search results favour https://docs.espressif.com/projects/esp-idf/en/stable/
+origin: unverified, ketch could not confirm sqlite.org as the official documentation of sqlite
+```
+
+- **verified** needs a second signal beyond a name: the root resolve found and the site the search results agree on are one project (the search lead taken without resolve's boost, by `pickSite` over sites chosen with no resolved root, so the agreement is not resolve's own preference); the site is the project's own (a domain its metadata, Go module path or repository owner names); a standard-library page of the language's own docs; the search results agree on a package index's page for the very name (`pkg.go.dev`'s page for `net/http`); the search's agreement settled an ambiguity; the library value is a URL naming the site; or the library name (for a question with no library, one of its words) is the domain of the site the search agreed on, alone or with a descriptor word (`jqlang.org` for jq), and the site's address says docs. The last is search agreement plus a name; it is kept, and `raspberry.tips` stays out of it by the docs-address condition.
+- **by name**: only a registry package of the name supports the root read. The answer still comes from the resolved root (on the first probe set it was the right source more often than the search's lead), never labelled verified, and when the search agreed on another site the line names it.
+- **unverified**: nothing ketch gathered confirms the site. It says only that; the site may well be official.
+
+What was asked is the library value, else the question's first firm reading, else the question. An answer from the index has no origin line: the caller chose that source by indexing it, and the bench check tier's budgets stay as they were.
+
+The last line of a by-name or unverified answer says what to do, never that the source is third-party:
+
+```
+origin unverified: ketch could not confirm this site as the official documentation; name the site you cite, or pass the official docs with --library <docs URL>
+origin by name: only the package name ties this site to the library; name the site you cite, or pass the docs you mean with --library https://docs.rs/esp32/latest/esp32/ or --library https://docs.espressif.com/projects/esp-idf/en/stable/
+```
+
+MCP `hint` gives the same with `library="…"`, after the cut hint and `; `; `--json` `hint` the CLI's words.
+
+**Python's standard library**, in the Go path's shape: a bare name shaped like a module (`pathlib`, `os.path`) is checked against `docs.python.org/3/library/<name>.html` beside resolve (one page read; its title must open with the name). The root is `https://docs.python.org/3/library/`, the module's page read first, ahead of a PyPI package of the name; a match resolve found in another ecosystem (an npm `uuid`) keeps the name, as does an ambiguity with a verified candidate outside PyPI. `--resolve pathlib` lists it first. A standard-library page is read first even when the search leads with another site of the language's domain (peps.python.org beside docs.python.org, which the same-domain rule would have taken as the project's own).
+
+**Status of a live answer.** Every answer from a search said `partial (partial_site)`, so the word warned about nothing. The reason is gone: a live answer is `found` when its distinctive terms are there, `partial (terms_not_found)` when some are missing, judged as an indexed answer is. The `source: search, N pages read` line and the note (`read N pages of <root> found by web search; the whole site: ketch docs index <root>`) still say where the pages came from. The question cache's version went to `docs-question/v3`, so no read cached by an earlier build (some from a wrong site, some with an older origin) is repeated.
+
+**D. A read failure gives its reason and the next step.** Pages that gave no text are counted per cause: `not found` (404, 410), `blocked` (401, 403, 407, 429, 451, with the status), `need JavaScript` (an unrendered shell), `empty after extraction`, `timed out`, `redirected outside the root`, else `failed` with the status. Each cause names the next step: configure `browser` (blocked, JavaScript), the site's parent tree as `--library` or `ketch docs index` to read its page lists (not found), the address they redirect to (redirected), another docs root. Example: `search: none of the 1 pages of https://www.raspberrypi.com/ could be read: 1 blocked (HTTP 403); the site refuses automated readers: configure browser to retry its pages in a browser, or pass another docs root as --library: not found`.
+
+Causes found:
+
+- **The Raspberry Pi documentation** answers every automated reader with a bot challenge (HTTP 403, `cf-mitigated: challenge`), which was reported as "not found". Not a bug to work around; the cause is now said, and a configured browser is the existing 403 retry.
+- **The archived man page**: a library URL naming a page became its directory's root, and only hits under it or the site's lists were read, so with no hit there nothing was planned: "none of the 0 pages … could be read". A library URL that names a page (`isPageFile`) now reads that page first; a root with nothing to read says `found no page of <root> to read: no search hit is under it, and its llms.txt, sitemap and links list none; pass the site's parent … as --library, or ketch docs index …`. The page itself, one `<pre>` block, sections and answers like any other.
+- **A moved site's old address** (found in the probes: an old jq manual answering with a script, a canonical link and a meta refresh inside `<noscript>`, read as an unrendered shell): a page under 4 KB with no links but to one place on another host is a redirect stub, and the site is read where it went, after any HTTP redirect there, as an HTTP redirect would have sent it.
+- **A code forge's API host** (`api.github.com`) passed as docs because its first label, `api`, exempts a forge's docs host (`docs.github.com`). An API host of a forge is no docs.
+- A live read that matched nothing said "nothing in the index of …"; it now says `nothing in the N pages read of <root> matched`.
+
+**E. The stored Context7 default is retired** (decided). `docs_backend: context7` in a config file came from an older default, not a choice. It no longer chooses anything: search is every call's backend, Context7 answers a call that names it (`-b context7`, MCP `backend`). The value stays in the file and is read, never acted on. `ketch config set docs_backend …` exits 2 with `docs_backend is retired: every docs call uses search; ask for Context7 per call with -b context7 (MCP: backend "context7"); a stored value is left in the file and ignored`, and writes nothing; `ketch config` shows `docs_backend: search` and that sentence as `docs_backend_note`; `--backend` defaults to `search` whatever the file says, and `ketch doctor` and the root summary mark search as the default. `KETCH_DOCS_BACKEND` is ignored the same way. Tests cover a config with `context7` stored and one with none.
+
+**Probe set.** 26 questions of our own, none from the benchmark's libraries or the examples above: 19 with `--library` (crates, Go modules, npm, PyPI, three Go and two Python standard-library names, products, hardware) and 7 with none. Run once on `7bbf467` and once on this build, each in its own state directory. "Own docs" is a judgement: the project's or product's own documentation, or a package index's docs for the exact package.
+
+| Probe | Before: source, own | After: source, own | After origin | Status before → after |
+|---|---|---|---|---|
+| chrono | docs.rs/chrono, yes | docs.rs/chrono, yes | verified | partial → found |
+| viper | failed (third-party mirror unreadable) | pkg.go.dev, the module's page, yes | verified | failed → found |
+| lodash | lodash.com/docs, yes | lodash.com/docs, yes | verified | partial → found |
+| marshmallow | readthedocs, yes | readthedocs, yes | verified | partial → found |
+| rayon | docs.rs/rayon, yes | docs.rs/rayon, yes | verified | partial → found |
+| boto3 | AWS boto3 docs, yes | AWS boto3 docs, yes | verified | partial → found |
+| axios | a GitHub Pages mirror, no | axios.rest (npm's homepage), yes | verified | partial → found |
+| gorm | gorm.io/docs, yes | gorm.io/docs, yes | verified (settled ambiguity) | partial → found |
+| thiserror | doc.rust-lang.org, no | docs.rs/thiserror, yes | verified | partial → found |
+| encoding/json | pkg.go.dev/, mixed projects | pkg.go.dev/encoding/json/, yes | verified | partial → found |
+| os/exec | pkg.go.dev/, mixed projects | pkg.go.dev/os/exec/, yes | verified | partial → found |
+| asyncio | refused, four junk sites | docs.python.org/3/, yes | verified | refused → found |
+| pathlib | docs.python.org/3.13/, yes | pathlib.readthedocs.io, the obsolete PyPI backport, no | verified | partial → found |
+| nomad | developer.hashicorp.com, yes | the same, yes | verified | partial → found |
+| homebrew | docs.brew.sh, yes | docs.brew.sh, yes | unverified | partial → found |
+| jq | refused, ambiguous_site | failed (api.github.com), fixed after the run: jqlang.org/manual, yes | unverified, then verified by the descriptor rule | refused → found |
+| ollama | docs.ollama.com, yes | the same, yes | verified | partial → found |
+| arduino | docs.arduino.cc, yes | the same, yes | verified | partial (terms) → partial (terms) |
+| esp32 | electropeak.com, no | docs.rs/esp32, a Rust crate, no | verified | partial → partial (terms) |
+| AirPods reset | support.apple.com, yes | the same, yes | unverified | partial → found |
+| Synology SSH | failed (official KB needs JavaScript) | docs.synocommunity.com, no, with a note that the official KB needs JavaScript | unverified | failed → found |
+| sqlite json_extract | sqlite.org, yes | the same, yes | unverified | partial → found |
+| kotlin launch/async | kotlinlang.org, yes | the same, yes | unverified | partial → found |
+| flutter ListView | docs.flutter.dev, yes | api.flutter.dev, yes | verified | partial → found |
+| gorm preload | gorm.io/docs, yes | the same, yes | verified | partial → found |
+| boto3 presigned url | AWS boto3 docs, yes | the same, yes | verified | partial → found |
+
+Own docs: 17 of 26 before (2 more mixed with strangers' pages, 3 wrong sources, 4 no answer); 22 of 26 after (1 of them the jq rerun), 3 wrong. Origin on that first pass, with two values: 20 verified, 6 unverified; wrong either way: 2 verified but not the docs asked about (pathlib's backport, esp32's crate), 5 unverified that are the official docs.
+
+**Relabelled**, with the three values and Python's standard library: all 26 again in a fresh state directory (the search returns other sites run to run), plus one rerun each of `pathlib` and `encoding/json` after the two fixes the run found (Go's standard-library matches lacked the standard-library mark; a sibling site of python.org displaced the module's page).
+
+| Probe | Source | Own | Origin |
+|---|---|---|---|
+| chrono, lodash, marshmallow, rayon, boto3, axios, thiserror, ollama, boto3 (bare) | the resolved root | yes | verified, and the search results agree |
+| gorm | gorm.io/docs | yes | verified (the search settled the ambiguity) |
+| nomad | developer.hashicorp.com | yes | verified (owner's domain) |
+| encoding/json, os/exec | pkg.go.dev's package page | yes | verified (Go standard library) |
+| asyncio, pathlib | docs.python.org/3/library/, the module's page | yes | verified (Python standard library) |
+| viper | pkg.go.dev's module page | yes | by name; the search results favour a third-party primer |
+| esp32 | docs.rs's esp32 crate | no | by name; the search results favour docs.espressif.com |
+| arduino | docs.arduino.cc | yes | verified (the library name is its domain) |
+| flutter, gorm (bare) | api.flutter.dev, gorm.io/docs | yes | verified (the question names the domain) |
+| homebrew, sqlite, AirPods | docs.brew.sh, sqlite.org, support.apple.com | yes | unverified, with no third-party advice |
+| kotlin | developer.android.com this time | yes (Android's Kotlin docs) | unverified |
+| jq | no docs among the hits this run (jqplay.org only) | | refused, no_docs_found |
+| Synology SSH | the official KB, every page needs JavaScript | | failed, with the cause; the first pass answered from a community site |
+
+No `verified` answer is from a source other than the one asked about: pathlib now answers from Python's own docs, and esp32 is by name with Espressif's docs named beside it. Of the correct answers that had `verified` from resolve, one lost it: viper (by name; the search led with a third-party primer). jq and Synology gave no answer this run because the search returned other results (one docs hit; a second site no clearer than the third), not because of these changes.
+
+The three examples, once before and once after: `sqlx` is refused with both libraries listed; `net/http` answers from `https://pkg.go.dev/net/http/`, verified; the Raspberry Pi root's error says `blocked (HTTP 403)` and what to do; the archived man page answers from the page.
+
+**Guards.** `go build ./... && go vet ./... && go test ./...` pass. The Round 11 and 13 name tests: wrong 0 on every half. The bench check tier with this build on the second pin: 207 of 291 answered, 221 answered or led, 20 of 30 not covered, 0 cases changed from `baseline-docs-check.json` (the sandbox denies the network, so only the indexed path runs there).
+
+**Rules dropped.**
+
+- The verified root always wins: nomad's verified root is pkg.go.dev's page for the `nomad` command, while the search agreed on HashiCorp's product docs. The project's-own-site test came from that.
+- Refuse every ambiguity: gorm and homebrew went from answered to refused; the search's agreement on one candidate's own site, and "one verified among unverified", came from those.
+- Refuse only when candidates span ecosystems: gorm's three span Go and a namesake crate.
+- Domain naming alone as verification: `raspberry.tips` was verified for a Raspberry Pi question.
+- A 10 s resolve budget: chrono once took 9.4 s; 6 s keeps the worst case near the search's own timeouts.
+- Resolve's verification alone as `verified`: a registry package that only shares the name (PyPI's obsolete `pathlib`, the `esp32` crate) came out verified. It is `by name` now unless the search agrees.
+- Agreement measured on the sites ranked with resolve's boost: the boost makes the resolved root lead the hits it wants to be confirmed by.
+- `unverified` advising "present it as a third-party source": sqlite.org, docs.brew.sh and support.apple.com are official.
+
+**Still wrong, or open.**
+
+- A hardware name a crate took (`esp32`) is still answered from the crate, now labelled by name with Espressif's docs named; ketch cannot tell an unrelated namesake from the library meant, only that nothing but the name ties them.
+- Official sites without a docs address or named otherwise stay unverified (sqlite.org, support.apple.com, kotlinlang.org, docs.brew.sh).
+- An answer routed by the search to an indexed library has no origin line; it is the caller's own index.
+- Bot challenges (HTTP 403) need a configured browser; nothing else gets through, by design.
 
 ## Storage
 

@@ -226,6 +226,10 @@ type siteProfile struct {
 	// shell) and links came from FetchPage's Markdown instead; meta,
 	// scripts and inline are then empty.
 	fromMarkdown bool
+	// movedTo is where a redirect stub on another host sends its reader
+	// (stubMove): a moved docs site whose old address answers with a
+	// script or meta refresh, not an HTTP redirect. nil for any other page.
+	movedTo *url.URL
 }
 
 // selectOption is one <option> of a <select> menu.

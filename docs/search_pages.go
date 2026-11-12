@@ -43,6 +43,9 @@ func (s *SearchFirst) plan(ctx context.Context, site sfSite, prof *siteProfile, 
 		out = append(out, l)
 		return true
 	}
+	if site.page != nil {
+		add(webLink{url: site.page}) // the page the library names, before any hit
+	}
 	for _, h := range site.hits {
 		if len(out) >= s.maxHits {
 			break
@@ -124,9 +127,11 @@ func inHand(links []webLink, pages []webPage, root webRoot) []webLink {
 // fetch reads the planned pages, sfConcurrency at a time, each within
 // sfPageTimeout and all within ctx: the pages that arrived in plan order,
 // one per page (pageIdentity) and none whose text another's is, each with
-// the link it was read by, and how many failed.
-func (s *SearchFirst) fetch(ctx context.Context, root webRoot, links []webLink) ([]webPage, []webLink, int) {
+// the link it was read by, and the pages that gave no text, each with its
+// cause (readCause; an unrendered JS shell, a page with no words).
+func (s *SearchFirst) fetch(ctx context.Context, root webRoot, links []webLink) ([]webPage, []webLink, readFails) {
 	pages := make([]*webPage, len(links))
+	errs := make([]error, len(links))
 	sem := make(chan struct{}, sfConcurrency)
 	var wg sync.WaitGroup
 	for i, l := range links {
@@ -138,25 +143,32 @@ func (s *SearchFirst) fetch(ctx context.Context, root webRoot, links []webLink) 
 			select {
 			case sem <- struct{}{}:
 			case <-ctx.Done():
+				errs[i] = ctx.Err()
 				return
 			}
 			defer func() { <-sem }()
 			pctx, cancel := context.WithTimeout(ctx, sfPageTimeout)
 			defer cancel()
-			if p, err := s.web.fetchOne(pctx, root, l); err == nil {
-				pages[i] = p
-			}
+			pages[i], errs[i] = s.web.fetchOne(pctx, root, links[i])
 		})
 	}
 	wg.Wait()
 	var out []webPage
 	var by []webLink
-	failed := 0
+	var fails readFails
 	seen := map[string]bool{}
 	texts := map[[32]byte]bool{}
 	for i, p := range pages {
-		if p == nil || unreadShell(p) {
-			failed++
+		switch {
+		case p == nil:
+			cause, detail := readCause(errs[i])
+			fails.add(links[i].url.String(), cause, detail)
+			continue
+		case unreadShell(p):
+			fails.add(links[i].url.String(), readJS, "")
+			continue
+		case len(strings.Fields(p.Markdown)) == 0:
+			fails.add(links[i].url.String(), readEmpty, "")
 			continue
 		}
 		k := p.URL
@@ -169,8 +181,30 @@ func (s *SearchFirst) fetch(ctx context.Context, root webRoot, links []webLink) 
 			by = append(by, links[i])
 		}
 	}
-	return out, by, failed
+	return out, by, fails
 }
+
+// readFails are the planned pages that gave no text, with a detail per
+// cause (an HTTP status) for the error that names them.
+type readFails struct {
+	list    []readFail
+	details map[string]string
+}
+
+func (f *readFails) add(page, cause, detail string) {
+	f.list = append(f.list, readFail{page: page, cause: cause})
+	if detail != "" {
+		if f.details == nil {
+			f.details = map[string]string{}
+		}
+		if _, ok := f.details[cause]; !ok {
+			f.details[cause] = detail
+		}
+	}
+}
+
+// n is how many pages gave no text.
+func (f readFails) n() int { return len(f.list) }
 
 // sfShellWords is how many words an unrendered JS shell's text must have
 // to be read as a page: below it the text is the shell's placeholder

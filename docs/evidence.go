@@ -58,6 +58,9 @@ type evidenceAnswer struct {
 	// outside the distinctive terms the library holds only outside it.
 	scope   string
 	outside []string
+	// origin is the origin line of an answer from pages a search read
+	// (search_origin.go), which the budget covers.
+	origin string
 }
 
 // ReasonTermsNotFound is the reason of an answer that names terms of the
@@ -76,7 +79,7 @@ func (a *evidenceAnswer) frontmatter(lib docsindex.Library, query, note string) 
 	if nf == nil {
 		nf = []string{}
 	}
-	return Frontmatter{Query: query, Backend: SearchBackend, Library: lib.Root, Scope: a.scope, Version: lib.Version, Index: a.index,
+	return Frontmatter{Query: query, Backend: SearchBackend, Library: lib.Root, Scope: a.scope, Version: lib.Version, Index: a.index, Origin: a.origin,
 		Status: a.status, Reason: a.reason, Terms: nonNil(a.terms), NotFound: nf, OutsideScope: a.outside, DefinedIn: a.definedIn, Note: note}
 }
 
@@ -97,11 +100,11 @@ func (l *Local) evidence(lib docsindex.Library, query string, opts LocalOptions,
 	}
 	t.gathered(g)
 	v := verdict(g.written, g.sections)
-	a := &evidenceAnswer{terms: v.found, notFound: v.notFound, status: Found, index: indexInfo(lib), scope: opts.scope}
+	a := &evidenceAnswer{terms: v.found, notFound: v.notFound, status: Found, index: indexInfo(lib), scope: opts.scope, origin: opts.origin}
 	if opts.read > 0 {
 		a.index = searchRead(opts.read, opts.cached)
 	}
-	if a.judge(v, scope, g.written, opts.note != ""); a.status == Refused {
+	if a.judge(v, scope, g.written); a.status == Refused {
 		return a, nil
 	}
 	pool := make([]docsindex.Section, len(g.pool))
@@ -134,20 +137,18 @@ func (l *Local) evidence(lib docsindex.Library, query string, opts LocalOptions,
 }
 
 // judge sets a's status and reason from the terms' verdict v, the scope
-// (nil for none) and its written terms' counts under it, and whether the
-// answer is from pages a search read (site): refused when no distinctive
-// term is in the library, no indexed page is under the scope, or no
-// distinctive term is under it; else partial for each of terms not found,
-// terms outside the scope and a site read, or found.
-func (a *evidenceAnswer) judge(v termVerdict, scope *docsindex.Scope, written []writtenTerm, site bool) {
+// (nil for none) and its written terms' counts under it: refused when no
+// distinctive term is in the library, no indexed page is under the scope,
+// or no distinctive term is under it; else partial for each of terms not
+// found and terms outside the scope, or found. An answer from pages a
+// search read is judged the same way: its source line says where the
+// pages came from (Build 1).
+func (a *evidenceAnswer) judge(v termVerdict, scope *docsindex.Scope, written []writtenTerm) {
 	inScope := true // some distinctive term is under the scope
 	if scope != nil {
 		a.outside, inScope = outsideScope(written)
 	}
 	var reasons []string
-	if site {
-		reasons = append(reasons, ReasonPartialSite)
-	}
 	if v.partial {
 		reasons = append(reasons, ReasonTermsNotFound)
 	}

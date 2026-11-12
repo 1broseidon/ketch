@@ -105,8 +105,8 @@ func TestIndexedNear(t *testing.T) {
 
 	s, _ := nearSearchFirst(t, exampleHits())
 	o := s.GetDocsSelect(ctx, "duo unix", "add middleware to a route", 0)
-	if o.Status != Partial || o.Index == nil || !slices.Equal(o.IndexedNear, []NearLibrary{duo}) {
-		t.Fatalf("answer from search = %s (%v), near %v; want partial with Cisco Duo near", o.Status, o.Err(), o.IndexedNear)
+	if o.Status != Found || o.Index == nil || !slices.Equal(o.IndexedNear, []NearLibrary{duo}) {
+		t.Fatalf("answer from search = %s (%v), near %v; want found with Cisco Duo near", o.Status, o.Err(), o.IndexedNear)
 	}
 	fm := NewFrontmatter("add middleware to a route", SearchBackend, "duo unix", o).Render()
 	if !strings.Contains(fm, "indexed_near: {Cisco Duo: https://duo.test/docs/}\n") {

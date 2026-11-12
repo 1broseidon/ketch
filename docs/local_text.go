@@ -39,6 +39,9 @@ type LocalOptions struct {
 	note   string
 	read   int
 	cached bool
+	// origin is the origin line of an answer from pages a search read
+	// (search_origin.go).
+	origin string
 	// scope is the URL below an indexed library's root that the caller
 	// gave as its library (fromIndex): the answer is made from the pages
 	// at or under it only ("" for the whole library).

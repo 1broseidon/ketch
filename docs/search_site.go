@@ -71,6 +71,9 @@ type sfSite struct {
 	spec  bool     // a standards body's site (specDomains)
 	alts  []sfSite // the domain's other docs trees, best first
 	retry bool     // an alternative tree of a site read before
+	// page is a page to read before any other: the page a library URL
+	// names, or a verified root's own page.
+	page *url.URL
 }
 
 // fuseWeighted is fuseHits with each list's weights scaled (1 when scale
@@ -216,8 +219,8 @@ var notDocsSegments = map[string]bool{
 func notDocsHit(u *url.URL) bool {
 	host := strings.ToLower(u.Hostname())
 	first, _, _ := strings.Cut(strings.TrimPrefix(host, "www."), ".")
-	if isNonDocsHost(host) && !docsHostLabels[first] || onDomains(host, thirdPartyDomains) || isPreviewHost(host) {
-		return true // a forge's own docs host (docs.github.com) is docs
+	if isNonDocsHost(host) && (!docsHostLabels[first] || first == "api") || onDomains(host, thirdPartyDomains) || isPreviewHost(host) {
+		return true // a forge's own docs host (docs.github.com) is docs; its API host (api.github.com) serves JSON
 	}
 	if notDocsHostLabels[first] {
 		return true
@@ -348,12 +351,57 @@ func docsDirOver(u *url.URL, base *url.URL) string {
 }
 
 // siteKey groups hits into sites: the registrable domain, or, for docs a
-// package index hosts (one host, many projects), the docs tree.
+// package index hosts or any host that serves many projects (one host,
+// many projects: sharedProjectRoot), the docs tree.
 func siteKey(u *url.URL, tree webRoot) string {
 	if indexHosted(u) {
 		return tree.String()
 	}
+	if _, ok := sharedProjectRoot(u); ok {
+		return tree.String()
+	}
 	return registrableDomain(u.Hostname())
+}
+
+// projectTree is the docs tree a hit sits in on a host that serves many
+// projects: the project root the library's name, as a path, gives it
+// (namedProjectRoot), else its own project's (sharedProjectRoot); false on any
+// other host. shared says the hits show its domain serving several
+// projects (sharedDomains). perProject reports a tree that is one
+// project's, which the site key keeps apart from the host's others.
+func projectTree(u *url.URL, name string, shared bool) (tree webRoot, perProject bool) {
+	pr, isProject := sharedProjectRoot(u)
+	if r, ok := namedProjectRoot(u, name, shared && docsTree(u).prefix == "/"); ok && r.contains(u) {
+		return r, true
+	}
+	if isProject {
+		return pr, true
+	}
+	return docsTree(u), false
+}
+
+// sharedDomains are the registrable domains whose hits sit under two or
+// more different first path elements: a host the search shows serving
+// several projects, where a library name that is one of those elements
+// is that project's path.
+func sharedDomains(hits []sfHit) map[string]bool {
+	firsts := map[string]map[string]bool{}
+	for _, h := range hits {
+		segs := pathSegments(h.u.Path)
+		if len(segs) < 2 {
+			continue
+		}
+		d := registrableDomain(h.u.Hostname())
+		if firsts[d] == nil {
+			firsts[d] = map[string]bool{}
+		}
+		firsts[d][strings.ToLower(segs[0])] = true
+	}
+	out := map[string]bool{}
+	for d, f := range firsts {
+		out[d] = len(f) >= 2
+	}
+	return out
 }
 
 // sitePrefs are what a request prefers: docs roots (a docs URL given, or
@@ -368,6 +416,16 @@ type sitePrefs struct {
 	names   []string // comparison keys (libraryKey)
 	words   []string // comparison keys of the question's words
 	version string
+	// library is the library name as written ("net/http"), which on a
+	// host that serves many projects is that project's path; "" for a
+	// docs URL or none.
+	library string
+	// resolved is what resolve made of the name the request gives.
+	resolved sfResolved
+	// lead is the site the search results agree on without resolve's
+	// preference (pickSite over sites chosen with no resolved root): what
+	// an origin compares the resolved root with. nil for none.
+	lead *webRoot
 }
 
 // sfWordBoost multiplies the weight of a hit on a site the question's
@@ -454,6 +512,7 @@ func chooseSites(hits []sfHit, prefs sitePrefs) []sfSite {
 	trees := map[string][]*tree{}
 	var order []string
 	scores := map[string]float64{}
+	shared := sharedDomains(hits)
 	for _, h := range hits {
 		switch {
 		case prefs.preferred(h.u):
@@ -461,13 +520,16 @@ func chooseSites(hits []sfHit, prefs sitePrefs) []sfSite {
 		case named(h.u, prefs.words):
 			h.weight *= sfWordBoost
 		}
-		t := docsTree(h.u)
+		t, perProject := projectTree(h.u, prefs.library, shared[registrableDomain(h.u.Hostname())])
 		for _, r := range prefs.roots {
 			if r.contains(h.u) && t.contains(r.u) {
 				t = r // the preferred root is the tree, however deep
 			}
 		}
 		k := siteKey(h.u, t)
+		if perProject {
+			k = t.String() // one project of a host that serves many is a site of its own
+		}
 		if trees[k] == nil {
 			order = append(order, k)
 		}

@@ -690,6 +690,10 @@ func (e *HTTPStatusError) Error() string {
 	return fmt.Sprintf("HTTP %d for %s", e.StatusCode, e.URL)
 }
 
+// HTTPStatus is the response status code, for packages that classify a
+// failed fetch without importing scrape (the docs backend's read errors).
+func (e *HTTPStatusError) HTTPStatus() int { return e.StatusCode }
+
 // FetchContent fetches a URL without extraction or browser fallback while
 // preserving response bytes and the server-declared content type.
 func (s *Scraper) FetchContent(ctx context.Context, rawURL string) (*FetchedContent, error) {

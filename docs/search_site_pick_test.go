@@ -186,7 +186,7 @@ func TestSearchFirstTriesTheDomainsNextTree(t *testing.T) {
 // follow-up (one more term) is searched.
 func TestSearchFirstMemoryNeedsTheSameTerms(t *testing.T) {
 	s, _, searches := searchFirstOver(t, exampleSite(), exampleHits())
-	if o := s.SearchSelect(context.Background(), "add logger middleware to a route", 0); o.Status != Partial {
+	if o := s.SearchSelect(context.Background(), "add logger middleware to a route", 0); o.Status != Found {
 		t.Fatalf("first answer = %s (%v)", o.Status, o.Err())
 	}
 	before := searches.Load()

@@ -74,10 +74,10 @@ func readLibrary(root webRoot, title, siteName string, pages []webPage) (*Local,
 	return NewLocal(store), lib, nil
 }
 
-// answerRead answers req from pages read under root, held in memory:
-// partial (partial_site), with the note that names the command indexing
-// the whole site.
-func (s *SearchFirst) answerRead(ctx context.Context, root webRoot, title, siteName string, pages []webPage, req sfRequest) Outcome {
+// answerRead answers req from pages read under root, held in memory,
+// with the note that names the command indexing the whole site and the
+// origin siteOrigin gave the site.
+func (s *SearchFirst) answerRead(ctx context.Context, root webRoot, title, siteName string, pages []webPage, req sfRequest, origin sfOrigin) Outcome {
 	l, lib, err := readLibrary(root, title, siteName, pages)
 	if err != nil {
 		return Answer(SearchBackend, nil, err)
@@ -85,9 +85,9 @@ func (s *SearchFirst) answerRead(ctx context.Context, root webRoot, title, siteN
 	defer l.store.Close()
 	note := searchNote(lib.Root, len(pages))
 	opts := req.opts
-	opts.note, opts.read = note, len(pages)
+	opts.note, opts.read, opts.origin = note, len(pages), origin.text
 	opts.scope = readScope(root, req.library)
-	return searchAnswered(l.answer(ctx, lib, req.query, opts), note)
+	return searchAnswered(l.answer(ctx, lib, req.query, opts), note, origin)
 }
 
 // readScope is the scope of an answer from pages read under root, for a
@@ -115,15 +115,17 @@ func readTitle(root webRoot, prof *siteProfile) (title, name string) {
 }
 
 // sfReadVersion versions the question cache's key and value.
-const sfReadVersion = "docs-question/v1"
+const sfReadVersion = "docs-question/v3"
 
 // sfRead is what the question cache keeps of a read: the docs root and,
 // unless an indexed library answered for it, the pages read in order.
 type sfRead struct {
-	Root     string       `json:"root"`
-	Title    string       `json:"title,omitempty"`
-	SiteName string       `json:"site_name,omitempty"`
-	Pages    []sfReadPage `json:"pages,omitempty"`
+	Root        string       `json:"root"`
+	Title       string       `json:"title,omitempty"`
+	SiteName    string       `json:"site_name,omitempty"`
+	Origin      string       `json:"origin,omitempty"`
+	OriginRoots []string     `json:"origin_roots,omitempty"`
+	Pages       []sfReadPage `json:"pages,omitempty"`
 }
 
 // sfReadPage is one page read: the link it was read by, the address the
@@ -290,13 +292,13 @@ func (s *SearchFirst) fromRead(ctx context.Context, req sfRequest, tr *sfTrace) 
 	}
 	cctx, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
-	pages, _, failed := s.fetch(cctx, root, links)
-	tr.cached, tr.site, tr.fetched, tr.failed = true, root.String(), len(pages), failed
+	pages, _, fails := s.fetch(cctx, root, links)
+	tr.cached, tr.site, tr.fetched, tr.failed = true, root.String(), len(pages), fails.n()
 	if len(pages) == 0 {
 		return Outcome{}, false
 	}
 	req.opts.cached = true
-	o := s.answerRead(ctx, root, r.Title, r.SiteName, pages, req)
+	o := s.answerRead(ctx, root, r.Title, r.SiteName, pages, req, sfOrigin{text: r.Origin, roots: r.OriginRoots})
 	return o, kept(o)
 }
 

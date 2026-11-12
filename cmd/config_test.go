@@ -679,13 +679,6 @@ func TestApplyConfigSetBackendValidatesAgainstRegistry(t *testing.T) {
 		{"backend", "", "backend cannot be empty", ""},
 		{"code_backend", "sourcegraph", "", ""},
 		{"code_backend", "grep", `unknown code backend "grep"`, ""},
-		{"docs_backend", "context7", "", ""},
-		{"docs_backend", "search", "", ""},
-		{"docs_backend", "local", "", "search"}, // ketch 0.20 accepted it; the local index is part of search now
-		{"docs_backend", "auto", `unknown docs backend "auto"`, ""},
-		{"docs_backend", "web", `unknown docs backend "web"`, ""},
-		{"docs_backend", "ctx7", `unknown docs backend "ctx7"`, ""},
-		{"docs_backend", "", "docs_backend cannot be empty", ""},
 	} {
 		c := config.Defaults()
 		err := applyConfigSet(&c, tc.key, tc.value)
@@ -694,7 +687,7 @@ func TestApplyConfigSetBackendValidatesAgainstRegistry(t *testing.T) {
 				t.Errorf("%s=%q: unexpected error %v", tc.key, tc.value, err)
 				continue
 			}
-			got := map[string]string{"backend": c.Backend, "code_backend": c.CodeBackend, "docs_backend": c.DocsBackend}[tc.key]
+			got := map[string]string{"backend": c.Backend, "code_backend": c.CodeBackend}[tc.key]
 			want := tc.want
 			if want == "" {
 				want = strings.TrimSpace(tc.value)

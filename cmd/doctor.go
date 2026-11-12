@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/1broseidon/ketch/config"
+	"github.com/1broseidon/ketch/docs"
 	"github.com/1broseidon/ketch/doctor"
 	"github.com/spf13/cobra"
 )
@@ -110,7 +111,7 @@ func doctorBackendLabel(c doctor.Check) string {
 	switch {
 	case c.Surface == "search" && c.Backend == cfg.Backend,
 		c.Surface == "code" && c.Backend == cfg.CodeBackend,
-		c.Surface == "docs" && c.Backend == cfg.DocsBackend:
+		c.Surface == "docs" && c.Backend == docs.SearchBackend: // docs_backend is retired
 		return c.Backend + " (default)"
 	}
 	return c.Backend

@@ -257,7 +257,7 @@ func TestPrintDocsResultsDefinedInFrontmatter(t *testing.T) {
 // An answer to a library value that named no indexed library prints the
 // libraries near it in the frontmatter and ends by saying to pass one.
 func TestPrintDocsResultsIndexedNear(t *testing.T) {
-	o := docs.Outcome{Status: docs.Partial, Reason: docs.ReasonPartialSite, Index: &docs.IndexInfo{Source: docs.SearchBackend, PagesRead: 3},
+	o := docs.Outcome{Status: docs.Found, Index: &docs.IndexInfo{Source: docs.SearchBackend, PagesRead: 3},
 		IndexedNear: []docs.NearLibrary{{Title: "Cisco Duo", Library: "https://duo.com/docs/"}},
 		Results:     []docs.Result{{Library: "https://other.example.test/", PageTitle: "Other", URL: "https://other.example.test/a", Snippet: "Text."}}}
 	out := captureStdout(t, func() {

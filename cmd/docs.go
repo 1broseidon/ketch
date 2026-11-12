@@ -23,18 +23,18 @@ var docsCmd = &cobra.Command{
 	Use:   "docs <query>",
 	Short: "Search library documentation",
 	Long: `Search library documentation. The default backend, search, answers from the docs themselves: a library indexed with ketch docs index answers offline from the local index; otherwise ketch searches the web for the question, picks the documentation site the results agree on, reads the matching pages and answers from them. A question saves nothing: the pages stay in the page cache for cache_ttl, so the same question again within it, answered or refused, does no search and no fetch (its source line ends with cached); only ketch docs index adds libraries or pages. ` +
-		`The answer's frontmatter says what it read (index: full or capped, its pages and build date; or source: search and the pages a search read), its status, the question's rare terms as written (identifiers it writes, words in under 1% of the library's sections or in at most 25 of them) with the number of sections holding each (terms), and those no section holds (not_found); for a term in terms that is the first cell of a table row (an option's row) in a section the answer does not print, defined_in names that section for --section (defined_in: {<term>: <url#anchor>}, at most three). Status is found (evidence matching the question, not a promise that it answers); partial when a term is in not_found or the answer is from pages a search read; refused, exit 3, when no distinctive term is in the docs: the body is empty and not_found is the answer. ` +
+		`The answer's frontmatter says what it read (index: full or capped, its pages and build date; or source: search and the pages a search read, with origin: verified and its evidence; by name when only a registry package of the name supports the site, with the site the search results favour; or unverified when ketch could not confirm the site as the official documentation of what was asked: the answer then ends with a line saying to name the site you cite or pass the official docs with --library), its status, the question's rare terms as written (identifiers it writes, words in under 1% of the library's sections or in at most 25 of them) with the number of sections holding each (terms), and those no section holds (not_found); for a term in terms that is the first cell of a table row (an option's row) in a section the answer does not print, defined_in names that section for --section (defined_in: {<term>: <url#anchor>}, at most three). Status is found (evidence matching the question, not a promise that it answers; an answer from pages a search read too, its source line says so); partial when a term is in not_found; refused, exit 3, when no distinctive term is in the docs: the body is empty and not_found is the answer. ` +
 		`The body is the pieces of sections that name the question (paragraphs, list items, code blocks, table rows under their header), verbatim, grouped by section: a page's groups under "## <page title>", each under its heading path, ending with its source url#anchor, marked "(cut, N of M tokens)" with how much of its section it shows when the group was cut; a section longer than a page (` + strconv.Itoa(docs.AnswerPageTokens) + ` tokens) is never printed whole: its group shows its best pieces up to a page, in page order; a page's groups print in rank order, the page with the best group first; about 1,800 tokens in all, frontmatter included, or --tokens; --limit caps the groups. An answer from the index first reads again the pages it cites that were read longer ago than cache_ttl, each the way it was stored (the page, its Markdown source or its llms-full.txt chunk; at most 3 seconds; a page that changed is sectioned again in the index); when one cannot be read that way, or its check failed in the last 15 minutes, the frontmatter says stale: unverified, built <date>; --offline skips the check. An answer with groups cut ends with one line saying how many are cut, that their hidden text is unread, and the --section call to run before stating what it says: --section returns a section from the local index (no ranking), or of a page a search read, through the page cache; whole when it fits --tokens (default 4000), else a page of that size at a time, broken at a block boundary: the frontmatter says what it was read from (library, index or source, stale) and page N of M, and its last line is the command for the next page (--page N); a page URL with no anchor returns the page's sections in order, paged alike. A --library URL below an indexed root answers from the pages under it only (scope: in the frontmatter; outside_scope: the distinctive terms the library holds elsewhere); no indexed page under it is refused, exit 3. --json prints the frontmatter's fields, the same line as hint when a result is cut, and the results as one object. ` +
 		docs.WithLibraryHelp("--library names the library") + `.
 
--b context7 (or ketch config set docs_backend context7 to make it the default) uses Context7's curated snippets instead. Context7 needs no key: without one it uses Context7's anonymous quota (about 200 requests a month per IP), and a key lifts it. --resolve lists a name's library IDs (Context7) or docs roots (search: the indexed libraries the name matches first, from the index with no network, every one with no name; else the web's resolution); pass one as --library.`,
+-b context7 uses Context7's curated snippets instead, for that call: search is the default of every call, and the docs_backend config key is retired (a stored value is ignored). Context7 needs no key: without one it uses Context7's anonymous quota (about 200 requests a month per IP), and a key lifts it. --resolve lists a name's library IDs (Context7) or docs roots (search: the indexed libraries the name matches first, from the index with no network, every one with no name; else the web's resolution); pass one as --library.`,
 	Args: exitArgs(docsArgs),
 	RunE: traceDocs(runDocs),
 }
 
 func init() {
 	rootCmd.AddCommand(docsCmd)
-	docsCmd.Flags().StringP("backend", "b", cfg.DocsBackend, "docs backend: "+strings.Join(config.AvailableDocBackends(), ", "))
+	docsCmd.Flags().StringP("backend", "b", docs.SearchBackend, "docs backend for this call: "+strings.Join(config.AvailableDocBackends(), ", ")+" (the docs_backend config key is retired)")
 	docsCmd.Flags().String("library", "", docs.WithLibraryHelp("the library to answer from"))
 	docsCmd.Flags().Int("tokens", 4000, "token budget (search: 1,800 unless set, frontmatter included; context7: 4000; --section: the page size of the section returned, 4000)")
 	docsCmd.Flags().IntP("limit", "l", cfg.Limit, "max number of results")
@@ -176,6 +176,9 @@ func finishDocs(cmd *cobra.Command, fetcher *docsFetcher, query, backend, librar
 		a := docs.AnswerJSON{Frontmatter: docs.NewFrontmatter(query, backend, library, o), Results: o.Results}
 		if o.Index != nil {
 			a.Hint = docs.JSONHint(docs.CutCount(o.Results))
+			if h := docs.OriginHint(docs.HintCLI, o); h != "" && len(o.Results) > 0 {
+				a.Hint = strings.TrimPrefix(a.Hint+"; "+h, "; ")
+			}
 			if len(o.IndexedNear) > 0 {
 				a.Hint = strings.TrimPrefix(a.Hint+"; "+docs.NearHint(docs.HintCLI), "; ")
 			}
@@ -453,11 +456,19 @@ func printDocsResults(w io.Writer, query, backend, library string, o docs.Outcom
 		// verdict, the body the evidence, a page's groups under its title.
 		p("%s", docs.NewFrontmatter(query, backend, library, o).Render())
 		p("%s", docs.RenderAnswer(results, hint))
-		if h := docs.NearHint(hint); h != "" && len(o.IndexedNear) > 0 {
-			if !docs.AnyCut(results) {
+		blank := !docs.AnyCut(results)
+		line := func(h string) {
+			if blank {
 				p("\n")
+				blank = false
 			}
 			p("%s\n", h)
+		}
+		if h := docs.OriginHint(hint, o); h != "" && len(results) > 0 {
+			line(h)
+		}
+		if h := docs.NearHint(hint); h != "" && len(o.IndexedNear) > 0 {
+			line(h)
 		}
 		return
 	}
