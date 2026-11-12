@@ -5,3 +5,4 @@
 cmd/testdata/*.json text eol=lf
 cmd/testdata/*.txt text eol=lf
 doctor/testdata/*.json text eol=lf
+docs/testdata/**/*.md text eol=lf
