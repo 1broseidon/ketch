@@ -59,7 +59,8 @@ type DocsOutput struct {
 	// documentation of what was asked: "verified, <evidence>" or
 	// "by name, <host> documents the <ecosystem> package <name>[; the search
 	// results favour <root>]" or "unverified, ketch could not confirm <host>
-	// as the official documentation of <what>".
+	// as the official documentation of <what>" ("for this question" when
+	// nothing says the question names a thing).
 	Origin string           `json:"origin,omitempty"`
 	Stale  string           `json:"stale,omitempty"`
 	Status docs.Status      `json:"status,omitempty"`

@@ -188,7 +188,7 @@ func readTitle(root webRoot, prof *siteProfile) (title, name string) {
 }
 
 // sfReadVersion versions the question cache's key and value.
-const sfReadVersion = "docs-question/v4"
+const sfReadVersion = "docs-question/v5"
 
 // sfRead is what the question cache keeps of a read: the docs root and,
 // unless an indexed library answered for it, the pages read in order.
@@ -202,6 +202,9 @@ type sfRead struct {
 	// Wide are the directories the site's own lists named too many pages
 	// under for one index (wideDirs, indexRoot).
 	Wide []string `json:"wide,omitempty"`
+	// Tried names the sites tried before this one that gave no text, and
+	// why, as the answer's note said it (keepTried, keepAfter).
+	Tried string `json:"tried,omitempty"`
 }
 
 // sfReadPage is one page read: the link it was read by, the address the
@@ -374,7 +377,7 @@ func (s *SearchFirst) fromRead(ctx context.Context, req sfRequest, tr *sfTrace) 
 		return Outcome{}, false
 	}
 	req.opts.cached = true
-	o := s.answerRead(ctx, root, r.Title, r.SiteName, pages, req, sfOrigin{text: r.Origin, roots: r.OriginRoots}, r.Wide)
+	o := withTried(s.answerRead(ctx, root, r.Title, r.SiteName, pages, req, sfOrigin{text: r.Origin, roots: r.OriginRoots}, r.Wide), r.Tried)
 	return o, kept(o)
 }
 

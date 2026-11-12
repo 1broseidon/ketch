@@ -409,33 +409,22 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 	// its note: an answer from the next site must say the first one failed.
 	var unread []string
 	if m := prefs.resolved.match; m != nil && !leadOwned(sites, m) {
+		if guessedByName(prefs) {
+			// A name guessed from the question, tied to its root by a
+			// registry name alone, has earned nothing over the site the
+			// search results favour: that one first, the root after it.
+			return s.favouredFirst(ctx, cctx, sites, req, prefs, tr)
+		}
 		// The root resolve verified is the library, unless the site the
 		// search agrees on is that project's own: read it first. Its
-		// docs not holding the terms is the answer; only a root that gave
-		// no text gives way to the search's sites, and the answer says so.
-		site := givenSite(m.root, sites)
-		site.page, site.named = m.root.u, true
+		// docs not holding the terms gives way to the site the search
+		// results favour, the better answer kept; a root that gave no
+		// text gives way to the search's sites, and the answer says so.
+		site := resolvedSite(m, sites)
 		tr.domains++
-		if m.page != nil {
-			site.page = m.page
-		}
 		o, read = s.readSite(ctx, cctx, site, s.hitProfile(cctx, site), req, resolvedOrigin(m, prefs.lead), tr)
 		if lead := prefs.lead; favoursOtherSite(cctx, o, lead, m) {
-			// The resolved root holds none of the question's terms and the
-			// search results favour another site: read that one in this
-			// call; refuse only when neither holds them.
-			fav := givenSite(*lead, sites)
-			org := siteOrigin(fav, req, prefs)
-			org.text += fmt.Sprintf("; %s, which resolve found for %s, holds none of the question's terms, so this answer is from the site the search results favour", m.root, prefs.resolved.name)
-			o2, read2 := s.readSite(ctx, cctx, fav, s.hitProfile(cctx, fav), req, org, tr)
-			if answered(o2) {
-				read = read2
-				return s.keep(req, read, o2)
-			}
-			if o.err != nil {
-				o.err = fmt.Errorf("%w; nor does %s, the site the search results favour", o.err, lead)
-			}
-			return s.keep(req, read, o)
+			return s.fallOver(ctx, cctx, o, read, sites, req, prefs, tr)
 		}
 		if o.unread == "" || cctx.Err() != nil {
 			return s.keep(req, read, o)
@@ -446,11 +435,159 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 	return s.readSites(ctx, cctx, sites, req, prefs, o, read, unread, tr)
 }
 
-// favoursOtherSite reports the resolved root's read, o, refused for want
-// of the question's terms while the search results favour lead, another
-// site than m's own.
+// favoursOtherSite reports the resolved root's read, o, refused or partial
+// for want of the question's terms while the search results favour lead,
+// another site than m's own.
 func favoursOtherSite(cctx context.Context, o Outcome, lead *webRoot, m *webMatch) bool {
-	return o.unread == "" && cctx.Err() == nil && termsRefused(o) && lead != nil && !m.root.contains(lead.u) && !ownSiteStrong(*lead, m)
+	return o.unread == "" && cctx.Err() == nil && (termsRefused(o) || termsPartial(o)) && leadElsewhere(lead, m)
+}
+
+// leadElsewhere reports a site the search results favour, lead, that is
+// neither under m's root nor that project's own site.
+func leadElsewhere(lead *webRoot, m *webMatch) bool {
+	return lead != nil && !m.root.contains(lead.u) && !ownSiteStrong(*lead, m)
+}
+
+// guessedByName reports a resolved root that has earned no read ahead of
+// the site the search results favour: the name was read from the question
+// (not --library), only a registry package of the name ties the root to
+// it (resolvedOrigin's by name), and the search favours another site that
+// carries the name in its host or docs directory while the root does not
+// (named): nginx.org over an npm nginx package's author homepage, but not
+// a third-party host over zod.dev for zod.
+func guessedByName(prefs sitePrefs) bool {
+	m, lead := prefs.resolved.match, prefs.lead
+	if !prefs.resolved.bare || m == nil || !leadElsewhere(lead, m) || !OriginByName(resolvedOrigin(m, lead).text) {
+		return false
+	}
+	keys := []string{libraryKey(prefs.resolved.name)}
+	return named(lead.u, keys) && !named(m.root.u, keys)
+}
+
+// resolvedSite is the root resolve found for m as a site to read, its own
+// page first.
+func resolvedSite(m *webMatch, sites []sfSite) sfSite {
+	site := givenSite(m.root, sites)
+	site.page, site.named = m.root.u, true
+	if m.page != nil {
+		site.page = m.page
+	}
+	return site
+}
+
+// fallOver reads the site the search results favour after the resolved
+// root's read, o, fell short for want of the question's terms, and keeps
+// the better answer (betterRead; a tie keeps the root's). A favoured site
+// that gave no text leaves the root's answer, saying so. The read counts
+// as the question's second site (sfMaxSites); no other is read after it.
+func (s *SearchFirst) fallOver(ctx, cctx context.Context, o Outcome, read sfRead, sites []sfSite, req sfRequest, prefs sitePrefs, tr *sfTrace) Outcome {
+	m, lead := prefs.resolved.match, *prefs.lead
+	fav := givenSite(lead, sites)
+	org := siteOrigin(fav, req, prefs)
+	org.text += fmt.Sprintf("; %s, which resolve found for %s, %s, so this answer is from the site the search results favour", m.root, prefs.resolved.name, lacking(o))
+	tr.domains++
+	o2, read2 := s.readSite(ctx, cctx, fav, s.hitProfile(cctx, fav), req, org, tr)
+	switch {
+	case o2.unread != "":
+		return s.keepTried(req, read, o, lead, o2.unread, "the site the search results favour")
+	case betterRead(o2, o):
+		return s.keep(req, read2, o2)
+	case o.err != nil:
+		o.err = fmt.Errorf("%w; nor does %s, the site the search results favour", o.err, lead)
+	}
+	return s.keep(req, read, o)
+}
+
+// favouredFirst reads the site the search results favour ahead of the
+// root resolve found for a name guessed from the question (guessedByName),
+// each with its own origin, and the root after it unless the favoured
+// site's answer is found; the better answer is kept (betterRead; a tie
+// keeps the favoured site's), and a site that gave no text is named in the
+// answer kept. The two reads are the question's two sites (sfMaxSites).
+func (s *SearchFirst) favouredFirst(ctx, cctx context.Context, sites []sfSite, req sfRequest, prefs sitePrefs, tr *sfTrace) Outcome {
+	m, lead := prefs.resolved.match, *prefs.lead
+	fav := givenSite(lead, sites)
+	tr.domains++
+	o, read := s.readSite(ctx, cctx, fav, s.hitProfile(cctx, fav), req, siteOrigin(fav, req, prefs), tr)
+	if o.Status == Found || cctx.Err() != nil {
+		return s.keep(req, read, o)
+	}
+	root := resolvedSite(m, sites)
+	tr.domains++
+	o2, read2 := s.readSite(ctx, cctx, root, s.hitProfile(cctx, root), req, resolvedOrigin(m, &lead), tr)
+	switch {
+	case o.unread != "" && o2.unread != "":
+		return s.keepAfter(req, read2, []string{lead.String() + " (" + o.unread + ")", m.root.String() + " (" + o2.unread + ")"}, o2)
+	case o.unread != "":
+		return s.keepTried(req, read2, o2, lead, o.unread, "the site the search results favour")
+	case o2.unread != "":
+		return s.keepTried(req, read, o, m.root, o2.unread, "which resolve found for "+prefs.resolved.name)
+	case betterRead(o2, o):
+		return s.keep(req, read2, o2)
+	case o.err != nil:
+		o.err = fmt.Errorf("%w; nor does %s, which resolve found for %s", o.err, m.root, prefs.resolved.name)
+	}
+	return s.keep(req, read, o)
+}
+
+// termsPartial reports an answer partial for want of some of the
+// question's distinctive terms.
+func termsPartial(o Outcome) bool {
+	return o.Status == Partial && o.Reason == ReasonTermsNotFound && len(o.NotFound) > 0
+}
+
+// lacking says what of the question's terms a read that fell short lacks:
+// all of them (a refusal), or those it names (a partial answer).
+func lacking(o Outcome) string {
+	if !termsPartial(o) {
+		return "holds none of the question's terms"
+	}
+	noun := "term"
+	if len(o.NotFound) > 1 {
+		noun = "terms"
+	}
+	return "lacks the question's " + noun + " " + strings.Join(o.NotFound, ", ")
+}
+
+// betterRead reports a read's answer, a, better than b's: found over
+// partial over neither; of two partial answers, the one missing fewer of
+// the question's terms.
+func betterRead(a, b Outcome) bool {
+	rank := func(o Outcome) int {
+		switch o.Status {
+		case Found:
+			return 2
+		case Partial:
+			return 1
+		}
+		return 0
+	}
+	if rank(a) != rank(b) {
+		return rank(a) > rank(b)
+	}
+	return a.Status == Partial && len(a.NotFound) < len(b.NotFound)
+}
+
+// keepTried is keep for o, kept over a site that gave no text (root; why:
+// its read's unread): o's note, or a refusal's error, names that site, and
+// so does a repeat within cache_ttl (sfRead.Tried), so a caller sees the
+// site was tried and why it failed.
+func (s *SearchFirst) keepTried(req sfRequest, read sfRead, o Outcome, root webRoot, why, what string) Outcome {
+	read.Tried = fmt.Sprintf("could not read %s (%s), %s", root, why, what)
+	return s.keep(req, read, withTried(o, read.Tried))
+}
+
+// withTried is o with tried, the sites tried before that gave no text, in
+// its note, or for a refusal its error.
+func withTried(o Outcome, tried string) Outcome {
+	switch {
+	case tried == "":
+	case answered(o):
+		o.Note = joinNote(tried, o.Note)
+	case o.err != nil:
+		o.err = fmt.Errorf("%w; %s", o.err, tried)
+	}
+	return o
 }
 
 // readSites reads the search's sites in turn, after o and read from any
@@ -513,7 +650,8 @@ func (s *SearchFirst) keepAfter(req sfRequest, read sfRead, unread []string, o O
 	switch {
 	case len(before) == 0:
 	case answered(o):
-		o.Note = joinNote("could not read "+strings.Join(before, "; ")+", so this answer is from the next site", o.Note)
+		read.Tried = "could not read " + strings.Join(before, "; ") + ", so this answer is from the next site"
+		o.Note = joinNote(read.Tried, o.Note)
 	case o.err != nil && o.Index == nil:
 		o.err = fmt.Errorf("%w; before it, could not read %s", o.err, strings.Join(before, "; "))
 	}

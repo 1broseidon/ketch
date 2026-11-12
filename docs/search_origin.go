@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 )
 
 // Right source or say so (design/docs-evidence.md, Build 1). A live
@@ -55,7 +56,12 @@ func verifiedOrigin(evidence string) sfOrigin {
 	return sfOrigin{text: originVerified + ", " + evidence}
 }
 
+// unverifiedOrigin is the origin of an answer from host that nothing ties
+// to what was asked: what, or this question when what is "".
 func unverifiedOrigin(host, what string) sfOrigin {
+	if what == "" {
+		return sfOrigin{text: fmt.Sprintf("%s, ketch could not confirm %s as the official documentation for this question", originUnverified, host)}
+	}
 	return sfOrigin{text: fmt.Sprintf("%s, ketch could not confirm %s as the official documentation of %s", originUnverified, host, what)}
 }
 
@@ -774,7 +780,8 @@ func registryNames(root webRoot, name string) bool {
 //     words, is its domain and its address says it is docs (docsSite);
 //   - by name when only a registry package of the name ties the site to
 //     it (resolvedOrigin);
-//   - otherwise unverified, naming the host and what was asked.
+//   - otherwise unverified, naming the host and, when something says the
+//     question names it, what was asked (askedAbout).
 //
 // prefs.lead is the site the search results agree on, chosen without
 // resolve's preference: agreement must not come from that preference.
@@ -805,7 +812,7 @@ func siteOrigin(site sfSite, req sfRequest, prefs sitePrefs) sfOrigin {
 	if org, ok := domainOrigin(site, req, prefs); ok {
 		return org
 	}
-	return unverifiedOrigin(scopeHost(site.root.u), askedAbout(req))
+	return unverifiedOrigin(scopeHost(site.root.u), askedAbout(site, req, prefs))
 }
 
 // registryOrigin is the origin of a package index's page for the very
@@ -877,21 +884,64 @@ func namedWithDescriptor(domain string, names []string) bool {
 	return false
 }
 
-// askedAbout names what a request asks about, for an unverified origin:
-// its library value; else the question's first firm reading (a name
-// its syntax puts there, not a guess or a common word); else the
-// question.
-func askedAbout(req sfRequest) string {
+// askedAbout names what a request asks about, for an unverified origin
+// read from site: its library value; else the question's first firm
+// reading (a name its syntax puts there, not a guess or a common word)
+// when something says the question names it: resolve found a project by
+// it, or the site carries it in its host or docs directory (named) or in
+// the title of a search hit on it (its domain's other trees' hits too).
+// Else "": the line names nothing rather than a word of the question that
+// only looks like a name.
+func askedAbout(site sfSite, req sfRequest, prefs sitePrefs) string {
 	if req.library != "" {
 		return req.library
 	}
-	words := strings.Fields(req.query)
-	for _, sp := range splitLibraryQuery(req.query) {
+	name := firmReading(req.query)
+	if name == "" {
+		return ""
+	}
+	key := libraryKey(name)
+	hits := site.hits
+	for _, a := range site.alts {
+		hits = slices.Concat(hits, a.hits)
+	}
+	resolved := prefs.resolved.match != nil && libraryKey(prefs.resolved.name) == key
+	if resolved || named(site.root.u, []string{key}) || titlesCarry(hits, key) {
+		return name
+	}
+	return ""
+}
+
+// firmReading is the question's first firm reading as written ("" for
+// none): a name its syntax puts there, not a guess or a common word.
+func firmReading(query string) string {
+	words := strings.Fields(query)
+	for _, sp := range splitLibraryQuery(query) {
 		if !sp.strict && !sp.common && sp.spec.url == "" && sp.from < sp.to && sp.to <= len(words) {
 			return strings.Trim(strings.Join(words[sp.from:sp.to], " "), ".,;:!?\"'()")
 		}
 	}
-	return fmt.Sprintf("%q", strings.Join(words, " "))
+	return ""
+}
+
+// titlesCarry reports a hit whose title has key (libraryKey) as a word of
+// its own, or two adjacent words run together: "Amazon S3 multipart upload
+// limits" carries s3, "Cross-document view transitions are opt-in" no opt.
+func titlesCarry(hits []sfHit, key string) bool {
+	if len(key) < 2 {
+		return false
+	}
+	for _, h := range hits {
+		words := strings.FieldsFunc(h.title, func(r rune) bool {
+			return !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '-' && r != '_' && r != '.'
+		})
+		for i, w := range words {
+			if libraryKey(w) == key || i+1 < len(words) && libraryKey(w+words[i+1]) == key {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // readFail is one planned page that gave no text, and why.

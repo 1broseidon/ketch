@@ -85,7 +85,8 @@ type Outcome struct {
 	// "verified, <evidence>"; "by name, <host> documents the <ecosystem>
 	// package <name>[; the search results favour <root>]" when only a
 	// registry package of the name supports it; or "unverified, ketch could
-	// not confirm <host> as the official documentation of <what was asked>".
+	// not confirm <host> as the official documentation of <what was asked>"
+	// ("for this question" when nothing says the question names a thing).
 	// Empty for an answer from an indexed library, which the caller chose by
 	// indexing it.
 	Origin string `json:"origin,omitempty"`

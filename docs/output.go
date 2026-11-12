@@ -19,7 +19,7 @@ import (
 //	scope: <a URL below the root the answer is limited to, when library named one>
 //	version: <the indexed version, when the library has one>
 //	index: <full|capped>, <N> pages, built <date>   (or, for pages a search read: source: search, N pages read[, cached])
-//	origin: verified, <evidence> | by name, <host> documents the <ecosystem> package <name>[; the search results favour <root>] | unverified, ketch could not confirm <host> as the official documentation of <what was asked>   (pages a search read only)
+//	origin: verified, <evidence> | by name, <host> documents the <ecosystem> package <name>[; the search results favour <root>] | unverified, ketch could not confirm <host> as the official documentation of <what was asked> (or: for this question)   (pages a search read only)
 //	stale: unverified, built <date>   (only when a cited page older than cache_ttl could not be read again)
 //	status: found | partial (<reason>) | refused (<reason>)
 //	terms: {<term as written>: <sections holding it>, ...}
@@ -125,7 +125,8 @@ type Frontmatter struct {
 	// documentation of what was asked: "verified, <evidence>" or
 	// "by name, <host> documents the <ecosystem> package <name>[; the search
 	// results favour <root>]" or "unverified, ketch could not confirm <host>
-	// as the official documentation of <what>".
+	// as the official documentation of <what>" ("for this question" when
+	// nothing says the question names a thing).
 	Origin string      `json:"origin,omitempty"`
 	Stale  string      `json:"stale,omitempty"`
 	Status Status      `json:"status,omitempty"`
