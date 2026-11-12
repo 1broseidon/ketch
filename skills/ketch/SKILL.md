@@ -190,7 +190,7 @@ The question spans products.
 4. Combine. Cite each claim's `source:`. Say what no source covered.
 5. A source you will ask again: propose `ketch docs index <site>` to the operator (CLI only; it writes the local index). It then answers from the index, offline too (`stale: unverified` when the cited pages cannot be checked).
 
-Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` with `page` for the next page, and `docs(resolve=true)` with an optional `query`; `defined_in` is a list of `{term, section}`, `indexed_near` a list of `{title, library}`, a cut result has `truncated` and `contents`, `hint` says how many are cut and that their text is unread (and, for an `origin` that is unverified, how to present it), an indexed match `indexed: true`. pi's `ketch_docs` takes the same, without `page`.
+Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` with `page` for the next page, and `docs(resolve=true)` with an optional `query`; `defined_in` is a list of `{term, section}`, `indexed_near` a list of `{title, library}`, a cut result has `truncated` and `contents`, `hint` says how many are cut and that their text is unread (and, for an `origin` that is unverified, how to present it), an indexed match `indexed: true`. pi's `ketch_docs` takes the same, without `page` and `offline`.
 
 ## Token budgets
 

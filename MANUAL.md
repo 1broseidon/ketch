@@ -238,98 +238,168 @@ repositories, warns when a repository search comes back empty.
 #### docs — Library documentation, from the docs site itself or Context7
 
 ```console
-$ ketch docs "how do I run code after the response is sent in fastapi"   # search (the default)
-$ ketch docs --library django@5.2 "middleware ordering"           # prefer a library, at a version
+$ ketch docs "pydantic field alias for validation"                  # search (the default)
+$ ketch docs --library django@5.2 "middleware ordering"              # a library, at a version
 $ ketch docs --library https://docs.astro.build/en/ "content collections schema"   # within one docs site
-$ ketch docs --tokens 880 "pinia store reset state"                 # fitted to an agent's budget
-$ ketch docs --section https://fastapi.tiangolo.com/tutorial/background-tasks/#using-backgroundtasks   # a cut result, in full
-$ ketch docs --resolve click                                        # a name → its docs root, with evidence
-$ ketch docs index fastapi                                          # index a whole site, for offline answers
-$ ketch docs -b context7 --library /vercel/next.js "routing"        # Context7's curated snippets
-$ ketch docs -b context7 --resolve "next.js"                        # a name → Context7 IDs
+$ ketch docs --section https://www.python-httpx.org/api/#client      # a cut group, in full
+$ ketch docs --resolve click                                         # a name → its docs root, with evidence
+$ ketch docs --resolve                                               # every indexed library, offline
+$ ketch docs index fastapi                                           # index a whole site, for offline answers
+$ ketch docs -b context7 --library /vercel/next.js "routing"         # Context7's curated snippets
+$ ketch docs -b context7 --resolve "next.js"                         # a name → Context7 IDs
 ```
 
 | Flag | Meaning |
 | --- | --- |
-| `--backend, -b` | `search` (default) or `context7`, for this call; the `docs_backend` config key is retired, so a stored value is ignored |
-| `--library` | `search`: a docs URL to search within, or a library name or spec (below) to prefer; a library indexed with `docs index` answers offline. `context7`: a library ID from `--resolve` |
-| `--tokens` | Token budget. `search`: about 1,800 unless set; set, the answer is fitted to it compactly. `context7`: 4000. With `--section`, the cap of the section returned (4000) |
-| `--resolve` | Resolve the query as a library name instead of searching: its docs root (`search`) or Context7 IDs (`context7`) |
-| `--limit, -l` | Max results; with `--library`, only `--tokens` bounds them unless set |
-| `--section <url#anchor>` | Return one section in full from the local index, given as the `source` a result carries; no query, no network (below) |
-| `--minimal` | One result per line |
+| `--backend, -b` | `search` (default) or `context7`, for this call. The `docs_backend` config key is retired |
+| `--library` | `search`: a docs URL, or a library name or spec (see Naming a library). `context7`: a library ID from `--resolve` |
+| `--tokens` | Budget. `search`: about 1,800 tokens, frontmatter included. `context7`: 4000. With `--section`: the page size, 4000 |
+| `--limit, -l` | Max results. `search`: no cap unless set. `context7`: the configured `limit` (5), none with `--library` unless set |
+| `--resolve` | Resolve the query as a library name: docs roots (`search`; with no name, every indexed library) or Context7 IDs |
+| `--section <url#anchor>` | Return one section, with no query and no ranking (see Full sections) |
+| `--page N` | With `--section`: the page of a long section to return (default 1) |
+| `--offline` | Answer from the index without the freshness check (see The index) |
+| `--minimal` | One result per line: URL, library, first line; the note, `stale` and `not_found` go to stderr |
 | `--tag <name>` | Bookmark every result URL under a tag |
 
-**`search` answers from the docs themselves, with no key.** It reads the
-documentation the question is about and answers with its sections, verbatim
-with their code:
+`search` answers from the documentation itself, with no key, on one of two
+paths. A question that names a library indexed with `ketch docs index`, in its
+words or with `--library`, answers from the index with no search, in tens of
+milliseconds. Any other question takes the live path: a web search, the docs
+site the results agree on, and up to 24 of its pages, within 45 seconds.
 
-1. **The local index first.** When the question (or `--library`) names a
-   library indexed with `ketch docs index`, it answers from the index with no
-   network, in tens of milliseconds ([The local index](#the-local-index--index-once-answer-offline)).
-   The same goes for a question asked before, with the same terms after
-   filler words, about the same library value: it answers from the site that
-   question was answered from.
-2. **Otherwise a web search.** It searches the web for the question, and for
-   the question plus "documentation", through the `search` surface's
-   providers (the `auto` chain, or your `search_order`), and keeps the hits
-   that are documentation: no forums, Q&A, blog posts or mirrors. The site
-   most of their weight agrees on is the one read; a site the question names
-   (`duo.com` for a question about Duo, `python-poetry.org` for poetry) goes
-   first, as does a standards body's site for a question about a spec, and a
-   site's main docs go ahead of an edition or an old release (enterprise,
-   legacy, a pinned release) unless the question names it. `--library` with a
-   name or spec is resolved while the search runs: the docs root resolve
-   verifies is read, unless the site the search agrees on is that project's
-   own, and a name several libraries share is refused (exit 2) with each
-   listed; with a docs URL, that site is the one read (a page URL, that page
-   first). On a host that serves many projects, such as pkg.go.dev, only the
-   named project's path is read (`net/http` is `https://pkg.go.dev/net/http/`).
-3. **It reads up to 24 pages**: the hits on that site and their neighbours in
-   its own page lists, through the scrape pipeline and page cache, honouring
-   `robots.txt`. When the site gives nothing readable, the same domain's next
-   docs tree is tried, then the next site (two sites, four trees at most,
-   within 45 seconds).
-4. **It keeps what it read** in the local index, ranks the sections by
-   keywords exactly as the local index does, and answers **compactly**: about
-   1,800 tokens (or `--tokens`), four or five results.
+A question saves nothing. The pages it read stay in the page cache for
+`cache_ttl` (72h by default). The same question again within that time, with
+the same terms after filler words and the same `--library`, does no search and
+no fetch, answered or refused alike, and its `source:` line ends `, cached`.
+Only `ketch docs index` adds libraries or pages to the index.
 
-An answer from pages search read says so on its `source:` line
-(`source: search, 12 pages read`), and says whether the site is the
-documentation of what was asked: `origin: verified, <evidence>` (a second
-signal beyond the name: the root resolve found and the site the search
-agrees on are one project, the site is the project's own, a standard-library
-page of the language's docs, or the library names the site);
-`origin: by name, …` when only a name ties the site to what was asked (a
-registry package of the name, with the site the search results favour when
-that is another; a domain carrying the name); or `origin: unverified, ketch could not confirm
-<host> as the official documentation of <what>`. The last two end with a line
-saying to name the site you cite or pass the official docs with `--library`
-(for by name, both roots). Its status is `found`, or
-`partial (terms_not_found)` when some of the question's terms are missing. A
-note names the site, how many of its pages were read, and how to index all of
-it
-(`note: read 12 pages of https://site/docs/ found by web search; the whole site: ketch docs index https://site/docs/`;
-`--json` and MCP carry `origin`, `status`, `reason` and `note` as fields). When
-the site read first gives no text, the note starts with `could not read <root>
-(<cause>)`, and the answer is from the next site. Each result carries
-`section`, the reference `--section` takes.
+##### Answers
 
-It refuses, exit **3** (`[not_found]`), when the search hits hold no
-documentation (`no_docs_found`), when none of the pages could be read (the
-error counts them per cause, such as `2 blocked (HTTP 403)` or
-`3 need JavaScript`, and names the next step), when the
-site's `robots.txt` closes them (`disallowed`), and when nothing on the pages
-matched (`no_results`); exit **2** (`[validation]`) when a `--library` name
-is shared by several libraries resolve verifies, or its search agrees on no
-site (each library resolve knows by the name is listed with its packages and
-title; pass one), and when, with no name resolve knows, the hits are split
-between sites with none clearly ahead (`ambiguous_site`: pass the docs you
-mean with `--library <docs URL>`). It fails with exit **4** (`[upstream]`) when
-every web search failed or came back empty (the providers are throttling:
-`search_empty`), or when no answer came within 45 seconds.
+An answer is a frontmatter verdict, then evidence: the pieces of sections that
+name the question, verbatim.
 
-**Library specs.** `--library`, `--resolve` and `docs index` take one spec:
+```console
+$ ketch docs "httpx timeout configuration"
+---
+query: httpx timeout configuration
+backend: search
+library: https://www.python-httpx.org/
+index: full, 23 pages, built 2026-11-12
+status: found
+terms: {timeout: 19}
+not_found: []
+---
+## Timeouts
+
+### Fine tuning the configuration
+
+HTTPX also allows you to specify the timeout behavior in more fine grained detail.
+…
+source: https://www.python-httpx.org/advanced/timeouts/#fine-tuning-the-configuration
+…
+## Developer Interface
+
+### Client
+same text in 1 other section: AsyncClient
+…
+source: https://www.python-httpx.org/api/#client (cut, 397 of 1,524 tokens)
+…
+## HTTPX
+
+### Features
+
+- Strict timeouts everywhere.
+
+…
+
+- Connection Timeouts
+
+source: https://www.python-httpx.org/#features (cut, 11 of 182 tokens)
+
+3 groups above are cut and their hidden text is unread: run ketch docs --section <its source> before stating what it says
+```
+
+The frontmatter prints these lines, in this order, each only when it applies:
+
+| Field | Says |
+| --- | --- |
+| `query`, `backend` | The question, and the backend that answered |
+| `library` | The docs root the answer came from |
+| `scope` | The URL below that root the answer is limited to, when `--library` named one |
+| `version` | The indexed version, when the library has one |
+| `index` or `source` | `index: full, N pages, built <date>` for an indexed library (`capped` when `--max-pages` left pages out); `source: search, N pages read` for a live answer, ending `, cached` on a repeat |
+| `origin` | Live answers only: whether the site is the documentation of what was asked (see Live answers) |
+| `stale` | `unverified, built <date>` when a cited page could not be checked (see The index) |
+| `status` | `found`, `partial (<reason>)` or `refused (<reason>)` |
+| `terms` | The question's distinctive terms as written, each with the number of sections holding it |
+| `not_found` | The terms no section holds |
+| `outside_scope` | With `scope`: the terms the library holds only outside it |
+| `defined_in` | `{term: url#anchor}`: for a listed term that is the first cell of a table row in a section the answer does not print, that section; at most three |
+| `indexed_near` | `{title: root}`: when `--library` named no indexed library, the indexed ones near it; the answer ends with a line saying to pass one as `--library` |
+| `note` | The status in words, other indexed versions of the library, and on a live answer the pages read and the `ketch docs index` command for the docs subtree the answer came from (left out on a host many projects share) |
+
+Distinctive terms are the identifiers the question writes and its rare words.
+On an indexed library a word is rare when it is in under 1% of the library's
+sections or in at most 25 of them. A live answer reads too few pages to
+measure rarity, so it lists identifiers and uncommon words only: common English
+and programming words (`whose`, `message`, `timeout`) appear in neither `terms`
+nor `not_found`, and `terms: {}` is normal there. A number of four or more
+digits matches its grouped form in the docs: `10000` finds `10,000`.
+
+The status is one of:
+
+- `found`: the docs hold evidence matching the question. It is not a promise that the evidence answers it.
+- `partial (terms_not_found)`: a term you wrote is in no section; `not_found` lists it.
+- `partial (terms_outside_scope)`: with `scope`, some terms are only outside it; `outside_scope` lists them.
+- `refused (<reason>)`: exit 3, with the frontmatter printed and an empty body (see Exit codes).
+
+The body prints each page's groups under `## <page title>`, the page with the
+best group first and its groups in rank order. A group is its heading path
+(`### <heading> > <subheading>`), the pieces of the section that name the
+question (paragraphs, list items, code blocks, table rows under their header),
+and `source: url#anchor`. A page's lead section printed after another of its
+groups is headed `### (top of page)`. The whole answer is about 1,800 tokens,
+frontmatter included: `--tokens` changes that, and only an explicit `--limit`
+caps the number of groups.
+
+A group that shows part of its section ends its source line with
+`(cut, N of M tokens)`, and `…` marks text left out. A section over 400 tokens
+is never printed whole. A cut group may print `also in this section:` with what
+it left out by name, and a line under its heading such as `option rows, 2 of 17`
+or `same text in 1 other section: AsyncClient`. When any group is cut, the
+answer ends with the line in the example above: the hidden text is unread until
+`--section` reads it.
+
+##### Full sections
+
+`--section <url#anchor>` returns one section and its subsections, with no
+ranking: from the index, or for a page a live answer read, from that page
+through the page cache (fetched again once it has expired). Pass a group's
+`source`, a `defined_in` target, or a page URL with no anchor for the page's
+sections in order. `--library` is optional. A section that fits `--tokens`
+(4000 by default) comes whole. A longer one comes a page at a time, broken at a
+block boundary and never inside a code block, and its last line is the command
+for the next page:
+
+```console
+$ ketch docs --section "https://www.python-httpx.org/api/#client" --tokens 600
+---
+backend: search
+library: https://www.python-httpx.org/
+index: full, 23 pages, built 2026-11-12
+page: 1 of 4
+---
+### Developer Interface > Client
+…
+source: https://www.python-httpx.org/api/#client
+
+next page: ketch docs --section https://www.python-httpx.org/api/#client --tokens 600 --page 2
+```
+
+##### Naming a library
+
+`--library`, `--resolve` and `docs index` take one spec:
 
 | Spec | Example | Means |
 | --- | --- | --- |
@@ -345,272 +415,267 @@ every web search failed or came back empty (the providers are throttling:
 no version list answers only for the package's current major. In a question,
 a spec of its own (`django@5.2`, `pypi:click`) is preferred the same way.
 
-`--resolve` shows the docs root a name resolves to, and why. A name only
-becomes a docs site on evidence: the package's registry entry or its GitHub
-repository names the site, or the homepage they name links to it as its docs,
-or it is the package's own docs on docs.rs or pkg.go.dev. A site found any
-other way, or linked as the docs from a homepage on another domain, counts
-only when it links back to the repository, and a site found by search only on
-the project's own domain too, so a mirror never does. A package's repository
-counts only when the repository backs the claim: its GitHub homepage is the
-package's site or registry page, or it is named like the package and written
-in the registry's language with no conflicting site of the package's own (a Go
-module's always counts). So a package that merely claims a popular repository
-gets neither its stars nor its place, and `click` is PyPI's Click, not npm's
-or crates.io's unrelated `click`.
+A name an indexed library answers to (see The index) answers from the index. A
+URL below an indexed root limits the answer to the pages under it: `library:`
+is the root and `scope:` the URL. Any other value takes the live path.
+
+`--resolve` shows the docs root a name resolves to, and why. With no name it
+lists every indexed library, offline, and a name an indexed library answers to
+lists that one:
+
+```console
+$ ketch docs --resolve
+https://www.python-httpx.org/  HTTPX  (indexed: yes, full, 23 pages, built 2026-11-12)
+```
+
+Any other name is resolved on the web, and becomes a docs site only on
+evidence: the package's registry entry or GitHub repository names the site, the
+homepage they name links to it as its docs, or it is the package's own docs on
+docs.rs or pkg.go.dev. A site found any other way counts only when it links
+back to the repository (and, when search found it, sits on the project's own
+domain), so a mirror never does. A repository counts only when it backs the
+package's claim, so `click` is PyPI's Click, not npm's or crates.io's unrelated
+`click`.
 
 ```console
 $ ketch docs --resolve click
-https://click.palletsprojects.com/en/stable/  Click  (trust: 10.0, version: 8.5.x, versions: stable)
+https://click.palletsprojects.com/en/stable/  Click  (trust: 10.0, version: 8.6.x, versions: 8.6.x)
   packages: pypi:click, github:pallets/click
-  evidence: pypi click lists it as Documentation; github pallets/click homepage; links to github.com/pallets/click
+  evidence: pypi click lists it as Documentation; links to github.com/pallets/click; the site links to the pypi click package page; the site's title names click; on the domain of pypi click project URL palletsprojects.com; on the domain of pypi click documentation click.palletsprojects.com
 ```
 
 The ID is the docs root URL; for a version, that version's root. Trust is on
 Context7's 0–10 scale but scored from the evidence listed, and `packages` are
 specs you can pass as `--library`. With `--json`, each match carries
-`version`, `versions`, `evidence` and `packages`. A name more than one verified
-project answers to is listed in full; `docs index` refuses it (exit **2**,
-naming each candidate) so you pass the one you mean. A name nobody publishes,
-or a version its docs do not offer, exits **3** (the error lists the versions
-that are), and a registry or GitHub that is down exits **4**; when one of them
-failed, each match's evidence begins `this list may be incomplete:`. Resolving
-a name asks GitHub about its repository, which allows 60 requests an hour
-without a token; `gh auth login` or `github_token` lifts it.
+`version`, `versions`, `evidence` and `packages`, and an indexed one
+`indexed: true` and `index`. A name more than one verified project answers to
+is listed in full, and `docs index` refuses it so you pass the one you mean.
+When a registry or GitHub failed, each match's evidence begins
+`this list may be incomplete:`. Resolving a name asks GitHub about its
+repository, which allows 60 requests an hour without a token; `gh auth login`
+or `github_token` lifts it.
 
-**Context7** (`-b context7`) serves curated snippets and needs no key: without
-one it runs on Context7's anonymous quota, which is small — about 200 requests
-a month per IP address, shared by everything on that address, and a docs
-search spends two (resolve, then fetch). When it runs out, `docs` exits **4**
-(`[upstream]`) and says when the quota resets and how to lift it with a free
-key (`ketch config set context7_api_key <key>`). A library Context7 has moved
-(`/facebook/react` is now `/react/react`) is followed once, and the output's
-`library:` line shows the new ID. With Context7, `docs` is a two-step: resolve
-the name, *vet the matches*, then fetch by ID. Its resolve never returns empty.
-A bad name still returns confident fuzzy matches, so check the name, not just
-the trust score.
+##### Live answers
 
-##### The local index — index once, answer offline
+ketch searches the web for the question, and for the question plus
+"documentation", through the `search` surface's providers (the `auto` chain, or
+your `search_order`). Forums, Q&A, blog posts and mirrors are dropped, and the
+site most of the remaining hits agree on is read. A site the question names
+(`duo.com` for a question about Duo) goes first, as does a standards body's
+site for a question about a spec, and a site's main docs go ahead of an
+enterprise edition, a legacy tree or a pinned release unless the question names
+one. ketch reads up to 24 pages, the hits on that site and their neighbours in
+its page lists, through the page cache, honouring `robots.txt`, and answers
+from them as from an indexed library. When the site gives nothing readable, the
+domain's next docs tree is tried, then the next site: two sites and four trees
+at most. The note then says `could not read <root> (<cause>), so this answer is
+from the next site`.
+
+With `--library`, a docs URL is the site read (a page URL, that page first). A
+name or spec is resolved while the search runs: the docs root resolve verifies
+is read, unless the site the search agrees on is that project's own. On a host
+that serves many projects, such as pkg.go.dev, only the named project's path is
+read (`net/http` is `https://pkg.go.dev/net/http/`).
+
+A live answer says whether the site is the documentation of what was asked:
+`origin: verified, <evidence>` (a second signal beyond the name: the root
+resolve found and the site the search agrees on are one project, the site is
+the project's own, a standard-library page of the language's docs, or the
+library names the site); `origin: by name, …` when only a name ties the site to
+what was asked (a registry package of the name, with the site the search
+results favour when that is another; a domain carrying the name); or
+`origin: unverified, ketch could not confirm <host> as the official documentation of <what>`.
+The last two end with a line saying to name the site you cite or pass the
+official docs with `--library` (for by name, both roots). A name resolved
+earlier reads `origin: verified, resolved earlier and cached (…)`. When the
+root resolve found for a named library holds none of the question's terms and
+the search results favour another site, that site answers in the same call,
+and its origin ends `…holds none of the question's terms, so this answer is
+from the site the search results favour`.
+
+##### The index
 
 ```console
 $ ketch docs index https://docs.astro.build/en/    # a docs URL, taken as the root
 $ ketch docs index fastapi                         # or a name or spec, resolved as --resolve shows
 $ ketch docs index django@5.2 --max-pages 800
 $ ketch docs index vue-router@3                    # another version, indexed beside the current one
-$ ketch docs --library fastapi "how do I run code after the response is sent"
-$ ketch docs --library vue-router@3 "router.push onComplete onAbort"
-$ ketch docs "content collections schema in astro"   # a question that names an indexed library
 $ ketch docs index --dry-run numpy                 # the pages a build would index, in order
 $ ketch docs index --list
 $ ketch docs index --remove fastapi
 ```
 
-`docs index` does the slow, judgment-heavy part of a docs query once per
-library and version, and stores the result in `docs-index.sqlite` in ketch's cache
-directory (one SQLite file, through a pure-Go driver; separate from the page
-cache and the bookmarks; `KETCH_DOCS_INDEX_PATH` overrides it). An index an
-earlier ketch built (`docs-index.db`, bbolt) is not read: `docs index` and
-`ketch doctor` say so, and you rebuild what you need and delete it. A docs URL is taken as the root; a name or spec is resolved
-exactly as `--resolve` resolves one, so an ambiguous name exits **2** listing the
-candidates and a name nothing verifies exits **3**, and you pass the docs URL
-you mean instead. It then reads the site's own page lists (`llms.txt` and
-`llms-full.txt`, its sitemaps, its search index and nav links), keeps the
-pages under the root in its locale and version, honours `robots.txt`, fetches up to
-`--max-pages` pages (1,500 by default) `--concurrency` at a time (4) through
-the scrape pipeline and page cache, splits them into heading sections (never
-inside a code block), and indexes the sections for full-text search (SQLite FTS5): each section's
-heading, its breadcrumb, the identifiers it names split into their parts
-(`useForm` is also `use` and `form`; `client_max_body_size` and
-`form.validateField` are also found by their whole name) and its text, every
-word normalized as queries are. No model runs, so a build costs what fetching
-the pages costs: a 735-page site indexes from the page cache in seconds and a
-couple of CPU-seconds. Progress goes
-to stderr; the summary (pages, sections, time, index size)
-to stdout, or as JSON with `--json`.
+`docs index` does the slow part of a docs query once per library and version,
+and stores it in `docs-index.sqlite` in ketch's cache directory (SQLite through
+a pure-Go driver; `KETCH_DOCS_INDEX_PATH` overrides it). An index an earlier
+ketch built (`docs-index.db`, bbolt) is not read: `docs index` and
+`ketch doctor` say so, and you rebuild what you need. A docs URL is the root. A
+name or spec is resolved as `--resolve` resolves one: an ambiguous name exits
+**2** listing the candidates, one nothing verifies exits **3**, and you pass the
+docs URL you mean instead.
 
-**Which pages, when there are more than `--max-pages`.** The pages `llms.txt`
-lists come first, in its order, then guides (paths such as `guide/`,
-`tutorial/`, `user/`, `concepts/`, `getting-started/`), then everything else
-(examples and galleries included), and last API reference leaves (a generated
-reference such as Sphinx's `generated/` or Matplotlib's `_as_gen/`, TypeDoc's
-`classes/`, pages two levels below `api/` or `reference/`) and release notes,
-changelogs and blog posts; within a group, top-level directories take turns.
-Nothing is left out for its group, only by the cap. One page listed as `x` and
-`x.html` is one page, an `llms.txt` text mirror under `/llms/` is left out when
-the rendered pages are listed, a translation's `x.html` is a copy of the
-`x` that `llms.txt` lists (and is left out with its locale), and after fetching a page whose text is
-another's (the same page at a second address, or a missing page a site
-answers with its home page) is dropped. `--dry-run` plans the build and prints
-the pages it would index, in order, each with its group (`curated`, `guide`,
-`other`, `reference`), without fetching a page or writing the index.
+It reads the site's own page lists (`llms.txt` and `llms-full.txt`, sitemaps,
+its search index and nav links), keeps the pages under the root in its locale
+and version, honours `robots.txt`, fetches up to `--max-pages` pages (1,500)
+`--concurrency` at a time (4) through the page cache, and splits them into
+heading sections, never inside a code block. A section over 1,500 tokens on a
+page whose anchors are known is split further at an RFC's numbered headings or
+at the entry anchors the page marks (an nginx directive, a Sphinx API entry).
+The sections are indexed for full-text search with their identifiers split
+into parts (`useForm` is also `use` and `form`) and whole
+(`client_max_body_size`). A 735-page site indexes from the page cache in
+seconds. Progress goes to stderr, the summary to stdout or, with `--json`, as
+JSON.
 
-**Where the docs are.** A docs root that stands for a release (its page
-redirects, refreshes or names as canonical the same path at a numbered
-release: duckdb.org's `/docs/stable/` is `/docs/2.0/`) is indexed at that
-release. An unversioned root whose page lists sit almost wholly in release
-directories right below it, or whose `llms.txt` lists mostly one of them
-(`docs.crewai.com` and `/v1.15.35/`; Hugging Face's `/docs/transformers/` and
-`/v5.22.1/`), is indexed at the release `llms.txt` lists, else the newest;
-when that release's pages name the unversioned address as canonical, results
-show the unversioned address. An unversioned root whose pages sit in two or
-more release directories within two levels of it (sequelize.org's
-`/docs/v6/` and `/docs/v7/`, with `/v5/` landing pages) is indexed at the one
-its home page links to most, the site's default docs (else the newest final
-release), and the others are left out as other versions. A version's own host whose page lists are an app
-shell (`v18.angular.dev` serves its home page for `sitemap.xml`) is given the
-current host's paths to try. The summary says when any of this happened.
+**Which pages.** Over `--max-pages`, the pages `llms.txt` lists come first, in
+its order, then guides (`guide/`, `tutorial/`, `concepts/`, …), then everything
+else, and last API reference leaves (Sphinx's `generated/`, TypeDoc's
+`classes/`, pages two levels below `api/` or `reference/`) and release notes;
+within a group, top-level directories take turns. Blog, news, announcement,
+showcase and community sections under the root, and dated posts, are left out
+whatever the cap. `x` and `x.html` are one page, an `llms.txt` text mirror
+under `/llms/` is left out when the rendered pages are listed, and a fetched
+page whose text is another's (the same page at a second address, a missing page
+answered with the home page) is dropped. `--dry-run` prints the pages a build
+would index, in order, with their group (`curated`, `guide`, `other`,
+`reference`), without fetching a page or writing the index.
+
+**Where the docs are.** A root that stands for a release (it redirects,
+refreshes or points as canonical to a numbered release: duckdb.org's
+`/docs/stable/` is `/docs/2.0/`) is indexed at that release. So is an
+unversioned root whose page lists or `llms.txt` sit almost wholly in release
+directories right below it (`docs.crewai.com` and `/v1.15.35/`): at the release
+`llms.txt` lists, else the newest, with results at the unversioned addresses
+when the release names them canonical. A root whose pages sit in several
+release directories within two levels (sequelize.org's `/docs/v6/` and
+`/docs/v7/`) is indexed at the one its home page links to most, else the newest
+final release. A version's own host whose page lists are an app shell
+(`v18.angular.dev`) is given the current host's paths to try. The summary says
+when any of this happened.
 
 **One index is one version.** `name@version` (or `--version`) indexes that
-version's docs root, found from the site's own version list as `--resolve`
-finds it (`vue-router@3` is `v3.router.vuejs.org`, `django@5.2` is `/en/5.2/`); with
-no version, the current docs. Only that version's tree is kept: other hosts
-and paths outside a versioned root never qualify, and below the root a tree
-the site's version list names as another version, a release or channel
-directory right below the root (Docusaurus's `/docs/2.x/` and `/docs/next/`,
-mike's `/1.0/`, `/latest/`), and a tree made mostly of copies of the current
-pages are left out (the summary counts them). Trees that are no version, such
-as a REST reference's `/api/v1/`, stay. The version is stored with the index,
-and several versions of a library sit side by side, each under its own docs
-root. `--library name@version` answers from that version's index; a version
-that is not indexed is searched for on the web like any other question.
-Without a version, the newest indexed one answers (the current docs
-before any release): `version:` in the output and each result's `version`
-say which, and a note names the others. A page in the indexed tree about a
-later major, such as a v3 page "Migrating to v4", is kept, labelled with that
-version, and ranks lower unless the question is about migrating or names that
-version. Running it
-again refreshes the library: pages come back through the page cache and only
-those whose content changed are sectioned again, and pages the
-site no longer lists are dropped. `--name` adds a name queries may call the
-library by. Otherwise a library answers only to its full identity: the name
-it was indexed by, its package names (with or without the ecosystem prefix
-and separators: `vue-router`, `npm:vue-router`, `vuerouter`), its
-repositories (`vuejs/router`), its docs site's own name (from `og:site_name`
-or its home page's title: Vue Router, Beautiful Soup, SvelteKit), the last
-part of a scoped package or repository, its root's distinctive path segment
-(`bs4`) and its docs host's distinctive label, also without a language word
-it joins (`httpx` for python-httpx.org, `poetry` for python-poetry.org),
-never to one word of a longer name it goes by (`vue` or `router` do not name
-Vue Router, `query` does not name TanStack Query); a host label yields to a
-library whose full name or path segment it is (two projects documented on
-one host, svelte.dev's `/docs/svelte/` and `/docs/kit/`, are not versions of
-one library), and a package named for its major release finds docs named
-without the number (`beautifulsoup4` is Beautiful Soup's `/BeautifulSoup/`). With only Vue Router indexed, `--library vue` or "vue
-v-model on a custom component" is not answered from Vue Router's docs (it is searched for on the web). A name
-without a version answers from the current docs of exactly that project, even
-when only an older version's index was built by that name: with `angular@18`
-and `https://angular.dev/` indexed, `--library angular` answers from
-angular.dev, and `--library svelte` from Svelte's docs, never SvelteKit's.
+version's docs root, found from the site's own version list (`vue-router@3` is
+`v3.router.vuejs.org`, `django@5.2` is `/en/5.2/`); with no version, the
+current docs. Only that version's tree is kept: other hosts, paths outside a
+versioned root, trees the version list names as other versions, release or
+channel directories right below the root (Docusaurus's `/docs/2.x/` and
+`/docs/next/`, mike's `/1.0/`), and trees made mostly of copies of the current
+pages are left out. Trees that are no version, such as a REST reference's
+`/api/v1/`, stay. Several versions of a library sit side by side.
+`--library name@version` answers from that version's index; a version that is
+not indexed takes the live path.
+Without a version the newest indexed one answers (the current docs before any
+release): `version:` says which, and a note names the others. A page in the
+indexed tree about a later major, such as a v3 page "Migrating to v4", is kept,
+labelled with that version, and ranks lower unless the question is about
+migrating or names that version. Running `docs index` again refreshes the
+library: pages come back through the page cache, only those whose content
+changed are sectioned again, and pages the site no longer lists are dropped.
 
-A library indexed with `docs index` answers with no network, in tens of
-milliseconds, as **whole sections**. A question is ranked by keywords: the full-text index's bm25
-picks the 200 sections that best match its words (a heading counting three
-times the text; words such as "how", "use" or "need" left out), and they are
-ordered by that score times what the words say about each section: how many
-of the question's terms it names, a heading or page title that is the
-question, an API entry the question names, the terms in its code and side by
-side, a guide page ahead of an API reference leaf (by where the page sits in
-the site), and a page whose other sections match too ahead of a stray section
-elsewhere. No model is involved (see **Why keywords** below). Sections are
-then grouped under
-their second-level heading: a section that ranks brings the H2 it sits under,
-and one result shows that H2's own text and the subsections of it that
-ranked. The best five such results are returned (`--limit` changes it), never
-two copies of one page (nor one page at two addresses, `x` and `x.html` or an
-`/llms/` text mirror), at most two from one page while other pages rank next
-(one from an API reference page), within about 1,800 tokens and none over
-about 600. A section that fits is shown whole; a longer one keeps its lead
-paragraphs, its first code block (cut, its fence closed, when even that does
-not fit) and the blocks that name the question's words, `[…]` marking what
-was left out.
+**Names.** `--name` adds a name queries may call the library by. Otherwise a
+library answers only to its full identity: the name it was indexed by, its
+package names with or without prefix and separators (`vue-router`,
+`npm:vue-router`, `vuerouter`), its repositories (`vuejs/router`), its docs
+site's own name (Vue Router, Beautiful Soup), the last part of a scoped package
+or repository, its root's distinctive path segment (`bs4`) and its host's
+distinctive label, also without a language word it joins (`httpx` for
+python-httpx.org). One word of a longer name is no name (`vue` or `router` do
+not name Vue Router). A host label yields to a library whose full name or path
+segment it is (svelte.dev's `/docs/svelte/` and `/docs/kit/` are two
+libraries), and a package named for its major release finds docs named without
+the number (`beautifulsoup4` is Beautiful Soup's `/BeautifulSoup/`). A library of one page,
+such as a specification, also answers to its document's title, the acronym the
+document spells out for it, and a name in it with its version (`jwt`, `pkce`,
+`oauth 2.0`, `rfc7519`). A name without a version answers from the current docs
+of exactly that project, even when only an older version's index was built by
+that name: with `angular@18` and
+`https://angular.dev/` indexed, `--library angular` answers from angular.dev,
+and `--library svelte` from Svelte's docs, never SvelteKit's.
 
-**With `--tokens` (MCP `tokens`) the answer is fitted to that budget**, as an
-answer from pages search read always is (about 1,800 tokens unless set),
-counted as an LLM's tokenizer counts them (o200k; ketch's estimate is within
-about 4% on a result), and rendered compactly so that four or five results
-fit even at an agent's 880 tokens: each result gets a share of the budget
-weighted by its rank (the first about 38% of it, the fifth about 10%; fewer
-results when the fifth's share would be under about 90 tokens), and a
-section family that does not fit its share keeps its heading path, its first
-sentence, the code block that names the question best (else its first),
-whole, with the sentence leading into it, the sentences that name the
-question best, then whatever else names it; subsections that did not rank
-are left out. Code is never cut; `…` joins sentences of one paragraph that
-skip some, and one `[…]` ends a result that leaves anything out. What a
-result leaves of its share goes to the others, best first. A generous
-budget shows whole sections as the default does. Text is the docs' own,
-code blocks inline. Each is printed as
+**Ranking.** The index ranks by keywords alone and never runs a model: SQLite
+FTS5's bm25 over each section, a heading counting three times the text, then
+what the question's terms say about each section (how many it names, a heading
+or page title that is the question, the terms in its code, a guide page ahead
+of an API reference leaf). An embedding model fused with the keywords was
+measured and left out: on 63 questions it changed no score by more than four,
+at six times the query time (ADR-0007, amendments 5 to 7).
 
-````
-### Page > Section
-The section's text, its code inline.
+**Freshness.** Before an indexed answer prints, every page it cites that was
+last read longer ago than `cache_ttl` is read again, the way it was stored
+(the page, its Markdown source or its `llms-full.txt` chunk), within 3 seconds
+in all. A page that changed is sectioned again and the answer ranked once
+more. When a page cannot be read that way, or its check failed in the last 15
+minutes, the answer prints as it is with `stale: unverified, built <date>`.
+`--offline` reads nothing and marks the answer stale when a cited page is older
+than `cache_ttl`. Pages added to the site since the build appear only after
+`docs index` runs again.
 
-```ts
-the code, verbatim
+##### Context7
+
+`-b context7` serves curated snippets and needs no key. Without one it runs on
+Context7's anonymous quota: about 200 requests a month per IP address, shared
+by everything on that address, and a docs search spends two (resolve, then
+fetch). A spent quota exits **4** naming when it resets and the free key that
+lifts it (`ketch config set context7_api_key <key>`). A library Context7 has
+moved (`/facebook/react` is now `/react/react`) is followed once, and
+`library:` shows the new ID. Its text answers keep 0.20's layout: a
+`result_count` line, then each snippet under its title in brackets, with its
+`source:`. With Context7, resolve the name, *vet the matches*, then fetch by ID:
+its resolve never returns empty, and a bad name still gets confident fuzzy
+matches, so check the name, not just the trust score.
+
+##### Exit codes
+
+A refusal for want of the question's terms prints its frontmatter with the
+reason; every other row prints an error that names the cause.
+
+| Exit | Reason | When |
+| --- | --- | --- |
+| 0 | | `found`, or `partial (terms_not_found)` or `partial (terms_outside_scope)` |
+| 2 | `ambiguous` | A `--library` name several libraries share, or one resolve knows whose search agrees on no site: each library is listed |
+| 2 | `ambiguous_site` | With no name resolve knows, the search results split between sites with none ahead: pass the docs URL as `--library` |
+| 2 | `context7_id` | `--library /org/repo` without `-b context7` |
+| 2 | `invalid_section`, `invalid_page` | A malformed `--section` reference, or `--page` past the last page |
+| 2 | | `--page` without `--section`; `--section` with `-b context7` or `--resolve`; `--tag` with `--resolve` |
+| 3 | `terms_not_found` | None of the question's distinctive terms is in the docs |
+| 3 | `terms_outside_scope` | The library holds them, but none under `scope` |
+| 3 | `scope_empty` | No indexed page is under the `--library` URL |
+| 3 | `no_docs_found` | The search results hold no documentation |
+| 3 | `not_found` | None of the site's pages could be read (the error counts the causes, such as `2 blocked (HTTP 403)`, and names the next step); an unknown `--section` page or anchor; a name nothing verifies, or a version its docs lack |
+| 3 | `disallowed` | The site's `robots.txt` closes the pages |
+| 3 | `no_results` | Nothing matched: rare on search, Context7's empty answer |
+| 3 | `not_indexed` | `--resolve` with no name and nothing indexed, or a name of several words no indexed library matches |
+| 4 | `search_empty` | Every web search came back empty: the providers are throttling |
+| 4 | `timeout` | No answer within 45 seconds |
+| 4 | | Every web search failed; a registry or GitHub down during `--resolve`; Context7's quota spent |
+| 5 | `index_outdated` | A library indexed in an older format: `ketch docs index <library>` rebuilds it |
+
+##### JSON and MCP
+
+`--json` prints one object on every backend: the frontmatter's fields (the note
+among them), `hint` (what the closing lines say), then `results`. A terms
+refusal prints it with empty `results` and exits 3:
+
+```console
+$ ketch docs --library httpx --json "kerberos gssapi"
+{"query":"kerberos gssapi","backend":"search","library":"https://www.python-httpx.org/","index":{"kind":"full","pages":23,"built":"2026-11-12"},"status":"refused","reason":"terms_not_found","terms":[],"not_found":["kerberos","gssapi"],"results":[]}
 ```
 
-#### A subsection that ranked
+`index` is `{kind, pages, built}` or, on a live answer,
+`{source, pages_read, cached}`. `terms` is a list of `{term, sections}`,
+`defined_in` of `{term, section}`, `indexed_near` of `{title, library}`. Each
+result has `library`, `version`, `title`, `breadcrumb`, `snippet` and `url`;
+search's also have `anchors`, `section` (the reference `--section` takes),
+`page_title`, `heading_path`, `contents`, `rows` and `same_text`, and a cut one
+`truncated`, `shown_tokens` and `section_tokens`. A section fetch's result adds
+`page`, `pages` and `next`.
 
-Its text.
-
-source: https://site/page#anchor
-````
-
-and with `--json` (or over MCP) as a result whose `breadcrumb` is the heading
-path, `snippet` the text, `url` the address of its best-ranked section,
-`section` the same address as the reference `--section` takes, `truncated`
-(`true` when the result leaves text of its section out) and `anchors` the
-anchors of every section it shows (`""` for a page's lead).
-
-**Reading the rest of a cut result: `--section`.** A compact answer can trim
-away the one example a how-to question needs. The full section is in the
-index, so reading it costs no network and no quota: in text output (not
-`--json` or `--minimal`), every result that ends in `[…]` ends with a pointer
-after its `source:` line,
-
-````
-source: https://site/page#anchor
-full section: ketch docs --section https://site/page#anchor
-````
-
-and a result shown whole has none. `--section` takes that `url#anchor` (the
-`source`, or `--json`'s `section`, which every search result carries, and
-`truncated: true` marks a result that was cut) and returns the section as a
-result of its own: its heading path, its text with every code block intact,
-and `source:`, with no ranking and no network, in tens of
-milliseconds. `--library` is optional (the URL names the indexed library; give
-it, as a root or `name@version`, to be explicit). An anchor on a second-level
-heading returns the whole family, that heading's text and the subsections under
-it; on a deeper one, that section and what is under it; a URL with no anchor,
-the page's sections in order. `--tokens` caps the answer (default 4000); a
-longer section is cut at a block boundary, never inside a code block, and ends
-with `[…] cut at 4000 tokens; next section: ketch docs --section …`
-naming the first section it did not show whole, or, when the cut falls in the
-first, how large the section is and to raise `--tokens`. An unknown page or
-anchor exits **3** with reason `not_found` (the message lists the page's
-anchors), a malformed reference **2**, and `--section` with `-b context7`
-**2**. `--section` reads the local index whichever backend is your default:
-only an explicit `-b context7` refuses it. Over MCP the `docs` tool takes
-`section` the same way, `query` is not required with it, and a cut result
-ends with the equivalent call, `full section: docs(section="https://site/page#anchor")`,
-at the end of its `snippet`. In a compact answer the pointer is counted in the
-budget, so the answer stays within it, at the cost of a result or a little
-text (about 25 tokens per cut result).
-
-Nothing matched in an indexed library exits **3** with `no_results`. A
-library indexed in an older index format is not
-read: the query fails with reason `index_outdated` (exit 5) until `ketch docs
-index <library>` rebuilds it, which it does on its own.
-
-**Why keywords.** The local index ranks by keywords alone and never runs a
-model. An embedding model fused with the keyword ranking was measured side
-by side and left out: on 63 gold-labelled library questions keywords alone
-put the right section first 38 times (37 with the model), in the top five
-51 times (55), answered 46 (47), and answered within an 880-token budget 43
-times (42); a query took 32 ms instead of 202 ms, and indexing a 735-page
-site took seconds and 2.4 CPU-seconds instead of 13 minutes and 2.5
-CPU-hours at 1.6 GB of memory. The design and the
-measurements are in ADR-0007 (amendments 5 to 7).
+The MCP `docs` tool takes `query`, `backend`, `library`, `tokens`, `limit`,
+`resolve`, `section`, `page`, `offline` and `tag`, and returns the same fields
+with `backend`, `matches` for `resolve`, and `warnings`. Its `hint` gives the
+`docs(section="…")` call, and for a section fetch the call for the next page.
+A refusal for want of the question's terms is a result with `status: refused`;
+every other refusal or failure is a tool error carrying its exit code's prefix.
 
 #### scrape — URL(s) → clean markdown
 
@@ -966,8 +1031,8 @@ rather than averaged away.
 - **Good** Rotate to another provider from `available_backends`, retry once, and note the swap. When `auto` itself fails it has already tried every usable provider — retry once, then report the outage.
 - **Bad** Fetch docs from resolve's first match because its trust score is high, even though the name isn't the library you asked about.
 - **Good** Vet name, snippet count, and trust together. If no match names the intended library, say so instead of fetching junk docs.
-- **Bad** Rerun `ketch docs` with more `--tokens` because a result ends in `[…]`.
-- **Good** Follow that result's `full section: ketch docs --section <url#anchor>` — it reads the rest from the local index, offline.
+- **Bad** Rerun `ketch docs` with more `--tokens` because a group is marked `(cut, N of M tokens)`.
+- **Good** `ketch docs --section <its source>` — it returns that section, a page at a time when it is long.
 - **Bad** Ask `ketch docs` the same library questions every session.
 - **Good** `ketch docs index <library|docs-url>` once; later questions naming it answer offline.
 
@@ -1058,10 +1123,8 @@ come from the instance itself, so the backend's own advice follows the hint.
 Grep and Sourcegraph need nothing. GitHub uses `gh auth login`,
 `$GITHUB_TOKEN`, or `ketch config set github_token <tok>`. The `search` docs
 backend needs nothing: it finds docs sites through the `search` surface's
-providers (so a key or `search_order` there helps it too), keeps what it reads
-in a local index (`docs-index.sqlite` in ketch's cache directory;
-`KETCH_DOCS_INDEX_PATH` overrides it), and answers from libraries `ketch docs
-index` indexed with no network at all. Resolving a library name asks GitHub
+providers (so a key or `search_order` there helps it too), and answers from
+libraries `ketch docs index` indexed with no search. Resolving a library name asks GitHub
 about its repository, and the same GitHub token lifts the 60-requests-an-hour
 limit an unauthenticated install gets; rate-limited, it still resolves from the
 registries, and says so in the match's evidence. Context7 works
@@ -1134,7 +1197,7 @@ $ ketch browser status
 
 - `url_rewrites` — regex rewrites applied before fetch
 - `spa_markers` — extra tokens for JS-shell detection
-- `cache_ttl` — cache lifetime
+- `cache_ttl` — page cache lifetime; docs also use it for repeated questions and to decide when an indexed page an answer cites is read again
 - `user_agent` — User-Agent override for HTTP and browser fetches
 - `extract_mode` — `clean` (default) or `complete`; a non-default mode scopes cached pages, so a page cached under one mode is never reused under the other
 - `mcp_tools` — allowlist of MCP tools to publish; unset publishes all six
@@ -1172,7 +1235,7 @@ Use `ketch` for external research — web pages, OSS code, library docs.
 - `ketch scrape <url> [url...]` for clean markdown from one or more URLs
 - `ketch extract` for already-fetched HTML piped in
 - `ketch code "query" --lang go` for real OSS code with line context; `--repo owner/name` searches one repository
-- `ketch docs "question"` for library docs from the docs site itself (`--library django@5.2` or a docs URL names it); follow a cut result's `full section: ketch docs --section <url#anchor>` to read the rest offline
+- `ketch docs "question"` for library docs from the docs site itself (`--library django@5.2` or a docs URL names it); text in a group marked `(cut)` is unread until `ketch docs --section <its source>` reads it
 - `--tag <name>` on any of them keeps the sources; `ketch tag show <name>` brings them back
 All commands support `--json`. `ketch config` reports active backends.
 Bound every scrape with --max-chars and --trim. Cite every claim.

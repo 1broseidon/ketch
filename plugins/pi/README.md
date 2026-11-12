@@ -52,8 +52,9 @@ directory.
 installs: surface routing, token budgets, error-prefix control flow, a
 deep-research verb and guided backend setup.
 
-**Tools** — `plugins/pi/extensions/ketch.ts`, one per surface, with the same
-per-call options as the MCP tools in [`mcp/`](../../mcp/):
+**Tools** — `plugins/pi/extensions/ketch.ts`, one per surface, with the
+per-call options of the MCP tools in [`mcp/`](../../mcp/), except that
+`ketch_docs` has no `page` or `offline`:
 
 | Tool | Runs | Options |
 | --- | --- | --- |
