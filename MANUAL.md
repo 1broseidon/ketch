@@ -484,14 +484,21 @@ the project's own, a standard-library page of the language's docs, or the
 library names the site); `origin: by name, …` when only a name ties the site to
 what was asked (a registry package of the name, with the site the search
 results favour when that is another; a domain carrying the name); or
-`origin: unverified, ketch could not confirm <host> as the official documentation of <what>`.
+`origin: unverified, ketch could not confirm <host> as the official documentation of <what>`,
+which ends `for this question` when nothing shows the question names a thing.
 The last two end with a line saying to name the site you cite or pass the
 official docs with `--library` (for by name, both roots). A name resolved
-earlier reads `origin: verified, resolved earlier and cached (…)`. When the
-root resolve found for a named library holds none of the question's terms and
-the search results favour another site, that site answers in the same call,
-and its origin ends `…holds none of the question's terms, so this answer is
-from the site the search results favour`.
+earlier reads `origin: verified, resolved earlier and cached (…)`.
+
+When resolve and the search disagree, both sites can be read in one call and
+the better answer is kept: `found` over `partial` over refused. A name taken
+from the question, tied to a registry package by name only, gives way to the
+site the search favours when that site carries the name. A root read first
+that lacks some of the question's terms falls over to the favoured site, and
+the origin then ends `…lacks the question's terms <terms>, so this answer is
+from the site the search results favour` (`holds none of the question's terms`
+when it had none). When the other site could not be read, the note says so:
+`could not read <root> (<cause>), the site the search results favour`.
 
 ##### The index
 
