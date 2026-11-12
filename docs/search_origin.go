@@ -266,14 +266,7 @@ func combineStd(out sfResolved, stds []*webMatch, m webMatch, err error, query s
 		out.candidates = slices.Clone(amb.Matches)
 		others = amb.Matches
 	}
-	if len(stds) > 0 {
-		others = slices.DeleteFunc(slices.Clone(others), func(c LibraryMatch) bool { return !isHTTPURL(c.ID) || stdNamesake(c, stds) })
-	}
-	var all []LibraryMatch
-	for _, sm := range stds {
-		all = append(all, sm.libraryMatch())
-	}
-	all = append(all, others...)
+	all, others := stdAhead(stds, others)
 	if len(stds) > 0 {
 		out.candidates = append(slices.Clone(all[:len(stds)]), out.candidates...)
 	}
@@ -304,6 +297,21 @@ func combineStd(out sfResolved, stds []*webMatch, m webMatch, err error, query s
 		out.ambiguous = amb
 	}
 	return out
+}
+
+// stdAhead is the standard-library pages as candidates ahead of the
+// others, and those others left once a web root's namesakes of the pages
+// go (stdNamesake).
+func stdAhead(stds []*webMatch, others []LibraryMatch) ([]LibraryMatch, []LibraryMatch) {
+	if len(stds) > 0 {
+		others = slices.DeleteFunc(slices.Clone(others), func(c LibraryMatch) bool { return !isHTTPURL(c.ID) || stdNamesake(c, stds) })
+	}
+	var all []LibraryMatch
+	for _, sm := range stds {
+		all = append(all, sm.libraryMatch())
+	}
+	all = append(all, others...)
+	return all, others
 }
 
 // stdNamesake reports a candidate that a standard-library page found for
@@ -501,6 +509,13 @@ func siteOfProject(root webRoot, m *webMatch) (string, bool) {
 	if p == nil || isNonDocsHost(host) || indexHosted(root.u) {
 		return "", false
 	}
+	return projectDomain(dom, p)
+}
+
+// projectDomain reports dom as a domain the project's own metadata
+// publishes (a homepage, a docs URL, a Go module's host) or its
+// repository's owner is named by, and why.
+func projectDomain(dom string, p *project) (string, bool) {
 	for _, a := range ownerURLs(p) {
 		if !isNonDocsHost(a.url.Hostname()) && !indexHosted(a.url) && registrableDomain(a.url.Hostname()) == dom {
 			return fmt.Sprintf("on %s, the domain of %s %s", dom, a.src, scopeHost(a.url)), true
@@ -526,7 +541,7 @@ func siteOfProject(root webRoot, m *webMatch) (string, bool) {
 // not pkg.go.dev/fmt/'s tree.
 func sameTree(a, b webRoot) bool {
 	over := func(x, y webRoot) bool {
-		return x.contains(y.u) && !(x.prefix == "/" && y.prefix != "/" && indexHosted(x.u))
+		return x.contains(y.u) && (x.prefix != "/" || y.prefix == "/" || !indexHosted(x.u))
 	}
 	return over(a, b) || over(b, a)
 }
@@ -692,12 +707,7 @@ func namedProjectRoot(u *url.URL, name string, shared bool) (webRoot, bool) {
 	keep := 0
 	switch {
 	case len(parts) > 1 && len(parts) <= len(segs):
-		ok := true
-		for i, p := range parts {
-			seg, _, _ := strings.Cut(strings.ToLower(segs[i]), "@")
-			ok = ok && seg == p
-		}
-		if ok {
+		if nameLeads(parts, segs) {
 			keep = len(parts)
 		}
 	case len(parts) == 1 && shared && len(segs) > 1:
@@ -714,6 +724,17 @@ func namedProjectRoot(u *url.URL, name string, shared bool) (webRoot, bool) {
 		return webRoot{}, false
 	}
 	return r, true
+}
+
+// nameLeads reports the name's elements (parts) as the path's leading
+// segments, a segment's @version aside.
+func nameLeads(parts, segs []string) bool {
+	ok := true
+	for i, p := range parts {
+		seg, _, _ := strings.Cut(strings.ToLower(segs[i]), "@")
+		ok = ok && seg == p
+	}
+	return ok
 }
 
 // registryNames reports a shared host's project root whose project the
@@ -779,13 +800,29 @@ func siteOrigin(site sfSite, req sfRequest, prefs sitePrefs) sfOrigin {
 		name = prefs.resolved.name
 	}
 	if registryNames(site.root, name) {
-		if segs := pathSegments(site.root.prefix); scopeHost(site.root.u) == "pkg.go.dev" && len(segs) > 0 && !strings.Contains(segs[0], ".") && strings.Join(segs, "/") == strings.Trim(name, "/") {
-			// pkg.go.dev serves a path with no host first for the standard
-			// library only: resolveGoStd's evidence, from the search's hit.
-			return verifiedOrigin(fmt.Sprintf("pkg.go.dev documents %s in the Go standard library", name))
-		}
-		return byNameText(fmt.Sprintf("%s documents a package named %s at its own path; nothing else confirms it is the one meant", scopeHost(site.root.u), name))
+		return registryOrigin(site, name)
 	}
+	if org, ok := domainOrigin(site, req, prefs); ok {
+		return org
+	}
+	return unverifiedOrigin(scopeHost(site.root.u), askedAbout(req))
+}
+
+// registryOrigin is the origin of a package index's page for the very
+// name asked (registryNames): verified for Go's standard library on
+// pkg.go.dev, by name otherwise.
+func registryOrigin(site sfSite, name string) sfOrigin {
+	if segs := pathSegments(site.root.prefix); scopeHost(site.root.u) == "pkg.go.dev" && len(segs) > 0 && !strings.Contains(segs[0], ".") && strings.Join(segs, "/") == strings.Trim(name, "/") {
+		// pkg.go.dev serves a path with no host first for the standard
+		// library only: resolveGoStd's evidence, from the search's hit.
+		return verifiedOrigin(fmt.Sprintf("pkg.go.dev documents %s in the Go standard library", name))
+	}
+	return byNameText(fmt.Sprintf("%s documents a package named %s at its own path; nothing else confirms it is the one meant", scopeHost(site.root.u), name))
+}
+
+// domainOrigin reports the by-name origin of a site on a domain of its own
+// that carries the name asked.
+func domainOrigin(site sfSite, req sfRequest, prefs sitePrefs) (sfOrigin, bool) {
 	if _, shared := sharedProjectRoot(site.root.u); !shared && !indexHosted(site.root.u) {
 		key := registrableDomain(site.root.u.Hostname())
 		var by string
@@ -798,10 +835,10 @@ func siteOrigin(site sfSite, req sfRequest, prefs sitePrefs) sfOrigin {
 			by = domainWord(key, prefs.words)
 		}
 		if by != "" {
-			return byNameText(fmt.Sprintf("the domain %s carries the name %s; nothing else confirms it as the official documentation", scopeHost(site.root.u), by))
+			return byNameText(fmt.Sprintf("the domain %s carries the name %s; nothing else confirms it as the official documentation", scopeHost(site.root.u), by)), true
 		}
 	}
-	return unverifiedOrigin(scopeHost(site.root.u), askedAbout(req))
+	return sfOrigin{}, false
 }
 
 // hostValue reports a library value written as a bare host name: a dot,
@@ -838,19 +875,6 @@ func namedWithDescriptor(domain string, names []string) bool {
 		}
 	}
 	return false
-}
-
-// docsSite reports a site that says it is documentation by its address:
-// a docs host or package docs host, or a docs directory (strongDocs), at
-// its root or at one of its hits. A title is not enough: a tutorial
-// site's posts are titled guides too. A domain named like the thing
-// asked about is the thing's own docs only with this; a fan site's
-// domain names the thing as well (raspberry.tips).
-func docsSite(site sfSite) bool {
-	if strongDocs(site.root.u) {
-		return true
-	}
-	return slices.ContainsFunc(site.hits, func(h sfHit) bool { return strongDocs(h.u) })
 }
 
 // askedAbout names what a request asks about, for an unverified origin:
@@ -899,10 +923,10 @@ func readCause(err error) (cause, detail string) {
 	case errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled):
 		return readTimeout, ""
 	case errors.As(err, &st):
-		switch code := st.HTTPStatus(); {
-		case code == 404 || code == 410:
+		switch code := st.HTTPStatus(); code {
+		case 404, 410:
 			return readNotFound, fmt.Sprintf("HTTP %d", code)
-		case code == 401 || code == 403 || code == 407 || code == 429 || code == 451:
+		case 401, 403, 407, 429, 451:
 			return readBlocked, fmt.Sprintf("HTTP %d", code)
 		default:
 			return readOther, fmt.Sprintf("HTTP %d", code)

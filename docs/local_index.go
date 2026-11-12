@@ -724,49 +724,77 @@ func libraryNames(l docsindex.Library) (primary, secondary []string) {
 // svelte.dev/docs/svelte; the latter alone is named svelte by its path).
 func libraryNameTiers(l docsindex.Library) (primary, specific, host []string) {
 	full := fullNames(l)
-	words := map[string]bool{} // the words of every multi-word name
-	addWords := func(name string) {
-		if parts := nameWords(name); len(parts) > 1 {
-			for _, w := range parts {
-				words[libraryKey(w)] = true
-			}
-		}
-	}
+	words := map[string]bool{}                                 // the words of every multi-word name
 	title, _, _ := strings.Cut(cleanPageTitle(l.Title), " - ") // "FastAPI - FastAPI" is FastAPI
-	addWords(title)
-	addWords(l.SiteName)
-	addWords(titleCore(cleanPageTitle(l.Document)))
+	addNameWords(words, title)
+	addNameWords(words, l.SiteName)
+	addNameWords(words, titleCore(cleanPageTitle(l.Document)))
 	seen := map[string]bool{}
-	add := func(into *[]string, k string) {
-		if len(k) >= 2 && !genericNames[k] && !seen[k] {
-			seen[k] = true
-			*into = append(*into, k)
-		}
-	}
 	root, _ := parseWebRoot(l.Root)
 	paths := pathNames(root)
 	var tails []string
 	for _, n := range full {
 		if k := libraryKey(n); n != l.SiteName || namesRootPath(k, paths) {
-			add(&primary, k)
+			addName(seen, &primary, k)
 		}
 		tail := n
 		if i := strings.LastIndex(n, "/"); i >= 0 { // @scope/pkg, owner/repo, a module path
 			tail = n[i+1:]
 			tails = append(tails, tail)
 		}
-		addWords(tail)
+		addNameWords(words, tail)
 	}
 	for _, n := range []string{title, l.SiteName} {
 		if k := descriptorName(n); k != "" && namesRootPath(k, paths) {
-			add(&primary, k)
+			addName(seen, &primary, k)
 			delete(words, k)
 		}
 	}
+	for _, k := range siteProductNames(title, l.SiteName, paths) {
+		addName(seen, &primary, k)
+	}
+	if k := soleSiteWord(title, l.SiteName, root, paths); k != "" {
+		addName(seen, &specific, k)
+	}
+	for _, n := range append(tails, paths...) {
+		if k := libraryKey(n); !words[k] {
+			addName(seen, &specific, k)
+		}
+	}
+	for _, n := range hostNames(root.u) {
+		if k := libraryKey(n); !words[k] && namesRootPath(k, paths) {
+			addName(seen, &host, k)
+		}
+	}
+	return primary, specific, host
+}
+
+// addNameWords adds to words the words of name when it has more than one.
+func addNameWords(words map[string]bool, name string) {
+	if parts := nameWords(name); len(parts) > 1 {
+		for _, w := range parts {
+			words[libraryKey(w)] = true
+		}
+	}
+}
+
+// addName appends k to into unless it is too short, generic or already
+// seen in any tier.
+func addName(seen map[string]bool, into *[]string, k string) {
+	if len(k) >= 2 && !genericNames[k] && !seen[k] {
+		seen[k] = true
+		*into = append(*into, k)
+	}
+}
+
+// siteProductNames are the names a site's name or title joined to each
+// of its root's path names makes, in order, as keys.
+func siteProductNames(title, siteName string, paths []string) []string {
+	var out []string
 	if len(paths) > 0 {
 		// A site's name before a product's path names the product
 		// (GitHub and /actions/: GitHub Actions; TanStack and /query/).
-		for _, n := range []string{title, l.SiteName} {
+		for _, n := range []string{title, siteName} {
 			site := libraryKey(n)
 			if d := descriptorName(n); d != "" {
 				site = d
@@ -774,26 +802,13 @@ func libraryNameTiers(l docsindex.Library) (primary, specific, host []string) {
 			if site != "" && !genericNames[site] {
 				for _, p := range paths {
 					if pk := libraryKey(p); pk != "" && !strings.HasPrefix(pk, site) {
-						add(&primary, site+pk)
+						out = append(out, site+pk)
 					}
 				}
 			}
 		}
 	}
-	if k := soleSiteWord(title, l.SiteName, root, paths); k != "" {
-		add(&specific, k)
-	}
-	for _, n := range append(tails, paths...) {
-		if k := libraryKey(n); !words[k] {
-			add(&specific, k)
-		}
-	}
-	for _, n := range hostNames(root.u) {
-		if k := libraryKey(n); !words[k] && namesRootPath(k, paths) {
-			add(&host, k)
-		}
-	}
-	return primary, specific, host
+	return out
 }
 
 // descriptorWords are the words a docs site's name adds to its product's

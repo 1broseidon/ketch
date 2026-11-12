@@ -299,6 +299,11 @@ func TestRenderAnswer(t *testing.T) {
 	if got := headingBelow(evSection("m", 0, "d", []string{"Module m", "Module m", "Directives"}, "x")); !slices.Equal(got, []string{"Directives"}) {
 		t.Errorf("a heading repeating the title: %q", got)
 	}
+}
+
+// The hint line in each surface's words, by how many groups are cut; none
+// with nothing cut or no surface.
+func TestAnswerHint(t *testing.T) {
 	for _, c := range []struct {
 		style HintStyle
 		cut   int

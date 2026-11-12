@@ -209,22 +209,7 @@ func (s *SearchFirst) ResolveSelect(ctx context.Context, name string, limit int)
 	fctx := withFetchMemo(ctx)
 	std := make([]*webMatch, 2)
 	var wg sync.WaitGroup
-	if spec, perr := parseLibSpec(name); perr == nil && spec.version == "" {
-		if goStdRe.MatchString(strings.TrimPrefix(name, "go:")) && (spec.eco == ecoAny || spec.eco == ecoGitHub || strings.HasPrefix(name, "go:")) {
-			wg.Go(func() {
-				if m, ok := s.web.resolveGoStd(fctx, name); ok {
-					std[0] = &m
-				}
-			})
-		}
-		if spec.eco == ecoAny && pyStdRe.MatchString(name) {
-			wg.Go(func() {
-				if m, ok := s.web.resolvePyStd(fctx, name); ok {
-					std[1] = &m
-				}
-			})
-		}
-	}
+	s.startStdPages(fctx, name, &wg, std)
 	matches, err := s.web.ResolveLibrary(ctx, name, limit)
 	wg.Wait()
 	var first []LibraryMatch
@@ -241,6 +226,27 @@ func (s *SearchFirst) ResolveSelect(ctx context.Context, name string, limit int)
 		matches, err = append(first, matches...), nil
 	}
 	return Resolved(SearchBackend, matches, err)
+}
+
+// startStdPages starts, on wg, the reads of the standard-library pages the
+// name is into std: Go's package at 0, Python's module at 1.
+func (s *SearchFirst) startStdPages(fctx context.Context, name string, wg *sync.WaitGroup, std []*webMatch) {
+	if spec, perr := parseLibSpec(name); perr == nil && spec.version == "" {
+		if goStdRe.MatchString(strings.TrimPrefix(name, "go:")) && (spec.eco == ecoAny || spec.eco == ecoGitHub || strings.HasPrefix(name, "go:")) {
+			wg.Go(func() {
+				if m, ok := s.web.resolveGoStd(fctx, name); ok {
+					std[0] = &m
+				}
+			})
+		}
+		if spec.eco == ecoAny && pyStdRe.MatchString(name) {
+			wg.Go(func() {
+				if m, ok := s.web.resolvePyStd(fctx, name); ok {
+					std[1] = &m
+				}
+			})
+		}
+	}
 }
 
 // SearchSelect answers a question from the local index when it covers
@@ -399,32 +405,9 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 	}
 	var o Outcome
 	var read sfRead
-	// keep is the outcome returned, its read kept in the question cache
-	// for a repeat within cache_ttl when the outcome is one the evidence
-	// pipeline decided (an answer, or a refusal for want of the terms).
-	keep := func(o Outcome) Outcome {
-		if read.Root != "" && kept(o) {
-			s.saveRead(req, read)
-		}
-		return o
-	}
 	// unread names the sites read before the answer that gave no text, for
 	// its note: an answer from the next site must say the first one failed.
 	var unread []string
-	keepAfter := func(o Outcome) Outcome {
-		before := unread
-		if o.unread != "" && len(before) > 0 {
-			before = before[:len(before)-1] // the site this outcome is about
-		}
-		switch {
-		case len(before) == 0:
-		case answered(o):
-			o.Note = joinNote("could not read "+strings.Join(before, "; ")+", so this answer is from the next site", o.Note)
-		case o.err != nil && o.Index == nil:
-			o.err = fmt.Errorf("%w; before it, could not read %s", o.err, strings.Join(before, "; "))
-		}
-		return keep(o)
-	}
 	if m := prefs.resolved.match; m != nil && !leadOwned(sites, m) {
 		// The root resolve verified is the library, unless the site the
 		// search agrees on is that project's own: read it first. Its
@@ -437,7 +420,7 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 			site.page = m.page
 		}
 		o, read = s.readSite(ctx, cctx, site, s.hitProfile(cctx, site), req, resolvedOrigin(m, prefs.lead), tr)
-		if lead := prefs.lead; o.unread == "" && cctx.Err() == nil && termsRefused(o) && lead != nil && !m.root.contains(lead.u) && !ownSiteStrong(*lead, m) {
+		if lead := prefs.lead; favoursOtherSite(cctx, o, lead, m) {
 			// The resolved root holds none of the question's terms and the
 			// search results favour another site: read that one in this
 			// call; refuse only when neither holds them.
@@ -447,26 +430,40 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 			o2, read2 := s.readSite(ctx, cctx, fav, s.hitProfile(cctx, fav), req, org, tr)
 			if answered(o2) {
 				read = read2
-				return keep(o2)
+				return s.keep(req, read, o2)
 			}
 			if o.err != nil {
 				o.err = fmt.Errorf("%w; nor does %s, the site the search results favour", o.err, lead)
 			}
-			return keep(o)
+			return s.keep(req, read, o)
 		}
 		if o.unread == "" || cctx.Err() != nil {
-			return keep(o)
+			return s.keep(req, read, o)
 		}
 		unread = append(unread, site.root.String()+" ("+o.unread+")")
 		sites = slices.DeleteFunc(sites, func(c sfSite) bool { return m.root.contains(c.root.u) })
 	}
+	return s.readSites(ctx, cctx, sites, req, prefs, o, read, unread, tr)
+}
+
+// favoursOtherSite reports the resolved root's read, o, refused for want
+// of the question's terms while the search results favour lead, another
+// site than m's own.
+func favoursOtherSite(cctx context.Context, o Outcome, lead *webRoot, m *webMatch) bool {
+	return o.unread == "" && cctx.Err() == nil && termsRefused(o) && lead != nil && !m.root.contains(lead.u) && !ownSiteStrong(*lead, m)
+}
+
+// readSites reads the search's sites in turn, after o and read from any
+// site read before, until one answers or the reads run out.
+func (s *SearchFirst) readSites(ctx, cctx context.Context, sites []sfSite, req sfRequest, prefs sitePrefs, o Outcome, read sfRead, unread []string, tr *sfTrace) Outcome {
+	var err error
 	for range sfMaxReads {
 		var site sfSite
 		var prof *siteProfile
 		site, prof, sites, err = s.chooseSite(cctx, sites, req, prefs)
 		if err != nil {
 			if o.Status != "" {
-				return keep(o) // the site read before says more than the rest's refusal
+				return s.keep(req, read, o) // the site read before says more than the rest's refusal
 			}
 			return s.failed(ctx, cctx, namedRefusal(err, req, prefs))
 		}
@@ -475,7 +472,7 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 		}
 		o, read = s.readSite(ctx, cctx, site, prof, req, siteOrigin(site, req, prefs), tr)
 		if answered(o) || cctx.Err() != nil {
-			return keepAfter(o)
+			return s.keepAfter(req, read, unread, o)
 		}
 		if o.unread != "" {
 			unread = append(unread, site.root.String()+" ("+o.unread+")")
@@ -490,10 +487,37 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 			continue
 		}
 		if o.Reason == reasonDisallowed || len(sites) == 0 || tr.domains >= sfMaxSites {
-			return keepAfter(o) // a site that closes its docs to robots is still the site
+			return s.keepAfter(req, read, unread, o) // a site that closes its docs to robots is still the site
 		}
 	}
-	return keepAfter(o)
+	return s.keepAfter(req, read, unread, o)
+}
+
+// keep is the outcome returned, its read kept in the question cache
+// for a repeat within cache_ttl when the outcome is one the evidence
+// pipeline decided (an answer, or a refusal for want of the terms).
+func (s *SearchFirst) keep(req sfRequest, read sfRead, o Outcome) Outcome {
+	if read.Root != "" && kept(o) {
+		s.saveRead(req, read)
+	}
+	return o
+}
+
+// keepAfter is keep with o's note or error naming the sites read before
+// it that gave no text (unread).
+func (s *SearchFirst) keepAfter(req sfRequest, read sfRead, unread []string, o Outcome) Outcome {
+	before := unread
+	if o.unread != "" && len(before) > 0 {
+		before = before[:len(before)-1] // the site this outcome is about
+	}
+	switch {
+	case len(before) == 0:
+	case answered(o):
+		o.Note = joinNote("could not read "+strings.Join(before, "; ")+", so this answer is from the next site", o.Note)
+	case o.err != nil && o.Index == nil:
+		o.err = fmt.Errorf("%w; before it, could not read %s", o.err, strings.Join(before, "; "))
+	}
+	return s.keep(req, read, o)
 }
 
 // searchLead is the site the search results agree on with no resolved
@@ -801,24 +825,30 @@ func (s *SearchFirst) chooseSite(ctx context.Context, sites []sfSite, req sfRequ
 			sites = append([]sfSite{lastTree(site)}, sites...)
 			continue
 		}
-		if prof != nil && prof.movedTo != nil {
-			// The site moved and its old address says so with a script or
-			// meta refresh: read it where it went (after any HTTP redirect
-			// there), as an HTTP redirect would have sent it.
-			if to, err := s.web.cachedProfile(ctx, prof.movedTo); err == nil && to.served != nil && to.movedTo == nil {
-				prof = to
-			} else {
-				moved := *prof
-				moved.served = prof.movedTo
-				prof = &moved
-			}
-		}
+		prof = s.followMoved(ctx, prof)
 		site, sites = servedSite(site, prof, sites)
 		if site.docs || site.named || prof != nil && prof.served != nil && looksLikeDocs(prof.served, prof) {
 			return site, prof, sites, nil
 		}
 	}
 	return sfSite{}, nil, nil, fmt.Errorf("search: %w", ErrNoDocsFound)
+}
+
+// followMoved is prof, or where its site moved when its page says so.
+func (s *SearchFirst) followMoved(ctx context.Context, prof *siteProfile) *siteProfile {
+	if prof != nil && prof.movedTo != nil {
+		// The site moved and its old address says so with a script or
+		// meta refresh: read it where it went (after any HTTP redirect
+		// there), as an HTTP redirect would have sent it.
+		if to, err := s.web.cachedProfile(ctx, prof.movedTo); err == nil && to.served != nil && to.movedTo == nil {
+			prof = to
+		} else {
+			moved := *prof
+			moved.served = prof.movedTo
+			prof = &moved
+		}
+	}
+	return prof
 }
 
 // givenSite is the docs root a request gives as the site, with the hits

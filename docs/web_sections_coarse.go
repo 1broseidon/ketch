@@ -582,7 +582,7 @@ func hasIdentPrefix(code, id string) bool {
 		return true
 	}
 	c := code[len(id)]
-	return !(c == '_' || c == '-' || c == '.' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9')
+	return c != '_' && c != '-' && c != '.' && (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') && (c < '0' || c > '9')
 }
 
 // leadCode is the code a block opens with: its first code span, or in a

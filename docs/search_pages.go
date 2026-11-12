@@ -38,7 +38,7 @@ func (s *SearchFirst) plan(ctx context.Context, site sfSite, prof *siteProfile, 
 			disallowed++
 			return false
 		}
-		if _, pref := variantKey(l.url, root, rootLabel); pref.class > 2 && rootLabel == "" {
+		if otherRelease(l.url, root, rootLabel) {
 			return false // another release's copy of the page
 		}
 		seen[k] = true
@@ -70,6 +70,13 @@ func (s *SearchFirst) plan(ctx context.Context, site sfSite, prof *siteProfile, 
 		}
 	}
 	return inHand(out, disc.pages, root), disallowed, wideDirs(root, disc.links)
+}
+
+// otherRelease reports u as another release's copy of a page under root,
+// whose version label is rootLabel.
+func otherRelease(u *url.URL, root webRoot, rootLabel string) bool {
+	_, pref := variantKey(u, root, rootLabel)
+	return pref.class > 2 && rootLabel == ""
 }
 
 // wideDirs are root and the directories under it that the site's own lists

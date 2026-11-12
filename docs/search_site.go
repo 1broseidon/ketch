@@ -228,7 +228,13 @@ func notDocsHit(u *url.URL) bool {
 	if !isPageURL(u) || !isResultLink(u) || isPostPath(u.Path) {
 		return true
 	}
-	segs := pathSegments(u.Path)
+	return notDocsPath(u.Path)
+}
+
+// notDocsPath reports a path under a segment no docs page is under
+// (notDocsSegments) or a Discourse topic's.
+func notDocsPath(p string) bool {
+	segs := pathSegments(p)
 	for i, s := range segs {
 		low := strings.ToLower(s)
 		if notDocsSegments[low] && i < len(segs)-1 {
@@ -770,7 +776,7 @@ func treeBetter(a, b float64, ra, rb webRoot, version string, words []string) bo
 func mainHostOver(a, b webRoot, words []string) bool {
 	ha, hb := scopeHost(a.u), scopeHost(b.u)
 	dom := registrableDomain(ha)
-	if ha == hb || registrableDomain(hb) != dom || !(ha == dom || ha == "docs."+dom) {
+	if ha == hb || registrableDomain(hb) != dom || ha != dom && ha != "docs."+dom {
 		return false
 	}
 	sibling, _, _ := strings.Cut(strings.TrimSuffix(hb, "."+dom), ".")
