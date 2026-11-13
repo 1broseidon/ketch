@@ -195,6 +195,9 @@ func (s *SearchFirst) ResolveSelect(ctx context.Context, name string, limit int)
 		}
 		return Resolved(SearchBackend, indexed, nil)
 	}
+	if offline(ctx) {
+		return Resolved(SearchBackend, nil, offlineMiss(name))
+	}
 	if strings.TrimSpace(name) == "" {
 		return Resolved(SearchBackend, nil, fmt.Errorf("search: no library is indexed (ketch docs index <docs-url>); give a library name to resolve its docs root: %w", ErrNotIndexed))
 	}
@@ -319,6 +322,7 @@ type sfRequest struct {
 	library string       // as given: a docs URL, a spec or a name; "" for none
 	spec    libSpec      // the library as a spec (zero for a docs URL or none)
 	opts    LocalOptions // as the caller gave them
+	version string       // the release verified by resolution, including aliases
 }
 
 // pinnedSpec is the library a question pins with a spec of its own
@@ -347,6 +351,9 @@ func (s *SearchFirst) answer(ctx context.Context, req sfRequest) Outcome {
 		tr.path = "local"
 		TraceFrom(ctx).setPath(tr.path)
 		return o
+	}
+	if req.opts.Offline {
+		return Answer(SearchBackend, nil, offlineMiss(firstNonEmpty(req.library, req.query)))
 	}
 	tr.path = "search"
 	TraceFrom(ctx).setPath(tr.path)
@@ -382,6 +389,9 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 	hits, prefs, err := s.searchHits(cctx, req)
 	tr.hits = len(hits)
 	tr.resolveMs, tr.resolved = prefs.resolved.took.Milliseconds(), resolvedTrace(prefs.resolved)
+	if req.spec.version != "" {
+		return s.readPinned(ctx, cctx, req, hits, prefs, tr)
+	}
 	if err != nil && prefs.resolved.ambiguous == nil {
 		return s.failed(ctx, cctx, err)
 	}
@@ -739,7 +749,7 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 		tr.site, tr.siteHits = site.root.String(), len(site.hits)
 	}
 	tr.sites++
-	if lib, ok := s.indexedOver(site.root); ok {
+	if lib, ok := s.indexedOver(site.root); ok && req.spec.version == "" {
 		tr.local = lib.Root
 		return s.answerIndexed(ctx, lib, req.query, req.opts, ""), sfRead{Root: site.root.String()}
 	}
@@ -763,6 +773,8 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 	}
 	title, name := readTitle(site.root, prof)
 	r := readOf(site.root, title, name, pages, by)
+	r.Version = req.version
+	r.Pin = req.spec.version
 	r.Origin, r.OriginRoots, r.Wide = origin.text, origin.roots, wide
 	return s.answerRead(ctx, site.root, title, name, pages, req, origin, wide), r
 }
@@ -916,7 +928,11 @@ func (s *SearchFirst) prefs(ctx context.Context, req sfRequest) sitePrefs {
 	if !s.web.resolvesNames() {
 		return p
 	}
-	rctx, cancel := context.WithTimeout(ctx, sfResolveTimeout)
+	timeout := sfResolveTimeout
+	if req.spec.version != "" {
+		timeout = s.timeout // an explicit pin must resolve, not degrade into a search preference
+	}
+	rctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	resolve := s.resolveNamed
 	if s.resolveName != nil {

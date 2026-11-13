@@ -1,6 +1,6 @@
 {
   "name": "ketch-pi",
-  "version": "0.21.0",
+  "version": "0.21.1",
   "private": true,
   "description": "pi package for the ketch CLI: the bundled ketch research skill plus ketch_search/ketch_code/ketch_docs/ketch_scrape/ketch_crawl/ketch_tag tools over `ketch \u2026 --json`. Requires the ketch binary on PATH.",
   "type": "module",

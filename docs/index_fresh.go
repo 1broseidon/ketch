@@ -398,6 +398,9 @@ func (s *SearchFirst) SectionSelect(ctx context.Context, library, ref string, to
 	if lib.Key != "" {
 		return s.verify(ctx, lib, o, []string{stored}, func() Outcome { o, _, _ := read(); return o })
 	}
+	if offline(ctx) {
+		return o // preserve validation and local missing-section errors without fetching
+	}
 	if err := o.Err(); errors.Is(err, ErrSectionNotFound) || errors.Is(err, ErrNotIndexed) {
 		return s.readSection(ctx, library, ref, tokens, page)
 	}

@@ -25,7 +25,7 @@ var docsCmd = &cobra.Command{
 
 A library indexed with ketch docs index answers from the local index.
 Otherwise ketch searches the web, picks the docs site the results agree
-on, reads up to 24 of its pages and answers from them. No key is needed.
+on and reads up to 24 pages. No key needed.
 
 The body is the docs' own text, grouped by section under each page's
 title, each group ending with its source url#anchor. The frontmatter
@@ -43,9 +43,9 @@ A group marked "(cut, N of M tokens)" shows part of its section. The
 rest is unread: run ketch docs --section <its source> before stating
 what it says.
 
---library takes a name, name@version or docs URL. A name several
-libraries share is refused with them listed, exit 2, unless the search
-results settle on one.
+--library takes a name, name@version or docs URL. Version pins must match.
+A name several libraries share is refused with them listed, exit 2,
+unless the search results settle on one.
 
 -b context7 answers from Context7's snippets instead, keyless on its
 anonymous quota. The docs_backend config key is retired.
@@ -74,10 +74,10 @@ func init() {
 	docsCmd.Flags().IntP("limit", "l", 0, "most groups (search: unset, the budget decides) or results (context7: the limit config key)")
 	docsCmd.Flags().Bool("resolve", false, "list the docs roots (indexed first) or Context7 IDs the query names, instead of answering")
 	docsCmd.Flags().String("tag", "", "record each result under this tag (see `ketch tag`)")
-	docsCmd.PreRunE = validateTagFlag
+	docsCmd.PreRunE = validateDocsFlags
 	docsCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/library/snippet)")
 	docsCmd.Flags().String("section", "", "return one section by the url#anchor of a source line, a page URL for its sections; no query")
-	docsCmd.Flags().Bool("offline", false, "answer from the index without reading again cited pages older than cache_ttl")
+	docsCmd.Flags().Bool("offline", false, "use only the local index; no network requests (a missing library exits 3)")
 	docsCmd.Flags().Int("page", 0, "with --section: the page of a section longer than --tokens to return (default 1)")
 	docsCmd.Flags().String("trace", "", "write how the answer was made to this file as JSON (docs.Trace; for QA)")
 	_ = docsCmd.Flags().MarkHidden("trace")
@@ -145,6 +145,13 @@ func docsArgs(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	return cobra.MinimumNArgs(1)(cmd, args)
+}
+
+func validateDocsFlags(cmd *cobra.Command, args []string) error {
+	if offline, _ := cmd.Flags().GetBool("offline"); offline && docs.ResolveBackend(docsBackendFlag(cmd)) != docs.SearchBackend {
+		return exitErrf(ExitValidation, "--offline requires the search backend's local index")
+	}
+	return validateTagFlag(cmd, args)
 }
 
 func runDocs(cmd *cobra.Command, args []string) error {

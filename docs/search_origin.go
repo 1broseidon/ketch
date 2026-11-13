@@ -104,6 +104,7 @@ func resolvedOrigin(m *webMatch, lead *webRoot) sfOrigin {
 // sfResolved is what resolve made of the library a request names, found
 // while the question was searched.
 type sfResolved struct {
+	err       error                  // retained for requests whose version must resolve
 	name      string                 // the name resolved, as written
 	match     *webMatch              // the one docs root resolve verified
 	ambiguous *AmbiguousLibraryError // several verified, none ahead
@@ -206,7 +207,7 @@ func onlyPyPI(packages []string) bool {
 func (s *SearchFirst) resolveNamed(ctx context.Context, req sfRequest) (out sfResolved) {
 	start := time.Now()
 	spec, bare := req.spec, false
-	if req.library == "" {
+	if firstNonEmpty(req.library, spec.raw) == "" {
 		var ok bool
 		if spec, ok = bareReading(req.query); !ok {
 			return sfResolved{}
@@ -257,6 +258,7 @@ func (s *SearchFirst) resolveNamed(ctx context.Context, req sfRequest) (out sfRe
 // agreement settles. Every library resolve knows by the name is kept as
 // a candidate for a refusal.
 func combineStd(out sfResolved, stds []*webMatch, m webMatch, err error, query string) sfResolved {
+	out.err = err
 	out.std = stds
 	var amb *AmbiguousLibraryError
 	var others []LibraryMatch

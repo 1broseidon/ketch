@@ -27,9 +27,8 @@ type LocalOptions struct {
 	// the pointer out and its tokens uncounted. It applies to answers and
 	// to the cut notice of a section fetch.
 	Hint HintStyle
-	// Offline skips the check an answer from an indexed library makes
-	// before printing (SearchFirst.verify): no cited page is fetched again,
-	// and one older than cache_ttl only marks the answer stale.
+	// Offline uses only the local index: no resolution, page-cache fetch
+	// or network access. An older cited page marks the answer stale.
 	Offline bool
 	// note is the note the caller adds to the answer's frontmatter (a
 	// partial answer's), which the budget covers; read, the pages a

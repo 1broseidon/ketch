@@ -126,7 +126,9 @@ func (w *Web) discoverLLMS(ctx context.Context, root webRoot, site *webSite) boo
 			}
 			if len(site.pages) > 0 || len(llms.links) > 0 {
 				site.links, site.llms = llms.links, true
-				return true
+				// Unattributed llms-full text may only name the manifest
+				// itself; that is not a page and must not stop discovery.
+				return len(candidateLinks(*site, root)) > 0
 			}
 		}
 	}

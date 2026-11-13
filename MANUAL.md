@@ -258,7 +258,7 @@ $ ketch docs -b context7 --resolve "next.js"                         # a name â†
 | `--resolve` | Resolve the query as a library name: docs roots (`search`; with no name, every indexed library) or Context7 IDs |
 | `--section <url#anchor>` | Return one section, with no query and no ranking (see Full sections) |
 | `--page N` | With `--section`: the page of a long section to return (default 1) |
-| `--offline` | Answer from the index without the freshness check (see The index) |
+| `--offline` | Use only the local index, with no network requests; a missing library exits 3 |
 | `--minimal` | One result per line: URL, library, first line; the note, `stale` and `not_found` go to stderr |
 | `--tag <name>` | Bookmark every result URL under a tag |
 
@@ -570,7 +570,9 @@ channel directories right below the root (Docusaurus's `/docs/2.x/` and
 pages are left out. Trees that are no version, such as a REST reference's
 `/api/v1/`, stay. Several versions of a library sit side by side.
 `--library name@version` answers from that version's index; a version that is
-not indexed takes the live path.
+not indexed takes the live path unless `--offline` is set. The live path
+must verify the requested release and read its docs; it cannot substitute
+another version or an unrelated site.
 Without a version the newest indexed one answers (the current docs before any
 release): `version:` says which, and a note names the others. A page in the
 indexed tree about a later major, such as a v3 page "Migrating to v4", is kept,
@@ -613,7 +615,10 @@ last read longer ago than `cache_ttl` is read again, the way it was stored
 in all. A page that changed is sectioned again and the answer ranked once
 more. When a page cannot be read that way, or its check failed in the last 15
 minutes, the answer prints as it is with `stale: unverified, built <date>`.
-`--offline` reads nothing and marks the answer stale when a cited page is older
+`--offline` makes no network requests: questions, resolution and section
+lookups use only the local index. An unindexed library or section exits 3;
+the page cache alone does not qualify. It cannot be combined with
+`-b context7` (exit 2). An answer is marked stale when a cited page is older
 than `cache_ttl`. Pages added to the site since the build appear only after
 `docs index` runs again.
 

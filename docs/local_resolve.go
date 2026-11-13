@@ -2,8 +2,10 @@ package docs
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/1broseidon/ketch/internal/docsindex"
 )
@@ -50,6 +52,12 @@ func indexedNamed(libs []docsindex.Library, query string) []docsindex.Library {
 	if isHTTPURL(query) {
 		return matchSpec(libs, libSpec{raw: query, url: query})
 	}
+	if spec, err := parseLibSpec(query); err == nil && spec.version != "" {
+		return MatchIndexed(libs, query)
+	}
+	if exact := MatchIndexed(libs, query); len(exact) > 0 {
+		return exact
+	}
 	return looseNamed(libs, query)
 }
 
@@ -65,7 +73,7 @@ func looseNamed(libs []docsindex.Library, query string) []docsindex.Library {
 	for _, lib := range libs {
 		fields := resolveFields(lib)
 		switch {
-		case anyHolds(fields, q):
+		case holdsName(fields, q):
 			whole = append(whole, lib)
 		case keyHeld(qk, lib):
 			keyed = append(keyed, lib)
@@ -80,6 +88,28 @@ func looseNamed(libs []docsindex.Library, query string) []docsindex.Library {
 		return keyed
 	}
 	return word
+}
+
+// A whole name cannot end halfway through another name (http in httpx).
+// Looser multi-word queries still have the filtered word fallback below.
+func holdsName(fields []string, query string) bool {
+	for _, field := range fields {
+		for start := 0; start < len(field); {
+			i := strings.Index(field[start:], query)
+			if i < 0 {
+				break
+			}
+			i += start
+			end := i + len(query)
+			before, _ := utf8.DecodeLastRuneInString(field[:i])
+			after, _ := utf8.DecodeRuneInString(field[end:])
+			if !unicode.IsLetter(before) && !unicode.IsDigit(before) && !unicode.IsLetter(after) && !unicode.IsDigit(after) {
+				return true
+			}
+			start = end
+		}
+	}
+	return false
 }
 
 // keyHeld reports a query key that holds the library's title, site name
@@ -201,6 +231,11 @@ func resolveFields(lib docsindex.Library) []string {
 	out = append(out, lib.Aliases...)
 	out = append(out, lib.Packages...)
 	for i := range out {
+		if isHTTPURL(out[i]) {
+			if u, err := url.Parse(out[i]); err == nil {
+				out[i] = u.Hostname() + u.Path // URL schemes are not library names
+			}
+		}
 		out[i] = strings.ToLower(out[i])
 	}
 	return out

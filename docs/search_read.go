@@ -84,6 +84,9 @@ func (s *SearchFirst) answerRead(ctx context.Context, root webRoot, title, siteN
 		return Answer(SearchBackend, nil, err)
 	}
 	defer l.store.Close()
+	if req.version != "" {
+		lib.Version = req.version
+	}
 	opts := req.opts
 	// The budget is planned with the note naming root; the note printed
 	// names what the answer cites, a few tokens either way.
@@ -188,12 +191,16 @@ func readTitle(root webRoot, prof *siteProfile) (title, name string) {
 }
 
 // sfReadVersion versions the question cache's key and value.
-const sfReadVersion = "docs-question/v5"
+const sfReadVersion = "docs-question/v6"
 
 // sfRead is what the question cache keeps of a read: the docs root and,
 // unless an indexed library answered for it, the pages read in order.
 type sfRead struct {
-	Root        string       `json:"root"`
+	Root    string `json:"root"`
+	Version string `json:"version,omitempty"`
+	// Pin is the request resolution verified. Keep it separately from the
+	// site's label: SQLAlchemy calls 2.0 "20", Express calls 4 "4x".
+	Pin         string       `json:"pin,omitempty"`
 	Title       string       `json:"title,omitempty"`
 	SiteName    string       `json:"site_name,omitempty"`
 	Origin      string       `json:"origin,omitempty"`
@@ -349,7 +356,11 @@ func (s *SearchFirst) fromRead(ctx context.Context, req sfRequest, tr *sfTrace) 
 	if !ok {
 		return Outcome{}, false
 	}
-	if lib, ok := s.indexedOver(root); ok {
+	if req.spec.version != "" && (r.Pin != req.spec.version || r.Version == "") {
+		return Outcome{}, false
+	}
+	req.version = r.Version
+	if lib, ok := s.indexedOver(root); ok && req.spec.version == "" {
 		tr.cached, tr.local = true, lib.Root
 		o := s.answerIndexed(ctx, lib, req.query, req.opts, "")
 		return o, kept(o)

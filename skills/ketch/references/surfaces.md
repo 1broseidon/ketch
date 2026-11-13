@@ -20,7 +20,7 @@ In pi, the package's tools are the MCP tools under a `ketch_` prefix — `ketch_
 | `--resolve` | `resolve` | docs |
 | `--section <url#anchor>` | `section` | docs; reads one section, no query: from the local index, or for a page a search read, through the page cache |
 | `--page N` | `page` | docs, with `section`: the page of a section longer than `tokens` (pi: none) |
-| `--offline` | `offline` | docs; no check of the cited pages of an indexed answer (pi: none) |
+| `--offline` | `offline` | docs; local index only, no network requests; a local miss exits 3 (pi: none) |
 | `--no-llms-txt` | `no_llms_txt` | scrape |
 | `--force-browser` | `force_browser` | scrape |
 | `--max-chars` | `max_chars` | scrape / search-with-scrape; crawl has it on MCP only |

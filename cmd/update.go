@@ -65,6 +65,9 @@ func shouldSkipPassiveUpdateNotice(cmd *cobra.Command) bool {
 	if cmd == nil || updatecheck.Disabled() || !interactiveTerminalFn(os.Stderr) {
 		return true
 	}
+	if offline, _ := cmd.Flags().GetBool("offline"); offline {
+		return true
+	}
 	// `version` prints its own update line in-band; `help` is informational;
 	// machine-readable output (--json) must not carry chatter on stderr of
 	// the same magnitude either way, so skip.
