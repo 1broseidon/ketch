@@ -95,7 +95,7 @@ func (w *Web) enumerate(ctx context.Context, root webRoot) (indexSite, error) {
 	if w.discoverSitemap(ctx, root, &s.site) {
 		s.sources = append(s.sources, "sitemap")
 	}
-	if len(s.site.links) == 0 && len(s.site.pages) == 0 {
+	if len(candidateLinks(s.site, root)) == 0 {
 		if err := w.discoverRootLinks(ctx, root, &s.site); err != nil {
 			return s, err
 		}
@@ -106,7 +106,7 @@ func (w *Web) enumerate(ctx context.Context, root webRoot) (indexSite, error) {
 	if len(s.site.index) > 0 {
 		s.sources = append(s.sources, "search index")
 	}
-	if len(s.site.links) == 0 && len(s.site.pages) == 0 && len(s.site.index) == 0 {
+	if len(candidateLinks(s.site, root)) == 0 {
 		return s, fmt.Errorf("web: no docs pages under %s: %w (tried %s)", root, ErrNotFound, strings.Join(s.site.tried, ", "))
 	}
 	return s, nil

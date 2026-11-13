@@ -7,7 +7,22 @@ using ketch, written as prose, not a list of commits. The section is published
 verbatim on the GitHub release. Versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.21.1] - 2026-11-13
+
+`ketch docs --library name@version` now keeps the requested version on the
+live path and in cached answers. A version that cannot be verified fails
+with the reason instead of answering from an unversioned or unrelated site.
+Local resolution no longer mistakes the `http` in an indexed URL's scheme
+for a library name.
+
+`--offline` now means no network requests. Questions, resolution and section
+lookups use only the local index; missing content exits 3, even if a live
+answer was previously cached. Combining it with `-b context7` exits 2.
+Previously it only skipped refreshing stale indexed pages.
+
+Docs discovery now tries sitemaps and page links when `llms` files supply
+no usable pages inside the selected root. This fixes empty indexes such as
+`requests-cache` without widening the selected version's scope.
 
 ## [0.21.0] - 2026-11-12
 
