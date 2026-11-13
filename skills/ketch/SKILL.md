@@ -1,13 +1,13 @@
 ---
 name: ketch
-description: "Research skill for ketch — a fast stateless CLI for web search, OSS code search, curated library docs, page scraping, and site crawling; an optional MCP server exists for operators who want it, but the CLI is the primary interface. Use when a question needs live sources: 'research X', 'what are people saying about Y', 'find docs or real-world examples for Z', 'scrape/crawl this site' — or when installing or configuring ketch backends. Routes search vs code vs docs vs scrape vs crawl, keeps every fetch inside a token budget, turns error prefixes into control flow, and produces cited syntheses. Not for local codebase search, private repos, or pages behind auth."
+description: "Research skill for ketch — a fast stateless CLI for web search, OSS code search, library docs, page scraping, and site crawling; an optional MCP server exists for operators who want it, but the CLI is the primary interface. Use when a question needs live sources: 'research X', 'what are people saying about Y', 'find docs or real-world examples for Z', 'scrape/crawl this site' — or when installing or configuring ketch backends. Routes search vs code vs docs vs scrape vs crawl, keeps every fetch inside a token budget, turns error prefixes into control flow, and produces cited syntheses. Not for local codebase search, private repos, or pages behind auth."
 metadata:
   version: "0.1.0"
 ---
 
 # Ketch
 
-Route every live-source question to one of ketch's five research surfaces — search, code, docs, scrape, crawl — over the transport the operator gave you, with a token budget on every fetch and a source URL on every claim. ketch is one stateless binary — call, result, exit — with web search, OSS code grep, curated library docs, and page/site extraction together, so a complete research pipeline needs no other tool and no daemon.
+Route every live-source question to one of ketch's five research surfaces — search, code, docs, scrape, crawl — over the transport the operator gave you, with a token budget on every fetch and a source URL on every claim. ketch is one stateless binary — call, result, exit — with web search, OSS code grep, library docs, and page/site extraction together, so a complete research pipeline needs no other tool and no daemon.
 
 ## Transport: stateless CLI by default, MCP when the operator wired it
 
@@ -35,7 +35,7 @@ Use only these terms in ketch output.
 | **surface** | One of the five research operations: `search`, `code`, `docs`, `scrape`, `crawl` |
 | **tag** | A label filed across surfaces: search hits, code hits, docs chunks, scraped pages, crawled pages. Not a research surface — it answers "what did I already find?", not "what is out there?" |
 | **transport** | How a surface is called: the CLI binary (default), the optional MCP tools, or the pi package's `ketch_*` tools (which run the CLI) |
-| **backend** | The provider behind a surface: auto (default; a fallback chain, not a provider)/brave/ddg/searxng/exa/firecrawl/keenable/tavily/tinyfish/parallel/serpbase/degoog/serply/youcom (search), grepapp/sourcegraph/github (code), context7 (docs) |
+| **backend** | The provider behind a surface: auto (default; a fallback chain, not a provider)/brave/ddg/searxng/exa/firecrawl/keenable/tavily/tinyfish/parallel/serpbase/degoog/serply/youcom (search), grepapp/sourcegraph/github (code), search/context7 (docs; search is the default) |
 | **operator action** | A system-managing or diagnostic command — `config set`, `cache`, `browser install`, background crawls, `doctor` — CLI-only by design |
 | **error prefix** | The stable class on every ketch error: CLI exit codes 2–6, mirrored as the bracketed prefix opening every MCP tool error — `[validation]`, `[not_found]`, `[upstream]`, `[precondition]`, `[cancelled]` |
 | **fan-out** | How many queries are searched and URLs scraped under one plan |
@@ -93,7 +93,7 @@ First match wins:
 
 | The question needs | Surface | Not |
 | --- | --- | --- |
-| Current web pages, opinions, news, comparisons | `search` | `docs` — that is curated library docs only |
+| Current web pages, opinions, news, comparisons | `search` | `docs` — that is library docs only |
 | How real projects call an API | `code` | `search` — blogs talk *about* code; `code` greps public OSS repos via grep.app |
 | A library's own documentation, version-aware | `docs` | `scrape` of the docs site — `docs` is already extracted and token-budgeted |
 | The content of a URL you already hold | `scrape` | `search` — never re-find a known URL |
@@ -134,13 +134,71 @@ stderr (structured under `--json`), and MCP returns `warnings`. A failed write
 does not discard the useful research result. Durable bookmarks use a separate
 file; test labs must set `KETCH_TAGS_PATH` as well as isolating the page cache.
 
+## Docs flows
+
+`ketch docs` prints evidence and a verdict. It has no model: you decide what to do next. Read the frontmatter first.
+
+Two rules hold for every answer:
+
+1. Text behind `…`, or in a group marked `(cut)`, is unread. Read it with `--section` before stating what it says, or say you did not read it.
+2. Whatever your answer says that no group prints is your own knowledge. Label it so; never cite the docs for it.
+
+| You see | It means | Do |
+|---|---|---|
+| `status: found` | evidence matching the question is printed; not a promise that it answers | read the groups |
+| `terms_not_found` in `status: partial (…)` | some of your terms are nowhere in this source | read `not_found`; ask the indexed source that owns those terms (Survey) |
+| `origin: verified, <evidence>` | a search read these pages, and evidence beyond a name ties them to what you asked: registry evidence the search agrees with, the project's own site by its metadata, a standard-library page of the language's docs, or the library URL you passed | read the groups; the `note` names the command that indexes the site |
+| `origin: by name, …` | only a name ties the site to what you asked: a registry package of that name (`; the search results favour <root>` when the search agreed on another), or a domain carrying the name | name the site you cite; if it is not what you meant, ask again with the other root (the last line gives the roots) as `--library` |
+| `origin: unverified, ketch could not confirm <host> as the official documentation of <what>` (or `for this question`) | nothing ketch gathered confirms the site; it may still be the official docs | name the site you cite, or ask again with the official docs as `--library` |
+| `note: could not read <root> (…)` | a site ketch tried gave no text (blocked, needs JavaScript, not found, …): the one tried first, or the one the search results favour, which the note names; the answer is from the other | weigh the origin line; the error of such a site names the next step |
+| `status: refused` | nothing here matches (exit 3) | stop asking this source |
+| `defined_in: {term: ref}` | where a term is defined, when that section was not printed | `ketch docs --section <ref>` |
+| `(cut, N of M tokens)` on a `source:` line | the group shows part of its section; the rest is unread | `ketch docs --section <that source>` before stating what the rest says |
+| `…` in a group | text left out of a cut group, unread | read it with `--section`, or say you did not read it |
+| last line `N groups above are cut …` | how many groups hide unread text | the same: `--section` before stating what they hide |
+| `scope: <url>` | the answer is from the pages at or under that URL only; `library` is the root | `outside_scope` lists your terms the library holds elsewhere: ask the root for them |
+| `indexed_near: {title: root}` | your `--library` named no indexed library; these indexed ones are near it, and the answer came from elsewhere | if one is what you meant, ask again with its root as `--library` |
+| `also in this section: …` | what a cut group left out, by name | use one of those names in your next call |
+| `index: …, built <date>`, `source: search, N pages read`, or `stale: unverified, built <date>` | how old the evidence is: the index's build date; pages read now (`, cached`: read by the same question within `cache_ttl`); cited pages that could not be checked | say so if the answer depends on it being current |
+
+### Lookup
+
+One question about one library or product.
+
+1. `ketch docs "<question>" --library <docs root or name>`: a root as `ketch docs --resolve` lists it, or a package name (answered from the docs root resolve verifies for it; a name several libraries share exits 2 listing them: pass one). A deeper URL narrows the answer to the pages under it (`scope:`); to read one page, `ketch docs --section <page URL>`. Leave `--tokens` unset unless a result is too long to read.
+2. The fact is printed: answer, citing each `source:`. Anything you add that no group prints is your own knowledge: label it so.
+3. The group you need is cut, or `defined_in` names it: `ketch docs --section <ref>`, then answer. A section longer than a page prints `page: 1 of N` and ends with a `next page:` command; run it only if the fact is not on this page.
+4. Otherwise, Follow.
+
+### Follow
+
+The docs use other words than the question.
+
+1. Take one thing the last call printed: a name from an `also in this section:` line, a heading, a `defined_in` target.
+2. Ask again in those words, or read that section with `--section`.
+3. After three calls to one source, stop. Say what you tried and that this source does not cover it.
+
+Every call after the first uses something the last one printed. Do not rephrase blind.
+
+### Survey
+
+The question spans products.
+
+1. Ask what is indexed before saying a source is unknown: `ketch docs --resolve` lists every indexed library, `--resolve <name>` those matching it (from the index, offline; a name none matches is looked up on the web).
+2. Split the question by owner. For every `not_found` term, ask the indexed source that owns it before saying it is not covered.
+3. One Lookup or Follow per source. The calls are independent: run them together.
+4. Combine. Cite each claim's `source:`. Say what no source covered.
+5. A source you will ask again: propose `ketch docs index <site>` to the operator (CLI only; it writes the local index). It then answers from the index, offline too (`stale: unverified` when the cited pages cannot be checked).
+
+Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` with `page` for the next page, and `docs(resolve=true)` with an optional `query`; `defined_in` is a list of `{term, section}`, `indexed_near` a list of `{title, library}`, a cut result has `truncated` and `contents`, `hint` says how many are cut and that their text is unread (and, for an `origin` that is unverified, how to present it), an indexed match `indexed: true`. pi's `ketch_docs` takes the same, without `page` and `offline`.
+
 ## Token budgets
 
 | Call | Bound with | Measured cost |
 | --- | --- | --- |
 | `search`, limit 5 | `limit` | ~1.4 KB |
 | `code`, limit 3 | `limit` | ~0.7 KB |
-| `docs`, default budget | `tokens` (default 4000) | ~3.3 KB |
+| `docs`, default budget | `tokens` (search: ~1,800 unless set; context7: 4000) | ~7 KB search, ~3.3 KB context7; `tokens: 880` ~3.5 KB |
 | `scrape`, unknown page | `max_chars` 4000–8000 + `trim` | unguarded: up to ~100 KB (~25k tokens) |
 | `crawl` (MCP) | `max_pages` + per-page `max_chars` | 30 pages default, 100 cap, 3-min wall clock |
 | `tag show` / MCP `tag` show | `limit` (default 50; 0 all) | bounded source metadata; no page bodies |
@@ -154,16 +212,16 @@ file; test labs must set `KETCH_TAGS_PATH` as well as isolating the page cache.
 | 3 | `[not_found]` | Nothing matched | Change the query or selector; not an outage |
 | 4 | `[upstream]` | Backend or network failure | Explicit backend: rotate to another provider (`available_backends` in `ketch config`) or retry once. `auto` already fell through every usable provider: retry once, then report the outage |
 | 5 | `[precondition]` | Operator config missing | Stop researching; enter `ketch setup` |
-| 6 | `[cancelled]` | Cancelled or timed out | Rerun with smaller scope |
+| 6 | `[cancelled]` | Cancelled (a timeout is `[upstream]`) | Rerun with smaller scope |
 
-Situations → class: unknown backend, `regexp` on github → `[validation]`. Selector matched nothing, a `repo` the code backend does not have → `[not_found]` (for `repo`, change the backend). ddg rate limit (it rate-limits readily under fan-out), DNS failure, grepapp's intermittent 504 → `[upstream]`, rotate or retry once. Missing API key, docs backend `local` (planned, unimplemented), `force_browser` with no browser configured → `[precondition]`. One asymmetry: a CLI `crawl` interrupted by SIGINT exits **0** with partial results, by design.
+Situations → class: unknown backend, `regexp` on github → `[validation]`. Selector matched nothing, a `repo` the code backend does not have → `[not_found]` (for `repo`, change the backend). ddg rate limit (it rate-limits readily under fan-out), DNS failure, grepapp's intermittent 504 → `[upstream]`, rotate or retry once. A spent keyless Context7 quota (about 200 requests a month per IP) is `[upstream]` naming the reset — drop `backend: context7` (search is keyless) rather than retry. A docs search whose hits hold no docs is `[not_found]` (`no_docs_found`); hits split between docs sites is `[validation]` (`ambiguous_site`: pass a docs URL as `library`); throttled search providers (`search_empty`) are `[upstream]`. Missing API key, a docs library indexed in an older format (`index_outdated`), `force_browser` with no browser configured → `[precondition]`. A timeout inside a backend is `[upstream]`; `[cancelled]` means only that the call was cancelled. One asymmetry: a CLI `crawl` interrupted by SIGINT exits **0** with partial results, by design.
 
 ## Gotchas
 
 Detail for each lives in `references/surfaces.md`.
 
 - Scraping a **bare domain** auto-probes `/llms.txt` and may silently return that instead of the homepage — the `title` field reveals the swap; `no_llms_txt` opts out.
-- `docs` is a two-step: `resolve` the name → **vet the matches** → fetch by `library` ID. Resolve never returns empty — garbage in gets confident fuzzy matches out, so check the name, not just the trust score.
+- `docs` (default backend `search`) answers from the library's own docs: ask the question, naming the library (or pass `library`: a name, `name@version`, or a docs URL), and follow **Docs flows**. A question saves nothing: the pages a web search read stay in the page cache for `cache_ttl`, so the same question again does no search (`source: search, N pages read, cached`); only `ketch docs index <library>` (operator, CLI) adds a library to the local index. `backend: context7` is the curated alternative: resolve the name → **vet the matches** → fetch by `library` ID; Context7's resolve never returns empty, so check the name, not just the trust score, and its keyless quota is small.
 - Batch scrape reports per-URL failures inside a successful call: `isError=false` with `results[].error` set. Check every entry.
 - `regexp` works on grepapp and sourcegraph only; github rejects it with a pointer to those backends.
 - Background crawls (`--background`, `status`, `stop`) are CLI-only; the MCP `crawl` is synchronous and capped.
@@ -180,8 +238,11 @@ Detail for each lives in `references/surfaces.md`.
 **BAD:** `[upstream] ddg rate limited` → retry the identical call three times.
 **GOOD:** Rotate — `backend: "brave"` (or another provider from `available_backends`; `auto` is a chain, not a rotation target) — retry once, and note the swap. When `auto` itself failed, it already tried every usable provider: retry once, then report the outage.
 
-**BAD:** Fetch docs from resolve's first match because its trust score is high, even though its name is not the library you asked about.
+**BAD:** Fetch Context7 docs from resolve's first match because its trust score is high, even though its name is not the library you asked about.
 **GOOD:** Vet name + snippet count + trust; if no match names the intended library, say so instead of fetching junk docs.
+
+**BAD:** Ask `docs` again with a bigger `tokens` because the group you need is marked `(cut, N of M tokens)`.
+**GOOD:** Read that section: `ketch docs --section <its source>` (MCP `docs {section: "<url#anchor>"}`) returns it whole, a page at a time when long, from the local index or, for a page a search read, through the page cache.
 
 ## Reference loading
 

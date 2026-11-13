@@ -1,0 +1,50 @@
+---
+url: /concepts/fake-timers.md
+description: >-
+  Replace setTimeout, setInterval, Date, and Temporal with controllable fake
+  implementations for time-based testing.
+---
+
+# Fake timers
+
+Fake timers are synchronous implementations of `setTimeout` and friends that
+Sinon.JS can overwrite the global functions with to allow you to more easily
+test code using them.
+
+```js
+const clock = sinon.useFakeTimers();
+clock.tick(510);
+clock.restore();
+```
+
+---
+
+---
+url: /concepts/fake-timers/tick.md
+description: >-
+  Advances the clock by the specified time in milliseconds. Supports
+  human-readable strings like "01:00" and Temporal.Duration objects.
+---
+
+# `clock.tick(time)` / `await clock.tickAsync(time)`
+
+Tick the clock ahead `time` milliseconds.
+
+Causes all timers scheduled within the affected time range to be called. `time` may be the number of milliseconds to advance the clock by, a human-readable string, or a `Temporal.Duration` object.
+
+```js
+const clock = sinon.useFakeTimers();
+setTimeout(() => callCount++, 100);
+clock.tick(100);
+```
+
+---
+
+---
+url: /concepts/fake-timers/restore.md
+description: Restores the original timer functions.
+---
+
+# `clock.restore()`
+
+Restore the faked methods. Call in e.g. `afterEach` to undo the fakes.

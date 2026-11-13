@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>FastAPI - FastAPI</title>
+<meta name="description" content="FastAPI framework, high performance, easy to learn, fast to code, ready for production" />
+<meta name="generator" content="zensical-0.0.65" />
+<script src="./assets/javascripts/bundle.c04ba553.min.js"></script>
+<script src="./js/termynal.js"></script>
+<script src="./js/custom.js"></script>
+<script src="./js/init_kapa_widget.js"></script>
+<script src="https://static.cloudflareinsights.com/beacon.min.js"></script>
+</head>
+<body>
+<h1>FastAPI¶</h1>
+<a href="#fastapi">Skip to content</a>
+<a href="https://fastapicloud.com">Deploy on FastAPI Cloud 🚀</a>
+<a href="https://fastapiconf.com">FastAPI Conf &#x27;26 — Oct 28, 2026, Amsterdam 🎤</a>
+<a href="https://x.com/fastapi">Follow @fastapi on X (Twitter) to stay updated</a>
+<a href="https://www.linkedin.com/company/fastapi">Follow FastAPI on LinkedIn to stay updated</a>
+<a href="https://fastapi.tiangolo.com/newsletter/">Subscribe to the FastAPI and friends newsletter 🎉</a>
+<a href="https://blockbee.io?ref=fastapi">sponsor</a>
+<a href="https://www.propelauth.com/?utm_source=fastapi&amp;utm_campaign=1223&amp;utm_medium=topbanner">sponsor</a>
+<a href="https://www.coderabbit.ai/?utm_source=fastapi&amp;utm_medium=banner&amp;utm_campaign=fastapi">sponsor</a>
+<a href="https://subtotal.com/?utm_source=fastapi&amp;utm_medium=sponsorship&amp;utm_campaign=open-source">sponsor</a>
+<a href="https://github.com/fastapi/fastapi">fastapi/fastapi</a>
+<a href="https://github.com/fastapi/fastapi/actions?query=workflow%3ATest+event%3Apush+branch%3Amaster"></a>
+<a href="https://github.com/OAI/OpenAPI-Specification">OpenAPI</a>
+<a href="https://github.com/fastapi/fastapi/pull/26">(ref)</a>
+<a href="https://github.com/swagger-api/swagger-ui">Swagger UI</a>
+<a href="https://github.com/Redocly/redoc">ReDoc</a>
+<a href="https://github.com/JoshData/python-email-validator">email-validator</a>
+<a href="https://github.com/Kludex/python-multipart">python-multipart</a>
+<a href="https://github.com/pydantic/pydantic-extra-types">pydantic-extra-types</a>
+<a href="https://github.com/ijl/orjson">orjson</a>
+<a href="https://github.com/ultrajson/ultrajson">ujson</a>
+</body>
+</html>

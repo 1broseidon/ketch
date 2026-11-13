@@ -2,7 +2,8 @@ package code
 
 import (
 	"context"
-	"errors"
+
+	"github.com/1broseidon/ketch/internal/failure"
 )
 
 // Result is a single code search result.
@@ -34,16 +35,16 @@ type Query struct {
 // ErrRegexpUnsupported is returned by a backend that was asked for a regular
 // expression search it cannot perform. The CLI maps this to a precondition
 // error so the user can pick a different backend.
-var ErrRegexpUnsupported = errors.New("regular expression search not supported by this backend")
+var ErrRegexpUnsupported = failure.New(failure.Validation, "regexp_unsupported", "regular expression search not supported by this backend")
 
 // ErrInvalidRepo is returned for a Repo that is not an owner/name repository.
 // Callers map it to a validation error.
-var ErrInvalidRepo = errors.New("repository must be owner/name")
+var ErrInvalidRepo = failure.New(failure.Validation, "invalid_repo", "repository must be owner/name")
 
 // ErrRepoNotFound is returned by a backend that reports it has no repository
 // matching Query.Repo. Another backend may index it, so callers map it to a
 // not-found error that names the alternatives.
-var ErrRepoNotFound = errors.New("repository not found")
+var ErrRepoNotFound = failure.New(failure.NotFound, "repo_not_found", "repository not found")
 
 // Searcher is the interface for code search backends. Each backend owns its
 // own query dialect — language and repository filtering and safety qualifiers

@@ -1,0 +1,12 @@
+{
+ "id": 17554398,
+ "name": "solid",
+ "full_name": "haaksmash/solid",
+ "html_url": "https://github.com/haaksmash/solid",
+ "description": "A state machine implementation for Python --- which *isn't* solely designed to parse strings!",
+ "fork": false,
+ "homepage": null,
+ "language": "Python",
+ "stargazers_count": 0,
+ "archived": false
+}

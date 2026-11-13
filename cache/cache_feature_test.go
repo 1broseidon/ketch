@@ -427,3 +427,15 @@ func TestPutOnUntaggedURLDoesNotStallOrWarnWhenTagsDBIsLocked(t *testing.T) {
 		t.Errorf("Put on an untagged URL warned %d time(s) about a lock it never needed to wait on", n)
 	}
 }
+
+// What the page's JSON leaves out survives the cache: its source, its final
+// URL, and whether an empty final URL is unknown rather than legacy.
+func TestFeatureSourceAndFinalURLRoundTrip(t *testing.T) {
+	t.Parallel()
+	c := newTestCache(t, time.Hour)
+	c.Put("https://example.com/a", &scrape.Page{URL: "https://example.com/a", Markdown: "a", FinalURLUnknown: true}, scrape.SourceBrowser)
+	page, source := c.Get("https://example.com/a")
+	if page == nil || source != scrape.SourceBrowser || page.Source != scrape.SourceBrowser || !page.FinalURLUnknown {
+		t.Errorf("got page=%+v source=%q", page, source)
+	}
+}

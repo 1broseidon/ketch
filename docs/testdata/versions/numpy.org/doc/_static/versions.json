@@ -1,0 +1,108 @@
+[
+    {
+        "name": "dev",
+        "version": "devdocs",
+        "url": "https://numpy.org/devdocs/"
+    },
+    {
+        "name": "2.5 (stable)",
+        "version": "2.5",
+        "url": "https://numpy.org/doc/stable/",
+        "preferred": true
+    },
+    {
+        "name": "2.4",
+        "version": "2.4",
+        "url": "https://numpy.org/doc/2.4/"
+    },
+    {
+        "name": "2.3",
+        "version": "2.3",
+        "url": "https://numpy.org/doc/2.3/"
+    },
+    {
+        "name": "2.2",
+        "version": "2.2",
+        "url": "https://numpy.org/doc/2.2/"
+    },
+    {
+        "name": "2.1",
+        "version": "2.1",
+        "url": "https://numpy.org/doc/2.1/"
+    },
+    {
+        "name": "2.0",
+        "version": "2.0",
+        "url": "https://numpy.org/doc/2.0/"
+    },
+    {
+        "name": "1.26",
+        "version": "doc/1.26",
+        "url": "https://numpy.org/doc/1.26/"
+    },
+    {
+        "name": "1.25",
+        "version": "doc/1.25",
+        "url": "https://numpy.org/doc/1.25/"
+    },
+    {
+        "name": "1.24",
+        "version": "doc/1.24",
+        "url": "https://numpy.org/doc/1.24/"
+    },
+    {
+        "name": "1.23",
+        "version": "doc/1.23",
+        "url": "https://numpy.org/doc/1.23/"
+    },
+    {
+        "name": "1.22",
+        "version": "1.22",
+        "url": "https://numpy.org/doc/1.22/"
+    },
+    {
+        "name": "1.21",
+        "version": "1.21",
+        "url": "https://numpy.org/doc/1.21/"
+    },
+    {
+        "name": "1.20",
+        "version": "1.20",
+        "url": "https://numpy.org/doc/1.20/"
+    },
+    {
+        "name": "1.19",
+        "version": "1.19",
+        "url": "https://numpy.org/doc/1.19/"
+    },
+    {
+        "name": "1.18",
+        "version": "1.18",
+        "url": "https://numpy.org/doc/1.18/"
+    },
+    {
+        "name": "1.17",
+        "version": "1.17",
+        "url": "https://numpy.org/doc/1.17/"
+    },
+    {
+        "name": "1.16",
+        "version": "1.16",
+        "url": "https://numpy.org/doc/1.16/"
+    },
+    {
+        "name": "1.15",
+        "version": "1.15",
+        "url": "https://numpy.org/doc/1.15/"
+    },
+    {
+        "name": "1.14",
+        "version": "1.14",
+        "url": "https://numpy.org/doc/1.14/"
+    },
+    {
+        "name": "1.13",
+        "version": "1.13",
+        "url": "https://numpy.org/doc/1.13/"
+    }
+]

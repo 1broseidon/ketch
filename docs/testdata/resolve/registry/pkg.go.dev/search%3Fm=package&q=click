@@ -1,0 +1,63 @@
+<!doctype html><html><head><title>pkg.go.dev search</title></head><body>
+<div class="SearchSnippet"><h2><a href="/github.com/gofiber/template/html/v3" data-gtmc="search result" data-gtmv="0"
+                data-test-id="snippet-title"
+                data-search-query="click"
+                data-clicked-package="github.com/gofiber/template/html/v3"
+                data-rank="0"
+                data-experiment-cohort="control">
+              html
+              <span class="SearchSnippet-header-path">(github.com/gofiber/template/html/v3)</span>
+            </a></h2><div class="SearchSnippet-infoLabel">
+    <a href="/github.com/gofiber/template/html/v3?tab=importedby" aria-label="Go to Imported By">
+       <span class="go-textSubtle">Imported by </span><strong>3</strong>
+    </a></div></div>
+<div class="SearchSnippet"><h2><a href="/barista.run/base/click" data-gtmc="search result" data-gtmv="1"
+                data-test-id="snippet-title"
+                data-search-query="click"
+                data-clicked-package="barista.run/base/click"
+                data-rank="1"
+                data-experiment-cohort="control">
+              click
+              <span class="SearchSnippet-header-path">(barista.run/base/click)</span>
+            </a></h2><div class="SearchSnippet-infoLabel">
+    <a href="/barista.run/base/click?tab=importedby" aria-label="Go to Imported By">
+       <span class="go-textSubtle">Imported by </span><strong>34</strong>
+    </a></div></div>
+<div class="SearchSnippet"><h2><a href="/github.com/gofiber/template/django/v3" data-gtmc="search result" data-gtmv="2"
+                data-test-id="snippet-title"
+                data-search-query="click"
+                data-clicked-package="github.com/gofiber/template/django/v3"
+                data-rank="2"
+                data-experiment-cohort="control">
+              django
+              <span class="SearchSnippet-header-path">(github.com/gofiber/template/django/v3)</span>
+            </a></h2><div class="SearchSnippet-infoLabel">
+    <a href="/github.com/gofiber/template/django/v3?tab=importedby" aria-label="Go to Imported By">
+       <span class="go-textSubtle">Imported by </span><strong>30</strong>
+    </a></div></div>
+<div class="SearchSnippet"><h2><a href="/github.com/aws/aws-sdk-go/service/iot1clickdevicesservice" data-gtmc="search result" data-gtmv="3"
+                data-test-id="snippet-title"
+                data-search-query="click"
+                data-clicked-package="github.com/aws/aws-sdk-go/service/iot1clickdevicesservice"
+                data-rank="3"
+                data-experiment-cohort="control">
+              iot1clickdevicesservice
+              <span class="SearchSnippet-header-path">(github.com/aws/aws-sdk-go/service/iot1clickdevicesservice)</span>
+            </a></h2><div class="SearchSnippet-infoLabel">
+    <a href="/github.com/aws/aws-sdk-go/service/iot1clickdevicesservice?tab=importedby" aria-label="Go to Imported By">
+       <span class="go-textSubtle">Imported by </span><strong>23</strong>
+    </a></div><div class="SearchSnippet-sub go-textSubtle">
+            <strong>Other packages in module github.com/aws/aws-sdk-go:</strong></div></div>
+<div class="SearchSnippet"><h2><a href="/github.com/ebitenui/ebitenui/input" data-gtmc="search result" data-gtmv="4"
+                data-test-id="snippet-title"
+                data-search-query="click"
+                data-clicked-package="github.com/ebitenui/ebitenui/input"
+                data-rank="4"
+                data-experiment-cohort="control">
+              input
+              <span class="SearchSnippet-header-path">(github.com/ebitenui/ebitenui/input)</span>
+            </a></h2><div class="SearchSnippet-infoLabel">
+    <a href="/github.com/ebitenui/ebitenui/input?tab=importedby" aria-label="Go to Imported By">
+       <span class="go-textSubtle">Imported by </span><strong>18</strong>
+    </a></div></div>
+</body></html>

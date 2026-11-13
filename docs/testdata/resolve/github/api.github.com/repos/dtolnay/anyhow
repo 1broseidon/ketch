@@ -1,0 +1,12 @@
+{
+ "id": 212936374,
+ "name": "anyhow",
+ "full_name": "dtolnay/anyhow",
+ "html_url": "https://github.com/dtolnay/anyhow",
+ "description": "Flexible concrete Error type built on std::error::Error",
+ "fork": false,
+ "homepage": "",
+ "language": "Rust",
+ "stargazers_count": 6685,
+ "archived": false
+}

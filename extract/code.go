@@ -26,7 +26,8 @@ func normalizeCodeBlocks(rawHTML string) string {
 		if language := codeLanguage(pre); language != "" {
 			code.Attr = []html.Attribute{{Key: "class", Val: language}}
 		}
-		code.AppendChild(&html.Node{Type: html.TextNode, Data: text.String()})
+		// A copy button's container before the code is an empty line.
+		code.AppendChild(&html.Node{Type: html.TextNode, Data: strings.TrimLeft(text.String(), "\n")})
 		pre.Empty()
 		pre.Nodes[0].AppendChild(code)
 	})
@@ -50,6 +51,15 @@ func codeLanguage(pre *goquery.Selection) string {
 }
 
 func writeCodeText(out *strings.Builder, node *html.Node) {
+	writeCodeNode(out, node, false)
+}
+
+// writeCodeNode writes node's code text. A div or p is a line of its own,
+// unless it sits inside an inline element (inInline): a highlighter that
+// wraps a token in a block for a hover popup (Shiki's twoslash puts a div
+// inside the line's span) still means one line, and the popup itself is
+// hidden.
+func writeCodeNode(out *strings.Builder, node *html.Node, inInline bool) {
 	if node.Type == html.TextNode {
 		out.WriteString(node.Data)
 		return
@@ -61,18 +71,22 @@ func writeCodeText(out *strings.Builder, node *html.Node) {
 		out.WriteByte('\n')
 		return
 	}
-	block := node.Data == "div" || node.Data == "p"
+	block := (node.Data == "div" || node.Data == "p") && !inInline
 	if block && out.Len() > 0 && !strings.HasSuffix(out.String(), "\n") {
 		out.WriteByte('\n')
 	}
 	start := out.Len()
+	inline := inInline || inlineCodeElements[node.Data]
 	for child := node.FirstChild; child != nil; child = child.NextSibling {
-		writeCodeText(out, child)
+		writeCodeNode(out, child, inline)
 	}
 	if block && (out.Len() == start || !strings.HasSuffix(out.String(), "\n")) {
 		out.WriteByte('\n')
 	}
 }
+
+// inlineCodeElements are the inline elements highlighters wrap tokens in.
+var inlineCodeElements = map[string]bool{"span": true, "a": true, "em": true, "strong": true, "b": true, "i": true, "mark": true}
 
 func hiddenCodeNode(node *html.Node) bool {
 	switch node.Data {

@@ -247,6 +247,47 @@ describe("argument construction", () => {
 		assert.equal(calls.length, 2);
 	});
 
+	test("docs: search takes library specs as they are, and section alone", async () => {
+		const { tools, calls } = fakePi();
+		await run(tools, "ketch_docs", { query: "middleware", library: "django@5.2" });
+		assert.deepEqual(calls[0].args, ["docs", "--json", "--library=django@5.2", "--", "middleware"]);
+		await run(tools, "ketch_docs", { query: "@astrojs/starlight@0.30", backend: "search", resolve: true });
+		assert.deepEqual(calls[1].args, ["docs", "--json", "--backend=search", "--resolve", "--", "@astrojs/starlight@0.30"]);
+		await run(tools, "ketch_docs", { query: "how do I set retries in requests" });
+		assert.deepEqual(calls[2].args, ["docs", "--json", "--", "how do I set retries in requests"]);
+		await run(tools, "ketch_docs", { section: "https://docs.example.test/guide#rules", tokens: 2000 });
+		assert.deepEqual(calls[3].args, ["docs", "--json", "--section=https://docs.example.test/guide#rules", "--tokens=2000"]);
+
+		for (const bad of [
+			{ section: "https://docs.example.test/guide#rules", query: "q" },
+			{ section: "https://docs.example.test/guide#rules", resolve: true },
+			{},
+		]) {
+			const r = await run(tools, "ketch_docs", bad);
+			assert.equal(r.isError, true);
+			assert.match(r.content[0].text, /^\[validation\]/);
+		}
+		assert.equal(calls.length, 4);
+	});
+
+	test("docs: descriptions cover search, Context7, section and library specs", () => {
+		const { tools } = fakePi();
+		const docs = tools.get("ketch_docs");
+		assert.ok(docs);
+		assert.match(docs.description, /default backend, search/);
+		assert.match(docs.description, /django@5\.2/);
+		assert.match(docs.description, /section/);
+		const props = docs.parameters.properties as Record<string, { description: string }>;
+		assert.match(props.backend.description, /\bsearch\b/);
+		assert.match(props.backend.description, /\bcontext7\b/);
+		assert.doesNotMatch(props.backend.description, /\bauto\b|\bweb \(/);
+		assert.match(docs.description, /anonymous quota/);
+		for (const form of ["name@version", "npm:/pypi:/crates:/go:/github:", "owner/repo"]) {
+			assert.ok(props.library.description.includes(form), `library description names ${form}`);
+		}
+		assert.ok(props.section, "section is a parameter");
+	});
+
 	test("scrape: single url, then every option", async () => {
 		const { tools, calls } = fakePi();
 		await run(tools, "ketch_scrape", { url: "https://example.com" });
@@ -570,10 +611,16 @@ describe("release pin", () => {
 	// The npx fallback must run the release this checkout belongs to. The
 	// chore(release) commit adds the version's CHANGELOG.md heading, so it fails
 	// here until NPX_PACKAGE is bumped in the same commit.
-	test("NPX_PACKAGE matches the newest released version in CHANGELOG.md", () => {
+	//
+	// pi shows the CHANGELOG entries newer than the package.json version it last
+	// recorded, then records that same version, so it has to move with the release
+	// or the whole changelog replays on every launch.
+	test("NPX_PACKAGE and package.json version match the newest released version in CHANGELOG.md", () => {
 		const changelog = readFileSync(new URL("../../../CHANGELOG.md", import.meta.url), "utf8");
 		const newest = changelog.match(/^## \[(\d+\.\d+\.\d+)\]/m)?.[1];
 		assert.ok(newest, "no released version heading found in CHANGELOG.md");
 		assert.equal(NPX_PACKAGE, `ketch-cli@${newest}`, `bump NPX_PACKAGE in plugins/pi/extensions/ketch.ts to ketch-cli@${newest}`);
+		const pkg = JSON.parse(readFileSync(new URL("../../../package.json", import.meta.url), "utf8"));
+		assert.equal(pkg.version, newest, `bump version in package.json to ${newest}`);
 	});
 });

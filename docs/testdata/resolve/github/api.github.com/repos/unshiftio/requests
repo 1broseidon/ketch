@@ -1,0 +1,12 @@
+{
+ "id": 30646192,
+ "name": "requests",
+ "full_name": "unshiftio/requests",
+ "html_url": "https://github.com/unshiftio/requests",
+ "description": "A streaming XHR module for Node.js and browsers.",
+ "fork": false,
+ "homepage": null,
+ "language": "JavaScript",
+ "stargazers_count": 12,
+ "archived": false
+}

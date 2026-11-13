@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+ <meta charset="utf-8">
+ <meta http-equiv="X-UA-Compatible" content="IE=edge">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+ <meta name="ROBOTS" content="ALL" />
+ <meta name="MSSmartTagsPreventParsing" content="true" />
+ <meta name="Copyright" content="Django Software Foundation" />
+ <meta name="keywords" content="Python, Django, framework, open-source" />
+ <meta name="description" content="" />
+ <meta name="fediverse:creator" content="@django@fosstodon.org" />
+ <link rel="apple-touch-icon" href="https://static.djangoproject.com/img/icon-touch.e4872c4da341.png">
+ <link rel="icon" sizes="192x192" href="https://static.djangoproject.com/img/icon-touch.e4872c4da341.png">
+ <link rel="shortcut icon" href="https://static.djangoproject.com/img/favicon.6dbf28c0650e.ico">
+ <meta name="msapplication-TileColor" content="#113228">
+ <meta name="msapplication-TileImage" content="https://static.djangoproject.com/img/icon-tile.b01ac0ef9f67.png">
+ <meta name="theme-color" content="#0C4B33">
+ <meta property="og:title" content="Django" />
+ <meta property="og:description" content="The web framework for perfectionists with deadlines." />
+ <meta property="og:image" content="https://static.djangoproject.com/img/logos/django-logo-negative.1d528e2cb5fb.png" />
+ <meta property="og:image:alt" content="Django logo" />
+ <meta property="og:image:width" content="1200" />
+ <meta property="og:image:height" content="546" />
+ <meta property="og:image:type" content="image/png"/>
+ <meta property="og:url" content="https://www.djangoproject.com/" />
+ <meta property="og:site_name" content="Django Project" />
+ <meta property="twitter:creator" content="djangoproject" />
+ <meta property="twitter:site" content="djangoproject" />
+ <meta property="twitter:card" content="summary">
+ <script async src="https://analytics.python.org/js/pa-vpHLG0R-txTE4LicNIQU7.js"></script>
+ <title>The web framework for perfectionists with deadlines | Django</title>
+ <link rel="stylesheet" href="https://static.djangoproject.com/css/output.3bc08a372066.css" >
+ <script src="https://static.djangoproject.com/js/mod/switch-dark-mode.139625c684db.js"></script>
+ </head>
+ <body id="homepage">
+ <a href="#main-content">Skip to main content</a>
+<header id="top">
+ <div>
+ <a href="https://www.djangoproject.com/">Django</a>
+ <p>The web framework for perfectionists with deadlines.</p>
+ <button>
+ <i aria-hidden="true"></i>
+ <span>Menu</span>
+ </button>
+ <nav aria-labelledby="navigation-header">
+ <span id="navigation-header">Main navigation</span>
+ <ul>
+ <li>
+ <a href="https://www.djangoproject.com/start/overview/">Overview</a>
+ </li>
+ <li>
+ <a href="https://www.djangoproject.com/download/">Download</a>
+ </li>
+ <li>
+ <a href="https://docs.djangoproject.com/">Documentation</a>
+ </li>
+ <li>
+ <a href="https://www.djangoproject.com/weblog/">News</a>
+ </li>
+ <li>
+ <a href="https://github.com/django/django" target="_blank" rel="noopener">Code</a>
+ </li>
+ <li>
+ <a href="https://code.djangoproject.com/">Issues</a>
+ </li>
+ <li>
+ <a href="https://www.djangoproject.com/community/">Community</a>
+ </li>
+ <li>
+ <a href="https://www.djangoproject.com/foundation/">Foundation</a>
+ </li>
+ <li>
+ <a href="https://www.djangoproject.com/fundraising/">&#9829; Donate</a>
+ </li>
+ <li>
+ <a href="https://www.djangoproject.com/sponsor/">Sponsor</a>
+ </li>
+ </ul>
+ </nav>
+ <div>
+<search aria-labelledby="docs-search-label">
+ <form action="https://docs.djangoproject.com/en/6.1/search/">
+ <label id="docs-search-label" for="id_q">Search</label>
+ <input type="search" name="q" placeholder="Search" id="id_q">
+ <input type="hidden" name="category" value="">
+ <button type="submit">
+ <i aria-hidden="true"></i>
+ <span>Search</span>
+ </button>
+ </form>
+</search>
+<button>
+ <div>Toggle theme (current theme: auto)</div>
+ <div>Toggle theme (current theme: light)</div>
+ <div>Toggle theme (current theme: dark)</div>
+ <div>Toggle Light / Dark / Auto color theme</div>
+ <i aria-hidden="true"></i>
+ <i aria-hidden="true"></i>
+ <i aria-hidden="true"></i>
+</button>
+ </div>
+ </div>
+</header>
+ <div id="billboard">
+ </div>
+ <section>
+ <div>
+ <p>
+ <em>Django makes it easier to build better web apps more quickly and with less code.</em>
+ </p>
+ <p>
+ <a href="https://www.djangoproject.com/start/">Get started with Django</a>
+ </p>
+ </div>
+ </section>
+ <div>
+ <main id="main-content">
+ <div>
+ <h1>Meet Django</h1>
+ <p>
+ Django is a high-level Python web framework that encourages rapid development and clean, pragmatic design. Built by experienced developers, it takes care of much of the hassle of web development, so you can focus on writing your app without needing to reinvent the wheel. It’s free and open source.
+ </p>
+ <dl>
+ <dt><i></i> Ridiculously fast.</dt>
+ <dd>
+ <p>Django was designed to help developers take applications from concept to completion as quickly as possible.</p>
+ </dd>
+ <dt><i></i> Reassuringly secure.</dt>
+ <dd>
+ <p>Django takes security seriously and helps developers avoid many common security mistakes.</p>
+ </dd>
+ <dt><i></i> Exceedingly scalable.</dt>
+ <dd>
+ <p>Some of the busiest sites on the web leverage Django’s ability to quickly and flexibly scale.</p>
+ </dd>
+ </dl>
+ <a href="https://www.djangoproject.com/start/overview/">Learn more about Django</a>
+ </div>
+ <div>
+ <h2>Join the Community</h2>
+ <div>
+ <a href="https://forum.djangoproject.com/">
+ <div>
+ <div>
+ </div>
+ <h3>Forum - Post a question</h3>
+ </div>
+ </a>
+ <a href="https://chat.djangoproject.com">
+ <div>
+ <div>
+ </div>
+ <h3>Discord - Chat with us</h3>
+ </div>
+ </a>
+ </div>
+ </div>
+ <a href="#top"><i></i> Back to Top</a>
+ </main>
+ <h2 id="aside-header">Additional Information</h2>
+ <div role="complementary">
+ <h2 id="aside-header">Additional Information</h2>
+ <a href="https://www.djangoproject.com/download/">
+ Download <em>latest release: 6.1.2</em>
+ </a>
+ <a href="https://docs.djangoproject.com/">Django documentation</a>
+ <div>
+ <h3>Support Django!</h3>
+ <div>
+ <img src="https://static.djangoproject.com/img/fundraising-heart.cd6bb84ffd33.svg" alt="Support Django!" />
+ </div>
+ <div>
+ <ul>
+ <li><a href="https://www.djangoproject.com/fundraising/">
+ Ribaguifi donated to the Django Software Foundation to support Django development. Donate today!
+ </a></li>
+ </ul>
+ </div>
+ </div>
+ <h3>Latest news</h3>
+ <ul>
+<li>
+ <h4>
+ <a href="https://www.djangoproject.com/weblog/2026/oct/19/quarterly-contributor-outreach/">Quarterly contributor outreach</a>
+</h4>
+ <p>The Steering Council is reaching out to bring people's attention to a few areas. We have major features we'd like to test and review for 6.2, smaller changes that could use attention and then various New Feature ideas we'd like community input on.</p>
+<span>
+ <span>Featured</span>
+ <span aria-hidden="true">|</span>
+ Posted by <strong>Tim Schilling</strong> on Oct. 19, 2026
+</span>
+</li>
+<li>
+ <h4>
+ <a href="https://www.djangoproject.com/weblog/2026/oct/26/natalia-bidart-planned-short-term-leave/">Natalia Bidart - Planned short-term leave</a>
+</h4>
+ <p>Natalia Bidart will take a three-month break from her Django Fellow duties from November 2026 through January 2027, returning in February.</p>
+<span>
+ Posted by <strong>Natalia Bidart</strong> on Oct. 26, 2026
+</span>
+</li>
+<li>
+ <h4>
+ <a href="https://www.djangoproject.com/weblog/2026/oct/08/django-security-reporting-update/">Django security reporting update</a>
+</h4>
+ <p>We are updating how security issues in Django are reported.</p>
+<span>
+ Posted by <strong>The Django Security Team</strong> on Oct. 8, 2026
+</span>
+</li>
+</ul>
+ <a href="https://www.djangoproject.com/weblog/">More news</a>
+ <h3>New to Django?</h3>
+ <ul>
+ <li><a href="https://docs.djangoproject.com/en/stable/intro/install/">Installation guide</a></li>
+ <li><a href="https://docs.djangoproject.com/en/stable/intro/tutorial01/">Write your first Django app</a></li>
+ </ul>
+ <a href="https://www.djangoproject.com/start/">Getting started with Django</a>
+ <h3>The power of Django</h3>
+ <ul>
+ <li><a href="https://docs.djangoproject.com/en/stable/topics/db/models/">Object-relational mapper</a></li>
+ <li><a href="https://docs.djangoproject.com/en/stable/intro/tutorial02/">Automatic admin interface</a></li>
+ <li><a href="https://docs.djangoproject.com/en/stable/topics/templates/">Robust template system</a></li>
+ <li><a href="https://docs.djangoproject.com/en/stable/topics/i18n/">Quick internationalization</a></li>
+ </ul>
+ <a href="https://www.djangoproject.com/start/overview/">Explore more features</a>
+ <h3>Get involved</h3>
+ <dl>
+ <dt><a href="https://code.djangoproject.com/">Ticket system</a></dt>
+ <dd>
+ Report bugs and make feature requests
+ </dd>
+ <dt><a href="https://dashboard.djangoproject.com/">Development dashboard</a></dt>
+ <dd>
+ see what's currently being worked on
+ </dd>
+ </dl>
+ <a href="https://www.djangoproject.com/community/">Inside the Django community</a>
+ <h3>Get Help</h3>
+ <dl>
+ <dt><a href="https://chat.djangoproject.com" target="_blank">Django Discord Server</a></dt>
+ <dd>
+ Join the Django Discord Community
+ </dd>
+ <dt><a href="https://forum.djangoproject.com/" target="_blank">Official Django Forum</a></dt>
+ <dd>
+ Join the community on the Django Forum.
+ </dd>
+ </dl>
+ <h3>The Django Software Foundation</h3>
+ <dl>
+ <dt><a href="https://www.djangoproject.com/foundation/">About the Foundation</a></dt>
+ <dd>
+ Our non-profit supports the project
+ </dd>
+ <dt><a href="https://www.djangoproject.com/fundraising/">Support Django</a></dt>
+ <dd>
+ Your contribution makes Django stronger
+ </dd>
+ <dt><a href="https://www.djangoproject.com/contact/foundation/">Contact the Django Software Foundation</a></dt>
+ <dd></dd>
+ </dl>
+ <a href="https://www.djangoproject.com/foundation/">More about the DSF</a>
+ </div>
+ </div>
+<footer>
+ <div>
+ <div>
+ <h2>Django Links</h2>
+ <div>
+ <div>
+ <h3>Learn More</h3>
+ <ul>
+ <li><a href="https://www.djangoproject.com/start/overview/">About Django</a></li>
+ <li><a href="https://www.djangoproject.com/start/">Getting Started with Django</a></li>
+ <li><a href="https://www.djangoproject.com/foundation/teams/">Team Organization</a></li>
+ <li><a href="https://www.djangoproject.com/foundation/">Django Software Foundation</a></li>
+ <li><a href="https://www.djangoproject.com/conduct/">Code of Conduct</a></li>
+ <li><a href="https://www.djangoproject.com/diversity/">Diversity Statement</a></li>
+ </ul>
+ </div>
+ <div>
+ <h3>Get Involved</h3>
+ <ul>
+ <li><a href="https://www.djangoproject.com/community/">Join a Group</a></li>
+ <li><a href="https://docs.djangoproject.com/en/dev/internals/contributing/">Contribute
+ to Django</a></li>
+ <li><a
+ href="https://docs.djangoproject.com/en/dev/internals/contributing/bugs-and-features/">Submit
+ a Bug</a></li>
+ <li><a
+ href="https://docs.djangoproject.com/en/dev/internals/security/#reporting-security-issues">Report
+ a Security Issue</a></li>
+ <li><a href="https://www.djangoproject.com/foundation/individual-members/">Individual membership</a></li>
+ </ul>
+ </div>
+ <div>
+ <h3>Get Help</h3>
+ <ul>
+ <li><a href="https://docs.djangoproject.com/en/stable/faq/">Getting Help FAQ</a>
+ </li>
+ <li><a href="https://chat.djangoproject.com" target="_blank">Django Discord</a></li>
+ <li><a href="https://forum.djangoproject.com/" target="_blank">Official Django Forum</a></li>
+ </ul>
+ </div>
+ <div>
+ <h3>Follow Us</h3>
+ <ul>
+ <li><a href="https://github.com/django">GitHub</a></li>
+ <li><a href="https://x.com/djangoproject">X</a></li>
+ <li><a href="https://fosstodon.org/@django" rel="me">Fediverse (Mastodon)</a></li>
+ <li><a href="https://bsky.app/profile/djangoproject.com">Bluesky</a></li>
+ <li><a href="https://www.linkedin.com/company/django-software-foundation">LinkedIn</a></li>
+ <li><a href="https://www.djangoproject.com/rss/weblog/">News RSS</a></li>
+ </ul>
+ </div>
+ <div>
+ <h3>Support Us</h3>
+ <ul>
+ <li><a href="https://www.djangoproject.com/sponsor/">Sponsor Django</a></li>
+ <li><a href="https://www.djangoproject.com/fundraising/">Donate to Django</a></li>
+ <li><a href="https://www.djangoproject.com/foundation/corporate-members/">Corporate membership</a></li>
+ <li><a href="https://django.threadless.com/" target="_blank">Official merchandise store</a></li>
+ <li><a href="https://www.djangoproject.com/foundation/donate/#benevity-giving">Benevity Workplace Giving Program</a></li>
+ <li><a href="https://github.com/sponsors/django" target="_blank" rel="noopener">GitHub Sponsors</a></li>
+ </ul>
+ </div>
+ </div>
+ </div>
+ </div>
+ <div>
+ <div>
+ <div>
+ <a href="https://www.djangoproject.com/">Django</a>
+ </div>
+ <ul>
+ <li>
+ <span>Hosting by</span> <a href="https://www.djangoproject.com/fundraising/#in-kind-donors">In-kind
+ donors</a>
+ </li>
+ <li><span>Design by</span> <a href="https://www.threespot.com">Threespot</a>
+ <span>&amp;</span> <a href="http://andrevv.com/">andrevv</a></li>
+ </ul>
+ <p>&copy; 2005-2026
+ <a href="https://www.djangoproject.com/foundation/"> Django Software
+ Foundation</a> and individual contributors. Django is a
+ <a href="https://www.djangoproject.com/trademarks/">registered
+ trademark</a> of the Django Software Foundation.
+ </p>
+ </div>
+ </div>
+</footer>
+ <script data-main="https://static.djangoproject.com/js/main.8677b21133eb.js" src="https://static.djangoproject.com/js/lib/require.177879fbe7dd.js"></script>
+ <script src="https://static.djangoproject.com/js/djangoproject.ae16178f2b1f.js"></script>
+ </body>
+</html>

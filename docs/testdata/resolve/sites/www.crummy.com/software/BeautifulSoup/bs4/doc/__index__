@@ -1,0 +1,514 @@
+<!doctype html>
+<html><head>
+<title>Beautiful Soup Documentation — Beautiful Soup 4.14.3 documentation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="_static/documentation_options.js?v=620199e5"></script>
+<script src="_static/doctools.js?v=888ff710"></script>
+<script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+</head><body>
+<a href="#beautiful-soup-documentation" title="Link to this heading" class="headerlink">¶</a>
+<a href="http://www.crummy.com/software/BeautifulSoup/" class="reference external">Beautiful Soup</a>
+<a href="http://www.crummy.com/software/BeautifulSoup/bs3/documentation.html" class="reference external">Beautiful Soup 3</a>
+<a href="#porting-code-to-bs4" class="reference internal">Porting code to BS4</a>
+<a href="https://www.crummy.com/software/BeautifulSoup/bs4/doc.zh/" class="reference external">这篇文档当然还有中文版.</a>
+<a href="http://kondou.com/BS4/" class="reference external">外部リンク</a>
+<a href="https://www.crummy.com/software/BeautifulSoup/bs4/doc.ko/" class="reference external">이 문서는 한국어 번역도 가능합니다.</a>
+<a href="https://www.crummy.com/software/BeautifulSoup/bs4/doc.ptbr" class="reference external">Este documento também está disponível em Português do Brasil.</a>
+<a href="https://www.crummy.com/software/BeautifulSoup/bs4/doc.es/" class="reference external">Este documento también está disponible en una traducción al español.</a>
+<a href="https://www.crummy.com/software/BeautifulSoup/bs4/doc.ru/" class="reference external">Эта документация доступна на русском языке.</a>
+<a href="#getting-help" title="Link to this heading" class="headerlink">¶</a>
+<a href="https://groups.google.com/forum/?fromgroups#!forum/beautifulsoup" class="reference external">send mail to the discussion group</a>
+<a href="#diagnose" class="reference internal">what the diagnose() function says</a>
+<a href="#api-documentation" title="Link to this heading" class="headerlink">¶</a>
+<a href="api/modules.html" class="reference internal">traditional API documentation</a>
+<a href="#quick-start" title="Link to this heading" class="headerlink">¶</a>
+<a href="#installing-beautiful-soup" title="Link to this heading" class="headerlink">¶</a>
+<a href="http://www.crummy.com/software/BeautifulSoup/bs3/documentation.html" class="reference external">Beautiful Soup 3</a>
+<a href="http://www.crummy.com/software/BeautifulSoup/download/4.x/" class="reference external">download the Beautiful Soup 4 source tarball</a>
+<a href="#installing-a-parser" title="Link to this heading" class="headerlink">¶</a>
+<a href="http://lxml.de/" class="reference external">lxml parser</a>
+<a href="http://code.google.com/p/html5lib/" class="reference external">html5lib parser</a>
+<a href="#differences-between-parsers" class="reference internal">Differences between parsers</a>
+<a href="#making-the-soup" title="Link to this heading" class="headerlink">¶</a>
+<a href="#id15" class="reference internal">Parsing XML</a>
+<a href="#kinds-of-objects" title="Link to this heading" class="headerlink">¶</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#Comment" title="Comment" class="reference internal">Comment</a>
+<a href="#Tag" title="Link to this definition" class="headerlink">¶</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#navigating-the-tree" class="reference internal">Navigating the tree</a>
+<a href="#searching-the-tree" class="reference internal">Searching the tree</a>
+<a href="#Tag.name" title="Link to this definition" class="headerlink">¶</a>
+<a href="#Tag.attrs" title="Link to this definition" class="headerlink">¶</a>
+<a href="#multi-valued-attributes" title="Link to this heading" class="headerlink">¶</a>
+<a href="#NavigableString" title="Link to this definition" class="headerlink">¶</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#navigating-the-tree" class="reference internal">Navigating the tree</a>
+<a href="#searching-the-tree" class="reference internal">Searching the tree</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#replace-with" class="reference internal">replace_with()</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#navigating-the-tree" class="reference internal">Navigating the tree</a>
+<a href="#searching-the-tree" class="reference internal">Searching the tree</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#navigating-the-tree" class="reference internal">Navigating the tree</a>
+<a href="#searching-the-tree" class="reference internal">Searching the tree</a>
+<a href="#modifying-the-tree" class="reference internal">Modifying the tree</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#special-strings" title="Link to this heading" class="headerlink">¶</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#Comment" title="Comment" class="reference internal">Comment</a>
+<a href="#Comment" title="Link to this definition" class="headerlink">¶</a>
+<a href="#Comment" title="Comment" class="reference internal">Comment</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#Comment" title="Comment" class="reference internal">Comment</a>
+<a href="#for-html-documents" title="Link to this heading" class="headerlink">¶</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#Stylesheet" title="Link to this definition" class="headerlink">¶</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#Script" title="Link to this definition" class="headerlink">¶</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#Template" title="Link to this definition" class="headerlink">¶</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#for-xml-documents" title="Link to this heading" class="headerlink">¶</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#Comment" title="Comment" class="reference internal">Comment</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#Declaration" title="Link to this definition" class="headerlink">¶</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="https://www.w3.org/TR/REC-xml/#sec-prolog-dtd" class="reference external">declaration</a>
+<a href="#Doctype" title="Link to this definition" class="headerlink">¶</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="https://www.w3.org/TR/REC-xml/#dt-doctype" class="reference external">document type declaration</a>
+<a href="#CData" title="Link to this definition" class="headerlink">¶</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="https://www.w3.org/TR/REC-xml/#sec-cdata-sect" class="reference external">CData section</a>
+<a href="#ProcessingInstruction" title="Link to this definition" class="headerlink">¶</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="https://www.w3.org/TR/REC-xml/#sec-pi" class="reference external">XML processing instruction</a>
+<a href="#navigating-the-tree" title="Link to this heading" class="headerlink">¶</a>
+<a href="#going-down" title="Link to this heading" class="headerlink">¶</a>
+<a href="#navigating-using-tag-names" title="Link to this heading" class="headerlink">¶</a>
+<a href="#searching-the-tree" class="reference internal">Searching the tree</a>
+<a href="#contents-and-children" title="Link to this heading" class="headerlink">¶</a>
+<a href="#modifying-the-tree" class="reference internal">Modifying the tree</a>
+<a href="#descendants" title="Link to this heading" class="headerlink">¶</a>
+<a href="#string" title="Link to this heading" class="headerlink">¶</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#strings-and-stripped-strings" title="Link to this heading" class="headerlink">¶</a>
+<a href="#going-up" title="Link to this heading" class="headerlink">¶</a>
+<a href="#parent" title="Link to this heading" class="headerlink">¶</a>
+<a href="#parents" title="Link to this heading" class="headerlink">¶</a>
+<a href="#self-and-parents" title="Link to this heading" class="headerlink">¶</a>
+<a href="#going-sideways" title="Link to this heading" class="headerlink">¶</a>
+<a href="#next-sibling-and-previous-sibling" title="Link to this heading" class="headerlink">¶</a>
+<a href="#next-siblings-and-previous-siblings" title="Link to this heading" class="headerlink">¶</a>
+<a href="#kwargs" class="reference internal">The keyword arguments</a>
+<a href="#going-back-and-forth" title="Link to this heading" class="headerlink">¶</a>
+<a href="#next-element-and-previous-element" title="Link to this heading" class="headerlink">¶</a>
+<a href="#next-elements-and-previous-elements" title="Link to this heading" class="headerlink">¶</a>
+<a href="#searching-the-tree" title="Link to this heading" class="headerlink">¶</a>
+<a href="#kinds-of-filters" title="Link to this heading" class="headerlink">¶</a>
+<a href="#a-string" title="Link to this heading" class="headerlink">¶</a>
+<a href="#a-regular-expression" title="Link to this heading" class="headerlink">¶</a>
+<a href="#true" title="Link to this heading" class="headerlink">¶</a>
+<a href="#a-function" title="Link to this heading" class="headerlink">¶</a>
+<a href="#a-list" title="Link to this heading" class="headerlink">¶</a>
+<a href="#find-all" title="Link to this heading" class="headerlink">¶</a>
+<a href="#name" class="reference internal">name</a>
+<a href="#attrs" class="reference internal">attrs</a>
+<a href="#recursive" class="reference internal">recursive</a>
+<a href="#id11" class="reference internal">string</a>
+<a href="#limit" class="reference internal">limit</a>
+<a href="#kwargs" class="reference internal">**kwargs</a>
+<a href="#kinds-of-filters" class="reference internal">Kinds of filters</a>
+<a href="#the-name-argument" title="Link to this heading" class="headerlink">¶</a>
+<a href="#kinds-of-filters" class="reference internal">Kinds of filters</a>
+<a href="#a-string" class="reference internal">a string</a>
+<a href="#a-regular-expression" class="reference internal">a regular expression</a>
+<a href="#a-list" class="reference internal">a list</a>
+<a href="#a-function" class="reference internal">a function</a>
+<a href="#the-value-true" class="reference internal">the value True</a>
+<a href="#the-keyword-arguments" title="Link to this heading" class="headerlink">¶</a>
+<a href="#a-string" class="reference internal">a string</a>
+<a href="#a-regular-expression" class="reference internal">a regular expression</a>
+<a href="#a-list" class="reference internal">a list</a>
+<a href="#a-function" class="reference internal">a function</a>
+<a href="#the-value-true" class="reference internal">the value True</a>
+<a href="#searching-by-css-class" title="Link to this heading" class="headerlink">¶</a>
+<a href="#multivalue" class="reference internal">Remember</a>
+<a href="#css-selectors" class="reference internal">described here</a>
+<a href="#the-string-argument" title="Link to this heading" class="headerlink">¶</a>
+<a href="#a-string" class="reference internal">a string</a>
+<a href="#a-regular-expression" class="reference internal">a regular expression</a>
+<a href="#a-function" class="reference internal">a function</a>
+<a href="#a-list" class="reference internal">a list</a>
+<a href="#the-value-true" class="reference internal">the value True</a>
+<a href="#the-limit-argument" title="Link to this heading" class="headerlink">¶</a>
+<a href="#the-recursive-argument" title="Link to this heading" class="headerlink">¶</a>
+<a href="#calling-a-tag-is-like-calling-find-all" title="Link to this heading" class="headerlink">¶</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#find" title="Link to this heading" class="headerlink">¶</a>
+<a href="#name" class="reference internal">name</a>
+<a href="#attrs" class="reference internal">attrs</a>
+<a href="#recursive" class="reference internal">recursive</a>
+<a href="#id11" class="reference internal">string</a>
+<a href="#kwargs" class="reference internal">**kwargs</a>
+<a href="#navigating-using-tag-names" class="reference internal">Navigating using tag names</a>
+<a href="#find-parents-and-find-parent" title="Link to this heading" class="headerlink">¶</a>
+<a href="#name" class="reference internal">name</a>
+<a href="#attrs" class="reference internal">attrs</a>
+<a href="#id11" class="reference internal">string</a>
+<a href="#limit" class="reference internal">limit</a>
+<a href="#kwargs" class="reference internal">**kwargs</a>
+<a href="#name" class="reference internal">name</a>
+<a href="#attrs" class="reference internal">attrs</a>
+<a href="#id11" class="reference internal">string</a>
+<a href="#kwargs" class="reference internal">**kwargs</a>
+<a href="#parent" class="reference internal">.parent</a>
+<a href="#parents" class="reference internal">.parents</a>
+<a href="#find-next-siblings-and-find-next-sibling" title="Link to this heading" class="headerlink">¶</a>
+<a href="#name" class="reference internal">name</a>
+<a href="#attrs" class="reference internal">attrs</a>
+<a href="#id11" class="reference internal">string</a>
+<a href="#limit" class="reference internal">limit</a>
+<a href="#kwargs" class="reference internal">**kwargs</a>
+<a href="#name" class="reference internal">name</a>
+<a href="#attrs" class="reference internal">attrs</a>
+<a href="#id11" class="reference internal">string</a>
+<a href="#kwargs" class="reference internal">**kwargs</a>
+<a href="#sibling-generators" class="reference internal">.next_siblings</a>
+<a href="#find-previous-siblings-and-find-previous-sibling" title="Link to this heading" class="headerlink">¶</a>
+<a href="#name" class="reference internal">name</a>
+<a href="#attrs" class="reference internal">attrs</a>
+<a href="#id11" class="reference internal">string</a>
+<a href="#limit" class="reference internal">limit</a>
+<a href="#kwargs" class="reference internal">**kwargs</a>
+<a href="#name" class="reference internal">name</a>
+<a href="#attrs" class="reference internal">attrs</a>
+<a href="#id11" class="reference internal">string</a>
+<a href="#kwargs" class="reference internal">**kwargs</a>
+<a href="#sibling-generators" class="reference internal">.previous_siblings</a>
+<a href="#find-all-next-and-find-next" title="Link to this heading" class="headerlink">¶</a>
+<a href="#name" class="reference internal">name</a>
+<a href="#attrs" class="reference internal">attrs</a>
+<a href="#id11" class="reference internal">string</a>
+<a href="#limit" class="reference internal">limit</a>
+<a href="#kwargs" class="reference internal">**kwargs</a>
+<a href="#name" class="reference internal">name</a>
+<a href="#attrs" class="reference internal">attrs</a>
+<a href="#id11" class="reference internal">string</a>
+<a href="#kwargs" class="reference internal">**kwargs</a>
+<a href="#element-generators" class="reference internal">.next_elements</a>
+<a href="#document-order" class="reference internal">document order</a>
+<a href="#find-all-previous-and-find-previous" title="Link to this heading" class="headerlink">¶</a>
+<a href="#name" class="reference internal">name</a>
+<a href="#attrs" class="reference internal">attrs</a>
+<a href="#id11" class="reference internal">string</a>
+<a href="#limit" class="reference internal">limit</a>
+<a href="#kwargs" class="reference internal">**kwargs</a>
+<a href="#name" class="reference internal">name</a>
+<a href="#attrs" class="reference internal">attrs</a>
+<a href="#id11" class="reference internal">string</a>
+<a href="#kwargs" class="reference internal">**kwargs</a>
+<a href="#element-generators" class="reference internal">.previous_elements</a>
+<a href="#document-order" class="reference internal">document order</a>
+<a href="#css-selectors-through-the-css-property" title="Link to this heading" class="headerlink">¶</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="https://facelessuser.github.io/soupsieve/" class="reference external">Soup Sieve</a>
+<a href="https://facelessuser.github.io/soupsieve/selectors/" class="reference external">all the currently supported CSS selectors</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#advanced-soup-sieve-features" title="Link to this heading" class="headerlink">¶</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="https://facelessuser.github.io/soupsieve/" class="reference external">the Soup Sieve documentation</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#namespaces-in-css-selectors" title="Link to this heading" class="headerlink">¶</a>
+<a href="#history-of-css-selector-support" title="Link to this heading" class="headerlink">¶</a>
+<a href="#modifying-the-tree" title="Link to this heading" class="headerlink">¶</a>
+<a href="#changing-tag-names-and-attributes" title="Link to this heading" class="headerlink">¶</a>
+<a href="#Tag.attrs" title="Tag.attrs" class="reference internal">Tag.attrs</a>
+<a href="#modifying-string" title="Link to this heading" class="headerlink">¶</a>
+<a href="#append" title="Link to this heading" class="headerlink">¶</a>
+<a href="#extend" title="Link to this heading" class="headerlink">¶</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#navigablestring-and-new-tag" title="Link to this heading" class="headerlink">¶</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#insert" title="Link to this heading" class="headerlink">¶</a>
+<a href="#insert-before-and-insert-after" title="Link to this heading" class="headerlink">¶</a>
+<a href="#clear" title="Link to this heading" class="headerlink">¶</a>
+<a href="#extract" title="Link to this heading" class="headerlink">¶</a>
+<a href="#decompose" title="Link to this heading" class="headerlink">¶</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#replace-with" title="Link to this heading" class="headerlink">¶</a>
+<a href="#wrap" title="Link to this heading" class="headerlink">¶</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#unwrap" title="Link to this heading" class="headerlink">¶</a>
+<a href="#smooth" title="Link to this heading" class="headerlink">¶</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#output" title="Link to this heading" class="headerlink">¶</a>
+<a href="#pretty-printing" title="Link to this heading" class="headerlink">¶</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#non-pretty-printing" title="Link to this heading" class="headerlink">¶</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#encodings" class="reference internal">Encodings</a>
+<a href="#output-formatters" title="Link to this heading" class="headerlink">¶</a>
+<a href="#formatter-objects" title="Link to this heading" class="headerlink">¶</a>
+<a href="#HTMLFormatter" title="Link to this definition" class="headerlink">¶</a>
+<a href="#XMLFormatter" title="Link to this definition" class="headerlink">¶</a>
+<a href="#writing-your-own-formatter" title="Link to this heading" class="headerlink">¶</a>
+<a href="#HTMLFormatter" title="HTMLFormatter" class="reference internal">HTMLFormatter</a>
+<a href="#XMLFormatter" title="XMLFormatter" class="reference internal">XMLFormatter</a>
+<a href="#CData" title="CData" class="reference internal">CData</a>
+<a href="#get-text" title="Link to this heading" class="headerlink">¶</a>
+<a href="#string-generators" class="reference internal">.stripped_strings</a>
+<a href="#specifying-the-parser-to-use" title="Link to this heading" class="headerlink">¶</a>
+<a href="#installing-a-parser" class="reference internal">Installing a parser</a>
+<a href="#differences-between-parsers" title="Link to this heading" class="headerlink">¶</a>
+<a href="#encodings" title="Link to this heading" class="headerlink">¶</a>
+<a href="#unicode-dammit" class="reference internal">Unicode, Dammit</a>
+<a href="#output-encoding" title="Link to this heading" class="headerlink">¶</a>
+<a href="#unicode-dammit" title="Link to this heading" class="headerlink">¶</a>
+<a href="#smart-quotes" title="Link to this heading" class="headerlink">¶</a>
+<a href="#inconsistent-encodings" title="Link to this heading" class="headerlink">¶</a>
+<a href="#line-numbers" title="Link to this heading" class="headerlink">¶</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#comparing-objects-for-equality" title="Link to this heading" class="headerlink">¶</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#copying-beautiful-soup-objects" title="Link to this heading" class="headerlink">¶</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#low-level-search-interface" title="Link to this heading" class="headerlink">¶</a>
+<a href="#searching-the-tree" class="reference internal">Searching the tree</a>
+<a href="#custom-element-filtering" title="Link to this heading" class="headerlink">¶</a>
+<a href="#ElementFilter" title="Link to this definition" class="headerlink">¶</a>
+<a href="#ElementFilter" title="ElementFilter" class="reference internal">ElementFilter</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#ElementFilter" title="ElementFilter" class="reference internal">ElementFilter</a>
+<a href="#ElementFilter" title="ElementFilter" class="reference internal">ElementFilter</a>
+<a href="#searching-the-tree" class="reference internal">Searching the tree</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#ElementFilter" title="ElementFilter" class="reference internal">ElementFilter</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#custom-element-iteration" title="Link to this heading" class="headerlink">¶</a>
+<a href="#ElementFilter.filter" title="Link to this definition" class="headerlink">¶</a>
+<a href="#ElementFilter" title="ElementFilter" class="reference internal">ElementFilter</a>
+<a href="#ElementFilter.filter" title="ElementFilter.filter" class="reference internal">ElementFilter.filter()</a>
+<a href="#ElementFilter.filter" title="ElementFilter.filter" class="reference internal">ElementFilter.filter()</a>
+<a href="#ElementFilter.filter" title="ElementFilter.filter" class="reference internal">ElementFilter.filter()</a>
+<a href="#advanced-parser-customization" title="Link to this heading" class="headerlink">¶</a>
+<a href="#parsing-only-part-of-a-document" title="Link to this heading" class="headerlink">¶</a>
+<a href="#SoupStrainer" title="SoupStrainer" class="reference internal">SoupStrainer</a>
+<a href="#SoupStrainer" title="SoupStrainer" class="reference internal">SoupStrainer</a>
+<a href="#SoupStrainer" title="Link to this definition" class="headerlink">¶</a>
+<a href="#SoupStrainer" title="SoupStrainer" class="reference internal">SoupStrainer</a>
+<a href="#searching-the-tree" class="reference internal">Searching the tree</a>
+<a href="#name" class="reference internal">name</a>
+<a href="#attrs" class="reference internal">attrs</a>
+<a href="#id11" class="reference internal">string</a>
+<a href="#kwargs" class="reference internal">**kwargs</a>
+<a href="#SoupStrainer" title="SoupStrainer" class="reference internal">SoupStrainer</a>
+<a href="#SoupStrainer" title="SoupStrainer" class="reference internal">SoupStrainer</a>
+<a href="#SoupStrainer" title="SoupStrainer" class="reference internal">SoupStrainer</a>
+<a href="#SoupStrainer" title="SoupStrainer" class="reference internal">SoupStrainer</a>
+<a href="#SoupStrainer" title="SoupStrainer" class="reference internal">SoupStrainer</a>
+<a href="#SoupStrainer" title="SoupStrainer" class="reference internal">SoupStrainer</a>
+<a href="#SoupStrainer" title="SoupStrainer" class="reference internal">SoupStrainer</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="https://docs.python.org/3/glossary.html#term-class" title="(in Python v3.14)" class="reference external">class</a>
+<a href="#customizing-multi-valued-attributes" title="Link to this heading" class="headerlink">¶</a>
+<a href="#handling-duplicate-attributes" title="Link to this heading" class="headerlink">¶</a>
+<a href="#instantiating-custom-subclasses" title="Link to this heading" class="headerlink">¶</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#NavigableString" title="NavigableString" class="reference internal">NavigableString</a>
+<a href="#troubleshooting" title="Link to this heading" class="headerlink">¶</a>
+<a href="#diagnose" title="Link to this heading" class="headerlink">¶</a>
+<a href="#errors-when-parsing-a-document" title="Link to this heading" class="headerlink">¶</a>
+<a href="#installing-a-parser" class="reference internal">Installing a parser</a>
+<a href="#version-mismatch-problems" title="Link to this heading" class="headerlink">¶</a>
+<a href="#parsing-xml" title="Link to this heading" class="headerlink">¶</a>
+<a href="#parser-installation" class="reference internal">have lxml installed</a>
+<a href="#other-parser-problems" title="Link to this heading" class="headerlink">¶</a>
+<a href="#differences-between-parsers" class="reference internal">Differences between parsers</a>
+<a href="http://www.w3.org/TR/html5/syntax.html#syntax" class="reference external">HTML tags and attributes are case-insensitive</a>
+<a href="#parsing-xml" class="reference internal">parse the document as XML.</a>
+<a href="#miscellaneous" title="Link to this heading" class="headerlink">¶</a>
+<a href="http://wiki.python.org/moin/PrintFails" class="reference external">this page on the Python wiki</a>
+<a href="#improving-performance" title="Link to this heading" class="headerlink">¶</a>
+<a href="http://lxml.de/" class="reference external">lxml</a>
+<a href="#parser-installation" class="reference internal">start</a>
+<a href="http://pypi.python.org/pypi/cchardet/" class="reference external">cchardet</a>
+<a href="#parsing-only-part-of-a-document" class="reference internal">Parsing only part of a document</a>
+<a href="#translating-this-documentation" title="Link to this heading" class="headerlink">¶</a>
+<a href="#id16" title="Link to this heading" class="headerlink">¶</a>
+<a href="https://www.crummy.com/software/BeautifulSoup/download/3.x/BeautifulSoup-3.2.2.tar.gz" class="reference external">a tarball of the final release, 3.2.2</a>
+<a href="http://www.crummy.com/software/BeautifulSoup/bs3/documentation.html" class="reference external">The documentation for Beautiful Soup 3 is archived online</a>
+<a href="#porting-code-to-bs4" title="Link to this heading" class="headerlink">¶</a>
+<a href="http://www.python.org/dev/peps/pep-0008/" class="reference external">PEP 8 compliance</a>
+<a href="#you-need-a-parser" title="Link to this heading" class="headerlink">¶</a>
+<a href="#installing-a-parser" class="reference internal">Installing a parser</a>
+<a href="#property-names" title="Link to this heading" class="headerlink">¶</a>
+<a href="#generators" title="Link to this heading" class="headerlink">¶</a>
+<a href="#xml" title="Link to this heading" class="headerlink">¶</a>
+<a href="#entities" title="Link to this heading" class="headerlink">¶</a>
+<a href="#unicode-dammit" class="reference internal">Unicode, Dammit</a>
+<a href="#output-formatters" class="reference internal">output formatter</a>
+<a href="#id17" title="Link to this heading" class="headerlink">¶</a>
+<a href="#string" class="reference internal">Tag.string</a>
+<a href="#multi-valued-attributes" class="reference internal">Multi-valued attributes</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#Tag" title="Tag" class="reference internal">Tag</a>
+<a href="#id11" class="reference internal">string</a>
+<a href="#name" class="reference internal">name</a>
+<a href="#string" class="reference internal">Tag.string</a>
+<a href="#id11" class="reference internal">string</a>
+<a href="#">Table of Contents</a>
+<a href="#" class="reference internal">Beautiful Soup Documentation</a>
+<a href="#getting-help" class="reference internal">Getting help</a>
+<a href="#api-documentation" class="reference internal">API documentation</a>
+<a href="#quick-start" class="reference internal">Quick Start</a>
+<a href="#installing-beautiful-soup" class="reference internal">Installing Beautiful Soup</a>
+<a href="#installing-a-parser" class="reference internal">Installing a parser</a>
+<a href="#making-the-soup" class="reference internal">Making the soup</a>
+<a href="#kinds-of-objects" class="reference internal">Kinds of objects</a>
+<a href="#Tag" class="reference internal">Tag</a>
+<a href="#Tag.name" class="reference internal">Tag.name</a>
+<a href="#Tag.attrs" class="reference internal">Tag.attrs</a>
+<a href="#NavigableString" class="reference internal">NavigableString</a>
+<a href="#special-strings" class="reference internal">Special strings</a>
+<a href="#Comment" class="reference internal">Comment</a>
+<a href="#for-html-documents" class="reference internal">For HTML documents</a>
+<a href="#Stylesheet" class="reference internal">Stylesheet</a>
+<a href="#Script" class="reference internal">Script</a>
+<a href="#Template" class="reference internal">Template</a>
+<a href="#for-xml-documents" class="reference internal">For XML documents</a>
+<a href="#Declaration" class="reference internal">Declaration</a>
+<a href="#Doctype" class="reference internal">Doctype</a>
+<a href="#CData" class="reference internal">CData</a>
+<a href="#ProcessingInstruction" class="reference internal">ProcessingInstruction</a>
+<a href="#navigating-the-tree" class="reference internal">Navigating the tree</a>
+<a href="#going-down" class="reference internal">Going down</a>
+<a href="#navigating-using-tag-names" class="reference internal">Navigating using tag names</a>
+<a href="#contents-and-children" class="reference internal">.contents and .children</a>
+<a href="#descendants" class="reference internal">.descendants</a>
+<a href="#string" class="reference internal">.string</a>
+<a href="#strings-and-stripped-strings" class="reference internal">.strings and stripped_strings</a>
+<a href="#going-up" class="reference internal">Going up</a>
+<a href="#parent" class="reference internal">.parent</a>
+<a href="#parents" class="reference internal">.parents</a>
+<a href="#self-and-parents" class="reference internal">.self_and_parents</a>
+<a href="#going-sideways" class="reference internal">Going sideways</a>
+<a href="#next-sibling-and-previous-sibling" class="reference internal">.next_sibling and .previous_sibling</a>
+<a href="#next-siblings-and-previous-siblings" class="reference internal">.next_siblings and .previous_siblings</a>
+<a href="#going-back-and-forth" class="reference internal">Going back and forth</a>
+<a href="#next-element-and-previous-element" class="reference internal">.next_element and .previous_element</a>
+<a href="#next-elements-and-previous-elements" class="reference internal">.next_elements and .previous_elements</a>
+<a href="#searching-the-tree" class="reference internal">Searching the tree</a>
+<a href="#kinds-of-filters" class="reference internal">Kinds of filters</a>
+<a href="#a-string" class="reference internal">A string</a>
+<a href="#a-regular-expression" class="reference internal">A regular expression</a>
+<a href="#true" class="reference internal">True</a>
+<a href="#a-function" class="reference internal">A function</a>
+<a href="#a-list" class="reference internal">A list</a>
+<a href="#find-all" class="reference internal">find_all()</a>
+<a href="#the-name-argument" class="reference internal">The name argument</a>
+<a href="#the-keyword-arguments" class="reference internal">The keyword arguments</a>
+<a href="#searching-by-css-class" class="reference internal">Searching by CSS class</a>
+<a href="#the-string-argument" class="reference internal">The string argument</a>
+<a href="#the-limit-argument" class="reference internal">The limit argument</a>
+<a href="#the-recursive-argument" class="reference internal">The recursive argument</a>
+<a href="#calling-a-tag-is-like-calling-find-all" class="reference internal">Calling a tag is like calling find_all()</a>
+<a href="#find" class="reference internal">find()</a>
+<a href="#find-parents-and-find-parent" class="reference internal">find_parents() and find_parent()</a>
+<a href="#find-next-siblings-and-find-next-sibling" class="reference internal">find_next_siblings() and find_next_sibling()</a>
+<a href="#find-previous-siblings-and-find-previous-sibling" class="reference internal">find_previous_siblings() and find_previous_sibling()</a>
+<a href="#find-all-next-and-find-next" class="reference internal">find_all_next() and find_next()</a>
+<a href="#find-all-previous-and-find-previous" class="reference internal">find_all_previous() and find_previous()</a>
+<a href="#css-selectors-through-the-css-property" class="reference internal">CSS selectors through the .css property</a>
+<a href="#advanced-soup-sieve-features" class="reference internal">Advanced Soup Sieve features</a>
+<a href="#namespaces-in-css-selectors" class="reference internal">Namespaces in CSS selectors</a>
+<a href="#history-of-css-selector-support" class="reference internal">History of CSS selector support</a>
+<a href="#modifying-the-tree" class="reference internal">Modifying the tree</a>
+<a href="#changing-tag-names-and-attributes" class="reference internal">Changing tag names and attributes</a>
+<a href="#modifying-string" class="reference internal">Modifying .string</a>
+<a href="#append" class="reference internal">append()</a>
+<a href="#extend" class="reference internal">extend()</a>
+<a href="#navigablestring-and-new-tag" class="reference internal">NavigableString() and .new_tag()</a>
+<a href="#insert" class="reference internal">insert()</a>
+<a href="#insert-before-and-insert-after" class="reference internal">insert_before() and insert_after()</a>
+<a href="#clear" class="reference internal">clear()</a>
+<a href="#extract" class="reference internal">extract()</a>
+<a href="#decompose" class="reference internal">decompose()</a>
+<a href="#replace-with" class="reference internal">replace_with()</a>
+<a href="#wrap" class="reference internal">wrap()</a>
+<a href="#unwrap" class="reference internal">unwrap()</a>
+<a href="#smooth" class="reference internal">smooth()</a>
+<a href="#output" class="reference internal">Output</a>
+<a href="#pretty-printing" class="reference internal">Pretty-printing</a>
+<a href="#non-pretty-printing" class="reference internal">Non-pretty printing</a>
+<a href="#output-formatters" class="reference internal">Output formatters</a>
+<a href="#formatter-objects" class="reference internal">Formatter objects</a>
+<a href="#HTMLFormatter" class="reference internal">HTMLFormatter</a>
+<a href="#XMLFormatter" class="reference internal">XMLFormatter</a>
+<a href="#writing-your-own-formatter" class="reference internal">Writing your own formatter</a>
+<a href="#get-text" class="reference internal">get_text()</a>
+<a href="#specifying-the-parser-to-use" class="reference internal">Specifying the parser to use</a>
+<a href="#differences-between-parsers" class="reference internal">Differences between parsers</a>
+<a href="#encodings" class="reference internal">Encodings</a>
+<a href="#output-encoding" class="reference internal">Output encoding</a>
+<a href="#unicode-dammit" class="reference internal">Unicode, Dammit</a>
+<a href="#smart-quotes" class="reference internal">Smart quotes</a>
+<a href="#inconsistent-encodings" class="reference internal">Inconsistent encodings</a>
+<a href="#line-numbers" class="reference internal">Line numbers</a>
+<a href="#comparing-objects-for-equality" class="reference internal">Comparing objects for equality</a>
+<a href="#copying-beautiful-soup-objects" class="reference internal">Copying Beautiful Soup objects</a>
+<a href="#low-level-search-interface" class="reference internal">Low-level search interface</a>
+<a href="#custom-element-filtering" class="reference internal">Custom element filtering</a>
+<a href="#ElementFilter" class="reference internal">ElementFilter</a>
+<a href="#custom-element-iteration" class="reference internal">Custom element iteration</a>
+<a href="#ElementFilter.filter" class="reference internal">ElementFilter.filter()</a>
+<a href="#advanced-parser-customization" class="reference internal">Advanced parser customization</a>
+<a href="#parsing-only-part-of-a-document" class="reference internal">Parsing only part of a document</a>
+<a href="#SoupStrainer" class="reference internal">SoupStrainer</a>
+<a href="#customizing-multi-valued-attributes" class="reference internal">Customizing multi-valued attributes</a>
+<a href="#handling-duplicate-attributes" class="reference internal">Handling duplicate attributes</a>
+<a href="#instantiating-custom-subclasses" class="reference internal">Instantiating custom subclasses</a>
+<a href="#troubleshooting" class="reference internal">Troubleshooting</a>
+<a href="#diagnose" class="reference internal">diagnose()</a>
+<a href="#errors-when-parsing-a-document" class="reference internal">Errors when parsing a document</a>
+<a href="#version-mismatch-problems" class="reference internal">Version mismatch problems</a>
+<a href="#parsing-xml" class="reference internal">Parsing XML</a>
+<a href="#other-parser-problems" class="reference internal">Other parser problems</a>
+<a href="#miscellaneous" class="reference internal">Miscellaneous</a>
+<a href="#improving-performance" class="reference internal">Improving Performance</a>
+<a href="#translating-this-documentation" class="reference internal">Translating this documentation</a>
+<a href="#id16" class="reference internal">Beautiful Soup 3</a>
+<a href="#porting-code-to-bs4" class="reference internal">Porting code to BS4</a>
+<a href="#you-need-a-parser" class="reference internal">You need a parser</a>
+<a href="#property-names" class="reference internal">Property names</a>
+<a href="#generators" class="reference internal">Generators</a>
+<a href="#xml" class="reference internal">XML</a>
+<a href="#entities" class="reference internal">Entities</a>
+<a href="#id17" class="reference internal">Miscellaneous</a>
+<a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+<a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+<a href="_sources/index.rst.txt">Page source</a>
+</body></html>

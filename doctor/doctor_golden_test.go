@@ -45,7 +45,9 @@ func TestRegistryDoctorCompatibilityGolden(t *testing.T) {
 	assertDoctorGolden(t, data)
 
 	for _, c := range checks {
-		wantRequired := c.Backend == cfg.Backend || c.Backend == cfg.CodeBackend || c.Backend == cfg.DocsBackend
+		// docs_backend is retired and a fresh config has none: search is
+		// every docs call's backend, so its check is the required one.
+		wantRequired := c.Backend == cfg.Backend || c.Backend == cfg.CodeBackend || c.Surface == "docs" && c.Backend == "search"
 		if c.Required != wantRequired {
 			t.Errorf("required changed for %s", c.Backend)
 		}

@@ -38,6 +38,7 @@ type configInfo struct {
 	ExtractMode                        string             `json:"extract_mode" order:"26"` // effective extraction mode: clean (default) or complete
 	CodeBackend                        string             `json:"code_backend" order:"21"`
 	DocsBackend                        string             `json:"docs_backend" order:"22"`
+	DocsBackendNote                    string             `json:"docs_backend_note" order:"22"` // the key is retired (docs.RetiredDocsBackend)
 	URLRewrites                        []urlrewrite.Rule  `json:"url_rewrites,omitempty" order:"27"`
 	SPAMarkers                         []string           `json:"spa_markers,omitempty" order:"28"`
 	MCPTools                           []string           `json:"mcp_tools" order:"29"` // effective set `ketch mcp serve` will publish
@@ -112,7 +113,8 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 		UserAgent:                          effectiveUserAgent(c),
 		ExtractMode:                        effectiveExtractMode(c),
 		CodeBackend:                        c.CodeBackend,
-		DocsBackend:                        c.DocsBackend,
+		DocsBackend:                        docs.SearchBackend, // every call's; a stored value is ignored
+		DocsBackendNote:                    docs.RetiredDocsBackend,
 		URLRewrites:                        c.URLRewrites,
 		SPAMarkers:                         c.SPAMarkers,
 		MCPTools:                           effectiveMCPTools(c),
@@ -242,7 +244,9 @@ func applyConfigSet(c *config.Config, key, value string) error {
 	case "code_backend":
 		return setBackend(&c.CodeBackend, "code", value, func(id string) bool { _, ok := code.Lookup(id); return ok }, config.AvailableCodeBackends())
 	case "docs_backend":
-		return setBackend(&c.DocsBackend, "docs", value, func(id string) bool { _, ok := docs.Lookup(id); return ok }, config.AvailableDocBackends())
+		// Retired: search is every call's docs backend and Context7 is asked
+		// for per call. Nothing is stored, and the file is not rewritten.
+		return exitErrf(ExitValidation, "%s", docs.RetiredDocsBackend)
 	case "url_rewrites":
 		return setURLRewrites(c, value)
 	case "spa_markers":

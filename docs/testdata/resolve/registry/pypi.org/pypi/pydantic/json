@@ -1,0 +1,16 @@
+{
+ "info": {
+  "name": "pydantic",
+  "version": "2.14.1",
+  "summary": "Data validation using Python type hints",
+  "home_page": null,
+  "docs_url": null,
+  "project_urls": {
+   "Changelog": "https://pydantic.dev/docs/validation/latest/get-started/changelog/",
+   "Documentation": "https://pydantic.dev/docs/validation/latest/get-started/",
+   "Funding": "https://github.com/sponsors/samuelcolvin",
+   "Homepage": "https://github.com/pydantic/pydantic",
+   "Source": "https://github.com/pydantic/pydantic"
+  }
+ }
+}

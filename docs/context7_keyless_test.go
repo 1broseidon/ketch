@@ -147,7 +147,7 @@ func TestContext7RateLimited(t *testing.T) {
 				if !errors.As(err, &rl) {
 					t.Fatalf("%s: %v, want a *RateLimitError", op, err)
 				}
-				if errors.Is(err, ErrNotFound) {
+				if errors.Is(err, ErrNotFound) || errors.Is(err, ErrLibraryRequired) {
 					t.Errorf("%s: a rate limit must classify as upstream, got %v", op, err)
 				}
 				for _, want := range tc.want {

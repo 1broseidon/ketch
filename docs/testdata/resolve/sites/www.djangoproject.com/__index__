@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The web framework for perfectionists with deadlines | Django</title>
+<meta name="description" content="The web framework for perfectionists with deadlines.">
+<meta property="og:title" content="Django">
+</head>
+<body>
+<header><nav>
+<a href="https://www.djangoproject.com/start/overview/">Overview</a>
+<a href="https://www.djangoproject.com/download/">Download</a>
+<a href="https://docs.djangoproject.com/">Documentation</a>
+<a href="https://www.djangoproject.com/weblog/">News</a>
+<a href="https://github.com/django/django">Code</a>
+</nav></header>
+<main>
+<h1>Django makes it easier to build better web apps more quickly and with less code.</h1>
+<a href="https://docs.djangoproject.com/en/stable/intro/install/">Installation guide</a>
+<a href="https://docs.djangoproject.com/en/stable/intro/tutorial01/">Write your first Django app</a>
+<a href="https://docs.djangoproject.com/en/stable/topics/db/models/">Object-relational mapper</a>
+</main>
+<footer><a href="https://github.com/django">GitHub</a> <a href="https://github.com/sponsors/django">GitHub Sponsors</a></footer>
+</body>
+</html>

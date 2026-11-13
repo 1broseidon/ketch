@@ -1,0 +1,12 @@
+{
+ "id": 10270250,
+ "name": "react",
+ "full_name": "react/react",
+ "html_url": "https://github.com/react/react",
+ "description": "The library for web and native user interfaces.",
+ "fork": false,
+ "homepage": "https://react.dev",
+ "language": "JavaScript",
+ "stargazers_count": 251894,
+ "archived": false
+}

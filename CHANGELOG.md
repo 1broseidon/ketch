@@ -9,6 +9,71 @@ verbatim on the GitHub release. Versions follow
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-11-12
+
+**`ketch docs` answers from the documentation itself, with no key.** Ask a question and ketch searches the web, picks the documentation site the results agree on, reads up to 24 of its pages within 45 seconds, and prints the pieces of their sections that match: paragraphs, list items, code blocks and table rows, verbatim, grouped by section, best first, in about 1,800 tokens. A library indexed with `ketch docs index` answers offline instead. A question saves nothing: the pages stay in the page cache for `cache_ttl`, and the same question again within it does no search and no fetch (its `source:` line ends `, cached`). `--library` names the docs: a docs URL, a name, or a spec such as `django@5.2`, `pypi:click` or `net/http`; a name several libraries share exits 2, listing them. `--resolve click` shows the docs root a name resolves to, with its evidence.
+
+````console
+$ ketch docs "SQLAlchemy pool_size and max_overflow defaults"
+---
+query: SQLAlchemy pool_size and max_overflow defaults
+backend: search
+library: https://docs.sqlalchemy.org/en/20/
+version: 20
+source: search, 24 pages read
+origin: verified, on sqlalchemy.org, the site of pypi SQLAlchemy lists it as Documentation (resolve, trust 10.0)
+status: found
+terms: {pool_size: 7, max_overflow: 6}
+not_found: []
+note: read 24 pages of https://docs.sqlalchemy.org/en/20/ found by web search; to index these docs: ketch docs index https://docs.sqlalchemy.org/en/20/
+---
+## SQLAlchemy 2.0 Documentation
+
+### Connection Pooling > API Documentation - Available Pool Implementations > sqlalchemy.pool.QueuePool.__init__
+…
+Construct a QueuePool.
+
+Parameters:
+
+…
+- **pool_size** – The size of the pool to be maintained, defaults to 5. This is the largest number of connections that will be kept persistently in the pool. …
+- **max_overflow** – The maximum overflow size of the pool. When the number of checked-out connections reaches the size set in pool_size, additional connections will be returned up to this limit. …
+…
+source: https://docs.sqlalchemy.org/en/20/core/pooling.html#sqlalchemy.pool.QueuePool.__init__ (cut, 368 of 553 tokens)
+…
+2 groups above are cut and their hidden text is unread: run ketch docs --section <its source> before stating what it says
+````
+
+**Upgrading from 0.20.**
+
+- Every docs call uses search unless it names Context7 (`-b context7`, MCP `backend: "context7"`). The `docs_backend` config key is retired. 0.20's `ketch config init` and `ketch config set` wrote `context7` into most config files; that value, and `KETCH_DOCS_BACKEND`, are now ignored. `ketch config` shows `docs_backend: search` with a note, and `ketch config set docs_backend` exits 2 and writes nothing.
+- `--library /org/repo` without `-b context7` exits 2 (reason `context7_id`), naming `-b context7`. `--resolve` without it lists docs roots, not Context7 IDs.
+- `ketch docs --json` prints one object on every backend, Context7 included: the frontmatter's fields, `hint`, then `results`. 0.20 printed a bare array, so a script reading `.[]` now reads `.results[]`. Results no longer carry `source`, and search answers have no `result_count` line.
+- A docs call that matches nothing exits 3 instead of 0 (below).
+- The MCP `docs` tool's `backend` takes `search` or `context7`. It takes `section`, `page` and `offline`, `query` is optional with `section`, and its output carries the answer's frontmatter fields beside `results`. The pi package's `ketch_docs` takes `section` but not `page` or `offline`.
+
+**Reading an answer.** The frontmatter is the verdict. `status: found` means the docs hold evidence matching the question, not that it answers. `partial (terms_not_found)` lists in `not_found` a term no section holds. `refused (terms_not_found)` exits 3 with the frontmatter printed and an empty body. On a live answer, `origin:` says whether the site is the documentation of what you asked: `verified, <evidence>`, `by name, …` when only a name ties them, or `unverified, …`. The last two end with a line telling you to name the site you cite or pass the official docs with `--library`. A group that shows part of its section ends `(cut, N of M tokens)`, and one closing line says how many groups are cut and that their hidden text is unread. `ketch docs --section <url#anchor>` reads the rest: a section with no ranking, from the index or, for a page a live answer read, through the page cache. A section longer than `--tokens` (4000) comes a page at a time, `--page N`. A term defined in a table row of a section the answer did not print is named in `defined_in`.
+
+**Index a library once: `ketch docs index`.** `ketch docs index fastapi` (or a docs URL, or a spec) resolves the docs root as `--resolve` does, reads the site's own page lists, fetches up to `--max-pages` pages (1,500), splits them into heading sections and stores them in `docs-index.sqlite` in ketch's cache directory (`KETCH_DOCS_INDEX_PATH` moves it). Blog, news, community and dated posts are left out, and so are other versions' trees: one index holds one version, and `vue-router@3` indexes beside the current docs. A section over 1,500 tokens splits at an RFC's numbered headings or at the entry anchors a page marks. A question naming the library then answers from the index in tens of milliseconds, with `index: full, N pages, built <date>`. Cited pages older than `cache_ttl` are read again first, within 3 seconds, and a changed page is sectioned again; when that check fails the answer says `stale: unverified, built <date>`, and `--offline` skips it. A library answers to its package and repository names, its site's name and its host's distinctive label; a one-page document also answers to its title and acronym (`jwt`, `pkce`). A `--library` URL below an indexed root limits the answer to the pages under it (`scope:`). `--resolve` with no name lists every indexed library, offline. Running `docs index` again re-sections only the pages that changed; `--list`, `--remove`, `--dry-run` and `--name` manage the index.
+
+**Context7 is an option.** `-b context7` answers from Context7 as 0.20.5 did, keyless on the anonymous quota or with a key, for the call that names it.
+
+**Every docs call ends found, partial, refused or failed.** A docs call that found nothing used to exit 0 with `result_count: 0`, and came back over MCP as a success with no results. On either backend it now exits 3 (`[not_found]`). Over MCP, a refusal for want of the question's terms is a result with `status: refused`, not a tool error. The manual's docs section has every exit code and reason in one table.
+
+**Two error classes moved to where ADR-0002 put them.** The CLI's exit codes and the MCP error prefixes now come from one classifier, so the two cannot disagree. A timeout (a backend that took too long, or the HTTP client's own limit) is `[upstream]` over MCP, as it already exited 4 on the CLI; `[cancelled]` now means only that the caller cancelled the call. A cache or bookmark file locked by another ketch process exits 4 (`[upstream]`: try again) instead of 5 (`[precondition]`), since nothing needs configuring.
+
+**Fixed** table rows printed with their cells run together. A table with a list, a heading, a quote or a code block inside a cell (AWS's quota tables, GitHub's REST parameter tables) came out as `NameDescription`, one cell after another with nothing between them. A cell's blocks are now lines of that cell and the row keeps its columns, in `ketch scrape`, `ketch extract` and docs alike. A page already in the page cache keeps its old text until `cache_ttl` expires.
+
+**Fixed** code highlighted with hover popups (Shiki's twoslash, as VitePress sites such as hono.dev and router.vuejs.org use) coming out one token per line: `app.notFound((c) => …)` now reads as written, in `ketch scrape`, `ketch extract` and docs alike.
+
+**Fixed** code samples in tabs going missing. A page that hides every tab but the first until a script shows it (an inline `display: none` or a `hidden` attribute, as AWS's XML/JSON lifecycle examples do) lost the hidden tabs' code. A hidden block holding code the page shows nowhere else is now kept, a hidden copy of visible code is still dropped, and a tab's label (npm, yarn; Python, Go) is written as a bold line above the code it shows instead of the labels running together above unlabelled blocks, in `ketch scrape`, `ketch extract` and docs alike.
+
+**Fixed** `ketch scrape --raw` serving a cached copy of a JavaScript page that was never rendered. A page fetched as an unrendered JS shell is never served from the page cache once a browser is configured, so a later call renders it; the `--raw` path skipped that rule. Every cached read now applies one rule, and it depends on whether a browser is configured, not on whether one launched in this process, so a browser that failed to start no longer makes the same cache entry fresh in one ketch process and stale in the next.
+
+**Fixed** `ketch tag show`, `tag list` and `tag add` reporting a bookmark with a `#fragment`, such as a docs section, as not cached when its page was. The fragment never reaches the server, so the page's cached body is the bookmark's; each section is still its own bookmark, removed by the URL shown.
+
+For Go importers: `docs.NewFromConfig`, `Provider.New` and `Provider.Build` take a `docs.Deps` (the zero value is valid); `docs.Provider` loses `Hidden`; `docs.FTS5Local` is removed; `docs.Result` no longer marshals `source`; and `config.AvailableDocBackends` returns `search, context7`. `scrape.Source` is a named type, which the scrape and `cache.Cache` methods that returned or took a source string now use, and `Scraper.BrowserConfigured` and `Scraper.ServeFromCache` replace `scrape.CacheStaleForBrowser`. `go doc github.com/1broseidon/ketch/docs` lists the new exports.
+
 ## [0.20.5] - 2026-11-04
 
 **Fixed** `ketch scrape` (and every docs path that reads the same page) growing without bound on a table whose header declares an enormous column span. docs.stripe.com's decline-code tables carry `colspan="9007199254740991"`, and converting that table to Markdown laid its cells out one at a time: `ketch scrape https://docs.stripe.com/declines/codes` reached 4.8 GB of memory within two seconds and kept growing until the machine ran out. Column and row spans are now capped at 100 before the conversion, so the page scrapes in under a second and its table comes out as before.

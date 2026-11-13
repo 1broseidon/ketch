@@ -104,6 +104,13 @@
   },
   {
     "surface": "docs",
+    "backend": "search",
+    "status": "ok",
+    "detail": "keyless: web search, then the docs site it finds (pages kept in the page cache for cache_ttl); nothing indexed yet",
+    "latency_ms": 0
+  },
+  {
+    "surface": "docs",
     "backend": "context7",
     "status": "ok",
     "detail": "keyless (quota not yet seen; Context7 allows about 200 anonymous requests a month per IP; a key lifts the cap: ketch config set context7_api_key \u003ckey\u003e)",

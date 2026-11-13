@@ -1,0 +1,10 @@
+{
+ "name": "tokio",
+ "version": "0.1.2",
+ "description": "Web scraping made simple.",
+ "repository": {
+  "url": "https://github.com/egoist/tokio.git",
+  "type": "git"
+ },
+ "license": "MIT"
+}

@@ -1,0 +1,39 @@
+{
+ "info": {
+  "name": "next",
+  "version": "1.0.1",
+  "summary": "required code for sae.news",
+  "home_page": "https://github.com/dheerajmpai/saenews/",
+  "docs_url": null,
+  "project_urls": {
+   "Download": "https://github.com/dheerajmpai/saenews/archive/v_033.tar.gz",
+   "Homepage": "https://github.com/dheerajmpai/saenews/"
+  }
+ },
+ "last_serial": 6258871,
+ "releases": {
+  "1.0.1": [
+   {
+    "filename": "next-1.0.1.tar.gz",
+    "packagetype": "sdist",
+    "python_version": "source",
+    "size": 12542347,
+    "upload_time_iso_8601": "2019-12-07T17:08:45.385829Z",
+    "url": "https://files.pythonhosted.org/packages/85/05/bc063f34e0312976d40fe6621975766a779c0c64f939d31c524fe50e6b61/next-1.0.1.tar.gz",
+    "yanked": false
+   }
+  ]
+ },
+ "urls": [
+  {
+   "filename": "next-1.0.1.tar.gz",
+   "packagetype": "sdist",
+   "python_version": "source",
+   "size": 12542347,
+   "upload_time_iso_8601": "2019-12-07T17:08:45.385829Z",
+   "url": "https://files.pythonhosted.org/packages/85/05/bc063f34e0312976d40fe6621975766a779c0c64f939d31c524fe50e6b61/next-1.0.1.tar.gz",
+   "yanked": false
+  }
+ ],
+ "vulnerabilities": []
+}

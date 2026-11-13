@@ -1,0 +1,8 @@
+{
+ "name": "gin",
+ "version": "0.0.1",
+ "repository": {
+  "url": "git://github.com/KOBA789/node-gin.git",
+  "type": "git"
+ }
+}

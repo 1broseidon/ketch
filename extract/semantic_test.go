@@ -494,3 +494,29 @@ func TestNamedBlockWithTheHeadlineStays(t *testing.T) {
 	assertContainsAll(t, clean, "INTROTEXT")
 	assertContainsNone(t, clean, "COOKIETEXT")
 }
+
+func TestHiddenCodeTabsStay(t *testing.T) {
+	t.Parallel()
+	complete, clean := extractBoth(t, landmarkPage(`<p>The configuration as XML and as JSON:</p>`+
+		`<div class="tabs"><dl style="display: none"><dt>XML</dt><dd><pre><code>&lt;Rule&gt;XMLSAMPLE&lt;/Rule&gt;</code></pre></dd></dl>`+
+		`<dl style="display: none"><dt>JSON</dt><dd><pre><code>{"Rule": "JSONSAMPLE"}</code></pre></dd></dl></div>`+
+		`<pre><code>shown VISIBLECODE</code></pre><div hidden><pre><code>shown VISIBLECODE</code></pre></div>`+
+		`<div style="display:none"><p>HIDDENPROSE with no code at all in it</p></div>`))
+	for _, md := range []string{complete, clean} {
+		assertContainsAll(t, md, "XMLSAMPLE", "JSONSAMPLE", "XML", "JSON")
+		assertContainsNone(t, md, "HIDDENPROSE")
+		if n := strings.Count(md, "VISIBLECODE"); n != 1 {
+			t.Fatalf("visible code with a hidden copy appears %d times, want 1:\n%s", n, md)
+		}
+	}
+}
+
+func TestTabLabelsMoveOntoPanels(t *testing.T) {
+	t.Parallel()
+	complete, clean := extractBoth(t, landmarkPage(`<div role="tablist"><button role="tab" aria-controls="p1" aria-selected="true">npm</button><button role="tab" aria-controls="p2">yarn</button></div>`+
+		`<div role="tabpanel" id="p1"><pre><code>npm install widget</code></pre></div><div role="tabpanel" id="p2" hidden><pre><code>yarn add widget</code></pre></div>`))
+	for _, md := range []string{complete, clean} {
+		assertContainsAll(t, md, "**npm**\n\n```\nnpm install widget", "**yarn**\n\n```\nyarn add widget")
+		assertContainsNone(t, md, "npmyarn")
+	}
+}

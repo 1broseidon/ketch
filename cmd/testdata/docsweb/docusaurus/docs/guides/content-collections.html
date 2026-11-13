@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-doc-page">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.5.2">
+<title data-rh="true">Content collections | Docu</title>
+<meta data-rh="true" name="description" content="Group Markdown files into typed collections.">
+<link data-rh="true" rel="canonical" href="{{ORIGIN}}/docs/guides/content-collections">
+</head>
+<body class="navigation-with-keyboard">
+<div id="__docusaurus">
+<nav aria-label="Main" class="navbar navbar--fixed-top"><div class="navbar__inner"><a class="navbar__brand" href="/">Docu</a><a class="navbar__item navbar__link" href="/docs/intro">Docs</a><a class="navbar__item navbar__link" href="/blog">Blog</a></div></nav>
+<div class="main-wrapper mainWrapper_z2l0">
+<div class="docsWrapper_hBAB"><div class="docRoot_UBD9">
+<aside class="theme-doc-sidebar-container"><nav aria-label="Docs sidebar" class="menu thin-scrollbar"><ul class="theme-doc-sidebar-menu menu__list">
+<li class="menu__list-item"><a class="menu__link" href="/docs/intro">Introduction</a></li>
+<li class="menu__list-item"><a class="menu__link menu__link--active" aria-current="page" href="/docs/guides/content-collections">Content collections</a></li>
+<li class="menu__list-item"><a class="menu__link" href="/docs/api/config">Configuration reference</a></li>
+</ul></nav></aside>
+<main class="docMainContainer_TBSr"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_VOVn">
+<div class="docItemContainer_Djhp"><article>
+<nav class="theme-doc-breadcrumbs" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a class="breadcrumbs__link" href="/">Home</a></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Guides</span></li></ul></nav>
+<div class="theme-doc-markdown markdown">
+<header><h1>Content collections</h1></header>
+<p>Content collections group related Markdown files under <code>src/content</code> so every entry is validated before the site builds.</p>
+<h2 class="anchor anchorWithStickyNavbar_LWe7" id="defining-a-collection">Defining a collection<a href="#defining-a-collection" class="hash-link" aria-label="Direct link to Defining a collection" title="Direct link to Defining a collection">&#8203;</a></h2>
+<p>Create a collection with <code>defineCollection()</code> in <code>src/content/config.ts</code> and export it from the collections object.</p>
+<div class="language-ts codeBlockContainer_Ckt0 theme-code-block"><div class="codeBlockContent_biex"><pre tabindex="0" class="prism-code language-ts codeBlock_bY9V thin-scrollbar"><code class="codeBlockLines_e6Vv">export const collections = { docs: defineCollection({ type: "content" }) };
+</code></pre></div></div>
+<h3 class="anchor anchorWithStickyNavbar_LWe7" id="schema-options">Collection schema options<a href="#schema-options" class="hash-link" aria-label="Direct link to Collection schema options" title="Direct link to Collection schema options">&#8203;</a></h3>
+<p>Pass a zod schema to validate each entry's frontmatter. Fields the schema marks optional may be omitted; unknown fields fail the build unless the schema is passthrough.</p>
+<div class="language-ts codeBlockContainer_Ckt0 theme-code-block"><div class="codeBlockContent_biex"><pre tabindex="0" class="prism-code language-ts codeBlock_bY9V thin-scrollbar"><code class="codeBlockLines_e6Vv">schema: z.object({ title: z.string(), draft: z.boolean().optional() })
+</code></pre></div></div>
+<h2 class="anchor anchorWithStickyNavbar_LWe7" id="querying-collections">Querying collections<a href="#querying-collections" class="hash-link" aria-label="Direct link to Querying collections" title="Direct link to Querying collections">&#8203;</a></h2>
+<p>Call <code>getCollection()</code> to load every entry of a collection at build time, or <code>getEntry()</code> for one.</p>
+</div>
+<footer class="theme-doc-footer docusaurus-mt-lg"><a href="https://github.com/docu/docu/edit/main/docs/guides/content-collections.md" class="theme-edit-this-page">Edit this page</a></footer>
+</article>
+<nav class="pagination-nav docusaurus-mt-lg" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/docs/intro"><div class="pagination-nav__label">Introduction</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/docs/api/config"><div class="pagination-nav__label">Configuration reference</div></a></nav>
+</div></div>
+<div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#defining-a-collection" class="table-of-contents__link toc-highlight">Defining a collection</a><ul><li><a href="#schema-options" class="table-of-contents__link toc-highlight">Collection schema options</a></li></ul></li><li><a href="#querying-collections" class="table-of-contents__link toc-highlight">Querying collections</a></li></ul></div></div>
+</div></div></main>
+</div></div>
+</div>
+<footer class="footer footer--dark"><div class="container container-fluid"><div class="footer__copyright">Copyright © 2026 Docu.</div></div></footer>
+</div>
+</body>
+</html>

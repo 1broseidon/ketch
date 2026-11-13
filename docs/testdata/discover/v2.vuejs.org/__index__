@@ -1,0 +1,717 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en" class="with-v3-banner">
+  <head>
+    <title>Vue.js</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Vue.js - The Progressive JavaScript Framework">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="alternate" hreflang="x-default" href="https://vuejs.org/index.html">
+    <link rel="alternate" hreflang="zh" href="https://v2.cn.vuejs.org/index.html">
+    <link rel="alternate" hreflang="ja" href="https://jp.vuejs.org/index.html">
+    <link rel="alternate" hreflang="ru" href="https://ru.vuejs.org/index.html">
+    <link rel="alternate" hreflang="ko" href="https://kr.vuejs.org/index.html">
+    <link rel="alternate" hreflang="pt-BR" href="https://br.vuejs.org/index.html">
+    <link rel="alternate" hreflang="fr" href="https://fr.vuejs.org/index.html">
+    <link rel="alternate" hreflang="es" href="https://es.vuejs.org/index.html">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Vue.js">
+    <meta property="og:description" content="Vue.js - The Progressive JavaScript Framework">
+    <meta property="og:image" content="https://vuejs.org/images/logo.png">
+
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Vue.js">
+    <meta name="twitter:description" content="Vue.js - The Progressive JavaScript Framework">
+    <meta name="twitter:image" content="https://vuejs.org/images/logo.png">
+
+    <link rel="apple-touch-icon" sizes="57x57" href="/images/icons/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/images/icons/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/images/icons/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/images/icons/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/images/icons/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/images/icons/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/images/icons/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/images/icons/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/icons/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192"  href="/images/icons/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/images/icons/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/icons/favicon-16x16.png">
+    <meta name="msapplication-TileImage" content="/images/icons/ms-icon-144x144.png">
+    <link rel="icon" href="/images/logo.svg">
+
+    <meta name="msapplication-TileColor" content="#4fc08d">
+    <meta name="theme-color" content="#4fc08d">
+
+    <meta name="msapplication-config" content="browserconfig.xml">
+    <link rel="manifest" href="/manifest.json">
+
+    <link href="https://fonts.googleapis.com" rel="preconnect" crossorigin>
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+    <link href="https://maxcdn.bootstrapcdn.com" rel="preconnect" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600|Roboto|Roboto Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Dosis:500&text=Vue.js&display=swap" rel="stylesheet">
+
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- main page styles -->
+    
+<link rel="stylesheet" href="/css/index.css">
+
+
+    <!-- this needs to be loaded before guide's inline scripts -->
+    <script src="/js/vue.js"></script>
+
+    
+
+    <script></script>
+
+    <!-- Fathom - beautiful, simple website analytics -->
+    <script src="https://cdn.usefathom.com/script.js" data-site="VNLEECSM" defer></script>
+    <!-- / Fathom -->
+
+    <!-- vimeo analytics -->
+    <script type="text/javascript" defer="defer" src="https://extend.vimeocdn.com/ga/72160148.js"></script>
+  <meta name="generator" content="Hexo 6.2.0"><link rel="alternate" href="/atom.xml" title="Vue.js" type="application/atom+xml">
+</head>
+  <body class="" data-v3-url="">
+
+    
+      <a id="vs-top" class="vs-hidden" href="#" target="_blank">
+  <div class="vs-background-wrapper">
+    <div class="vs-logo"></div>
+    <div class="vs-core">
+      <div class="vs-slogan-wrapper">
+        <div id="vs-slogan" class="vs-slogan"></div>
+        <div id="vs-subline" class="vs-subline"></div>
+      </div>
+      <div class="vs-button-wrapper">
+        <div id="vs-button" class="vs-button"></div>
+      </div>
+    </div>
+    <div
+      id="vs-close"
+      class="vs-close">
+      <img src="https://vueschool.io/images/close.svg" alt="Close">
+    </div>
+  </div>
+</a>
+
+    
+
+    <div id="mobile-bar" class="top">
+      <a class="menu-button"></a>
+      <a class="logo" href="/"></a>
+    </div>
+    <div>
+  <div id="v3-banner">
+    <span class="hidden-sm">Vue 2 has reached EOL and is no longer actively maintained.</span>
+    <a target="_blank" rel="noopener" href="https://vuejs.org/">Upgrade to Vue 3</a>
+    <span class="hidden-sm"> or learn more about</span>
+    <span class="only-sm"> | </span>
+    <a href="/eol/">Vue 2 EOL</a><span class="hidden-sm">.</span>
+  </div>
+
+  <header id="header">
+    <a id="logo" href="/">
+      <img src="/images/logo.svg" alt="Vue logo">
+      <span>Vue.js</span>
+    </a>
+    <ul id="nav">
+      <li>
+  <form id="search-form">
+    <input type="text" id="search-query-nav" class="search-query st-default-search-input" aria-label="Search">
+  </form>
+</li>
+<li class="nav-dropdown-container learn">
+  <a class="nav-link">Learn</a><span class="arrow"></span>
+  <ul class="nav-dropdown">
+    <li><h4>Documentation</h4></li>
+    <li>
+      <ul>
+        <li><a href="/v2/guide/" class="nav-link">Guide</a></li>
+        <li><a href="/v2/api/" class="nav-link">API</a></li>
+        <li><a href="/v2/style-guide/" class="nav-link">Style Guide</a></li>
+        <li><a href="/v2/examples/" class="nav-link">Examples</a></li>
+        <li><a href="/v2/cookbook/" class="nav-link">Cookbook</a></li>
+      </ul>
+    </li>
+    <li><h4>Video Courses</h4></li>
+    <li>
+      <ul>
+        <li>
+          <a href="https://www.vuemastery.com/courses/" class="nav-link" target="_blank" rel="sponsored noopener">
+            Vue Mastery
+          </a>
+        </li>
+        <li>
+          <a
+            href="https://vueschool.io/?friend=vuejs&utm_source=Vuejs.org&utm_medium=Link&utm_content=Navbar%20Dropdown"
+            class="nav-link"
+            target="_blank" rel="sponsored noopener"
+          >
+            Vue School
+          </a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</li>
+
+<li class="nav-dropdown-container ecosystem">
+  <a class="nav-link">Ecosystem</a><span class="arrow"></span>
+  <ul class="nav-dropdown">
+    <li><h4>Help</h4></li>
+    <li><ul>
+      <li><a href="https://forum.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Forum</a></li>
+      <li><a href="https://chat.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Chat</a></li>
+      <li><a href="https://events.vuejs.org/meetups/" class="nav-link" target="_blank" rel="noopener">Meetups</a></li>
+    </ul></li>
+    <li><h4>Tooling</h4></li>
+    <li>
+      <ul>
+        <li><a href="https://github.com/vuejs/vue-devtools" class="nav-link" target="_blank" rel="noopener">Devtools</a></li>
+        <li><a href="https://cli.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Vue CLI</a></li>
+        <li><a href="https://vue-loader.vuejs.org" class="nav-link" target="_blank" rel="noopener">Vue Loader</a></li>
+      </ul>
+    </li>
+    <li><h4>Core Libraries</h4></li>
+    <li><ul>
+      <li><a href="https://router.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Vue Router</a></li>
+      <li><a href="https://vuex.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Vuex</a></li>
+      <li><a href="https://v2.ssr.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Vue Server Renderer</a></li>
+    </ul></li>
+    <li><h4>News</h4></li>
+    <li><ul>
+      <li><a href="https://news.vuejs.org" class="nav-link" target="_blank" rel="noopener">Weekly News</a></li>
+      <li><a href="https://events.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Events</a></li>
+      <li><a href="https://twitter.com/vuejs" class="nav-link" target="_blank" rel="noopener">Twitter</a></li>
+      <li><a href="https://blog.vuejs.org" class="nav-link" target="_blank" rel="noopener">Blog</a></li>
+      <li><a href="https://vuejobs.com/?ref=vuejs" class="nav-link" target="_blank" rel="noopener">Jobs</a></li>
+      <li><a href="https://dev.to/t/vue" class="nav-link" target="_blank" rel="noopener">DEV Community</a></li>
+    </ul></li>
+  </ul>
+</li>
+
+<li class="nav-dropdown-container resources">
+  <a href="#" class="nav-link">Resources</a><span class="arrow"></span>
+  <ul class="nav-dropdown">
+    <li>
+      <a
+        target="_blank" rel="noopener" href="https://vuejs.org/about/team.html"
+        class="nav-link team"
+        >Team</a
+      >
+    </li>
+    <li>
+      <a target="_blank" rel="noopener" href="https://vuejs.org/sponsor/">Sponsor</a>
+    </li>
+    <li><a target="_blank" rel="noopener" href="https://vuejs.org/partners/" class="nav-link">Partners</a></li>
+    <li>
+      <a class='nav-link' href='https://vuejs.org/resources/themes' rel='noopener' target='_blank'>Themes</a
+      >
+    </li>
+    <li>
+      <a
+        href="https://github.com/vuejs/awesome-vue"
+        class="nav-link"
+        target="_blank"
+        rel="noopener"
+        >Awesome Vue</a
+      >
+    </li>
+    <li>
+      <a
+        href="https://awesomejs.dev/for/vue/"
+        class="nav-link"
+        target="_blank"
+        rel="noopener"
+        >Browse packages for Vue</a
+      >
+    </li>
+  </ul>
+</li>
+
+<li>
+  <a href="/eol/" class="badge-parent">EOL<sup class="badge">NEW</sup></a>
+</li>
+<li class="nav-dropdown-container language">
+  <a class="nav-link">Translations</a><span class="arrow"></span>
+  <ul class="nav-dropdown">
+    <li><a class='nav-link' href='https://v2.cn.vuejs.org/' rel='noopener' target='_blank'>中文</a></li>
+    <li><a class='nav-link' href='https://jp.vuejs.org/' rel='noopener' target='_blank'>日本語</a></li>
+    <li><a class='nav-link' href='https://ru.vuejs.org/' rel='noopener' target='_blank'>Русский</a></li>
+    <li><a class='nav-link' href='https://kr.vuejs.org/' rel='noopener' target='_blank'>한국어</a></li>
+    <li><a class='nav-link' href='https://br.vuejs.org/' rel='noopener' target='_blank'>Português</a></li>
+    <li><a class='nav-link' href='https://fr.vuejs.org/' rel='noopener' target='_blank'>Français</a></li>
+    <li><a class='nav-link' href='https://vi.vuejs.org/' rel='noopener' target='_blank'>Tiếng Việt</a></li>
+    <li><a class='nav-link' href='https://es.vuejs.org/' rel='noopener' target='_blank'>Español</a></li>
+    <li><a class='nav-link' href='https://docs.vuejs.id/' rel='noopener' target='_blank'>Bahasa Indonesia</a></li>
+  </ul>
+</li>
+
+
+    </ul>
+  </header>
+</div>
+
+    
+      
+
+<main role="main">
+  <div class="sidebar">
+    <div class="sidebar-inner-index">
+      <ul class="main-menu">
+        <li>
+  <form id="search-form">
+    <input type="text" id="search-query-sidebar" class="search-query st-default-search-input" aria-label="Search">
+  </form>
+</li>
+<li class="nav-dropdown-container learn">
+  <a class="nav-link">Learn</a><span class="arrow"></span>
+  <ul class="nav-dropdown">
+    <li><h4>Documentation</h4></li>
+    <li>
+      <ul>
+        <li><a href="/v2/guide/" class="nav-link">Guide</a></li>
+        <li><a href="/v2/api/" class="nav-link">API</a></li>
+        <li><a href="/v2/style-guide/" class="nav-link">Style Guide</a></li>
+        <li><a href="/v2/examples/" class="nav-link">Examples</a></li>
+        <li><a href="/v2/cookbook/" class="nav-link">Cookbook</a></li>
+      </ul>
+    </li>
+    <li><h4>Video Courses</h4></li>
+    <li>
+      <ul>
+        <li>
+          <a href="https://www.vuemastery.com/courses/" class="nav-link" target="_blank" rel="sponsored noopener">
+            Vue Mastery
+          </a>
+        </li>
+        <li>
+          <a
+            href="https://vueschool.io/?friend=vuejs&utm_source=Vuejs.org&utm_medium=Link&utm_content=Navbar%20Dropdown"
+            class="nav-link"
+            target="_blank" rel="sponsored noopener"
+          >
+            Vue School
+          </a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</li>
+
+<li class="nav-dropdown-container ecosystem">
+  <a class="nav-link">Ecosystem</a><span class="arrow"></span>
+  <ul class="nav-dropdown">
+    <li><h4>Help</h4></li>
+    <li><ul>
+      <li><a href="https://forum.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Forum</a></li>
+      <li><a href="https://chat.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Chat</a></li>
+      <li><a href="https://events.vuejs.org/meetups/" class="nav-link" target="_blank" rel="noopener">Meetups</a></li>
+    </ul></li>
+    <li><h4>Tooling</h4></li>
+    <li>
+      <ul>
+        <li><a href="https://github.com/vuejs/vue-devtools" class="nav-link" target="_blank" rel="noopener">Devtools</a></li>
+        <li><a href="https://cli.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Vue CLI</a></li>
+        <li><a href="https://vue-loader.vuejs.org" class="nav-link" target="_blank" rel="noopener">Vue Loader</a></li>
+      </ul>
+    </li>
+    <li><h4>Core Libraries</h4></li>
+    <li><ul>
+      <li><a href="https://router.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Vue Router</a></li>
+      <li><a href="https://vuex.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Vuex</a></li>
+      <li><a href="https://v2.ssr.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Vue Server Renderer</a></li>
+    </ul></li>
+    <li><h4>News</h4></li>
+    <li><ul>
+      <li><a href="https://news.vuejs.org" class="nav-link" target="_blank" rel="noopener">Weekly News</a></li>
+      <li><a href="https://events.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Events</a></li>
+      <li><a href="https://twitter.com/vuejs" class="nav-link" target="_blank" rel="noopener">Twitter</a></li>
+      <li><a href="https://blog.vuejs.org" class="nav-link" target="_blank" rel="noopener">Blog</a></li>
+      <li><a href="https://vuejobs.com/?ref=vuejs" class="nav-link" target="_blank" rel="noopener">Jobs</a></li>
+      <li><a href="https://dev.to/t/vue" class="nav-link" target="_blank" rel="noopener">DEV Community</a></li>
+    </ul></li>
+  </ul>
+</li>
+
+<li class="nav-dropdown-container resources">
+  <a href="#" class="nav-link">Resources</a><span class="arrow"></span>
+  <ul class="nav-dropdown">
+    <li>
+      <a
+        target="_blank" rel="noopener" href="https://vuejs.org/about/team.html"
+        class="nav-link team"
+        >Team</a
+      >
+    </li>
+    <li>
+      <a target="_blank" rel="noopener" href="https://vuejs.org/sponsor/">Sponsor</a>
+    </li>
+    <li><a target="_blank" rel="noopener" href="https://vuejs.org/partners/" class="nav-link">Partners</a></li>
+    <li>
+      <a class='nav-link' href='https://vuejs.org/resources/themes' rel='noopener' target='_blank'>Themes</a
+      >
+    </li>
+    <li>
+      <a
+        href="https://github.com/vuejs/awesome-vue"
+        class="nav-link"
+        target="_blank"
+        rel="noopener"
+        >Awesome Vue</a
+      >
+    </li>
+    <li>
+      <a
+        href="https://awesomejs.dev/for/vue/"
+        class="nav-link"
+        target="_blank"
+        rel="noopener"
+        >Browse packages for Vue</a
+      >
+    </li>
+  </ul>
+</li>
+
+<li>
+  <a href="/eol/" class="badge-parent">EOL<sup class="badge">NEW</sup></a>
+</li>
+<li class="nav-dropdown-container language">
+  <a class="nav-link">Translations</a><span class="arrow"></span>
+  <ul class="nav-dropdown">
+    <li><a class='nav-link' href='https://v2.cn.vuejs.org/' rel='noopener' target='_blank'>中文</a></li>
+    <li><a class='nav-link' href='https://jp.vuejs.org/' rel='noopener' target='_blank'>日本語</a></li>
+    <li><a class='nav-link' href='https://ru.vuejs.org/' rel='noopener' target='_blank'>Русский</a></li>
+    <li><a class='nav-link' href='https://kr.vuejs.org/' rel='noopener' target='_blank'>한국어</a></li>
+    <li><a class='nav-link' href='https://br.vuejs.org/' rel='noopener' target='_blank'>Português</a></li>
+    <li><a class='nav-link' href='https://fr.vuejs.org/' rel='noopener' target='_blank'>Français</a></li>
+    <li><a class='nav-link' href='https://vi.vuejs.org/' rel='noopener' target='_blank'>Tiếng Việt</a></li>
+    <li><a class='nav-link' href='https://es.vuejs.org/' rel='noopener' target='_blank'>Español</a></li>
+    <li><a class='nav-link' href='https://docs.vuejs.id/' rel='noopener' target='_blank'>Bahasa Indonesia</a></li>
+  </ul>
+</li>
+
+
+      </ul>
+    </div>
+  </div>
+
+  <div id="hero">
+    <div class="inner">
+      <div class="left">
+        <img class="hero-logo" src="/images/logo.svg" alt="Vue logo">
+      </div><div class="right">
+        <h2 class="vue">Vue.js</h2>
+        <h1>
+          The Progressive<br>JavaScript Framework
+        </h1>
+        <p>
+          <a id="modal-player" class="button has-icon" href="javascript:;">
+            
+
+            WHY VUE.JS?</a>
+          <a class="button white" href="/v2/guide/">GET STARTED</a>
+          <a class="button gray has-icon" href="https://github.com/vuejs/vue" target="_blank" rel="noopener">
+            
+
+            GITHUB</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div id="special">
+    <h3>Special Sponsor</h3>
+    
+    <a href="https://appwrite.io" target="_blank" rel="noopener sponsored" class="sponsor" style="width: 160px; height: 80px; line-height: 80px;">
+      <img src="https://sponsors.vuejs.org/images/appwrite.svg" alt="Special sponsor appwrite">
+      <br>
+      <!-- <span>Open source Firebase alternative</span> -->
+    </a>
+  </div>
+
+  <div id="highlights">
+    <div class="inner">
+      <div class="point">
+        <h2>Approachable</h2>
+        <p>Already know HTML, CSS and JavaScript? Read the guide and start building things in no time!</p>
+      </div>
+
+      <div class="point">
+        <h2>Versatile</h2>
+        <p>An incrementally adoptable ecosystem that scales between a library and a full-featured framework.</p>
+      </div>
+
+      <div class="point">
+        <h2>Performant</h2>
+        <p>
+          20KB min+gzip Runtime<br>
+          Blazing Fast Virtual DOM<br>
+          Minimal Optimization Efforts
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div id="sponsors">
+    <div class="inner">
+      
+
+<h3>Patreon Sponsors</h3>
+
+<a href="https://bit.dev" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 160px; height: 80px; line-height: 80px;">
+  <img src="https://sponsors.vuejs.org/images/bit.svg?v2" alt="Bit">
+</a>
+<a href="https://www.vuemastery.com/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 160px; height: 80px; line-height: 80px;">
+  <img src="https://sponsors.vuejs.org/images/vuemastery.png" alt="VueMastery">
+</a>
+<a href="https://vueschool.io/?utm_source=Vuejs.org&utm_medium=Banner&utm_campaign=Sponsored%20Banner&utm_content=V1" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 160px; height: 80px; line-height: 80px;">
+  <img src="https://sponsors.vuejs.org/images/vueschool.png" alt="VueSchool">
+</a>
+<a href="https://vehikl.com/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 160px; height: 80px; line-height: 80px;">
+  <img src="https://sponsors.vuejs.org/images/vehikl.png" alt="Vehikl">
+</a>
+<a href="https://passionatepeople.io/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 160px; height: 80px; line-height: 80px;">
+  <img src="https://sponsors.vuejs.org/images/passionate_people.png" alt="Passionate People">
+</a>
+<a href="https://www.storyblok.com" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 160px; height: 80px; line-height: 80px;">
+  <img src="https://sponsors.vuejs.org/images/storyblok.png" alt="Storyblok">
+</a>
+<a href="https://skilled.yashio-corp.com" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 160px; height: 80px; line-height: 80px;">
+  <img src="https://sponsors.vuejs.org/images/skilled.svg" alt="Skilled">
+</a>
+<a href="https://opencollective.com/2021-frameworks-fund" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 160px; height: 80px; line-height: 80px;">
+  <img src="https://sponsors.vuejs.org/images/chrome_frameworks_fund.png" alt="Chrome Frameworks Fund">
+</a>
+<a href="https://www.herodevs.com/support/vue" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 160px; height: 80px; line-height: 80px;">
+  <img src="https://sponsors.vuejs.org/images/herodevs.png" alt="HeroDevs">
+</a>
+<br>
+<br>
+<a href="https://tidelift.com/subscription/npm/vue" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/tidelift.png" alt="Tidelift">
+</a>
+<a href="https://intygrate.com/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/intygrate.png" alt="Intygrate">
+</a>
+<a href="https://www.y8.com/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/y8.png" alt="Y8">
+</a>
+<a href="https://js.devexpress.com/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/devexpress.png" alt="DevExpress">
+</a>
+<a href="https://fastcoding.jp/javascript/ " target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/fastcoding_inc.svg" alt="FASTCODING Inc">
+</a>
+<a href="https://www.lycorp.co.jp/en/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/ly_corporation.png?v2" alt="LY Corporation">
+</a>
+<a href="https://www.fenetre.nl/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/fen_tre_online_solutions.svg" alt="Fenêtre Online Solutions">
+</a>
+<a href="https://antdv.com" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/ant_design_vue.png" alt="Ant Design Vue">
+</a>
+<a href="https://crisp.chat/en/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/crisp.png" alt="Crisp">
+</a>
+<a href="https://localazy.com/blog/how-to-localize-vuejs-app-with-vue-i18n-and-localazy?utm_source=vuejs&utm_medium=banner&utm_campaign=sponsorships_vuejs&utm_content=logo" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/localazy.svg" alt="Localazy">
+</a>
+<a href="https://casinoburst.com/casino-utan-licens/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/casinoburst_com.png" alt="Casinoburst.com">
+</a>
+<a href="https://www.enkrypt.com" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/enkrypt__ethereum_and_polkadot_web3_wallet.svg" alt="Enkrypt: Ethereum and Polkadot Web3 Wallet">
+</a>
+<a href="https://www.uudetkasinot.com" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/uudetkasinot_com.png" alt="uudetkasinot.com">
+</a>
+<a href="https://usefathom.com/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/fathom_analytics.svg" alt="Fathom Analytics">
+</a>
+<a href="https://goread.io/buy-instagram-followers" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/goread_io.png" alt="Goread.io">
+</a>
+<a href="https://sentry.io/for/vue?utm_source=vuejs.org&utm_medium=paid-community" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/sentry.png" alt="Sentry">
+</a>
+<a href="https://poprey.com/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/poprey_com.png" alt="Poprey.com">
+</a>
+<a href="https://www.vedonlyontibonukset.com/pitkavetovihjeet" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/ilmaiset_pitk_vetovihjeet.png" alt="Ilmaiset Pitkävetovihjeet">
+</a>
+<a href="https://famoid.com/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/famoid.png" alt="Famoid">
+</a>
+<a href="https://www.certible.com" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/certible.svg" alt="Certible">
+</a>
+<a href="https://www.fortunegames.com" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/fortune_games.png" alt="FORTUNE GAMES">
+</a>
+<a href="http://tbdc.com.br/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/tbdc___agro_software.svg" alt="TBDC - Agro Software">
+</a>
+<a href="https://rxdb.info/?utm_source=sponsor&utm_medium=opencollective&utm_campaign=opencollective-vuejs" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/daniel.png" alt="Daniel">
+</a>
+<a href="https://surveyjs.io/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/surveyjs.png?v2" alt="SurveyJS">
+</a>
+<a href="https://quickbookstoolhub.com/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/quickbooks_tool_hub.png" alt="Quickbooks Tool Hub">
+</a>
+<a href="https://celebian.com/buy-tiktok-followers" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/celebian.png" alt="Celebian">
+</a>
+<a href=" https://opensource.muenchen.de/software/vue.js.html" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/it_m.png" alt="it@M">
+</a>
+<a href="https://blastup.com/buy-instagram-likes" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/blastup.png" alt="Blastup">
+</a>
+<a href="https://skweezer.net/buy-instagram-likes" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/skweezer_net.png" alt="Skweezer.net">
+</a>
+<a href="https://howsociable.com/buy-instagram-likes" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/howsociable.png" alt="Howsociable">
+</a>
+<a href="https://vuejobs.com/?utm_source=vuejs.com&utm_campaign=sponsor" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/vuejobs.png" alt="VueJobs">
+</a>
+<a href="https://huly.io" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/huly.svg" alt="Huly">
+</a>
+<a href="https://www.stormlikes.net/buy-instagram-followers" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/buy_instagram_followers_stormlikes.png" alt="Buy Instagram Followers Stormlikes">
+</a>
+<a href="https://insfollowpro.com" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/insfollowpro.png" alt="Insfollowpro">
+</a>
+<a href="https://automatenspieler.net/" target="_blank" rel="sponsored noopener" class="sponsor" style="width: 120px; height: 60px; line-height: 60px;">
+  <img src="https://sponsors.vuejs.org/images/automatenspieler.png?v2" alt="Automatenspieler">
+</a>
+<br>
+
+<a class="become-sponsor button white" href="/support-vuejs/">Become a Sponsor!</a>
+
+<script></script>
+
+    </div>
+  </div>
+
+  <div id="news">
+    <div class="inner">
+      <h3><label for="member_email">Subscribe to our Weekly Newsletter</label></h3>
+      <form
+        class="newsletter-form"
+        id="revue-form"
+        name="revue-form"
+        target="_blank"
+        rel="noopener"
+        action="https://www.getrevue.co/profile/vuenewsletter/add_subscriber"
+        method="post"
+        @submit="subscribe"
+      >
+        <input
+          class="newsletter-input"
+          type="email"
+          name="member[email]"
+          id="member_email"
+          required
+          placeholder="Email address"
+        >
+        <input
+          class="button newsletter-button"
+          type="submit"
+          value="Subscribe"
+          name="member[subscribe]"
+          id="member_submit"
+        >
+      </form>
+      <p>
+        You can read the previous issues and listen to our podcast at <a href="https://news.vuejs.org" target="_blank" rel="noopener">news.vuejs.org</a>.
+      </p>
+    </div>
+  </div>
+</main>
+
+<footer id="footer" role="contentinfo">
+  <p>
+    <a class="social-icon" href="https://github.com/vuejs/vue" target="_blank" rel="noopener">
+      
+
+    </a>
+    <a class="social-icon" href="https://twitter.com/vuejs" target="_blank" rel="noopener">
+      
+
+    </a>
+    <a class="social-icon" href="https://medium.com/the-vue-point" target="_blank" rel="noopener">
+      
+
+    </a>
+  </p>
+  <p>Released under the <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT License</a><br>
+  Copyright &copy; 2014-2024 Evan You</p>
+</footer>
+
+<div id="video-modal" class="modal">
+  <div class="video-space" style="padding: 56.25% 0 0 0; position: relative;">
+    <iframe
+      src="https://player.vimeo.com/video/247494684?dnt=1"
+      style="height: 100%; left: 0; position: absolute; top: 0; width: 100%;"
+      frameborder="0"
+      webkitallowfullscreen
+      mozallowfullscreen
+      allowfullscreen></iframe>
+  </div>
+  <script src="https://player.vimeo.com/api/player.js"></script>
+  <p class="modal-text">
+    Video by
+    <a
+      href="https://www.vuemastery.com"
+      target="_blank"
+      rel="sponsored noopener"
+      title="Vue.js Courses on Vue Mastery">
+        Vue Mastery
+    </a>. Watch Vue Mastery’s free
+    <a
+      href="https://www.vuemastery.com/courses/intro-to-vue-js/vue-instance/"
+      target="_blank"
+      rel="sponsored noopener"
+      title="Vue.js Courses on Vue Mastery"
+    >
+      Intro to Vue course
+    </a>.
+  </p>
+</div>
+
+<script></script>
+
+    
+
+    <!-- main custom script for sidebars, version selects etc. -->
+    <script src="/js/css.escape.js"></script>
+    <script src="/js/common.js"></script>
+
+    <!-- search -->
+    <link href="https://cdn.jsdelivr.net/docsearch.js/1/docsearch.min.css" rel='stylesheet' type='text/css'>
+    
+<link rel="stylesheet" href="/css/search.css">
+
+    <script src="https://cdn.jsdelivr.net/docsearch.js/1/docsearch.min.js"></script>
+    <script></script>
+    <script src="/js/v3-notice.js"></script>
+  </body>
+</html>

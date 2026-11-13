@@ -1,0 +1,76 @@
+{
+ "info": {
+  "name": "Django",
+  "version": "6.1.2",
+  "summary": "A high-level Python web framework that encourages rapid development and clean, pragmatic design.",
+  "home_page": null,
+  "docs_url": null,
+  "project_urls": {
+   "Documentation": "https://docs.djangoproject.com/",
+   "Funding": "https://www.djangoproject.com/fundraising/",
+   "Homepage": "https://www.djangoproject.com/",
+   "Release notes": "https://docs.djangoproject.com/en/stable/releases/",
+   "Source": "https://github.com/django/django",
+   "Tracker": "https://code.djangoproject.com/"
+  }
+ },
+ "last_serial": 41880248,
+ "releases": {
+  "6.1.2": [
+   {
+    "filename": "django-6.1.2-py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "py3",
+    "size": 8420684,
+    "upload_time_iso_8601": "2026-10-06T12:53:17.381365Z",
+    "url": "https://files.pythonhosted.org/packages/c9/83/90ff2dbfac7b519ed77620bdbb827cd2d1a83faf00d076bf95056428bce7/django-6.1.2-py3-none-any.whl",
+    "yanked": false
+   }
+  ],
+  "6.1a1": [
+   {
+    "filename": "django-6.1a1-py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "py3",
+    "size": 8393399,
+    "upload_time_iso_8601": "2026-05-20T19:40:43.638389Z",
+    "url": "https://files.pythonhosted.org/packages/37/db/7d4ad06746747ceee4807dc9db16085e1424d7bd9cc8bf7dedf9bba16a93/django-6.1a1-py3-none-any.whl",
+    "yanked": false
+   }
+  ],
+  "6.1b1": [
+   {
+    "filename": "django-6.1b1-py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "py3",
+    "size": 8410854,
+    "upload_time_iso_8601": "2026-06-24T17:34:04.435675Z",
+    "url": "https://files.pythonhosted.org/packages/5d/6c/2bcd52d088f313f928b4dd899deb216b33e36ed4bcb8c1f809280ba69cf7/django-6.1b1-py3-none-any.whl",
+    "yanked": false
+   }
+  ],
+  "6.1rc1": [
+   {
+    "filename": "django-6.1rc1-py3-none-any.whl",
+    "packagetype": "bdist_wheel",
+    "python_version": "py3",
+    "size": 8411536,
+    "upload_time_iso_8601": "2026-07-22T20:07:43.766076Z",
+    "url": "https://files.pythonhosted.org/packages/3d/91/54c1548dd7fd14b1d63df33d6b085b7350695bdbd38d9ce5890cf8a2d8be/django-6.1rc1-py3-none-any.whl",
+    "yanked": false
+   }
+  ]
+ },
+ "urls": [
+  {
+   "filename": "django-6.1.2-py3-none-any.whl",
+   "packagetype": "bdist_wheel",
+   "python_version": "py3",
+   "size": 8420684,
+   "upload_time_iso_8601": "2026-10-06T12:53:17.381365Z",
+   "url": "https://files.pythonhosted.org/packages/c9/83/90ff2dbfac7b519ed77620bdbb827cd2d1a83faf00d076bf95056428bce7/django-6.1.2-py3-none-any.whl",
+   "yanked": false
+  }
+ ],
+ "vulnerabilities": []
+}

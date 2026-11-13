@@ -1,0 +1,71 @@
+{
+ "info": {
+  "name": "astro",
+  "version": "0.2.7",
+  "summary": "A package of astrodynamic functions",
+  "home_page": "https://github.com/skulumani/astro",
+  "docs_url": null,
+  "project_urls": {
+   "Homepage": "https://github.com/skulumani/astro"
+  }
+ },
+ "last_serial": 3576450,
+ "releases": {
+  "0.2.4": [
+   {
+    "filename": "astro-0.2.4.tar.gz",
+    "packagetype": "sdist",
+    "python_version": "source",
+    "size": 62798,
+    "upload_time_iso_8601": "2017-12-14T00:20:43.674690Z",
+    "url": "https://files.pythonhosted.org/packages/5f/e1/b8635fd8e492953f2a09f1fa75e3a8f9458202f4e6e98a4da64c940f17fe/astro-0.2.4.tar.gz",
+    "yanked": false
+   }
+  ],
+  "0.2.5": [
+   {
+    "filename": "astro-0.2.5.tar.gz",
+    "packagetype": "sdist",
+    "python_version": "source",
+    "size": 62641,
+    "upload_time_iso_8601": "2017-12-19T22:18:13.081862Z",
+    "url": "https://files.pythonhosted.org/packages/cd/4f/debe2052736f125618ec217c6f46e75a3721d25d7bb97046b04fd31f86b6/astro-0.2.5.tar.gz",
+    "yanked": false
+   }
+  ],
+  "0.2.6": [
+   {
+    "filename": "astro-0.2.6.tar.gz",
+    "packagetype": "sdist",
+    "python_version": "source",
+    "size": 62692,
+    "upload_time_iso_8601": "2017-12-20T02:45:38.306818Z",
+    "url": "https://files.pythonhosted.org/packages/1d/2e/dc3a364ff63b6f83148ebedd04b7ce792767b0a545605d7b4cb29ddb85fa/astro-0.2.6.tar.gz",
+    "yanked": false
+   }
+  ],
+  "0.2.7": [
+   {
+    "filename": "astro-0.2.7.tar.gz",
+    "packagetype": "sdist",
+    "python_version": "source",
+    "size": 67537,
+    "upload_time_iso_8601": "2018-02-12T21:58:26.716547Z",
+    "url": "https://files.pythonhosted.org/packages/75/46/2eb0336e6600e9d6c4d602feaf35da04511a3049f647e58f85114a7dd82b/astro-0.2.7.tar.gz",
+    "yanked": false
+   }
+  ]
+ },
+ "urls": [
+  {
+   "filename": "astro-0.2.7.tar.gz",
+   "packagetype": "sdist",
+   "python_version": "source",
+   "size": 67537,
+   "upload_time_iso_8601": "2018-02-12T21:58:26.716547Z",
+   "url": "https://files.pythonhosted.org/packages/75/46/2eb0336e6600e9d6c4d602feaf35da04511a3049f647e58f85114a7dd82b/astro-0.2.7.tar.gz",
+   "yanked": false
+  }
+ ],
+ "vulnerabilities": []
+}

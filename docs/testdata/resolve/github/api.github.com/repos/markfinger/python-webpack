@@ -1,0 +1,12 @@
+{
+ "id": 27568524,
+ "name": "python-webpack",
+ "full_name": "markfinger/python-webpack",
+ "html_url": "https://github.com/markfinger/python-webpack",
+ "description": "Python bindings to webpack",
+ "fork": false,
+ "homepage": "",
+ "language": "Python",
+ "stargazers_count": 61,
+ "archived": true
+}

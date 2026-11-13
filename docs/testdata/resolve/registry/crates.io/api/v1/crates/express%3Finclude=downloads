@@ -1,0 +1,15 @@
+{
+ "crate": {
+  "id": "express",
+  "name": "express",
+  "description": "Compatible node express API web Framework for Rust",
+  "homepage": null,
+  "documentation": null,
+  "repository": "https://github.com/express-rs/express",
+  "max_stable_version": null,
+  "max_version": "0.0.0",
+  "newest_version": "0.0.0",
+  "default_version": "0.0.2",
+  "recent_downloads": 27
+ }
+}

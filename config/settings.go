@@ -20,9 +20,7 @@ func ProviderSettings() []Setting {
 		settings = append(settings, p.Settings...)
 	}
 	for _, p := range docs.Providers() {
-		if !p.Hidden {
-			settings = append(settings, p.Settings...)
-		}
+		settings = append(settings, p.Settings...)
 	}
 	return settings
 }

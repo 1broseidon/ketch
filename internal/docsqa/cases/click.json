@@ -1,0 +1,32 @@
+[
+  {
+    "id": "click-password",
+    "question": "click password option hide input",
+    "library": "https://click.palletsprojects.com/en/stable/",
+    "facts": [
+      {"quote": "this can also be replaced with the `password_option()` decorator", "source": "https://click.palletsprojects.com/en/stable/option-decorators/#password-option"}
+    ],
+    "not_found": [],
+    "budget": 1800
+  },
+  {
+    "id": "click-confirm",
+    "question": "click option prompt with confirmation",
+    "library": "https://click.palletsprojects.com/en/stable/",
+    "facts": [
+      {"quote": "this can also be replaced with the `confirmation_option()` decorator", "source": "https://click.palletsprojects.com/en/stable/option-decorators/#confirmation-option"}
+    ],
+    "not_found": [],
+    "budget": 1800
+  },
+  {
+    "id": "click-invoke",
+    "question": "click group invoke without command",
+    "library": "https://click.palletsprojects.com/en/stable/",
+    "facts": [
+      {"quote": "pass `invoke_without_command=True` to the group", "source": "https://click.palletsprojects.com/en/stable/commands-and-groups/#group-invocation-without-command"}
+    ],
+    "not_found": [],
+    "budget": 1800
+  }
+]

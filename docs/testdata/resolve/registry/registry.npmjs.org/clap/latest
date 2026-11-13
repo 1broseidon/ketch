@@ -1,0 +1,14 @@
+{
+ "name": "clap",
+ "version": "3.1.1",
+ "description": "Command line argument parser",
+ "homepage": "https://github.com/lahmatiy/clap#readme",
+ "repository": {
+  "url": "git+https://github.com/lahmatiy/clap.git",
+  "type": "git"
+ },
+ "bugs": {
+  "url": "https://github.com/lahmatiy/clap/issues"
+ },
+ "license": "MIT"
+}

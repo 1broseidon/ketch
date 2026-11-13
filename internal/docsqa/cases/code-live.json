@@ -1,0 +1,167 @@
+[
+  {
+    "id": "code-requests-retries",
+    "question": "how do I set retries in requests",
+    "library": "https://docs.python-requests.org/en/latest/",
+    "facts": [
+      {
+        "quote": "By default, Requests does not retry failed connections",
+        "source": "https://docs.python-requests.org/en/latest/api/#lower-lower-level-classes"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "code-live",
+    "split": "tune"
+  },
+  {
+    "id": "code-pytest-param-fixture",
+    "question": "pytest parametrize a fixture",
+    "library": "https://docs.pytest.org/en/stable/",
+    "facts": [
+      {
+        "quote": "Fixture functions can be parametrized in which case they will be called multiple times",
+        "source": "https://docs.pytest.org/en/stable/how-to/fixtures.html#parametrizing-fixtures"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "code-live",
+    "split": "tune"
+  },
+  {
+    "id": "code-flask-blueprint",
+    "question": "flask blueprint url prefix",
+    "library": "https://flask.palletsprojects.com/en/stable/",
+    "facts": [
+      {
+        "quote": "Blueprints however can also be mounted at different locations",
+        "source": "https://flask.palletsprojects.com/en/stable/blueprints/?highlight=exception#registering-blueprints"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "code-live",
+    "split": "tune"
+  },
+  {
+    "id": "code-sqlalchemy-one-to-many",
+    "question": "sqlalchemy one to many relationship",
+    "library": "https://docs.sqlalchemy.org/en/21/",
+    "facts": [
+      {
+        "quote": "A one to many relationship places a foreign key on the child table referencing the parent.",
+        "source": "https://docs.sqlalchemy.org/en/21/orm/basic_relationships.html#one-to-many"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "code-live",
+    "split": "tune"
+  },
+  {
+    "id": "code-httpx-timeouts",
+    "question": "httpx timeout configuration",
+    "library": "https://www.python-httpx.org/",
+    "facts": [
+      {
+        "quote": "HTTPX also allows you to specify the timeout behavior in more fine grained detail.",
+        "source": "https://www.python-httpx.org/advanced/timeouts/#fine-tuning-the-configuration"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "code-live",
+    "split": "tune"
+  },
+  {
+    "id": "code-typer-optional-arg",
+    "question": "typer optional cli argument",
+    "library": "https://typer.tiangolo.com/",
+    "facts": [
+      {
+        "quote": "To make a CLI argument optional, use typer.Argument() and make sure to provide a",
+        "source": "https://typer.tiangolo.com/tutorial/arguments/optional/#make-an-optional-cli-argument"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "code-live",
+    "split": "tune"
+  },
+  {
+    "id": "code-vite-env",
+    "question": "vite env variables",
+    "library": "https://vite.dev/",
+    "facts": [
+      {
+        "quote": "Vite exposes env variables under the import.meta.env object as strings automatically.",
+        "source": "https://vite.dev/guide/env-and-mode#env-variables"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "code-live",
+    "split": "tune"
+  },
+  {
+    "id": "code-vitest-mock-module",
+    "question": "vitest mock a module",
+    "library": "https://vitest.dev/",
+    "facts": [
+      {
+        "quote": "To mock a module completely, you can use the vi.mock API.",
+        "source": "https://vitest.dev/guide/mocking/modules#mocking-a-module"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "code-live",
+    "split": "tune"
+  },
+  {
+    "id": "code-express-errors",
+    "question": "express error handling middleware",
+    "library": "https://expressjs.com/en/",
+    "facts": [
+      {
+        "quote": "error-handling functions have four arguments instead of three",
+        "source": "https://expressjs.com/en/guide/error-handling/#writing-error-handlers"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "code-live",
+    "split": "tune"
+  },
+  {
+    "id": "code-celery-retry",
+    "question": "celery retry a task on exception",
+    "library": "https://docs.celeryq.dev/en/stable/",
+    "facts": [
+      {
+        "quote": "can be used to re-execute the task, for example in the event of recoverable errors.",
+        "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html#retrying"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "code-live",
+    "split": "tune"
+  },
+  {
+    "id": "code-django-select-related",
+    "question": "django queryset select_related",
+    "library": "https://docs.djangoproject.com/en/6.1/",
+    "facts": [
+      {
+        "quote": "Returns a QuerySet that will join in the named foreign-key relationships",
+        "source": "https://docs.djangoproject.com/en/6.1/ref/models/querysets/#select-related"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "code-live",
+    "split": "tune"
+  }
+]

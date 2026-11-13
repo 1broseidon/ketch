@@ -1,0 +1,12 @@
+{
+ "id": 85915856,
+ "name": "tokio",
+ "full_name": "PyO3/tokio",
+ "html_url": "https://github.com/PyO3/tokio",
+ "description": "Asyncio event loop written in Rust language",
+ "fork": false,
+ "homepage": "",
+ "language": "Rust",
+ "stargazers_count": 245,
+ "archived": true
+}

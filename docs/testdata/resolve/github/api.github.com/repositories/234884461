@@ -1,0 +1,12 @@
+{
+ "id": 234884461,
+ "name": "solid",
+ "full_name": "janaakhterov/solid",
+ "html_url": "https://github.com/janaakhterov/solid",
+ "description": "Solidity encoding/decoding crate",
+ "fork": false,
+ "homepage": "",
+ "language": "Rust",
+ "stargazers_count": 8,
+ "archived": false
+}

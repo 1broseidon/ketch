@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Getting started | Docs</title>
+<meta name="generator" content="Astro v7.4.2"/>
+<meta name="generator" content="Starlight v0.42.7"/>
+<meta property="og:title" content="Getting started"/>
+<meta property="og:site_name" content="Docs"/>
+<meta name="description" content="Guides, resources, and API references to help you build with Astro — the web framework for content-driven websites."/>
+<script type="module" src="/_astro/page.cNngjUgL.js"></script>
+</head>
+<body>
+<a href="#_top">Skip to content</a>
+<header>
+<a href="https://astro.build/" aria-label="Astro"><style>[data-theme="dark"] .flame { fill: url(#gradient); }</style></a>
+<a href="/en/getting-started/" class="site-title">Docs</a>
+<a href="https://github.com/withastro/astro">GitHub</a>
+<a href="https://astro.build/chat">Discord</a>
+</header>
+<nav>
+<a href="/en/tutorial/0-introduction/">Introduction</a>
+<a href="/en/concepts/why-astro/">Why Astro?</a>
+<a href="/en/install-and-setup/">Installation</a>
+<a href="/en/basics/project-structure/">Project structure</a>
+<a href="/en/guides/content-collections/">Content collections</a>
+<a href="/en/guides/deploy/github/">GitHub Pages</a>
+</nav>
+<main><h1>Getting started</h1><p>Astro is the web framework for building content-driven websites like blogs, marketing, and e-commerce.</p></main>
+</body>
+</html>

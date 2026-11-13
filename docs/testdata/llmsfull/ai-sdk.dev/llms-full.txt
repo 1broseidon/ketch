@@ -1,0 +1,51 @@
+# AI SDK documentation
+
+> The TypeScript toolkit for building AI applications and agents.
+
+## When to use AI SDK
+
+- Category: Developer tools
+- Audience: JavaScript and TypeScript developers
+
+## Documentation
+
+---
+title: Backpressure
+description: How to handle backpressure and cancellation when working with the AI SDK
+url: "https://ai-sdk.dev/docs/advanced/backpressure"
+docs_index: /llms.txt
+---
+
+> For an index of all documentation, see [/llms.txt](/llms.txt).
+
+This page focuses on understanding back-pressure and cancellation when working with streams.
+
+## Back-pressure and Cancellation with Streams
+
+Let's begin by setting up a simple example program:
+
+```jsx
+async function* integers() {
+  let i = 1;
+  while (true) {
+    yield i++;
+  }
+}
+```
+
+---
+title: Caching
+description: How to handle caching when working with the AI SDK
+url: "https://ai-sdk.dev/docs/advanced/caching"
+docs_index: /llms.txt
+---
+
+Depending on the type of application you're building, you may want to cache the responses you receive from your AI provider.
+
+## Using Language Model Middleware
+
+Use `wrapLanguageModel` with a caching middleware to cache `doGenerate` results.
+
+---
+
+A horizontal rule inside a page is not a page break.

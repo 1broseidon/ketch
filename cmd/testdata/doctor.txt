@@ -7,5 +7,5 @@ problems: 2 (1 blocking)
 search   auto (default)         ok                  0ms  parallel serving, 5 of 6 providers healthy
 search   brave                  no_key              0ms  missing fixture key
 code     grepapp (default)      ok                 12ms
-docs     context7 (default)     misconfigured       3ms  fixture rejected
+docs     context7               misconfigured       3ms  fixture rejected
 browser  none                   skipped             0ms  not configured

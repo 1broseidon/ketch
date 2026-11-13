@@ -29,7 +29,10 @@ func clampSpans(html string) string {
 	})
 }
 
-// toMarkdown converts HTML with the shared converter, spans clamped.
+// toMarkdown converts HTML with the shared converter, spans clamped,
+// table cells made convertible (tableCells) and their line breaks
+// collapsed (cellBreaks).
 func toMarkdown(html string, opts ...converter.ConvertOptionFunc) (string, error) {
-	return markdownConverter.ConvertString(clampSpans(html), opts...)
+	md, err := markdownConverter.ConvertString(tableCells(clampSpans(html)), opts...)
+	return cellBreaks(md), err
 }

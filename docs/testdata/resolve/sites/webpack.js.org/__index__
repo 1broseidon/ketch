@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>webpack</title>
+<meta name="theme-color" content="#2B3A42" />
+<meta name="description" content="webpack bundles JavaScript, CSS, HTML, WebAssembly and assets into optimized output for browsers, Node.js, Deno, Bun and other environments." />
+<meta property="og:site_name" content="webpack" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="webpack" />
+<meta property="og:description" name="description" content="webpack bundles JavaScript, CSS, HTML, WebAssembly and assets into optimized output for browsers, Node.js, Deno, Bun and other environments." />
+<meta property="og:image" content="https://webpack.js.org/icon-pwa-512x512.934507c816afbcdb.png" />
+<meta property="twitter:card" content="summary" />
+<meta property="twitter:site" content="@webpack" />
+<meta property="twitter:creator" content="@webpack" />
+<meta property="twitter:domain" content="https://webpack.js.org/" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="apple-mobile-web-app-title" content="webpack" />
+<meta name="msapplication-TileImage" content="/icon_150x150.png" />
+<meta name="msapplication-TileColor" content="#465e69" />
+<script src="/vendor.3cb5b3ad66beb5d9.js"></script>
+<script src="/index.e8adb964781f1b13.js"></script>
+</head>
+<body>
+<h1>bundle your assets scripts</h1>
+<a href="/"></a>
+<a href="/concepts/">Documentation</a>
+<a href="/contribute/">Contribute</a>
+<a href="/blog/">Blog</a>
+<a href="https://github.com/webpack/webpack">(opens in a new tab)</a>
+<a href="https://x.com/webpack">(opens in a new tab)</a>
+<a href="https://stackoverflow.com/questions/tagged/webpack">(opens in a new tab)</a>
+<a href="https://discord.com/invite/webpack">(opens in a new tab)</a>
+<a href="https://webpack.js.org/">English</a>
+<a href="https://webpack.docschina.org/">中文</a>
+<a href="https://webpack.kr/">한국어</a>
+<a href="#install-webpack"></a>
+<a href="#write-your-code"></a>
+<a href="https://github.com/webpack/webpack/releases">Changelog(opens in a new tab)</a>
+</body>
+</html>

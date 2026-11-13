@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Introduction | Widget docs</title>
+<meta name="description" content="Documentation for Widget, accessible widgets for the browser.">
+<meta property="og:site_name" content="Widget">
+</head>
+<body>
+<header><nav>
+<a href="/">Widget</a>
+<a href="/docs/">Docs</a>
+<a href="https://github.com/widgetjs/widget">GitHub</a>
+</nav></header>
+<aside><nav>
+<a href="/docs/getting-started/">Getting started</a>
+<a href="/docs/themes/">Themes</a>
+<a href="/docs/dialogs/">Dialogs</a>
+</nav></aside>
+<main>
+<h1>Introduction</h1>
+<p>Widget renders accessible menus, dialogs and tabs in the browser. These docs cover installing it, theming it and every component it ships.</p>
+<p>Start with getting started, then read the themes guide to configure colours and spacing with CSS custom properties.</p>
+<p><a href="https://github.com/widgetjs/widget/edit/main/docs/index.md">Edit this page on GitHub</a></p>
+</main>
+</body>
+</html>

@@ -1,0 +1,154 @@
+{
+  "api_version": "1",
+  "projects": {
+    "current": {
+      "id": 777,
+      "name": "pytest",
+      "slug": "pytest",
+      "language": {
+        "code": "en",
+        "name": "English"
+      },
+      "homepage": "https://pytest.org/",
+      "repository": {
+        "url": "https://github.com/pytest-dev/pytest",
+        "type": "git"
+      },
+      "default_version": "stable",
+      "default_branch": "main",
+      "urls": {
+        "documentation": "https://docs.pytest.org/en/stable/",
+        "home": "https://app.readthedocs.org/projects/pytest/",
+        "builds": "https://app.readthedocs.org/projects/pytest/builds/",
+        "versions": "https://app.readthedocs.org/projects/pytest/versions/",
+        "downloads": null
+      },
+      "versioning_scheme": "multiple_versions_with_translations",
+      "single_version": false
+    },
+    "translations": []
+  },
+  "versions": {
+    "current": {
+      "aliases": [],
+      "slug": "stable",
+      "verbose_name": "stable",
+      "identifier": "cf470ec0bf7eb89cd97dd56df4859eae5db46447",
+      "built": true,
+      "active": true,
+      "hidden": false,
+      "type": "tag",
+      "urls": {
+        "documentation": "https://docs.pytest.org/en/stable/",
+        "vcs": "https://github.com/pytest-dev/pytest/tree/9.1.1/",
+        "dashboard": {
+          "edit": "https://app.readthedocs.org/projects/pytest/version/stable/edit/"
+        }
+      }
+    },
+    "active": [
+      {
+        "aliases": [],
+        "slug": "latest",
+        "verbose_name": "latest",
+        "identifier": "main",
+        "built": true,
+        "active": true,
+        "hidden": false,
+        "type": "branch",
+        "urls": {
+          "documentation": "https://docs.pytest.org/en/latest/",
+          "vcs": "https://github.com/pytest-dev/pytest/tree/main/",
+          "dashboard": {
+            "edit": "https://app.readthedocs.org/projects/pytest/version/latest/edit/"
+          }
+        }
+      },
+      {
+        "aliases": [],
+        "slug": "stable",
+        "verbose_name": "stable",
+        "identifier": "cf470ec0bf7eb89cd97dd56df4859eae5db46447",
+        "built": true,
+        "active": true,
+        "hidden": false,
+        "type": "tag",
+        "urls": {
+          "documentation": "https://docs.pytest.org/en/stable/",
+          "vcs": "https://github.com/pytest-dev/pytest/tree/9.1.1/",
+          "dashboard": {
+            "edit": "https://app.readthedocs.org/projects/pytest/version/stable/edit/"
+          }
+        }
+      },
+      {
+        "aliases": [],
+        "slug": "9.0.x",
+        "verbose_name": "9.0.x",
+        "identifier": "9.0.x",
+        "built": true,
+        "active": true,
+        "hidden": false,
+        "type": "branch",
+        "urls": {
+          "documentation": "https://docs.pytest.org/en/9.0.x/",
+          "vcs": "https://github.com/pytest-dev/pytest/tree/9.0.x/",
+          "dashboard": {
+            "edit": "https://app.readthedocs.org/projects/pytest/version/9.0.x/edit/"
+          }
+        }
+      },
+      {
+        "aliases": [],
+        "slug": "8.4.x",
+        "verbose_name": "8.4.x",
+        "identifier": "8.4.x",
+        "built": true,
+        "active": true,
+        "hidden": false,
+        "type": "branch",
+        "urls": {
+          "documentation": "https://docs.pytest.org/en/8.4.x/",
+          "vcs": "https://github.com/pytest-dev/pytest/tree/8.4.x/",
+          "dashboard": {
+            "edit": "https://app.readthedocs.org/projects/pytest/version/8.4.x/edit/"
+          }
+        }
+      },
+      {
+        "aliases": [],
+        "slug": "8.3.x",
+        "verbose_name": "8.3.x",
+        "identifier": "8.3.x",
+        "built": true,
+        "active": true,
+        "hidden": false,
+        "type": "branch",
+        "urls": {
+          "documentation": "https://docs.pytest.org/en/8.3.x/",
+          "vcs": "https://github.com/pytest-dev/pytest/tree/8.3.x/",
+          "dashboard": {
+            "edit": "https://app.readthedocs.org/projects/pytest/version/8.3.x/edit/"
+          }
+        }
+      },
+      {
+        "aliases": [],
+        "slug": "8.2.x",
+        "verbose_name": "8.2.x",
+        "identifier": "8.2.x",
+        "built": true,
+        "active": true,
+        "hidden": false,
+        "type": "branch",
+        "urls": {
+          "documentation": "https://docs.pytest.org/en/8.2.x/",
+          "vcs": "https://github.com/pytest-dev/pytest/tree/8.2.x/",
+          "dashboard": {
+            "edit": "https://app.readthedocs.org/projects/pytest/version/8.2.x/edit/"
+          }
+        }
+      }
+    ]
+  }
+}

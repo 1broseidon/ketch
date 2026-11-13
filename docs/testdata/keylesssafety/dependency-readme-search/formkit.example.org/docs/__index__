@@ -1,0 +1,4 @@
+<html><head><title>Formkit</title><meta name="generator" content="VitePress v1"></head>
+<body><nav><a href="/docs/getting-started">Getting started</a><a href="/docs/validation">Validation</a><a href="https://github.com/formkit-org/formkit">GitHub</a></nav>
+<aside><h2>Integrations</h2><ul><li><a href="https://www.npmjs.com/package/sparrow-forms">sparrow-forms</a></li><li><a href="https://www.npmjs.com/package/kestrel-forms">kestrel-forms</a></li></ul></aside>
+<h1>Formkit</h1><p>Forms for any UI library.</p></body></html>

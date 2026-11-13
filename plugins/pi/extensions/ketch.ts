@@ -18,7 +18,7 @@ const INSTALL_HINT = "brew install ketch, npm i -g ketch-cli, or go install gith
 // Pinned so the plugin never executes an unreviewed release; KETCH_PI_NO_NPX=1 opts out.
 // Bumped in every release commit; the unit tests and the release workflow
 // fail when it differs from the newest CHANGELOG.md version.
-export const NPX_PACKAGE = "ketch-cli@0.20.5";
+export const NPX_PACKAGE = "ketch-cli@0.21.0";
 const NPX_FIRST_RUN_EXTRA_MS = 120_000;
 const KETCH_MISSING = `[precondition] ketch not on PATH: ${INSTALL_HINT}`;
 
@@ -127,25 +127,50 @@ const CodeParams = Type.Object({
 });
 
 const DocsParams = Type.Object({
-	query: Type.String({ description: "the docs search query, or a library name when resolve is true" }),
-	backend: Type.Optional(Type.String({ description: "docs backend: context7 (default: the configured backend)" })),
+	query: Type.Optional(
+		Type.String({
+			description:
+				"the docs question (search picks the library and its docs site from it unless library is set), or the library to resolve when resolve is true (search: optional; none lists every indexed library); not needed with section",
+		}),
+	),
+	backend: Type.Optional(
+		Type.String({
+			description:
+				"docs backend: search (the default: the local index, else a web search for the docs site, no key) or context7 (curated snippets; no key needed, but keyless use has a small anonymous quota, about 200 requests a month per IP) (default: search; context7 only when named here)",
+		}),
+	),
 	library: Type.Optional(
 		Type.String({
 			description:
-				"library ID to fetch docs from directly, skipping the resolve step; requires a backend with library operations",
+				"the library to answer from. search: a docs root as resolve lists it, or a library name or spec to prefer (name@version such as django@5.2, npm:/pypi:/crates:/go:/github: prefixes such as pypi:click, owner/repo); a library the operator indexed answers from the local index, and a URL below its root narrows the answer to the pages under it (scope); a docs URL not indexed is searched within. " +
+				"context7: a library ID from resolve, such as /vercel/next.js",
+		}),
+	),
+	section: Type.Optional(
+		Type.String({
+			description:
+				"read one section instead of searching: the url#anchor in a result's section field or a defined_in entry (a page URL alone returns the page's sections in order), from the local index or, for a page a search read, through the page cache; no query; a section longer than tokens (default 4000) returns its first page (page and pages say so): raise tokens to read more",
 		}),
 	),
 	tokens: Type.Optional(
-		Type.Integer({ minimum: 1, description: "library token budget when library is set (default 4000)" }),
+		Type.Integer({
+			minimum: 1,
+			description:
+				"token budget: search answers in about 1,800 tokens unless set (leave it unset unless a result is too long to read); context7 defaults to 4000; with section, the cap of the section returned (default 4000)",
+		}),
 	),
 	limit: Type.Optional(
 		Type.Integer({
 			minimum: 1,
-			description: "max number of results (default: the configured limit; with library set, unbounded unless given)",
+			description:
+				"max number of results: search caps the groups only when given (unset, the token budget decides); context7 defaults to the configured limit, unbounded with library unless given",
 		}),
 	),
 	resolve: Type.Optional(
-		Type.Boolean({ description: "resolve a library name to library IDs instead of searching docs" }),
+		Type.Boolean({
+			description:
+				"resolve the query as a library name instead of searching docs: Context7 library IDs; search answers from the local index first, with no network (the indexed libraries the query names, every one with no query, each marked indexed), else resolves the name to docs roots with their version, versions, package specs and evidence",
+		}),
 	),
 	tag: Type.Optional(
 		Type.String({
@@ -511,11 +536,12 @@ export function docsArgs(p: DocsInput): string[] {
 	const args = ["docs", "--json"];
 	flag(args, "--backend", p.backend);
 	flag(args, "--library", p.library);
+	flag(args, "--section", p.section);
 	flag(args, "--tokens", p.tokens);
 	flag(args, "--limit", p.limit);
 	toggle(args, "--resolve", p.resolve);
 	flag(args, "--tag", p.tag);
-	return positional(args, p.query);
+	return p.section ? args : positional(args, p.query ?? "");
 }
 
 /**
@@ -660,12 +686,19 @@ export default function ketch(pi: ExtensionAPI): void {
 		...renderers("docs"),
 		label: "ketch docs",
 		description:
-			"Search library documentation using Context7. Supports resolving a library name to a Context7 library ID (resolve=true), and fetching docs directly from a known library ID (library=/org/repo, bounded by tokens)." +
+			"Search library documentation. The default backend, search, answers from the docs themselves with no API key: a library the operator indexed (ketch docs index) answers from the local index; otherwise ketch searches the web for the question, picks the documentation site the results agree on, reads the matching pages and answers from them. Nothing is saved (only ketch docs index adds libraries or pages): the same question again within cache_ttl is answered from the page cache. " +
+			"The answer is evidence and a verdict: status found (evidence matching the question, not a promise that it answers), partial (reason terms_not_found: not_found names your terms this source lacks) or refused (nothing here matches); origin, on pages a search read, is verified with its evidence, by name (only a name ties the site to what you asked: a registry package, a domain carrying it; the search may favour another, both named) or unverified (ketch could not confirm the site as the official docs): for either, name the site you cite, or pass the official docs as library; defined_in names the section defining a term no result shows; stale says the cited pages could not be checked. Results are the matching pieces of sections, verbatim, about 1,800 tokens in all unless tokens is set. " +
+			"library names the library: a docs root as resolve lists it, or a name or spec such as django@5.2 or pypi:click, read from the docs root resolve verifies (a name several libraries share is refused, listing them: pass one); a URL below an indexed root narrows the answer to the pages under it (scope); to read one page, use section. " +
+			"A cut result is marked truncated (shown_tokens of section_tokens); to read it, or a defined_in target, pass its url#anchor (the result's section field) as section, with no query. Two rules. Text behind … or in a truncated result is unread: read it with section before stating what it says, or say you did not read it. Whatever your answer says that no result prints is your own knowledge: label it so, never cite the docs for it. Leave tokens unset unless a result is too long to read. " +
+			"backend=context7 returns Context7's curated snippets instead, for that call only; Context7 needs no key either, but keyless it runs on an anonymous quota of about 200 requests a month per IP, and a spent quota is an [upstream] error naming when it resets. " +
+			"resolve=true lists the indexed libraries (query narrows it; a name none matches is resolved on the web to docs roots, or Context7 library IDs): ask it before calling a source unknown, and for every not_found term ask the indexed source that owns it before saying it is not covered." +
 			ERR_TAXONOMY,
-		promptSnippet: "ketch_docs for a library's own documentation; resolve the name first, then fetch by library ID",
+		promptSnippet: "ketch_docs for a library's own documentation; ask the question, then read a cut result in full with section",
 		parameters: DocsParams,
 		async execute(_id, p, signal) {
-			if (!p.query?.trim()) return validation("query is required");
+			if (p.section && (p.resolve || p.query?.trim())) return validation("section takes no query and no resolve");
+			// search's resolve with no query lists every indexed library
+			if (!p.section && !(p.resolve && p.backend !== "context7") && !p.query?.trim()) return validation("query is required");
 			if (p.resolve && p.library) return validation("resolve and library are mutually exclusive");
 			if (p.resolve && p.tag) return validation("tag is not available with resolve");
 			return passthrough(pi, docsArgs(p), signal, TIMEOUT.docs);

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"slices"
+	"strings"
 
 	"github.com/1broseidon/ketch/health"
 	config "github.com/1broseidon/ketch/internal/configbase"
@@ -15,18 +16,24 @@ type Provider struct {
 	ID           string
 	Setup        string
 	LibrarySetup string
-	Name         string
-	Hidden       bool
-	Usable       func(*config.Config) bool
-	Settings     []config.Setting
-	New          func(*config.Config) (Searcher, error)
-	Probe        func(context.Context, *http.Client, *config.Config) (health.Status, string)
+	// LibraryHelp says what the provider accepts as a library. It feeds the
+	// --library and --resolve help and the MCP library, resolve and query
+	// descriptions, so shared help text never names a provider; empty adds
+	// nothing.
+	LibraryHelp string
+	Name        string
+	Usable      func(*config.Config) bool
+	Settings    []config.Setting
+	New         func(*config.Config, Deps) (Searcher, error)
+	Probe       func(context.Context, *http.Client, *config.Config) (health.Status, string)
 }
 
-// Required reports whether a failing health check must fail doctor. Selection
-// and explicitly configured credentials gate health independently of usability.
+// Required reports whether a failing health check must fail doctor: the
+// docs backend every call uses (search), or one whose credentials are
+// configured, independently of usability. A stored docs_backend no longer
+// selects one (RetiredDocsBackend).
 func (p Provider) Required(cfg *config.Config) bool {
-	if cfg.DocsBackend == p.ID {
+	if p.ID == SearchBackend {
 		return true
 	}
 	for _, setting := range p.Settings {
@@ -37,9 +44,32 @@ func (p Provider) Required(cfg *config.Config) bool {
 	return false
 }
 
+// providers are the docs backends, the default (search) first.
 var providers = []Provider{
+	searchProvider(),
 	context7Provider(),
-	localProvider(),
+}
+
+// RetiredDocsBackend says why the docs_backend config key does nothing:
+// search is the docs backend of every call, and Context7 answers only a
+// call that asks for it (design/docs-evidence.md, Build 1). A stored
+// value came from an older default, not a choice; it is left in the file
+// and ignored.
+const RetiredDocsBackend = "docs_backend is retired: every docs call uses search; ask for Context7 per call with -b context7 (MCP: backend \"context7\"); a stored value is left in the file and ignored"
+
+// legacyBackends maps a docs_backend value an earlier release stored to
+// the backend that serves it now. ketch 0.20 let `ketch config set
+// docs_backend local` store the local index's ID before it was
+// implemented; the local index is now part of search.
+var legacyBackends = map[string]string{"local": SearchBackend}
+
+// CanonicalBackend is the backend id names: a legacy value's replacement
+// (legacyBackends), else id itself.
+func CanonicalBackend(id string) string {
+	if to, ok := legacyBackends[id]; ok {
+		return to
+	}
+	return id
 }
 
 // Providers returns the descriptors in their stable presentation order.
@@ -51,13 +81,12 @@ func Providers() []Provider {
 	return snapshot
 }
 
-// AvailableBackends returns the implemented provider IDs in registry order.
+// AvailableBackends returns the provider IDs in registry order: every value
+// --backend and the docs_backend config key accept.
 func AvailableBackends() []string {
 	var names []string
 	for _, p := range providers {
-		if !p.Hidden {
-			names = append(names, p.ID)
-		}
+		names = append(names, p.ID)
 	}
 	return names
 }
@@ -66,9 +95,7 @@ func AvailableBackends() []string {
 func ProviderNames() []string {
 	var names []string
 	for _, p := range providers {
-		if !p.Hidden {
-			names = append(names, p.Name)
-		}
+		names = append(names, p.Name)
 	}
 	return names
 }
@@ -84,11 +111,11 @@ func Lookup(id string) (Provider, bool) {
 }
 
 // Build checks the descriptor's usability before constructing a client.
-func (p Provider) Build(c *config.Config) (Searcher, error) {
+func (p Provider) Build(c *config.Config, deps Deps) (Searcher, error) {
 	if !p.Usable(c) {
 		return nil, errors.New(p.Setup)
 	}
-	return p.New(c)
+	return p.New(c, deps)
 }
 
 // LibraryResolver is the optional library capability of a docs provider.
@@ -103,10 +130,7 @@ type LibraryResolver interface {
 func LibraryBackends() []string {
 	var names []string
 	for _, p := range providers {
-		if p.Hidden {
-			continue
-		}
-		client, err := p.New(&config.Config{})
+		client, err := p.New(&config.Config{}, Deps{})
 		if err != nil {
 			continue
 		}
@@ -117,8 +141,11 @@ func LibraryBackends() []string {
 	return names
 }
 
-// SupportsLibraries reports whether a registered provider has library operations.
-func SupportsLibraries(id string) bool { return slices.Contains(LibraryBackends(), id) }
+// SupportsLibraries reports whether a registered provider has library
+// operations.
+func SupportsLibraries(id string) bool {
+	return slices.Contains(LibraryBackends(), id)
+}
 
 // ResolveBackend retains the legacy resolve fallback while allowing additional
 // library-capable providers to handle an explicitly selected backend.
@@ -141,4 +168,26 @@ func LibraryProviderNames() []string {
 		names = append(names, p.Name)
 	}
 	return names
+}
+
+// LibraryHelp joins what each library provider says it accepts as a
+// library beyond a resolved ID (its descriptor's LibraryHelp), labelled with
+// the provider's name, so the CLI help and the MCP descriptions that use it
+// name no provider themselves. Empty when no provider says anything.
+func LibraryHelp() string {
+	var parts []string
+	for _, id := range LibraryBackends() {
+		if p, ok := Lookup(id); ok && p.LibraryHelp != "" {
+			parts = append(parts, p.Name+": "+p.LibraryHelp)
+		}
+	}
+	return strings.Join(parts, "; ")
+}
+
+// WithLibraryHelp appends LibraryHelp to s in parentheses, when there is any.
+func WithLibraryHelp(s string) string {
+	if help := LibraryHelp(); help != "" {
+		return s + " (" + help + ")"
+	}
+	return s
 }

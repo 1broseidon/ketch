@@ -39,7 +39,7 @@ type toolMeta struct {
 var toolProse = map[string]toolMeta{
 	"search": {"web search", "search for the open web"},
 	"code":   {"grep public OSS repos for real-world usage", "code for code examples"},
-	"docs":   {"curated library/API documentation via " + strings.Join(docs.ProviderNames(), ", "), "docs for library references"},
+	"docs":   {"library/API documentation via " + strings.Join(docs.ProviderNames(), ", "), "docs for library references"},
 	"scrape": {"fetch URLs as clean markdown", "scrape when you already have the URL"},
 	"crawl":  {"bounded same-host multi-page crawl", "crawl only when one page is not enough"},
 	"tag":    {"bookmark sources and revisit them across sessions", "tag to keep and revisit a working set instead of re-searching"},
@@ -63,7 +63,7 @@ func buildServerInstructions(tools []string) string {
 	writeClauses(&b, tools, func(name string) string { return toolProse[name].guidance })
 	b.WriteString(".\n")
 	b.WriteString(`Backend defaults and API keys come from the operator's ketch config; omit the backend argument to use them (on the CLI, ` + "`ketch config`" + ` shows the effective settings).
-Tool errors start with a stable prefix: [validation] and [not_found] mean fix your input (retrying unchanged will not help); [upstream] is a backend/network failure where retrying may help; [precondition] means the operator must configure something (e.g. an API key or browser); [cancelled] means the call was cancelled or timed out.
+Tool errors start with a stable prefix: [validation] and [not_found] mean fix your input (retrying unchanged will not help); [upstream] is a backend/network failure or a timeout, where retrying may help; [precondition] means the operator must configure something (e.g. an API key or browser); [cancelled] means the call was cancelled.
 `)
 	writeSizeAdvice(&b, tools)
 	// The historic static text ended without a trailing newline.

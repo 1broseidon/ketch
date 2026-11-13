@@ -898,7 +898,7 @@ func TestBuildSpecsRequiredGating(t *testing.T) {
 	if s := findSpec(t, specs, "code", "github"); s.required {
 		t.Error("github not default must be informational")
 	}
-	if s := findSpec(t, specs, "docs", "context7"); !s.required {
+	if s := findSpec(t, specs, "docs", "search"); !s.required {
 		t.Error("default docs backend must be required")
 	}
 	if s := findSpec(t, specs, "cache", "bbolt"); !s.required {

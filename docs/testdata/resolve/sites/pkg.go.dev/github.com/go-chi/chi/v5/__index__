@@ -1,0 +1,174 @@
+<!doctype html>
+<html><head>
+<title>chi package - github.com/go-chi/chi/v5 - Go Packages</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="Description" content="Package chi is a small, idiomatic and composable router for building HTTP services.">
+</head><body>
+<a href="https://blink.qualtrics.com/jfe/form/SV_ba8fa1ZcSQQdTRs?s=p" class="go-SurveyBanner-link js-surveyBannerLink">Take the 2026 Go Developer Survey</a>
+<a href="https://go.dev/" class="js-headerLogo"></a>
+<a href="#main-content" aria-label="Skip to main content" class="skip-to-content-link">Skip to Main Content</a>
+<a href="#" class="js-desktop-menu-hover">Why Go</a>
+<a href="https://go.dev/solutions/case-studies">Case Studies</a>
+<a href="https://go.dev/solutions/use-cases">Use Cases</a>
+<a href="https://go.dev/security/">Security</a>
+<a href="https://go.dev/learn/">Learn</a>
+<a href="#" class="js-desktop-menu-hover">Docs</a>
+<a href="https://go.dev/doc/effective_go">Effective Go</a>
+<a href="https://go.dev/doc/">Go User Manual</a>
+<a href="https://pkg.go.dev/std">Standard library</a>
+<a href="https://go.dev/doc/devel/release">Release Notes</a>
+<a href="/api">API</a>
+<a href="/">Packages</a>
+<a href="#" class="js-desktop-menu-hover">Community</a>
+<a href="https://go.dev/talks/">Recorded Talks</a>
+<a href="https://www.meetup.com/pro/go">Meetups</a>
+<a href="https://github.com/golang/go/wiki/Conferences">Conferences</a>
+<a href="https://go.dev/blog">Go blog</a>
+<a href="https://go.dev/help">Go project</a>
+<a href="https://groups.google.com/g/golang-nuts" aria-label="Get connected with google-groups (Opens in new window)" title="Get connected with google-groups (Opens in new window)" class="go-Header-socialIcon"></a>
+<a href="https://github.com/golang" aria-label="Get connected with github (Opens in new window)" title="Get connected with github (Opens in new window)" class="go-Header-socialIcon"></a>
+<a href="https://twitter.com/golang" aria-label="Get connected with twitter (Opens in new window)" title="Get connected with twitter (Opens in new window)" class="go-Header-socialIcon"></a>
+<a href="https://www.reddit.com/r/golang/" aria-label="Get connected with reddit (Opens in new window)" title="Get connected with reddit (Opens in new window)" class="go-Header-socialIcon"></a>
+<a href="https://invite.slack.golangbridge.org/" aria-label="Get connected with slack (Opens in new window)" title="Get connected with slack (Opens in new window)" class="go-Header-socialIcon"></a>
+<a href="https://stackoverflow.com/collectives/go" aria-label="Get connected with stack-overflow (Opens in new window)" class="go-Header-socialIcon"></a>
+<a href="https://go.dev/"></a>
+<a href="#">Why Go</a>
+<a href="#">Why Go</a>
+<a href="/github.com/go-chi/chi/v5@v5.5.0">github.com/go-chi/chi/v5</a>
+<a href="/github.com/go-chi/chi/v5" aria-label="Go to Latest Version">Go to latest</a>
+<a href="/github.com/go-chi/chi/v5?tab=licenses">MIT</a>
+<a href="/github.com/go-chi/chi/v5?tab=imports" aria-label="Imports: 10">Imports: 10</a>
+<a href="/github.com/go-chi/chi/v5?tab=importedby" aria-label="Imported By: 17,309">Imported by: 17,309</a>
+<a href="https://github.com/go-chi/chi/tree/v5.5.0/go.mod">go.mod</a>
+<a href="https://github.com/go-chi/chi" title="https://github.com/go-chi/chi">github.com/go-chi/chi</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5"></a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/middleware">middleware</a>
+<a href="https://github.com/go-chi/render">render</a>
+<a href="https://github.com/go-chi/docgen">docgen</a>
+<a href="https://github.com/go-chi/chi/issues/91">discussion</a>
+<a href="https://github.com/go-chi/chi/blob/master/CHANGELOG.md">CHANGELOG</a>
+<a href="https://github.com/go-chi/chi/raw/master/_examples/">_examples/</a>
+<a href="https://github.com/go-chi/chi/raw/master/_examples/rest/routes.json">routes.json</a>
+<a href="https://github.com/go-chi/chi/blob/master/_examples/rest/routes.md">routes.md</a>
+<a href="https://github.com/go-chi/chi/raw/master/_examples/">examples</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#AllowContentEncoding">AllowContentEncoding</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#AllowContentType">AllowContentType</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#BasicAuth">BasicAuth</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#Compress">Compress</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#ContentCharset">ContentCharset</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#CleanPath">CleanPath</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#Deprecation">Deprecation</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#Sunset">Sunset</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#GetHead">GetHead</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#Heartbeat">Heartbeat</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#Logger">Logger</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#NoCache">NoCache</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#Profiler">Profiler</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#ClientIPFromHeader">ClientIPFromHeader</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#ClientIPFromXFF">ClientIPFromXFF</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#ClientIPFromXFFTrustedProxies">ClientIPFromXFFTrustedProxies</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#ClientIPFromRemoteAddr">ClientIPFromRemoteAddr</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#RealIP">RealIP</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#ClientIPFromXFF">ClientIPFromXFF</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#Recoverer">Recoverer</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#RequestID">RequestID</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#RedirectSlashes">RedirectSlashes</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#RouteHeaders">RouteHeaders</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#SetHeader">SetHeader</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#StripSlashes">StripSlashes</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#Sunset">Sunset</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#Deprecation">Deprecation</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#Throttle">Throttle</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#Timeout">Timeout</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#URLFormat">URLFormat</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#WithValue">WithValue</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#RealIP">RealIP</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#GetClientIP">GetClientIP</a>
+<a href="https://pkg.go.dev/github.com/go-chi/chi/v5/middleware#GetClientIPAddr">GetClientIPAddr</a>
+<a href="https://github.com/go-chi">https://github.com/go-chi</a>
+<a href="https://github.com/go-chi/cors">cors</a>
+<a href="https://github.com/go-chi/docgen">docgen</a>
+<a href="https://github.com/go-chi/jwtauth">jwtauth</a>
+<a href="https://github.com/go-chi/hostrouter">hostrouter</a>
+<a href="https://github.com/go-chi/httplog">httplog</a>
+<a href="https://github.com/go-chi/httprate">httprate</a>
+<a href="https://github.com/go-chi/httptracer">httptracer</a>
+<a href="https://github.com/go-chi/httpvcr">httpvcr</a>
+<a href="https://github.com/go-chi/stampede">stampede</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/CONTRIBUTING.md">your contributions</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/LICENSE">MIT License</a>
+<a href="/github.com/go-chi/chi/v5/_examples">github.com/go-chi/chi/v5/_examples</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/context.go#L35" class="Documentation-source">View Source</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/tree.go#L70" class="Documentation-source">RegisterMethod</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/context.go#L11" class="Documentation-source">URLParam</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/context.go#L16" class="Documentation-source">URLParamFromCtx</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/tree.go#L882" class="Documentation-source">Walk</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/chain.go#L24" class="Documentation-source">ChainHandler</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/chain.go#L30" class="Documentation-source">ServeHTTP</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/context.go#L45" class="Documentation-source">Context</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/context.go#L31" class="Documentation-source">NewRouteContext</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/context.go#L25" class="Documentation-source">RouteContext</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/context.go#L104" class="Documentation-source">Clone</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/context.go#L82" class="Documentation-source">Reset</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/context.go#L147" class="Documentation-source">RoutePattern</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/context.go#L124" class="Documentation-source">URLParam</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/chi.go#L140" class="Documentation-source">Middlewares</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/chain.go#L6" class="Documentation-source">Chain</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/chain.go#L12" class="Documentation-source">Handler</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/chain.go#L18" class="Documentation-source">HandlerFunc</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L21" class="Documentation-source">Mux</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L52" class="Documentation-source">NewMux</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/chi.go#L62" class="Documentation-source">NewRouter</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L143" class="Documentation-source">Connect</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L149" class="Documentation-source">Delete</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L382" class="Documentation-source">Find</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L155" class="Documentation-source">Get</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L268" class="Documentation-source">Group</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L109" class="Documentation-source">Handle</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L121" class="Documentation-source">HandleFunc</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L161" class="Documentation-source">Head</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L373" class="Documentation-source">Match</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L127" class="Documentation-source">Method</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L137" class="Documentation-source">MethodFunc</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L223" class="Documentation-source">MethodNotAllowed</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L421" class="Documentation-source">MethodNotAllowedHandler</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L363" class="Documentation-source">Middlewares</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L295" class="Documentation-source">Mount</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L203" class="Documentation-source">NotFound</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L412" class="Documentation-source">NotFoundHandler</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L167" class="Documentation-source">Options</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L173" class="Documentation-source">Patch</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L179" class="Documentation-source">Post</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L185" class="Documentation-source">Put</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L191" class="Documentation-source">Query</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L278" class="Documentation-source">Route</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L358" class="Documentation-source">Routes</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L63" class="Documentation-source">ServeHTTP</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L197" class="Documentation-source">Trace</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L100" class="Documentation-source">Use</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go#L242" class="Documentation-source">With</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/tree.go#L872" class="Documentation-source">Route</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/context.go#L171" class="Documentation-source">RouteParams</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/context.go#L176" class="Documentation-source">Add</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/chi.go#L68" class="Documentation-source">Router</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/chi.go#L121" class="Documentation-source">Routes</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/tree.go#L879" class="Documentation-source">WalkFunc</a>
+<a href="https://github.com/go-chi/chi/tree/v5.5.0">View all Source files</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/chain.go" title="chain.go">chain.go</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/chi.go" title="chi.go">chi.go</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/context.go" title="context.go">context.go</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/mux.go" title="mux.go">mux.go</a>
+<a href="https://github.com/go-chi/chi/blob/v5.5.0/tree.go" title="tree.go">tree.go</a>
+<a href="/github.com/go-chi/chi/v5@v5.5.0/_examples/custom-handler">custom-handler</a>
+<a href="/github.com/go-chi/chi/v5@v5.5.0/_examples/custom-method">custom-method</a>
+<a href="/github.com/go-chi/chi/v5@v5.5.0/_examples/fileserver">fileserver</a>
+<a href="/github.com/go-chi/chi/v5@v5.5.0/_examples/graceful">graceful</a>
+<a href="/github.com/go-chi/chi/v5@v5.5.0/_examples/hello-world">hello-world</a>
+<a href="/github.com/go-chi/chi/v5@v5.5.0/_examples/limits">limits</a>
+<a href="/github.com/go-chi/chi/v5@v5.5.0/_examples/logging">logging</a>
+<a href="/github.com/go-chi/chi/v5@v5.5.0/_examples/pathvalue">pathvalue</a>
+<a href="/github.com/go-chi/chi/v5@v5.5.0/_examples/router-walk">router-walk</a>
+<a href="/github.com/go-chi/chi/v5@v5.5.0/_examples/todos-resource">todos-resource</a>
+<a href="/github.com/go-chi/chi/v5@v5.5.0/middleware">middleware</a>
+</body></html>

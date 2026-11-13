@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="rustdoc"><meta name="description" content="Provides a trait to get the next sequential value">
+<title>next - Rust</title></head>
+<body class="rustdoc mod crate">
+<nav class="sidebar"><a href="../next/index.html">next</a> <a href="https://github.com/Seldom-SE/next">Repository</a> <a href="https://crates.io/crates/next">crates.io</a> <a href="https://docs.rs/crate/next/latest/source/">Source</a></nav>
+<main><h1>Crate <span>next</span></h1>
+<p>Provides a trait to get the next sequential value</p>
+<h2 id="traits">Traits</h2><dl><dt><a class="trait" href="trait.Next.html">Next</a></dt><dd>A type with a next sequential value</dd></dl>
+</main></body></html>

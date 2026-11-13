@@ -1,0 +1,12 @@
+{
+ "id": 4164482,
+ "name": "django",
+ "full_name": "django/django",
+ "html_url": "https://github.com/django/django",
+ "description": "The Web framework for perfectionists with deadlines.",
+ "fork": false,
+ "homepage": "https://www.djangoproject.com/",
+ "language": "Python",
+ "stargazers_count": 91679,
+ "archived": false
+}

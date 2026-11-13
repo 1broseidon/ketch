@@ -227,7 +227,9 @@ func Defaults() Config {
 		Limit:       5,
 		CacheTTL:    "72h",
 		CodeBackend: "grepapp",
-		DocsBackend: "context7",
+		// No docs_backend: the key is retired (every docs call uses search,
+		// context7 only when a call names it), so a fresh config carries
+		// none; a value an older release stored is kept and ignored.
 
 		ExternalPDFToMDConverterTimeoutSec: 300,
 	}

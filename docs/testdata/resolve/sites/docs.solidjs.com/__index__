@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Overview</title>
+<meta name="description" content="Solid is a reactive JavaScript framework for building fast, efficient UIs. Learn about fine-grained reactivity and modern web development." />
+<script src="/_build/assets/entry-client-C-M3YEeN.js" type="module"></script>
+</head>
+<body>
+<header>
+<a href="/">Solid</a>
+<a href="https://github.com/solidjs/solid" aria-label="GitHub"></a>
+<a href="https://discord.com/invite/solidjs" aria-label="Discord"></a>
+<nav><a href="/solid-router">Router</a> <a href="/solid-start/v2">SolidStart</a> <a href="/solid-meta">Meta</a></nav>
+</header>
+<aside>
+<a href="/">Overview</a>
+<a href="/quick-start">Quick start</a>
+<a href="/concepts/components/basics">Basics</a>
+<a href="/concepts/intro-to-reactivity">Intro to reactivity</a>
+<a href="/concepts/control-flow/conditional-rendering">Conditional rendering</a>
+</aside>
+<main>
+<h1>Overview</h1>
+<p>Solid is a modern JavaScript framework designed to build responsive and high-performing user interfaces.</p>
+<a href="https://www.solidjs.com/tutorial/introduction_basics">Tutorial</a>
+<a href="https://github.com/solidjs/templates">Templates</a>
+<a href="https://www.solidjs.com/ecosystem">Ecosystem</a>
+<a href="https://github.com/solidjs/solid-docs-next">Contribute</a>
+<a href="https://github.com/solidjs/solid-docs/edit/main/src/routes/(0)index.mdx">Edit this page</a>
+</main>
+</body>
+</html>

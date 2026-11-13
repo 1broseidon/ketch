@@ -1,0 +1,74 @@
+<!doctype html>
+<html><head>
+<title>Fast and reliable end-to-end testing for modern web apps | Playwright</title>
+<meta name="generator" content="Docusaurus v3.10.1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://repository-images.githubusercontent.com/221981891/8c5c6942-c91f-4df1-825f-4cf474056bd7">
+<meta name="twitter:image" content="https://repository-images.githubusercontent.com/221981891/8c5c6942-c91f-4df1-825f-4cf474056bd7">
+<meta property="og:url" content="https://playwright.dev/">
+<meta property="og:locale" content="en">
+<meta name="docusaurus_locale" content="en">
+<meta name="docusaurus_tag" content="default">
+<meta name="docsearch:language" content="en">
+<meta name="docsearch:docusaurus_tag" content="default">
+<meta property="og:title" content="Fast and reliable end-to-end testing for modern web apps | Playwright">
+<meta name="description" content="Web automation and testing for apps, scripts, and AI agents">
+<meta property="og:description" content="Web automation and testing for apps, scripts, and AI agents">
+<script src="/js/redirection.js"></script>
+<script src="/assets/js/runtime~main.f3d7c595.js"></script>
+<script src="/assets/js/main.bb11800a.js"></script>
+</head><body>
+<a href="#__docusaurus_skipToContent_fallback" class="skipToContent_fXgn">Skip to main content</a>
+<a href="/" class="navbar__brand">Playwright</a>
+<a href="/docs/intro" class="navbar__item navbar__link">Docs</a>
+<a href="/mcp/introduction" class="navbar__item navbar__link">MCP</a>
+<a href="/agent-cli/introduction" class="navbar__item navbar__link">CLI</a>
+<a href="/docs/api/class-playwright" class="navbar__item navbar__link">API</a>
+<a href="#" class="navbar__link">Node.js</a>
+<a href="/" class="dropdown__link undefined dropdown__link--active">Node.js</a>
+<a href="/python/" class="dropdown__link">Python</a>
+<a href="/java/" class="dropdown__link">Java</a>
+<a href="/dotnet/" class="dropdown__link">.NET</a>
+<a href="https://github.com/microsoft/playwright" aria-label="GitHub repository" class="navbar__item navbar__link header-github-link"></a>
+<a href="https://aka.ms/playwright/discord" aria-label="Discord server" class="navbar__item navbar__link header-discord-link"></a>
+<a href="https://playwright.dev/docs/intro">TypeScript</a>
+<a href="https://playwright.dev/python/docs/intro">Python</a>
+<a href="https://playwright.dev/dotnet/docs/intro">.NET</a>
+<a href="https://playwright.dev/java/docs/intro">Java</a>
+<a href="/docs/intro" class="getStarted_Sjon">Get started</a>
+<a href="https://github.com/microsoft/playwright" aria-label="Star microsoft/playwright on GitHub" class="gh-btn">Star</a>
+<a href="https://github.com/microsoft/playwright/stargazers" aria-label="97k+ stargazers on GitHub" class="gh-count">97k+</a>
+<a href="/docs/intro">Testing documentation</a>
+<a href="/docs/getting-started-cli">CLI documentation</a>
+<a href="/docs/getting-started-mcp">MCP documentation</a>
+<a href="https://modelcontextprotocol.io">Model Context Protocol</a>
+<a href="docs/codegen">Test generator</a>
+<a href="docs/trace-viewer-intro">Trace Viewer</a>
+<a href="docs/getting-started-vscode">VS Code extension</a>
+<a href="https://playwright.dev/python/docs/intro">Python</a>
+<a href="https://playwright.dev/dotnet/docs/intro">.NET</a>
+<a href="https://playwright.dev/java/docs/intro">Java</a>
+<a href="https://code.visualstudio.com"></a>
+<a href="https://bing.com"></a>
+<a href="https://outlook.com"></a>
+<a href="https://www.hotstar.com/"></a>
+<a href="https://github.com/mui-org/material-ui"></a>
+<a href="https://github.com/ing-bank/lion"></a>
+<a href="https://github.com/adobe/spectrum-web-components"></a>
+<a href="https://github.com/react-navigation/react-navigation"></a>
+<a href="https://accessibilityinsights.io/"></a>
+<a href="/docs/intro" class="footer__link-item">Getting started</a>
+<a href="https://learn.microsoft.com/en-us/training/modules/build-with-playwright/" class="footer__link-item">Playwright Training</a>
+<a href="/community/learn-videos" class="footer__link-item">Learn Videos</a>
+<a href="/community/feature-videos" class="footer__link-item">Feature Videos</a>
+<a href="https://stackoverflow.com/questions/tagged/playwright" class="footer__link-item">Stack Overflow</a>
+<a href="https://aka.ms/playwright/discord" class="footer__link-item">Discord</a>
+<a href="https://x.com/playwrightweb" class="footer__link-item">X</a>
+<a href="https://www.linkedin.com/company/playwrightweb" class="footer__link-item">LinkedIn</a>
+<a href="https://github.com/microsoft/playwright" class="footer__link-item">GitHub</a>
+<a href="https://www.youtube.com/channel/UC46Zj8pDH5tDosqm1gd7WTg" class="footer__link-item">YouTube</a>
+<a href="https://dev.to/playwright" class="footer__link-item">Blog</a>
+<a href="/community/ambassadors" class="footer__link-item">Ambassadors</a>
+<a href="https://go.microsoft.com/fwlink/?LinkId=521839" class="footer__link-item">Microsoft Privacy Statement</a>
+</body></html>

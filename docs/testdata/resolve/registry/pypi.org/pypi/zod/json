@@ -1,0 +1,13 @@
+{
+ "info": {
+  "name": "zod",
+  "version": "0.8.0",
+  "summary": "Zenseact Open Dataset",
+  "home_page": null,
+  "docs_url": null,
+  "project_urls": {
+   "Homepage": "https://zod.zenseact.com",
+   "Repository": "https://github.com/zenseact/zod"
+  }
+ }
+}

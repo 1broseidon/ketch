@@ -1,0 +1,13 @@
+{
+ "info": {
+  "name": "beautifulsoup4",
+  "version": "4.15.0",
+  "summary": "Screen-scraping library",
+  "home_page": null,
+  "docs_url": null,
+  "project_urls": {
+   "Download": "https://www.crummy.com/software/BeautifulSoup/bs4/download/",
+   "Homepage": "https://www.crummy.com/software/BeautifulSoup/bs4/"
+  }
+ }
+}

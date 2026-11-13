@@ -40,11 +40,17 @@ func NormalizeSearchOrder(list []string) ([]string, error) { return search.Norma
 // AvailableCodeBackends returns the list of known code search backends.
 func AvailableCodeBackends() []string { return code.AvailableBackends() }
 
-// AvailableDocBackends returns the list of usable docs backends. The local
-// FTS5 backend is planned but not implemented, so it is not advertised here;
-// docs.NewFromConfig still recognizes "local" and rejects it with a clear
-// precondition error.
+// AvailableDocBackends returns every value the docs --backend flag and the
+// docs_backend key accept: search (the default) and context7.
 func AvailableDocBackends() []string { return docs.AvailableBackends() }
+
+// canonicalDocsBackend reads a docs_backend an earlier release stored under
+// a name that has since moved ("local", now part of search) as the backend
+// that serves it, so a config file written by ketch 0.20 keeps working and
+// is saved with the new name by the next config set.
+func canonicalDocsBackend(c *Config) {
+	c.DocsBackend = docs.CanonicalBackend(c.DocsBackend)
+}
 
 // Path returns the config file path: $KETCH_CONFIG if set, otherwise
 // ~/.config/ketch/config.json. KETCH_CONFIG redirects reads and writes
@@ -90,6 +96,7 @@ func LoadFile() (Config, error) {
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return Defaults(), fmt.Errorf("config file %s: %s", path, decodeErrorDetail(data, err))
 	}
+	canonicalDocsBackend(&cfg)
 	return cfg, nil
 }
 
@@ -187,6 +194,7 @@ func position(data []byte, offset int64) (line, col int) {
 func Load() (LoadResult, error) {
 	cfg, fileErr := LoadFile()
 	overrides, err := applyEnv(&cfg)
+	canonicalDocsBackend(&cfg)
 	err = errors.Join(fileErr, err)
 	if headerErr := httpx.ValidateOriginHeaders(cfg.HTTPHeaders); headerErr != nil {
 		cfg.HTTPHeaders = nil

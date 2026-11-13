@@ -1,0 +1,65 @@
+<!doctype html>
+<html><head>
+<title>NumPy documentation — NumPy v2.5 Manual</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+<script src="_static/documentation_options.js?v=824642aa"></script>
+<script src="_static/doctools.js?v=888ff710"></script>
+<script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+<script src="_static/clipboard.min.js?v=a7894cd8"></script>
+<script src="_static/copybutton.js?v=30646c52"></script>
+<script src="_static/jupyterlite_sphinx.js?v=96e329c5"></script>
+<script src="_static/design-tabs.js?v=f930bc37"></script>
+<script src="https://views.scientific-python.org/js/script.js"></script>
+<script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://numpy.org/doc/_static/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="docsearch:language" content="en">
+<meta name="docsearch:version" content="2.5">
+<meta name="docbuild:last-update" content="Jun 28, 2026">
+<script src="_static/searchtools.js"></script>
+<script src="_static/language_data.js"></script>
+<script src="searchindex.js"></script>
+<script src="_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+</head><body>
+<a href="#main-content">Skip to main content</a>
+<a href="#" class="navbar-brand logo"></a>
+<a href="user/index.html" class="nav-link nav-internal">User Guide</a>
+<a href="reference/index.html" class="nav-link nav-internal">API reference</a>
+<a href="building/index.html" class="nav-link nav-internal">Building from source</a>
+<a href="dev/index.html" class="nav-link nav-internal">Development</a>
+<a href="release.html" class="nav-link nav-internal">Release notes</a>
+<a href="https://numpy.org/numpy-tutorials/" class="nav-link nav-external">Learn</a>
+<a href="https://numpy.org/neps" class="nav-link nav-external">NEPs</a>
+<a href="https://github.com/numpy/numpy" title="GitHub" class="nav-link pst-navbar-icon">GitHub</a>
+<a href="user/index.html" class="nav-link nav-internal">User Guide</a>
+<a href="reference/index.html" class="nav-link nav-internal">API reference</a>
+<a href="building/index.html" class="nav-link nav-internal">Building from source</a>
+<a href="dev/index.html" class="nav-link nav-internal">Development</a>
+<a href="release.html" class="nav-link nav-internal">Release notes</a>
+<a href="https://numpy.org/numpy-tutorials/" class="nav-link nav-external">Learn</a>
+<a href="https://numpy.org/neps" class="nav-link nav-external">NEPs</a>
+<a href="https://github.com/numpy/numpy" title="GitHub" class="nav-link pst-navbar-icon">GitHub</a>
+<a href="#numpy-documentation" title="Link to this heading" class="headerlink">#</a>
+<a href="https://numpy.org/doc/" class="reference external">Historical versions of documentation</a>
+<a href="https://numpy.org" class="reference external">Home</a>
+<a href="https://numpy.org/install/" class="reference external">Installation</a>
+<a href="https://github.com/numpy/numpy" class="reference external">Source Repository</a>
+<a href="https://github.com/numpy/numpy/issues" class="reference external">Issue Tracker</a>
+<a href="https://numpy.org/gethelp/" class="reference external">Q&amp;A Support</a>
+<a href="https://mail.python.org/mailman/listinfo/numpy-discussion" class="reference external">Mailing List</a>
+<a href="user/absolute_beginners.html" class="sd-sphinx-override sd-btn sd-text-wrap sd-btn-secondary sd-stretched-link reference internal">To the absolute beginner’s guide</a>
+<a href="user/index.html#user" class="sd-sphinx-override sd-btn sd-text-wrap sd-btn-secondary sd-stretched-link reference internal">To the user guide</a>
+<a href="reference/index.html#reference" class="sd-sphinx-override sd-btn sd-text-wrap sd-btn-secondary sd-stretched-link reference internal">To the reference guide</a>
+<a href="dev/index.html#devindex" class="sd-sphinx-override sd-btn sd-text-wrap sd-btn-secondary sd-stretched-link reference internal">To the contributor’s guide</a>
+<a href="user/index.html" title="next page" class="right-next">next NumPy user guide</a>
+<a href="https://www.sphinx-doc.org/">Sphinx</a>
+<a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a>
+</body></html>

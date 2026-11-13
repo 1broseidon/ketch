@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Next.js Docs</title>
+<meta name="description" content="Welcome to the Next.js Documentation."/>
+<meta property="og:title" content="Next.js Docs"/>
+<meta property="og:description" content="Welcome to the Next.js Documentation."/>
+</head>
+<body>
+<header><nav>
+<a href="/docs">Docs</a>
+<a href="https://github.com/vercel/next.js">GitHub</a>
+</nav></header>
+<aside>
+<a href="/docs/app/getting-started">Getting Started</a>
+<a href="/docs/app/getting-started/installation">Installation</a>
+<a href="/docs/app/getting-started/project-structure">Project Structure</a>
+<a href="/docs/app/api-reference">API Reference</a>
+</aside>
+<main>
+<h1>Next.js Docs</h1>
+<p>Welcome to the Next.js documentation!</p>
+<a href="https://github.com/vercel/next.js/discussions">GitHub Discussions</a>
+<a href="https://github.com/vercel/next.js/edit/canary/docs/index.mdx">Edit this page on GitHub</a>
+</main>
+<footer>
+<a href="https://github.com/vercel/next.js/releases">Releases</a>
+<a href="https://github.com/vercel">GitHub</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,3 @@
+{"info": {"name": "gridiron-cache", "version": "0.7.2", "summary": "Response caching for Gridiron", "home_page": "", "docs_url": null,
+ "project_urls": {"Source": "https://github.com/cachesmith/gridiron-cache"},
+ "description": "# gridiron-cache\n\nResponse caching for [Gridiron](https://docs.gridiron.example/).\n\n**Documentation**: https://gridiron-cache.example.dev/\n\nSee the [backends guide](https://gridiron-cache.example.dev/backends/) and Gridiron's [middleware docs](https://docs.gridiron.example/middleware/).\n"}, "releases": {}}

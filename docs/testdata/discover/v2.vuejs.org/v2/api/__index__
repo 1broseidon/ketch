@@ -1,0 +1,515 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en" class="with-v3-banner">
+  <head>
+    <title>API — Vue.js</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Vue.js - The Progressive JavaScript Framework">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="alternate" hreflang="x-default" href="https://vuejs.org/v2/api/index.html">
+    <link rel="alternate" hreflang="zh" href="https://v2.cn.vuejs.org/v2/api/index.html">
+    <link rel="alternate" hreflang="ja" href="https://jp.vuejs.org/v2/api/index.html">
+    <link rel="alternate" hreflang="ru" href="https://ru.vuejs.org/v2/api/index.html">
+    <link rel="alternate" hreflang="ko" href="https://kr.vuejs.org/v2/api/index.html">
+    <link rel="alternate" hreflang="pt-BR" href="https://br.vuejs.org/v2/api/index.html">
+    <link rel="alternate" hreflang="fr" href="https://fr.vuejs.org/v2/api/index.html">
+    <link rel="alternate" hreflang="es" href="https://es.vuejs.org/v2/api/index.html">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="API — Vue.js">
+    <meta property="og:description" content="Vue.js - The Progressive JavaScript Framework">
+    <meta property="og:image" content="https://vuejs.org/images/logo.png">
+
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="API — Vue.js">
+    <meta name="twitter:description" content="Vue.js - The Progressive JavaScript Framework">
+    <meta name="twitter:image" content="https://vuejs.org/images/logo.png">
+
+    <link rel="apple-touch-icon" sizes="57x57" href="/images/icons/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/images/icons/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/images/icons/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/images/icons/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/images/icons/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/images/icons/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/images/icons/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/images/icons/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/icons/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192"  href="/images/icons/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/images/icons/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/icons/favicon-16x16.png">
+    <meta name="msapplication-TileImage" content="/images/icons/ms-icon-144x144.png">
+    <link rel="icon" href="/images/logo.svg">
+
+    <meta name="msapplication-TileColor" content="#4fc08d">
+    <meta name="theme-color" content="#4fc08d">
+
+    <meta name="msapplication-config" content="browserconfig.xml">
+    <link rel="manifest" href="/manifest.json">
+
+    <link href="https://fonts.googleapis.com" rel="preconnect" crossorigin>
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+    <link href="https://maxcdn.bootstrapcdn.com" rel="preconnect" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600|Roboto|Roboto Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Dosis:500&text=Vue.js&display=swap" rel="stylesheet">
+
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- main page styles -->
+    
+<link rel="stylesheet" href="/css/page.css">
+
+
+    <!-- this needs to be loaded before guide's inline scripts -->
+    <script src="/js/vue.js"></script>
+
+    
+
+    <script></script>
+
+    <!-- Fathom - beautiful, simple website analytics -->
+    <script src="https://cdn.usefathom.com/script.js" data-site="VNLEECSM" defer></script>
+    <!-- / Fathom -->
+
+    <!-- vimeo analytics -->
+    <script type="text/javascript" defer="defer" src="https://extend.vimeocdn.com/ga/72160148.js"></script>
+  <meta name="generator" content="Hexo 6.2.0"><link rel="alternate" href="/atom.xml" title="Vue.js" type="application/atom+xml">
+</head>
+  <body class="docs" data-v3-url="/api/">
+
+    
+      <a id="vs-top" class="vs-hidden" href="#" target="_blank">
+  <div class="vs-background-wrapper">
+    <div class="vs-logo"></div>
+    <div class="vs-core">
+      <div class="vs-slogan-wrapper">
+        <div id="vs-slogan" class="vs-slogan"></div>
+        <div id="vs-subline" class="vs-subline"></div>
+      </div>
+      <div class="vs-button-wrapper">
+        <div id="vs-button" class="vs-button"></div>
+      </div>
+    </div>
+    <div
+      id="vs-close"
+      class="vs-close">
+      <img src="https://vueschool.io/images/close.svg" alt="Close">
+    </div>
+  </div>
+</a>
+
+    
+
+    <div id="mobile-bar" >
+      <a class="menu-button"></a>
+      <a class="logo" href="/"></a>
+    </div>
+    <div>
+  <div id="v3-banner">
+    <span class="hidden-sm">Vue 2 has reached EOL and is no longer actively maintained.</span>
+    <a target="_blank" rel="noopener" href="https://vuejs.org/">Upgrade to Vue 3</a>
+    <span class="hidden-sm"> or learn more about</span>
+    <span class="only-sm"> | </span>
+    <a href="/eol/">Vue 2 EOL</a><span class="hidden-sm">.</span>
+  </div>
+
+  <header id="header">
+    <a id="logo" href="/">
+      <img src="/images/logo.svg" alt="Vue logo">
+      <span>Vue.js</span>
+    </a>
+    <ul id="nav">
+      <li>
+  <form id="search-form">
+    <input type="text" id="search-query-nav" class="search-query st-default-search-input" aria-label="Search">
+  </form>
+</li>
+<li class="nav-dropdown-container learn">
+  <a class="nav-link current">Learn</a><span class="arrow"></span>
+  <ul class="nav-dropdown">
+    <li><h4>Documentation</h4></li>
+    <li>
+      <ul>
+        <li><a href="/v2/guide/" class="nav-link">Guide</a></li>
+        <li><a href="/v2/api/" class="nav-link current">API</a></li>
+        <li><a href="/v2/style-guide/" class="nav-link">Style Guide</a></li>
+        <li><a href="/v2/examples/" class="nav-link">Examples</a></li>
+        <li><a href="/v2/cookbook/" class="nav-link">Cookbook</a></li>
+      </ul>
+    </li>
+    <li><h4>Video Courses</h4></li>
+    <li>
+      <ul>
+        <li>
+          <a href="https://www.vuemastery.com/courses/" class="nav-link" target="_blank" rel="sponsored noopener">
+            Vue Mastery
+          </a>
+        </li>
+        <li>
+          <a
+            href="https://vueschool.io/?friend=vuejs&utm_source=Vuejs.org&utm_medium=Link&utm_content=Navbar%20Dropdown"
+            class="nav-link"
+            target="_blank" rel="sponsored noopener"
+          >
+            Vue School
+          </a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</li>
+
+<li class="nav-dropdown-container ecosystem">
+  <a class="nav-link">Ecosystem</a><span class="arrow"></span>
+  <ul class="nav-dropdown">
+    <li><h4>Help</h4></li>
+    <li><ul>
+      <li><a href="https://forum.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Forum</a></li>
+      <li><a href="https://chat.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Chat</a></li>
+      <li><a href="https://events.vuejs.org/meetups/" class="nav-link" target="_blank" rel="noopener">Meetups</a></li>
+    </ul></li>
+    <li><h4>Tooling</h4></li>
+    <li>
+      <ul>
+        <li><a href="https://github.com/vuejs/vue-devtools" class="nav-link" target="_blank" rel="noopener">Devtools</a></li>
+        <li><a href="https://cli.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Vue CLI</a></li>
+        <li><a href="https://vue-loader.vuejs.org" class="nav-link" target="_blank" rel="noopener">Vue Loader</a></li>
+      </ul>
+    </li>
+    <li><h4>Core Libraries</h4></li>
+    <li><ul>
+      <li><a href="https://router.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Vue Router</a></li>
+      <li><a href="https://vuex.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Vuex</a></li>
+      <li><a href="https://v2.ssr.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Vue Server Renderer</a></li>
+    </ul></li>
+    <li><h4>News</h4></li>
+    <li><ul>
+      <li><a href="https://news.vuejs.org" class="nav-link" target="_blank" rel="noopener">Weekly News</a></li>
+      <li><a href="https://events.vuejs.org/" class="nav-link" target="_blank" rel="noopener">Events</a></li>
+      <li><a href="https://twitter.com/vuejs" class="nav-link" target="_blank" rel="noopener">Twitter</a></li>
+      <li><a href="https://blog.vuejs.org" class="nav-link" target="_blank" rel="noopener">Blog</a></li>
+      <li><a href="https://vuejobs.com/?ref=vuejs" class="nav-link" target="_blank" rel="noopener">Jobs</a></li>
+      <li><a href="https://dev.to/t/vue" class="nav-link" target="_blank" rel="noopener">DEV Community</a></li>
+    </ul></li>
+  </ul>
+</li>
+
+<li class="nav-dropdown-container resources">
+  <a href="#" class="nav-link">Resources</a><span class="arrow"></span>
+  <ul class="nav-dropdown">
+    <li>
+      <a
+        target="_blank" rel="noopener" href="https://vuejs.org/about/team.html"
+        class="nav-link team"
+        >Team</a
+      >
+    </li>
+    <li>
+      <a target="_blank" rel="noopener" href="https://vuejs.org/sponsor/">Sponsor</a>
+    </li>
+    <li><a target="_blank" rel="noopener" href="https://vuejs.org/partners/" class="nav-link">Partners</a></li>
+    <li>
+      <a class='nav-link' href='https://vuejs.org/resources/themes' rel='noopener' target='_blank'>Themes</a
+      >
+    </li>
+    <li>
+      <a
+        href="https://github.com/vuejs/awesome-vue"
+        class="nav-link"
+        target="_blank"
+        rel="noopener"
+        >Awesome Vue</a
+      >
+    </li>
+    <li>
+      <a
+        href="https://awesomejs.dev/for/vue/"
+        class="nav-link"
+        target="_blank"
+        rel="noopener"
+        >Browse packages for Vue</a
+      >
+    </li>
+  </ul>
+</li>
+
+<li>
+  <a href="/eol/" class="badge-parent">EOL<sup class="badge">NEW</sup></a>
+</li>
+<li class="nav-dropdown-container language">
+  <a class="nav-link">Translations</a><span class="arrow"></span>
+  <ul class="nav-dropdown">
+    <li><a class='nav-link' href='https://v2.cn.vuejs.org/v2/api/' rel='noopener' target='_blank'>中文</a></li>
+    <li><a class='nav-link' href='https://jp.vuejs.org/v2/api/' rel='noopener' target='_blank'>日本語</a></li>
+    <li><a class='nav-link' href='https://ru.vuejs.org/v2/api/' rel='noopener' target='_blank'>Русский</a></li>
+    <li><a class='nav-link' href='https://kr.vuejs.org/v2/api/' rel='noopener' target='_blank'>한국어</a></li>
+    <li><a class='nav-link' href='https://br.vuejs.org/v2/api/' rel='noopener' target='_blank'>Português</a></li>
+    <li><a class='nav-link' href='https://fr.vuejs.org/v2/api/' rel='noopener' target='_blank'>Français</a></li>
+    <li><a class='nav-link' href='https://vi.vuejs.org/v2/api/' rel='noopener' target='_blank'>Tiếng Việt</a></li>
+    <li><a class='nav-link' href='https://es.vuejs.org/v2/api/' rel='noopener' target='_blank'>Español</a></li>
+    <li><a class='nav-link' href='https://docs.vuejs.id/v2/api/' rel='noopener' target='_blank'>Bahasa Indonesia</a></li>
+  </ul>
+</li>
+
+
+    </ul>
+  </header>
+</div>
+
+    
+      <div id="main" class="fix-sidebar">
+         
+
+<div class="sidebar">
+  <div class="sidebar-inner">
+    
+    <div class="list">
+      
+
+<div id="sidebar-sponsors-special">
+  <div class="main-sponsor">
+    <span>Special Sponsor</span>
+    <div>
+    <a href="https://appwrite.io" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/appwrite.svg" alt="appwrite">
+    </a>
+    </div>
+  </div>
+</div>
+<div id="sidebar-sponsors-platinum-left">
+  <div class="main-sponsor">
+    <span>Platinum Sponsors</span>
+    <div>
+    <a href="https://bit.dev" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/bit.svg?v2" alt="Bit">
+    </a>
+    <a href="https://www.vuemastery.com/" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/vuemastery.png" alt="VueMastery">
+    </a>
+    <a href="https://vueschool.io/?utm_source=Vuejs.org&utm_medium=Banner&utm_campaign=Sponsored%20Banner&utm_content=V1" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/vueschool.png" alt="VueSchool">
+    </a>
+    <a href="https://vehikl.com/" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/vehikl.png" alt="Vehikl">
+    </a>
+    <a href="https://passionatepeople.io/" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/passionate_people.png" alt="Passionate People">
+    </a>
+    <a href="https://www.storyblok.com" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/storyblok.png" alt="Storyblok">
+    </a>
+    <a href="https://skilled.yashio-corp.com" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/skilled.svg" alt="Skilled">
+    </a>
+    <a href="https://opencollective.com/2021-frameworks-fund" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/chrome_frameworks_fund.png" alt="Chrome Frameworks Fund">
+    </a>
+    <a href="https://www.herodevs.com/support/vue" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/herodevs.png" alt="HeroDevs">
+    </a>
+    </div>
+  </div>
+  <a class="become-backer" href="/support-vuejs">
+    Become a Sponsor
+  </a>
+</div>
+
+
+      
+        <h2>
+          
+          API
+          
+            <select class="version-select">
+              <option value="">3.x</option>
+              <option value="SELF" selected>2.x</option>
+              <option value="v1">1.0</option>
+              <option value="012">0.12</option>
+              <option value="011">0.11</option>
+            </select>
+          
+        </h2>
+        <ul class="menu-root">
+  
+</ul>
+
+      
+    </div>
+  </div>
+</div>
+
+<div id="sidebar-sponsors-platinum-right">
+  <div class="main-sponsor">
+    <span>Platinum Sponsors</span>
+    <div>
+    <a href="https://bit.dev" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/bit.svg?v2" alt="Bit">
+    </a>
+    <a href="https://www.vuemastery.com/" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/vuemastery.png" alt="VueMastery">
+    </a>
+    <a href="https://vueschool.io/?utm_source=Vuejs.org&utm_medium=Banner&utm_campaign=Sponsored%20Banner&utm_content=V1" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/vueschool.png" alt="VueSchool">
+    </a>
+    <a href="https://vehikl.com/" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/vehikl.png" alt="Vehikl">
+    </a>
+    <a href="https://passionatepeople.io/" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/passionate_people.png" alt="Passionate People">
+    </a>
+    <a href="https://www.storyblok.com" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/storyblok.png" alt="Storyblok">
+    </a>
+    <a href="https://skilled.yashio-corp.com" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/skilled.svg" alt="Skilled">
+    </a>
+    <a href="https://opencollective.com/2021-frameworks-fund" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/chrome_frameworks_fund.png" alt="Chrome Frameworks Fund">
+    </a>
+    <a href="https://www.herodevs.com/support/vue" target="_blank" rel="sponsored noopener" class="logo">
+      <img src="https://sponsors.vuejs.org/images/herodevs.png" alt="HeroDevs">
+    </a>
+    </div>
+  </div>
+  <a class="become-backer" href="/support-vuejs">
+    Become a Sponsor
+  </a>
+</div>
+
+
+ 
+<div
+  class="content api with-sidebar "
+>
+    
+<div id="ad">
+  <script
+    async
+    type="text/javascript"
+    src="//cdn.carbonads.com/carbon.js?serve=CEBDT27Y&placement=vuejsorg"
+    id="_carbonads_js">
+  </script>
+</div>
+
+   
+  <h1>API</h1>
+    <h2 id="Global-Config"><a href="#Global-Config" class="headerlink" title="Global Config"></a>Global Config</h2><p><code>Vue.config</code> is an object containing Vue’s global configurations. You can modify its properties listed below before bootstrapping your application:</p>
+<h3 id="silent"><a href="#silent" class="headerlink" title="silent"></a>silent</h3><ul>
+<li><p><strong>Type:</strong> <code>boolean</code></p>
+</li>
+<li><p><strong>Default:</strong> <code>false</code></p>
+</li>
+<li><p><strong>Usage:</strong></p>
+<figure class="highlight js"><table><tr><td class="code"><pre><code class="hljs js"><span class="hljs-title class_">Vue</span>.<span class="hljs-property">config</span>.<span class="hljs-property">silent</span> = <span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+<p>Suppress all Vue logs and warnings.</p>
+</li>
+</ul>
+<h3 id="optionMergeStrategies"><a href="#optionMergeStrategies" class="headerlink" title="optionMergeStrategies"></a>optionMergeStrategies</h3><ul>
+<li><p><strong>Type:</strong> <code>&#123; [key: string]: Function &#125;</code></p>
+</li>
+<li><p><strong>Default:</strong> <code>&#123;&#125;</code></p>
+</li>
+<li><p><strong>Usage:</strong></p>
+<figure class="highlight js"><table><tr><td class="code"><pre><code class="hljs js"><span class="hljs-title class_">Vue</span>.<span class="hljs-property">config</span>.<span class="hljs-property">optionMergeStrategies</span>.<span class="hljs-property">_my_option</span> = <span class="hljs-keyword">function</span> (<span class="hljs-params">parent, child, vm</span>) &#123;<br>  <span class="hljs-keyword">return</span> child + <span class="hljs-number">1</span><br>&#125;<br><br><span class="hljs-keyword">const</span> <span class="hljs-title class_">Profile</span> = <span class="hljs-title class_">Vue</span>.<span class="hljs-title function_">extend</span>(&#123;<br>  <span class="hljs-attr">_my_option</span>: <span class="hljs-number">1</span><br>&#125;)<br><br><span class="hljs-comment">// Profile.options._my_option = 2</span><br></code></pre></td></tr></table></figure>
+<p>Define custom merging strategies for options.</p>
+<p>The merge strategy receives the value of that option defined on the parent and child instances as the first and second arguments, respectively. The context Vue instance is passed as the third argument.</p>
+</li>
+<li><p><strong>See also:</strong> <a href='/v2/guide/mixins#Custom-Option-Merge-Strategies'>Custom Option Merging Strategies</a></p>
+</li>
+</ul>
+<h3 id="devtools"><a href="#devtools" class="headerlink" title="devtools"></a>devtools</h3><ul>
+<li><p><strong>Type:</strong> <code>boolean</code></p>
+</li>
+<li><p><strong>Default:</strong> <code>true</code> (<code>false</code> in production builds)</p>
+</li>
+<li><p><strong>Usage:</strong></p>
+<figure class="highlight js"><table><tr><td class="code"><pre><code class="hljs js"><span class="hljs-comment">// make sure to set this synchronously immediately after loading Vue</span><br><span class="hljs-title class_">Vue</span>.<span class="hljs-property">config</span>.<span class="hljs-property">devtools</span> = <span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+<p>Configure whether to allow <a target="_blank" rel="noopener" href="https://github.com/vuejs/vue-devtools">vue-devtools</a> inspection. This option’s default value is <code>true</code> in development builds and <code>false</code> in production builds. You can set it to <code>true</code> to enable inspection for production builds.</p>
+</li>
+</ul>
+<h3 id="errorHandler"><a href="#errorHandler" class="headerlink" title="errorHandler"></a>errorHandler</h3><ul>
+<li><p><strong>Type:</strong> <code>Function</code></p>
+</li>
+<li><p><strong>Default:</strong> <code>undefined</code></p>
+</li>
+<li><p><strong>Usage:</strong></p>
+<figure class="highlight js"><table><tr><td class="code"><pre><code class="hljs js"><span class="hljs-title class_">Vue</span>.<span class="hljs-property">config</span>.<span class="hljs-property">errorHandler</span> = <span class="hljs-keyword">function</span> (<span class="hljs-params">err, vm, info</span>) &#123;<br>  <span class="hljs-comment">// handle error</span><br>  <span class="hljs-comment">// `info` is a Vue-specific error info, e.g. which lifecycle hook</span><br>  <span class="hljs-comment">// the error was found in. Only available in 2.2.0+</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>Assign a handler for uncaught errors during component render function and watchers. The handler gets called with the error and the Vue instance.</p>
+<blockquote>
+<p>In 2.2.0+, this hook also captures errors in component lifecycle hooks. Also, when this hook is <code>undefined</code>, captured errors will be logged with <code>console.error</code> instead of crashing the app.</p>
+</blockquote>
+<blockquote>
+<p>In 2.4.0+, this hook also captures errors thrown inside Vue custom event handlers.</p>
+</blockquote>
+<blockquote>
+<p>In 2.6.0+, this hook also captures errors thrown inside <code>v-on</code> DOM listeners. In addition, if any of the covered hooks or handlers returns a Promise chain (e.g. async functions), the error from that Promise chain will also be handled.</p>
+</blockquote>
+<blockquote>
+<p>Error tracking services <a target="_blank" rel="noopener" href="https://sentry.io/for/vue/">Sentry</a> and <a target="_blank" rel="noopener" href="https://docs.bugsnag.com/platforms/browsers/vue/">Bugsnag</a> provide official integrations using this option.</p>
+</blockquote>
+</li>
+</ul>
+<h3 id="warnHandler"><a href="#warnHandler" class="headerlink" title="warnHandler"></a>warnHandler</h3><blockquote>
+<p>New in 2.4.0+</p>
+</blockquote>
+<ul>
+<li><p><strong>Type:</strong> <code>Function</code></p>
+</li>
+<li><p><strong>Default:</strong> <code>undefined</code></p>
+</li>
+<li><p><strong>Usage:</strong></p>
+<figure class="highlight js"><table><tr><td class="code"><pre><code class="hljs js"><span class="hljs-title class_">Vue</span>.<span class="hljs-property">config</span>.<span class="hljs-property">warnHandler</span> = <span class="hljs-keyword">function</span> (<span class="hljs-params">msg, vm, trace</span>) &#123;<br>  <span class="hljs-comment">// `trace` is the component hierarchy trace</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>Assign a custom handler for runtime Vue warnings. Note this only works during development and is ignored in production.</p>
+</li>
+</ul>
+<h3 id="ignoredElements"><a href="#ignoredElements" class="headerlink" title="ignoredElements"></a>ignoredElements</h3><ul>
+<li><p><strong>Type:</strong> <code>Array&lt;string | RegExp&gt;</code></p>
+</li>
+<li><p><strong>Default:</strong> <code>[]</code></p>
+</li>
+<li><p><strong>Usage:</strong></p>
+<figure class="highlight js"><table><tr><td class="code"><pre><code class="hljs js"><span class="hljs-title class_">Vue</span>.<span class="hljs-property">config</span>.<span class="hljs-property">ignoredElements</span> = [<br>  <span class="hljs-string">&#x27;my-custom-web-component&#x27;</span>,<br>  <span class="hljs-string">&#x27;another-web-component&#x27;</span>,<br>  <span class="hljs-comment">// Use a `RegExp` to ignore all elements that start with &quot;ion-&quot;</span><br>  <span class="hljs-comment">// 2.5+ only</span><br>  <span class="hljs-regexp">/^ion-/</span><br>]<br></code></pre></td></tr></table></figure>
+<p>Make Vue ignore custom elements defined outside of Vue (e.g., using the Web Components APIs). Otherwise, it will throw a warning about an <code>Unknown custom element</code>, assuming that you forgot to register a global component or misspelled a component name.</p>
+</li>
+</ul>
+<h3 id="keyCodes"><a href="#keyCodes" class="headerlink" title="keyCodes"></a>keyCodes</h3><ul>
+<li><p><strong>Type:</strong> <code>&#123; [key: string]: number | Array&lt;number&gt; &#125;</code></p>
+</li>
+<li><p><strong>Default:</strong> <code>&#123;&#125;</code></p>
+</li>
+<li><p><strong>Usage:</strong></p>
+<figure class="highlight js"><table><tr><td class="code"><pre><code class="hljs js"><span class="hljs-title class_">Vue</span>.<span class="hljs-property">config</span>.<span class="hljs-property">keyCodes</span> = &#123;<br>  <span class="hljs-attr">v</span>: <span class="hljs-number">86</span>,<br>  <span class="hljs-attr">f1</span>: <span class="hljs-number">112</span>,<br>  <span class="hljs-comment">// camelCase won`t work</span><br>  <span class="hljs-attr">mediaPlayPause</span>: <span class="hljs-number">179</span>,<br>  <span class="hljs-comment">// instead you can use kebab-case with double quotation marks</span><br>  <span class="hljs-string">&quot;media-play-pause&quot;</span>: <span class="hljs-number">179</span>,<br>  <span class="hljs-attr">up</span>: [<span class="hljs-number">38</span>, <span class="hljs-number">87</span>]<br>&#125;<br></code></pre></td></tr></table></figure>
+<figure class="highlight html"><table><tr><td class="code"><pre><code class="hljs html"><span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;text&quot;</span> @<span class="hljs-attr">keyup.media-play-pause</span>=<span class="hljs-string">&quot;method&quot;</span>&gt;</span><br></code></pre></td></tr></table></figure>
+<p>Define custom key alias(es) for <code>v-on</code>.</p>
+</li>
+</ul>
+<h3 id="performance"><a href="#performance" class="headerlink" title="performance"></a>performance</h3><blockquote>
+<p>New in 2.2.0+</p>
+</blockquote>
+<ul>
+<li><p><strong>Type:</strong> <code>boolean</code></p>
+</li>
+<li><p><strong>Default:</strong> <code>false (from 2.2.3+)</code></p>
+</li>
+<li><p><strong>Usage</strong>:</p>
+<p>Set this to <code>true</code> to enable component init, compile, render and patch performance tracing in the browser devtool performance/timeline panel. Only works in development mode and in browsers that support the <a target="_blank" rel="noopener" href="https://developer.mozilla.org/en-US/docs/Web/API/Performance/mark">performance.mark</a> API.</p>
+</li>
+</ul>
+<h3 id="productionTip"><a href="#productionTip" class="headerlink" title="productionTip"></a>productionTip</h3><blockquote>
+<p>New in 2.2.0+</p>
+</blockquote>
+<ul>
+<li><p><strong>Type:</strong> <code>boolean</code></p>
+</li>
+<li><p><strong>Default:</strong> <code>true</code></p>
+</li>
+<li><p><strong>Usage</strong>:</p>
+<p>Set this to <code>false</code> to prevent the production tip on Vue startup.</p>
+</li>
+</ul>
+</div></div></body></html>

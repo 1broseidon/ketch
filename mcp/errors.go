@@ -1,12 +1,9 @@
 package mcp
 
 import (
-	"context"
-	"errors"
 	"fmt"
 
-	"github.com/1broseidon/ketch/code"
-	"github.com/1broseidon/ketch/docs"
+	"github.com/1broseidon/ketch/internal/failure"
 )
 
 // Error kinds mirror the CLI's documented exit codes (cmd/exit.go: 2
@@ -20,17 +17,19 @@ import (
 // CallToolResult with IsError=true and the error string as text content —
 // there is no structured error-data field on tool results in MCP, so the
 // prefix convention is the contract.
-const (
-	kindValidation   = "validation"   // bad tool input — fix the arguments
-	kindNotFound     = "not_found"    // resource or match absent
-	kindUpstream     = "upstream"     // backend/network failure — retry may help
-	kindPrecondition = "precondition" // server-side config missing (API key, browser, ...)
-	kindCancelled    = "cancelled"    // call cancelled or timed out
+//
+// The names come from failure.Kind, which the CLI's exit codes use too.
+// Upstream and cancelled are never chosen by hand: only failure.Classify
+// decides them.
+var (
+	kindValidation   = failure.Validation.String()   // bad tool input — fix the arguments
+	kindNotFound     = failure.NotFound.String()     // resource or match absent
+	kindPrecondition = failure.Precondition.String() // server-side config missing (API key, browser, ...)
 )
 
 // errTaxonomy is appended to every tool description so agents know how to
 // read failures.
-const errTaxonomy = " Errors carry a machine-readable prefix: [validation] fix the input; [not_found] no such resource/match; [upstream] backend or network failure, retrying may help; [precondition] server-side configuration missing; [cancelled] the call was cancelled or timed out."
+const errTaxonomy = " Errors carry a machine-readable prefix: [validation] fix the input; [not_found] no such resource/match; [upstream] backend or network failure or a timeout, retrying may help; [precondition] server-side configuration missing; [cancelled] the call was cancelled."
 
 // errf builds an error whose message starts with the "[kind] " prefix.
 // Supports %w wrapping like fmt.Errorf.
@@ -44,31 +43,24 @@ func warnf(kind, format string, args ...any) string {
 	return "[" + kind + "] " + fmt.Sprintf(format, args...)
 }
 
-// upstreamErrf wraps a failure from a backend/network call under [upstream],
-// or [cancelled] when the underlying cause is context cancellation or a
-// deadline (client cancelled the tool call, or a server-side timeout fired),
-// or [not_found] when the shared layer flagged the resource as permanently
-// absent (docs.ErrNotFound, e.g. a Context7 404 for a bad library ID;
-// code.ErrRepoNotFound, a repository the backend does not have) — the same
-// rule the CLI applies in cmd's upstreamErr, so the surfaces cannot diverge.
+// upstreamErrf classifies a failure from a backend/network call with
+// failure.Classify, the rule the CLI's upstreamErr applies too: the
+// sentinels carry their own kind, cancellation is [cancelled], a deadline is
+// an [upstream] timeout, and anything else is [upstream].
 func upstreamErrf(err error, format string, args ...any) error {
-	kind := kindUpstream
-	switch {
-	case errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded):
-		kind = kindCancelled
-	case errors.Is(err, docs.ErrNotFound) || errors.Is(err, code.ErrRepoNotFound):
-		kind = kindNotFound
-	}
-	return errf(kind, format+": %w", append(args, err)...)
+	return classifiedf(err, failure.Upstream, format+": %w", append(args, err)...)
 }
 
 // backendErrf classifies a backend-constructor error (search/code/docs
-// NewFromConfig): errors wrapping the package's unknown-backend sentinel are
-// [validation]; anything else (missing API key/token, unimplemented backend)
-// is [precondition].
-func backendErrf(err, unknown error) error {
-	if errors.Is(err, unknown) {
-		return errf(kindValidation, "%w", err)
-	}
-	return errf(kindPrecondition, "%w", err)
+// NewFromConfig): an unknown backend is [validation] (its sentinel says so);
+// anything else (missing API key/token, unimplemented backend) is
+// [precondition].
+func backendErrf(err error) error {
+	return classifiedf(err, failure.Precondition, "%w", err)
+}
+
+// classifiedf formats an error prefixed with err's failure.Kind, or
+// fallback's when err carries none.
+func classifiedf(err error, fallback failure.Kind, format string, args ...any) error {
+	return errf(failure.Classify(err, fallback).Kind.String(), format, args...)
 }

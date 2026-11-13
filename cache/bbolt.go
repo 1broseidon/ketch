@@ -9,9 +9,9 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"time"
 
+	"github.com/1broseidon/ketch/internal/boltfile"
 	bolt "go.etcd.io/bbolt"
 	bolterrors "go.etcd.io/bbolt/errors"
 )
@@ -98,19 +98,8 @@ func (s *BBoltStore) tx(write bool, fn func(*bolt.Tx) error) error {
 	return boltTx(s.path, "cache db", write, pageOpenTimeout, pageBuckets, fn)
 }
 
-// tightenDBPermissions protects both newly-created and pre-existing cache
-// databases. It is deliberately enforced on read-only opens too: a cache may
-// contain authenticated page content even when the current command only
-// inspects statistics.
-func tightenDBPermissions(path string) error {
-	if runtime.GOOS == "windows" {
-		return nil
-	}
-	if err := os.Chmod(path, 0o600); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("secure cache db permissions: %w", err)
-	}
-	return nil
-}
+// tightenDBPermissions makes the cache file private (boltfile.TightenPermissions).
+func tightenDBPermissions(path string) error { return boltfile.TightenPermissions(path) }
 
 func (s *BBoltStore) Get(key string) ([]byte, error) {
 	var val []byte

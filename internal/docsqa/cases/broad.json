@@ -1,0 +1,2178 @@
+[
+  {
+    "id": "fastapi-yield",
+    "question": "fastapi dependencies with yield",
+    "library": "https://fastapi.tiangolo.com/",
+    "facts": [
+      {
+        "quote": "To do this, use yield instead of return, and write the extra steps (code) after.",
+        "source": "https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "fastapi-upload",
+    "question": "how to upload files in fastapi",
+    "library": "https://fastapi.tiangolo.com/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "You can define files to be uploaded by the client using File.",
+              "source": "https://fastapi.tiangolo.com/tutorial/request-files/"
+            }
+          ],
+          [
+            {
+              "quote": "Define a file parameter with a type of UploadFile",
+              "source": "https://fastapi.tiangolo.com/tutorial/request-files/#file-parameters-with-uploadfile"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "react-effect-cleanup",
+    "question": "useEffect cleanup function",
+    "library": "https://react.dev/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "Your setup function may also optionally return a cleanup function.",
+              "source": "https://react.dev/reference/react/useEffect#useeffect"
+            }
+          ],
+          [
+            {
+              "quote": "React will call your cleanup function each time before the Effect runs again, and one final time when the component unmounts",
+              "source": "https://react.dev/learn/synchronizing-with-effects#step-3-add-cleanup-if-needed"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "next-middleware-matcher",
+    "question": "next.js middleware matcher",
+    "library": "https://nextjs.org/docs/",
+    "facts": [
+      {
+        "quote": "The matcher option allows you to target specific paths for the Proxy to run on.",
+        "source": "https://nextjs.org/docs/app/api-reference/file-conventions/proxy#matcher"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "hono-cors",
+    "question": "hono cors middleware",
+    "library": "https://hono.dev/docs/",
+    "facts": [
+      {
+        "quote": "we have to implement CORS, let's do this with middleware as well.",
+        "source": "https://hono.dev/docs/middleware/builtin/cors"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "astro-collections",
+    "question": "astro content collections schema",
+    "library": "https://docs.astro.build/en/",
+    "facts": [
+      {
+        "quote": "Schemas enforce consistent frontmatter or entry data within a collection through Zod validation.",
+        "source": "https://docs.astro.build/en/guides/content-collections/#defining-the-collection-schema"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "astro-image",
+    "question": "Image component",
+    "library": "https://docs.astro.build/en/",
+    "facts": [
+      {
+        "quote": "component optimizes your image and infers width and height",
+        "source": "https://docs.astro.build/en/guides/images/#choosing-image--vs-img"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "tokio-shared-state",
+    "question": "how to share state between tasks in tokio",
+    "library": "https://tokio.rs/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "There are a couple of different ways to share state in Tokio.",
+              "source": "https://tokio.rs/tokio/tutorial/shared-state#strategies"
+            },
+            {
+              "quote": "Guard the shared state with a Mutex.",
+              "source": "https://tokio.rs/tokio/tutorial/shared-state#strategies"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "tokio-url-shutdown",
+    "question": "graceful shutdown",
+    "library": "https://tokio.rs/",
+    "facts": [
+      {
+        "quote": "There are usually three parts to implementing graceful shutdown",
+        "source": "https://tokio.rs/tokio/topics/shutdown"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "hono-bearer",
+    "question": "bearer auth",
+    "library": "https://hono.dev/docs/",
+    "facts": [
+      {
+        "quote": "The HTTP clients accessing the endpoint will add the `Authorization` header with `Bearer {token}` as the header value.",
+        "source": "https://hono.dev/docs/middleware/builtin/bearer-auth"
+      },
+      {
+        "quote": "import { bearerAuth } from 'hono/bearer-auth'",
+        "source": "https://hono.dev/docs/middleware/builtin/bearer-auth#import"
+      },
+      {
+        "quote": "app.use('/api/*', bearerAuth({ token }))",
+        "source": "https://hono.dev/docs/middleware/builtin/bearer-auth#usage"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "react-effect-race",
+    "question": "useEffect fetch data race condition ignore cleanup",
+    "library": "https://react.dev/",
+    "facts": [
+      {
+        "quote": "Note the ignore variable which is initialized to false, and is set to true during cleanup.",
+        "source": "https://react.dev/reference/react/useEffect#fetching-data-with-effects"
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "let ignore = false;",
+              "source": "https://react.dev/reference/react/useEffect#fetching-data-with-effects"
+            },
+            {
+              "quote": "if (!ignore) {",
+              "source": "https://react.dev/reference/react/useEffect#fetching-data-with-effects"
+            },
+            {
+              "quote": "ignore = true;",
+              "source": "https://react.dev/reference/react/useEffect#fetching-data-with-effects"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "tanstack-query-invalidate-after-mutation",
+    "question": "how do I invalidate and refetch queries after a mutation succeeds in tanstack query",
+    "library": "https://tanstack.com/query/latest/",
+    "facts": [
+      {
+        "quote": "you can use useMutation's onSuccess options and the client's invalidateQueries function",
+        "source": "https://tanstack.com/query/latest/docs/framework/react/guides/invalidations-from-mutations"
+      },
+      {
+        "quote": "await queryClient.invalidateQueries({ queryKey: ['todos'] })",
+        "source": "https://tanstack.com/query/latest/docs/framework/react/guides/invalidations-from-mutations"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "tanstack-query-infinite-initialpageparam",
+    "question": "tanstack query useInfiniteQuery initialPageParam getNextPageParam",
+    "library": "https://tanstack.com/query/latest/",
+    "facts": [
+      {
+        "quote": "The initialPageParam option is now available (and required) to specify the initial page param",
+        "source": "https://tanstack.com/query/latest/docs/framework/react/guides/infinite-queries"
+      },
+      {
+        "quote": "initialPageParam: 0, getNextPageParam: (lastPage, pages) => lastPage.nextCursor,",
+        "source": "https://tanstack.com/query/latest/docs/framework/react/guides/infinite-queries#example"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "sveltekit-hooks-handle",
+    "question": "sveltekit hooks.server.js handle function",
+    "library": "https://svelte.dev/docs/kit/",
+    "facts": [
+      {
+        "quote": "This function runs every time the SvelteKit server receives a request",
+        "source": "https://svelte.dev/docs/kit/hooks#handle"
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "If unimplemented, defaults to ({ event, resolve }) => resolve(event).",
+              "source": "https://svelte.dev/docs/kit/hooks#handle"
+            }
+          ],
+          [
+            {
+              "quote": "It receives an event object representing the request and a function called resolve, which renders the route and generates a Response.",
+              "source": "https://svelte.dev/docs/kit/hooks#handle"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "sveltekit-url-prerender",
+    "question": "prerender a page at build time",
+    "library": "https://svelte.dev/docs/kit/",
+    "facts": [
+      {
+        "quote": "Alternatively, you can set export const prerender = true in your root +layout.js or +layout.server.js",
+        "source": "https://svelte.dev/docs/kit/page-options#prerender"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "docusaurus-tag-docs-version",
+    "question": "how do I tag a new version of my docs in docusaurus",
+    "library": "https://docusaurus.io/docs/",
+    "facts": [
+      {
+        "quote": "npm run docusaurus docs:version 1.1.0",
+        "source": "https://docusaurus.io/docs/versioning#tagging-a-new-version"
+      },
+      {
+        "quote": "Copy the full docs/ folder contents into a new versioned_docs/version-[versionName]/ folder.",
+        "source": "https://docusaurus.io/docs/versioning#tagging-a-new-version"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "docusaurus-admonition-title",
+    "question": "docusaurus admonition custom title",
+    "library": "https://docusaurus.io/docs/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "You may also specify an optional title.",
+              "source": "https://docusaurus.io/docs/markdown-features/admonitions#specifying-title"
+            },
+            {
+              "quote": ":::note[Your Title",
+              "source": "https://docusaurus.io/docs/markdown-features/admonitions#specifying-title"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "electron-expose-api-preload",
+    "question": "how do I expose a function from my Electron preload script to the renderer with context isolation enabled",
+    "library": "https://www.electronjs.org/docs/latest/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "The contextBridge module can be used to safely expose APIs from your preload script's isolated context to the context the website is running in.",
+              "source": "https://www.electronjs.org/docs/latest/tutorial/context-isolation#after-context-isolation-enabled"
+            }
+          ],
+          [
+            {
+              "quote": "An example of exposing an API to a renderer from an isolated preload script is given below",
+              "source": "https://www.electronjs.org/docs/latest/api/context-bridge"
+            }
+          ]
+        ]
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "contextBridge.exposeInMainWorld('myAPI', {",
+              "source": "https://www.electronjs.org/docs/latest/tutorial/context-isolation#after-context-isolation-enabled"
+            }
+          ],
+          [
+            {
+              "quote": "contextBridge.exposeInMainWorld('electron', {",
+              "source": "https://www.electronjs.org/docs/latest/api/context-bridge"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "electron-ipc-invoke-handle",
+    "question": "electron ipcRenderer.invoke ipcMain.handle two-way",
+    "library": "https://www.electronjs.org/docs/latest/",
+    "facts": [
+      {
+        "quote": "This can be done by using ipcRenderer.invoke paired with ipcMain.handle.",
+        "source": "https://www.electronjs.org/docs/latest/tutorial/ipc#pattern-2-renderer-to-main-two-way"
+      },
+      {
+        "quote": "ipcMain.handle('dialog:openFile', handleFileOpen)",
+        "source": "https://www.electronjs.org/docs/latest/tutorial/ipc#pattern-2-renderer-to-main-two-way"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "electron-npm-login-item",
+    "question": "launch app automatically at login",
+    "library": "https://www.electronjs.org/docs/latest/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "Set the app's login item settings.",
+              "source": "https://www.electronjs.org/docs/latest/api/app#appsetloginitemsettingssettings-macos-windows"
+            },
+            {
+              "quote": "openAtLogin boolean (optional) - true to open the app at login, false to remove the app as a login item.",
+              "source": "https://www.electronjs.org/docs/latest/api/app#appsetloginitemsettingssettings-macos-windows"
+            }
+          ]
+        ]
+      },
+      {
+        "quote": "app.setLoginItemSettings({ openAtLogin: true,",
+        "source": "https://www.electronjs.org/docs/latest/api/app#appsetloginitemsettingssettings-macos-windows"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "vue-router-auth-guard",
+    "question": "how do I redirect unauthenticated users to a login page with vue router",
+    "library": "https://router.vuejs.org/",
+    "facts": [
+      {
+        "quote": "You can register global before guards using router.beforeEach",
+        "source": "https://router.vuejs.org/guide/advanced/navigation-guards#Global-Before-Guards"
+      },
+      {
+        "quote": "return { name: 'Login' }",
+        "source": "https://router.vuejs.org/guide/advanced/navigation-guards#Global-Before-Guards"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "testing-library-react-custom-render",
+    "question": "custom render with context providers wrapper",
+    "library": "https://testing-library.com/docs/",
+    "facts": [
+      {
+        "quote": "It's often useful to define a custom render method that includes things like global context providers, data stores, etc.",
+        "source": "https://testing-library.com/docs/react-testing-library/setup/#custom-render"
+      },
+      {
+        "quote": "render(ui, {wrapper: AllTheProviders, ...options})",
+        "source": "https://testing-library.com/docs/react-testing-library/setup/#custom-render"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "ai-sdk-structured-output",
+    "question": "how do I get structured JSON output validated by a zod schema with the vercel ai sdk",
+    "library": "https://ai-sdk.dev/docs/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "Use generateText with Output.object() to generate structured data from a prompt.",
+              "source": "https://ai-sdk.dev/docs/ai-sdk-core/generating-structured-data#generating-structured-outputs"
+            },
+            {
+              "quote": "The schema is also used to validate the generated data, ensuring type safety and correctness.",
+              "source": "https://ai-sdk.dev/docs/ai-sdk-core/generating-structured-data#generating-structured-outputs"
+            }
+          ]
+        ]
+      },
+      {
+        "quote": "output: Output.object({ schema: z.object({",
+        "source": "https://ai-sdk.dev/docs/ai-sdk-core/generating-structured-data#generating-structured-outputs"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "ai-sdk-usechat",
+    "question": "ai sdk useChat chatbot sendMessage",
+    "library": "https://ai-sdk.dev/docs/",
+    "facts": [
+      {
+        "quote": "It enables the streaming of chat messages from your AI provider, manages the chat state, and updates the UI automatically as new messages arrive.",
+        "source": "https://ai-sdk.dev/docs/ai-sdk-ui/chatbot"
+      },
+      {
+        "quote": "sendMessage({ text: input });",
+        "source": "https://ai-sdk.dev/docs/ai-sdk-ui/chatbot#example"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "streamlit-session-state-init",
+    "question": "streamlit session state initialize a value",
+    "library": "https://docs.streamlit.io/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "if 'key' not in st.session_state:",
+              "source": "https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#initialize-values-in-session-state"
+            },
+            {
+              "quote": "st.session_state['key'] = 'value'",
+              "source": "https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#initialize-values-in-session-state"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "streamlit-upload-multiple",
+    "question": "file uploader accept multiple files",
+    "library": "https://docs.streamlit.io/",
+    "facts": [
+      {
+        "quote": "True: The user can upload multiple files at the same time.",
+        "source": "https://docs.streamlit.io/develop/api-reference/widgets/st.file_uploader#stfile_uploader"
+      },
+      {
+        "quote": "\"Upload data\", accept_multiple_files=True, type=\"csv\"",
+        "source": "https://docs.streamlit.io/develop/api-reference/widgets/st.file_uploader#stfile_uploader"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "instructor-reask-retries",
+    "question": "reask the model when validation fails",
+    "library": "https://python.useinstructor.com/",
+    "facts": [
+      {
+        "quote": "max_retries parameter to set the number of times you can reask the model to correct the output.",
+        "source": "https://python.useinstructor.com/concepts/reask_validation/#using-reasking-logic-to-correct-outputs"
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "response_model=UserDetails,",
+              "source": "https://python.useinstructor.com/concepts/reask_validation/#step-2-using-the-client-with-retries"
+            },
+            {
+              "quote": "max_retries=2,",
+              "source": "https://python.useinstructor.com/concepts/reask_validation/#step-2-using-the-client-with-retries"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "instructor-stream-partial",
+    "question": "instructor stream partial objects create_partial",
+    "library": "https://python.useinstructor.com/",
+    "facts": [
+      {
+        "quote": "This lets us dynamically create a new class that treats all of the original model's fields as Optional.",
+        "source": "https://python.useinstructor.com/concepts/partial/"
+      },
+      {
+        "quote": "extraction_stream = client.create_partial(",
+        "source": "https://python.useinstructor.com/concepts/partial/#understanding-partial-responses"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "instructor-async-client",
+    "question": "how do I create an async instructor client",
+    "library": "https://python.useinstructor.com/",
+    "facts": [
+      {
+        "quote": "async_client=True",
+        "source": "https://python.useinstructor.com/concepts/from_provider/#async-clients"
+      },
+      {
+        "quote": "instructor.from_provider(",
+        "source": "https://python.useinstructor.com/concepts/from_provider/#basic-usage"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "prefect-task-retry-backoff",
+    "question": "prefect task retries with exponential backoff",
+    "library": "https://www.prefect.io/docs/v3/",
+    "facts": [
+      {
+        "quote": "exponential_backoff utility to generate a list of retry delays that correspond to an exponential backoff retry strategy.",
+        "source": "https://www.prefect.io/docs/v3/how-to-guides/workflows/retries#retry-with-configurable-delay"
+      },
+      {
+        "quote": "@task(retries=4, retry_delay_seconds=exponential_backoff(backoff_factor=2))",
+        "source": "https://www.prefect.io/docs/v3/how-to-guides/workflows/retries#retry-with-configurable-delay"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "prefect-old-domain-cache-inputs",
+    "question": "cache a task result based on its inputs",
+    "library": "https://www.prefect.io/docs/v3/",
+    "facts": [
+      {
+        "quote": "To cache the result of a task based only on task inputs, set cache_policy=INPUTS in the task decorator:",
+        "source": "https://www.prefect.io/docs/v3/how-to-guides/workflows/cache-workflow-steps#cache-based-on-inputs"
+      },
+      {
+        "quote": "@task(cache_policy=INPUTS)",
+        "source": "https://www.prefect.io/docs/v3/how-to-guides/workflows/cache-workflow-steps#cache-based-on-inputs"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "prefect-serve-cron",
+    "question": "how do I run a prefect flow on a cron schedule from python",
+    "library": "https://www.prefect.io/docs/v3/",
+    "facts": [
+      {
+        "quote": "Just add the keyword argument cron, interval, or rrule.",
+        "source": "https://www.prefect.io/docs/v3/how-to-guides/deployments/create-schedules#create-schedules-in-python"
+      },
+      {
+        "quote": "my_flow.serve(name=\"flowing\", cron=\"* * * * *\")",
+        "source": "https://www.prefect.io/docs/v3/how-to-guides/deployments/create-schedules#create-schedules-in-python"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "scrapy-autothrottle",
+    "question": "scrapy enable autothrottle",
+    "library": "https://docs.scrapy.org/en/latest/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "AUTOTHROTTLE_ENABLED",
+              "source": "https://docs.scrapy.org/en/latest/topics/autothrottle#settings"
+            },
+            {
+              "quote": "Enables the AutoThrottle extension.",
+              "source": "https://docs.scrapy.org/en/latest/topics/autothrottle#autothrottle_enabled"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "scrapy-export-jsonlines",
+    "question": "how do I export scraped items to a JSON lines file in scrapy",
+    "library": "https://docs.scrapy.org/en/latest/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "scrapy crawl quotes -o quotes.jsonl",
+              "source": "https://docs.scrapy.org/en/latest/intro/tutorial#storing-the-scraped-data"
+            }
+          ],
+          [
+            {
+              "quote": "FEEDS setting: jsonlines",
+              "source": "https://docs.scrapy.org/en/latest/topics/feed-exports#json-lines"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "psycopg3-copy-write-row",
+    "question": "COPY FROM STDIN write rows",
+    "library": "https://www.psycopg.org/psycopg3/docs/",
+    "facts": [
+      {
+        "quote": "To perform such operation use a COPY ... FROM STDIN with Cursor.copy() and use write_row() on the resulting object in a with block.",
+        "source": "https://www.psycopg.org/psycopg3/docs/basic/copy.html#writing-data-row-by-row"
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "with cursor.copy(\"COPY sample (col1, col2, col3) FROM STDIN\") as copy:",
+              "source": "https://www.psycopg.org/psycopg3/docs/basic/copy.html#writing-data-row-by-row"
+            },
+            {
+              "quote": "copy.write_row(record)",
+              "source": "https://www.psycopg.org/psycopg3/docs/basic/copy.html#writing-data-row-by-row"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "psycopg3-async-connection",
+    "question": "async connection and cursor with asyncio",
+    "library": "https://www.psycopg.org/psycopg3/docs/",
+    "facts": [
+      {
+        "quote": "Psycopg Connection and Cursor have counterparts AsyncConnection and AsyncCursor supporting an asyncio interface.",
+        "source": "https://www.psycopg.org/psycopg3/docs/advanced/async.html#asynchronous-operations"
+      },
+      {
+        "quote": "async with await psycopg.AsyncConnection.connect(",
+        "source": "https://www.psycopg.org/psycopg3/docs/advanced/async.html#asynchronous-operations"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "psycopg3-connection-pool",
+    "question": "how do I use a connection pool with psycopg 3",
+    "library": "https://www.psycopg.org/psycopg3/docs/",
+    "facts": [
+      {
+        "quote": "A ConnectionPool object can be used to request connections from multiple concurrent threads.",
+        "source": "https://www.psycopg.org/psycopg3/docs/advanced/pool.html#basic-connection-pool-usage"
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "with ConnectionPool(...) as pool:",
+              "source": "https://www.psycopg.org/psycopg3/docs/advanced/pool.html#basic-connection-pool-usage"
+            },
+            {
+              "quote": "with pool.connection() as conn:",
+              "source": "https://www.psycopg.org/psycopg3/docs/advanced/pool.html#basic-connection-pool-usage"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "pillow-thumbnail-aspect",
+    "question": "PIL resize image keep aspect ratio thumbnail",
+    "library": "https://pillow.readthedocs.io/en/stable/",
+    "facts": [
+      {
+        "quote": "This method calculates an appropriate thumbnail size to preserve the aspect of the image",
+        "source": "https://pillow.readthedocs.io/en/stable/reference/Image.html#the-image-class"
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "im.thumbnail(size)",
+              "source": "https://pillow.readthedocs.io/en/stable/reference/Image.html#create-thumbnails"
+            }
+          ],
+          [
+            {
+              "quote": "im.thumbnail(size)",
+              "source": "https://pillow.readthedocs.io/en/stable/handbook/tutorial.html#create-jpeg-thumbnails"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "pillow-exif-transpose",
+    "question": "how do I rotate a photo according to its EXIF orientation with pillow",
+    "library": "https://pillow.readthedocs.io/en/stable/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "exif_transpose",
+              "source": "https://pillow.readthedocs.io/en/stable/reference/ImageOps.html"
+            },
+            {
+              "quote": "If an image has an EXIF Orientation tag, other than 1, transpose the image accordingly, and remove the orientation data.",
+              "source": "https://pillow.readthedocs.io/en/stable/reference/ImageOps.html"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "pillow-draw-text-font",
+    "question": "draw text on an image with a TrueType font",
+    "library": "https://pillow.readthedocs.io/en/stable/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "To load an OpenType/TrueType font, use the truetype function in the ImageFont module.",
+              "source": "https://pillow.readthedocs.io/en/stable/reference/ImageDraw.html#fonts"
+            }
+          ],
+          [
+            {
+              "quote": "Load a TrueType or OpenType font from a file or file-like object, and create a font object.",
+              "source": "https://pillow.readthedocs.io/en/stable/reference/ImageFont.html#functions"
+            }
+          ]
+        ]
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "fnt = ImageFont.truetype(\"Pillow/Tests/fonts/FreeMono.ttf\", 40)",
+              "source": "https://pillow.readthedocs.io/en/stable/reference/ImageDraw.html#example-draw-partial-opacity-text"
+            },
+            {
+              "quote": "d.text((10, 10), \"Hello\", font=fnt, fill=(255, 255, 255, 128))",
+              "source": "https://pillow.readthedocs.io/en/stable/reference/ImageDraw.html#example-draw-partial-opacity-text"
+            }
+          ],
+          [
+            {
+              "quote": "font = ImageFont.truetype(\"arial.ttf\", 15)",
+              "source": "https://pillow.readthedocs.io/en/stable/reference/ImageFont.html#example"
+            },
+            {
+              "quote": "draw.text((10, 25), \"world\", font=font)",
+              "source": "https://pillow.readthedocs.io/en/stable/reference/ImageFont.html#example"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "textual-key-bindings",
+    "question": "bind keys to actions",
+    "library": "https://textual.textualize.io/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "To create bindings, add a BINDINGS class variable to your app or widget.",
+              "source": "https://textual.textualize.io/guide/input/#bindings"
+            }
+          ],
+          [
+            {
+              "quote": "Textual will run actions bound to keys.",
+              "source": "https://textual.textualize.io/guide/actions/#bindings"
+            },
+            {
+              "quote": "BINDINGS = [",
+              "source": "https://textual.textualize.io/guide/actions/#bindings"
+            }
+          ]
+        ]
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "(\"r\", \"add_bar('red')\", \"Add Red\"),",
+              "source": "https://textual.textualize.io/guide/input/#bindings"
+            }
+          ],
+          [
+            {
+              "quote": "(\"r\", \"set_background('red')\", \"Red\"),",
+              "source": "https://textual.textualize.io/guide/actions/#bindings"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "textual-watch-reactive",
+    "question": "textual watch reactive attribute changes",
+    "library": "https://textual.textualize.io/",
+    "facts": [
+      {
+        "quote": "Textual will call watch methods when reactive attributes are modified.",
+        "source": "https://textual.textualize.io/guide/reactivity/#watch-methods"
+      },
+      {
+        "quote": "def watch_color(self, old_color: Color, new_color: Color) -> None:",
+        "source": "https://textual.textualize.io/guide/reactivity/#watch-methods"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "textual-work-decorator",
+    "question": "how do I run a slow network request in the background in a textual app without freezing the ui",
+    "library": "https://textual.textualize.io/",
+    "facts": [
+      {
+        "quote": "run_worker manually is the work decorator, which automatically generates a worker from the decorated method.",
+        "source": "https://textual.textualize.io/guide/workers/#work-decorator"
+      },
+      {
+        "quote": "@work(exclusive=True)",
+        "source": "https://textual.textualize.io/guide/workers/#work-decorator"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "seaorm-transaction",
+    "question": "how do I run a database transaction with SeaORM",
+    "library": "https://www.sea-ql.org/SeaORM/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "Perform a transaction with a closure. The transaction will be committed if the closure returned Ok, rollbacked if returned Err.",
+              "source": "https://www.sea-ql.org/SeaORM/docs/advanced-query/transaction/#with-a-closure"
+            }
+          ],
+          [
+            {
+              "quote": "begin the transaction followed by a commit or rollback.",
+              "source": "https://www.sea-ql.org/SeaORM/docs/advanced-query/transaction/#begin--commit"
+            }
+          ]
+        ]
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "db.transaction::<_, (), DbErr>(|txn| {",
+              "source": "https://www.sea-ql.org/SeaORM/docs/advanced-query/transaction/#with-a-closure"
+            }
+          ],
+          [
+            {
+              "quote": "let txn = db.begin().await?;",
+              "source": "https://www.sea-ql.org/SeaORM/docs/advanced-query/transaction/#begin--commit"
+            },
+            {
+              "quote": "txn.commit().await?;",
+              "source": "https://www.sea-ql.org/SeaORM/docs/advanced-query/transaction/#begin--commit"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "seaorm-url-insert-many",
+    "question": "insert many rows at once",
+    "library": "https://www.sea-ql.org/SeaORM/",
+    "facts": [
+      {
+        "quote": "Insert many active models and get back the last insert id.",
+        "source": "https://www.sea-ql.org/SeaORM/docs/basic-crud/insert/#insert-many"
+      },
+      {
+        "quote": "Fruit::insert_many([apple, orange]).exec(db).await?;",
+        "source": "https://www.sea-ql.org/SeaORM/docs/basic-crud/insert/#insert-many"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "bun-soft-deletes",
+    "question": "bun soft deletes golang",
+    "library": "https://bun.uptrace.dev/",
+    "facts": [
+      {
+        "quote": "To enable soft deletes on a model, add DeletedAt field with soft_delete tag",
+        "source": "https://bun.uptrace.dev/guide/soft-deletes.html#using-bun-models"
+      },
+      {
+        "quote": "DeletedAt time.Time `bun:\",soft_delete,nullzero\"`",
+        "source": "https://bun.uptrace.dev/guide/soft-deletes.html#using-bun-models"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "bun-upsert-on-conflict",
+    "question": "how do I upsert a row with ON CONFLICT DO UPDATE using the bun Go ORM?",
+    "library": "https://bun.uptrace.dev/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "On(\"CONFLICT (id) DO UPDATE\")",
+              "source": "https://bun.uptrace.dev/guide/query-insert.html#api"
+            },
+            {
+              "quote": "Set(\"title = EXCLUDED.title\")",
+              "source": "https://bun.uptrace.dev/guide/query-insert.html#upsert"
+            }
+          ],
+          [
+            {
+              "quote": "On(\"CONFLICT (id) DO UPDATE\")",
+              "source": "https://bun.uptrace.dev/guide/query-insert.html#api"
+            },
+            {
+              "quote": "Set(\"col1 = EXCLUDED.col1\")",
+              "source": "https://bun.uptrace.dev/guide/query-insert.html#api"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "bun-module-has-many",
+    "question": "has-many relation",
+    "library": "https://bun.uptrace.dev/",
+    "facts": [
+      {
+        "quote": "To define a has-many relationship, add bun:\"rel:has-many\" to the field.",
+        "source": "https://bun.uptrace.dev/guide/relations.html#has-many-relation"
+      },
+      {
+        "quote": "Profiles []*Profile `bun:\"rel:has-many,join:id=user_id\"`",
+        "source": "https://bun.uptrace.dev/guide/relations.html#has-many-relation"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "temporal-go-activity-timeout",
+    "question": "how do I set a Start-To-Close timeout on an activity in a Temporal Go workflow?",
+    "library": "https://docs.temporal.io/",
+    "facts": [
+      {
+        "quote": "To set an Activity Timeout in Go, create an instance of ActivityOptions from the go.temporal.io/sdk/workflow package",
+        "source": "https://docs.temporal.io/develop/go/activities/timeouts#set-activity-timeouts"
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "StartToCloseTimeout: 10 * time.Second",
+              "source": "https://docs.temporal.io/develop/go/activities/timeouts#set-activity-timeouts"
+            },
+            {
+              "quote": "ctx = workflow.WithActivityOptions(ctx, activityOptions)",
+              "source": "https://docs.temporal.io/develop/go/activities/timeouts#set-activity-timeouts"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "temporal-go-module-signal-channel",
+    "question": "receive a signal in a workflow",
+    "library": "https://docs.temporal.io/",
+    "facts": [
+      {
+        "quote": "Pass the Signal's name to GetSignalChannel to get the Signal Channel that listens for Signals of that type.",
+        "source": "https://docs.temporal.io/develop/go/workflows/message-passing#signal-channels"
+      },
+      {
+        "quote": "workflow.GetSignalChannel(ctx, ApproveSignal).Receive(ctx, &approveInput)",
+        "source": "https://docs.temporal.io/develop/go/workflows/message-passing#signal-channels"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "temporal-go-continue-as-new",
+    "question": "temporal go sdk continue-as-new",
+    "library": "https://docs.temporal.io/",
+    "facts": [
+      {
+        "quote": "Inside your Workflow, return the NewContinueAsNewError error.",
+        "source": "https://docs.temporal.io/develop/go/workflows/continue-as-new#use-continue-as-new-with-the-go-sdk"
+      },
+      {
+        "quote": "workflow.NewContinueAsNewError(",
+        "source": "https://docs.temporal.io/develop/go/workflows/continue-as-new#use-continue-as-new-with-the-go-sdk"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "testcontainers-go-wait-for-log",
+    "question": "how do I wait for a log message before a container is ready in testcontainers-go?",
+    "library": "https://golang.testcontainers.org/",
+    "facts": [
+      {
+        "quote": "The Log wait strategy will check if a string occurs in the container logs for a desired number of times",
+        "source": "https://golang.testcontainers.org/features/wait/log/"
+      },
+      {
+        "quote": "WaitingFor: wait.ForLog(\"port: 3306 MySQL Community Server - GPL\"),",
+        "source": "https://golang.testcontainers.org/features/wait/log/"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "testcontainers-go-module-compose",
+    "question": "start a docker compose stack",
+    "library": "https://golang.testcontainers.org/",
+    "facts": [
+      {
+        "quote": "Use the advanced NewDockerComposeWith(...) constructor allowing you to customise the compose execution with options",
+        "source": "https://golang.testcontainers.org/features/docker_compose/#usage"
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "compose.NewDockerComposeWith(",
+              "source": "https://golang.testcontainers.org/features/docker_compose/#usage"
+            },
+            {
+              "quote": "Up(ctx, compose.Wait(true))",
+              "source": "https://golang.testcontainers.org/features/docker_compose/#usage"
+            }
+          ],
+          [
+            {
+              "quote": "compose.NewDockerComposeWith(",
+              "source": "https://golang.testcontainers.org/features/docker_compose/#usage"
+            },
+            {
+              "quote": "Up(ctx, compose.Wait(true))",
+              "source": "https://golang.testcontainers.org/features/docker_compose/#usage"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "duo-authproxy-failmode",
+    "question": "authproxy.cfg failmode safe vs secure",
+    "library": "https://duo.com/docs/",
+    "facts": [
+      {
+        "quote": "In the event that Duo's service cannot be contacted, users' authentication attempts will be permitted if primary authentication succeeds.",
+        "source": "https://duo.com/docs/authproxy-reference#radius-auto"
+      },
+      {
+        "quote": "In the event that Duo's service cannot be contacted, all users' authentication attempts will be rejected.",
+        "source": "https://duo.com/docs/authproxy-reference#radius-auto"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "saas-product",
+    "split": "tune"
+  },
+  {
+    "id": "duo-adminapi-request-signing",
+    "question": "how do I sign duo admin api requests",
+    "library": "https://duo.com/docs/",
+    "facts": [
+      {
+        "quote": "Duo currently supports two signing versions, v5 and v2. v5 signing is the preferred authentication method for Duo APIs",
+        "source": "https://duo.com/docs/adminapi#authentication"
+      },
+      {
+        "quote": "Generate the HTTP Password as an HMAC signature of the request. This will be different for each request and must be re-generated each time.",
+        "source": "https://duo.com/docs/adminapi#authentication"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "saas-product",
+    "split": "tune"
+  },
+  {
+    "id": "okta-scim-oin-oauth-redirect-uris",
+    "question": "okta scim oauth callback redirect uri for OIN integration",
+    "library": "https://developer.okta.com/docs/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "If you plan to publish your integration to the OIN, Okta requires that all SCIM apps support the following redirect URIs",
+              "source": "https://developer.okta.com/docs/guides/scim-provisioning-integration-prepare/main/#authentication"
+            },
+            {
+              "quote": "https://system-admin.okta.com/admin/app/cpc/{appName}/oauth/callback",
+              "source": "https://developer.okta.com/docs/guides/scim-provisioning-integration-prepare/main/#authentication"
+            }
+          ]
+        ]
+      },
+      {
+        "quote": "Where the {appName} is an identifier provided to you after you create your app integration instance in Okta.",
+        "source": "https://developer.okta.com/docs/guides/scim-provisioning-integration-prepare/main/#authentication"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "saas-product",
+    "split": "tune"
+  },
+  {
+    "id": "stripe-cli-listen-forward-to",
+    "question": "forward stripe webhooks to localhost with the stripe cli",
+    "library": "https://docs.stripe.com/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "stripe listen --forward-to localhost:4242/webhook",
+              "source": "https://docs.stripe.com/webhooks#test-locally-without-a-registered-url"
+            },
+            {
+              "quote": "This command assumes you have a localhost website on port 4242 with a POST /webhook endpoint",
+              "source": "https://docs.stripe.com/webhooks#test-locally-without-a-registered-url"
+            }
+          ]
+        ]
+      },
+      {
+        "quote": "The stripe listen command outputs the {{WEBHOOK_SIGNING_SECRET}}. Copy this value to use when you create a handler.",
+        "source": "https://docs.stripe.com/webhooks#test-locally-without-a-registered-url"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "saas-product",
+    "split": "confirm"
+  },
+  {
+    "id": "slack-slash-command-operation-timeout",
+    "question": "slack slash command shows operation_timeout",
+    "library": "https://docs.slack.dev/",
+    "facts": [
+      {
+        "quote": "received by Slack within 3000 milliseconds of the original request being sent, otherwise an operation_timeout error will be displayed to the user.",
+        "source": "https://docs.slack.dev/interactivity/implementing-slash-commands#responding_basic_receipt"
+      },
+      {
+        "quote": "Your app can do this by sending back an empty HTTP 200 response to the original request.",
+        "source": "https://docs.slack.dev/interactivity/implementing-slash-commands#responding_basic_receipt"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "saas-product",
+    "split": "confirm"
+  },
+  {
+    "id": "aws-lambda-max-timeout-and-env-var-size",
+    "question": "lambda max function timeout and environment variable size limit",
+    "library": "https://docs.aws.amazon.com/lambda/latest/dg/",
+    "facts": [
+      {
+        "quote": "900 seconds (15 minutes). For functions using AWS Lambda Managed Instances, asynchronous invocations",
+        "source": "https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits#function-configuration-deployment-and-execution"
+      },
+      {
+        "quote": "4 KB, for all environment variables associated with the function, in aggregate",
+        "source": "https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits#function-configuration-deployment-and-execution"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "cloud-ci",
+    "split": "confirm"
+  },
+  {
+    "id": "kubernetes-pod-disruption-budget",
+    "question": "what does a PodDisruptionBudget actually protect against during kubectl drain",
+    "library": "https://kubernetes.io/docs/",
+    "facts": [
+      {
+        "quote": "A PDB limits the number of Pods of a replicated application that are down simultaneously from voluntary disruptions.",
+        "source": "https://kubernetes.io/docs/concepts/workloads/pods/disruptions/#pod-disruption-budgets"
+      },
+      {
+        "quote": "Involuntary disruptions cannot be prevented by PDBs; however they do count against the budget.",
+        "source": "https://kubernetes.io/docs/concepts/workloads/pods/disruptions/#pod-disruption-budgets"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "infra-ops",
+    "split": "confirm"
+  },
+  {
+    "id": "kubernetes-liveness-vs-readiness-probe",
+    "question": "k8s liveness vs readiness probe",
+    "library": "https://kubernetes.io/docs/",
+    "facts": [
+      {
+        "quote": "If a container fails its liveness probe more times than the configured tolerance, the kubelet restarts that container.",
+        "source": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#liveness-probe"
+      },
+      {
+        "quote": "If the readiness probe returns a failed state, the EndpointSlice controller removes the Pod's IP address from the EndpointSlices of all Services that match the Pod.",
+        "source": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#readiness-probe"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "infra-ops",
+    "split": "confirm"
+  },
+  {
+    "id": "kubernetes-kubectl-rollout-undo",
+    "question": "how do I roll back a kubernetes deployment to a previous revision",
+    "library": "https://kubernetes.io/docs/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "Now you've decided to undo the current rollout and rollback to the previous revision:",
+              "source": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-to-a-previous-revision"
+            },
+            {
+              "quote": "kubectl rollout undo deployment/nginx-deployment",
+              "source": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-to-a-previous-revision"
+            }
+          ]
+        ]
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "Alternatively, you can rollback to a specific revision by specifying it with --to-revision:",
+              "source": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-to-a-previous-revision"
+            },
+            {
+              "quote": "kubectl rollout undo deployment/nginx-deployment --to-revision=2",
+              "source": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-to-a-previous-revision"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "infra-ops",
+    "split": "confirm"
+  },
+  {
+    "id": "nginx-413-client-max-body-size",
+    "question": "why does nginx return 413 request entity too large",
+    "library": "https://nginx.org/en/docs/",
+    "facts": [
+      {
+        "quote": "If the size in a request exceeds the configured value, the 413 (Request Entity Too Large) error is returned to the client.",
+        "source": "http://nginx.org/en/docs/http/ngx_http_core_module.html#directives"
+      },
+      {
+        "quote": "client_max_body_size 1m;",
+        "source": "http://nginx.org/en/docs/http/ngx_http_core_module.html#directives"
+      },
+      {
+        "quote": "Setting size to 0 disables checking of client request body size.",
+        "source": "http://nginx.org/en/docs/http/ngx_http_core_module.html#directives"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "infra-ops",
+    "split": "tune"
+  },
+  {
+    "id": "nginx-proxy-pass-trailing-slash",
+    "question": "nginx proxy_pass trailing slash uri",
+    "library": "https://nginx.org/en/docs/",
+    "facts": [
+      {
+        "quote": "If the proxy_pass directive is specified with a URI, then when a request is passed to the server, the part of a normalized request URI matching the location is replaced by a URI specified in the directive",
+        "source": "http://nginx.org/en/docs/http/ngx_http_proxy_module.html#directives"
+      },
+      {
+        "quote": "If proxy_pass is specified without a URI, the request URI is passed to the server in the same form as sent by a client when the original request is processed",
+        "source": "http://nginx.org/en/docs/http/ngx_http_proxy_module.html#directives"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "infra-ops",
+    "split": "tune"
+  },
+  {
+    "id": "nginx-limit-req-rate-limit",
+    "question": "how to rate limit requests per IP in nginx with a burst",
+    "library": "https://nginx.org/en/docs/",
+    "facts": [
+      {
+        "quote": "limit_req_zone $binary_remote_addr zone=one:10m rate=1r/s;",
+        "source": "http://nginx.org/en/docs/http/ngx_http_limit_req_module.html#content"
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "allow not more than 1 request per second at an average, with bursts not exceeding 5 requests.",
+              "source": "http://nginx.org/en/docs/http/ngx_http_limit_req_module.html#directives"
+            }
+          ],
+          [
+            {
+              "quote": "Excessive requests are delayed until their number exceeds the maximum burst size in which case the request is terminated with an error.",
+              "source": "http://nginx.org/en/docs/http/ngx_http_limit_req_module.html#directives"
+            }
+          ]
+        ]
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "limit_req_status 503;",
+              "source": "http://nginx.org/en/docs/http/ngx_http_limit_req_module.html#directives"
+            },
+            {
+              "quote": "Sets the status code to return in response to rejected requests.",
+              "source": "http://nginx.org/en/docs/http/ngx_http_limit_req_module.html#directives"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "infra-ops",
+    "split": "tune"
+  },
+  {
+    "id": "nginx-reload-configuration",
+    "question": "nginx reload config without restart",
+    "library": "https://nginx.org/en/docs/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "Changes made in the configuration file will not be applied until the command to reload configuration is sent to nginx or it is restarted.",
+              "source": "http://nginx.org/en/docs/beginners_guide.html#content"
+            },
+            {
+              "quote": "nginx -s reload",
+              "source": "http://nginx.org/en/docs/beginners_guide.html#content"
+            }
+          ]
+        ]
+      },
+      {
+        "quote": "Once the master process receives the signal to reload configuration, it checks the syntax validity of the new configuration file and tries to apply the configuration provided in it.",
+        "source": "http://nginx.org/en/docs/beginners_guide.html#content"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "infra-ops",
+    "split": "tune"
+  },
+  {
+    "id": "postgresql-wal-level-logical-replication",
+    "question": "what wal_level do I need for postgres logical replication",
+    "library": "https://www.postgresql.org/docs/current/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "Finally, logical adds information necessary to support logical decoding.",
+              "source": "https://www.postgresql.org/docs/current/runtime-config-wal.html#RUNTIME-CONFIG-WAL-SETTINGS"
+            }
+          ],
+          [
+            {
+              "quote": "wal_level must be set to logical.",
+              "source": "https://www.postgresql.org/docs/current/logical-replication-config.html#LOGICAL-REPLICATION-CONFIG-PUBLISHER"
+            }
+          ]
+        ]
+      },
+      {
+        "quote": "The default value is replica, which writes enough data to support WAL archiving and replication, including running read-only queries on a standby server.",
+        "source": "https://www.postgresql.org/docs/current/runtime-config-wal.html#RUNTIME-CONFIG-WAL-SETTINGS"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "infra-ops",
+    "split": "confirm"
+  },
+  {
+    "id": "postgresql-listen-addresses-remote",
+    "question": "postgres not accepting remote connections only listening on localhost",
+    "library": "https://www.postgresql.org/docs/current/",
+    "facts": [
+      {
+        "quote": "The default value is localhost, which allows only local TCP/IP “loopback” connections to be made.",
+        "source": "https://www.postgresql.org/docs/current/runtime-config-connection.html#RUNTIME-CONFIG-CONNECTION-SETTINGS"
+      },
+      {
+        "quote": "The special entry * corresponds to all available IP interfaces.",
+        "source": "https://www.postgresql.org/docs/current/runtime-config-connection.html#RUNTIME-CONFIG-CONNECTION-SETTINGS"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "infra-ops",
+    "split": "confirm"
+  },
+  {
+    "id": "github-actions-concurrency-cancel-in-progress",
+    "question": "cancel previous running github actions workflow when new commit is pushed",
+    "library": "https://docs.github.com/en/actions/",
+    "facts": [
+      {
+        "quote": "To use concurrency to cancel any in-progress job or run in GitHub Actions, you can use the concurrency key with the cancel-in-progress option set to true:",
+        "source": "https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#example-using-concurrency-to-cancel-any-in-progress-job-or-run"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "cloud-ci",
+    "split": "tune"
+  },
+  {
+    "id": "github-actions-job-timeout-default",
+    "question": "github actions default job timeout",
+    "library": "https://docs.github.com/en/actions/",
+    "facts": [
+      {
+        "quote": "The maximum number of minutes to let a job run before GitHub automatically cancels it. Default: 360",
+        "source": "https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idtimeout-minutes"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "cloud-ci",
+    "split": "tune"
+  },
+  {
+    "id": "oidc-core-prompt-none-login-required",
+    "question": "oidc prompt=none returns login_required error",
+    "library": "https://openid.net/specs/",
+    "facts": [
+      {
+        "quote": "The Authorization Server requires End-User authentication. This error MAY be returned when the prompt parameter value in the Authentication Request is none",
+        "source": "https://openid.net/specs/openid-connect-core-1_0.html"
+      },
+      {
+        "quote": "The error code will typically be login_required, interaction_required, or another code defined in",
+        "source": "https://openid.net/specs/openid-connect-core-1_0.html"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "spec",
+    "split": "tune"
+  },
+  {
+    "id": "oidc-core-nonce-required",
+    "question": "is nonce required in openid connect authorization code flow",
+    "library": "https://openid.net/specs/",
+    "facts": [
+      {
+        "quote": "OPTIONAL. String value used to associate a Client session with an ID Token, and to mitigate replay attacks.",
+        "source": "https://openid.net/specs/openid-connect-core-1_0.html"
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "REQUIRED. String value used to associate a Client session with an ID Token, and to mitigate replay attacks.",
+              "source": "https://openid.net/specs/openid-connect-core-1_0.html"
+            }
+          ],
+          [
+            {
+              "quote": "Use of the nonce Claim is REQUIRED for this flow.",
+              "source": "https://openid.net/specs/openid-connect-core-1_0.html"
+            }
+          ]
+        ]
+      },
+      {
+        "quote": "If a nonce value was sent in the Authentication Request, a nonce Claim MUST be present and its value checked",
+        "source": "https://openid.net/specs/openid-connect-core-1_0.html"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "spec",
+    "split": "tune"
+  },
+  {
+    "id": "react-effect-runs-twice-dev",
+    "question": "why does my useEffect run twice in development",
+    "library": "https://react.dev/",
+    "facts": [
+      {
+        "quote": "React intentionally remounts your components in development to find bugs like in the last example.",
+        "source": "https://react.dev/learn/synchronizing-with-effects#how-to-handle-the-effect-firing-twice-in-development"
+      },
+      {
+        "quote": "Usually, the answer is to implement the cleanup function. The cleanup function should stop or undo whatever the Effect was doing.",
+        "source": "https://react.dev/learn/synchronizing-with-effects#how-to-handle-the-effect-firing-twice-in-development"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "react-setstate-old-value",
+    "question": "react console.log shows old state right after setState",
+    "library": "https://react.dev/",
+    "facts": [
+      {
+        "quote": "Updating state requests another render with the new state value, but does not affect the count JavaScript variable in your already-running event handler.",
+        "source": "https://react.dev/reference/react/useState#ive-updated-the-state-but-logging-gives-me-the-old-value"
+      },
+      {
+        "quote": "If you need to use the next state, you can save it in a variable before passing it to the set function",
+        "source": "https://react.dev/reference/react/useState#ive-updated-the-state-but-logging-gives-me-the-old-value"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "nextjs-app-router-route-handler",
+    "question": "how to create an api endpoint in next.js app router",
+    "library": "https://nextjs.org/docs/",
+    "facts": [
+      {
+        "quote": "Route Handlers allow you to create custom request handlers for a given route using the Web Request and Response APIs.",
+        "source": "https://nextjs.org/docs/app/api-reference/file-conventions/route"
+      },
+      {
+        "quote": "The following HTTP methods are supported: GET, POST, PUT, PATCH, DELETE, HEAD, and OPTIONS.",
+        "source": "https://nextjs.org/docs/app/api-reference/file-conventions/route#http-methods"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "nextjs-revalidatepath-dynamic-route",
+    "question": "nextjs revalidatePath for a dynamic route like /blog/[slug]",
+    "library": "https://nextjs.org/docs/",
+    "facts": [
+      {
+        "quote": "If path contains a dynamic segment, for example /product/[slug], this parameter is required.",
+        "source": "https://nextjs.org/docs/app/api-reference/functions/revalidatePath#parameters"
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "revalidatePath('/blog/[slug]', 'page')",
+              "source": "https://nextjs.org/docs/app/api-reference/functions/revalidatePath#revalidating-a-page-path"
+            },
+            {
+              "quote": "This will invalidate any path that matches the provided page file for revalidation on the next page visit.",
+              "source": "https://nextjs.org/docs/app/api-reference/functions/revalidatePath#revalidating-a-page-path"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "tokio-mutexguard-not-send-across-await",
+    "question": "tokio std::sync::MutexGuard is not Send error when holding lock across .await",
+    "library": "https://tokio.rs/",
+    "facts": [
+      {
+        "quote": "This means that you can't send a mutex lock to another thread, and the error happens because the Tokio runtime can move a task between threads at every .await.",
+        "source": "https://tokio.rs/tokio/tutorial/shared-state#holding-a-mutexguard-across-an-await"
+      },
+      {
+        "quote": "To avoid this, you should restructure your code such that the mutex lock's destructor runs before the .await.",
+        "source": "https://tokio.rs/tokio/tutorial/shared-state#holding-a-mutexguard-across-an-await"
+      },
+      {
+        "quote": "The primary feature of the Tokio mutex is that it can be held across an .await without any issues.",
+        "source": "https://tokio.rs/tokio/tutorial/shared-state#use-tokios-asynchronous-mutex"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "neg-stripe-decline-daily-limit-exceeded",
+    "question": "stripe decline code daily_limit_exceeded",
+    "library": "https://docs.stripe.com/",
+    "facts": [],
+    "not_found": [
+      "daily_limit_exceeded"
+    ],
+    "budget": 1800,
+    "kind": "saas-product",
+    "split": "confirm"
+  },
+  {
+    "id": "neg-nginx-proxy-retry-backoff",
+    "question": "nginx proxy_retry_backoff directive to add delay between upstream retries",
+    "library": "https://nginx.org/en/docs/",
+    "facts": [],
+    "not_found": [
+      "proxy_retry_backoff"
+    ],
+    "budget": 1800,
+    "kind": "infra-ops",
+    "split": "tune"
+  },
+  {
+    "id": "neg-k8s-podmemoryautoresize-gate",
+    "question": "kubernetes PodMemoryAutoResize feature gate",
+    "library": "https://kubernetes.io/docs/",
+    "facts": [],
+    "not_found": [
+      "PodMemoryAutoResize"
+    ],
+    "budget": 1800,
+    "kind": "infra-ops",
+    "split": "confirm"
+  },
+  {
+    "id": "neg-postgres-query-cache-size",
+    "question": "postgresql query_cache_size parameter",
+    "library": "https://www.postgresql.org/docs/current/",
+    "facts": [],
+    "not_found": [
+      "query_cache_size"
+    ],
+    "budget": 1800,
+    "kind": "infra-ops",
+    "split": "confirm"
+  },
+  {
+    "id": "neg-gha-step-retry-on-failure",
+    "question": "github actions retry-on-failure option for a step",
+    "library": "https://docs.github.com/en/actions/",
+    "facts": [],
+    "not_found": [
+      "retry-on-failure"
+    ],
+    "budget": 1800,
+    "kind": "cloud-ci",
+    "split": "tune"
+  },
+  {
+    "id": "react-memo-bare",
+    "question": "how to memoize a component in react",
+    "library": "https://react.dev/",
+    "facts": [
+      {
+        "quote": "Wrap a component in memo to get a memoized version of that component.",
+        "source": "https://react.dev/reference/react/memo#memo"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "next-gsp",
+    "question": "next generateStaticParams",
+    "library": "https://nextjs.org/docs/",
+    "facts": [
+      {
+        "quote": "The generateStaticParams function can be used in combination with dynamic route segments to statically generate routes at build time",
+        "source": "https://nextjs.org/docs/app/api-reference/functions/generate-static-params"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "astro-url-middleware",
+    "question": "middleware",
+    "library": "https://docs.astro.build/en/",
+    "facts": [
+      {
+        "quote": "Middleware allows you to intercept requests and responses and inject behaviors dynamically",
+        "source": "https://docs.astro.build/en/guides/middleware/"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "sveltekit-form-actions",
+    "question": "how do I handle a form POST on the server in SvelteKit so it works without client-side JavaScript",
+    "library": "https://svelte.dev/docs/kit/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "A +page.server.js file can export actions, which allow you to POST data to the server using the <form> element.",
+              "source": "https://svelte.dev/docs/kit/form-actions"
+            },
+            {
+              "quote": "When using <form>, client-side JavaScript is optional",
+              "source": "https://svelte.dev/docs/kit/form-actions"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "vue-router-dynamic-params",
+    "question": "vue router dynamic route params :id",
+    "library": "https://router.vuejs.org/",
+    "facts": [
+      {
+        "quote": "A param is denoted by a colon :. When a route is matched, the value of its params will be exposed as route.params in every component.",
+        "source": "https://router.vuejs.org/guide/essentials/dynamic-matching"
+      },
+      {
+        "quote": "{ path: '/users/:id', component: User }",
+        "source": "https://router.vuejs.org/guide/essentials/dynamic-matching"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "testing-library-user-event-setup",
+    "question": "how do I simulate real user interactions instead of fireEvent in testing library",
+    "library": "https://testing-library.com/docs/",
+    "facts": [
+      {
+        "quote": "fireEvent dispatches DOM events, whereas user-event simulates full interactions, which may fire multiple events and do additional checks along the way.",
+        "source": "https://testing-library.com/docs/user-event/intro/#differences-from-fireevent"
+      },
+      {
+        "quote": "We recommend invoking userEvent.setup() before the component is rendered.",
+        "source": "https://testing-library.com/docs/user-event/intro/#writing-tests-with-userevent"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "confirm"
+  },
+  {
+    "id": "ai-sdk-npm-define-tool",
+    "question": "define a tool the model can call",
+    "library": "https://ai-sdk.dev/docs/",
+    "facts": [
+      {
+        "quote": "inputSchema: A Zod schema or a JSON schema that defines the input parameters.",
+        "source": "https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling"
+      },
+      {
+        "quote": "weather: tool({ description: 'Get the weather in a location',",
+        "source": "https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "duo-sso-generic-saml-signing-defaults",
+    "question": "duo sso generic saml app: default signature algorithm and is the assertion signed?",
+    "library": "https://duo.com/docs/",
+    "facts": [
+      {
+        "quote": "Select the encryption strength supported by your service provider. Defaults to SHA-256.",
+        "source": "https://duo.com/docs/sso-generic#update-your-cloud-application-in-duo"
+      },
+      {
+        "quote": "sign the SAML response and assertion by checking the boxes next to Sign response and Sign assertion. They are both checked by default.",
+        "source": "https://duo.com/docs/sso-generic#update-your-cloud-application-in-duo"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "saas-product",
+    "split": "tune"
+  },
+  {
+    "id": "okta-custom-authz-server-groups-claim",
+    "question": "add groups claim to okta custom authorization server token",
+    "library": "https://developer.okta.com/docs/",
+    "facts": [
+      {
+        "quote": "On the Authorization Servers tab, select the name of the authorization server, and then click Claims.",
+        "source": "https://developer.okta.com/docs/guides/customize-authz-server/main/#create-claims"
+      },
+      {
+        "quote": "Include in token type—select Access Token (OAuth 2.0) or ID Token (OpenID Connect).",
+        "source": "https://developer.okta.com/docs/guides/customize-authz-server/main/#create-claims"
+      },
+      {
+        "quote": "Up to 100 groups are included in the claim. If the filter results in more than that, the request fails.",
+        "source": "https://developer.okta.com/docs/guides/customize-authz-server/main/#create-claims"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "saas-product",
+    "split": "tune"
+  },
+  {
+    "id": "slack-socket-mode-no-request-url",
+    "question": "slack app events without a public request url",
+    "library": "https://docs.slack.dev/",
+    "facts": [
+      {
+        "quote": "Socket Mode allows your app to use the Events API and interactive features—without exposing a public HTTP Request URL.",
+        "source": "https://docs.slack.dev/apis/events-api/using-socket-mode"
+      },
+      {
+        "quote": "Your app-level token allows your app, either directly or with an SDK, to generate a WebSocket URL for communication with Slack via the apps.connections.open method.",
+        "source": "https://docs.slack.dev/apis/events-api/using-socket-mode#token"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "saas-product",
+    "split": "confirm"
+  },
+  {
+    "id": "aws-lambda-task-timed-out-error",
+    "question": "lambda error Task timed out after 3.00 seconds",
+    "library": "https://docs.aws.amazon.com/lambda/latest/dg/",
+    "facts": [
+      {
+        "quote": "Increase the function timeout duration: Extend the timeout to give the Init and Invoke phases time to complete successfully.",
+        "source": "https://docs.aws.amazon.com/lambda/latest/dg/troubleshooting-invocation#lambda-function-times-out-during-init-phase-sandbox-timedout"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "cloud-ci",
+    "split": "confirm"
+  },
+  {
+    "id": "fastapi-enable-cors",
+    "question": "how do i enable cors in fastapi",
+    "library": "https://fastapi.tiangolo.com/",
+    "facts": [
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "from fastapi.middleware.cors import CORSMiddleware",
+              "source": "https://fastapi.tiangolo.com/tutorial/cors/#use-corsmiddleware"
+            },
+            {
+              "quote": "You can configure it in your FastAPI application using the CORSMiddleware.",
+              "source": "https://fastapi.tiangolo.com/tutorial/cors/#use-corsmiddleware"
+            }
+          ]
+        ]
+      },
+      {
+        "quote": "allow_origins - A list of origins that should be permitted to make cross-origin requests.",
+        "source": "https://fastapi.tiangolo.com/tutorial/cors/#use-corsmiddleware"
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  },
+  {
+    "id": "fastapi-background-tasks",
+    "question": "fastapi send email after returning response without blocking",
+    "library": "https://fastapi.tiangolo.com/",
+    "facts": [
+      {
+        "quote": "You can define background tasks to be run after returning a response.",
+        "source": "https://fastapi.tiangolo.com/tutorial/background-tasks/"
+      },
+      {
+        "alternatives": [
+          [
+            {
+              "quote": "Inside of your path operation function, pass your task function to the background tasks object with the method .add_task()",
+              "source": "https://fastapi.tiangolo.com/tutorial/background-tasks/#add-the-background-task"
+            }
+          ],
+          [
+            {
+              "quote": "background_tasks.add_task(write_notification, email, message=\"some notification\")",
+              "source": "https://fastapi.tiangolo.com/tutorial/background-tasks/#using-backgroundtasks"
+            }
+          ]
+        ]
+      }
+    ],
+    "not_found": [],
+    "budget": 1800,
+    "kind": "library",
+    "split": "tune"
+  }
+]

@@ -21,7 +21,7 @@ On older ketch versions without `doctor`, configured-state detection is imperfec
    | --- | --- | --- | --- | --- |
    | search | `ketch search "test" -l 1` | exit 0 | exit 5 `[precondition]` | exit 4 `[upstream]` |
    | code | `ketch code "test" -l 1` | exit 0 | exit 5 | exit 4 |
-   | docs | `ketch docs --resolve "react" -l 1` | exit 0 | exit 5 | exit 4 |
+   | docs | `ketch docs --resolve "react" -l 1` (search; `-b context7` probes Context7 and spends quota) | exit 0 | exit 5 | exit 4 |
    | scrape | `ketch scrape https://example.com --max-chars 200` | exit 0 | — | exit 4 |
    | browser | `ketch browser status` | `status: ok` | not configured | — |
 
@@ -82,7 +82,7 @@ On older ketch versions without `doctor`, configured-state detection is imperfec
 ## Code, docs, browser
 
 - **code:** `grepapp` is the default and keyless — a healthy probe means leave it alone. `sourcegraph` is keyless too (`sourcegraph_url` can point at another instance). `github` needs auth by any of: `gh auth login`, `$GITHUB_TOKEN`, or `ketch config set github_token <tok>`.
-- **docs:** `context7` works without a key on its anonymous quota (~200 requests a month per IP); a free key lifts the cap: `ketch config set context7_api_key <key>`. The `local` backend is planned but unimplemented — selecting it is `[precondition]` / exit 5, not a bug in your call.
+- **docs:** the default backend, `search`, needs nothing: it finds docs sites through the `search` surface (a healthy search means docs can search too), saves nothing from a question (the pages stay in the page cache for `cache_ttl`), and `ketch docs index <library|docs-url>` indexes a docs site for offline answers (`ketch doctor`'s `search` docs row says how many libraries are indexed). Resolving a library name asks GitHub about its repository, and the `code` surface's GitHub auth (`gh auth login`, `$GITHUB_TOKEN` or `github_token`) lifts the 60-requests-an-hour unauthenticated limit. `context7` is the other backend, for a call that names it (`-b context7`, MCP `backend: "context7"`): it works with no key on Context7's anonymous quota — about 200 requests a month per IP, shared by everything on that address; `ketch doctor` shows it as `keyless` with the requests left as of the last Context7 response (or `quota not yet seen`) and spends none of them. A free key lifts it: `ketch config set context7_api_key <key>`. The `docs_backend` config key is retired: a stored value (often `context7`, an older default) is ignored, and `ketch config set docs_backend` exits 2 saying so.
 - **browser** (JS-rendered pages): check `ketch browser status`. Either point at an installed binary — `ketch config set browser <binary>` — or download Chromium with `ketch browser install`. Both are mutations: propose, confirm.
 
 ---

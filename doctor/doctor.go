@@ -1,5 +1,5 @@
 // Package doctor runs cheap live health checks against every ketch surface:
-// search/code/docs backends, the configured browser, and the page cache.
+// search/code/docs backends, the configured browser and the page cache.
 // Probes are read-only — they never write cache entries or mutate config —
 // and each is bounded by a per-probe timeout so a full run stays fast.
 package doctor
@@ -179,9 +179,6 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 		specs = append(specs, spec{0, "code", p.ID, p.Required(cfg), func(ctx context.Context) (Status, string) { return p.Probe(ctx, client, cfg) }})
 	}
 	for _, p := range docs.Providers() {
-		if p.Hidden {
-			continue
-		}
 		specs = append(specs, spec{0, "docs", p.ID, p.Required(cfg), func(ctx context.Context) (Status, string) { return p.Probe(ctx, client, cfg) }})
 	}
 	return append(specs,

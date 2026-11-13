@@ -1,0 +1,12 @@
+{
+ "id": 45698146,
+ "name": "astro-rust",
+ "full_name": "saurvs/astro-rust",
+ "html_url": "https://github.com/saurvs/astro-rust",
+ "description": "Astronomical algorithms in Rust",
+ "fork": false,
+ "homepage": "https://saurvs.github.io/astro-rust/",
+ "language": "Rust",
+ "stargazers_count": 314,
+ "archived": false
+}

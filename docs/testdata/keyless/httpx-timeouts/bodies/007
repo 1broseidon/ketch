@@ -1,0 +1,2176 @@
+
+<!DOCTYPE html>
+<html lang="en" data-layout="responsive" data-local="" data-version="prod-frontend-00275-2gh">
+ <head>
+ <meta charset="utf-8">
+ <meta http-equiv="X-UA-Compatible" content="IE=edge">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <meta name="Description" content="Package httpx provides a robust HTTP client with retry support and other advanced features within a simple and familiar interface.">
+ <meta class="js-gtmID" data-gtmid="GTM-W8MVQXG">
+ <link rel="shortcut icon" href="/static/shared/icon/favicon.ico">
+ <link rel="canonical" href="https://pkg.go.dev/github.com/gogama/httpx">
+ <link href="/static/frontend/frontend.min.css?version=prod-frontend-00275-2gh" rel="stylesheet">
+ <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="Go Packages">
+ <title>httpx package - github.com/gogama/httpx - Go Packages</title>
+ <link href="/static/frontend/unit/unit.min.css?version=prod-frontend-00275-2gh" rel="stylesheet">
+ <link href="/static/frontend/unit/main/main.min.css?version=prod-frontend-00275-2gh" rel="stylesheet">
+ </head>
+ <body>
+ <section class="go-SurveyBanner js-surveyBanner" role="region" aria-label="2026 Go Developer Survey" data-survey-id="go-survey-2026">
+ <img class="go-SurveyBanner-gopher" src="/static/shared/survey/gopher-announcement.png" width="108" height="80" alt="" aria-hidden="true">
+ <img class="go-SurveyBanner-bullhornMobile" src="/static/shared/survey/bullhorn-mobile.svg" width="22" height="23" alt="" aria-hidden="true">
+ <img class="go-SurveyBanner-bullhornDesktop" src="/static/shared/survey/bullhorn-desktop.svg" width="28" height="28" alt="" aria-hidden="true">
+ <div class="go-SurveyBanner-content">
+ <span class="go-SurveyBanner-lead">Help us shape the future of Go!</span>
+ <a class="go-SurveyBanner-link js-surveyBannerLink" href="https://blink.qualtrics.com/jfe/form/SV_ba8fa1ZcSQQdTRs?s=p" target="_blank" rel="noopener"><span class="go-SurveyBanner-linkPrefix">Take the </span>2026 Go Developer Survey</a>
+ </div>
+ <button class="go-SurveyBanner-close js-surveyBannerClose" type="button" aria-label="Minimize the survey banner">
+ <img class="go-SurveyBanner-minimizeIcon" src="/static/shared/survey/minimize.svg" width="20" height="20" alt="" aria-hidden="true">
+ </button>
+ </section>
+ <header class="go-Header go-Header--full js-siteHeader">
+ <div class="go-Header-inner go-Header-inner--dark">
+ <nav class="go-Header-nav">
+ <a href="https://go.dev/" class="js-headerLogo" data-gtmc="nav link"
+ data-test-id="go-header-logo-link" role="heading" aria-level="1">
+ <img class="go-Header-logo" src="/static/shared/logo/go-white.svg" alt="Go">
+ </a>
+ <div class="skip-navigation-wrapper">
+ <a class="skip-to-content-link" aria-label="Skip to main content" href="#main-content"> Skip to Main Content </a>
+ </div>
+ <div class="go-Header-rightContent">
+<div class="go-SearchForm js-searchForm">
+ <form
+ class="go-InputGroup go-ShortcutKey go-SearchForm-form"
+ action="/search"
+ data-shortcut="/"
+ data-shortcut-alt="search"
+ data-gtmc="search form"
+ aria-label="Search for a package"
+ role="search"
+ >
+ <input name="q" class="go-Input js-searchFocus" aria-label="Search for a package" type="search"
+ autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"
+ placeholder="Search packages or symbols"
+ value="" />
+ <input name="m" value="" hidden>
+ <button class="go-Button go-Button--inverted" aria-label="Submit search">
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/search_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </form>
+ <button class="go-SearchForm-expandSearch js-expandSearch" data-gtmc="nav button"
+ aria-label="Open search" data-test-id="expand-search">
+ <img class="go-Icon go-Icon--inverted" height="24" width="24"
+ src="/static/shared/icon/search_gm_grey_24dp.svg" alt="">
+ </button>
+</div>
+ <ul class="go-Header-menu">
+ <li class="go-Header-menuItem">
+ <a class="js-desktop-menu-hover" href="#" data-gtmc="nav link">
+ Why Go
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_drop_down_gm_grey_24dp.svg" alt="submenu dropdown icon">
+ </a>
+ <ul class="go-Header-submenu go-Header-submenu--why js-desktop-submenu-hover" aria-label="submenu">
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/solutions/case-studies">
+ <span>Case Studies</span>
+ </a>
+ </div>
+ <p>Common problems companies solve with Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/solutions/use-cases">
+ <span>Use Cases</span>
+ </a>
+ </div>
+ <p>Stories about how and why companies use Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/security/">
+ <span>Security</span>
+ </a>
+ </div>
+ <p>How Go can help keep you secure by default</p>
+ </li>
+ </ul>
+ </li>
+ <li class="go-Header-menuItem">
+ <a href="https://go.dev/learn/" data-gtmc="nav link">Learn</a>
+ </li>
+ <li class="go-Header-menuItem">
+ <a class="js-desktop-menu-hover" href="#" data-gtmc="nav link">
+ Docs
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_drop_down_gm_grey_24dp.svg" alt="submenu dropdown icon">
+ </a>
+ <ul class="go-Header-submenu go-Header-submenu--docs js-desktop-submenu-hover" aria-label="submenu">
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/doc/effective_go">
+ <span>Effective Go</span>
+ </a>
+ </div>
+ <p>Tips for writing clear, performant, and idiomatic Go code</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/doc/">
+ <span>Go User Manual</span>
+ </a>
+ </div>
+ <p>A complete introduction to building software with Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://pkg.go.dev/std">
+ <span>Standard library</span>
+ </a>
+ </div>
+ <p>Reference documentation for Go's standard library</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/doc/devel/release">
+ <span>Release Notes</span>
+ </a>
+ </div>
+ <p>Learn what's new in each Go release</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="/api">
+ <span>API</span>
+ </a>
+ </div>
+ <p>Reference documentation for the pkg.go.dev API</p>
+ </li>
+ </ul>
+ </li>
+ <li class="go-Header-menuItem go-Header-menuItem--active">
+ <a href="/" data-gtmc="nav link">Packages</a>
+ </li>
+ <li class="go-Header-menuItem">
+ <a class="js-desktop-menu-hover" href="#" data-gtmc="nav link">
+ Community
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/arrow_drop_down_gm_grey_24dp.svg" alt="submenu dropdown icon">
+ </a>
+ <ul class="go-Header-submenu go-Header-submenu--community js-desktop-submenu-hover" aria-label="submenu">
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/talks/">
+ <span>Recorded Talks</span>
+ </a>
+ </div>
+ <p>Videos from prior events</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://www.meetup.com/pro/go">
+ <span>Meetups</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </div>
+ <p>Meet other local Go developers</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://github.com/golang/go/wiki/Conferences">
+ <span>Conferences</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </div>
+ <p>Learn and network with Go developers from around the world</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/blog">
+ <span>Go blog</span>
+ </a>
+ </div>
+ <p>The Go project's official blog.</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ <a href="https://go.dev/help">
+ <span>Go project</span>
+ </a>
+ </div>
+ <p>Get help and stay informed from Go</p>
+ </li>
+ <li class="go-Header-submenuItem">
+ <div>
+ Get connected
+ </div>
+ <p></p>
+ <div class="go-Header-socialIcons">
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with google-groups (Opens in new window)"
+ title="Get connected with google-groups (Opens in new window)"
+ href="https://groups.google.com/g/golang-nuts">
+ <img src="/static/shared/logo/social/google-groups.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with github (Opens in new window)"
+ title="Get connected with github (Opens in new window)"
+ href="https://github.com/golang">
+ <img src="/static/shared/logo/social/github.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with twitter (Opens in new window)"
+ title="Get connected with twitter (Opens in new window)"
+ href="https://twitter.com/golang">
+ <img src="/static/shared/logo/social/twitter.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with reddit (Opens in new window)"
+ title="Get connected with reddit (Opens in new window)"
+ href="https://www.reddit.com/r/golang/">
+ <img src="/static/shared/logo/social/reddit.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with slack (Opens in new window)"
+ title="Get connected with slack (Opens in new window)"
+ href="https://invite.slack.golangbridge.org/">
+ <img src="/static/shared/logo/social/slack.svg" />
+ </a>
+ <a
+ class="go-Header-socialIcon"
+ aria-label="Get connected with stack-overflow (Opens in new window)"
+ title=""
+ href="https://stackoverflow.com/collectives/go">
+ <img src="/static/shared/logo/social/stack-overflow.svg" />
+ </a>
+ </div>
+ </li>
+ </ul>
+ </li>
+ </ul>
+ <button class="go-Header-navOpen js-headerMenuButton go-Header-navOpen--white" data-gtmc="nav button" aria-label="Open navigation">
+ </button>
+ </div>
+ </nav>
+ </div>
+ </header>
+ <aside class="go-NavigationDrawer js-header">
+ <nav class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="https://go.dev/">
+ <img class="go-NavigationDrawer-logo" src="/static/shared/logo/go-blue.svg" alt="Go.">
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem js-mobile-subnav-trigger go-NavigationDrawer-hasSubnav">
+ <a href="#">
+ <span>Why Go</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_next_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ <div class="go-NavigationDrawer go-NavigationDrawer-submenuItem">
+ <div class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="#">
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_before_gm_grey_24dp.svg" alt="">
+ </i>
+ Why Go
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/solutions/case-studies">
+ Case Studies
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/solutions/use-cases">
+ Use Cases
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/security/">
+ Security
+ </a>
+ </li>
+ </ul>
+ </div>
+ </div>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/learn/">Learn</a>
+ </li>
+ <li class="go-NavigationDrawer-listItem js-mobile-subnav-trigger go-NavigationDrawer-hasSubnav">
+ <a href="#">
+ <span>Docs</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_next_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ <div class="go-NavigationDrawer go-NavigationDrawer-submenuItem">
+ <div class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="#"><i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_before_gm_grey_24dp.svg" alt="">
+ </i>
+ Docs
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/doc/effective_go">
+ Effective Go
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/doc/">
+ Go User Manual
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://pkg.go.dev/std">
+ Standard library
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/doc/devel/release">
+ Release Notes
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="/api">
+ API
+ </a>
+ </li>
+ </ul>
+ </div>
+ </div>
+ </li>
+ <li class="go-NavigationDrawer-listItem go-NavigationDrawer-listItem--active">
+ <a href="/">Packages</a>
+ </li>
+ <li class="go-NavigationDrawer-listItem js-mobile-subnav-trigger go-NavigationDrawer-hasSubnav">
+ <a href="#">
+ <span>Community</span>
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_next_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ <div class="go-NavigationDrawer go-NavigationDrawer-submenuItem">
+ <div class="go-NavigationDrawer-nav">
+ <div class="go-NavigationDrawer-header">
+ <a href="#">
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/navigate_before_gm_grey_24dp.svg" alt="">
+ </i>
+ Community
+ </a>
+ </div>
+ <ul class="go-NavigationDrawer-list">
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/talks/">
+ Recorded Talks
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://www.meetup.com/pro/go">
+ Meetups
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24"
+ src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://github.com/golang/go/wiki/Conferences">
+ Conferences
+ <i class="material-icons">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/launch_gm_grey_24dp.svg" alt="">
+ </i>
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/blog">
+ Go blog
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <a href="https://go.dev/help">
+ Go project
+ </a>
+ </li>
+ <li class="go-NavigationDrawer-listItem">
+ <div>Get connected</div>
+ <div class="go-Header-socialIcons">
+ <a class="go-Header-socialIcon" href="https://groups.google.com/g/golang-nuts"><img src="/static/shared/logo/social/google-groups.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://github.com/golang"><img src="/static/shared/logo/social/github.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://twitter.com/golang"><img src="/static/shared/logo/social/twitter.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://www.reddit.com/r/golang/"><img src="/static/shared/logo/social/reddit.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://invite.slack.golangbridge.org/"><img src="/static/shared/logo/social/slack.svg" /></a>
+ <a class="go-Header-socialIcon" href="https://stackoverflow.com/collectives/go"><img src="/static/shared/logo/social/stack-overflow.svg" /></a>
+ </div>
+ </li>
+ </ul>
+ </div>
+ </div>
+ </li>
+ </ul>
+ </nav>
+ </aside>
+ <div class="go-NavigationDrawer-scrim js-scrim" role="presentation"></div>
+ <main class="go-Main" id="main-content">
+ <div class="go-Main-banner" role="alert"></div>
+ <header class="go-Main-header js-mainHeader">
+ <nav class="go-Main-headerBreadcrumb go-Breadcrumb" aria-label="Breadcrumb" data-test-id="UnitHeader-breadcrumb">
+ <ol>
+ <li data-test-id="UnitHeader-breadcrumbItem">
+ <a href="/" data-gtmc="breadcrumb link">Discover Packages</a>
+ </li>
+ <li>
+ <a href="/github.com/gogama/httpx@v1.1.5" data-gtmc="breadcrumb link" aria-current="location"
+ data-test-id="UnitHeader-breadcrumbCurrent">
+ github.com/gogama/httpx
+ </a>
+ <button
+ class="go-Button go-Button--inline go-Clipboard js-clipboard"
+ title="Copy path to clipboard.&#10;&#10;github.com/gogama/httpx"
+ aria-label="Copy Path to Clipboard"
+ data-to-copy="github.com/gogama/httpx"
+ data-gtmc="breadcrumbs button"
+ >
+ <img
+ class="go-Icon go-Icon--accented"
+ height="24"
+ width="24"
+ src="/static/shared/icon/content_copy_gm_grey_24dp.svg"
+ alt=""
+ >
+ </button>
+ </li>
+ </ol>
+ </nav>
+ <div class="go-Main-headerContent">
+ <div class="go-Main-headerTitle js-stickyHeader">
+ <a class="go-Main-headerLogo" href="https://go.dev/" aria-hidden="true" tabindex="-1" data-gtmc="header link" aria-label="Link to Go Homepage">
+ <img height="78" width="207" src="/static/shared/logo/go-blue.svg" alt="Go">
+ </a>
+ <h1 class="UnitHeader-titleHeading" data-test-id="UnitHeader-title">httpx</h1>
+ <span class="go-Chip go-Chip--inverted">package</span>
+ <span class="go-Chip go-Chip--inverted">module</span>
+ <button
+ class="go-Button go-Button--inline go-Clipboard js-clipboard"
+ title="Copy path to clipboard.&#10;&#10;github.com/gogama/httpx"
+ aria-label="Copy Path to Clipboard"
+ data-to-copy="github.com/gogama/httpx"
+ data-gtmc="title button"
+ tabindex="-1"
+ >
+ <img
+ class="go-Icon go-Icon--accented"
+ height="24"
+ width="24"
+ src="/static/shared/icon/content_copy_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </div>
+ <div class="go-Main-headerDetails">
+ <span class="go-Main-headerDetailItem" data-test-id="UnitHeader-version">
+ <a href="?tab=versions" aria-label="Version: v1.1.5" 
+ data-gtmc="header link" aria-describedby="version-description">
+ <span class="go-textSubtle" aria-hidden="true">Version: </span>
+ v1.1.5
+ </a>
+ <div class="screen-reader-only" id="version-description" hidden>
+ Opens a new window with list of versions in this module.
+ </div>
+ <span class="DetailsHeader-badge--latest" data-test-id="UnitHeader-minorVersionBanner">
+ <span class="go-Chip DetailsHeader-span--latest">Latest</span>
+ <span class="go-Chip DetailsHeader-span--notAtLatest">
+ Latest
+ <details class="go-Tooltip js-tooltip" data-gtmc="tooltip">
+ <summary>
+ <img class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/alert_gm_grey_24dp.svg" alt="Warning">
+ </summary>
+ <p>This package is not in the latest version of its module.</p>
+ </details>
+ </span>
+ <a href="/github.com/gogama/httpx" aria-label="Go to Latest Version" data-gtmc="header link">
+ <span class="go-Chip go-Chip--alert DetailsHeader-span--goToLatest">Go to latest</span>
+ </a>
+ </span>
+ </span>
+ <span class="go-Main-headerDetailItem" data-test-id="UnitHeader-commitTime">
+ Published: Dec 13, 2022
+ </span>
+ <span class="go-Main-headerDetailItem" data-test-id="UnitHeader-licenses">
+ License: <a href="/github.com/gogama/httpx?tab=licenses" data-test-id="UnitHeader-license" 
+ data-gtmc="header link" aria-describedby="license-description">MIT</a>
+ </span>
+ <div class="screen-reader-only" id="license-description" hidden>
+ Opens a new window with license information.
+ </div>
+ <span class="go-Main-headerDetailItem" data-test-id="UnitHeader-imports">
+ <a href="/github.com/gogama/httpx?tab=imports" aria-label="Imports: 11"
+ data-gtmc="header link" aria-describedby="imports-description">
+ <span class="go-textSubtle">Imports: </span>11
+ </a>
+ </span>
+ <div class="screen-reader-only" id="imports-description" hidden>
+ Opens a new window with list of imports.
+ </div>
+ <span class="go-Main-headerDetailItem" data-test-id="UnitHeader-importedby">
+ <a href="/github.com/gogama/httpx?tab=importedby" aria-label="Imported By: 9"
+ data-gtmc="header link" aria-describedby="importedby-description">
+ <span class="go-textSubtle">Imported by: </span>9
+ </a>
+ </span>
+ <div class="screen-reader-only" id="importedby-description" hidden>
+ Opens a new window with list of known importers.
+ </div>
+ </div>
+ <div class="UnitHeader-overflowContainer">
+ <select class="UnitHeader-overflowSelect js-selectNav" tabindex="-1">
+ <option value="/">Main</option>
+ <option value="/github.com/gogama/httpx?tab=versions">
+ Versions
+ </option>
+ <option value="/github.com/gogama/httpx?tab=licenses">
+ Licenses
+ </option>
+ <option value="/github.com/gogama/httpx?tab=imports">
+ Imports
+ </option>
+ <option value="/github.com/gogama/httpx?tab=importedby">
+ Imported By
+ </option>
+ </select>
+ </div>
+ </div>
+</header>
+ <aside class="go-Main-aside js-mainAside">
+ <div class="UnitMeta">
+ <h2 class="go-textLabel">Details</h2>
+ <ul class="UnitMeta-details">
+ <li>
+ <details class="go-Tooltip js-tooltip" data-gtmc="tooltip">
+ <summary class="go-textSubtle">
+ <img class="go-Icon go-Icon--accented"
+ tabindex="0"
+ role="button"src="/static/shared/icon/check_circle_gm_grey_24dp.svg" alt="checked" aria-label="Valid file, toggle tooltip"height="24" width="24">
+ Valid <a href="https://github.com/gogama/httpx/tree/v1.1.5/go.mod" target="_blank" rel="noopener">go.mod</a> file
+ <img class="go-Icon" role="button" tabindex="0" src="/static/shared/icon/help_gm_grey_24dp.svg" alt="" aria-label="Toggle go.mod validity tooltip" height="24" width="24">
+ </summary>
+ <p aria-live="polite" role="tooltip">
+ The Go module system was introduced in Go 1.11 and is the official dependency management
+ solution for Go.
+ </p>
+ </details>
+ </li>
+ <li>
+ <details class="go-Tooltip js-tooltip" data-gtmc="tooltip">
+ <summary class="go-textSubtle">
+ <img class="go-Icon go-Icon--accented"
+ tabindex="0"
+ role="button"src="/static/shared/icon/check_circle_gm_grey_24dp.svg" alt="checked" aria-label="Valid file, toggle tooltip"height="24" width="24">
+ Redistributable license
+ <img class="go-Icon" role="button" tabindex="0" src="/static/shared/icon/help_gm_grey_24dp.svg" alt="" aria-label="Toggle redistributable help tooltip" height="24" width="24">
+ </summary>
+ <p aria-live="polite" role="tooltip">
+ Redistributable licenses place minimal restrictions on how software can be used,
+ modified, and redistributed.
+ </p>
+ </details>
+ </li>
+ <li>
+ <details class="go-Tooltip js-tooltip" data-gtmc="tooltip">
+ <summary class="go-textSubtle">
+ <img class="go-Icon go-Icon--accented"
+ tabindex="0"
+ role="button"src="/static/shared/icon/check_circle_gm_grey_24dp.svg" alt="checked" aria-label="Valid file, toggle tooltip"height="24" width="24">
+ Tagged version
+ <img class="go-Icon" role="button" tabindex="0" src="/static/shared/icon/help_gm_grey_24dp.svg" alt="" aria-label="Toggle tagged version tooltip" height="24" width="24">
+ </summary>
+ <p aria-live="polite" role="tooltip">Modules with tagged versions give importers more predictable builds.</p>
+ </details>
+ </li>
+ <li>
+ <details class="go-Tooltip js-tooltip" data-gtmc="tooltip">
+ <summary class="go-textSubtle">
+ <img class="go-Icon go-Icon--accented"
+ tabindex="0"
+ role="button"src="/static/shared/icon/check_circle_gm_grey_24dp.svg" alt="checked" aria-label="Valid file, toggle tooltip"height="24" width="24">
+ Stable version
+ <img class="go-Icon" role="button" tabindex="0" aria-label="Toggle stable version tooltip" src="/static/shared/icon/help_gm_grey_24dp.svg" alt="" height="24" width="24">
+ </summary>
+ <p aria-live="polite" role="tooltip">When a project reaches major version v1 it is considered stable.</p>
+ </details>
+ </li>
+ <li class="UnitMeta-detailsLearn">
+ <a href="/about#best-practices" data-gtmc="meta link">Learn more about best practices</a>
+ </li>
+ </ul>
+ <h2 class="go-textLabel">Repository</h2>
+ <div class="UnitMeta-repo">
+ <a href="https://github.com/gogama/httpx" title="https://github.com/gogama/httpx" target="_blank" rel="noopener">
+ github.com/gogama/httpx
+ </a>
+ </div>
+ <h2 class="go-textLabel" data-test-id="links-heading">Links</h2>
+ <ul class="UnitMeta-links">
+ <li>
+ <a href="https://deps.dev/go/github.com%2Fgogama%2Fhttpx/v1.1.5" title="View this module on Open Source Insights"
+ target="_blank" rel="noopener" data-test-id="meta-link-depsdev">
+ <img class="link-Icon" src="/static/shared/icon/depsdev-logo.svg"
+ alt="Open Source Insights Logo" />
+ Open Source Insights
+ </a>
+ </li>
+ </ul>
+ </div>
+</aside>
+ <nav class="go-Main-nav go-Main-nav--sticky js-mainNav" aria-label="Outline">
+ <div class="go-Main-navDesktop">
+ <div class="UnitOutline-jumpTo">
+ <button class="UnitOutline-jumpToInput go-ShortcutKey js-jumpToInput"
+ aria-controls="jump-to-modal"
+ aria-label="Open Jump to Identifier"
+ data-shortcut="f"
+ data-shortcut-alt="find"
+ data-test-id="jump-to-button" data-gtmc="outline button">
+ Jump to ...
+ </button>
+ </div>
+ <ul class="go-Tree js-tree" role="tree" aria-label="Outline">
+ <li class="js-readmeOutline">
+ <a href="#section-readme" data-gtmc="outline link">
+ README
+ </a>
+ <ul id="readme-outline">
+ <li>
+ <a href="#readme-httpx-best-http-client-for-reliability-retry-plugins-racing-and-more" data-gtmc="readme outline link">
+ httpx - Best HTTP client for reliability (retry, plugins, racing, and more!)
+ </a>
+ </li>
+ <li>
+ <a href="#readme-getting-started" data-gtmc="readme outline link">
+ Getting Started
+ </a>
+ </li>
+ <li>
+ <a href="#readme-quick-hits" data-gtmc="readme outline link">
+ Quick Hits
+ </a>
+ <ul>
+ <li>
+ <a href="#readme-retry" data-gtmc="readme outline link">
+ Retry
+ </a>
+ </li>
+ <li>
+ <a href="#readme-timeouts" data-gtmc="readme outline link">
+ Timeouts
+ </a>
+ </li>
+ <li>
+ <a href="#readme-concurrent-requests-quot-racing-quot" data-gtmc="readme outline link">
+ Concurrent requests (&amp;quot;racing&amp;quot;)
+ </a>
+ </li>
+ </ul>
+ </li>
+ <li>
+ <a href="#readme-more-info" data-gtmc="readme outline link">
+ More Info
+ </a>
+ </li>
+ <li>
+ <a href="#readme-plugins" data-gtmc="readme outline link">
+ Plugins
+ </a>
+ </li>
+ <li>
+ <a href="#readme-license" data-gtmc="readme outline link">
+ License
+ </a>
+ </li>
+ <li>
+ <a href="#readme-acknowledgements" data-gtmc="readme outline link">
+ Acknowledgements
+ </a>
+ </li>
+ </ul>
+ </li>
+ <li>
+ <a href="#section-documentation" data-gtmc="outline link">
+ Documentation
+ </a>
+<ul>
+ <li>
+ <a href="#pkg-overview" data-gtmc="doc outline link">Overview</a>
+ </li>
+ <li class="DocNav-overview">
+ <a href="#pkg-index" data-gtmc="doc outline link">
+ Index
+ </a>
+ </li>
+ <li class="DocNav-constants">
+ <a href="#pkg-constants" data-gtmc="doc outline link">
+ Constants
+ </a>
+ </li>
+ <li class="DocNav-variables">
+ <a href="#pkg-variables" data-gtmc="doc outline link">
+ Variables
+ </a>
+ </li>
+ <li class="DocNav-functions">
+ <a href="#pkg-functions" data-gtmc="doc outline link">
+ Functions
+ </a>
+ <ul>
+ <li>
+ <a href="#Get" title="Get(d, url)" data-gtmc="doc outline link">
+ Get(d, url)
+ </a>
+ </li>
+ <li>
+ <a href="#Head" title="Head(d, url)" data-gtmc="doc outline link">
+ Head(d, url)
+ </a>
+ </li>
+ <li>
+ <a href="#Post" title="Post(d, url, contentType, body)" data-gtmc="doc outline link">
+ Post(d, url, contentType, body)
+ </a>
+ </li>
+ <li>
+ <a href="#PostForm" title="PostForm(d, url, data)" data-gtmc="doc outline link">
+ PostForm(d, url, data)
+ </a>
+ </li>
+ </ul>
+ </li>
+ <li class="DocNav-types">
+ <a href="#pkg-types" data-gtmc="doc outline link">
+ Types
+ </a>
+ <ul>
+ <li>
+ <a href="#Client" title="type Client" data-gtmc="doc outline link">
+ type Client
+ </a>
+ <ul>
+ <li>
+ <a href="#Client.CloseIdleConnections" title="(c) CloseIdleConnections()"
+ data-gtmc="doc outline link">
+ (c) CloseIdleConnections()
+ </a>
+ </li>
+ <li>
+ <a href="#Client.Do" title="(c) Do(p)"
+ data-gtmc="doc outline link">
+ (c) Do(p)
+ </a>
+ </li>
+ <li>
+ <a href="#Client.Get" title="(c) Get(url)"
+ data-gtmc="doc outline link">
+ (c) Get(url)
+ </a>
+ </li>
+ <li>
+ <a href="#Client.Head" title="(c) Head(url)"
+ data-gtmc="doc outline link">
+ (c) Head(url)
+ </a>
+ </li>
+ <li>
+ <a href="#Client.Post" title="(c) Post(url, contentType, body)"
+ data-gtmc="doc outline link">
+ (c) Post(url, contentType, body)
+ </a>
+ </li>
+ <li>
+ <a href="#Client.PostForm" title="(c) PostForm(url, data)"
+ data-gtmc="doc outline link">
+ (c) PostForm(url, data)
+ </a>
+ </li>
+ </ul>
+ </li>
+ <li>
+ <a href="#Doer" title="type Doer" data-gtmc="doc outline link">
+ type Doer
+ </a>
+ </li>
+ <li>
+ <a href="#Event" title="type Event" data-gtmc="doc outline link">
+ type Event
+ </a>
+ <ul>
+ <li>
+ <a href="#Events" title="Events()"
+ data-gtmc="doc outline link">
+ Events()
+ </a>
+ </li>
+ <li>
+ <a href="#Event.Name" title="(evt) Name()"
+ data-gtmc="doc outline link">
+ (evt) Name()
+ </a>
+ </li>
+ <li>
+ <a href="#Event.String" title="(evt) String()"
+ data-gtmc="doc outline link">
+ (evt) String()
+ </a>
+ </li>
+ </ul>
+ </li>
+ <li>
+ <a href="#Executor" title="type Executor" data-gtmc="doc outline link">
+ type Executor
+ </a>
+ <ul>
+ <li>
+ <a href="#Inflate" title="Inflate(d)"
+ data-gtmc="doc outline link">
+ Inflate(d)
+ </a>
+ </li>
+ </ul>
+ </li>
+ <li>
+ <a href="#FormPoster" title="type FormPoster" data-gtmc="doc outline link">
+ type FormPoster
+ </a>
+ </li>
+ <li>
+ <a href="#Getter" title="type Getter" data-gtmc="doc outline link">
+ type Getter
+ </a>
+ </li>
+ <li>
+ <a href="#HTTPDoer" title="type HTTPDoer" data-gtmc="doc outline link">
+ type HTTPDoer
+ </a>
+ </li>
+ <li>
+ <a href="#Handler" title="type Handler" data-gtmc="doc outline link">
+ type Handler
+ </a>
+ </li>
+ <li>
+ <a href="#HandlerFunc" title="type HandlerFunc" data-gtmc="doc outline link">
+ type HandlerFunc
+ </a>
+ <ul>
+ <li>
+ <a href="#HandlerFunc.Handle" title="(f) Handle(evt, e)"
+ data-gtmc="doc outline link">
+ (f) Handle(evt, e)
+ </a>
+ </li>
+ </ul>
+ </li>
+ <li>
+ <a href="#HandlerGroup" title="type HandlerGroup" data-gtmc="doc outline link">
+ type HandlerGroup
+ </a>
+ <ul>
+ <li>
+ <a href="#HandlerGroup.PushBack" title="(g) PushBack(evt, h)"
+ data-gtmc="doc outline link">
+ (g) PushBack(evt, h)
+ </a>
+ </li>
+ </ul>
+ </li>
+ <li>
+ <a href="#Header" title="type Header" data-gtmc="doc outline link">
+ type Header
+ </a>
+ </li>
+ <li>
+ <a href="#IdleCloser" title="type IdleCloser" data-gtmc="doc outline link">
+ type IdleCloser
+ </a>
+ </li>
+ <li>
+ <a href="#Poster" title="type Poster" data-gtmc="doc outline link">
+ type Poster
+ </a>
+ </li>
+ </ul>
+ </li>
+</ul>
+ </li>
+ <li>
+ <a href="#section-sourcefiles" data-gtmc="outline link">
+ Source Files
+ </a>
+ </li>
+ <li>
+ <a href="#section-directories" data-gtmc="outline link">
+ Directories
+ </a>
+ </li>
+ </ul>
+ </div>
+ <div class="go-Main-navMobile js-mainNavMobile">
+ <label class="go-Label">
+ <select class="go-Select">
+ <option selected disabled>README</option>
+ </select>
+ </label>
+ </div>
+</nav>
+ <article class="go-Main-article js-mainContent">
+ <div class="UnitDetails" data-test-id="UnitDetails" style="display: block;">
+ <div class="UnitDetails-content js-unitDetailsContent" data-test-id="UnitDetails-content">
+ <div class="UnitReadme UnitReadme--expanded js-readme">
+ <h2 class="UnitReadme-title" id="section-readme">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/chrome_reader_mode_gm_grey_24dp.svg" alt="">
+ README
+ <a class="UnitReadme-idLink" href="#section-readme" title="Go to Readme" aria-label="Go to Readme">¶</a>
+ </h2>
+ <div class="UnitReadme-content" data-test-id="Unit-readmeContent">
+ <div class="Overview-readmeContent js-readmeContent"><h3 class="h1" id="readme-httpx-best-http-client-for-reliability-retry-plugins-racing-and-more">httpx - Best HTTP client for reliability (retry, plugins, racing, and more!)</h3>
+<p><a href="https://travis-ci.com/gogama/httpx" rel="nofollow"><img src="https://travis-ci.org/gogama/httpx.svg" alt="Build Status"/></a> <a href="https://goreportcard.com/report/github.com/gogama/httpx" rel="nofollow"><img src="https://goreportcard.com/badge/github.com/gogama/httpx" alt="Go Report Card"/></a> <a href="https://pkg.go.dev/github.com/gogama/httpx" rel="nofollow"><img src="https://pkg.go.dev/badge/github.com/gogama/httpx" alt="PkgGoDev"/></a></p>
+<p>Package httpx is the best-in-class GoLang HTTP client for making HTTP
+requests with enterprise-level reliability.</p>
+<p>Features include:</p>
+<ul>
+<li>Flexible retry policies</li>
+<li>Flexible timeout policies (including adaptive timeouts)</li>
+<li>Optional concurrent request support smooths over rough service patches (&#34;racing&#34;)</li>
+<li>Plugin and customization support via event handlers</li>
+</ul>
+<hr/>
+<h3 class="h1" id="readme-getting-started">Getting Started</h3>
+<p>Install httpx:</p>
+<pre><code>$ go get github.com/gogama/httpx
+</code></pre>
+<p>Import the httpx package and create a <code>Client</code> to begin making reliable
+HTTP requests:</p>
+<pre><code>package main
+import &#34;github.com/gogama/httpx&#34;
+func main() {
+ client := &amp;httpx.Client{} // Use default retry and timeout policies
+ client.Get(&#34;http://example.com&#34;)
+}
+</code></pre>
+<hr/>
+<h3 class="h1" id="readme-quick-hits">Quick Hits</h3>
+<h4 class="h2" id="readme-retry">Retry</h4>
+<p>The <code>httpx.Client</code> provides a reasonable default retry policy. To replace it
+with your own custom policy, use package retry, for example</p>
+<pre><code>client := &amp;httpx.Client{
+ RetryPolicy: retry.NewPolicy(
+ retry.Times(10).And(
+ retry.StatusCode(501, 502, 504).Or(retry.TransientErr)
+ ),
+ retry.NewExpWaiter(500*time.Millisecond, 30*time.Second, nil)
+ )
+}
+</code></pre>
+<p>For more elaborate policies, write your own <code>retry.Decider</code> or <code>retry.Waiter</code>
+implementation. To disable retry altogether, use the built-in policy <code>retry.Never</code>:</p>
+<h4 class="h2" id="readme-timeouts">Timeouts</h4>
+<p>The <code>httpx.Client</code> provides a reasonable default timeout policy. To replace it
+with your own constant timeout, adaptive timeout, or custom policy, use package
+timeout, for example:</p>
+<pre><code>client := &amp;httpx.Client{
+ TimeoutPolicy: timeout.Fixed(30*time.Second) // Constant 30 second timeout
+}
+</code></pre>
+<p>For more elaborate timeouts, use <code>timeout.Adaptive</code> or write your own
+<code>timeout.Policy</code> implementation. To disable timeouts altogether, use the built-in
+policy <code>timeout.Infinite</code>:</p>
+<h4 class="h2" id="readme-concurrent-requests-quot-racing-quot">Concurrent requests (&#34;racing&#34;)</h4>
+<p>The <code>httpx.Client</code> advanced racing feature is disabled by default. Enable it by
+specifying a racing policy using built in components from package racing, or by
+writing your own <code>racing.Scheduler</code> and <code>racing.Starter</code> implementations. Here
+is a simple example using the built-ins:</p>
+<pre><code>client := &amp;httpx.Client{
+ // Use up to two extra parallel request attempts. Start the first extra attempt
+ // if the response to the initial attempt is not received within 300ms. Start
+ // the second extra attempt if neither the initial attempt nor the first extra
+ // attempt have received a response after one second. 
+ RacingPolicy: racing.NewPolicy( 
+ racing.NewStaticScheduler(300*time.Millisecond, 1*time.Second),
+ racing.AlwaysStart)
+}
+</code></pre>
+<hr/>
+<h3 class="h1" id="readme-more-info">More Info</h3>
+<p>See the <a href="https://github.com/gogama/httpx/blob/v1.1.5/USAGE.md" rel="nofollow">USAGE.md</a> for a more detailed usage guide and
+<a href="https://github.com/gogama/httpx/blob/v1.1.5/FAQ.md" rel="nofollow">FAQ.md</a> for answers to frequently asked questions, or
+<a href="https://pkg.go.dev/github.com/gogama/httpx" rel="nofollow">click here</a> for the full
+httpx API reference documentation.</p>
+<hr/>
+<h3 class="h1" id="readme-plugins">Plugins</h3>
+<p>Customize the behavior of <code>httpx.Client</code> by adding event handlers to the
+client&#39;s handler group.</p>
+<pre><code>handlers := &amp;httpx.HandlerGroup{}
+handlers.PushBack(httpx.BeforeReadBody, myReadBodyHandler)
+client := &amp;httpx.Client{Handlers: handlers}
+</code></pre>
+<p>Besides writing your own, you can add install one of the following open source
+httpx plugins into your client:</p>
+<ol>
+<li><a href="https://github.com/gogama/aws-xray-httpx" rel="nofollow">aws-xray-httpx</a> - Adds AWS X-Ray
+tracing support into <code>httpx.Client</code>.</li>
+<li><a href="https://github.com/gogama/reconnx" rel="nofollow">reconnx</a> - Discards slow HTTP connections
+from connection pool.</li>
+</ol>
+<hr/>
+<h3 class="h1" id="readme-license">License</h3>
+<p>This project is licensed under the terms of the MIT License.</p>
+<h3 class="h1" id="readme-acknowledgements">Acknowledgements</h3>
+<p>Developer happiness on this project was boosted by JetBrains&#39; generous donation
+of an <a href="https://www.jetbrains.com/opensource/" rel="nofollow">open source license</a> for their
+lovely GoLand IDE. ❤</p>
+</div>
+ </div>
+ <button class="UnitReadme-expandLink js-readmeExpand"
+ data-test-id="readme-expand" data-gtmc="readme button"
+ aria-label="Expand Readme">Expand ▾</button>
+ <button class="UnitReadme-collapseLink js-readmeCollapse"
+ data-test-id="readme-collapse" data-gtmc="readme button"
+ aria-label="Expand Readme">Collapse ▴</button>
+ </div>
+ <div class="UnitDoc">
+ <h2 class="UnitDoc-title" id="section-documentation">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/code_gm_grey_24dp.svg" alt="">
+ Documentation
+ <a class="UnitDoc-idLink" href="#section-documentation" title="Go to Documentation" aria-label="Go to Documentation">¶</a>
+ </h2>
+ <div class="Documentation js-documentation">
+<div class="Documentation-content js-docContent"> <section class="Documentation-overview">
+ <h3 tabindex="-1" id="pkg-overview" class="Documentation-overviewHeader">Overview <a href="#pkg-overview" title="Go to Overview" aria-label="Go to Overview">¶</a></h3>
+<p>Package httpx provides a robust HTTP client with retry support and other
+advanced features within a simple and familiar interface.
+</p><p>Create a Client to begin making requests.
+</p><pre>client := &amp;httpx.Client{}
+ex, err := client.Get(&#34;https://www.example.com&#34;)
+...
+ex, err := client.Post(&#34;https://www.example.com/upload&#34;,
+ &#34;application/json&#34;, &amp;buf)
+...
+ex, err := client.PostForm(&#34;http://example.com/form&#34;,
+ url.Values{&#34;key&#34;: {&#34;Value&#34;}, &#34;id&#34;: {&#34;123&#34;}})
+</pre><p>For control over how the client sends HTTP requests and receives HTTP
+responses, use a custom HTTPDoer. For example, use a GoLang standard
+HTTP client:
+</p><pre>doer := &amp;http.Client{
+ ..., // See package &#34;net/http&#34; for detailed documentation
+}
+client := &amp;httpx.Client{
+ HTTPDoer: doer,
+}
+</pre><p>For control over the client&#39;s retry decisions and timing, create a
+custom retry policy using components from package retry:
+</p><pre>retryWaiter := retry.NewExpWaiter(250*time.Millisecond, 5*time.Second(), time.Now())
+retryPolicy := retry.NewPolicy(retry.DefaultDecider, retryWaiter)
+client := httpx.Client{
+ RetryPolicy: retryPolicy,
+}
+</pre><p>For control over the client&#39;s individual attempt timeouts, set a custom
+timeout policy using package timeout:
+</p><pre>client := &amp;httpx.Client{
+ TimeoutPolicy: timeout.Fixed(10*time.Second)
+}
+</pre><p>To hook into the fine-grained details of the client&#39;s request execution
+logic, install a handler into the appropriate handler chain:
+</p><pre>log := log.New(os.Stdout, &#34;&#34;, log.LstdFlags)
+handlers := &amp;httpx.HandlerGroup{}
+handlers.PushBack(httpx.BeforeAttempt, httpx.HandlerFunc(
+ func(_ httpx.Event, e *request.Execution) {
+ log.Printf(&#34;Attempt %d to %s&#34;, e.Attempt, e.Request.URL.String())
+ })
+)
+client := &amp;httpx.Client{
+ HTTPDoer: doer,
+ Handlers: handlers,
+}
+</pre><p>Package httpx provides basic interfaces for each method of the robust
+client (Doer, Getter, Header, Poster, FormPoster, and IdleCloser); a
+combined interface that composes all the basic methods (Executor); and
+utility functions for working with a Doer (Inflate, Get, Head, Post,
+and PostForm).
+</p>
+</section><section class="Documentation-index">
+ <h3 id="pkg-index" class="Documentation-indexHeader">Index <a href="#pkg-index" title="Go to Index" aria-label="Go to Index">¶</a></h3>
+<ul class="Documentation-indexList">
+<li class="Documentation-indexFunction">
+ <a href="#Get">func Get(d Doer, url string) (*request.Execution, error)</a></li>
+<li class="Documentation-indexFunction">
+ <a href="#Head">func Head(d Doer, url string) (*request.Execution, error)</a></li>
+<li class="Documentation-indexFunction">
+ <a href="#Post">func Post(d Doer, url, contentType string, body interface{}) (*request.Execution, error)</a></li>
+<li class="Documentation-indexFunction">
+ <a href="#PostForm">func PostForm(d Doer, url string, data url.Values) (*request.Execution, error)</a></li>
+<li class="Documentation-indexType">
+ <a href="#Client">type Client</a></li>
+<li><ul class="Documentation-indexTypeMethods">
+<li>
+ <a href="#Client.CloseIdleConnections">func (c *Client) CloseIdleConnections()</a></li>
+<li>
+ <a href="#Client.Do">func (c *Client) Do(p *request.Plan) (*request.Execution, error)</a></li>
+<li>
+ <a href="#Client.Get">func (c *Client) Get(url string) (*request.Execution, error)</a></li>
+<li>
+ <a href="#Client.Head">func (c *Client) Head(url string) (*request.Execution, error)</a></li>
+<li>
+ <a href="#Client.Post">func (c *Client) Post(url, contentType string, body interface{}) (*request.Execution, error)</a></li>
+<li>
+ <a href="#Client.PostForm">func (c *Client) PostForm(url string, data url.Values) (*request.Execution, error)</a></li>
+</ul></li>
+<li class="Documentation-indexType">
+ <a href="#Doer">type Doer</a></li>
+<li class="Documentation-indexType">
+ <a href="#Event">type Event</a></li>
+<li><ul class="Documentation-indexTypeFunctions">
+<li>
+ <a href="#Events">func Events() []Event</a></li>
+</ul></li>
+<li><ul class="Documentation-indexTypeMethods">
+<li>
+ <a class="js-deprecatedTagLink" href="#Event.Name">func (evt Event) Name() string</a><span class="Documentation-indexDeprecated Documentation-deprecatedTag">deprecated</span></li>
+<li>
+ <a href="#Event.String">func (evt Event) String() string</a></li>
+</ul></li>
+<li class="Documentation-indexType">
+ <a href="#Executor">type Executor</a></li>
+<li><ul class="Documentation-indexTypeFunctions">
+<li>
+ <a href="#Inflate">func Inflate(d Doer) Executor</a></li>
+</ul></li>
+<li class="Documentation-indexType">
+ <a href="#FormPoster">type FormPoster</a></li>
+<li class="Documentation-indexType">
+ <a href="#Getter">type Getter</a></li>
+<li class="Documentation-indexType">
+ <a href="#HTTPDoer">type HTTPDoer</a></li>
+<li class="Documentation-indexType">
+ <a href="#Handler">type Handler</a></li>
+<li class="Documentation-indexType">
+ <a href="#HandlerFunc">type HandlerFunc</a></li>
+<li><ul class="Documentation-indexTypeMethods">
+<li>
+ <a href="#HandlerFunc.Handle">func (f HandlerFunc) Handle(evt Event, e *request.Execution)</a></li>
+</ul></li>
+<li class="Documentation-indexType">
+ <a href="#HandlerGroup">type HandlerGroup</a></li>
+<li><ul class="Documentation-indexTypeMethods">
+<li>
+ <a href="#HandlerGroup.PushBack">func (g *HandlerGroup) PushBack(evt Event, h Handler)</a></li>
+</ul></li>
+<li class="Documentation-indexType">
+ <a href="#Header">type Header</a></li>
+<li class="Documentation-indexType">
+ <a href="#IdleCloser">type IdleCloser</a></li>
+<li class="Documentation-indexType">
+ <a href="#Poster">type Poster</a></li>
+</ul>
+</section><h3 tabindex="-1" id="pkg-constants" class="Documentation-constantsHeader">Constants <a href="#pkg-constants" title="Go to Constants" aria-label="Go to Constants">¶</a></h3>
+ <section class="Documentation-constants"><p class="Documentation-empty">This section is empty.</p></section>
+ <h3 tabindex="-1" id="pkg-variables" class="Documentation-variablesHeader">Variables <a href="#pkg-variables" title="Go to Variables" aria-label="Go to Variables">¶</a></h3>
+ <section class="Documentation-variables"><p class="Documentation-empty">This section is empty.</p></section>
+ <h3 tabindex="-1" id="pkg-functions" class="Documentation-functionsHeader">Functions <a href="#pkg-functions" title="Go to Functions" aria-label="Go to Functions">¶</a></h3>
+ <section class="Documentation-functions"><div class="Documentation-function">
+ <h4 tabindex="-1" id="Get" data-kind="function" class="Documentation-functionHeader">
+ <span>func <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/interface.go#L116">Get</a> <a class="Documentation-idLink" href="#Get" title="Go to Get" aria-label="Go to Get">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>func Get(d <a href="#Doer">Doer</a>, url <a href="/builtin#string">string</a>) (*<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>, <a href="/builtin#error">error</a>)</pre>
+ </div>
+ <p>Get uses the specified Doer to issue a GET to the specified URL,
+using the same policies as d.Do.
+</p><p>To make a request plan with custom headers, use request.NewPlan and
+d.Do.
+</p>
+ </div><div class="Documentation-function">
+ <h4 tabindex="-1" id="Head" data-kind="function" class="Documentation-functionHeader">
+ <span>func <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/interface.go#L129">Head</a> <a class="Documentation-idLink" href="#Head" title="Go to Head" aria-label="Go to Head">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>func Head(d <a href="#Doer">Doer</a>, url <a href="/builtin#string">string</a>) (*<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>, <a href="/builtin#error">error</a>)</pre>
+ </div>
+ <p>Head uses the specified Doer to issue a HEAD to the specified URL,
+using the same policies as d.Do.
+</p><p>To make a request plan with custom headers, use request.NewPlan and
+d.Do.
+</p>
+ </div><div class="Documentation-function">
+ <h4 tabindex="-1" id="Post" data-kind="function" class="Documentation-functionHeader">
+ <span>func <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/interface.go#L146">Post</a> <a class="Documentation-idLink" href="#Post" title="Go to Post" aria-label="Go to Post">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>func Post(d <a href="#Doer">Doer</a>, url, contentType <a href="/builtin#string">string</a>, body interface{}) (*<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>, <a href="/builtin#error">error</a>)</pre>
+ </div>
+ <p>Post uses the specified Doer to issue a POST to the specified URL,
+using the same policies as d.Do.
+</p><p>The body parameter may be nil for an empty body, or may be any of the
+types supported by Client.Post, request.NewPlan, and request.BodyBytes,
+namely: string; []byte; io.Reader; and io.ReadCloser.
+</p><p>To make a request plan with custom headers, use request.NewPlan and
+d.Do.
+</p>
+ </div><div class="Documentation-function">
+ <h4 tabindex="-1" id="PostForm" data-kind="function" class="Documentation-functionHeader">
+ <span>func <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/interface.go#L164">PostForm</a> <a class="Documentation-idLink" href="#PostForm" title="Go to PostForm" aria-label="Go to PostForm">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>func PostForm(d <a href="#Doer">Doer</a>, url <a href="/builtin#string">string</a>, data <a href="/net/url">url</a>.<a href="/net/url#Values">Values</a>) (*<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>, <a href="/builtin#error">error</a>)</pre>
+ </div>
+ <p>PostForm uses the specified Doer to issue a POST to the specified URL,
+with data&#39;s keys and values URL-encoded as the request body.
+</p><p>The Content-Type header is set to application/x-www-form-urlencoded.
+To set other headers, use request.NewPlan and d.Do.
+</p>
+ </div></section>
+ <h3 tabindex="-1" id="pkg-types" class="Documentation-typesHeader">Types <a href="#pkg-types" title="Go to Types" aria-label="Go to Types">¶</a></h3>
+ <section class="Documentation-types"><div class="Documentation-type">
+ <h4 tabindex="-1" id="Client" data-kind="type" class="Documentation-typeHeader">
+ <span>type <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/client.go#L91">Client</a> <a class="Documentation-idLink" href="#Client" title="Go to Client" aria-label="Go to Client">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>type Client struct {
+<span id="Client.HTTPDoer" data-kind="field"> <span class="comment">// HTTPDoer specifies the mechanics of sending HTTP requests and</span>
+</span> <span class="comment">// receiving responses.</span>
+ <span class="comment">//</span>
+ <span class="comment">// If HTTPDoer is nil, http.DefaultClient from the standard net/http</span>
+ <span class="comment">// package is used.</span>
+ HTTPDoer <a href="#HTTPDoer">HTTPDoer</a>
+<span id="Client.TimeoutPolicy" data-kind="field"> <span class="comment">// TimeoutPolicy specifies how to set timeouts on individual request</span>
+</span> <span class="comment">// attempts.</span>
+ <span class="comment">//</span>
+ <span class="comment">// If TimeoutPolicy is nil, timeout.DefaultPolicy is used.</span>
+ TimeoutPolicy <a href="/github.com/gogama/httpx@v1.1.5/timeout">timeout</a>.<a href="/github.com/gogama/httpx@v1.1.5/timeout#Policy">Policy</a>
+<span id="Client.RetryPolicy" data-kind="field"> <span class="comment">// RetryPolicy decides when to retry failed attempts and how long</span>
+</span> <span class="comment">// to sleep after a failed attempt before retrying.</span>
+ <span class="comment">//</span>
+ <span class="comment">// If RetryPolicy is nil, retry.DefaultPolicy is used.</span>
+ RetryPolicy <a href="/github.com/gogama/httpx@v1.1.5/retry">retry</a>.<a href="/github.com/gogama/httpx@v1.1.5/retry#Policy">Policy</a>
+<span id="Client.RacingPolicy" data-kind="field"> <span class="comment">// RacingPolicy specifies how to race concurrent requests if this</span>
+</span> <span class="comment">// advanced feature is desired.</span>
+ <span class="comment">//</span>
+ <span class="comment">// If RacingPolicy is nil, racing.Disabled, which never races</span>
+ <span class="comment">// concurrent requests, is used.</span>
+ RacingPolicy <a href="/github.com/gogama/httpx@v1.1.5/racing">racing</a>.<a href="/github.com/gogama/httpx@v1.1.5/racing#Policy">Policy</a>
+<span id="Client.Handlers" data-kind="field"> <span class="comment">// Handlers allows custom handler chains to be invoked when</span>
+</span> <span class="comment">// designated events occur during execution of a request plan.</span>
+ <span class="comment">//</span>
+ <span class="comment">// If Handlers is nil, no custom handlers will be run.</span>
+ Handlers *<a href="#HandlerGroup">HandlerGroup</a>
+}</pre>
+ </div>
+ <p>A Client is a robust HTTP client with retry support. Its zero value
+is a valid configuration.
+</p><p>The zero value client uses http.DefaultClient (from net/http) as the
+HTTPDoer, timeout.DefaultPolicy as the timeout policy, retry.DefaultPolicy
+as the retry policy, and an empty handler group (no event handlers/plug-ins).
+</p><p>Client&#39;s HTTPDoer typically has an internal state (cached TCP
+connections) so Client instances should be reused instead of created
+as needed. Client is safe for concurrent use by multiple goroutines.
+</p><p>A Client is higher-level than an HTTPDoer. The HTTPDoer is responsible
+for all details of sending the HTTP request and receiving the response,
+while Client builds on top of the HTTPDoer&#39;s feature set. For example,
+the HTTPDoer is responsible for redirects, so consult the HTTPDoer&#39;s
+documentation to understand how redirects are handled. Typically the
+Go standard HTTP client http.Client) will be used as the HTTPDoer,
+but this is not required.
+</p><p>On top of the HTTP request features provided by the HTTPDoer, Client
+adds the following features:
+</p><p>• Client reads and buffers the entire HTTP response body into a
+[]byte (returned as the Execution.Body field);
+</p><p>• Client retries failed request attempts using a customizable retry
+policy;
+</p><p>• Client sets individual request attempt timeouts using a
+customizable timeout policy;
+</p><p>• Client may race multiple concurrent HTTP request attempts against
+one another to improve performance using a customizable racing policy
+(see package racing for more detail);
+</p><p>• Client invokes user-provided handler functions at designated plug-in
+points within the attempt/retry loop, allowing new features to be
+mixed in from outside libraries; and
+</p><p>• Client implements the httpx.Executor interface.
+</p><p>Client&#39;s HTTP methods should feel familiar to anyone who has used the
+Go standard HTTP client (http.Client). The methods use the same names,
+and follow the same rough parameter schema, as the Go standard client.
+The main differences are:
+</p><p>• instead of consuming an http.Request, which is only suitable for
+making a one-off request attempt, Client.Do consumes a request.Plan
+which is suitable for making multiple attempts if necessary (the plan
+execution logic converts the plan into http.Request as
+needed); and
+</p><p>• instead of producing an http.Response, all of Client&#39;s HTTP methods
+return a request.Execution, which contains some metadata about the
+plan execution as well as a fully-buffered response body.
+</p>
+<div class="Documentation-typeMethod">
+ <h4 tabindex="-1" id="Client.CloseIdleConnections" data-kind="method" class="Documentation-typeMethodHeader">
+ <span>func (*Client) <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/client.go#L594">CloseIdleConnections</a> <a class="Documentation-idLink" href="#Client.CloseIdleConnections" title="Go to Client.CloseIdleConnections" aria-label="Go to Client.CloseIdleConnections">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>func (c *<a href="#Client">Client</a>) CloseIdleConnections()</pre>
+ </div>
+ <p>CloseIdleConnections invokes the same method on the client&#39;s
+underlying HTTPDoer.
+</p><p>If the HTTPDoer has no CloseIdleConnections method, this method does
+nothing.
+</p><p>If the HTTPDoer does have a CloseIdleConnections method, then the
+effect of this method depends entirely on its implementation in the
+HTTPDoer. For example, the http.Client type forwards the call to its
+Transport, but only if the Transport itself has a CloseIdleConnections
+method (otherwise it does nothing).
+</p>
+ </div><div class="Documentation-typeMethod">
+ <h4 tabindex="-1" id="Client.Do" data-kind="method" class="Documentation-typeMethodHeader">
+ <span>func (*Client) <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/client.go#L156">Do</a> <a class="Documentation-idLink" href="#Client.Do" title="Go to Client.Do" aria-label="Go to Client.Do">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>func (c *<a href="#Client">Client</a>) Do(p *<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Plan">Plan</a>) (*<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>, <a href="/builtin#error">error</a>)</pre>
+ </div>
+ <p>Do executes an HTTP request plan and returns the results, following
+timeout and retry policy set on Client, and low-level policy set on
+the underlying HTTPDoer.
+</p><p>The result returned is the result after the final HTTP request
+attempt made during the plan execution, as determined by the retry
+policy.
+</p><p>An error is returned if, after doing any retries mandated by the
+retry policy, the final attempt resulted in an error. An attempt may
+end in error due to failure to speak HTTP (for example a network
+connectivity problem), or because of policy in the robust client
+(such as timeout), or because of policy on the underlying HTTPDoer
+(for example relating to redirects body). A non-2XX status code in
+the final attempt does not result in an error.
+</p><p>The returned Execution is never nil, but may contain a nil Response
+and will contain a nil Body if an error occurred (if the initial
+HTTP request caused an error, both Response and Body are nil, but if
+the initial HTTP request succeeded and the error occurred while
+reading Body from the request, then Response is non-nil but body
+is nil). If an error was returned, the Err field of the Execution
+always references the same error.
+</p><p>If the returned error is nil, the returned Execution will contain
+both a non-nil Response and a non-nil Body (although Body may have
+zero length).
+</p><p>Any returned error will be of type *url.Error. The url.Error&#39;s
+Timeout method, and the Execution&#39;s Timeout method, will return
+true if the final request attempt timed out, or if the entire plan
+timed out.
+</p><p>For simple use cases, the Get, Head, Post, and PostForm methods may
+prove easier to use than Do.
+</p>
+ </div><div class="Documentation-typeMethod">
+ <h4 tabindex="-1" id="Client.Get" data-kind="method" class="Documentation-typeMethodHeader">
+ <span>func (*Client) <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/client.go#L548">Get</a> <a class="Documentation-idLink" href="#Client.Get" title="Go to Client.Get" aria-label="Go to Client.Get">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>func (c *<a href="#Client">Client</a>) Get(url <a href="/builtin#string">string</a>) (*<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>, <a href="/builtin#error">error</a>)</pre>
+ </div>
+ <p>Get issues a GET to the specified URL, using the same policies
+followed by Do.
+</p><p>To make a request plan with custom headers, use request.NewPlan and
+Client.Do.
+</p>
+ </div><div class="Documentation-typeMethod">
+ <h4 tabindex="-1" id="Client.Head" data-kind="method" class="Documentation-typeMethodHeader">
+ <span>func (*Client) <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/client.go#L557">Head</a> <a class="Documentation-idLink" href="#Client.Head" title="Go to Client.Head" aria-label="Go to Client.Head">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>func (c *<a href="#Client">Client</a>) Head(url <a href="/builtin#string">string</a>) (*<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>, <a href="/builtin#error">error</a>)</pre>
+ </div>
+ <p>Head issues a HEAD to the specified URL, using the same policies
+followed by Do.
+</p><p>To make a request plan with custom headers, use request.NewPlan and
+Client.Do.
+</p>
+ </div><div class="Documentation-typeMethod">
+ <h4 tabindex="-1" id="Client.Post" data-kind="method" class="Documentation-typeMethodHeader">
+ <span>func (*Client) <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/client.go#L570">Post</a> <a class="Documentation-idLink" href="#Client.Post" title="Go to Client.Post" aria-label="Go to Client.Post">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>func (c *<a href="#Client">Client</a>) Post(url, contentType <a href="/builtin#string">string</a>, body interface{}) (*<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>, <a href="/builtin#error">error</a>)</pre>
+ </div>
+ <p>Post issues a POST to the specified URL, using the same policies
+followed by Do.
+</p><p>The body parameter may be nil for an empty body, or may be any of the
+types supported by request.NewPlan, request.BodyBytes, and httpx.Post,
+namely: string; []byte; io.Reader; and io.ReadCloser.
+</p><p>To make a request plan with custom headers, use request.NewPlan and
+Client.Do.
+</p>
+ </div><div class="Documentation-typeMethod">
+ <h4 tabindex="-1" id="Client.PostForm" data-kind="method" class="Documentation-typeMethodHeader">
+ <span>func (*Client) <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/client.go#L579">PostForm</a> <a class="Documentation-idLink" href="#Client.PostForm" title="Go to Client.PostForm" aria-label="Go to Client.PostForm">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>func (c *<a href="#Client">Client</a>) PostForm(url <a href="/builtin#string">string</a>, data <a href="/net/url">url</a>.<a href="/net/url#Values">Values</a>) (*<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>, <a href="/builtin#error">error</a>)</pre>
+ </div>
+ <p>PostForm issues a POST to the specified URL, with data&#39;s keys and
+values URL-encoded as the request body.
+</p><p>The Content-Type header is set to application/x-www-form-urlencoded.
+To set other headers, use request.NewPlan and Client.Do.
+</p>
+ </div>
+ </div><div class="Documentation-type">
+ <h4 tabindex="-1" id="Doer" data-kind="type" class="Documentation-typeHeader">
+ <span>type <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/interface.go#L21">Doer</a> <a class="Documentation-idLink" href="#Doer" title="Go to Doer" aria-label="Go to Doer">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>type Doer interface {
+<span id="Doer.Do" data-kind="method"> Do(p *<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Plan">Plan</a>) (*<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>, <a href="/builtin#error">error</a>)
+</span>}</pre>
+ </div>
+ <p>Doer is the interface that wraps the basic Do method.
+</p><p>Do executes an HTTP request plan and returns the final execution
+state (and error, if any). Client implements the Doer interface,
+and any other Doer implementation must behave substantially the same
+as Client.Do.
+</p><p>Any Doer can be converted into an Executor via the Inflate function.
+</p>
+ </div><div class="Documentation-type">
+ <h4 tabindex="-1" id="Event" data-kind="type" class="Documentation-typeHeader">
+ <span>type <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/event.go#L10">Event</a> <a class="Documentation-idLink" href="#Event" title="Go to Event" aria-label="Go to Event">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>type Event <a href="/builtin#int">int</a></pre>
+ </div>
+ <p>An Event identifies the event type when installing or running a
+Handler. Install event handlers in a Client to extend it with custom
+functionality.
+</p>
+<div class="Documentation-typeConstant">
+ <div class="Documentation-declaration">
+ <pre>const (
+<span id="BeforeExecutionStart" data-kind="constant"> <span class="comment">// BeforeExecutionStart identifies the event that occurs before the</span>
+</span> <span class="comment">// plan execution starts.</span>
+ <span class="comment">//</span>
+ <span class="comment">// When Client fires BeforeExecutionStart, the execution is</span>
+ <span class="comment">// non-nil but the only field that has been set is the plan.</span>
+ BeforeExecutionStart <a href="#Event">Event</a> = <a href="/builtin#iota">iota</a>
+<span id="BeforeAttempt" data-kind="constant"> <span class="comment">// BeforeAttempt identifies the event that occurs before each</span>
+</span> <span class="comment">// individual HTTP request attempt during the plan execution.</span>
+ <span class="comment">//</span>
+ <span class="comment">// When Client fires BeforeAttempt, the execution&#39;s request</span>
+ <span class="comment">// field is set to the HTTP request that WILL BE sent after all</span>
+ <span class="comment">// BeforeAttempt handlers have finished.</span>
+ <span class="comment">//</span>
+ <span class="comment">// BeforeAttempt Handlers may modify the execution&#39;s request, or</span>
+ <span class="comment">// some of its fields, thus changing the HTTP request that will be</span>
+ <span class="comment">// sent. However, BeforeAttempt handlers should clone request fields</span>
+ <span class="comment">// which have reference types (URL and Header) before changing them</span>
+ <span class="comment">// to avoid side effects, as these fields initially reference the</span>
+ <span class="comment">// same-named fields in the plan.</span>
+ BeforeAttempt
+<span id="BeforeReadBody" data-kind="constant"> <span class="comment">// BeforeReadBody identifies the event that occurs after an HTTP</span>
+</span> <span class="comment">// request attempt has resulted in an HTTP response (as opposed to</span>
+ <span class="comment">// an error) but before the response body is read and buffered.</span>
+ <span class="comment">//</span>
+ <span class="comment">// When Client fires BeforeReadyBody, the execution&#39;s</span>
+ <span class="comment">// response field is set to the HTTP response whose body WILL BE</span>
+ <span class="comment">// read after all BeforeReadBody handlers have finished (however,</span>
+ <span class="comment">// handlers may modify this field).</span>
+ <span class="comment">//</span>
+ <span class="comment">// Note that BeforeReadBody never fires if the HTTP request attempt</span>
+ <span class="comment">// ended in error, but always fires if an HTTP response is received,</span>
+ <span class="comment">// regardless of HTTP response status code, and regardless of</span>
+ <span class="comment">// whether there is a non-empty body in the request.</span>
+ BeforeReadBody
+<span id="AfterAttemptTimeout" data-kind="constant"> <span class="comment">// AfterAttemptTimeout identifies the event that occurs after an</span>
+</span> <span class="comment">// HTTP request attempt failed because of a timeout error.</span>
+ <span class="comment">//</span>
+ <span class="comment">// When Client fires AfterAttemptTimeout, the execution&#39;s</span>
+ <span class="comment">// error field is set to the timeout error, and its attempt timeout</span>
+ <span class="comment">// counter has been incremented.</span>
+ AfterAttemptTimeout
+<span id="AfterAttempt" data-kind="constant"> <span class="comment">// AfterAttempt identifies the event that occurs after an HTTP</span>
+</span> <span class="comment">// request attempt is concluded, regardless of whether it concluded</span>
+ <span class="comment">// successfully or not.</span>
+ <span class="comment">//</span>
+ <span class="comment">// When Client fires AfterAttempt, either the execution&#39;s</span>
+ <span class="comment">// response field or its error field OR BOTH may be set to non-nil</span>
+ <span class="comment">// values, but it will never be the case that both are nil. The</span>
+ <span class="comment">// response will only be non-nil when the error is also non-nil if</span>
+ <span class="comment">// there was an error reading the response body.</span>
+ <span class="comment">//</span>
+ <span class="comment">// Note that AfterAttempt always fires on every HTTP request attempt,</span>
+ <span class="comment">// regardless of whether it ended in error, and that it runs before</span>
+ <span class="comment">// the retry policy is consulted for a retry decision.</span>
+ AfterAttempt
+<span id="AfterPlanTimeout" data-kind="constant"> <span class="comment">// AfterPlanTimeout identifies the event that occurs after a timeout</span>
+</span> <span class="comment">// on the request plan level, not just the request attempt level</span>
+ <span class="comment">// (i.e. the context deadline on the plan&#39;s context is exceeded).</span>
+ <span class="comment">// A plan timeout can be detected either at the same time as an</span>
+ <span class="comment">// attempt timeout, or during the retry wait period.</span>
+ <span class="comment">//</span>
+ <span class="comment">// When Client fires AfterPlanTimeout, the execution&#39;s</span>
+ <span class="comment">// response and body fields are both nil.</span>
+ <span class="comment">//</span>
+ <span class="comment">// Note that AfterPlanTimeout always occurs after AfterAttempt,</span>
+ <span class="comment">// even if the plan timeout was actually detected at the same time</span>
+ <span class="comment">// as an attempt timeout.</span>
+ AfterPlanTimeout
+<span id="AfterExecutionEnd" data-kind="constant"> <span class="comment">// AfterExecutionEnd identifies the event that occurs after the plan</span>
+</span> <span class="comment">// execution ends.</span>
+ <span class="comment">//</span>
+ <span class="comment">// When Client fires AfterExecutionEnd, the execution is in</span>
+ <span class="comment">// the same state it was in after the final HTTP request attempt</span>
+ <span class="comment">// (and last AfterAttempt event) EXCEPT that the end time is set to</span>
+ <span class="comment">// the time the execution ended.</span>
+ AfterExecutionEnd
+)</pre>
+ </div>
+</div><div class="Documentation-typeFunc">
+ <h4 tabindex="-1" id="Events" data-kind="function" class="Documentation-typeFuncHeader">
+ <span>func <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/event.go#L110">Events</a> <a class="Documentation-idLink" href="#Events" title="Go to Events" aria-label="Go to Events">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>func Events() []<a href="#Event">Event</a></pre>
+ </div>
+ <p>Events returns a slice containing all events which can occur in an
+HTTP request plan execution by Client, in the order in which
+they would occur.
+</p>
+ </div><div class="Documentation-typeMethod">
+ <details class="Documentation-deprecatedDetails js-deprecatedDetails">
+ <summary>
+ <h4 tabindex="-1" id="Event.Name" data-kind="method" class="Documentation-typeMethodHeader">
+ <span class="Documentation-deprecatedTitle">
+ func (Event) <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/event.go#L126">Name</a>
+ <span class="Documentation-deprecatedTag">deprecated</span>
+ <span class="Documentation-deprecatedBody"></span>
+ </span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ </summary>
+ <div class="go-Message go-Message--warning Documentation-deprecatedItemBody">
+ <div class="Documentation-declaration">
+ <pre>func (evt <a href="#Event">Event</a>) Name() <a href="/builtin#string">string</a></pre>
+ </div>
+ <p>Name returns the name of the event.
+</p><p>Deprecated: This method is redundant with String and will be removed
+in the near future.
+</p>
+ </div>
+ </details>
+ </div><div class="Documentation-typeMethod">
+ <h4 tabindex="-1" id="Event.String" data-kind="method" class="Documentation-typeMethodHeader">
+ <span>func (Event) <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/event.go#L131">String</a> <a class="Documentation-idLink" href="#Event.String" title="Go to Event.String" aria-label="Go to Event.String">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ <span class="Documentation-sinceVersionLabel">added in</span>
+ <span class="Documentation-sinceVersionVersion">v1.1.2</span>
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>func (evt <a href="#Event">Event</a>) String() <a href="/builtin#string">string</a></pre>
+ </div>
+ <p>String returns the name of the event.
+</p>
+ </div>
+ </div><div class="Documentation-type">
+ <h4 tabindex="-1" id="Executor" data-kind="type" class="Documentation-typeHeader">
+ <span>type <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/interface.go#L102">Executor</a> <a class="Documentation-idLink" href="#Executor" title="Go to Executor" aria-label="Go to Executor">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>type Executor interface {
+ <a href="#Doer">Doer</a>
+ <a href="#Getter">Getter</a>
+ <a href="#Header">Header</a>
+ <a href="#Poster">Poster</a>
+ <a href="#FormPoster">FormPoster</a>
+ <a href="#IdleCloser">IdleCloser</a>
+}</pre>
+ </div>
+ <p>Executor is the interface that groups the basic Do, Get, Head, Post,
+PostForm, and CloseIdleConnections methods.
+</p><p>Any Doer can be converted into an Executor via the Inflate function.
+</p>
+<div class="Documentation-typeFunc">
+ <h4 tabindex="-1" id="Inflate" data-kind="function" class="Documentation-typeFuncHeader">
+ <span>func <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/interface.go#L172">Inflate</a> <a class="Documentation-idLink" href="#Inflate" title="Go to Inflate" aria-label="Go to Inflate">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>func Inflate(d <a href="#Doer">Doer</a>) <a href="#Executor">Executor</a></pre>
+ </div>
+ <p>Inflate converts any non-nil Doer into an Executor. This may be
+helpful for interop across library boundaries, i.e. if code that only
+has access to a Doer needs to call a function that requires an
+Executor.
+</p>
+ </div>
+ </div><div class="Documentation-type">
+ <h4 tabindex="-1" id="FormPoster" data-kind="type" class="Documentation-typeHeader">
+ <span>type <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/interface.go#L80">FormPoster</a> <a class="Documentation-idLink" href="#FormPoster" title="Go to FormPoster" aria-label="Go to FormPoster">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>type FormPoster interface {
+<span id="FormPoster.PostForm" data-kind="method"> PostForm(url <a href="/builtin#string">string</a>, data <a href="/net/url">url</a>.<a href="/net/url#Values">Values</a>) (*<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>, <a href="/builtin#error">error</a>)
+</span>}</pre>
+ </div>
+ <p>FormPoster is the interface that wraps the basic PostForm method.
+</p><p>PostForm creates an HTTP request plan to issue a form POST to the
+specified URL, executes the plan, and returns the final execution
+state (and error, if any). Client implements the FormPoster interface,
+and any other FormPoster implementation must behave substantially the
+same as Client.PostForm.
+</p><p>The request plan body is set to the URL-encoded keys and values from
+data, and the content type is set to application/x-www-form-urlencoded.
+</p><p>Any Doer can be used to emulate a FormPoster via the PostForm
+function.
+</p>
+ </div><div class="Documentation-type">
+ <h4 tabindex="-1" id="Getter" data-kind="type" class="Documentation-typeHeader">
+ <span>type <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/interface.go#L33">Getter</a> <a class="Documentation-idLink" href="#Getter" title="Go to Getter" aria-label="Go to Getter">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>type Getter interface {
+<span id="Getter.Get" data-kind="method"> Get(url <a href="/builtin#string">string</a>) (*<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>, <a href="/builtin#error">error</a>)
+</span>}</pre>
+ </div>
+ <p>Getter is the interface that wraps the basic Get method.
+</p><p>Get creates an HTTP request plan to issue a GET to the specified URL,
+executes the plan, and returns the final execution state (and error,
+if any). Client implements the Getter interface, and any other
+Getter implementation must behave substantially the same as Client.Get.
+</p><p>Any Doer can be used to emulate a Getter via the Get function.
+</p>
+ </div><div class="Documentation-type">
+ <h4 tabindex="-1" id="HTTPDoer" data-kind="type" class="Documentation-typeHeader">
+ <span>type <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/client.go#L24">HTTPDoer</a> <a class="Documentation-idLink" href="#HTTPDoer" title="Go to HTTPDoer" aria-label="Go to HTTPDoer">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>type HTTPDoer interface {
+<span id="HTTPDoer.Do" data-kind="method"> <span class="comment">// Do sends an HTTP request and returns an HTTP response following</span>
+</span> <span class="comment">// policy (such as redirects, cookies, auth) configured on the</span>
+ <span class="comment">// HTTPDoer.</span>
+ <span class="comment">//</span>
+ <span class="comment">// The Do method must follow the contract documented on the GoLang</span>
+ <span class="comment">// standard library http.Client from the net/http package.</span>
+ Do(r *<a href="/net/http">http</a>.<a href="/net/http#Request">Request</a>) (*<a href="/net/http">http</a>.<a href="/net/http#Response">Response</a>, <a href="/builtin#error">error</a>)
+}</pre>
+ </div>
+ <p>An HTTPDoer implements a Do method in the same manner as the GoLang
+standard library http.Client from the net/http package.
+</p>
+ </div><div class="Documentation-type">
+ <h4 tabindex="-1" id="Handler" data-kind="type" class="Documentation-typeHeader">
+ <span>type <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/handler.go#L48">Handler</a> <a class="Documentation-idLink" href="#Handler" title="Go to Handler" aria-label="Go to Handler">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>type Handler interface {
+<span id="Handler.Handle" data-kind="method"> Handle(<a href="#Event">Event</a>, *<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>)
+</span>}</pre>
+ </div>
+ <p>A Handler handles the occurrence of an event during a request plan
+execution. Install event handlers in a Client to extend the Client
+with custom functionality.
+</p>
+ </div><div class="Documentation-type">
+ <h4 tabindex="-1" id="HandlerFunc" data-kind="type" class="Documentation-typeHeader">
+ <span>type <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/handler.go#L55">HandlerFunc</a> <a class="Documentation-idLink" href="#HandlerFunc" title="Go to HandlerFunc" aria-label="Go to HandlerFunc">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>type HandlerFunc func(<a href="#Event">Event</a>, *<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>)</pre>
+ </div>
+ <p>The HandlerFunc type is an adapter to allow the use of ordinary
+functions as event handlers. If f is a function with appropriate
+signature, then HandlerFunc(f) is a Handler that calls f.
+</p>
+<div class="Documentation-typeMethod">
+ <h4 tabindex="-1" id="HandlerFunc.Handle" data-kind="method" class="Documentation-typeMethodHeader">
+ <span>func (HandlerFunc) <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/handler.go#L58">Handle</a> <a class="Documentation-idLink" href="#HandlerFunc.Handle" title="Go to HandlerFunc.Handle" aria-label="Go to HandlerFunc.Handle">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>func (f <a href="#HandlerFunc">HandlerFunc</a>) Handle(evt <a href="#Event">Event</a>, e *<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>)</pre>
+ </div>
+ <p>Handle calls f(evt, e).
+</p>
+ </div>
+ </div><div class="Documentation-type">
+ <h4 tabindex="-1" id="HandlerGroup" data-kind="type" class="Documentation-typeHeader">
+ <span>type <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/handler.go#L14">HandlerGroup</a> <a class="Documentation-idLink" href="#HandlerGroup" title="Go to HandlerGroup" aria-label="Go to HandlerGroup">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>type HandlerGroup struct {
+ <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+ </div>
+ <p>A HandlerGroup is a group of event handler chains which can be
+installed in a Client. Install event handlers to extend Client with
+custom functionality.
+</p>
+<div class="Documentation-typeMethod">
+ <h4 tabindex="-1" id="HandlerGroup.PushBack" data-kind="method" class="Documentation-typeMethodHeader">
+ <span>func (*HandlerGroup) <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/handler.go#L20">PushBack</a> <a class="Documentation-idLink" href="#HandlerGroup.PushBack" title="Go to HandlerGroup.PushBack" aria-label="Go to HandlerGroup.PushBack">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>func (g *<a href="#HandlerGroup">HandlerGroup</a>) PushBack(evt <a href="#Event">Event</a>, h <a href="#Handler">Handler</a>)</pre>
+ </div>
+ <p>PushBack adds an event handler to the back of the event handler chain
+for a specific event type.
+</p>
+ </div>
+ </div><div class="Documentation-type">
+ <h4 tabindex="-1" id="Header" data-kind="type" class="Documentation-typeHeader">
+ <span>type <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/interface.go#L46">Header</a> <a class="Documentation-idLink" href="#Header" title="Go to Header" aria-label="Go to Header">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>type Header interface {
+<span id="Header.Head" data-kind="method"> Head(url <a href="/builtin#string">string</a>) (*<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>, <a href="/builtin#error">error</a>)
+</span>}</pre>
+ </div>
+ <p>Header is the interface that wraps the basic Head method.
+</p><p>Head creates an HTTP request plan to issue a HEAD to the specified
+URL, executes the plan, and returns the final execution state (and
+error, if any). Client implements the Header interface, and any other
+Header implementation must behave substantially the same as
+Client.Head.
+</p><p>Any Doer can be used to emulate a Header via the Head function.
+</p>
+ </div><div class="Documentation-type">
+ <h4 tabindex="-1" id="IdleCloser" data-kind="type" class="Documentation-typeHeader">
+ <span>type <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/interface.go#L94">IdleCloser</a> <a class="Documentation-idLink" href="#IdleCloser" title="Go to IdleCloser" aria-label="Go to IdleCloser">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>type IdleCloser interface {
+<span id="IdleCloser.CloseIdleConnections" data-kind="method"> CloseIdleConnections()
+</span>}</pre>
+ </div>
+ <p>IdleCloser is the interface that wraps the basic CloseIdleConnections
+method.
+</p><p>If the underlying implementation supports it, CloseIdleConnections
+closes any idle which were previously connected from previous
+requests but are now sitting idle in a &#34;keep-alive&#34; state. It does
+not interrupt any connections currently in use.
+</p><p>If the underlying implementation does not support this ability,
+CloseIdleConnections does nothing.
+</p>
+ </div><div class="Documentation-type">
+ <h4 tabindex="-1" id="Poster" data-kind="type" class="Documentation-typeHeader">
+ <span>type <a class="Documentation-source" href="https://github.com/gogama/httpx/blob/v1.1.5/interface.go#L63">Poster</a> <a class="Documentation-idLink" href="#Poster" title="Go to Poster" aria-label="Go to Poster">¶</a></span>
+ <span class="Documentation-sinceVersion">
+ </span>
+</h4>
+ <div class="Documentation-declaration">
+ <pre>type Poster interface {
+<span id="Poster.Post" data-kind="method"> Post(url, contentType <a href="/builtin#string">string</a>, body interface{}) (*<a href="/github.com/gogama/httpx@v1.1.5/request">request</a>.<a href="/github.com/gogama/httpx@v1.1.5/request#Execution">Execution</a>, <a href="/builtin#error">error</a>)
+</span>}</pre>
+ </div>
+ <p>Poster is the interface that wraps the basic Post method.
+</p><p>Post creates an HTTP request plan to issue a POST to the specified
+URL, executes the plan, and returns the final execution state (and
+error, if any). Client implements the Poster interface, and any other
+Poster implementation must behave substantially the same as
+Client.Post.
+</p><p>The body parameter may be nil for an empty body, or may be any of the
+types supported by request.NewPlan, request.BodyBytes, and httpx.Post,
+namely: string; []byte; io.Reader; and io.ReadCloser.
+</p><p>Any Doer can be used to emulate a Poster via the Post function.
+</p>
+ </div></section></div> 
+ </div>
+ </div>
+ <div class="UnitFiles js-unitFiles">
+ <h2 class="UnitFiles-title" id="section-sourcefiles">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/insert_drive_file_gm_grey_24dp.svg" alt="">
+ Source Files
+ <a class="UnitFiles-idLink" href="#section-sourcefiles" title="Go to Source Files" aria-label="Go to Source Files">¶</a>
+ </h2><div class="UnitFiles-titleLink">
+ <a href="https://github.com/gogama/httpx/tree/v1.1.5" target="_blank" rel="noopener">View all Source files</a>
+ </div><div>
+ <ul class="UnitFiles-fileList"><li><a href="https://github.com/gogama/httpx/blob/v1.1.5/client.go" target="_blank" rel="noopener" title="client.go">client.go</a></li><li><a href="https://github.com/gogama/httpx/blob/v1.1.5/doc.go" target="_blank" rel="noopener" title="doc.go">doc.go</a></li><li><a href="https://github.com/gogama/httpx/blob/v1.1.5/event.go" target="_blank" rel="noopener" title="event.go">event.go</a></li><li><a href="https://github.com/gogama/httpx/blob/v1.1.5/handler.go" target="_blank" rel="noopener" title="handler.go">handler.go</a></li><li><a href="https://github.com/gogama/httpx/blob/v1.1.5/interface.go" target="_blank" rel="noopener" title="interface.go">interface.go</a></li></ul>
+ </div>
+ </div>
+ <div class="UnitDirectories js-unitDirectories">
+ <h2 class="UnitDirectories-title" id="section-directories">
+ <img class="go-Icon" height="24" width="24" src="/static/shared/icon/folder_gm_grey_24dp.svg" alt="">
+ Directories
+ <a class="UnitDirectories-idLink" href="#section-directories" title="Go to Directories" aria-label="Go to Directories">¶</a>
+ </h2>
+ <div class="UnitDirectories-toggles">
+ <div class="UnitDirectories-toggleButtons">
+ <button class="js-showInternalDirectories" data-test-id="internal-directories-toggle"
+ data-gtmc="directories button" aria-label="Show Internal Directories">
+ Show internal
+ </button>
+ <button class="js-expandAllDirectories" data-test-id="directories-toggle"
+ data-gtmc="directories button" aria-label="Expand All Directories">
+ Expand all
+ </button>
+ </div>
+ </div>
+ <table class="UnitDirectories-table UnitDirectories-table--tree js-expandableTable"
+ data-test-id="UnitDirectories-table">
+ <tr class="UnitDirectories-tableHeader UnitDirectories-tableHeader--tree">
+ <th>Path</th>
+ <th class="UnitDirectories-desktopSynopsis">Synopsis</th>
+ </tr>
+ <tr
+ class="">
+ <td data-id="racing" data-aria-owns="">
+ <div class="UnitDirectories-pathCell">
+ <div><a href="/github.com/gogama/httpx@v1.1.5/racing">racing</a>
+ </div>
+ <div class="UnitDirectories-mobileSynopsis">Package racing provides flexible policies for running multiple HTTP requests simultaneously in a &#34;race&#34; to improve performance.</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">Package racing provides flexible policies for running multiple HTTP requests simultaneously in a &#34;race&#34; to improve performance.</td></tr></tr>
+ <tr
+ class="">
+ <td data-id="request" data-aria-owns="">
+ <div class="UnitDirectories-pathCell">
+ <div><a href="/github.com/gogama/httpx@v1.1.5/request">request</a>
+ </div>
+ <div class="UnitDirectories-mobileSynopsis">Package request contains the core types Plan (describes an HTTP request plan) and Execution (describes a Plan execution).</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">Package request contains the core types Plan (describes an HTTP request plan) and Execution (describes a Plan execution).</td></tr></tr>
+ <tr
+ class="">
+ <td data-id="retry" data-aria-owns="">
+ <div class="UnitDirectories-pathCell">
+ <div><a href="/github.com/gogama/httpx@v1.1.5/retry">retry</a>
+ </div>
+ <div class="UnitDirectories-mobileSynopsis">Package retry provides flexible policies for retrying failed attempts during an HTTP request plan execution, and how long to wait before retrying.</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">Package retry provides flexible policies for retrying failed attempts during an HTTP request plan execution, and how long to wait before retrying.</td></tr></tr>
+ <tr
+ class="">
+ <td data-id="timeout" data-aria-owns="">
+ <div class="UnitDirectories-pathCell">
+ <div><a href="/github.com/gogama/httpx@v1.1.5/timeout">timeout</a>
+ </div>
+ <div class="UnitDirectories-mobileSynopsis">Package timeout defines flexible policies for setting HTTP timeouts during an HTTP request plan execution, including on retries.</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">Package timeout defines flexible policies for setting HTTP timeouts during an HTTP request plan execution, including on retries.</td></tr></tr>
+ <tr
+ class="">
+ <td data-id="transient" data-aria-owns="">
+ <div class="UnitDirectories-pathCell">
+ <div><a href="/github.com/gogama/httpx@v1.1.5/transient">transient</a>
+ </div>
+ <div class="UnitDirectories-mobileSynopsis">Package transient classifies errors from HTTP request execution as transient or non-transient.</div>
+ </div>
+ </td>
+ <td class="UnitDirectories-desktopSynopsis">Package transient classifies errors from HTTP request execution as transient or non-transient.</td></tr></tr>
+ </table>
+ </div>
+ </div>
+ </div>
+ <div id="showInternal-description" hidden> Click to show internal directories. </div>
+ <div id="hideInternal-description" hidden> Click to hide internal directories. </div>
+</article>
+ <footer class="go-Main-footer"></footer>
+ </main>
+ <footer class="go-Footer">
+ <div class="go-Footer-links">
+ <div class="go-Footer-linkColumn">
+ <a href="https://go.dev/solutions" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Why Go
+ </a>
+ <a href="https://go.dev/solutions/use-cases" class="go-Footer-link"
+ data-gtmc="footer link">
+ Use Cases
+ </a>
+ <a href="https://go.dev/solutions/case-studies" class="go-Footer-link"
+ data-gtmc="footer link">
+ Case Studies
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://learn.go.dev/" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Get Started
+ </a>
+ <a href="https://play.golang.org" class="go-Footer-link" data-gtmc="footer link">
+ Playground
+ </a>
+ <a href="https://tour.golang.org" class="go-Footer-link" data-gtmc="footer link">
+ Tour
+ </a>
+ <a href="https://stackoverflow.com/questions/tagged/go?tab=Newest" class="go-Footer-link"
+ data-gtmc="footer link">
+ Stack Overflow
+ </a>
+ <a href="https://go.dev/help" class="go-Footer-link"
+ data-gtmc="footer link">
+ Help
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://pkg.go.dev" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Packages
+ </a>
+ <a href="/std" class="go-Footer-link" data-gtmc="footer link">
+ Standard Library
+ </a>
+ <a href="/golang.org/x" class="go-Footer-link" data-gtmc="footer link">
+ Sub-repositories
+ </a>
+ <a href="https://pkg.go.dev/about" class="go-Footer-link" data-gtmc="footer link">
+ About Go Packages
+ </a>
+ <a href="/api" class="go-Footer-link" data-gtmc="footer link">
+ pkg.go.dev API
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://go.dev/project" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ About
+ </a>
+ <a href="https://go.dev/dl/" class="go-Footer-link" data-gtmc="footer link">Download</a>
+ <a href="https://go.dev/blog" class="go-Footer-link" data-gtmc="footer link">Blog</a>
+ <a href="https://github.com/golang/go/issues" class="go-Footer-link" data-gtmc="footer link">
+ Issue Tracker
+ </a>
+ <a href="https://go.dev/doc/devel/release.html" class="go-Footer-link"
+ data-gtmc="footer link">
+ Release Notes
+ </a>
+ <a href="https://go.dev/brand" class="go-Footer-link" data-gtmc="footer link">
+ Brand Guidelines
+ </a>
+ <a href="https://go.dev/conduct" class="go-Footer-link" data-gtmc="footer link">
+ Code of Conduct
+ </a>
+ </div>
+ <div class="go-Footer-linkColumn">
+ <a href="https://www.twitter.com/golang" class="go-Footer-link go-Footer-link--primary"
+ data-gtmc="footer link">
+ Connect
+ </a>
+ <a href="https://www.twitter.com/golang" class="go-Footer-link" data-gtmc="footer link">
+ Twitter
+ </a>
+ <a href="https://github.com/golang" class="go-Footer-link" data-gtmc="footer link">GitHub</a>
+ <a href="https://invite.slack.golangbridge.org/" class="go-Footer-link"
+ data-gtmc="footer link">
+ Slack
+ </a>
+ <a href="https://reddit.com/r/golang" class="go-Footer-link" data-gtmc="footer link">
+ r/golang
+ </a>
+ <a href="https://www.meetup.com/pro/go" class="go-Footer-link" data-gtmc="footer link">
+ Meetup
+ </a>
+ <a href="https://golangweekly.com/" class="go-Footer-link" data-gtmc="footer link">
+ Golang Weekly
+ </a>
+ </div>
+ </div>
+ <div class="go-Footer-bottom">
+ <img class="go-Footer-gopher" width="1431" height="901"
+ src="/static/shared/gopher/pilot-bust-1431x901.svg" alt="Gopher in flight goggles">
+ <ul class="go-Footer-listRow">
+ <li class="go-Footer-listItem">
+ <a href="https://go.dev/copyright" data-gtmc="footer link">Copyright</a>
+ </li>
+ <li class="go-Footer-listItem">
+ <a href="https://go.dev/tos" data-gtmc="footer link">Terms of Service</a>
+ </li>
+ <li class="go-Footer-listItem">
+ <a href="http://www.google.com/intl/en/policies/privacy/" data-gtmc="footer link"
+ target="_blank" rel="noopener">
+ Privacy Policy
+ </a>
+ </li>
+ <li class="go-Footer-listItem">
+ <a href="https://go.dev/s/pkgsite-feedback" target="_blank" rel="noopener"
+ data-gtmc="footer link">
+ Report an Issue
+ </a>
+ </li>
+ <li class="go-Footer-listItem">
+ <button class="go-Button go-Button--text go-Footer-toggleTheme js-toggleTheme" aria-label="Theme Toggle">
+ <img data-value="auto" class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/brightness_6_gm_grey_24dp.svg" alt="System theme">
+ <img data-value="dark" class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/brightness_2_gm_grey_24dp.svg" alt="Dark theme">
+ <img data-value="light" class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/light_mode_gm_grey_24dp.svg" alt="Light theme">
+ <p> Theme Toggle </p>
+ </button>
+ </li>
+ <li class="go-Footer-listItem">
+ <button class="go-Button go-Button--text go-Footer-keyboard js-openShortcuts" aria-label="Shorcuts Modal">
+ <img class="go-Icon go-Icon--inverted" height="24" width="24" src="/static/shared/icon/keyboard_grey_24dp.svg" alt="">
+ <p> Shortcuts Modal </p>
+ </button>
+ </li>
+ </ul>
+ <a class="go-Footer-googleLogo" href="https://google.com" target="_blank"rel="noopener"
+ data-gtmc="footer link">
+ <img class="go-Footer-googleLogoImg" height="24" width="72"
+ src="/static/shared/logo/google-white.svg" alt="Google logo">
+ </a>
+ </div>
+ </footer>
+ <dialog id="jump-to-modal" class="JumpDialog go-Modal go-Modal--md js-modal">
+ <form method="dialog" data-gmtc="jump to form" aria-label="Jump to Identifier">
+ <div class="Dialog-title go-Modal-header">
+ <h2>Jump to</h2>
+ <button
+ class="go-Button go-Button--inline"
+ type="button"
+ data-modal-close
+ data-gtmc="modal button"
+ aria-label="Close"
+ >
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/close_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </div>
+ <div class="JumpDialog-filter">
+ <input class="JumpDialog-input go-Input" autocomplete="off" type="text">
+ </div>
+ <div class="JumpDialog-body go-Modal-body">
+ <div class="JumpDialog-list"></div>
+ </div>
+ <div class="go-Modal-actions">
+ <button class="go-Button" data-test-id="close-dialog">Close</button>
+ </div>
+ </form>
+ </dialog>
+ <dialog class="ShortcutsDialog go-Modal go-Modal--sm js-modal">
+ <form method="dialog">
+ <div class="go-Modal-header">
+ <h2>Keyboard shortcuts</h2>
+ <button
+ class="go-Button go-Button--inline"
+ type="button"
+ data-modal-close
+ data-gtmc="modal button"
+ aria-label="Close"
+ >
+ <img
+ class="go-Icon"
+ height="24"
+ width="24"
+ src="/static/shared/icon/close_gm_grey_24dp.svg"
+ alt=""
+ />
+ </button>
+ </div>
+ <div class="go-Modal-body">
+ <table>
+ <tbody>
+ <tr><td class="ShortcutsDialog-key">
+ <strong>?</strong></td><td> : This menu</td>
+ </tr>
+ <tr><td class="ShortcutsDialog-key">
+ <strong>/</strong></td><td> : Search site</td>
+ </tr>
+ <tr><td class="ShortcutsDialog-key">
+ <strong>f</strong> or <strong>F</strong></td><td> : Jump to</td>
+ </tr>
+ <tr>
+ <td class="ShortcutsDialog-key"><strong>y</strong> or <strong>Y</strong></td>
+ <td> : Canonical URL</td>
+ </tr>
+ </tbody>
+ </table>
+ </div>
+ <div class="go-Modal-actions">
+ <button class="go-Button" data-test-id="close-dialog">Close</button>
+ </div>
+ </form>
+ </dialog>
+ <section class="Cookie-notice js-cookieNotice">
+ <div>go.dev uses cookies from Google to deliver and enhance the quality of its services and to
+ analyze traffic. <a target=_blank href="https://policies.google.com/technologies/cookies">Learn more.</a></div>
+ <div><button class="go-Button">Okay</button></div>
+ </section>
+ <div class="js-canonicalURLPath" data-canonical-url-path="/github.com/gogama/httpx@v1.1.5" hidden></div>
+ <div class="js-playgroundVars" data-modulepath="github.com/gogama/httpx" data-version="v1.1.5" hidden></div>
+ </body>
+</html>

@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="rustdoc"><meta name="description" content="Algorithms for astronomical calculations">
+<title>astro - Rust</title></head>
+<body class="rustdoc mod crate">
+<nav class="sidebar"><a href="../astro/index.html">astro</a> <a href="https://saurvs.github.io/astro-rust">Documentation</a> <a href="https://www.github.com/saurvs/astro-rust">Repository</a> <a href="https://crates.io/crates/astro">crates.io</a></nav>
+<main><h1>Crate <span>astro</span></h1>
+<p>Algorithms for astronomical calculations</p>
+<h2 id="modules">Modules</h2><dl><dt><a class="mod" href="planet/index.html">planet</a></dt><dd>Planets</dd><dt><a class="mod" href="sun/index.html">sun</a></dt><dd>The Sun</dd></dl>
+</main></body></html>

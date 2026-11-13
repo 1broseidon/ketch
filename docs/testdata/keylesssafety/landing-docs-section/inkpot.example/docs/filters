@@ -1,0 +1,1 @@
+<html><head><title>Filters</title></head><body><h1>Filters</h1><p>Register a custom filter with env.add_filter(name, fn); a filter receives the value and returns the new value.</p></body></html>
