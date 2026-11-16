@@ -103,7 +103,13 @@ type Outcome struct {
 	// no room to name (evidence_outline.go).
 	Outline     []OutlineEntry `json:"outline,omitempty"`
 	OutlineMore []OutlineMore  `json:"outline_more,omitempty"`
-	err         error
+	// Decisions, PassedOver and Next are a decided answer's
+	// (decide_flow.go): the provider used, the results read or tried and
+	// not printed, and the calls to read a better source or a cut section.
+	Decisions  *DecisionUse `json:"decisions,omitempty"`
+	PassedOver []PagePassed `json:"passed_over,omitempty"`
+	Next       []NextStep   `json:"next,omitempty"`
+	err        error
 	// named is the library the request named ("" for none): an unverified
 	// origin is printed only for one.
 	named string

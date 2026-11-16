@@ -177,6 +177,12 @@ const DocsParams = Type.Object({
 			description: "record each result under this tag, retrievable later with ketch_tag; not with resolve",
 		}),
 	),
+	decisions: Type.Optional(
+		Type.String({
+			description:
+				"decision provider for a question that names no library: typesafe, openai, auto or off (default: the operator's docs_decisions; auto uses a provider with a key set). With one, the top five results are read and labelled and their passages chosen by the provider; confidence says how far to trust each",
+		}),
+	),
 });
 
 const ScrapeParams = Type.Object({
@@ -541,6 +547,7 @@ export function docsArgs(p: DocsInput): string[] {
 	flag(args, "--limit", p.limit);
 	toggle(args, "--resolve", p.resolve);
 	flag(args, "--tag", p.tag);
+	flag(args, "--decisions", p.decisions);
 	return p.section ? args : positional(args, p.query ?? "");
 }
 

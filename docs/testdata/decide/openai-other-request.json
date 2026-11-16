@@ -1,0 +1,92 @@
+{
+ "model": "gpt-6-luna",
+ "input": [
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "input_json",
+     "data": {
+      "docs_question": "Prometheus Alertmanager route config: what are the defaults for group_wait, group_interval and repeat_interval, what happens if an alert resolves before group_wait has elapsed, and what happens if repeat_interval is not a multiple of group_interval?"
+     }
+    }
+   ]
+  }
+ ],
+ "questions": [
+  {
+   "type": "predicate",
+   "name": "makers_0",
+   "instructions": [
+    {
+     "type": "input_json",
+     "data": {
+      "search_result": {
+       "title": "Alertmanager Routing · Kubernetes Notes",
+       "url": "https://k8s-notes.home.liskl.com/alertmanager",
+       "snippet": "Published: N/A"
+      }
+     }
+    },
+    {
+     "type": "input_text",
+     "text": "Is `search_result` published by the makers of the software that `docs_question` asks about?\n\nTrue if: The page is on the project's or vendor's own documentation site, website or source repository.\nFalse if: The page is written by someone else: a blog, tutorial site, Q&A answer, forum, news article or a copy of the documentation hosted elsewhere."
+    }
+   ]
+  },
+  {
+   "type": "choice",
+   "name": "kind_0",
+   "instructions": [
+    {
+     "type": "input_json",
+     "data": {
+      "search_result": {
+       "title": "Alertmanager Routing · Kubernetes Notes",
+       "url": "https://k8s-notes.home.liskl.com/alertmanager",
+       "snippet": "Published: N/A"
+      }
+     }
+    },
+    {
+     "type": "input_text",
+     "text": "What kind of page is `search_result`?"
+    }
+   ],
+   "choices": [
+    {
+     "value": "reference_documentation",
+     "description": "Reference documentation: an API, command, configuration or language reference, a manual page or a specification."
+    },
+    {
+     "value": "guide_or_tutorial",
+     "description": "A guide or tutorial in a documentation set that walks through how to do something."
+    },
+    {
+     "value": "blog_post_or_article",
+     "description": "A blog post, news item or article written by a person or company."
+    },
+    {
+     "value": "forum_or_qa_thread",
+     "description": "A forum thread or a question-and-answer page such as Stack Overflow."
+    },
+    {
+     "value": "issue_or_discussion",
+     "description": "An issue, pull request or discussion thread in a code hosting site."
+    },
+    {
+     "value": "source_code",
+     "description": "A source code file or a repository file listing."
+    },
+    {
+     "value": "marketing_or_landing_page",
+     "description": "A marketing, product or landing page."
+    },
+    {
+     "value": "other",
+     "description": "Any other kind of page."
+    }
+   ]
+  }
+ ]
+}

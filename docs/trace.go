@@ -90,6 +90,9 @@ type Trace struct {
 	Sort      *traceSort   `json:"sort,omitempty"`
 	Rank      *traceRank   `json:"rank,omitempty"`
 	Output    traceOutput  `json:"output"`
+	// Decisions is the decision provider a decided answer used, with its
+	// requests and input tokens.
+	Decisions *DecisionUse `json:"decisions,omitempty"`
 
 	printed bytes.Buffer
 }
@@ -271,6 +274,7 @@ func (t *Trace) SetOutcome(backend string, o Outcome) {
 		return
 	}
 	t.Backend, t.Status, t.Reason, t.Note = backend, o.Status, o.Reason, o.Note
+	t.Decisions = o.Decisions
 	if err := o.Err(); err != nil {
 		t.Error = err.Error()
 	}

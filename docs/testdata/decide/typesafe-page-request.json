@@ -1,0 +1,51 @@
+{
+ "model": "jev-1.14.0",
+ "questions": {
+  "documentation": {
+   "type": "noul",
+   "instructions": "Is `page` documentation for software: a reference page, manual, specification or guide to how the software works?",
+   "criteria": {
+    "true": "The page explains how the software works, such as an API or configuration reference, a manual, a specification or a user guide.",
+    "false": "The page is a blog post or article, a forum or Q&A thread, an issue or discussion, a marketing page, or a page with almost no content."
+   }
+  },
+  "makers": {
+   "type": "noul",
+   "instructions": "Is `page` published by the makers of the software that `docs_question` asks about?",
+   "criteria": {
+    "true": "The page is on the project's or vendor's own documentation site, website or source repository.",
+    "false": "The page is written by someone else: a blog, tutorial site, Q&A answer, forum, news article or a copy of the documentation hosted elsewhere."
+   }
+  },
+  "names_release": {
+   "type": "noul",
+   "instructions": "Does `docs_question` name a specific version or release of the software it asks about?",
+   "criteria": {
+    "true": "The question gives a version number or a named release, such as \"3.12\", \"v5\", \"version 2\" or \"the 2024 edition\".",
+    "false": "The question names the software without any version or release."
+   }
+  },
+  "other_release": {
+   "type": "noul",
+   "instructions": "Does `page` document a different version or release than the one `docs_question` names?",
+   "criteria": {
+    "true": "The page's title, address or text shows a version or release other than the one the question names.",
+    "false": "The page shows the version the question names, or shows no version at all."
+   }
+  },
+  "kind": {
+   "type": "choice",
+   "instructions": "What kind of page is `page`?",
+   "criteria": {
+    "reference_documentation": "Reference documentation: an API, command, configuration or language reference, a manual page or a specification.",
+    "guide_or_tutorial": "A guide or tutorial in a documentation set that walks through how to do something.",
+    "blog_post_or_article": "A blog post, news item or article written by a person or company.",
+    "forum_or_qa_thread": "A forum thread or a question-and-answer page such as Stack Overflow.",
+    "issue_or_discussion": "An issue, pull request or discussion thread in a code hosting site.",
+    "source_code": "A source code file or a repository file listing.",
+    "marketing_or_landing_page": "A marketing, product or landing page.",
+    "other": "Any other kind of page."
+   }
+  }
+ }
+}

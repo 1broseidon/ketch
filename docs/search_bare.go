@@ -61,6 +61,13 @@ func (s *SearchFirst) answerBare(ctx, cctx context.Context, req sfRequest, tr *s
 	if err != nil && !errors.Is(err, errSearchEmpty) {
 		return s.failed(ctx, cctx, err)
 	}
+	if req.dec.usable() && len(hits) > 0 {
+		o, derr := s.answerDecided(ctx, cctx, req, hits, tr)
+		if derr == nil {
+			return o
+		}
+		req.dec.failed = derr
+	}
 	var o Outcome
 	var read sfRead
 	readable := false

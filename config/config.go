@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/1broseidon/ketch/code"
+	"github.com/1broseidon/ketch/decide"
 	"github.com/1broseidon/ketch/docs"
 	"github.com/1broseidon/ketch/httpx"
 	"github.com/1broseidon/ketch/internal/configbase"
@@ -36,6 +37,14 @@ func SelectableBackends() []string { return search.SelectableBackends() }
 // NormalizeSearchOrder validates an operator-configured search_order against
 // the search provider registry, preserving the operator's order.
 func NormalizeSearchOrder(list []string) ([]string, error) { return search.NormalizeSearchOrder(list) }
+
+// NormalizeDocsDecisions validates a docs_decisions value against the
+// decision provider registry: auto (also for ""), off, or a provider ID.
+func NormalizeDocsDecisions(value string) (string, error) { return decide.Normalize(value) }
+
+// AvailableDecisionProviders returns the decision provider IDs in registry
+// order.
+func AvailableDecisionProviders() []string { return decide.IDs() }
 
 // AvailableCodeBackends returns the list of known code search backends.
 func AvailableCodeBackends() []string { return code.AvailableBackends() }

@@ -1,0 +1,81 @@
+{
+ "model": "gpt-6-luna",
+ "answers": [
+  {
+   "type": "predicate",
+   "name": "documentation",
+   "probability": 1.0
+  },
+  {
+   "type": "predicate",
+   "name": "makers",
+   "probability": 1.0
+  },
+  {
+   "type": "predicate",
+   "name": "names_release",
+   "probability": 0.0
+  },
+  {
+   "type": "predicate",
+   "name": "other_release",
+   "probability": 0.0
+  },
+  {
+   "type": "choice",
+   "name": "kind",
+   "choice": "reference_documentation",
+   "probabilities": [
+    {
+     "value": "reference_documentation",
+     "probability": 1.0
+    },
+    {
+     "value": "guide_or_tutorial",
+     "probability": 0.0
+    },
+    {
+     "value": "blog_post_or_article",
+     "probability": 0.0
+    },
+    {
+     "value": "forum_or_qa_thread",
+     "probability": 0.0
+    },
+    {
+     "value": "issue_or_discussion",
+     "probability": 0.0
+    },
+    {
+     "value": "source_code",
+     "probability": 0.0
+    },
+    {
+     "value": "marketing_or_landing_page",
+     "probability": 0.0
+    },
+    {
+     "value": "other",
+     "probability": 0.0
+    }
+   ],
+   "confidence": 1.0
+  }
+ ],
+ "usage": {
+  "input_tokens": 9756,
+  "input_tokens_details": {
+   "cached_tokens": 8632,
+   "cache_write_tokens": 0,
+   "cache_write_tokens_details": {
+    "ttl_30m_tokens": 0,
+    "ttl_12h_tokens": 0
+   }
+  },
+  "output_tokens": 0,
+  "output_tokens_details": {
+   "reasoning_tokens": 0
+  },
+  "total_tokens": 9756
+ }
+}

@@ -1,0 +1,64 @@
+{
+ "model": "gpt-6-luna",
+ "questions": [
+  {
+   "type": "predicate",
+   "name": "documentation",
+   "instructions": "Is `page` documentation for software: a reference page, manual, specification or guide to how the software works?\n\nTrue if: The page explains how the software works, such as an API or configuration reference, a manual, a specification or a user guide.\nFalse if: The page is a blog post or article, a forum or Q&A thread, an issue or discussion, a marketing page, or a page with almost no content."
+  },
+  {
+   "type": "predicate",
+   "name": "makers",
+   "instructions": "Is `page` published by the makers of the software that `docs_question` asks about?\n\nTrue if: The page is on the project's or vendor's own documentation site, website or source repository.\nFalse if: The page is written by someone else: a blog, tutorial site, Q&A answer, forum, news article or a copy of the documentation hosted elsewhere."
+  },
+  {
+   "type": "predicate",
+   "name": "names_release",
+   "instructions": "Does `docs_question` name a specific version or release of the software it asks about?\n\nTrue if: The question gives a version number or a named release, such as \"3.12\", \"v5\", \"version 2\" or \"the 2024 edition\".\nFalse if: The question names the software without any version or release."
+  },
+  {
+   "type": "predicate",
+   "name": "other_release",
+   "instructions": "Does `page` document a different version or release than the one `docs_question` names?\n\nTrue if: The page's title, address or text shows a version or release other than the one the question names.\nFalse if: The page shows the version the question names, or shows no version at all."
+  },
+  {
+   "type": "choice",
+   "name": "kind",
+   "instructions": "What kind of page is `page`?",
+   "choices": [
+    {
+     "value": "reference_documentation",
+     "description": "Reference documentation: an API, command, configuration or language reference, a manual page or a specification."
+    },
+    {
+     "value": "guide_or_tutorial",
+     "description": "A guide or tutorial in a documentation set that walks through how to do something."
+    },
+    {
+     "value": "blog_post_or_article",
+     "description": "A blog post, news item or article written by a person or company."
+    },
+    {
+     "value": "forum_or_qa_thread",
+     "description": "A forum thread or a question-and-answer page such as Stack Overflow."
+    },
+    {
+     "value": "issue_or_discussion",
+     "description": "An issue, pull request or discussion thread in a code hosting site."
+    },
+    {
+     "value": "source_code",
+     "description": "A source code file or a repository file listing."
+    },
+    {
+     "value": "marketing_or_landing_page",
+     "description": "A marketing, product or landing page."
+    },
+    {
+     "value": "other",
+     "description": "Any other kind of page."
+    }
+   ]
+  }
+ ]
+}

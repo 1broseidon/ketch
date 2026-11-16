@@ -21,7 +21,7 @@ import (
 var docsCmd = &cobra.Command{
 	Use:   "docs <query>",
 	Short: "Answer a question from a library's documentation",
-	Long: `Answer a question from documentation: the docs' own text, no model.
+	Long: `Answer a question from documentation: the docs' own text.
 
 An indexed library answers from the index. Otherwise ketch reads the
 search's first readable document and up to two more pages of the same
@@ -75,6 +75,7 @@ func init() {
 	docsCmd.Flags().Bool("minimal", false, "one result per line, tab-separated (url/library/snippet)")
 	docsCmd.Flags().String("section", "", "return one section by the url#anchor of a source line, a page URL for its sections; no query")
 	docsCmd.Flags().Bool("offline", false, "use only the local index; no network requests (a missing library exits 3)")
+	docsCmd.Flags().String("decisions", "", "a model labels sources, picks passages (no --library): "+strings.Join(config.AvailableDecisionProviders(), ", ")+", auto, off (default: docs_decisions)")
 	docsCmd.Flags().Int("page", 0, "with --section: the page of a section longer than --tokens to return (default 1)")
 	docsCmd.Flags().String("trace", "", "write how the answer was made to this file as JSON (docs.Trace; for QA)")
 	_ = docsCmd.Flags().MarkHidden("trace")
@@ -147,6 +148,11 @@ func docsArgs(cmd *cobra.Command, args []string) error {
 func validateDocsFlags(cmd *cobra.Command, args []string) error {
 	if offline, _ := cmd.Flags().GetBool("offline"); offline && docs.ResolveBackend(docsBackendFlag(cmd)) != docs.SearchBackend {
 		return exitErrf(ExitValidation, "--offline requires the search backend's local index")
+	}
+	if value, _ := cmd.Flags().GetString("decisions"); cmd.Flags().Changed("decisions") {
+		if _, err := config.NormalizeDocsDecisions(value); err != nil {
+			return exitErrf(ExitValidation, "--decisions: %v", err)
+		}
 	}
 	return validateTagFlag(cmd, args)
 }
@@ -311,6 +317,9 @@ func printSection(w io.Writer, backend, library string, o docs.Outcome) {
 func withLocalDocsOptions(cmd *cobra.Command, tokens, limit int, hint docs.HintStyle) context.Context {
 	o := docs.LocalOptions{Hint: hint}
 	o.Offline, _ = cmd.Flags().GetBool("offline")
+	if value, _ := cmd.Flags().GetString("decisions"); value != "" {
+		o.Decisions, _ = config.NormalizeDocsDecisions(value)
+	}
 	if cmd.Flags().Changed("tokens") {
 		o.Tokens = tokens
 	}

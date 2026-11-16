@@ -192,17 +192,7 @@ func markRelease(o Outcome, r sfRelease) Outcome {
 	if !answered(o) || len(o.Read) == 0 {
 		return o
 	}
-	marked := false
-	for _, p := range o.Read {
-		if u, err := url.Parse(p.URL); err == nil && urlNamesRelease(u, r.release) {
-			marked = true
-		}
-	}
-	spoken := false
-	for _, res := range o.Results {
-		marked = marked || titleNamesRelease(res.PageTitle, r.release)
-		spoken = spoken || textNamesRelease(res.Snippet, r)
-	}
+	marked, spoken := releaseShown(o, r)
 	if !marked {
 		if !spoken {
 			o.Note = joinNote(o.Note, fmt.Sprintf("the question names %s %s and no page read is marked %s: they may document another release; pass that release's docs URL as --library", r.name, r.release, r.release))
@@ -213,6 +203,32 @@ func markRelease(o Outcome, r sfRelease) Outcome {
 		o.Results[i].Version = r.release
 	}
 	return o
+}
+
+// releaseShown reports whether a page o read is marked with r's release
+// (address or title), and whether the text it prints names the thing with
+// that release.
+func releaseShown(o Outcome, r sfRelease) (marked, spoken bool) {
+	for _, p := range o.Read {
+		if u, err := url.Parse(p.URL); err == nil && urlNamesRelease(u, r.release) {
+			marked = true
+		}
+	}
+	for _, res := range o.Results {
+		marked = marked || titleNamesRelease(res.PageTitle, r.release)
+		spoken = spoken || textNamesRelease(res.Snippet, r)
+	}
+	return marked, spoken
+}
+
+// releaseUnmarked reports an answer markRelease notes: none of its pages
+// is marked with r's release and its text does not name it.
+func releaseUnmarked(o Outcome, r sfRelease) bool {
+	if !answered(o) || len(o.Read) == 0 {
+		return false
+	}
+	marked, spoken := releaseShown(o, r)
+	return !marked && !spoken
 }
 
 // textNamesRelease reports text that writes the thing r names followed by

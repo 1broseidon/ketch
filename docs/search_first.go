@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/1broseidon/ketch/decide"
 	"github.com/1broseidon/ketch/health"
 	config "github.com/1broseidon/ketch/internal/configbase"
 	"github.com/1broseidon/ketch/internal/failure"
@@ -132,6 +133,10 @@ type SearchFirst struct {
 	// resolveName resolves the library a request names (resolveNamed
 	// when nil); tests give a fixed answer.
 	resolveName func(ctx context.Context, req sfRequest) sfResolved
+	// decisions is the decision provider a setting selects ("" for the
+	// configured docs_decisions; decide.Choose): nil asks none, as a
+	// backend built without a config does.
+	decisions func(setting string) (decide.Provider, decide.Decider, bool, error)
 }
 
 // sfDefaultTTL is the page cache's TTL when cache_ttl does not parse, as
@@ -155,6 +160,13 @@ func newSearchFirstFromConfig(c *config.Config, deps Deps) *SearchFirst {
 	}
 	if os.Getenv("KETCH_DOCS_TRACE") != "" {
 		s.trace = os.Stderr
+	}
+	dc := *c
+	s.decisions = func(setting string) (decide.Provider, decide.Decider, bool, error) {
+		if setting == "" {
+			setting = dc.DocsDecisions
+		}
+		return decide.Choose(&dc, setting)
 	}
 	return s
 }
@@ -334,6 +346,9 @@ type sfRequest struct {
 	// in a bare question): used when resolve confirms its version, read as
 	// ordinary words when it does not, never a refusal.
 	guessed bool
+	// dec is the decision provider a question that names no library asks
+	// (decide_flow.go); nil for none.
+	dec *decision
 }
 
 // pinnedSpec is the library a question pins with a spec of its own
@@ -369,10 +384,17 @@ func (s *SearchFirst) answer(ctx context.Context, req sfRequest) Outcome {
 	tr.path = "search"
 	TraceFrom(ctx).setPath(tr.path)
 	near := s.near(req)
-	if o, ok := s.fromRead(ctx, req, tr); ok {
-		return withNear(withRelease(o, req), req.library, near)
+	req.dec = s.decisionFor(req)
+	if !req.dec.usable() {
+		// An answer with decisions is never kept: a repeat asks again.
+		if o, ok := s.fromRead(ctx, req, tr); ok {
+			return withNear(withDecisionNote(withRelease(o, req), req.dec.note()), req.library, near)
+		}
 	}
 	o := withRelease(s.fromSearch(ctx, req, tr), req)
+	if req.dec != nil && o.Decisions == nil {
+		o = withDecisionNote(o, req.dec.note())
+	}
 	tr.fellOver = tr.domains > 1
 	for _, f := range []struct {
 		on   bool
@@ -389,7 +411,7 @@ func (s *SearchFirst) answer(ctx context.Context, req sfRequest) Outcome {
 // words (markRelease); o as it is for a request that names a library or
 // pins a version.
 func withRelease(o Outcome, req sfRequest) Outcome {
-	if req.library != "" || req.spec.version != "" && !req.guessed {
+	if req.library != "" || req.spec.version != "" && !req.guessed || o.Decisions != nil {
 		return o
 	}
 	if r, ok := questionRelease(req.query); ok {

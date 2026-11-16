@@ -1,0 +1,26 @@
+{
+ "model": "jev-1.14.0",
+ "state": {
+  "docs_question": "Prometheus Alertmanager route config: what are the defaults for group_wait, group_interval and repeat_interval, what happens if an alert resolves before group_wait has elapsed, and what happens if repeat_interval is not a multiple of group_interval?",
+  "page": {
+   "title": "Configuration",
+   "url": "https://prometheus.io/docs/alerting/latest/configuration/"
+  }
+ },
+ "questions": {
+  "p0": {
+   "type": "noul",
+   "instructions": {
+    "passage": {
+     "section": "Configuration",
+     "text": "Show nav"
+    },
+    "question": "Does `passage` state something that helps answer `docs_question`?"
+   },
+   "criteria": {
+    "true": "The passage states a fact, behaviour, setting, default, rule, limit, version note or example that a correct answer to the question would use.",
+    "false": "The passage is about something else, or mentions the topic without stating anything the answer needs, such as navigation, an introduction or an unrelated option."
+   }
+  }
+ }
+}

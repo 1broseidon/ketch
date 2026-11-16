@@ -1,0 +1,40 @@
+{
+ "model": "jev-1.14.0",
+ "answers": {
+  "documentation": {
+   "type": "noul",
+   "noul": 0.99
+  },
+  "makers": {
+   "type": "noul",
+   "noul": 0.97
+  },
+  "names_release": {
+   "type": "noul",
+   "noul": 0.06
+  },
+  "other_release": {
+   "type": "noul",
+   "noul": 0.09
+  },
+  "kind": {
+   "type": "choice",
+   "choice": "reference_documentation",
+   "confidence": 1.0,
+   "probabilities": {
+    "reference_documentation": 1.0,
+    "guide_or_tutorial": 0.0,
+    "blog_post_or_article": 0.0,
+    "forum_or_qa_thread": 0.0,
+    "issue_or_discussion": 0.0,
+    "source_code": 0.0,
+    "marketing_or_landing_page": 0.0,
+    "other": 0.0
+   }
+  }
+ },
+ "usage": {
+  "input_tokens": 9527,
+  "output_tokens": 166
+ }
+}

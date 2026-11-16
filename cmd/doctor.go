@@ -17,8 +17,9 @@ var doctorCmd = &cobra.Command{
 	Short: "Check the health of every backend, the browser, and the cache",
 	Long: `Run cheap live health checks against every ketch surface: search backends
 (` + strings.Join(config.SelectableBackends(), "/") + `), code backends
-(` + strings.Join(config.AvailableCodeBackends(), "/") + `), docs (` + strings.Join(config.AvailableDocBackends(), "/") + `), the configured browser binary,
-and the page cache.
+(` + strings.Join(config.AvailableCodeBackends(), "/") + `), docs (` + strings.Join(config.AvailableDocBackends(), "/") + `), the decision
+providers ketch docs can ask (` + strings.Join(config.AvailableDecisionProviders(), "/") + `), the configured browser
+binary, and the page cache.
 
 Probes run concurrently with a per-check timeout, are read-only (nothing is
 written to the cache), and each reports one of: ok, no_key, unreachable,
@@ -27,8 +28,8 @@ misconfigured (with a fix hint), or skipped.
 Exit codes:
   0  every applicable check is ok or cleanly skipped
   5  at least one configured surface is broken — the default backend of a
-     surface, a backend with an API key explicitly set, the configured
-     browser, or the cache
+     surface, a backend or decision provider with an API key explicitly
+     set (or named by docs_decisions), the configured browser, or the cache
 
 Optional backends that merely lack an API key (no_key) do not fail the run.`,
 	Args: exitArgs(cobra.NoArgs),

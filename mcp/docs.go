@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/1broseidon/ketch/decide"
 	"github.com/1broseidon/ketch/docs"
 	"github.com/1broseidon/ketch/internal/configbase"
 	"github.com/1broseidon/ketch/internal/docsfetch"
@@ -27,6 +28,8 @@ type DocsInput struct {
 	Page int `json:"page,omitempty" jsonschema:"with section: the page to return"`
 	// Offline uses only the local index and makes no network requests.
 	Offline bool `json:"offline,omitempty" jsonschema:"use only the local index; make no network requests; a missing library is not_found"`
+	// Decisions picks the decision provider for this call.
+	Decisions string `json:"decisions,omitempty" jsonschema:"decision provider for a question that names no library"`
 }
 
 // DocsOutput is the output schema for the "docs" tool. Results is populated
@@ -63,8 +66,14 @@ type DocsOutput struct {
 	DefinedIn []docs.DefinedIn `json:"defined_in,omitempty"`
 	// IndexedNear are the indexed libraries near a library value that
 	// named none, the roots to pass as library next.
-	IndexedNear  []docs.NearLibrary  `json:"indexed_near,omitempty"`
-	Note         string              `json:"note,omitempty"`
+	IndexedNear []docs.NearLibrary `json:"indexed_near,omitempty"`
+	Note        string             `json:"note,omitempty"`
+	// Decisions, PassedOver and Next are a decided answer's: the
+	// provider used, the results read or tried and not printed, and what
+	// to read next.
+	Decisions    *docs.DecisionUse   `json:"decisions,omitempty"`
+	PassedOver   []docs.PagePassed   `json:"passed_over,omitempty"`
+	Next         []docs.NextStep     `json:"next,omitempty"`
 	Results      []docs.Result       `json:"results,omitempty"`
 	Outline      []docs.OutlineEntry `json:"outline,omitempty"`
 	OutlineMore  []docs.OutlineMore  `json:"outline_more,omitempty"`
@@ -85,7 +94,7 @@ func fromOutcome(o docs.Outcome) DocsOutput {
 	return DocsOutput{
 		Library: f.Library, Scope: f.Scope, Version: f.Version, Index: f.Index, Read: f.Read, Skipped: f.Skipped, Widened: f.Widened,
 		NotOnPages: f.NotOnPages, NotInIndex: f.NotInIndex, OutsideScope: f.OutsideScope, Origin: f.Origin, Stale: f.Stale,
-		DefinedIn: f.DefinedIn, IndexedNear: f.IndexedNear, Note: f.Note, Results: o.Results, Outline: o.Outline,
+		DefinedIn: f.DefinedIn, IndexedNear: f.IndexedNear, Note: f.Note, Decisions: f.Decisions, PassedOver: f.PassedOver, Next: f.Next, Results: o.Results, Outline: o.Outline,
 		OutlineMore: o.OutlineMore, OtherResults: o.OtherResults, Hint: docs.Hint(docs.HintMCP, o), Matches: o.Matches, Backend: f.Backend,
 	}
 }
@@ -94,7 +103,7 @@ func (s *Server) registerDocsTool() {
 	mcpsdk.AddTool(s.mcp, &mcpsdk.Tool{
 		Name:        "docs",
 		InputSchema: docsInputSchema(),
-		Description: "Documentation for a question: the docs' own text, no model. One call usually answers. An indexed library answers from the local index; otherwise the question is searched on the web and the search's first readable document is read, with up to two more pages of the same site, in search order (threads, issues, commits and source files passed over); when the search gives nothing to read, one more search runs, the question + \"documentation\", and the note says so. The first readable result may not be the official docs: read shows what answered. library, or a name@version in the question that resolve confirms, names other docs; only with library, when an identifier your question writes is on none of the pages, are more pages of that release read (widened)." +
+		Description: "Documentation for a question: the docs' own text (no model, unless the operator set up a decision provider: see decisions). One call usually answers. An indexed library answers from the local index; otherwise the question is searched on the web and the search's first readable document is read, with up to two more pages of the same site, in search order (threads, issues, commits and source files passed over); when the search gives nothing to read, one more search runs, the question + \"documentation\", and the note says so. The first readable result may not be the official docs: read shows what answered. library, or a name@version in the question that resolve confirms, names other docs; only with library, when an identifier your question writes is on none of the pages, are more pages of that release read (widened)." +
 			" Fields: read (pages read, with their search rank); skipped (hits that could not be read, and why); not_on_pages (identifiers your question writes, such as code names, flags and options, on none of the pages read: only those pages were checked, not the whole docs) or not_in_index (an indexed library); version (only a pin that matched, or a release the question names that a page read is marked with; otherwise a note says so); origin (verified, or unverified for a library you named); defined_in (where a term is defined when that section is not shown); index and stale (an indexed library's age)." +
 			" results: the docs' text verbatim, grouped by page in reading order (page_title, heading_path, url); truncated (shown_tokens of section_tokens) marks a cut section, … marks text left out. outline: the other sections of those pages, not printed. other_results: search hits not read." +
 			" Two rules. Text that is truncated, behind …, or only named in outline is unread: read it with docs(section=\"<url#anchor>\") before stating what it says; read an other result with the scrape tool. Whatever your answer says that no result prints is your own knowledge: label it so, never cite the docs for it." +
@@ -127,7 +136,11 @@ func (s *Server) registerDocsTool() {
 		}
 		// Search takes the budget and limit only when given, and its own
 		// defaults otherwise.
-		ctx = docs.WithLocalOptions(ctx, docs.LocalOptions{Tokens: max(in.Tokens, 0), Limit: max(in.Limit, 0), Hint: docs.HintMCP, Offline: in.Offline})
+		decisions, err := docsDecisions(in.Decisions)
+		if err != nil {
+			return nil, DocsOutput{}, err
+		}
+		ctx = docs.WithLocalOptions(ctx, docs.LocalOptions{Tokens: max(in.Tokens, 0), Limit: max(in.Limit, 0), Hint: docs.HintMCP, Offline: in.Offline, Decisions: decisions})
 
 		if in.Resolve {
 			// Library matches carry IDs, not URLs: there is nothing to
@@ -169,6 +182,19 @@ func (s *Server) registerDocsTool() {
 		out.Warnings = diagnostics.values()
 		return nil, out, nil
 	})
+}
+
+// docsDecisions is a call's decisions value, checked: "" leaves the
+// docs_decisions setting.
+func docsDecisions(value string) (string, error) {
+	if value == "" {
+		return "", nil
+	}
+	v, err := decide.Normalize(value)
+	if err != nil {
+		return "", errf(kindValidation, "decisions: %v", err)
+	}
+	return v, nil
 }
 
 // validQuery checks a docs call that asks a question (no section): it
@@ -320,14 +346,15 @@ func docsInputSchema() *jsonschema.Schema {
 	backends := docs.AvailableBackends()
 	libNames := strings.Join(docs.LibraryProviderNames(), ", ")
 	return inputSchema[DocsInput](map[string]string{
-		"query":   "the docs question (search answers from an indexed library it names, else from the first readable documents a web search for it returns, unless library is set); with resolve, the library name to resolve (search: optional, none lists every indexed library); not needed with section",
-		"backend": "docs backend for this call: " + configbase.JoinNames(backends) + " (default: search; context7 only when named here)",
-		"library": docs.WithLibraryHelp("the library to answer from: for context7 a library ID from resolve"),
-		"tokens":  "token budget for " + strings.Join(docs.LibraryProviderNames(), " and ") + ": search prints 4,000 tokens of docs text unless set (the frontmatter fields, outline and other_results aside; leave it unset); context7 defaults to 4000; with section, the page size of the section returned (default 4000)",
-		"section": "read one section in full instead of searching: the url#anchor of a result, an outline entry or a defined_in entry (a page URL alone returns the page's sections in order: how to read one page), from the local index or, for a page a search read, the page through the page cache; whole when it fits tokens (default 4000), else a page of that size at a time (page); library is optional",
-		"offline": "use only the local index; make no network requests; a missing library is not_found; stale marks cited pages older than cache_ttl",
-		"page":    "with section: the page of a section longer than tokens to return (default 1); the hint gives the call for the next",
-		"resolve": "resolve the query as a library name instead of answering (" + libNames + "): search lists docs roots, the indexed libraries the query names first, with no network, and resolves a name none matches on the web; context7 lists its library IDs",
+		"query":     "the docs question (search answers from an indexed library it names, else from the first readable documents a web search for it returns, unless library is set); with resolve, the library name to resolve (search: optional, none lists every indexed library); not needed with section",
+		"backend":   "docs backend for this call: " + configbase.JoinNames(backends) + " (default: search; context7 only when named here)",
+		"library":   docs.WithLibraryHelp("the library to answer from: for context7 a library ID from resolve"),
+		"tokens":    "token budget for " + strings.Join(docs.LibraryProviderNames(), " and ") + ": search prints 4,000 tokens of docs text unless set (the frontmatter fields, outline and other_results aside; leave it unset); context7 defaults to 4000; with section, the page size of the section returned (default 4000)",
+		"section":   "read one section in full instead of searching: the url#anchor of a result, an outline entry or a defined_in entry (a page URL alone returns the page's sections in order: how to read one page), from the local index or, for a page a search read, the page through the page cache; whole when it fits tokens (default 4000), else a page of that size at a time (page); library is optional",
+		"offline":   "use only the local index; make no network requests; a missing library is not_found; stale marks cited pages older than cache_ttl",
+		"decisions": "decision provider for a question that names no library: " + configbase.JoinNames(decide.Values()) + " (default: the operator's docs_decisions, auto: a provider with a key set). With one, the top five results are read, labelled (read, passed_over, other_results) and their passages chosen by the provider; confidence says how far to trust each; on a provider failure the answer is made without it and note says why",
+		"page":      "with section: the page of a section longer than tokens to return (default 1); the hint gives the call for the next",
+		"resolve":   "resolve the query as a library name instead of answering (" + libNames + "): search lists docs roots, the indexed libraries the query names first, with no network, and resolves a name none matches on the web; context7 lists its library IDs",
 	})
 }
 

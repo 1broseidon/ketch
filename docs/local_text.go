@@ -30,6 +30,10 @@ type LocalOptions struct {
 	// Offline uses only the local index: no resolution, page-cache fetch
 	// or network access. An older cited page marks the answer stale.
 	Offline bool
+	// Decisions is the decision provider a question that names no
+	// library asks this call ("off" for none, a provider's ID); "" uses
+	// the docs_decisions setting.
+	Decisions string
 	// live marks an answer from pages a search just read (no index line;
 	// a common word missing from a few pages says nothing), and pages are,
 	// for an answer from the exact pages a search ranked best, those

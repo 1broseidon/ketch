@@ -137,6 +137,12 @@ type Result struct {
 	// Next is the call that reads a section fetch's next page, in the
 	// surface's words; empty on the last page.
 	Next string `json:"next,omitempty"`
+	// A decided answer's group (decide_flow.go): its page's source label,
+	// how far to trust it in words (the lower of the page's tier and the
+	// best passage of its section), and that passage's probability.
+	SourceLabel string  `json:"source_label,omitempty"`
+	Confidence  string  `json:"confidence,omitempty"`
+	Probability float64 `json:"probability,omitempty"`
 }
 
 // Searcher is the interface for docs backends.

@@ -27,6 +27,7 @@
   "code_backend": "grepapp",
   "docs_backend": "search",
   "docs_backend_note": "docs_backend is retired: every docs call uses search; ask for Context7 per call with -b context7 (MCP: backend \"context7\"); a stored value is left in the file and ignored",
+  "docs_decisions": "auto",
   "context7_api_key_set": true,
   "sourcegraph_url": "https://sourcegraph.com",
   "github_token_source": "config",
@@ -66,11 +67,17 @@
     "search",
     "context7"
   ],
+  "available_decision_providers": [
+    "typesafe",
+    "openai"
+  ],
   "tinyfish_api_key_set": false,
   "tinyfish_api_keys_count": 0,
   "parallel_api_key_set": false,
   "parallel_api_keys_count": 0,
   "degoog_url": "",
   "serply_api_key_set": false,
-  "serply_api_keys_count": 0
+  "serply_api_keys_count": 0,
+  "typesafe_api_key_set": false,
+  "openai_api_key_set": false
 }

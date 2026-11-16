@@ -14,6 +14,7 @@ import (
 
 	"github.com/1broseidon/ketch/code"
 	"github.com/1broseidon/ketch/config"
+	"github.com/1broseidon/ketch/decide"
 	"github.com/1broseidon/ketch/docs"
 	"github.com/1broseidon/ketch/health"
 	"github.com/1broseidon/ketch/httpx"
@@ -59,6 +60,11 @@ type spec struct {
 	required   bool
 	probe      func(ctx context.Context) (Status, string)
 }
+
+// DecisionSurface is the surface of the decision providers' checks (ketch
+// docs' optional source labels and passage choice): no_key for one not
+// configured, a probe of its model list for one that is.
+const DecisionSurface = "decision"
 
 // DefaultTimeout is the per-probe timeout. Probes run concurrently, so the
 // whole run is bounded by roughly one timeout, not the sum.
@@ -180,6 +186,9 @@ func buildSpecs(cfg *config.Config, client *http.Client) []spec {
 	}
 	for _, p := range docs.Providers() {
 		specs = append(specs, spec{0, "docs", p.ID, p.Required(cfg), func(ctx context.Context) (Status, string) { return p.Probe(ctx, client, cfg) }})
+	}
+	for _, p := range decide.Providers() {
+		specs = append(specs, spec{0, DecisionSurface, p.ID, p.Required(cfg), func(ctx context.Context) (Status, string) { return p.Probe(ctx, client, cfg) }})
 	}
 	return append(specs,
 		spec{0, "browser", browserBackendName(cfg.Browser), cfg.Browser != "", func(context.Context) (Status, string) { return checkBrowser(cfg.Browser) }},

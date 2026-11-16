@@ -257,6 +257,8 @@ describe("argument construction", () => {
 		assert.deepEqual(calls[2].args, ["docs", "--json", "--", "how do I set retries in requests"]);
 		await run(tools, "ketch_docs", { section: "https://docs.example.test/guide#rules", tokens: 2000 });
 		assert.deepEqual(calls[3].args, ["docs", "--json", "--section=https://docs.example.test/guide#rules", "--tokens=2000"]);
+		await run(tools, "ketch_docs", { query: "retries", decisions: "off" });
+		assert.deepEqual(calls[4].args, ["docs", "--json", "--decisions=off", "--", "retries"]);
 
 		for (const bad of [
 			{ section: "https://docs.example.test/guide#rules", query: "q" },
@@ -267,7 +269,7 @@ describe("argument construction", () => {
 			assert.equal(r.isError, true);
 			assert.match(r.content[0].text, /^\[validation\]/);
 		}
-		assert.equal(calls.length, 4);
+		assert.equal(calls.length, 5);
 	});
 
 	test("docs: descriptions cover search, Context7, section and library specs", () => {

@@ -101,11 +101,22 @@ type PageRead struct {
 	URL  string `json:"url"`
 	Rank int    `json:"rank,omitempty"`
 	Via  string `json:"via,omitempty"`
+	// A decided answer (decide_flow.go) says what each page is and how far
+	// to trust what it prints: its source label and confidence in words,
+	// and in JSON the tier, the page's context from its passages and the
+	// raw judgments behind them.
+	Label      string         `json:"label,omitempty"`
+	Confidence string         `json:"confidence,omitempty"`
+	Tier       string         `json:"tier,omitempty"`
+	Context    string         `json:"context,omitempty"`
+	Judgments  *PageJudgments `json:"judgments,omitempty"`
 }
 
 // line is the page as its read line names it.
 func (p PageRead) line() string {
 	switch {
+	case p.Label != "":
+		return fmt.Sprintf("%s (%s, confidence %s, search rank %d)", p.URL, p.Label, p.Confidence, p.Rank)
 	case p.Rank > 0:
 		return fmt.Sprintf("%s (search rank %d)", p.URL, p.Rank)
 	case p.Via != "":
@@ -144,6 +155,10 @@ type OtherResult struct {
 	URL     string `json:"url"`
 	Snippet string `json:"snippet,omitempty"`
 	Rank    int    `json:"rank"`
+	// Label is a decided answer's source label for the result, from
+	// Judgments.
+	Label     string           `json:"label,omitempty"`
+	Judgments *ResultJudgments `json:"judgments,omitempty"`
 }
 
 // Frontmatter is an answer's frontmatter: what the CLI prints before the
@@ -180,6 +195,13 @@ type Frontmatter struct {
 	// named none: the indexed_near line.
 	IndexedNear []NearLibrary `json:"indexed_near,omitempty"`
 	Note        string        `json:"note,omitempty"`
+	// Decisions names the decision provider a decided answer used, with
+	// its requests' input tokens and cut-offs; PassedOver the results read
+	// or tried and not printed, each with why; Next the calls that read a
+	// better source or a cut section on the question.
+	Decisions  *DecisionUse `json:"decisions,omitempty"`
+	PassedOver []PagePassed `json:"passed_over,omitempty"`
+	Next       []NextStep   `json:"next,omitempty"`
 	// section marks a section fetch's frontmatter (SectionFrontmatter),
 	// which prints its page line ("page: 2 of 4", page).
 	section bool
@@ -204,6 +226,7 @@ func NewFrontmatter(query, backend, library string, o Outcome) Frontmatter {
 		f.Version = o.Results[0].Version
 	}
 	f.Read, f.Skipped, f.Widened, f.DefinedIn, f.OutsideScope = o.Read, o.Skipped, o.Widened, o.DefinedIn, o.OutsideScope
+	f.Decisions, f.PassedOver, f.Next = o.Decisions, o.PassedOver, o.Next
 	f.Origin = ShownOrigin(o)
 	switch {
 	case o.Index != nil:
@@ -316,6 +339,9 @@ func (f Frontmatter) Render() string {
 	if f.Index != nil {
 		line("index", f.Index.Summary())
 	}
+	if f.Decisions != nil {
+		line("decisions", f.Decisions.Provider)
+	}
 	if f.section {
 		line("stale", f.Stale)
 		line("note", f.Note)
@@ -325,18 +351,7 @@ func (f Frontmatter) Render() string {
 		b.WriteString("---\n")
 		return b.String()
 	}
-	if len(f.Read) > 0 {
-		b.WriteString("read:\n")
-		for _, p := range f.Read {
-			b.WriteString("  - " + p.line() + "\n")
-		}
-	}
-	if len(f.Skipped) > 0 {
-		b.WriteString("skipped:\n")
-		for _, p := range f.Skipped {
-			b.WriteString("  - " + p.URL + " (" + p.Cause + ")\n")
-		}
-	}
+	b.WriteString(f.pageLists())
 	if w := f.Widened; w != nil {
 		line("widened", w.line(len(f.Read) > 0))
 	}
@@ -354,7 +369,30 @@ func (f Frontmatter) Render() string {
 	b.WriteString(definedInLine(f.DefinedIn))
 	b.WriteString(nearLine(f.IndexedNear))
 	line("note", f.Note)
+	b.WriteString(listBlock("next", f.Next, NextStep.line))
 	b.WriteString("---\n")
+	return b.String()
+}
+
+// pageLists are the read, skipped and passed_over lists, each only when
+// it has entries.
+func (f Frontmatter) pageLists() string {
+	return listBlock("read", f.Read, PageRead.line) +
+		listBlock("skipped", f.Skipped, func(p PageSkipped) string { return p.URL + " (" + p.Cause + ")" }) +
+		listBlock("passed_over", f.PassedOver, PagePassed.line)
+}
+
+// listBlock is a YAML block list under key, one line per item; "" for
+// none.
+func listBlock[T any](key string, items []T, line func(T) string) string {
+	if len(items) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString(key + ":\n")
+	for _, it := range items {
+		b.WriteString("  - " + line(it) + "\n")
+	}
 	return b.String()
 }
 
@@ -484,6 +522,9 @@ func sep(n int) string {
 // otherLine is another search result as printed.
 func otherLine(r OtherResult) string {
 	line := "- " + firstNonEmpty(r.Title, r.URL) + " — " + r.URL
+	if r.Label != "" {
+		line += " (" + r.Label + ")"
+	}
 	if r.Snippet != "" {
 		line += " — " + r.Snippet
 	}
@@ -550,6 +591,9 @@ func pageHeading(r Result) string {
 	if title == "" {
 		title = pageOf(r)
 	}
+	if r.SourceLabel != "" {
+		return "## " + title + "\n" + pageOf(r) + " (" + r.SourceLabel + ")\n\n"
+	}
 	return "## " + title + "\n" + pageOf(r) + "\n\n"
 }
 
@@ -581,7 +625,12 @@ func RenderGroup(r Result, firstOfPage bool) string {
 		b.WriteString(r.Contents + "\n")
 	}
 	b.WriteString("source: " + r.URL)
-	if r.Truncated {
+	switch {
+	case r.Confidence != "" && r.Truncated:
+		b.WriteString(" (confidence " + r.Confidence + ", " + strings.TrimPrefix(cutNote(r), " ("))
+	case r.Confidence != "":
+		b.WriteString(" (confidence " + r.Confidence + ")")
+	case r.Truncated:
 		b.WriteString(cutNote(r))
 	}
 	b.WriteString("\n")

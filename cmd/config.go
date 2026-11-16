@@ -39,6 +39,7 @@ type configInfo struct {
 	CodeBackend                        string             `json:"code_backend" order:"21"`
 	DocsBackend                        string             `json:"docs_backend" order:"22"`
 	DocsBackendNote                    string             `json:"docs_backend_note" order:"22"` // the key is retired (docs.RetiredDocsBackend)
+	DocsDecisions                      string             `json:"docs_decisions" order:"22"`    // effective: auto (default), off, or a decision provider
 	URLRewrites                        []urlrewrite.Rule  `json:"url_rewrites,omitempty" order:"27"`
 	SPAMarkers                         []string           `json:"spa_markers,omitempty" order:"28"`
 	MCPTools                           []string           `json:"mcp_tools" order:"29"` // effective set `ketch mcp serve` will publish
@@ -48,6 +49,7 @@ type configInfo struct {
 	AvailableBackends                  []string           `json:"available_backends" order:"33"`
 	AvailableCodeBackends              []string           `json:"available_code_backends" order:"34"`
 	AvailableDocBackends               []string           `json:"available_doc_backends" order:"35"`
+	AvailableDecisionProviders         []string           `json:"available_decision_providers" order:"36"`
 	ProviderFields                     []configbase.Field `json:"-"`
 	Providers                          map[string]any     `json:"-"`
 
@@ -115,6 +117,7 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 		CodeBackend:                        c.CodeBackend,
 		DocsBackend:                        docs.SearchBackend, // every call's; a stored value is ignored
 		DocsBackendNote:                    docs.RetiredDocsBackend,
+		DocsDecisions:                      effectiveDocsDecisions(c),
 		URLRewrites:                        c.URLRewrites,
 		SPAMarkers:                         c.SPAMarkers,
 		MCPTools:                           effectiveMCPTools(c),
@@ -124,6 +127,7 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 		AvailableBackends:                  config.SelectableBackends(),
 		AvailableCodeBackends:              config.AvailableCodeBackends(),
 		AvailableDocBackends:               config.AvailableDocBackends(),
+		AvailableDecisionProviders:         config.AvailableDecisionProviders(),
 	}
 
 	info.Providers = make(map[string]any)
@@ -255,6 +259,8 @@ func applyConfigSet(c *config.Config, key, value string) error {
 		return setMCPTools(c, value)
 	case "search_order":
 		return setSearchOrder(c, value)
+	case "docs_decisions":
+		return setDocsDecisions(c, value)
 	case "cookie_file":
 		return setCookieFile(c, value)
 	case "user_agent":
@@ -501,6 +507,31 @@ func setSearchOrder(c *config.Config, value string) error {
 	return nil
 }
 
+// setDocsDecisions persists what ketch docs asks to label sources and
+// choose passages: auto (the default; stored as no value), off, or a
+// decision provider's ID.
+func setDocsDecisions(c *config.Config, value string) error {
+	v, err := config.NormalizeDocsDecisions(value)
+	if err != nil {
+		return exitErrf(ExitValidation, "invalid docs_decisions: %w", err)
+	}
+	if v == "auto" {
+		v = ""
+	}
+	c.DocsDecisions = v
+	return nil
+}
+
+// effectiveDocsDecisions is the docs_decisions setting in effect: auto when
+// unset; a value the normalizer rejects (a hand-edited file) as it is.
+func effectiveDocsDecisions(c config.Config) string {
+	v, err := config.NormalizeDocsDecisions(c.DocsDecisions)
+	if err != nil {
+		return c.DocsDecisions
+	}
+	return v
+}
+
 // parseNameList reads a list-valued config key given as a JSON array or a
 // comma-separated list. Blank or whitespace-only input is an empty list.
 func parseNameList(value string) ([]string, error) {
@@ -529,7 +560,7 @@ func runConfigPath(_ *cobra.Command, _ []string) error {
 }
 
 func validConfigKeys() []string {
-	fields := []configbase.Field{{Name: "backend", Order: 0}, {Name: "limit", Order: 15}, {Name: "cache_ttl", Order: 16}, {Name: "browser", Order: 17}, {Name: "code_backend", Order: 18}, {Name: "docs_backend", Order: 19}, {Name: "url_rewrites", Order: 23}, {Name: "spa_markers", Order: 24}, {Name: "mcp_tools", Order: 25}, {Name: "cookie_file", Order: 26}, {Name: "user_agent", Order: 27}, {Name: "external_pdf_to_md_converter_command", Order: 28}, {Name: "external_pdf_to_md_converter_timeout_sec", Order: 29}, {Name: "extract_mode", Order: 30}, {Name: "http_headers", Order: 31}, {Name: "search_order", Order: 32}}
+	fields := []configbase.Field{{Name: "backend", Order: 0}, {Name: "limit", Order: 15}, {Name: "cache_ttl", Order: 16}, {Name: "browser", Order: 17}, {Name: "code_backend", Order: 18}, {Name: "docs_backend", Order: 19}, {Name: "url_rewrites", Order: 23}, {Name: "spa_markers", Order: 24}, {Name: "mcp_tools", Order: 25}, {Name: "cookie_file", Order: 26}, {Name: "user_agent", Order: 27}, {Name: "external_pdf_to_md_converter_command", Order: 28}, {Name: "external_pdf_to_md_converter_timeout_sec", Order: 29}, {Name: "extract_mode", Order: 30}, {Name: "http_headers", Order: 31}, {Name: "search_order", Order: 32}, {Name: "docs_decisions", Order: 33}}
 	for _, s := range config.ProviderSettings() {
 		fields = append(fields, configbase.Field{Name: s.Key, Order: s.ValidationOrder})
 		if s.Plural != "" {
