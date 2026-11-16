@@ -114,6 +114,50 @@ func TestMarkRelease(t *testing.T) {
 	if o = markRelease(o, r); o.Note != "" || o.Results[0].Version != "9" {
 		t.Errorf("a title marked with the release: note %q, version %q", o.Note, o.Results[0].Version)
 	}
+	// A x label names every release under it: 5.x is marked 5.4.
+	r5 := sfRelease{name: "Symfony", release: "5.4"}
+	o = Outcome{Status: Found, Read: []PageRead{{URL: "https://symfony.test/doc/5.x/security.html", Rank: 1}}, Results: []Result{{URL: "https://symfony.test/doc/5.x/security.html"}}}
+	if o = markRelease(o, r5); o.Note != "" || o.Results[0].Version != "5.4" {
+		t.Errorf("a 5.x page for 5.4: note %q, version %q", o.Note, o.Results[0].Version)
+	}
+}
+
+// Text that names the thing with the release asked speaks of it: no note,
+// and no version either (the page itself is marked with none).
+func TestReleaseNamedInText(t *testing.T) {
+	go123 := sfRelease{name: "Go", release: "1.23"}
+	for text, want := range map[string]bool{
+		"Before Go 1.23, the garbage collector did not recover timers": true,
+		"Since Go 1.23.1 the channel is unbuffered.":                   true,
+		"As of Go 1.23. Timers are collected.":                         true,
+		"Go 1.230 is no release":                                       false,
+		"Go 1.2 changed scheduling":                                    false,
+		"go 1.23 is lower case and still names it":                     true,
+		"Lego 1.23 bricks":                                             false,
+		"set GOTOOLCHAIN=go1.23 to pin the toolchain":                  false,
+		"Pydantic V2 changed field defaults":                           false, // another thing
+	} {
+		if got := textNamesRelease(text, go123); got != want {
+			t.Errorf("textNamesRelease(%q, Go 1.23) = %t, want %t", text, got, want)
+		}
+	}
+	if !textNamesRelease("Pydantic V2 changed field defaults", sfRelease{name: "Pydantic", release: "2"}) ||
+		!textNamesRelease("New in .NET 9: JsonSerializerOptions.Web", sfRelease{name: ".NET", release: "9"}) ||
+		textNamesRelease("ASP.NET 9 middleware", sfRelease{name: ".NET", release: "9"}) ||
+		textNamesRelease("Python 3.1 is old", sfRelease{name: "Python", release: "3.10"}) {
+		t.Error("textNamesRelease: v, a leading dot or a longer release")
+	}
+	r := sfRelease{name: "Go", release: "1.23"}
+	o := Outcome{Status: Found, Read: []PageRead{{URL: "https://pkg.test/time", Rank: 1}},
+		Results: []Result{{URL: "https://pkg.test/time", Snippet: "Before Go 1.23, the garbage collector did not recover timers that had not yet expired."}}}
+	if o = markRelease(o, r); o.Note != "" || o.Results[0].Version != "" {
+		t.Errorf("text names Go 1.23: note %q, version %q; want neither", o.Note, o.Results[0].Version)
+	}
+	o = Outcome{Status: Found, Read: []PageRead{{URL: "https://pkg.test/time", Rank: 1}},
+		Results: []Result{{URL: "https://pkg.test/time", Snippet: "Go 1.22 added a timer."}}}
+	if o = markRelease(o, r); !strings.Contains(o.Note, "no page read is marked 1.23") {
+		t.Errorf("text names another release: note %q, want the release note", o.Note)
+	}
 }
 
 // An answer from pages a search read prints no version from an address's

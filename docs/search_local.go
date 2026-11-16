@@ -85,15 +85,18 @@ type sfTrace struct {
 	// fellThrough counts the results a question that names no library
 	// passed over before its first page.
 	fellThrough int
+	// secondQuery marks a question whose own search gave nothing to read,
+	// so one more search ran (searchAgain).
+	secondQuery bool
 }
 
 func (t *sfTrace) write(w io.Writer, req sfRequest, d time.Duration) {
 	if w == nil {
 		return
 	}
-	_, _ = fmt.Fprintf(w, "trace: search-first path=%s local=%s cached=%t hits=%d docs_hits=%d site=%s site_hits=%d sites=%d planned=%d fetched=%d failed=%d exact=%d widened=%t fell_over=%t resolved_first=%t fell_through=%d ms=%d resolve_ms=%d resolved=%q library=%q cands=%q\n",
+	_, _ = fmt.Fprintf(w, "trace: search-first path=%s local=%s cached=%t hits=%d docs_hits=%d site=%s site_hits=%d sites=%d planned=%d fetched=%d failed=%d exact=%d widened=%t fell_over=%t resolved_first=%t fell_through=%d second_query=%t ms=%d resolve_ms=%d resolved=%q library=%q cands=%q\n",
 		t.path, t.local, t.cached, t.hits, t.docsHits, t.site, t.siteHits, t.sites, t.planned, t.fetched, t.failed,
-		t.exact, t.widened, t.fellOver, t.resolvedFirst, t.fellThrough,
+		t.exact, t.widened, t.fellOver, t.resolvedFirst, t.fellThrough, t.secondQuery,
 		d.Milliseconds(), t.resolveMs, t.resolved, req.library, t.cands)
 }
 

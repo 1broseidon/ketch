@@ -2,6 +2,7 @@ package docs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"path"
@@ -29,7 +30,9 @@ import (
 //	and the next result read, on any site
 //	        │
 //	up to two more results of the same site and release, in search order
-//	        │       (none readable at all: the search results alone)
+//	        │       (none readable, or no results: ONE more search, the
+//	        │       question + "documentation", read the same way; none
+//	        │       readable there either: the search results alone)
 //	answered through the evidence pipeline, best page first
 //
 // The site and resolve machinery serves only a request that names a
@@ -55,14 +58,95 @@ func (s *SearchFirst) answerBare(ctx, cctx context.Context, req sfRequest, tr *s
 	}
 	req.hits = hits
 	tr.hits = len(hits)
-	if err != nil {
+	if err != nil && !errors.Is(err, errSearchEmpty) {
 		return s.failed(ctx, cctx, err)
 	}
-	o, read := s.readBare(ctx, cctx, req, hits, tr)
+	var o Outcome
+	var read sfRead
+	readable := false
+	if len(hits) > 0 {
+		o, read, readable = s.readBare(ctx, cctx, req, hits, tr)
+	}
+	if !readable {
+		return s.searchAgain(ctx, cctx, req, o, err, tr)
+	}
 	if answered(o) || printableRefusal(o) {
 		return s.keep(req, read, o)
 	}
 	return resultsOnly(dressed(o, req, nil), req.hits)
+}
+
+// retrySuffix makes the one more search a question that names no library
+// runs when its own search gave nothing to read: the question asking for
+// documentation, which read more than a shortened question
+// (design/docs-evidence.md, Final shape, Fourth pass).
+const retrySuffix = " documentation"
+
+// retryWhat is the second search as an answer's note names it: the
+// frontmatter already prints the question.
+const retryWhat = `a second search, the question + "documentation"`
+
+// searchAgain answers a question whose own search gave nothing to read
+// (no results, empty being that search's error; or no result that is a
+// readable document, first being that read's outcome) from ONE more
+// search, read by the same rules. The answer's note says the first search
+// gave nothing and what was searched instead. When the second search gives
+// nothing to read either, the results print alone (the first search's, or
+// the second's when the first had none); no results from either is nothing
+// to print (exit 3).
+func (s *SearchFirst) searchAgain(ctx, cctx context.Context, req sfRequest, first Outcome, empty error, tr *sfTrace) Outcome {
+	if cctx.Err() != nil {
+		return s.nothingRead(ctx, cctx, req, first, empty, "")
+	}
+	tr.secondQuery = true
+	why := "the question's search returned no results"
+	if empty == nil {
+		why = "none of the question's search results is a document that reads"
+	}
+	hits, err := s.plainSearch(cctx, strings.Join(strings.Fields(req.query), " ")+retrySuffix)
+	switch {
+	case errors.Is(err, errSearchEmpty):
+		return s.nothingRead(ctx, cctx, req, first, empty, retryWhat+" returned none either")
+	case err != nil:
+		return s.nothingRead(ctx, cctx, req, first, empty, retryWhat+" failed: "+strings.TrimPrefix(err.Error(), "search: "))
+	}
+	again := req
+	again.hits = hits
+	tr.hits += len(hits)
+	o, read, readable := s.readBare(ctx, cctx, again, hits, tr)
+	switch {
+	case !readable && len(req.hits) > 0:
+		return s.nothingRead(ctx, cctx, req, first, empty, "nor do the results of "+retryWhat)
+	case !readable:
+		return s.nothingRead(ctx, cctx, again, o, nil, why+"; these are "+retryWhat)
+	}
+	said := why + "; this answer is from " + retryWhat
+	read.Tried = joinNote(said, read.Tried)
+	o.Note = joinNote(said, o.Note)
+	if answered(o) || printableRefusal(o) {
+		return s.keep(again, read, o)
+	}
+	return resultsOnly(dressed(o, again, nil), again.hits)
+}
+
+// nothingRead is the outcome of searches that gave nothing to read: o's
+// results alone (resultsOnly) with said in its note, or, when req has no
+// results, empty (the question's search's error) with said.
+func (s *SearchFirst) nothingRead(ctx, cctx context.Context, req sfRequest, o Outcome, empty error, said string) Outcome {
+	if len(req.hits) == 0 {
+		if empty == nil {
+			empty = fmt.Errorf("search: %w", errSearchEmpty)
+		}
+		if said != "" {
+			empty = fmt.Errorf("%w; %s", empty, said)
+		}
+		return s.failed(ctx, cctx, empty)
+	}
+	out := resultsOnly(dressed(o, req, nil), req.hits)
+	if out.Reason == "results_only" {
+		out.Note = joinNote(out.Note, said)
+	}
+	return out
 }
 
 // bareSearch runs the plain question's search (as `ketch search` runs it)
@@ -79,18 +163,25 @@ func (s *SearchFirst) bareSearch(ctx context.Context, req sfRequest) ([]sfHit, s
 			prefs = s.prefs(ctx, req)
 		}
 	}()
+	hits, err := s.plainSearch(ctx, strings.Join(strings.Fields(req.query), " "))
+	<-done
+	return hits, prefs, err
+}
+
+// plainSearch runs query's web search: its results as hits, in order. No
+// results is errSearchEmpty.
+func (s *SearchFirst) plainSearch(ctx context.Context, query string) ([]sfHit, error) {
 	sctx, cancel := context.WithTimeout(ctx, sfSearchTimeout)
 	defer cancel()
-	list, err := s.web.sites.Search(sctx, strings.Join(strings.Fields(req.query), " "), sfSearchResults)
-	<-done
+	list, err := s.web.sites.Search(sctx, query, sfSearchResults)
 	if err != nil {
-		return nil, prefs, fmt.Errorf("search: web search failed: %w", err)
+		return nil, fmt.Errorf("search: web search failed: %w", err)
 	}
 	hits := plainHits(list, 0)
 	if len(hits) == 0 {
-		return nil, prefs, fmt.Errorf("search: %w", errSearchEmpty)
+		return nil, fmt.Errorf("search: %w", errSearchEmpty)
 	}
-	return hits, prefs, nil
+	return hits, nil
 }
 
 // plainHits are a search's results as hits in the search's order, each
@@ -154,21 +245,21 @@ type bareRead struct {
 // readBare reads the first readable document among hits, then up to
 // sfExactPages-1 more of its site and release, in search order, and
 // answers from them. It returns the read a repeat within cache_ttl answers
-// from.
-func (s *SearchFirst) readBare(ctx, cctx context.Context, req sfRequest, hits []sfHit, tr *sfTrace) (Outcome, sfRead) {
+// from, and whether a page read (or an indexed library answered).
+func (s *SearchFirst) readBare(ctx, cctx context.Context, req sfRequest, hits []sfHit, tr *sfTrace) (Outcome, sfRead, bool) {
 	cands := bareCandidates(hits)
 	x := &bareRead{s: s, cands: cands, tried: make([]bool, len(cands)),
 		seen: map[string]bool{}, texts: map[[32]byte]bool{}, p: &sfPages{}}
-	tr.docsHits = len(cands)
+	tr.docsHits += len(cands)
 	if lib, ok := x.readFirst(cctx, tr); ok {
 		// A site the caller indexed answers from the index.
 		tr.local, tr.site = lib.Root, lib.Root
-		return s.answerIndexed(ctx, lib, req.query, req.opts, ""), sfRead{Root: lib.Root}
+		return s.answerIndexed(ctx, lib, req.query, req.opts, ""), sfRead{Root: lib.Root}, true
 	}
 	x.readMore(cctx, tr)
-	tr.fellThrough, tr.exact = x.skipped, len(x.p.exact)
+	tr.fellThrough, tr.exact = tr.fellThrough+x.skipped, len(x.p.exact)
 	if len(x.p.exact) == 0 {
-		return x.unread(ctx, cctx, s), sfRead{}
+		return x.unread(ctx, cctx, s), sfRead{}, false
 	}
 	x.p.root = x.root()
 	x.p.title, x.p.name = readTitle(x.p.root, nil)
@@ -178,7 +269,7 @@ func (s *SearchFirst) readBare(ctx, cctx context.Context, req sfRequest, hits []
 	r := readOf(x.p)
 	r.Tried = otherReleaseNote(x.p)
 	o.Note = joinNote(r.Tried, o.Note)
-	return o, r
+	return o, r, true
 }
 
 // readFirst reads the candidates in order until one reads: that is the

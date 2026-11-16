@@ -203,3 +203,102 @@ func TestReadCauseNames(t *testing.T) {
 		t.Errorf("an unknown failure: %q, %q; want its message as the detail", cause, detail)
 	}
 }
+
+// bySearch is a search backend answering each query from results, and the
+// queries it was asked, in order.
+func bySearch(s *SearchFirst, results map[string][]search.Result) *[]string {
+	var asked []string
+	s.web.sites = siteSearchFunc(func(_ context.Context, q string, _ int) ([]search.Result, error) {
+		asked = append(asked, q)
+		return results[q], nil
+	})
+	return &asked
+}
+
+// When the question's search gives nothing to read (no results, or none
+// that is a document that reads), ONE more search runs, the question +
+// "documentation", read by the same rules; the note says so, and so does a
+// repeat within cache_ttl, which searches nothing.
+func TestBareSearchesOnceMore(t *testing.T) {
+	const q = "add middleware to a route"
+	docs := []search.Result{hit(idxRoot+"guide/middleware", "Middleware - Example docs"), hit("https://tips.test/articles/middleware", "Middleware tips")}
+	threads := []search.Result{hit("https://stackoverflow.com/questions/1/example-middleware", "How to add middleware")}
+	for _, tc := range []struct {
+		name  string
+		first []search.Result
+		why   string
+	}{
+		{"no results", nil, "the question's search returned no results"},
+		{"no document", threads, "none of the question's search results is a document that reads"},
+	} {
+		f := exampleSite()
+		s, _, _ := searchFirstOver(t, f, nil)
+		asked := bySearch(s, map[string][]search.Result{q: tc.first, q + " documentation": docs})
+		o := s.SearchSelect(context.Background(), q, 0)
+		if o.Err() != nil || len(o.Read) == 0 || o.Read[0].URL != idxRoot+"guide/middleware" {
+			t.Fatalf("%s: read %+v (%v), want the second search's first result", tc.name, o.Read, o.Err())
+		}
+		if !slices.Equal(*asked, []string{q, q + " documentation"}) {
+			t.Errorf("%s: searched %q, want the question, then the question + documentation", tc.name, *asked)
+		}
+		want := tc.why + `; this answer is from a second search, the question + "documentation"`
+		if fm := NewFrontmatter(q, SearchBackend, "", o).Render(); !strings.Contains(fm, "\nnote: "+want+"\n") {
+			t.Errorf("%s: frontmatter\n%s\nwant note %q", tc.name, fm, want)
+		}
+		if len(o.OtherResults) != 1 || o.OtherResults[0].URL != "https://tips.test/articles/middleware" {
+			t.Errorf("%s: other results %+v, want the second search's", tc.name, o.OtherResults)
+		}
+		n := len(*asked)
+		again := s.SearchSelect(context.Background(), q, 0)
+		if len(*asked) != n || again.Note != o.Note || !slices.Equal(again.Read, o.Read) {
+			t.Errorf("%s: a repeat searched %d times, note %q; want none and the same note", tc.name, len(*asked)-n, again.Note)
+		}
+	}
+}
+
+// The second search never runs when the question's search gave a page
+// that reads: its answer is the one before this rule.
+func TestBareNoSecondSearchWhenOneReads(t *testing.T) {
+	const q = "add middleware to a route"
+	f := exampleSite()
+	s, _, _ := searchFirstOver(t, f, nil)
+	asked := bySearch(s, map[string][]search.Result{
+		q: {hit("https://stackoverflow.com/questions/1/x", "thread"), hit(idxRoot+"guide/routing", "Routing")},
+	})
+	o := s.SearchSelect(context.Background(), q, 0)
+	if o.Err() != nil || len(o.Read) != 1 || len(*asked) != 1 || strings.Contains(o.Note, "second search") {
+		t.Errorf("read %+v, searched %q, note %q (%v): want the question's page and one search", o.Read, *asked, o.Note, o.Err())
+	}
+}
+
+// When the second search gives nothing to read either: no results from
+// both is nothing to print (exit 3), saying both were searched; results
+// that do not read print alone, the first search's when it had any.
+func TestBareBothSearchesGiveNothing(t *testing.T) {
+	const q = "add middleware to a route"
+	thread := hit("https://stackoverflow.com/questions/1/example-middleware", "How to add middleware")
+	issue := hit("https://github.com/example/example/issues/12", "middleware order issue")
+
+	s, _, _ := searchFirstOver(t, exampleSite(), nil)
+	bySearch(s, nil)
+	o := s.SearchSelect(context.Background(), q, 0)
+	if !errors.Is(o.Err(), errSearchEmpty) || !strings.Contains(o.Err().Error(), `a second search, the question + "documentation" returned none either`) {
+		t.Errorf("both empty: %v, want search_empty (exit 3) naming the second search", o.Err())
+	}
+
+	s, _, _ = searchFirstOver(t, exampleSite(), nil)
+	bySearch(s, map[string][]search.Result{q: {thread}, q + " documentation": {issue}})
+	o = s.SearchSelect(context.Background(), q, 0)
+	if o.Err() != nil || o.Reason != "results_only" || len(o.OtherResults) != 1 || o.OtherResults[0].URL != thread.URL ||
+		!strings.Contains(o.Note, `nor do the results of a second search, the question + "documentation"`) {
+		t.Errorf("neither reads: %s %+v note %q (%v), want the first search's results alone", o.Reason, o.OtherResults, o.Note, o.Err())
+	}
+
+	s, _, _ = searchFirstOver(t, exampleSite(), nil)
+	bySearch(s, map[string][]search.Result{q + " documentation": {issue}})
+	o = s.SearchSelect(context.Background(), q, 0)
+	if o.Err() != nil || o.Reason != "results_only" || len(o.OtherResults) != 1 || o.OtherResults[0].URL != issue.URL ||
+		!strings.Contains(o.Note, `the question's search returned no results; these are a second search, the question + "documentation"`) {
+		t.Errorf("first empty, second unreadable: %s %+v note %q (%v), want the second search's results", o.Reason, o.OtherResults, o.Note, o.Err())
+	}
+}

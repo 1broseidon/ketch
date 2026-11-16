@@ -85,16 +85,18 @@ func releaseName(w string) bool {
 }
 
 // releaseLabel reports a host label or path segment that names release:
-// 2.7.x, v2, 9.x, 4x, 1.10, and 20 for 2.0 (a release written without its
-// dot).
+// 2.7.x, v2, 9.x, 4x, 1.10, 20 for 2.0 (a release written without its
+// dot), and 5.x for 5.4 (a label with an x names every release under it).
 func releaseLabel(label, release string) bool {
 	l := strings.ToLower(label)
 	l = strings.TrimPrefix(l, "v")
-	l = strings.TrimSuffix(strings.TrimSuffix(l, ".x"), "x")
+	trimmed := strings.TrimSuffix(strings.TrimSuffix(l, ".x"), "x")
+	wild := trimmed != l
+	l = trimmed
 	if l == "" || strings.Trim(l, "0123456789.") != "" {
 		return false
 	}
-	return l == release || strings.HasPrefix(l, release+".") ||
+	return l == release || strings.HasPrefix(l, release+".") || wild && strings.HasPrefix(release, l+".") ||
 		strings.Contains(release, ".") && !strings.Contains(l, ".") && l == strings.ReplaceAll(release, ".", "")
 }
 
@@ -183,7 +185,9 @@ func releaseFirst(docs []sfHit, r sfRelease) []sfHit {
 
 // markRelease is o, an answer from pages a search read to a question that
 // names r: its version the release when a page read is marked with it
-// (address or title); else a note that none is, and what to do.
+// (address or title); else, unless the text printed names the thing with
+// that release (Go 1.23, Pydantic V2: the pages speak of it), a note that
+// none is marked, and what to do.
 func markRelease(o Outcome, r sfRelease) Outcome {
 	if !answered(o) || len(o.Read) == 0 {
 		return o
@@ -194,15 +198,31 @@ func markRelease(o Outcome, r sfRelease) Outcome {
 			marked = true
 		}
 	}
+	spoken := false
 	for _, res := range o.Results {
 		marked = marked || titleNamesRelease(res.PageTitle, r.release)
+		spoken = spoken || textNamesRelease(res.Snippet, r)
 	}
 	if !marked {
-		o.Note = joinNote(o.Note, fmt.Sprintf("the question names %s %s and no page read is marked %s: they may document another release; pass that release's docs URL as --library", r.name, r.release, r.release))
+		if !spoken {
+			o.Note = joinNote(o.Note, fmt.Sprintf("the question names %s %s and no page read is marked %s: they may document another release; pass that release's docs URL as --library", r.name, r.release, r.release))
+		}
 		return o
 	}
 	for i := range o.Results {
 		o.Results[i].Version = r.release
 	}
 	return o
+}
+
+// textNamesRelease reports text that writes the thing r names followed by
+// its release, as the question does or with a v (Go 1.23, Pydantic V2,
+// .NET 9, Python 3.10.4 for 3.10; not Python 3.1 for 3.10).
+func textNamesRelease(text string, r sfRelease) bool {
+	words := strings.Fields(regexp.QuoteMeta(r.name))
+	if len(words) == 0 || text == "" {
+		return false
+	}
+	re, err := regexp.Compile(`(?i)(?:^|[^\w.])` + strings.Join(words, `\s+`) + `\s+v?` + regexp.QuoteMeta(r.release) + `(?:$|[^\w.]|\.(?:[\dxX]|\s|$))`)
+	return err == nil && re.MatchString(text)
 }

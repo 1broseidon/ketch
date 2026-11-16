@@ -26,7 +26,8 @@ var docsCmd = &cobra.Command{
 An indexed library answers from the index. Otherwise ketch reads the
 search's first readable document and up to two more pages of the same
 site, in search order, as ketch scrape reads them (robots.txt is not
-consulted). --library or a confirmed name@version names other docs.
+consulted). Nothing to read: it searches once more, the question +
+"documentation". --library or a confirmed name@version names other docs.
 
 Frontmatter lines:
   version       a matched pin, or a named release found
@@ -36,8 +37,8 @@ Frontmatter lines:
   not_on_pages  identifiers asked about on none of the pages read
   origin        verified, or unverified for a library you named
   defined_in    where an unprinted term is defined
-  note          a named release no page read is marked with, or a
-                skipped result whose other release was read
+  note          the second search, a named release no page read is
+                marked with, or a skipped result's other release read
 
 Then the docs' text, "Not printed", "Other results". Cut or listed text
 is unread: read it with --section <url#anchor>, another result with
@@ -48,8 +49,8 @@ docs URL; name@version in the question only if resolve confirms it.
 Exit codes:
   0  an answer: docs text, or only the search results
   2  bad input, or a library name several libraries share
-  3  nothing to print: no search results, an unconfirmed --library
-     pin, or an offline miss
+  3  nothing to print: no results from either search, an
+     unconfirmed --library pin, or an offline miss
   4  the web search, or Context7 (-b context7), failed
   5  a library indexed in an older format: index it again`,
 	Example: `  ketch docs "set the default context length in ollama"

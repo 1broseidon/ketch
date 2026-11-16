@@ -1106,6 +1106,77 @@ On the 10-result searches, `resize_observer_loop` is below for the same reason, 
 - **Section choice.** Section choice on a page the floor also read costs five questions one fact each.
 - **Dead lean mode.** `leanKey` is never set, so `resolution.lean` and the speculative branches it guards are dead. They predate this pass and are left for a separate change.
 
+#### Fourth pass
+
+Built on 2026-11-16, after the third pass was run on a third unseen set (E, 32 questions) with each question's web searches recorded once and replayed to every build, graded blind. Facts covered:
+
+| Search recording | release | second pass | third pass | search then read the top result |
+|---|---|---|---|---|
+| default chain (Keenable 40 / Parallel 24 of the queries), 32 questions, 128 facts | 79 | 96 | **108** | 98 |
+| Firecrawl only, 29 questions, 116 facts | 44 | **76** | 65 | 66 |
+
+The third pass stays the shape. Set E is now open.
+
+**What changed.**
+
+1. **One more search when the first gives nothing to read** (`searchAgain`, `search_bare.go`). On the Firecrawl recording the question's search returned no results for 7 of 29 questions, all long questions in words. The third pass printed nothing there (exit 3); the second pass answered two of them (`axios_config`, `caddy_reverse_proxy`, 4 facts each) from its second query. Now, when the question's search returns no results, or no result that is a document that reads, ONE more search runs, the question + "documentation", and its results are read by the same rules: the search's order, the structural skip, up to 3 pages of one site and release. The answer says so in its note: `the question's search returned no results; this answer is from a second search, the question + "documentation"` (or `none of the question's search results is a document that reads; …`). A repeat within `cache_ttl` prints the same note. When the second search gives nothing to read either, the results print alone: the first search's, or the second's when the first had none. No results from either is nothing to print, exit 3. `search.Auto` still stops at a provider's empty answer. The trace line gains `second_query`.
+2. **The release note fires less often by mistake** (`markRelease`, `releaseLabel`, `search_release.go`). Two rules changed, and no word list grew:
+   - A page is marked with the release when the text printed names the thing with that release (`Go 1.23`, `Pydantic V2`, `.NET 9`, `RabbitMQ 4.3`, also `Go 1.23.1`; not `Go 1.230` or `ASP.NET 9`). Such text speaks of the release, so no note prints. No `version:` line prints either, because the page itself carries no release.
+   - A label with an x names every release under it: `/5.x/` is marked `5.4`, so a Symfony 5.4 question read from `symfony.com/doc/5.x/` gets `version: 5.4` and no note.
+3. **Same page, fewer facts than the floor: no change.** No one cause explains most of the six cases (below).
+
+**Measure.** Each question's search was replayed from a recording: E's two recordings (`KETCH_SEARCH_REPLAY`, the measurement hook, which is not in the tree), and for A to D the third pass's fixed searches F (the floor's own) and T (10 results). Pages were read once live with the third pass and recorded through the bench build's HTTP record/replay. Every build then read the same pages from that recording, so outputs are byte-comparable.
+
+*Which second query.* Three forms were measured: (a) the question + "documentation", (b1) the question's first clause (`Grafana Loki`, `Caddy reverse_proxy in front of a Rails app`), and (b2) its first word, identifiers and capitalised names, at most 8 (`Grafana Loki retention_stream`). Firecrawl, keyless, refused every query after the E recording (`rate limited`, five tries from 05:53 to 06:10 UTC). So (b1) and (b2) could not be recorded on Firecrawl. They were measured on the default chain instead, with the question's own results emptied for the seven questions Firecrawl returned none for, so that the second search runs. Facts are from substring markers built from E's quotes. On those seven questions the markers agree with the blind grades on 218 of 224 graded facts. Of the six differences, four are facts the graders took from Other results snippets, which the markers do not read. One is a paraphrase a grader credited to the released build. In the last, the markers credit a floor answer for wording a grader credited in another arm but not in that one.
+
+| Second query | E, Firecrawl: 7 questions with no results | E, default chain, first search emptied: 7 questions, 28 facts | A to D: `rsync_delete` on F (every result a Q&A thread) |
+|---|---|---|---|
+| none (third pass) | 0 (exit 3 on all 7) | | 0, results only |
+| **(a) question + "documentation"** | **8**: `axios_config` 4, `caddy_reverse_proxy` 4; for the other 5 Firecrawl returned none to this query either | **22** (the question's own search reads 22) | 0, results only |
+| (b1) first clause | not recorded | 7 | 3, from a 35,700-token answer (see Still open) |
+| (b2) names | not recorded | 6 | 0 |
+
+The shortened forms lose because they search for the topic, not the question: `Grafana Loki` reads Loki's overview, `Adyen payments API` a client library's README, and `DevTools` a glossary page. (a) is kept. Facts on each recording, against the third pass: E default chain 108, unchanged (the second search never runs). E Firecrawl: the 65 graded facts + 8 = 73 (second pass 76). A to D: unchanged on F and T (`rsync_delete` stays results only, its note now naming the second search).
+
+*Byte comparison.* All 277 calls ran with the third pass and with this pass before the note change: E default chain 32, E Firecrawl 29, F 108, T 108. 274 printed the same bytes with the same exit code. The 3 that differ are the 3 where the second search ran: `axios_config` and `caddy_reverse_proxy` on Firecrawl, and `rsync_delete` on F. In every other call the trace says `second_query=false` and the replay log shows no second search. Replay is close to exact. The third pass replayed against its own live run differs on 3 calls (`postgres_upsert`, `webpack4_node`, `httpx_timeouts`), each in one `skipped` line's cause: a recorded DNS failure or timeout comes back from the replay with other wording. Those 3 are identical across the two replayed builds. With the note change, 10 more calls differ, in their `note` line alone and, for Symfony on F, `version: 5.4`.
+
+*Release notes.* Over the 140 questions on the four recordings, the note printed 23 times before this pass and 14 times now. It no longer prints for `dotnet_json_web`, `go_timer_123`, `pydantic_defaults` and `rabbitmq_ack_timeout` (F and T: the text names `.NET 9`, `Go 1.23`, `Pydantic V2`, `RabbitMQ 4.3`), or for `symfony54_login_throttling` on F (`/5.x/`). All nine were misfires. Where it still prints:
+
+| Question | Recording | Pages read | Right? |
+|---|---|---|---|
+| `springboot27_redis` | F, T | current Spring Boot reference (`docs.spring.io/spring-boot/reference/…`) | right: not the 2.7 docs |
+| `rails61_retry_on` | T | `railsdoc.github.io`, current Rails | right |
+| `phpunit9_depends` | E Firecrawl | `docs.phpunit.de/en/12.5/…` | right |
+| `py310_fromisoformat` | T | two unrelated forge files | right, if beside the point: no Python docs were read |
+| `symfony54_login_throttling` | T | a third-party bundle's README | right |
+| `nextjs_tags` | F, T | `nextjs.org/docs/…`, current, which is 16 | misfire |
+| `tanstack_optimistic` | F, T | `tanstack.com/query/latest/…`, which is v5 | misfire |
+| `polly_circuit_breaker` | E both | `pollydocs.org`, which documents v8 only | misfire |
+| `ga4_retention` | E both | a GA4 blog post; Google's Analytics Help page | misfire: the 4 is part of the product's name |
+
+Six right, eight misfires. The eight read pages that carry no release at all, in address, title or printed text, as do the right Spring Boot and Rails answers. Telling them apart needs each product's current release, or a list of names that end in a number; neither was added.
+
+*Same page, fewer facts than the floor.* Each case, with where the missing fact was and why it did not print:
+
+| Question | Missing fact, and where | Why not printed |
+|---|---|---|
+| `array_map` (A, F) | "forEach() always returns undefined", in the forEach page's Description | the second page; the map page's examples took the budget first (best page first) |
+| `react_queue` (A, F) | "React stores 3", in the second page's "Updating the same state multiple times" | best page first: the snapshot page took most of the budget, and the section was cut to 120 of 656 tokens |
+| `fastapi_yield` (A, F) | "use yield one single time per dependency", in the page's 145-token lead section | section choice: the lead holds few of the question's terms and is listed under Not printed |
+| `intersection_observer_options` (B, F) | "a value of 0.5 … the default is 0", inside "Intersection observer options" | a cut: that section printed 416 of 670 tokens, without that piece |
+| `mongodb_ttl` (C, T) | "compound indexes do not support TTL", on `/docs/v6.0/core/index-ttl` | that page is in another release tree (`v6.0` beside `manual`), so it is never read beside the first; 3,315 tokens printed |
+| `optional_chaining` (E default chain, run 1) | the floor's second fact came from an Other results snippet; the page read was the same | the Optional chaining reference at rank 4 was MDN's German page: another locale, never read beside the first |
+
+That is four causes: best page first (2 cases), another release or locale not read (2), a cut (1) and section choice (1). No one of them is most, so nothing changed.
+
+**Guards.** `go build`, `go vet`, `go test ./...` and `golangci-lint` pass (0 issues), and so do the pi tests (64). The bench's second pin, network denied, gives 232 of 291 answered and 237 answered or led, case for case the same as the second and third passes, with the same three `not_covered` FAILs from the checker. The bench repository was not modified.
+
+**Still open.**
+
+- **The shortened second query on Firecrawl.** (b1) and (b2) were never recorded there, because Firecrawl rate-limited every query.
+- **Release-note misfires on unmarked pages:** Next.js 16, TanStack Query v5, Polly v8 and GA4 (above).
+- **A page that is one code block ignores the budget.** In the (b1) measurement, `linux.org/docs/man1/rsync.html`, a man page served as one `<pre>`, printed whole: about 35,700 tokens against 4,000. This predates this pass. It reached no measured answer of the as-built shape, but any search can rank such a page first.
+
 ## Storage
 
 Agreed on 2026-11-10, the check in point 4 included.
