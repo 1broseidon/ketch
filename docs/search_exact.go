@@ -175,7 +175,7 @@ func (x *exactRead) wave(ctx context.Context) []sfCand {
 			continue
 		}
 		x.seen[k] = true
-		if !x.allowed(ctx, c.link.url) {
+		if robotsApply(c) && !x.allowed(ctx, c.link.url) {
 			x.disallowed++
 			x.p.skipped = append(x.p.skipped, PageSkipped{URL: c.link.url.String(), Cause: "robots.txt disallows it"})
 			continue

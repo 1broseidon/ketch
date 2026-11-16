@@ -293,8 +293,9 @@ describe("argument construction", () => {
 		const docs = tools.get("ketch_docs");
 		assert.ok(docs);
 		for (const want of [
-			/reads the site its top three docs hits weigh most for .* at the hits' exact addresses \(up to 3, one release\)/,
-			/a version pin or a library name in the question that resolve verifies/,
+			/reads the search's first readable document and up to two more pages of the same site, in search order/,
+			/without consulting robots\.txt/,
+			/a name@version in the question that resolve confirms/,
 			/version is printed only for a pin that matched/,
 			/\(widened\)/,
 			/carries no verdict/,

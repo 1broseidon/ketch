@@ -330,7 +330,7 @@ func (w *Web) indexTarget(ctx context.Context, req IndexRequest) (indexTarget, e
 	}
 	// A build resolves afresh, past the resolution cache: it is a one-off
 	// whose judgment lasts, and a cached pick lacks the package's releases.
-	m, _, err := w.resolveOnce(ctx, spec, false, false, false)
+	m, _, err := w.resolveOnce(ctx, spec)
 	if err != nil {
 		return indexTarget{}, err
 	}

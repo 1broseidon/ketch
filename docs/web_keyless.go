@@ -662,36 +662,3 @@ func moduleRootPath(path string) bool {
 
 // goNameRe is a name that can be a Go module path's last element.
 var goNameRe = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]*$`)
-
-// strictMissError is a bare query's reading (react-router in "react
-// router loaders") that verified no docs although a registry has a
-// package of exactly that name: the query may well be about it, so
-// another reading (react) answers only if it outweighs that package
-// (pastStrictMisses). Its popularity is read only then (weigh). Keyless
-// resolutions only.
-type strictMissError struct {
-	err   error
-	exact []*project // the packages of exactly the reading's name
-}
-
-func (e *strictMissError) Error() string { return e.err.Error() }
-func (e *strictMissError) Unwrap() error { return e.err }
-
-// strictMiss is err for a keyless reading that failed as not found, as a
-// *strictMissError when a registry has a package of exactly its name,
-// else err.
-func (w *Web) strictMiss(err error, log *resolveLog) error {
-	if w.popularity == nil || !errors.Is(err, ErrNotFound) {
-		return err
-	}
-	var exact []*project
-	for _, p := range log.considered() {
-		if p.exact && len(p.pkgs) > 0 {
-			exact = append(exact, p)
-		}
-	}
-	if len(exact) == 0 {
-		return err
-	}
-	return &strictMissError{err: err, exact: exact}
-}

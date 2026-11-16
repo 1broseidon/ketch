@@ -23,22 +23,21 @@ var docsCmd = &cobra.Command{
 	Short: "Answer a question from a library's documentation",
 	Long: `Answer a question from documentation: the docs' own text, no model.
 
-An indexed library answers from the index. Otherwise ketch searches the
-web and reads the site its top three docs hits weigh most for (by rank,
-half without a docs sign in address or title), from its best hit: up
-to 3 pages, one release. --library, a version pin or a name in the
-question that resolve verifies can override it. A release the question
-names ("Vue 2") goes first.
+An indexed library answers from the index. Otherwise ketch reads the
+search's first readable document and up to two more pages of the same
+site, in search order, as ketch scrape reads them (robots.txt is not
+consulted). --library or a confirmed name@version names other docs.
 
 Frontmatter lines:
   version       a matched pin, or a named release found
   read          pages read, with search rank
-  skipped       hits not read, and why
-  widened       more pages, for a missing identifier
+  skipped       results not read, and why
+  widened       more pages, for a missing identifier (--library)
   not_on_pages  identifiers asked about on none of the pages read
   origin        verified, or unverified for a library you named
   defined_in    where an unprinted term is defined
-  note          a named release no page read is marked with
+  note          a named release no page read is marked with, or a
+                skipped result whose other release was read
 
 Then the docs' text, "Not printed", "Other results". Cut or listed text
 is unread: read it with --section <url#anchor>, another result with

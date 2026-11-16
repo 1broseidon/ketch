@@ -231,10 +231,9 @@ func TestSearchFirstRefusals(t *testing.T) {
 	}
 }
 
-// Sites split between several docs hosts are read in the search's order:
-// the first docs hit's site, else (its pages unreadable) the next one,
-// saying which failed; results only when none can be read, naming each
-// site tried and why it failed.
+// Results on several docs hosts are read in the search's order: the
+// first, else (unreadable) the next, the first listed as skipped with its
+// cause; results only when none can be read, every page tried skipped.
 func TestSplitSitesRead(t *testing.T) {
 	hits := []search.Result{
 		hit("https://docs.one.test/guide/a", "A - One docs"),
@@ -252,14 +251,14 @@ func TestSplitSitesRead(t *testing.T) {
 	f = &fakeFetcher{pages: map[string]fakePage{"https://docs.two.test/guide/a": page}}
 	s, _, _ = searchFirstOver(t, f, hits)
 	o = s.SearchSelect(context.Background(), "add middleware", 0)
-	if o.Status != Found || len(o.Read) != 1 || o.Read[0].Rank != 2 || !strings.Contains(o.Note, "could not read https://docs.one.test/") {
-		t.Fatalf("first site unreadable: %s, read %+v, note %q (%v), want the second read, saying the first failed", o.Status, o.Read, o.Note, o.Err())
+	if o.Status != Found || len(o.Read) != 1 || o.Read[0].Rank != 2 || len(o.Skipped) != 1 ||
+		o.Skipped[0].URL != "https://docs.one.test/guide/a" || !strings.Contains(o.Skipped[0].Cause, "not found") {
+		t.Fatalf("first site unreadable: %s, read %+v, skipped %+v (%v), want the second read, the first skipped with its cause", o.Status, o.Read, o.Skipped, o.Err())
 	}
 
 	s, _, _ = searchFirstOver(t, &fakeFetcher{pages: map[string]fakePage{}}, hits)
 	o = s.SearchSelect(context.Background(), "add middleware", 0)
-	if o.Reason != "results_only" || !strings.Contains(o.Note, "https://docs.one.test/") || !strings.Contains(o.Note, "https://docs.two.test/") ||
-		!strings.Contains(o.Note, "not found") || len(o.Skipped) != 2 || len(o.OtherResults) != 1 {
+	if o.Reason != "results_only" || !strings.Contains(o.Note, "3 not found") || len(o.Skipped) != 3 {
 		t.Errorf("none readable: %s/%s, note %q, skipped %+v, others %+v", o.Status, o.Reason, o.Note, o.Skipped, o.OtherResults)
 	}
 }

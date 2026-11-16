@@ -182,12 +182,20 @@ func TestExactSameRelease(t *testing.T) {
 }
 
 // A hit that cannot be read is skipped with its cause, and the next hit
-// read in its place.
+// read in its place: for a question that names no library the next
+// result, whatever its release; for a library, the next of its release.
 func TestExactSkipsUnreadable(t *testing.T) {
 	f := releaseSiteFixture()
 	delete(f.pages, relRoot+"v6/guide/alpha")
 	s, _, _ := searchFirstOver(t, f, append(releaseHits()[:3], hit(relRoot+"v6/guide/gamma", "Gamma - Rel docs")))
 	o := s.SearchSelect(context.Background(), "frobnicate widgets", 0)
+	if got := readURLs(o); !slices.Equal(got, []string{relRoot + "v7/guide/cobalt"}) {
+		t.Errorf("bare question: read %v, want the next result", got)
+	}
+	f = releaseSiteFixture()
+	delete(f.pages, relRoot+"v6/guide/alpha")
+	s, _, _ = searchFirstOver(t, f, append(releaseHits()[:3], hit(relRoot+"v6/guide/gamma", "Gamma - Rel docs")))
+	o = s.GetDocsSelect(context.Background(), relRoot, "frobnicate widgets", 0)
 	if o.Err() != nil || len(o.Results) == 0 {
 		t.Fatalf("outcome %s (%v)", o.Status, o.Err())
 	}
@@ -208,14 +216,22 @@ func TestExactSkipsUnreadable(t *testing.T) {
 	}
 }
 
-// Widening: an identifier the question writes on none of the exact pages
-// reads more pages of the first page's release (its sitemap's pages under
-// /v6/), never another release, and says so: widened, with the terms.
+// Widening (a request that names a library): an identifier the question
+// writes on none of the exact pages reads more pages of the first page's
+// release (its sitemap's pages under /v6/), never another release, and
+// says so: widened, with the terms. A question that names no library
+// never widens: the identifier is named in not_on_pages.
 func TestWidenOnlyWhenMissing(t *testing.T) {
 	f := releaseSiteFixture()
 	s, _, _ := searchFirstOver(t, f, releaseHits())
+	if o := s.SearchSelect(context.Background(), "frobnicate widgets zorp_inate", 0); o.Widened != nil || !slices.Contains(o.NotFound, "zorp_inate") {
+		t.Errorf("bare question: widened %+v, not_on_pages %v; want no widening and the identifier named", o.Widened, o.NotFound)
+	}
+	assertNeverFetched(t, f, "sitemap", "/ref/")
+	f = releaseSiteFixture()
+	s, _, _ = searchFirstOver(t, f, releaseHits())
 	tr := NewTrace("frobnicate widgets zorp_inate")
-	o := s.SearchSelect(WithTrace(context.Background(), tr), "frobnicate widgets zorp_inate", 0)
+	o := s.GetDocsSelect(WithTrace(context.Background(), tr), relRoot, "frobnicate widgets zorp_inate", 0)
 	if o.Err() != nil || len(o.Results) == 0 {
 		t.Fatalf("outcome %s (%v)", o.Status, o.Err())
 	}
@@ -347,7 +363,7 @@ func TestRepeatPrintsTheSameOffline(t *testing.T) {
 	for _, style := range []HintStyle{HintCLI, HintMCP} {
 		ctx := WithLocalOptions(context.Background(), LocalOptions{Hint: style})
 		const q = "frobnicate widgets zorp_inate"
-		first := s.SearchSelect(ctx, q, 0)
+		first := s.GetDocsSelect(ctx, relRoot, q, 0)
 		if first.Err() != nil || len(first.Skipped) == 0 || first.Widened == nil || len(first.OtherResults) == 0 {
 			t.Fatalf("first: %s (%v) skipped %+v widened %+v others %+v", first.Status, first.Err(), first.Skipped, first.Widened, first.OtherResults)
 		}
@@ -355,7 +371,7 @@ func TestRepeatPrintsTheSameOffline(t *testing.T) {
 		f.fail = down
 		s.web.sites = siteSearchFunc(func(context.Context, string, int) ([]search.Result, error) { return nil, down })
 		searched, fetched := searches.Load(), len(f.called())
-		again := s.SearchSelect(ctx, q, 0)
+		again := s.GetDocsSelect(ctx, relRoot, q, 0)
 		if len(f.called()) != fetched || searches.Load() != searched {
 			t.Errorf("the repeat touched the network: %v", f.called()[fetched:])
 		}
@@ -406,8 +422,9 @@ func TestPrintedAddressesResolve(t *testing.T) {
 }
 
 // An exact page served from another host of its registrable domain (the
-// docs moved from docs.x to x/docs/) is read and cited where it is served;
-// one served from another site is not read.
+// docs moved from docs.x to x/docs/) is read and cited where it is served.
+// One served from another site is read, where it is served, for a question
+// that names no library (as ketch scrape reads it), never for a library.
 func TestExactServedOnSite(t *testing.T) {
 	moved := "https://example.test/docs/guide/middleware"
 	f := exampleSite()
@@ -428,8 +445,13 @@ func TestExactServedOnSite(t *testing.T) {
 	away.redirects = map[string]string{idxRoot + "guide/middleware": "https://elsewhere.test/middleware"}
 	s, _, _ = searchFirstOver(t, away, exampleHits())
 	o = s.SearchSelect(context.Background(), "add middleware to a route", 0)
+	if len(o.Read) == 0 || o.Read[0].URL != "https://elsewhere.test/middleware" {
+		t.Errorf("bare question: read %+v, want the first document where it is served", o.Read)
+	}
+	s, _, _ = searchFirstOver(t, away, exampleHits())
+	o = s.GetDocsSelect(context.Background(), idxRoot, "add middleware to a route", 0)
 	if slices.ContainsFunc(readURLs(o), func(u string) bool { return strings.Contains(u, "elsewhere.test") }) {
-		t.Errorf("read %v: a page served from another site", readURLs(o))
+		t.Errorf("library: read %v, a page served from another site", readURLs(o))
 	}
 }
 

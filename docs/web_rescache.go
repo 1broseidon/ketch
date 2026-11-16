@@ -24,9 +24,9 @@ type cachedResolution struct {
 }
 
 // resolutionKey keys a single-library pick by everything that decides it:
-// the spec (ecosystem, name, version), whether it is a bare query's guessed
-// or lean reading, whether GitHub was asked, and the ecosystem hint.
-func resolutionKey(spec libSpec, strict, lean, keyless bool, hint []ecosystem) string {
+// the spec (ecosystem, name, version), whether it is a lean reading,
+// whether GitHub was asked, and the ecosystem hint.
+func resolutionKey(spec libSpec, lean, keyless bool, hint []ecosystem) string {
 	mode := "github"
 	if keyless {
 		mode = "keyless"
@@ -36,19 +36,12 @@ func resolutionKey(spec libSpec, strict, lean, keyless bool, hint []ecosystem) s
 		h = append(h, string(e))
 	}
 	slices.Sort(h)
-	reading := boolText(strict)
-	if lean && !strict {
+	reading := "-"
+	if lean {
 		reading = "lean"
 	}
 	return strings.Join([]string{resolutionCacheVersion, mode, reading, strings.Join(h, ","),
 		string(spec.eco), strings.ToLower(spec.name), strings.ToLower(spec.version)}, "|")
-}
-
-func boolText(b bool) string {
-	if b {
-		return "strict"
-	}
-	return "-"
 }
 
 // resolutionCache is the fetcher's ResolutionCache, nil without one.

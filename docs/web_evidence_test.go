@@ -247,7 +247,7 @@ func TestKeylessDeprecatedNamesakeBlocks(t *testing.T) {
 		root := rw.crate("prism", 12)
 		rw.pkgs.pkgs["npm:prism"] = pkgInfo{eco: ecoNPM, name: "prism", homepage: "https://prism.example.org", deprecated: true}
 		rw.pop.weekly_["npm:prism"] = tc.npm
-		m, err := rw.web().resolveOne(context.Background(), mustSpec(t, "prism"), false)
+		m, err := rw.web().resolveOne(context.Background(), mustSpec(t, "prism"))
 		switch {
 		case tc.want && (err != nil || m.root.String() != root):
 			t.Errorf("npm prism at %d: resolveOne = %s, %v; want %s", tc.npm, m.root, err, root)

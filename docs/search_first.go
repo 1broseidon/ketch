@@ -28,6 +28,10 @@ import (
 //	        │no
 //	the same question read within cache_ttl? ──yes──▶ the same pages, the same answer (no network)
 //	        │no
+//	the request names no library? ──yes──▶ the plain question's search, its
+//	        │                         first readable document and up to two
+//	        │                         more of its site (search_bare.go)
+//	        │no
 //	web search (the question, and the question + "documentation"),
 //	beside it resolve of the library the request names (search_origin.go)
 //	        │       (several verified, none settled: ambiguous, refused)
@@ -52,15 +56,14 @@ import (
 // page cache under cache_ttl, with what a repeat needs to skip the search,
 // and `ketch docs index` is the only command that writes the index. An
 // answer from the index checks the pages it cites first (index_fresh.go).
-// A library the request names (--library, or name@version in the
-// question; a bare question's first firm reading, strictly) is resolved
-// while the question is searched: one docs root verified is the site
-// read, unless the first docs site of the search is that project's own;
-// else the name is a preference among the hits' sites, and the version
-// it asks for picks the tree. A name@version in a bare question that
-// resolve cannot confirm is ordinary words. A call whose search returned
-// results never refuses for want of a readable page: it prints the
-// results (resultsOnly).
+// A library the request names (--library, or a name@version the question
+// writes) is resolved while the question is searched: one docs root
+// verified is the site read, unless the first docs site of the search is
+// that project's own; else the name is a preference among the hits'
+// sites, and the version it asks for picks the tree. A name@version in a
+// bare question that resolve cannot confirm is ordinary words. A call
+// whose search returned results never refuses for want of a readable
+// page: it prints the results (resultsOnly).
 
 // SearchBackend is the search backend's ID: the default docs backend.
 const SearchBackend = "search"
@@ -417,13 +420,10 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 	ctx = withProfileMemo(withFetchMemo(ctx))
 	cctx, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
-	hits, prefs, err := s.searchHits(cctx, req)
-	if req.guessed && (prefs.resolved.match == nil || prefs.resolved.match.version == "") {
-		// A pin guessed from the question's words that resolve cannot
-		// confirm is ordinary words: the question is answered as asked.
-		req.spec, req.guessed = libSpec{}, false
-		prefs = sitePrefs{words: prefs.words, resolved: sfResolved{name: prefs.resolved.name, took: prefs.resolved.took}} // the trace says it was tried
+	if bareRequest(req) {
+		return s.answerBare(ctx, cctx, req, tr)
 	}
+	hits, prefs, err := s.searchHits(cctx, req)
 	req.hits = hits
 	o := s.readSearch(ctx, cctx, req, hits, prefs, err, tr)
 	if answered(o) || req.spec.version != "" || errors.Is(o.err, ErrAmbiguousLibrary) {
@@ -894,7 +894,7 @@ func searchQueries(req sfRequest) []string {
 		if r, err := parseWebRoot(req.library); err == nil {
 			lead = strings.TrimSuffix(scopeHost(r.u)+r.prefix, "/")
 		}
-	case req.spec.name != "" && !req.guessed:
+	case req.spec.name != "":
 		lead = req.spec.name
 		if req.spec.version != "" {
 			lead += " " + req.spec.version
@@ -910,8 +910,8 @@ func searchQueries(req sfRequest) []string {
 // library it names, sites its name labels, and what resolve makes of the
 // name within sfResolveTimeout (resolveNamed: one verified docs root, a
 // preference here and the site fromSearch reads first, or several, which
-// refuse the question). A bare question's first firm reading is resolved
-// the same way, strictly. Resolving runs beside the web search, so it
+// refuse the question). A name@version a bare question writes is resolved
+// the same way (answerBare). Resolving runs beside the web search, so it
 // costs only the time it takes past the search's.
 func (s *SearchFirst) prefs(ctx context.Context, req sfRequest) sitePrefs {
 	p := sitePrefs{words: questionWords(req.query)}

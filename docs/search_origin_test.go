@@ -638,43 +638,6 @@ func namesakeMatch() *webMatch {
 	return &webMatch{root: rootOf(nameRoot), trust: 6, evidence: []evidence{{kind: evPkgDocs, detail: "npm lib lists it as Homepage"}}, stars: -1, packages: []string{"npm:lib"}}
 }
 
-// The root resolve verified for a name the question writes is read first;
-// a root that lacks the question's terms gives way to the search's first
-// docs site, which answers with its own origin. A word of the question in
-// a site's domain earns that site nothing.
-func TestGuessedNameRootFirst(t *testing.T) {
-	bare := sfResolved{name: "libtips", match: namesakeMatch(), bare: true}
-	o := originSearch(t, namesakeSite(), fanHits(), bare).SearchSelect(context.Background(), "max_connections max_workers", 0)
-	if o.Status != Found || o.Library != fanRoot || !OriginUnverified(o.Origin) {
-		t.Fatalf("guessed name: %s from %q, origin %q (%v), want found from %s", o.Status, o.Library, o.Origin, o.Err(), fanRoot)
-	}
-
-	// The root holds the terms: it answers, with no origin line.
-	o = originSearch(t, namesakeSite(), fanHits(), bare).SearchSelect(context.Background(), "job_timeout max_workers", 0)
-	if o.Status != Found || o.Library != nameRoot || o.Origin != "" {
-		t.Fatalf("root holds the terms: %s from %q, origin %q (%v), want found from %s", o.Status, o.Library, o.Origin, o.Err(), nameRoot)
-	}
-
-	// Resolve's root verified by the search's agreement is read first.
-	agree := append([]search.Result{hit(nameRoot+"guide", "Lib guide"), hit(nameRoot+"pool", "Lib pool"), hit(nameRoot+"tuning", "Lib tuning")}, fanHits()...)
-	f := namesakeSite()
-	for _, p := range []string{"guide", "pool", "tuning"} {
-		f.pages[nameRoot+p] = fakePage{title: "Guide", markdown: "# Guide\n\n## Max connections\n\nSet max_connections and max_workers on the pool.\n"}
-	}
-	if o = originSearch(t, f, agree, bare).SearchSelect(context.Background(), "max_connections max_workers", 0); o.Library != nameRoot {
-		t.Fatalf("agreeing search: %s from %q, origin %q", o.Status, o.Library, o.Origin)
-	}
-
-	// The root carries the guessed name and the favoured site does not:
-	// the root is read first, and answering, alone.
-	f = namesakeSite()
-	own := sfResolved{name: "namesake", match: namesakeMatch(), bare: true}
-	if o = originSearch(t, f, fanHits(), own).SearchSelect(context.Background(), "job_timeout max_workers", 0); o.Status != Found || o.Library != nameRoot {
-		t.Fatalf("root named like the name: %s from %q, origin %q (%v)", o.Status, o.Library, o.Origin, o.Err())
-	}
-	assertNeverFetched(t, f, "libtips.test")
-}
-
 // A resolved root read first whose answer is partial for want of some of
 // the question's terms gives way to the site the search results favour
 // when that one answers better, the origin naming the missing terms; a tie
@@ -712,17 +675,11 @@ func TestUnreadFavouredSiteIsNamed(t *testing.T) {
 		name string
 		call func(*SearchFirst) Outcome
 	}{
-		{"guessed name", func(s *SearchFirst) Outcome {
-			return s.SearchSelect(context.Background(), "max_connections max_workers", 0)
-		}},
 		{"library name", func(s *SearchFirst) Outcome {
 			return s.GetDocsSelect(context.Background(), "lib", "max_connections max_workers", 0)
 		}},
 	} {
 		r := sfResolved{name: "lib", match: namesakeMatch()}
-		if tc.name == "guessed name" {
-			r = sfResolved{name: "libtips", match: namesakeMatch(), bare: true}
-		}
 		s := originSearch(t, shells(), fanHits(), r)
 		o := tc.call(s)
 		if o.Status != Partial || o.Library != nameRoot || !strings.Contains(o.Note, note) {
@@ -739,42 +696,14 @@ func TestUnreadFavouredSiteIsNamed(t *testing.T) {
 	}
 }
 
-// An unverified origin names what was asked only when something says the
-// question names it; else it names nothing, not a word of the question
-// that looks like a name, nor the whole question.
-func TestUnverifiedOriginNamesOnlyANamedThing(t *testing.T) {
-	site := func(root string, titles ...string) sfSite {
-		s := sfSite{root: rootOf(root)}
-		for _, title := range titles {
-			s.hits = append(s.hits, sfHit{u: mustURL(t, root+"page"), title: title})
-		}
-		return s
-	}
-	for _, tc := range []struct {
-		query string
-		site  sfSite
-		r     sfResolved
-		want  string
-	}{
-		{"opt in to cross-document view transitions on a multi-page site",
-			site("https://developer.browser.test/docs/", "Cross-document view transitions for multi-page applications", "Cross-document view transitions are opt-in"),
-			sfResolved{name: "opt", bare: true}, "unverified, ketch could not confirm developer.browser.test as the official documentation for this question"},
-		{"Deno permission flag to allow network access to one host", site("https://docs.deno.test/", "Security and permissions"), sfResolved{},
-			"unverified, ketch could not confirm docs.deno.test as the official documentation for this question"},
-		{"S3 multipart upload maximum 10000 parts", site("https://docs.cloud.test/AmazonS3/latest/", "Amazon S3 multipart upload limits"), sfResolved{name: "S3", bare: true},
-			"unverified, ketch could not confirm docs.cloud.test as the official documentation of S3"},
-		{"container-type values size inline-size normal",
-			func() sfSite {
-				s := site("https://developer.web.test/en-US/docs/", "Container queries")
-				s.alts = []sfSite{site("https://developer.web.test/docs/", "container-type CSS property")}
-				return s
-			}(), sfResolved{}, "unverified, ketch could not confirm developer.web.test as the official documentation of container-type"},
-		{"lib pool max_connections", site(fanRoot, "Pool tuning guide"), sfResolved{name: "lib", match: namesakeMatch(), bare: true},
-			"unverified, ketch could not confirm libtips.test as the official documentation of lib"},
-	} {
-		prefs := sitePrefs{words: questionWords(tc.query), resolved: tc.r}
-		if got := siteOrigin(tc.site, sfRequest{query: tc.query}, prefs).text; got != tc.want {
-			t.Errorf("%s:\n got %q\nwant %q", tc.query, got, tc.want)
-		}
+// An unverified origin names the library the request gave: only a request
+// that names one has an origin.
+func TestUnverifiedOriginNamesTheLibrary(t *testing.T) {
+	site := sfSite{root: rootOf(fanRoot), hits: []sfHit{{u: mustURL(t, fanRoot+"page"), title: "Pool tuning guide"}}}
+	req := sfRequest{query: "pool max_connections", library: "lib", spec: libSpec{raw: "lib", name: "lib"}}
+	prefs := sitePrefs{words: questionWords(req.query), resolved: sfResolved{name: "lib"}}
+	want := "unverified, ketch could not confirm libtips.test as the official documentation of lib"
+	if got := siteOrigin(site, req, prefs).text; got != want {
+		t.Errorf("got %q\nwant %q", got, want)
 	}
 }

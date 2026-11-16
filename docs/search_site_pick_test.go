@@ -161,9 +161,20 @@ func TestSearchFirstTriesTheDomainsNextTree(t *testing.T) {
 		hit(idxRoot+"guide/middleware", "Middleware - Example docs"),
 	}
 	s, _, _ := searchFirstOver(t, f, hits)
-	o := s.SearchSelect(context.Background(), "add middleware to a route in example", 0)
+	o := s.GetDocsSelect(context.Background(), "example", "add middleware to a route", 0)
 	if len(o.Results) == 0 || !strings.HasPrefix(o.Results[0].URL, idxRoot) {
 		t.Fatalf("outcome %s (%v), results %+v; want the example.test docs tree", o.Status, o.Err(), o.Results)
+	}
+
+	// A question that names no library reads the search's order: the two
+	// shells skipped with their cause, then the next result, on any site.
+	s, _, _ = searchFirstOver(t, f, hits)
+	o = s.SearchSelect(context.Background(), "add middleware to a route in example", 0)
+	if len(o.Read) != 1 || o.Read[0].URL != "https://docs.vendor.test/integrations/example" || o.Read[0].Rank != 3 {
+		t.Fatalf("bare question: read %+v (%v), want the third result", o.Read, o.Err())
+	}
+	if len(o.Skipped) != 2 || o.Skipped[0].Cause != readJS {
+		t.Errorf("skipped %+v, want the two shells with their cause", o.Skipped)
 	}
 }
 

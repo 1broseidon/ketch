@@ -1006,6 +1006,106 @@ Objectives on C, on these searches: Go timer 4, npm unpublish 4, storage quota e
 
 **Still open.** A long sibling page chosen first fills the budget before the page that answers (nginx's upstream module over its proxy module; Elixir's `Task.Supervisor` over `Task`). Two hits tied in weight go by fused rank order, which may put a third-party reference first (Postgres). Page chrome (`← Event Handling Components Basics →`, course advertisements) still prints as text. The C markers were built on the very outputs they grade; the next sealed set checks them.
 
+#### Third pass
+
+Built on 2026-11-15, after the second pass was run blind on 32 more unseen questions (set D, 128 facts): released docs 71 facts / 8 complete, the first pass 94 / 20, the second 100 / 21, and the floor (`ketch search`, then the top result read at 4,000 tokens) 109 / 24; against the floor 2 wins, 6 losses, 24 ties. Twice the redesign trailed the floor on unseen questions, and every loss came from something done between "the search returned results" and "read the page": a site vote, docs-sign weights, name boosts, a second fused query, addresses mined from snippets, guessed pins, robots, widening after failed hits. Tuning those on open sets did not transfer (the second pass gained 15 facts on its tune set C and 6 on D). So this pass builds up from the floor instead of fixing the pipeline down: a question that names no library starts from exactly the floor's behaviour, and a step is kept only when it measurably beats it.
+
+**What a question that names no library does now** (`search_bare.go`):
+
+1. One search, the plain question, as `ketch search` runs it, in the search's order. No second query, no addresses taken from snippets, no name resolved from the question's words, no site vote, no docs-sign weight, no release reordering.
+2. Results that are no document by their address are passed over: Q&A and forum threads, issues, pull requests, commits, source files on a code forge, videos and social posts. A Markdown file on a forge, a README, a wiki page, a blog post or a tutorial is a document.
+3. The first result that reads is the first page. One that fails is skipped with its cause, and the next result is read, on any site.
+4. Then up to two more results of the same site and release (`releaseOf`), in search order.
+5. Pages the search returned are read as `ketch scrape` reads them: robots.txt is not consulted, and a page is read where it is served. With nothing readable, the answer is the search results alone.
+
+Its pages go through the same evidence pipeline, outline, Other results, 4,000-token budget and output contract as before. A `name@version` the question writes is resolved beside the search and, when resolve confirms it, answered as a pin. `--library`, the local index, `--section`, `--resolve`, `--offline`, version pins and Context7 keep their behaviour; the site and resolve machinery now serves only requests that name a library.
+
+**Measure.** Sets A (20), B (24), C (32) and D (32): 108 questions, 416 facts, all open. Each question's search was held fixed for every build two ways. **F** is the graded floor's own search, rebuilt from its record (the five results `ketch search --limit 5` gave it, in order). On F, a Go build and the floor see the same results, so a difference is the build's. **T** is a 10-result search of the plain question run once per question: the earlier passes' caches for A to C, and a new one for D. Pages were read live, a fresh state per call. Facts were checked by the substring markers. On D they agree with the blind grades on 506 of 512 graded facts (98.8%), and never credit a fact a grader refused. The six differences are facts the graders took from an Other results snippet, which the checker does not read. That is why the floor's D score reads 105 here against its graded 109. Facts / complete per set:
+
+| Build (F: the floor's own search) | A | B | C | D | All |
+|---|---|---|---|---|---|
+| floor (proto.py over the same search) | 59 / 14 | 70 / 16 | 106 / 24 | 105 / 22 | 340 / 76 |
+| second pass | 57 / 14 | 81 / 19 | 111 / 25 | 101 / 21 | 350 / 79 |
+| baseline: the floor in Go (first readable result, 1 page) | 58 / 12 | 81 / 18 | 109 / 25 | 103 / 21 | 351 / 76 |
+| S1 skip non-documents (structural) | 58 / 12 | 81 / 18 | 112 / 25 | 102 / 21 | 353 / 76 |
+| S1 instead: the old `notDocsHit` list | 55 / 12 | 81 / 18 | 108 / 24 | 97 / 22 | 341 / 76 |
+| + S2 up to 3 pages of the first page's site and release | 58 / 12 | 82 / 19 | 118 / 27 | 102 / 21 | 360 / 79 |
+| + S3 instead: a site's lists read when its hits failed | 58 / 12 | 82 / 19 | 118 / 27 | 102 / 21 | 360 / 79 |
+| + S4 widen for a missing identifier | 58 / 12 | 82 / 19 | 118 / 27 | 102 / 21 | 360 / 79 |
+| + S5 a named release first within its site | 55 / 11 | 82 / 19 | 118 / 27 | 102 / 21 | 357 / 78 |
+| + S6 the second query when nothing is readable | 58 / 12 | 82 / 19 | 118 / 27 | 102 / 21 | 360 / 79 |
+| **as built: S1 + S2, search results read without robots.txt** | **58 / 12** | **82 / 19** | **118 / 27** | **104 / 22** | **362 / 80** |
+
+| Build (T: a 10-result search) | A | B | C | D | All |
+|---|---|---|---|---|---|
+| floor | 49 / 13 | 73 / 17 | 92 / 17 | 77 / 15 | 291 / 62 |
+| second pass | 65 / 17 | 82 / 20 | 112 / 24 | 86 / 17 | 345 / 78 |
+| baseline | 47 / 12 | 81 / 19 | 93 / 18 | 77 / 15 | 298 / 64 |
+| S1 structural | 48 / 12 | 81 / 19 | 99 / 19 | 78 / 15 | 306 / 65 |
+| S1 instead: `notDocsHit` | 48 / 12 | 81 / 19 | 98 / 19 | 84 / 18 | 311 / 68 |
+| + S2 | 53 / 13 | 82 / 20 | 99 / 19 | 78 / 15 | 312 / 67 |
+| + S3 instead (lists) | 53 / 13 | 82 / 20 | 95 / 18 | 78 / 15 | 308 / 66 |
+| + S4 | 53 / 13 | 82 / 20 | 99 / 19 | 78 / 15 | 312 / 67 |
+| + S5 | 53 / 13 | 82 / 20 | 99 / 19 | 77 / 15 | 311 / 67 |
+| + S6 | 53 / 13 | 82 / 20 | 99 / 19 | 78 / 15 | 312 / 67 |
+| **as built** | **59 / 14** | **82 / 20** | **99 / 19** | **78 / 15** | **318 / 68** |
+
+The S2 to S6 rows add one step each to the row "+ S2"; the robots change is the difference between "+ S2" (robots.txt honoured) and "as built".
+
+- **Baseline.** Its first page equals the floor's on 106 of 108 questions. The two exceptions are `django@5.2`, a pin the question writes that resolve confirms and that is answered as a pin by design, and Python 3.10's `datetime` page, which robots.txt closes. The robots change removes the second.
+- **S1, kept.** The structural skip gains 2 on F and 8 on T. It wins Spring Boot (+3, a `.java` file at rank 1), Kotlin (+2, a `.kt` file), Shopify (+4, a forum thread), `rust_overflow` (+2, an issue) and tokio (+1, a `.rs` file). It loses `resize_observer_loop` (−1 on both searches): the issue thread at rank 1 held one fact and the result after it held none. A first version also skipped Sphinx `_modules` pages and lost SQLAlchemy's 3 facts, so that rule went. The `notDocsHit` list is −12 on F and +5 on T against the structural skip. It drops blogs, tutorials and Markdown on forges, and loses the .NET, OpenTelemetry, Prometheus, Python 3.10 and `rust_overflow` answers.
+- **S2, kept.** Gains 7 on F and 6 on T. It wins SQS (+4), Kotlin (+2), AbortSignal and S3 (+1 each) on F, and TanStack, `rust_pin` and pytest on T. It loses Intersection Observer (−1 on F): a third page took budget from the first.
+- **S3, rejected.** Reading a site's lists when its hits failed never helped on F, and loses 4 on T: Cloud Run and `java_threadpool` were answered by the next result. A failed read falls through to the next result.
+- **S4, rejected.** Widening fired on 5 questions on F and 7 on T, read 87 and 113 more pages, and changed no fact. A question that names no library never widens; `not_on_pages` names the identifier instead. Widening stays for `--library`.
+- **S5, rejected.** It loses Pydantic v2 (−3 on F: a 2.9 models page at rank 3 over the current fields page at rank 1) and Symfony 5.4 (−1 on T), and wins nothing. `questionRelease` and its `releaseUnits` list stay only for `--library` ordering and for the note that says no page read is marked with the release asked for, which changes no fact.
+- **S6, rejected.** The second query, used only when the first query's results hold no readable document, never fired once the structural skip let blog posts through.
+- **Robots, kept.** Search results read without robots.txt gain 2 on F (Python 3.10 `datetime`, +2) and 6 on T (Prisma 6, +6), and lose nothing. Widening, a site's lists, discovery, `ketch docs index`, and the page a library value or resolve names keep honouring robots.txt (`robotsApply`, `search_robots.go`).
+
+As built, against the floor on the floor's own searches: 362 facts against 340, 80 complete against 76; 10 questions above it and 5 below. On the 10-result searches: 318 against 291; 13 above and 2 below. The first page equals the floor's on 102 of 108: the structural skip moves five and the confirmed pin one. Per set against the floor's graded facts: A+B 140 against 135 (the checker gives the floor 129 on the same outputs), C 118 against 106, D 104 against 109. On D, checker against checker, the score is 104 against 105.
+
+**Below the floor**, on the floor's own searches:
+
+- `resize_observer_loop` (D, 0 against 1): S1 skips the issue thread at rank 1, which held one fact.
+- `array_map`, `react_queue` (A, −1 each), `fastapi_yield` (A, −1) and `intersection_observer_options` (B, −1): the same pages were read, and the evidence pipeline's choice of sections under 4,000 tokens left out a fact the floor's term-count choice printed. For `react_queue` and Intersection Observer, a third page took some of that budget.
+
+On the 10-result searches, `resize_observer_loop` is below for the same reason, and so is `mongodb_ttl` (C, 1 against 2): the same page, a section choice.
+
+**Cost**, as built, on the floor's own searches (on the 10-result searches in brackets):
+
+- Tokens: median 4,215, p90 4,870 (4,138 and 4,897). The floor printed 4,368 and 4,914.
+- Seconds: median 0.27, max 2.53 (0.29 and 1.73), searches held fixed.
+- Pages fetched: median 1, 194 in all (206). The second pass fetched 339 in all on F (median 2).
+- Extras: the frontmatter, Not printed, and Other results with the closing line take a median 446 tokens, p90 584, max 686 (428, 662 and 786).
+
+**Fallbacks fired** over the 108 questions, as built:
+
+- Fell through to a later result: 2 on F (`bash_set_e`, `webpack4_node`) and 3 on T (Cloud Run, httpx, `java_threadpool`).
+- Results only: 1, `rsync_delete` on F, where every result was a Q&A thread.
+- Widened: only the confirmed pin (`django@5.2`).
+- Site fall-over, resolved root first, second query and lists after failed hits no longer exist for a question that names no library.
+
+**Indexed path.** The bench's second pin, network denied, gives 232 of 291 answered and 237 answered or led, case for case the same as the second pass. Its three `not_covered` FAILs are the second pass's too: the checker reads a refusal (see above).
+
+**Also changed.**
+
+- A skipped page names its cause. A failed read now says `DNS lookup failed`, `connection failed`, `TLS certificate rejected` or `timed out`, and any other error gives its message as the detail; before, all of these were `failed`.
+- When the page read is the same page of another release as one skipped before it, the note says so: `<url> was skipped (<cause>); <url>, read instead, is the same page of another release`.
+- A result whose host has no known suffix (`https://docs.python.or/`, cut short in a result's text) is no result and never appears in Other results.
+
+**Removed.**
+
+- What the bare question no longer reaches: the resolve of a name guessed from a bare question (`bareReading`, `sfResolved.bare`, the strict resolve mode: `resolveOne`'s `strict`, `resolution.strict`, `guessUnproven`, `strictMiss`, `strictMissError`, `strictMinTrust`, and the strict slot of `resolutionKey`).
+- What only that mode used: the origin of a bare question (`askedAbout`, `firmReading`, `titlesCarry`, "for this question" in `unverifiedOrigin`).
+- The guessed-pin branch of the library path.
+- `resolveOne`'s `reading` and `weigh` parameters and `(*Web).weigh`, which were already dead.
+
+**Still open.**
+
+- **On the 10-result searches the second pass leads.** It scores 345 against 318. On A to C those searches are the ones its rules were tuned on. On D they are new, and it still leads by 8 (86 against 78). It reads the official docs ranked second or third where the first readable result is a third-party page: RabbitMQ, ResizeObserver and webpack 4 (+4 each). It loses Gmail (a third-party page first), `cpp_try_emplace` and Symfony. On the floor's own searches it trails by 12 (350 against 362).
+- **The sealed set decides.** Which order holds on an unseen draw of the search is for the next sealed set to show. The docs-sign weights cost the blind runs twice.
+- **Section choice.** Section choice on a page the floor also read costs five questions one fact each.
+- **Dead lean mode.** `leanKey` is never set, so `resolution.lean` and the speculative branches it guards are dead. They predate this pass and are left for a separate change.
+
 ## Storage
 
 Agreed on 2026-11-10, the check in point 4 included.

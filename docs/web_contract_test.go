@@ -28,7 +28,7 @@ var (
 	_ func(repoKey) bool        = repoKey.isZero
 	_ []string                  = []string{versionsRTD, versionsMike, versionsSwitcher, versionsSiblings, versionsSitemap, versionsSphinx}
 	_ []ecosystem               = []ecosystem{ecoAny, ecoNPM, ecoPyPI, ecoCrates, ecoGo, ecoGitHub}
-	_                           = []float64{minTrust, strictMinTrust}
+	_                           = []float64{minTrust}
 )
 
 // Chunk A: inputs and sources.
@@ -63,7 +63,7 @@ var (
 	_ func([]evidence) (float64, bool)                                       = score
 	_ map[evidenceKind]float64                                               = trustPoints
 	_ func(*Web, context.Context, libSpec, int) ([]webMatch, error)          = (*Web).resolve
-	_ func(*Web, context.Context, libSpec, bool) (webMatch, error)           = (*Web).resolveOne
+	_ func(*Web, context.Context, libSpec) (webMatch, error)                 = (*Web).resolveOne
 	_ func(*Web, context.Context, *project, *resolveLog) []rootCandidate     = (*Web).candidateRoots
 	_ func(*Web, context.Context, *project, rootCandidate) (webMatch, error) = (*Web).verifyRoot
 	_ func(*Web, context.Context, string) []rootCandidate                    = (*Web).lastResortSearch

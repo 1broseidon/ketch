@@ -145,12 +145,13 @@ Two rules hold for every answer:
 
 | You see | It means | Do |
 |---|---|---|
-| `read:` with `(search rank N)` | the pages the answer read: the site the search's top three docs hits weigh most for, from its best-ranked hit, at their exact addresses, one release | cite each group's `source:` |
-| `skipped: <url> (<cause>)` | a hit that could not be read (blocked, needs JavaScript, not found, …) | if it matters, `ketch scrape <url>` or configure `browser` |
-| `widened: read N more pages of <root> for: <terms>` | the exact pages lacked those identifiers, so more pages of that release were read; their sections print after the exact pages' | read the groups as usual |
+| `read:` with `(search rank N)` | the pages the answer read: the search's first readable document and up to two more pages of the same site, in search order, at their exact addresses | cite each group's `source:` |
+| `skipped: <url> (<cause>)` | a result that could not be read (DNS lookup failed, HTTP status, timed out, needs JavaScript, …); the next result was read instead | if it matters, `ketch scrape <url>` or configure `browser` |
+| `widened: read N more pages of <root> for: <terms>` | with `--library` only: the exact pages lacked those identifiers, so more pages of that release were read; their sections print after the exact pages' | read the groups as usual |
 | `not_on_pages: [terms]` | identifiers your question writes (code names, flags, options) on none of the pages read; only those pages were checked, not the whole docs | another call worded for those terms, or another source; never "the docs do not cover it" from this line alone |
 | `version: <release>` | a pin that matched, or the release your question names (`Vue 2`) on a page read | cite it with the answer |
 | `note: the question names <X> <release> and no page read is marked <release>: …` | the pages may document another release | pass that release's docs URL as `--library`, or say which release the text is from |
+| `note: <url> was skipped (<cause>); <url>, read instead, is the same page of another release` | the search ranked another release's page first and it could not be read | say which release the text is from, or `ketch scrape` the skipped page |
 | `not_in_index: [terms]` | an indexed library holds those terms nowhere | ask the indexed source that owns them (Survey) |
 | `origin: verified, <evidence>` | evidence beyond a name ties the site to what you asked | cite it |
 | `origin: unverified, …` | you named a library and ketch could not confirm this site as its official docs; it may still be | name the site you cite, or ask again with the official docs as `--library` |
