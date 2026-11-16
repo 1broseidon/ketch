@@ -145,17 +145,19 @@ Two rules hold for every answer:
 
 | You see | It means | Do |
 |---|---|---|
-| `read:` with `(search rank N)` | the pages the answer read: the search's top hits on the docs site, at their exact addresses, one release | cite each group's `source:` |
+| `read:` with `(search rank N)` | the pages the answer read: the site the search's top three docs hits weigh most for, from its best-ranked hit, at their exact addresses, one release | cite each group's `source:` |
 | `skipped: <url> (<cause>)` | a hit that could not be read (blocked, needs JavaScript, not found, …) | if it matters, `ketch scrape <url>` or configure `browser` |
 | `widened: read N more pages of <root> for: <terms>` | the exact pages lacked those identifiers, so more pages of that release were read; their sections print after the exact pages' | read the groups as usual |
-| `not_on_pages: [terms]` | your terms on none of the pages read; only those pages were checked, not the whole docs | another call worded for those terms, or another source; never "the docs do not cover it" from this line alone |
+| `not_on_pages: [terms]` | identifiers your question writes (code names, flags, options) on none of the pages read; only those pages were checked, not the whole docs | another call worded for those terms, or another source; never "the docs do not cover it" from this line alone |
+| `version: <release>` | a pin that matched, or the release your question names (`Vue 2`) on a page read | cite it with the answer |
+| `note: the question names <X> <release> and no page read is marked <release>: …` | the pages may document another release | pass that release's docs URL as `--library`, or say which release the text is from |
 | `not_in_index: [terms]` | an indexed library holds those terms nowhere | ask the indexed source that owns them (Survey) |
 | `origin: verified, <evidence>` | evidence beyond a name ties the site to what you asked | cite it |
 | `origin: unverified, …` | you named a library and ketch could not confirm this site as its official docs; it may still be | name the site you cite, or ask again with the official docs as `--library` |
 | `defined_in: {term: ref}` | where a term is defined, when that section was not printed | `ketch docs --section <ref>` |
 | `## Not printed` | the other sections of the pages read, with their size; `(+n more: …)` for the rest of a page | `ketch docs --section <url#anchor>` for the one you need |
 | `## Other results` | search hits not read: title, URL, snippet | `ketch scrape <url>` to read one |
-| `note: no page was printed: …` | the search returned results but no docs page could be read or chosen; the results are listed | pick one under Other results, or pass the docs you mean as `--library` |
+| `note: no page was printed: …` | the search returned results but no docs page among them, or none could be read (`skipped` says why); the results are listed | pick one under Other results, or pass the docs you mean as `--library` |
 | `scope: <url>` | the answer is from the pages at or under that URL only; `library` is the root | `outside_scope` lists your terms the library holds elsewhere: ask the root for them |
 | `indexed_near: {title: root}` | your `--library` named no indexed library; these indexed ones are near it | if one is what you meant, ask again with its root as `--library` |
 | `also in this section: …` | what a cut group left out, by name | read it with `--section`, or use one of those names in your next call |
@@ -165,7 +167,7 @@ Two rules hold for every answer:
 
 One question about one library or product.
 
-1. `ketch docs "<question>"`, with `--library <docs root or name>` when you know it: a root as `ketch docs --resolve` lists it, or a package name or `name@version` (a pin must match; a name several libraries share exits 2 listing them: pass one). A deeper URL narrows an indexed answer to the pages under it (`scope:`); to read one page, `ketch docs --section <page URL>`. Leave `--tokens` unset.
+1. `ketch docs "<question>"`, with `--library <docs root or name>` when you know it: a root as `ketch docs --resolve` lists it, or a package name or `name@version` (a pin must match; a name several libraries share exits 2 listing them: pass one). A `name@version` written inside the question is used only when resolve confirms it. A deeper URL narrows an indexed answer to the pages under it (`scope:`); to read one page, `ketch docs --section <page URL>`. Leave `--tokens` unset.
 2. The fact is printed: answer, citing each `source:`.
 3. The section you need is cut, listed under Not printed, or named by `defined_in`: `ketch docs --section <ref>`, then answer. A section longer than a page prints `page: 1 of N` and ends with a `next page:` command; run it only if the fact is not on this page.
 4. Otherwise, Follow.
@@ -198,7 +200,7 @@ Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` 
 | --- | --- | --- |
 | `search`, limit 5 | `limit` | ~1.4 KB |
 | `code`, limit 3 | `limit` | ~0.7 KB |
-| `docs`, default budget | `tokens` (search: 4,000 of docs text unless set, frontmatter and lists ≤ ~600 more; context7: 4000) | ~16 KB search, ~3.3 KB context7 |
+| `docs`, default budget | `tokens` (search: 4,000 of docs text unless set, frontmatter and lists about 600 more, rarely over 800; context7: 4000) | ~16 KB search, ~3.3 KB context7 |
 | `scrape`, unknown page | `max_chars` 4000–8000 + `trim` | unguarded: up to ~100 KB (~25k tokens) |
 | `crawl` (MCP) | `max_pages` + per-page `max_chars` | 30 pages default, 100 cap, 3-min wall clock |
 | `tag show` / MCP `tag` show | `limit` (default 50; 0 all) | bounded source metadata; no page bodies |

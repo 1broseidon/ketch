@@ -1,7 +1,9 @@
 package docs
 
 import (
+	"cmp"
 	"fmt"
+	"math"
 	"net/url"
 	"path"
 	"regexp"
@@ -14,26 +16,19 @@ import (
 	"github.com/1broseidon/ketch/search"
 )
 
-// Choosing the docs site a question's search hits agree on (the
-// search-first backend, search_first.go). Each hit is judged from its URL
-// and title alone: pages that are never docs (code forges, registries,
-// social and Q&A sites, forums, blog posts, documentation mirrors) are
-// dropped, and the rest weigh by rank, a hit with a docs signal (a docs
-// host, a docs path, a title that says so) twice one without. Hits are
-// grouped by registrable domain (a package index's hosted docs by their
-// docs tree, since one index hosts many projects), and the domain with
-// the most weight is the site, its docs tree the root the most of its
-// weight sits under. A domain that is not clearly ahead of the next is no
-// answer: the question is about several sites' docs, or none.
+// Choosing the docs site of a question's search hits (the search-first
+// backend, search_first.go). Each hit is judged from its URL and title
+// alone: pages that are never docs (code forges, registries, social and
+// Q&A sites, forums, blog posts, documentation mirrors) are dropped. The
+// rest are grouped by registrable domain (a package index's hosted docs by
+// their docs tree, since one index hosts many projects), each domain's
+// root the docs tree most of its weight sits under (a hit with a docs
+// signal weighs twice one without). The site read first is the one the
+// first three docs hits weigh most for (rankSites).
 
 // ErrNoDocsFound is a question whose search hits hold no documentation
 // page: a refusal, since searching again finds the same.
 var ErrNoDocsFound = failure.New(failure.NotFound, "no_docs_found", "no documentation among the search results")
-
-// ErrAmbiguousSite is a question whose docs hits are split between sites
-// with none clearly ahead: the caller names one (a docs URL as the
-// library).
-var ErrAmbiguousSite = failure.New(failure.Validation, "ambiguous_site", "the search results are split between several sites")
 
 const (
 	// sfRankK is the rank constant hits are weighed by: 1/(sfRankK+rank).
@@ -41,9 +36,6 @@ const (
 	// sfPlainWeight is what a hit with no docs signal weighs, against 1
 	// for one with a signal.
 	sfPlainWeight = 0.5
-	// sfLead is how far ahead of the next domain the chosen one must be
-	// when it has a single hit: two sites with one hit each say nothing.
-	sfLead = 1.5
 	// sfBoost multiplies the weight of a site the request prefers (the
 	// library it names resolves to it, or its host names the library).
 	sfBoost = 3.0
@@ -57,6 +49,9 @@ type sfHit struct {
 	weight float64
 	docs   bool // a docs signal: host, path or title
 	rank   int  // its place among the fused search results, 1 the first
+	// pos is its place among the docs hits, 0 the first: the search's
+	// order, with the pages of a release the question names first.
+	pos int
 }
 
 // sfSite is the hits of one site (registrable domain) and the docs tree
@@ -68,8 +63,6 @@ type sfSite struct {
 	score float64  // all the domain's hits
 	docs  bool     // some hit under root has a docs signal
 	named bool     // the request names its host or docs directory
-	owner bool     // the question names its domain (ownsDomain)
-	spec  bool     // a standards body's site (specDomains)
 	alts  []sfSite // the domain's other docs trees, best first
 	retry bool     // an alternative tree of a site read before
 	// page is a page to read before any other: the page a library URL
@@ -102,11 +95,11 @@ func fuseWeighted(lists [][]search.Result, scale []float64) []sfHit {
 			if i, ok := at[k]; ok {
 				out[i].weight += w
 				out[i].title = firstNonEmpty(out[i].title, res.Title)
-				out[i].desc = firstNonEmpty(out[i].desc, res.Description)
+				out[i].desc = firstNonEmpty(out[i].desc, resultSnippet(res.Description, res.Content))
 				continue
 			}
 			at[k] = len(out)
-			out = append(out, sfHit{u: u, title: res.Title, desc: res.Description, weight: w})
+			out = append(out, sfHit{u: u, title: res.Title, desc: resultSnippet(res.Description, res.Content), weight: w})
 		}
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].weight > out[j].weight })
@@ -124,6 +117,27 @@ const sfMaxCited = 4
 // citedRe matches an absolute http(s) URL in a result's text.
 var citedRe = regexp.MustCompile(`https?://[^\s<>"'()\[\]{}|\\^` + "`" + `]+`)
 
+// citedURLs are the addresses in a result's texts, but one that ends its
+// text or runs into an ellipsis: an excerpt cut it short
+// (https://docs.npmjs.com/unpubl), and it names no page.
+func citedURLs(texts ...string) []string {
+	var out []string
+	for _, text := range texts {
+		for _, at := range citedRe.FindAllStringIndex(text, -1) {
+			rest := text[at[1]:]
+			if rest == "" || strings.HasPrefix(rest, "…") {
+				continue
+			}
+			raw := text[at[0]:at[1]]
+			if strings.HasSuffix(raw, "...") {
+				continue
+			}
+			out = append(out, strings.TrimRight(raw, ".,;:!?*_"))
+		}
+	}
+	return out
+}
+
 // citedLists are, for each search list, the pages its results' text
 // (description and excerpts) links to, ranked as the citing result: a
 // search that returns third-party pages about a thing often cites the
@@ -135,8 +149,7 @@ func citedLists(lists [][]search.Result) [][]search.Result {
 		for _, r := range list {
 			own, _ := url.Parse(r.URL)
 			n := 0
-			for _, raw := range citedRe.FindAllString(r.Description+"\n"+r.Content, -1) {
-				raw = strings.TrimRight(raw, ".,;:!?*_")
+			for _, raw := range citedURLs(r.Description, r.Content) {
 				u, err := url.Parse(raw)
 				if err != nil || own != nil && registrableDomain(u.Hostname()) == registrableDomain(own.Hostname()) {
 					continue // a page's links to its own site add nothing to its vote
@@ -165,6 +178,9 @@ func docsHits(hits []sfHit) []sfHit {
 			h.weight *= sfPlainWeight
 		}
 		out = append(out, h)
+	}
+	for i := range out {
+		out[i].pos = i
 	}
 	return out
 }
@@ -418,10 +434,10 @@ func sharedDomains(hits []sfHit) map[string]bool {
 // sitePrefs are what a request prefers: docs roots (a docs URL given, or
 // what the library it names resolves to) and library names a site's host
 // may carry; and the version it asks for. words are the question's own
-// words: a site whose host or docs directory one of them names (nginx
-// in nginx.org, lambda in docs.aws.amazon.com/lambda/) is more likely
-// the thing's own docs than a page that discusses it, which wins a
-// search on the question's other words.
+// words, which choose between the trees of one domain (an enterprise
+// copy the question asks for, a sibling host it names), never between
+// sites: a word of the question in an address is no evidence that the
+// site documents what was asked.
 type sitePrefs struct {
 	roots   []webRoot
 	names   []string // comparison keys (libraryKey)
@@ -438,10 +454,6 @@ type sitePrefs struct {
 	// an origin compares the resolved root with. nil for none.
 	lead *webRoot
 }
-
-// sfWordBoost multiplies the weight of a hit on a site the question's
-// words name.
-const sfWordBoost = 2.0
 
 // questionWords are a question's words, and each two adjacent ones run
 // together, as comparison keys; stopwords, language names, generic docs
@@ -511,9 +523,8 @@ func (p sitePrefs) preferred(u *url.URL) bool {
 // root is the docs tree most of its weight sits under (the version the
 // request asks for first, when hits name it), and its other trees are
 // the alternatives read when that one gives nothing (alts). Preferred hits
-// weigh sfBoost times as much. A site the question names by its domain
-// (owner), or else a standards body's (spec), goes first when its weight
-// is a fair share of the leader's (ownerFirst).
+// weigh sfBoost times as much. rankSites then puts them in the search's
+// order.
 func chooseSites(hits []sfHit, prefs sitePrefs) []sfSite {
 	type tree struct {
 		root  webRoot
@@ -525,11 +536,8 @@ func chooseSites(hits []sfHit, prefs sitePrefs) []sfSite {
 	scores := map[string]float64{}
 	shared := sharedDomains(hits)
 	for _, h := range hits {
-		switch {
-		case prefs.preferred(h.u):
+		if prefs.preferred(h.u) {
 			h.weight *= sfBoost
-		case named(h.u, prefs.words):
-			h.weight *= sfWordBoost
 		}
 		t, perProject := projectTree(h.u, prefs.library, shared[registrableDomain(h.u.Hostname())])
 		for _, r := range prefs.roots {
@@ -568,14 +576,14 @@ func chooseSites(hits []sfHit, prefs sitePrefs) []sfSite {
 		out = append(out, domainSite(alts, prefs))
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].score > out[j].score })
-	return ownerFirst(out)
+	return out
 }
 
 // treeSite is one docs tree of a domain (key) as a site.
 func treeSite(key string, root webRoot, hits []sfHit, score float64, prefs sitePrefs) sfSite {
 	s := sfSite{key: key, root: root, hits: hits, score: score}
 	s.docs = slices.ContainsFunc(hits, func(h sfHit) bool { return h.docs })
-	s.named = slices.ContainsFunc(hits, func(h sfHit) bool { return prefs.preferred(h.u) || named(h.u, prefs.words) })
+	s.named = slices.ContainsFunc(hits, func(h sfHit) bool { return prefs.preferred(h.u) })
 	return s
 }
 
@@ -589,46 +597,8 @@ func domainSite(trees []sfSite, prefs sitePrefs) sfSite {
 	}
 	s := trees[0]
 	s.alts = trees[1:]
-	s.owner = ownsDomain(s.key, prefs.words)
-	s.spec = onDomains(s.root.u.Hostname(), specDomains)
-	s.named = s.named || s.owner
-	s.docs = s.docs || s.spec
+	s.docs = s.docs || onDomains(s.root.u.Hostname(), specDomains)
 	return s
-}
-
-// sfOwnerShare is the share of the leading site's weight a site the
-// question names by its domain (or a standards body's site) needs to go
-// first: a page about a product on another site loses to the product's
-// own docs when both are found, but not to a single stray link.
-const sfOwnerShare = 0.25
-
-// ownerFirst moves to the front the best site the question names by its
-// domain (duo.com for a question about duo), when its weight is at least
-// sfOwnerShare of the leader's; when the question names none of the
-// sites, a standards body's site (the RFC a vendor implements) the same
-// way.
-func ownerFirst(sites []sfSite) []sfSite {
-	if len(sites) < 2 {
-		return sites
-	}
-	pick := func(ok func(sfSite) bool) bool {
-		for i, s := range sites {
-			if !ok(s) {
-				continue
-			}
-			if i > 0 && s.score >= sfOwnerShare*sites[0].score {
-				s := sites[i]
-				copy(sites[1:i+1], sites[:i])
-				sites[0] = s
-			}
-			return true
-		}
-		return false
-	}
-	if !pick(func(s sfSite) bool { return s.owner }) {
-		pick(func(s sfSite) bool { return s.spec })
-	}
-	return sites
 }
 
 // ownsDomain reports a site key (a registrable domain, or a hosted
@@ -807,31 +777,53 @@ func rootNamesVersion(r webRoot, version string) bool {
 	return false
 }
 
-// pickSite is the site the hits agree on, or why there is none: no docs
-// hit at all (ErrNoDocsFound), or a lead over the next site too small to
-// mean anything (ErrAmbiguousSite, naming the candidates), unless the
-// site is another tree of a site read before, the question names its
-// domain, it is the spec (ownerFirst put those first), or the question
-// names exactly one of the leading sites (onlyNamed).
+// pickSite is the first of sites, which rankSites put in the search's
+// order: ErrNoDocsFound when there is none.
 func pickSite(sites []sfSite) (sfSite, error) {
 	if len(sites) == 0 {
 		return sfSite{}, fmt.Errorf("search: %w", ErrNoDocsFound)
 	}
-	top := sites[0]
-	if top.retry || top.owner || top.spec {
-		return top, nil // another tree of the site read before; a site the question names; the spec
+	return sites[0], nil
+}
+
+// sfTopDocs is how many of the first docs hits choose the site.
+const sfTopDocs = 3
+
+// rankSites orders sites as the search's first docs hits (sfHit.pos below
+// sfTopDocs; a release the question names first) weigh for them: each
+// hit's fused rank weight, half for one with no docs signal in its address
+// or title, summed per site; then by the site's best-ranked hit. Read from
+// that hit on (exactCandidates), the first page is the top docs hit
+// unless two of the first three agree on another site, or the first has
+// no docs signal and a signed one close behind it does. A word of the
+// question in a site's address moves nothing: it is no evidence that the
+// site documents what was asked.
+func rankSites(sites []sfSite) []sfSite {
+	type key struct {
+		weight float64
+		best   int
 	}
-	if len(sites) > 1 && len(top.hits) < 2 && top.score < sfLead*sites[1].score {
-		if i, ok := onlyNamed(sites); ok {
-			return sites[i], nil
+	keys := make(map[string]key, len(sites))
+	for _, s := range sites {
+		k := key{best: math.MaxInt}
+		for _, t := range append([]sfSite{s}, s.alts...) {
+			for _, h := range t.hits {
+				if h.pos < sfTopDocs {
+					k.weight += h.weight
+				}
+				k.best = min(k.best, h.pos)
+			}
 		}
-		var names []string
-		for _, s := range sites[:min(len(sites), 4)] {
-			names = append(names, s.root.String())
-		}
-		return sfSite{}, fmt.Errorf("search: %w, none ahead and none tied to what was asked: %s; pass the docs you mean as the library (--library <docs URL>)", ErrAmbiguousSite, strings.Join(names, ", "))
+		keys[s.key+"|"+s.root.String()] = k
 	}
-	return top, nil
+	slices.SortStableFunc(sites, func(a, b sfSite) int {
+		ka, kb := keys[a.key+"|"+a.root.String()], keys[b.key+"|"+b.root.String()]
+		if c := cmp.Compare(kb.weight, ka.weight); c != 0 {
+			return c
+		}
+		return cmp.Compare(ka.best, kb.best)
+	})
+	return sites
 }
 
 // hostReleaseRe matches a host label naming a numbered release: v1-32,
@@ -847,26 +839,6 @@ func numberedRoot(r webRoot) bool {
 	}
 	first, _, _ := strings.Cut(scopeHost(r.u), ".")
 	return hostReleaseRe.MatchString(first)
-}
-
-// sfNamedDepth is how many of the leading sites onlyNamed looks among.
-const sfNamedDepth = 4
-
-// onlyNamed is the one site among the leading ones whose host or docs
-// directory the request names (its library, or a word of its question),
-// when exactly one is.
-func onlyNamed(sites []sfSite) (int, bool) {
-	found := -1
-	for i, s := range sites[:min(len(sites), sfNamedDepth)] {
-		if !s.named {
-			continue
-		}
-		if found >= 0 {
-			return 0, false
-		}
-		found = i
-	}
-	return found, found >= 0
 }
 
 // strongDocsSegments are path segments only docs trees have.

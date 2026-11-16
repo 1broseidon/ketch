@@ -209,9 +209,30 @@ func NewFrontmatter(query, backend, library string, o Outcome) Frontmatter {
 	case o.Index != nil:
 		f.NotInIndex = nonNil(o.NotFound)
 	case len(o.Read) > 0 || o.Widened != nil:
-		f.NotOnPages = nonNil(o.NotFound)
+		f.NotOnPages = nonNil(identTerms(o.NotFound))
 	}
 	return f
+}
+
+// identTerms are the terms of terms that are identifiers as the question
+// writes them: code-like names (queryIdents: snake_case, dotted, CamelCase,
+// calls), flags (--force-with-lease, -e) and host names. A plain word
+// missing from a few pages is the docs' other wording; an identifier
+// missing is worth a caller's next call.
+func identTerms(terms []string) []string {
+	var out []string
+	for _, t := range terms {
+		if len(queryIdents(t)) > 0 || isHostName(strings.ToLower(t)) || flagWord(t) {
+			out = append(out, t)
+		}
+	}
+	return out
+}
+
+// flagWord reports a command-line flag as written: -e, --force-with-lease.
+func flagWord(w string) bool {
+	rest := strings.TrimPrefix(strings.TrimPrefix(w, "-"), "-")
+	return rest != w && rest != "" && (rest[0] >= 'a' && rest[0] <= 'z' || rest[0] >= 'A' && rest[0] <= 'Z')
 }
 
 // ShownOrigin is o's origin line when it says something: verified, with
@@ -219,7 +240,7 @@ func NewFrontmatter(query, backend, library string, o Outcome) Frontmatter {
 // only a name ties the site to the question, or nothing names one.
 func ShownOrigin(o Outcome) string {
 	switch {
-	case o.Origin == "", OriginByName(o.Origin):
+	case o.Origin == "":
 		return ""
 	case OriginUnverified(o.Origin) && o.named == "":
 		return ""

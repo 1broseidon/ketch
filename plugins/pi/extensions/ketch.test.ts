@@ -293,7 +293,9 @@ describe("argument construction", () => {
 		const docs = tools.get("ketch_docs");
 		assert.ok(docs);
 		for (const want of [
-			/top search hits there at their exact addresses \(up to 3, one release\)/,
+			/reads the site its top three docs hits weigh most for .* at the hits' exact addresses \(up to 3, one release\)/,
+			/a version pin or a library name in the question that resolve verifies/,
+			/version is printed only for a pin that matched/,
 			/\(widened\)/,
 			/carries no verdict/,
 			/\bread lists the pages read with their search rank/,
@@ -309,7 +311,7 @@ describe("argument construction", () => {
 		]) {
 			assert.match(docs.description, want);
 		}
-		for (const gone of [/status found/, /\bnot_found names\b/, /1,800/, /by name \(only a name/, /\bverdict:/, /every not_found term/]) {
+		for (const gone of [/status found/, /\bnot_found names\b/, /1,800/, /by name \(only a name/, /\bverdict:/, /every not_found term/, /results agree on/, /not_on_pages names your terms/]) {
 			assert.doesNotMatch(docs.description, gone);
 		}
 		const props = docs.parameters.properties as Record<string, { description: string }>;

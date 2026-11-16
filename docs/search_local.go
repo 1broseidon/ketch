@@ -78,19 +78,19 @@ type sfTrace struct {
 	hits, docsHits, siteHits, sites, planned, fetched, failed int
 	domains                                                   int // the sites (domains) read; sites counts docs trees
 	// The fallbacks this call took (design/docs-evidence.md, Final shape):
-	// it widened past the exact pages, fell over to a second site, read
-	// the resolved root first, or read the favoured site first.
-	widened, fellOver, resolvedFirst, favouredFirst bool
-	exact                                           int // exact pages read
+	// it widened past the exact pages, fell over to a second site, or read
+	// the resolved root first.
+	widened, fellOver, resolvedFirst bool
+	exact                            int // exact pages read
 }
 
 func (t *sfTrace) write(w io.Writer, req sfRequest, d time.Duration) {
 	if w == nil {
 		return
 	}
-	_, _ = fmt.Fprintf(w, "trace: search-first path=%s local=%s cached=%t hits=%d docs_hits=%d site=%s site_hits=%d sites=%d planned=%d fetched=%d failed=%d exact=%d widened=%t fell_over=%t resolved_first=%t favoured_first=%t ms=%d resolve_ms=%d resolved=%q library=%q cands=%q\n",
+	_, _ = fmt.Fprintf(w, "trace: search-first path=%s local=%s cached=%t hits=%d docs_hits=%d site=%s site_hits=%d sites=%d planned=%d fetched=%d failed=%d exact=%d widened=%t fell_over=%t resolved_first=%t ms=%d resolve_ms=%d resolved=%q library=%q cands=%q\n",
 		t.path, t.local, t.cached, t.hits, t.docsHits, t.site, t.siteHits, t.sites, t.planned, t.fetched, t.failed,
-		t.exact, t.widened, t.fellOver, t.resolvedFirst, t.favouredFirst,
+		t.exact, t.widened, t.fellOver, t.resolvedFirst,
 		d.Milliseconds(), t.resolveMs, t.resolved, req.library, t.cands)
 }
 

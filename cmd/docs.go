@@ -24,33 +24,33 @@ var docsCmd = &cobra.Command{
 	Long: `Answer a question from documentation: the docs' own text, no model.
 
 An indexed library answers from the index. Otherwise ketch searches the
-web, picks the docs site the results agree on and reads its top hits there
-(up to 3, one release); more pages of that release only when an
-identifier in the question is on none of them.
+web and reads the site its top three docs hits weigh most for (by rank,
+half without a docs sign in address or title), from its best hit: up
+to 3 pages, one release. --library, a version pin or a name in the
+question that resolve verifies can override it. A release the question
+names ("Vue 2") goes first.
 
 Frontmatter lines:
-  read          the pages read, with their search rank
-  skipped       hits that could not be read, and why
-  widened       more pages read, and for which terms
-  not_on_pages  your terms on none of the pages read (only those pages
-                were checked); not_in_index for an indexed library
+  version       a matched pin, or a named release found
+  read          pages read, with search rank
+  skipped       hits not read, and why
+  widened       more pages, for a missing identifier
+  not_on_pages  identifiers asked about on none of the pages read
   origin        verified, or unverified for a library you named
-  defined_in    where a term is defined, when not printed
+  defined_in    where an unprinted term is defined
+  note          a named release no page read is marked with
 
-Then the docs' text by page and section, "Not printed" (other sections
-of those pages) and "Other results" (hits not read). Text cut "(cut, N
-of M tokens)" or only listed is unread: read it with ketch docs --section
-<url#anchor> before stating what it says; another result with ketch scrape.
-
---tokens bounds the docs text (4,000 by default); the frontmatter and the
-two lists add at most about 600 tokens.
-
---library takes a name, name@version (the pin must match) or docs URL.
+Then the docs' text, "Not printed", "Other results". Cut or listed text
+is unread: read it with --section <url#anchor>, another result with
+ketch scrape. --tokens bounds the docs text (4,000); the rest adds about
+600 tokens, rarely 800. --library: a name, name@version (must match) or
+docs URL; name@version in the question only if resolve confirms it.
 
 Exit codes:
   0  an answer: docs text, or only the search results
   2  bad input, or a library name several libraries share
-  3  nothing to print: no search results, or an offline miss
+  3  nothing to print: no search results, an unconfirmed --library
+     pin, or an offline miss
   4  the web search, or Context7 (-b context7), failed
   5  a library indexed in an older format: index it again`,
 	Example: `  ketch docs "set the default context length in ollama"

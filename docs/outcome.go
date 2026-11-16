@@ -83,7 +83,7 @@ type Outcome struct {
 	IndexedNear []NearLibrary `json:"indexed_near,omitempty"`
 	// Origin says whether an answer from pages a search read is from the
 	// documentation of what was asked (design/docs-evidence.md, Build 1):
-	// "verified, <evidence>"; "by name, …" when only a name supports it;
+	// "verified, <evidence>"; none when only a name supports it;
 	// "unverified, …" when nothing ketch gathered confirms it. Empty for
 	// an answer from an indexed library, which the caller chose by
 	// indexing it. The answer prints it only when it says something

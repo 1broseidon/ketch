@@ -86,14 +86,8 @@ func TestResolvedRootOrigin(t *testing.T) {
 	if o.Status != Found || o.Library != ownRoot {
 		t.Fatalf("outcome = %s from %q (%v), want found from %s", o.Status, o.Library, o.Err(), ownRoot)
 	}
-	if want := "by name, docs.lib.test documents the npm package lib; the search results favour " + fanRoot; o.Origin != want {
-		t.Errorf("origin = %q, want %q", o.Origin, want)
-	}
-	if !OriginByName(o.Origin) || OriginUnverified(o.Origin) {
-		t.Errorf("origin kind wrong: %q", o.Origin)
-	}
-	if ShownOrigin(o) != "" || strings.Contains(NewFrontmatter("q", SearchBackend, "lib", o).Render(), "origin:") {
-		t.Errorf("a by-name origin is printed: %q", ShownOrigin(o))
+	if o.Origin != "" || strings.Contains(NewFrontmatter("q", SearchBackend, "lib", o).Render(), "origin:") {
+		t.Errorf("origin = %q: a root only a registry name ties to the library has none", o.Origin)
 	}
 	assertNeverFetched(t, f, "libtips.test")
 
@@ -342,10 +336,9 @@ func TestReadFailureSaysWhy(t *testing.T) {
 	f := statusFetcher{fakeFetcher: originSite(), status: map[string]int{fanRoot + "lib/max-conns": 403, fanRoot + "lib/pool-tuning": 403}}
 	s := originSearch(t, f, fanHits(), sfResolved{name: "lib"})
 	o := s.GetDocsSelect(context.Background(), "lib", "pool max_connections", 0)
-	msg := fmt.Sprint(o.Err())
-	if o.Status != Refused || !strings.Contains(msg, "none of the 2 pages of "+fanRoot+" could be read: 2 blocked (HTTP 403)") ||
-		!strings.Contains(msg, "configure browser") {
-		t.Fatalf("outcome = %s: %s", o.Status, msg)
+	if o.Err() != nil || o.Reason != "results_only" || !strings.Contains(o.Note, "none of the 2 pages of "+fanRoot+" could be read: 2 blocked (HTTP 403)") ||
+		!strings.Contains(o.Note, "configure browser") || len(o.Skipped) != 2 {
+		t.Fatalf("outcome = %s/%s: note %q, skipped %+v (%v); want the results, saying why each page failed", o.Status, o.Reason, o.Note, o.Skipped, o.Err())
 	}
 
 	shells := originSite()
@@ -353,8 +346,8 @@ func TestReadFailureSaysWhy(t *testing.T) {
 		shells.pages[p] = fakePage{title: "App", markdown: "Loading", shell: true}
 	}
 	o = originSearch(t, shells, fanHits(), sfResolved{name: "lib"}).GetDocsSelect(context.Background(), "lib", "pool max_connections", 0)
-	if msg := fmt.Sprint(o.Err()); !strings.Contains(msg, "2 need JavaScript") || !strings.Contains(msg, "configure browser for full content") {
-		t.Errorf("JS shells: %s", msg)
+	if !strings.Contains(o.Note, "2 need JavaScript") || !strings.Contains(o.Note, "configure browser for full content") {
+		t.Errorf("JS shells: %q (%v)", o.Note, o.Err())
 	}
 
 	// The verified root blocked: the search's site answers, saying so.
@@ -432,14 +425,14 @@ func TestDomainNameIsByName(t *testing.T) {
 	prefs := sitePrefs{words: questionWords(req.query)}
 	official := sfSite{key: "raspberrypi.test", root: rootOf("https://www.raspberrypi.test/documentation/")}
 	fan := sfSite{key: "raspberry.test", root: rootOf("https://raspberry.test/en/"), hits: []sfHit{{u: mustURL(t, "https://raspberry.test/en/tutorials/enable-ssh")}}}
-	if got := siteOrigin(official, req, prefs).text; got != "by name, the domain raspberrypi.test carries the name raspberrypi; nothing else confirms it as the official documentation" {
-		t.Errorf("official: %q", got)
+	if got := siteOrigin(official, req, prefs).text; !OriginUnverified(got) {
+		t.Errorf("official, its domain a word of the question: %q, want unverified", got)
 	}
 	lib := sfRequest{query: "enable ssh", library: "fly.io", spec: libSpec{raw: "fly.io", name: "fly.io"}}
-	if got := siteOrigin(sfSite{root: rootOf("https://docs.fly.io/")}, lib, sitePrefs{names: []string{libraryKey("fly.io")}}).text; !OriginByName(got) {
-		t.Errorf("docs.fly.io for fly.io: %q", got)
+	if got := siteOrigin(sfSite{root: rootOf("https://docs.fly.io/")}, lib, sitePrefs{names: []string{libraryKey("fly.io")}}).text; got != "" {
+		t.Errorf("docs.fly.io for fly.io: %q, want no origin (the name alone ties it)", got)
 	}
-	if got := siteOrigin(fan, req, prefs).text; !OriginByName(got) || strings.HasPrefix(got, "verified") {
+	if got := siteOrigin(fan, req, prefs).text; !OriginUnverified(got) {
 		t.Errorf("fan site: %q", got)
 	}
 }
@@ -495,12 +488,12 @@ func TestStdModuleNotDisplacedBySiblingSite(t *testing.T) {
 }
 
 // A domain named by the repository owner is a name match: the lead is
-// read, labelled by name.
-func TestOwnerNamedDomainIsByName(t *testing.T) {
+// read, with no origin line (only the name ties it).
+func TestOwnerNamedDomainHasNoOrigin(t *testing.T) {
 	proj := &project{repo: repoKey{owner: "libtips", name: "lib"}}
 	s := originSearch(t, originSite(), fanHits(), sfResolved{name: "lib", match: verifiedMatch("https://pkg.go.dev/github.com/libtips/lib/", "pkg.go.dev hosts the docs of go github.com/libtips/lib", proj)})
 	o := s.GetDocsSelect(context.Background(), "lib", "pool max_connections", 0)
-	if o.Library != fanRoot || o.Origin != "by name, the domain libtips.test carries the name of libtips, owner of github.com/libtips/lib; nothing else confirms it as the official documentation" {
+	if o.Library != fanRoot || o.Origin != "" {
 		t.Fatalf("outcome %s from %q, origin %q (%v)", o.Status, o.Library, o.Origin, o.Err())
 	}
 }
@@ -522,7 +515,7 @@ func TestResolvedRootFallsOver(t *testing.T) {
 		len(o.Read) == 0 || len(o.OtherResults) != 2 || o.OtherResults[0].URL != fanRoot+"lib/max-conns" {
 		t.Fatalf("neither: %s %v from %q read %+v not_on_pages %v others %+v", o.Status, o.Err(), o.Library, o.Read, o.NotFound, o.OtherResults)
 	}
-	if fm := NewFrontmatter("q", SearchBackend, "lib", o).Render(); !strings.Contains(fm, "\nnot_on_pages: [zeppelin, quaternion]\n") {
+	if fm := NewFrontmatter("q", SearchBackend, "lib", o).Render(); !strings.Contains(fm, "\nnot_on_pages: []\n") || !strings.Contains(fm, "\nnote: no section of the pages read holds the question's terms (zeppelin, quaternion)\n") {
 		t.Errorf("frontmatter:\n%s", fm)
 	}
 }
@@ -559,22 +552,21 @@ func TestGoStdOneElement(t *testing.T) {
 	}
 }
 
-// A named library the search agrees on no site for is refused with what
+// A named library whose search finds no docs site is refused with what
 // resolve knows by the name, never the sites the search returned; with
-// nothing resolved, the sites are named as the search's, none tied to
-// what was asked: the answer is then the search results alone.
+// nothing resolved, the answer is the search results alone.
 func TestNamedRefusalListsResolveCandidates(t *testing.T) {
-	split := []search.Result{hit("https://one.test/a/guide", "A guide"), hit("https://two.test/b/guide", "B guide")}
+	split := []search.Result{hit("https://github.com/one/lib/issues/1", "Issue"), hit("https://stackoverflow.com/questions/1/lib-pool", "Lib pool")}
 	cands := []LibraryMatch{{ID: "npm:lib", Title: "docs not verified", Packages: []string{"npm:lib"}}, crateLib}
 	s := originSearch(t, originSite(), split, sfResolved{name: "lib", candidates: cands})
 	o := s.GetDocsSelect(context.Background(), "lib", "pool max_connections", 0)
 	msg := fmt.Sprint(o.Err())
-	if o.Status != Refused || !strings.Contains(msg, `the search results agree on no site for "lib"; resolve knows it as: npm:lib (docs not verified; npm:lib), `+crateLib.ID) ||
-		strings.Contains(msg, "one.test") || failure.Classify(o.Err(), failure.Upstream).Kind != failure.Validation {
+	if o.Status != Refused || !strings.Contains(msg, `the search found no docs site for "lib"; resolve knows it as: npm:lib (docs not verified; npm:lib), `+crateLib.ID) ||
+		strings.Contains(msg, "github.com") || failure.Classify(o.Err(), failure.Upstream).Kind != failure.Validation {
 		t.Fatalf("%s: %s", o.Status, msg)
 	}
 	o = originSearch(t, originSite(), split, sfResolved{name: "lib"}).GetDocsSelect(context.Background(), "lib", "pool max_connections", 0)
-	if o.Err() != nil || o.Reason != "results_only" || !strings.Contains(o.Note, "the search results are split between several sites, none ahead and none tied to what was asked: ") ||
+	if o.Err() != nil || o.Reason != "results_only" || !strings.Contains(o.Note, "no documentation among the search results") ||
 		strings.Contains(o.Note, "documentation sites") || len(o.OtherResults) != 2 {
 		t.Fatalf("nothing resolved: %v note %q others %+v", o.Err(), o.Note, o.OtherResults)
 	}
@@ -646,23 +638,21 @@ func namesakeMatch() *webMatch {
 	return &webMatch{root: rootOf(nameRoot), trust: 6, evidence: []evidence{{kind: evPkgDocs, detail: "npm lib lists it as Homepage"}}, stars: -1, packages: []string{"npm:lib"}}
 }
 
-// A name guessed from the question, tied to its root by a registry
-// package alone, is no reason to read that root ahead of the site the
-// search results favour when that site carries the name and the root does
-// not: that site is read first and answers with its own origin. The root
-// stays a candidate, read when the favoured site does not answer. A root
-// that carries the name itself, or one the search agrees on, is read first.
-func TestGuessedNameGivesWayToTheFavouredSite(t *testing.T) {
+// The root resolve verified for a name the question writes is read first;
+// a root that lacks the question's terms gives way to the search's first
+// docs site, which answers with its own origin. A word of the question in
+// a site's domain earns that site nothing.
+func TestGuessedNameRootFirst(t *testing.T) {
 	bare := sfResolved{name: "libtips", match: namesakeMatch(), bare: true}
 	o := originSearch(t, namesakeSite(), fanHits(), bare).SearchSelect(context.Background(), "max_connections max_workers", 0)
 	if o.Status != Found || o.Library != fanRoot || !OriginUnverified(o.Origin) {
 		t.Fatalf("guessed name: %s from %q, origin %q (%v), want found from %s", o.Status, o.Library, o.Origin, o.Err(), fanRoot)
 	}
 
-	// The favoured site without the terms: the root is read after it.
+	// The root holds the terms: it answers, with no origin line.
 	o = originSearch(t, namesakeSite(), fanHits(), bare).SearchSelect(context.Background(), "job_timeout max_workers", 0)
-	if o.Status != Found || o.Library != nameRoot || !OriginByName(o.Origin) {
-		t.Fatalf("favoured site lacks the terms: %s from %q, origin %q (%v), want found from %s", o.Status, o.Library, o.Origin, o.Err(), nameRoot)
+	if o.Status != Found || o.Library != nameRoot || o.Origin != "" {
+		t.Fatalf("root holds the terms: %s from %q, origin %q (%v), want found from %s", o.Status, o.Library, o.Origin, o.Err(), nameRoot)
 	}
 
 	// Resolve's root verified by the search's agreement is read first.

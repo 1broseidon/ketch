@@ -94,9 +94,9 @@ func (s *SearchFirst) answerRead(ctx context.Context, p *sfPages, req sfRequest,
 			return Answer(SearchBackend, nil, fmt.Errorf("search: %w", err))
 		}
 	}
-	if req.version != "" {
-		lib.Version = req.version
-	}
+	// A release only when a pin matched (req.version): a label in an
+	// address is too often no release (Task/async_stream/3/, kafka /43/).
+	lib.Version = req.version
 	opts := req.opts
 	opts.live, opts.origin = true, origin.text
 	opts.pages = pagesOf(p.exact)
@@ -201,7 +201,11 @@ func sfReadKey(req sfRequest) string {
 	if r, err := parseWebRoot(req.library); err == nil && isHTTPURL(req.library) {
 		scope = linkKey(r.u)
 	}
-	return strings.Join([]string{sfReadVersion, scope, strings.ToLower(req.spec.raw), strings.Join(terms, " ")}, "|")
+	pin := strings.ToLower(req.spec.raw)
+	if req.guessed {
+		pin = "" // a pin guessed from the question is in its terms, confirmed or not
+	}
+	return strings.Join([]string{sfReadVersion, scope, pin, strings.Join(terms, " ")}, "|")
 }
 
 // readOf is the read to keep of the pages p holds.
@@ -311,6 +315,16 @@ func (s *SearchFirst) loadRead(req sfRequest) (sfRead, webRoot, bool) {
 	return r, root, true
 }
 
+// pinRepeats reports a read a request's pin may repeat: none asked, or
+// the read made for it. A pin guessed from the question that the first
+// read found unconfirmed is ordinary words again (req loses it).
+func pinRepeats(req *sfRequest, r sfRead) bool {
+	if req.guessed && r.Pin == "" {
+		req.spec, req.guessed = libSpec{}, false
+	}
+	return req.spec.version == "" || r.Pin == req.spec.version && r.Version != ""
+}
+
 // fromRead answers a question read before, within the TTL, as it was
 // answered: from the indexed library that holds its docs root, else from
 // the same pages, read again through the page cache (no web search, no
@@ -323,7 +337,7 @@ func (s *SearchFirst) fromRead(ctx context.Context, req sfRequest, tr *sfTrace) 
 	if !ok {
 		return Outcome{}, false
 	}
-	if req.spec.version != "" && (r.Pin != req.spec.version || r.Version == "") {
+	if !pinRepeats(&req, r) {
 		return Outcome{}, false
 	}
 	req.version = r.Version

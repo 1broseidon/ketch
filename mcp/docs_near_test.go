@@ -39,10 +39,6 @@ func TestFromOutcomeOrigin(t *testing.T) {
 	if out := fromOutcome(o); out.Origin != o.Origin || strings.Contains(out.Hint, "origin") {
 		t.Errorf("verified: origin %q, hint %q", out.Origin, out.Hint)
 	}
-	o.Origin = "by name, tips.example.test documents the npm package lib"
-	if out := fromOutcome(o); out.Origin != "" {
-		t.Errorf("by name: origin %q", out.Origin)
-	}
 }
 
 // The docs tool's output names an answer's fields as --json does: what

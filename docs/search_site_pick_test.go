@@ -2,8 +2,8 @@ package docs
 
 import (
 	"context"
-	"errors"
 	"net/url"
+	"slices"
 	"strings"
 	"testing"
 
@@ -11,35 +11,23 @@ import (
 	"github.com/1broseidon/ketch/search"
 )
 
-// The site a question names by its domain goes first over third-party
-// pages about it that the search weighs more; a standards body's site
-// goes first when the question names no site; neither is a refusal.
-func TestOwnerAndSpecFirst(t *testing.T) {
+// A site whose domain the question names, or a standards body's, is read
+// in its search rank, not ahead of a higher-ranked docs page.
+func TestNoNameOrSpecFirst(t *testing.T) {
 	hits := docsHits(fuseHits([][]search.Result{{
 		hit("https://docs.other.test/integrations/acme-logs", "Integrate Acme logs - Other docs"),
-		hit("https://docs.other.test/integrations/acme-setup", "Acme setup - Other docs"),
-		hit("https://docs.third.test/acme", "Acme - Third docs"),
 		hit("https://acme.test/docs/adminapi", "Admin API - Acme docs"),
 	}}))
-	sites := chooseSites(hits, sitePrefs{words: questionWords("how do I read logs from the acme api")})
-	if sites[0].key != "acme.test" || !sites[0].owner {
-		t.Fatalf("site %s (owner %v), want acme.test, whose domain the question names", sites[0].key, sites[0].owner)
+	sites := rankSites(chooseSites(hits, sitePrefs{words: questionWords("how do I read logs from the acme api")}))
+	if sites[0].key != "other.test" {
+		t.Errorf("site %s, want other.test, ranked first", sites[0].key)
 	}
 	spec := docsHits(fuseHits([][]search.Result{{
 		hit("https://docs.vendor.test/pkce", "PKCE - Vendor docs"),
-		hit("https://docs.other.test/oauth/pkce", "PKCE - Other docs"),
 		hit("https://www.rfc-editor.org/rfc/rfc7636", "RFC 7636: Proof Key for Code Exchange"),
 	}}))
-	sites = chooseSites(spec, sitePrefs{words: questionWords("how to generate the pkce code challenge")})
-	if sites[0].key != "rfc-editor.org" {
-		t.Fatalf("site %s, want the spec's site", sites[0].key)
-	}
-	if _, err := pickSite(sites); err != nil {
-		t.Errorf("pickSite: %v; the spec is no ambiguity", err)
-	}
-	sites = chooseSites(spec, sitePrefs{words: questionWords("how to generate the pkce code challenge in vendor")})
-	if sites[0].key != "vendor.test" {
-		t.Errorf("a question naming the vendor: site %s, want vendor.test", sites[0].key)
+	if sites = rankSites(chooseSites(spec, sitePrefs{})); sites[0].key != "vendor.test" {
+		t.Errorf("site %s, want vendor.test, ranked first", sites[0].key)
 	}
 }
 
@@ -89,9 +77,6 @@ func TestTreesAndVariants(t *testing.T) {
 	}
 	if len(sites[0].alts) != 1 || sites[0].alts[0].root.String() != "https://docs.lib.test/en/enterprise-server@3.22/" {
 		t.Errorf("variant hits only: the variant tree is the alternative")
-	}
-	if _, err := pickSite([]sfSite{{retry: true}, {score: 9}}); errors.Is(err, ErrAmbiguousSite) {
-		t.Error("another tree of a site read before is no ambiguity")
 	}
 }
 
@@ -208,11 +193,13 @@ func TestServedSiteTakesTheServedDomainsHits(t *testing.T) {
 		hit("https://developer.corp.test/validated/tool/import", "Import - Tool docs"),
 	}}))
 	sites := chooseSites(hits, sitePrefs{words: questionWords("tool import existing resource")})
-	if sites[0].key != "tool.test" {
-		t.Fatalf("site %s, want tool.test, which the question owns", sites[0].key)
+	i := slices.IndexFunc(sites, func(s sfSite) bool { return s.key == "tool.test" })
+	if i < 0 {
+		t.Fatal("no tool.test site")
 	}
+	others := slices.Delete(slices.Clone(sites), i, i+1)
 	served, _ := url.Parse("https://developer.corp.test/tool/cli/import/usage")
-	site, rest := servedSite(sites[0], &siteProfile{served: served}, sites[1:])
+	site, rest := servedSite(sites[i], &siteProfile{served: served}, others)
 	if site.key != "corp.test" || len(site.hits) != 3 || len(rest) != 0 {
 		t.Errorf("served site %s with %d hits, %d sites left; want corp.test with every hit", site.key, len(site.hits), len(rest))
 	}

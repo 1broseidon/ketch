@@ -76,7 +76,7 @@ func TestNewFrontmatterNotFoundKey(t *testing.T) {
 	}{
 		{"indexed", Outcome{Index: &IndexInfo{Kind: IndexFull}, NotFound: []string{"a"}}, nil, []string{"a"}, "", ""},
 		{"indexed, all found", Outcome{Index: &IndexInfo{Kind: IndexFull}}, nil, []string{}, "", ""},
-		{"pages read", Outcome{Read: []PageRead{{URL: "https://x.test/a", Rank: 1}}, NotFound: []string{"b"}}, []string{"b"}, nil, "", ""},
+		{"pages read", Outcome{Read: []PageRead{{URL: "https://x.test/a", Rank: 1}}, NotFound: []string{"b", "max_conns", "hang", "--force-with-lease", "2.7", "useEffect"}}, []string{"max_conns", "--force-with-lease", "useEffect"}, nil, "", ""},
 		{"pages read, all found", Outcome{Read: []PageRead{{URL: "https://x.test/a", Rank: 1}}}, []string{}, nil, "", ""},
 		{"widened only", Outcome{Widened: &Widening{Pages: 2, Root: "https://x.test/"}}, []string{}, nil, "", ""},
 		{"results only", Outcome{OtherResults: []OtherResult{{Title: "T", URL: "https://x.test/t", Rank: 1}}}, nil, nil, "", ""},
@@ -95,8 +95,7 @@ func TestNewFrontmatterNotFoundKey(t *testing.T) {
 }
 
 // The origin line prints only when it says something: verified, with its
-// evidence; unverified only for a request that named a library; never
-// "by name".
+// evidence; unverified only for a request that named a library.
 func TestShownOrigin(t *testing.T) {
 	read := []PageRead{{URL: "https://x.test/a", Rank: 1}}
 	for _, c := range []struct {
@@ -106,8 +105,6 @@ func TestShownOrigin(t *testing.T) {
 		{"verified, x", "lib", "verified, x"},
 		{"unverified, ketch could not confirm x.test", "", ""},
 		{"unverified, ketch could not confirm x.test", "lib", "unverified, ketch could not confirm x.test"},
-		{"by name, x.test documents the npm package x", "", ""},
-		{"by name, x.test documents the npm package x", "lib", ""},
 		{"", "lib", ""},
 	} {
 		o := Outcome{Origin: c.origin, named: c.named, Read: read}

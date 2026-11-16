@@ -138,8 +138,38 @@ func (w *Web) fetchOne(ctx context.Context, root webRoot, link webLink) (*webPag
 }
 
 // fetchIn is fetchOne with the scope a response may be served from given
-// as inScope.
+// as inScope. A page of a few words that says it redirects and refreshes
+// to another page in scope (rustdoc's "Redirecting to
+// ../../struct.Mutex.html...") is read where it sends its reader, once.
 func (w *Web) fetchIn(ctx context.Context, inScope func(*url.URL) bool, link webLink) (*webPage, error) {
+	p, err := w.fetchPageIn(ctx, inScope, link)
+	if err != nil || p.markdown || len(strings.Fields(p.Markdown)) > stubMaxWords || !strings.Contains(strings.ToLower(p.Markdown), "redirect") {
+		return p, err
+	}
+	raw, rerr := w.fetcher.FetchRaw(ctx, link.url.String())
+	if rerr != nil || !looksLikeHTML(raw.Body, raw.ContentType) {
+		return p, nil
+	}
+	served, serr := url.Parse(raw.URL)
+	if serr != nil || raw.URL == "" {
+		served = link.url
+	}
+	t := metaRefreshTarget(raw.Body, served)
+	if t == nil || !inScope(t) || linkKey(t) == linkKey(link.url) || linkKey(t) == linkKey(served) {
+		return p, nil
+	}
+	if moved, merr := w.fetchPageIn(ctx, inScope, webLink{url: t, title: link.title, description: link.description}); merr == nil {
+		return moved, nil
+	}
+	return p, nil
+}
+
+// stubMaxWords is the most words a page that only refreshes to another
+// holds once extracted.
+const stubMaxWords = 40
+
+// fetchPageIn reads one page for fetchIn.
+func (w *Web) fetchPageIn(ctx context.Context, inScope func(*url.URL) bool, link webLink) (*webPage, error) {
 	u := link.url.String()
 	var from *url.URL
 	title, md := "", ""

@@ -210,11 +210,6 @@ func TestSearchFirstRefusals(t *testing.T) {
 			hit("https://stackoverflow.com/questions/1/x", "question"),
 			hit("https://forum.example.test/t/middleware/123", "forum topic"),
 		}, Partial, "results_only", 0, 3, "no page was printed: "},
-		{"split between sites", []search.Result{
-			hit("https://docs.one.test/guide/a", "A - One docs"),
-			hit("https://docs.two.test/guide/a", "A - Two docs"),
-			hit("https://docs.three.test/guide/a", "A - Three docs"),
-		}, Partial, "results_only", 0, 3, "no page was printed: "},
 		{"empty search", nil, Refused, "search_empty", failure.NotFound, 0, ""},
 	}
 	for _, tc := range cases {
@@ -233,6 +228,39 @@ func TestSearchFirstRefusals(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// Sites split between several docs hosts are read in the search's order:
+// the first docs hit's site, else (its pages unreadable) the next one,
+// saying which failed; results only when none can be read, naming each
+// site tried and why it failed.
+func TestSplitSitesRead(t *testing.T) {
+	hits := []search.Result{
+		hit("https://docs.one.test/guide/a", "A - One docs"),
+		hit("https://docs.two.test/guide/a", "A - Two docs"),
+		hit("https://docs.three.test/guide/a", "A - Three docs"),
+	}
+	page := fakePage{title: "A", markdown: "# A\n\n## Middleware\n\nAdd middleware with app.use before the routes.\n"}
+	f := &fakeFetcher{pages: map[string]fakePage{"https://docs.one.test/guide/a": page, "https://docs.two.test/guide/a": page}}
+	s, _, _ := searchFirstOver(t, f, hits)
+	o := s.SearchSelect(context.Background(), "add middleware", 0)
+	if o.Status != Found || len(o.Read) != 1 || o.Read[0].URL != "https://docs.one.test/guide/a" || o.Read[0].Rank != 1 {
+		t.Fatalf("split sites: %s, read %+v (%v), want the first docs hit read", o.Status, o.Read, o.Err())
+	}
+
+	f = &fakeFetcher{pages: map[string]fakePage{"https://docs.two.test/guide/a": page}}
+	s, _, _ = searchFirstOver(t, f, hits)
+	o = s.SearchSelect(context.Background(), "add middleware", 0)
+	if o.Status != Found || len(o.Read) != 1 || o.Read[0].Rank != 2 || !strings.Contains(o.Note, "could not read https://docs.one.test/") {
+		t.Fatalf("first site unreadable: %s, read %+v, note %q (%v), want the second read, saying the first failed", o.Status, o.Read, o.Note, o.Err())
+	}
+
+	s, _, _ = searchFirstOver(t, &fakeFetcher{pages: map[string]fakePage{}}, hits)
+	o = s.SearchSelect(context.Background(), "add middleware", 0)
+	if o.Reason != "results_only" || !strings.Contains(o.Note, "https://docs.one.test/") || !strings.Contains(o.Note, "https://docs.two.test/") ||
+		!strings.Contains(o.Note, "not found") || len(o.Skipped) != 2 || len(o.OtherResults) != 1 {
+		t.Errorf("none readable: %s/%s, note %q, skipped %+v, others %+v", o.Status, o.Reason, o.Note, o.Skipped, o.OtherResults)
 	}
 }
 
@@ -327,14 +355,33 @@ func TestSearchFirstPinnedSpec(t *testing.T) {
 	}
 }
 
-// errors.Is through the refusal: ambiguous_site names the candidates.
-func TestPickSiteNamesCandidates(t *testing.T) {
+// The search's first three docs hits decide the site: the top hit's,
+// unless two of the three agree on another; no refusal when sites split;
+// a word of the question in a lower-ranked site's domain moves nothing.
+func TestRankDecides(t *testing.T) {
 	hits := docsHits(fuseHits([][]search.Result{{
 		hit("https://docs.one.test/a", "A docs"), hit("https://docs.two.test/a", "A docs"),
+		hit("https://docs.three.test/b", "B docs"), hit("https://docs.two.test/c", "C docs"),
 	}}))
-	_, err := pickSite(chooseSites(hits, sitePrefs{}))
-	if !errors.Is(err, ErrAmbiguousSite) || !strings.Contains(err.Error(), "https://docs.one.test/") {
-		t.Errorf("err = %v, want ambiguous_site naming the sites", err)
+	site, err := pickSite(rankSites(chooseSites(hits, sitePrefs{words: questionWords("two three a")})))
+	if err != nil || site.key != "one.test" {
+		t.Errorf("site %s (%v), want one.test, the first docs hit's", site.key, err)
+	}
+	agree := docsHits(fuseHits([][]search.Result{{
+		hit("https://docs.one.test/a", "A docs"), hit("https://docs.two.test/a", "A docs"), hit("https://docs.two.test/b", "B docs"),
+	}}))
+	if site, _ := pickSite(rankSites(chooseSites(agree, sitePrefs{}))); site.key != "two.test" || site.hits[0].u.Path != "/a" {
+		t.Errorf("two of the first three on two.test: site %s, want two.test from its rank-2 hit", site.key)
+	}
+	plain := docsHits(fuseHits([][]search.Result{{
+		hit("https://blog-like.test/storage-for-the-web", "Storage for the web"), hit("https://social.test/x", "x"),
+		hit("https://developer.ref.test/docs/Storage_quotas", "Storage quotas"),
+	}}))
+	if site, _ := pickSite(rankSites(chooseSites(plain, sitePrefs{}))); site.key != "ref.test" {
+		t.Errorf("a plain first hit and a docs page close behind: site %s, want ref.test", site.key)
+	}
+	if _, err := pickSite(nil); !errors.Is(err, ErrNoDocsFound) {
+		t.Errorf("no docs hit: %v, want no_docs_found", err)
 	}
 }
 

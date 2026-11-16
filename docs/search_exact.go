@@ -1,9 +1,11 @@
 package docs
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"net/url"
+	"regexp"
 	"slices"
 	"strings"
 	"unicode/utf8"
@@ -69,7 +71,7 @@ func exactCandidates(site sfSite) []sfCand {
 	for _, t := range append([]sfSite{site}, site.alts...) {
 		hits = append(hits, t.hits...)
 	}
-	slices.SortStableFunc(hits, func(a, b sfHit) int { return a.rank - b.rank })
+	slices.SortStableFunc(hits, func(a, b sfHit) int { return cmp.Or(a.pos-b.pos, a.rank-b.rank) })
 	if site.page != nil {
 		c := sfCand{link: webLink{url: site.page}, via: firstNonEmpty(site.pageVia, "the library URL")}
 		for _, h := range hits {
@@ -336,11 +338,18 @@ func (l *Local) widenNeed(lib docsindex.Library, query string) ([]string, bool, 
 	v := verdict(g.written, g.sections)
 	var missing []string
 	for _, wt := range g.written {
-		if wt.ident && wt.sections == 0 {
+		if wt.ident && wt.sections == 0 && !specWord(wt.text) {
 			missing = append(missing, wt.text)
 		}
 	}
 	return missing, len(missing) > 0 || v.refused || len(g.pool) == 0, nil
+}
+
+// specWord reports a word written as a package and its version
+// (mylib@2.0.0): the asker's own package, which no docs page names.
+func specWord(w string) bool {
+	spec, ok := explicitSpec(cleanQueryWord(w))
+	return ok && spec.url == "" && spec.version != ""
 }
 
 // otherResults are the search hits an answer did not read (read and
@@ -363,26 +372,115 @@ func otherResults(hits []sfHit, read []PageRead, wide []webPage, skipped []PageS
 		mark(sk.URL)
 	}
 	var out []OtherResult
+	chars := 0
 	for _, h := range hits {
 		if len(out) == sfOtherResults {
 			break
 		}
-		if strings.TrimSpace(h.title) == "" || done[samePageKey(h.u)] {
+		if done[samePageKey(h.u)] {
 			continue
 		}
 		done[samePageKey(h.u)] = true
-		out = append(out, OtherResult{Title: oneLine(h.title, sfTitleChars), URL: h.u.String(), Snippet: oneLine(h.desc, sfSnippetChars), Rank: h.rank})
+		r := OtherResult{Title: oneLine(resultTitle(h), sfTitleChars), URL: h.u.String(), Snippet: oneLine(h.desc, sfSnippetChars), Rank: h.rank}
+		if chars += len(otherLine(r)); chars > sfOtherChars && len(out) > 0 {
+			break
+		}
+		out = append(out, r)
 	}
 	return out
+}
+
+// resultTitle is a hit's title, or when it has none worth printing ("",
+// "N/A") its address's last path part: ssh_config for
+// man.openbsd.org/ssh_config.
+func resultTitle(h sfHit) string {
+	if t := strings.TrimSpace(h.title); t != "" && !strings.EqualFold(t, "N/A") && t != h.u.String() {
+		return t
+	}
+	segs := pathSegments(h.u.Path)
+	if len(segs) == 0 {
+		return scopeHost(h.u)
+	}
+	last := segs[len(segs)-1]
+	if u, err := url.PathUnescape(last); err == nil {
+		last = u
+	}
+	return last
+}
+
+// resultSnippet is a search result's text as a one-line snippet: the
+// first lines of prose in its description, else its content (excerpts),
+// without a provider's metadata (Published: N/A), headings' and quotes'
+// marks, code, tables, images or link syntax.
+func resultSnippet(desc, content string) string {
+	var b strings.Builder
+	for _, text := range []string{desc, content} {
+		fence := false
+		for line := range strings.SplitSeq(text, "\n") {
+			line = strings.TrimSpace(line)
+			if strings.HasPrefix(line, "```") || strings.HasPrefix(line, "~~~") {
+				fence = !fence
+				continue
+			}
+			if fence || line == "" || strings.HasPrefix(line, "#") || snippetSkip(line) {
+				continue // code, a heading, metadata, a table
+			}
+			line = snippetClean(line)
+			if line == "" || text == content && len(strings.Fields(line)) < 4 {
+				continue // in an excerpt, a label or a stray word
+			}
+			if b.Len() > 0 {
+				b.WriteString(" ")
+			}
+			b.WriteString(line)
+			if b.Len() >= sfSnippetChars {
+				return b.String()
+			}
+		}
+		if b.Len() > 0 {
+			return b.String()
+		}
+	}
+	return b.String()
+}
+
+// snippetSkip reports a line that is no prose: metadata, a table row, an
+// image, a rule or markup.
+func snippetSkip(line string) bool {
+	for _, p := range []string{"Published:", "Published date:", "Author:", "Title:", "URL:", "|", "![", "---", "<", "[!"} {
+		if strings.HasPrefix(line, p) {
+			return true
+		}
+	}
+	return false
+}
+
+// snippetLinkRe and snippetMarkRe match Markdown link syntax and emphasis
+// or code marks.
+var (
+	snippetLinkRe = regexp.MustCompile(`!?\[([^\]]*)\]\([^)]*\)`)
+	snippetMarkRe = regexp.MustCompile("[*`]{1,3}")
+)
+
+// snippetClean is a line of Markdown as plain text: heading, list and
+// quote marks off its start, links as their text, no emphasis or code
+// marks, escapes undone.
+func snippetClean(line string) string {
+	line = strings.TrimLeft(line, "#>-*+ \t")
+	line = snippetLinkRe.ReplaceAllString(line, "$1")
+	line = snippetMarkRe.ReplaceAllString(line, "")
+	line = strings.NewReplacer(`\.`, ".", `\-`, "-", `\_`, "_", `\(`, "(", `\)`, ")", `\#`, "#").Replace(line)
+	return strings.Join(strings.Fields(line), " ")
 }
 
 const (
 	// sfOtherResults is how many other search results an answer lists.
 	sfOtherResults = 5
 	// sfTitleChars and sfSnippetChars cap an other result's title and
-	// snippet: the list stays within about 250 tokens.
-	sfTitleChars   = 60
-	sfSnippetChars = 70
+	// snippet, sfOtherChars the list's lines: about 250 tokens.
+	sfTitleChars   = 70
+	sfSnippetChars = 160
+	sfOtherChars   = 1000
 )
 
 // oneLine is s on one line, cut to about n bytes at a word, with "…".
@@ -407,7 +505,7 @@ func oneLine(s string, n int) string {
 // answer, not a refusal: the results are what search alone would give.
 func resultsOnly(o Outcome, hits []sfHit) Outcome {
 	others := otherResults(hits, nil, nil, o.Skipped)
-	if len(others) == 0 {
+	if len(others) == 0 && len(o.Skipped) == 0 {
 		return o
 	}
 	note := "no page was printed: " + strings.TrimSuffix(strings.TrimPrefix(errText(o.err), "search: "), ": "+ErrNotFound.Error())

@@ -256,7 +256,7 @@ func checkWidenedPrint(t *testing.T, o Outcome) {
 
 // Every term on the exact pages: nothing more is read; a plain word on
 // none of them, beside one they hold: not widened (it is the docs' other
-// wording), named in not_on_pages, and the pages still answer.
+// wording), not listed in not_on_pages, and the pages still answer.
 func TestNoWidenWhenAllHeld(t *testing.T) {
 	f := releaseSiteFixture()
 	s, _, _ := searchFirstOver(t, f, releaseHits())
@@ -276,7 +276,9 @@ func TestNoWidenWhenAllHeld(t *testing.T) {
 		t.Errorf("a term nowhere: widened %+v not_on_pages %v, %d results (%v)", o.Widened, o.NotFound, len(o.Results), o.Err())
 	}
 	neverRead(t, f, "/v7/")
-	if fm := NewFrontmatter("q", SearchBackend, "", o).Render(); !strings.Contains(fm, "\nnot_on_pages: [xylograph]\n") {
+	// A plain word is the asker's, not the docs': not_on_pages lists only
+	// identifiers, and none is missing.
+	if fm := NewFrontmatter("q", SearchBackend, "", o).Render(); !strings.Contains(fm, "\nnot_on_pages: []\n") {
 		t.Errorf("frontmatter:\n%s", fm)
 	}
 }
