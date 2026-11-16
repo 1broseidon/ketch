@@ -12,7 +12,7 @@ Most research tooling for agents means wiring up several provider SDKs, each wit
 
 - `ketch search` — web search, no API key required (Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, Keenable, Tavily, TinyFish, Parallel, SerpBase, Serply, or You.com)
 - `ketch code` — grep real OSS source across public repos (Grep, Sourcegraph, or GitHub Code Search)
-- `ketch docs` — answers from a library's own documentation, no API key: it searches the web for the docs site and reads the pages that answer, or answers offline from a library you indexed with `ketch docs index` (or Context7's curated snippets with `-b context7`)
+- `ketch docs` — answers from documentation, no API key: it searches the web for the question and reads the first result that is a readable document, or answers offline from a library you indexed with `ketch docs index` (or Context7's curated snippets with `-b context7`)
 
 Plus `ketch scrape` and `ketch crawl` to turn HTML pages and text-based PDFs into clean markdown.
 
@@ -121,16 +121,18 @@ are mutually exclusive with `--backend` and each other.
 See the [command reference](https://ketch.run/#commands).
 
 Library docs work with zero configuration as well. `ketch docs` searches the
-web for the question, reads the documentation site the results agree on, and
-prints the pieces of its sections that match, verbatim with their code, under a
-frontmatter verdict. Its `origin:` line says whether that site is the
-documentation of what you asked, with the evidence. When only a name ties them,
-or nothing confirms it, the answer ends by telling you to name the site you
-cite or pass the official docs with `--library`.
+web for the question as `ketch search` does, reads the first result that is a
+readable document and up to two more pages of the same site, and prints their
+sections verbatim with their code, up to 4,000 tokens. The frontmatter says
+which pages it read, with their search rank, what it skipped and why, and which
+identifiers of the question are on none of them. The answer ends with the
+sections it did not print and the results it did not read. It reads what the
+search ranks first, which may not be the official documentation: `--library`
+names the docs you mean.
 
 ```sh
 ketch docs "SQLAlchemy pool_size and max_overflow defaults"
-ketch docs --section <url#anchor>                  # a group marked (cut), in full
+ketch docs --section <url#anchor>                  # a cut or unprinted section, in full
 ketch docs index https://fastapi.tiangolo.com/     # index a site once, then answer offline
 ```
 
@@ -244,7 +246,7 @@ a stderr warning (`warning.code: tag_write_failed` with `--json`), and MCP adds
 |---|---|
 | `search` | Web search — Brave, DuckDuckGo, SearXNG, Exa, Firecrawl, Keenable, Tavily, Parallel, SerpBase, Serply, or You.com |
 | `code` | Grep real OSS source — Grep (default), Sourcegraph, or GitHub Code Search |
-| `docs` | Library/framework docs — search (default: the local index, else the docs site a web search finds; the matching pieces of its sections with their code, no key) or Context7 (curated, version-aware snippets; keyless on its anonymous quota). `docs index` indexes a library's docs for offline answers; `--section` reads a cut group in full |
+| `docs` | Library/framework docs — search (default: the local index, else the first readable documents a web search returns; their sections verbatim with their code, no key) or Context7 (curated, version-aware snippets; keyless on its anonymous quota). `docs index` indexes a library's docs for offline answers; `--section` reads a cut group in full |
 | `scrape` | Fetch HTML or PDF URL(s) and extract clean markdown; concurrent batch, JSON array, file, or stdin input |
 | `extract` | Convert piped HTML to clean markdown (`curl ... \| ketch extract`) — no fetch, no cache, no browser |
 | `crawl` | BFS or sitemap crawl with optional background execution and status tracking |
@@ -269,7 +271,7 @@ Every command supports `-h/--help` for its full flag list; `--json` is the only 
 |---|---|---|---|
 | `search` | `auto` | `brave`, `ddg`, `searxng`, `exa`, `firecrawl`, `keenable`, `tavily`, `tinyfish`, `parallel`, `serpbase`, `degoog`, `serply`, `youcom` | Nothing — `auto` falls back through the keyless providers (`parallel` → `exa` → `keenable` → `youcom` → `firecrawl` → `ddg`) and needs no key. Brave, Tavily, TinyFish, SerpBase, and Serply need a free key (`ketch config set brave_api_key <key>` / `tavily_api_key` / `tinyfish_api_key` / `serpbase_api_key` / `serply_api_key`) and `auto` prefers them once set; `firecrawl_api_key`, `exa_api_key`, `keenable_api_key`, `parallel_api_key`, and `youcom_api_key` are optional and lift the hosted caps. `degoog` needs a self-hosted instance (`ketch config set degoog_url <url>`), `searxng` an instance URL (`ketch config set searxng_url <url>`); both are preferred over hosted APIs once configured |
 | `code` | `grepapp` | `sourcegraph`, `github` | Grep and Sourcegraph need nothing; GitHub uses `gh auth login`, `$GITHUB_TOKEN`, or `ketch config set github_token <tok>` |
-| `docs` | `search` | `context7` | Nothing — `search` uses the `search` surface's providers to find the docs site, and `ketch docs index <library\|url>` indexes a whole site for offline answers; resolving a library name asks GitHub about its repository, and the GitHub token above lifts the unauthenticated rate limit. Context7 works with no key on its anonymous quota, about 200 requests a month per IP (a search spends two; `ketch doctor` shows what was left at the last response without spending any), and a free key lifts it: `ketch config set context7_api_key <key>`; Context7 answers a call that names it (`-b context7`), and the `docs_backend` key is retired |
+| `docs` | `search` | `context7` | Nothing — `search` searches the web through the `search` surface's providers, and `ketch docs index <library\|url>` indexes a whole site for offline answers; resolving a library name asks GitHub about its repository, and the GitHub token above lifts the unauthenticated rate limit. Context7 works with no key on its anonymous quota, about 200 requests a month per IP (a search spends two; `ketch doctor` shows what was left at the last response without spending any), and a free key lifts it: `ketch config set context7_api_key <key>`; Context7 answers a call that names it (`-b context7`), and the `docs_backend` key is retired |
 
 ## Why it works well for agents
 
@@ -345,7 +347,7 @@ Use `ketch` for external research — web pages, OSS code, library docs.
 - `ketch scrape <url> [url...]` for clean markdown from one or more URLs
 - `ketch extract` for already-fetched/piped HTML (`curl ... | ketch extract`) — no fetch, no cache, no browser
 - `ketch code "query" --lang go` for real OSS code with repo/line context; `--repo owner/name` searches one repository
-- `ketch docs "question"` for library docs from the docs site itself (`--library django@5.2` or a docs URL to name it); text in a group marked `(cut)` is unread until `ketch docs --section <its source>` reads it
+- `ketch docs "question"` for library docs, read verbatim from the pages a web search ranks first (`--library django@5.2` or a docs URL to name the docs); text in a group marked `(cut)` or listed under Not printed is unread until `ketch docs --section <its source>` reads it
 - All commands support `--json`. `ketch config` reports active backends.
 ```
 

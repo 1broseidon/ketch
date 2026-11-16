@@ -130,13 +130,13 @@ const DocsParams = Type.Object({
 	query: Type.Optional(
 		Type.String({
 			description:
-				"the docs question (search picks the library and its docs site from it unless library is set), or the library to resolve when resolve is true (search: optional; none lists every indexed library); not needed with section",
+				"the docs question (search answers from an indexed library it names, else from the first readable documents a web search for it returns, unless library is set), or the library to resolve when resolve is true (search: optional; none lists every indexed library); not needed with section",
 		}),
 	),
 	backend: Type.Optional(
 		Type.String({
 			description:
-				"docs backend: search (the default: the local index, else a web search for the docs site, no key) or context7 (curated snippets; no key needed, but keyless use has a small anonymous quota, about 200 requests a month per IP) (default: search; context7 only when named here)",
+				"docs backend: search (the default: the local index, else the first readable documents a web search returns, no key) or context7 (curated snippets; no key needed, but keyless use has a small anonymous quota, about 200 requests a month per IP) (default: search; context7 only when named here)",
 		}),
 	),
 	library: Type.Optional(
@@ -149,7 +149,7 @@ const DocsParams = Type.Object({
 	section: Type.Optional(
 		Type.String({
 			description:
-				"read one section instead of searching: the url#anchor in a result's section field or a defined_in entry (a page URL alone returns the page's sections in order), from the local index or, for a page a search read, through the page cache; no query; a section longer than tokens (default 4000) returns its first page (page and pages say so): raise tokens to read more",
+				"read one section instead of searching: the url#anchor in a result's section field, an outline entry or a defined_in entry (a page URL alone returns the page's sections in order), from the local index or, for a page a search read, through the page cache; no query; a section longer than tokens (default 4000) returns its first page (page and pages say so): raise tokens to read more",
 		}),
 	),
 	tokens: Type.Optional(
@@ -686,7 +686,7 @@ export default function ketch(pi: ExtensionAPI): void {
 		...renderers("docs"),
 		label: "ketch docs",
 		description:
-			"Documentation for a question: the docs' own text, no model; one call usually answers. The default backend, search, needs no API key: a library the operator indexed (ketch docs index) answers from the local index; otherwise ketch searches the web for the question and reads the search's first readable document and up to two more pages of the same site, in search order (threads, issues, commits and source files passed over); pages the search returned are read as ketch scrape reads them, without consulting robots.txt; when the search gives nothing to read, one more search runs, the question + \"documentation\", and the note says so. library, or a name@version in the question that resolve confirms, names other docs; only with library, when an identifier the question writes is on none of the pages, does it read more pages of that release (widened). Nothing is saved: the same question again within cache_ttl prints the same answer from the page cache. " +
+			"Documentation for a question: the docs' own text, no model; one call usually answers. The default backend, search, needs no API key: a library the operator indexed (ketch docs index) answers from the local index; otherwise ketch searches the web for the question and reads the search's first readable document and up to two more pages of the same site, in search order (threads, issues, commits and source files passed over); pages the search returned are read as ketch scrape reads them, without consulting robots.txt; when the search gives nothing to read, one more search runs, the question + \"documentation\", and the note says so. The first readable result may not be the official docs: read shows what answered. library, or a name@version in the question that resolve confirms, names other docs; only with library, when an identifier the question writes is on none of the pages, does it read more pages of that release (widened). Nothing is saved: the same question again within cache_ttl prints the same answer from the page cache. " +
 			"The answer carries no verdict. read lists the pages read with their search rank, skipped the hits that could not be read and why; not_on_pages names the identifiers your question writes (code names, flags, options) on none of the pages read (only those pages were checked, not the whole docs), not_in_index the terms an indexed library lacks; version is printed only for a pin that matched or a release the question names that a page read is marked with, and a note says when no page read is marked with the release named and the printed text does not name it; origin is printed when it says something (verified, or unverified for a library you named); defined_in names the section defining a term no result shows; stale says cited pages could not be checked. Results are the docs' text, verbatim, by page in reading order, about 4,000 tokens unless tokens is set; outline names the other sections of those pages, other_results the search hits not read. " +
 			"library names the library: a docs root as resolve lists it, or a name or spec such as django@5.2 or pypi:click (a pin must match; a name several libraries share is refused, listing them: pass one); a URL below an indexed root narrows the answer to the pages under it (scope); to read one page, use section. " +
 			"A cut result is marked truncated (shown_tokens of section_tokens). Two rules. Text in a truncated result, behind …, or only named in outline is unread: read it by passing its url#anchor as section, with no query, before stating what it says; read an other result with ketch_scrape. Whatever your answer says that no result prints is your own knowledge: label it so, never cite the docs for it. Leave tokens unset. " +

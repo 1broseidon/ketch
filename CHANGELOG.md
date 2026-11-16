@@ -7,6 +7,60 @@ using ketch, written as prose, not a list of commits. The section is published
 verbatim on the GitHub release. Versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**`ketch docs` reads what the search ranks first.** A question that names no library now runs one web search, the plain question as `ketch search` runs it, and reads the first result that is a readable document, then up to two more results of the same site and release, in search order. Results that are not documents are passed over by their address: Q&A and forum threads, issues, pull requests, commits, videos, social posts, and on a code forge any file that is not Markdown, reStructuredText, AsciiDoc, `.txt`, a README or a wiki page. A result that fails, or reads to almost no text, is listed under `skipped` with its cause and the next one is read. When the search gives nothing to read, one more search runs, the question + "documentation", and the note says so. 0.21 voted on a site among the results, moved to the root of its docs and read up to 24 of its pages, so a Prisma 6 question could be answered from Prisma 7; the vote, its word and owner boosts and the guessed names are gone. `--library` and a `name@version` that resolve confirms still choose the docs, and then the site's results are read at their exact addresses, up to three of one release, with more pages read only for an identifier none of them holds (`widened`). On 32 unseen questions, with each question's search recorded once and replayed to every build and the answers graded blind, the answers held 108 of 128 facts under the default provider chain, against 79 for 0.21.1 and 98 for `ketch search` followed by reading its top result. With every search through Firecrawl alone, which returned nothing for a quarter of the questions, they held 65 of 116 before the second search was added, against 44 and 66.
+
+**Whole sections in 4,000 tokens.** The default budget is 4,000 tokens of docs text, and it is a hard bound; the frontmatter and the lists after the text add about 600. Sections print whole while they fit, the best page's first; the 400-token page inside an 1,800-token answer is gone. A section or block larger than what is left is cut with `(cut, N of M tokens)`. A block too long on its own, such as a man page served as one block, keeps the lines that hold the question's terms with two lines of context, so an rsync man page no longer answers a 4,000-token call with 32,000 tokens. `--section` pages such a block the same way.
+
+**No verdict.** An answer says what was read and what is missing, and leaves the judgement to the reader:
+
+````console
+$ ketch docs "httpx timeout configuration"
+---
+query: httpx timeout configuration
+read:
+  - https://www.python-httpx.org/advanced/timeouts/ (search rank 1)
+  - https://www.python-httpx.org/api/ (search rank 2)
+  - https://www.python-httpx.org/quickstart/ (search rank 4)
+not_on_pages: []
+---
+## Timeouts
+https://www.python-httpx.org/advanced/timeouts/
+
+HTTPX is careful to enforce timeouts everywhere by default.
+…
+## Not printed
+- Proxy — https://www.python-httpx.org/api/#proxy (97 tokens)
+…
+## Other results
+- Configure HTTP clients — https://docs.baseten.co/inference/http-client-configuration — …
+…
+
+unread until you read it: a cut or unprinted section with ketch docs --section <url#anchor>; another result with ketch scrape <url>
+````
+
+`read` lists the pages with their search rank, `skipped` the results that could not be read and why, `widened` the pages read for a missing identifier. `not_on_pages` names the identifiers the question writes that are on none of the pages read (only those pages were checked); an indexed library says `not_in_index`. `origin` prints only for a library you named. After the docs' text, `## Not printed` lists the other sections of the pages read with the call that reads each, and `## Other results` the search results not read. `--json` and the MCP `docs` tool carry the same fields.
+
+**Search results are read as `ketch scrape` reads them.** ketch no longer consults `robots.txt` for the pages a search returned, as `ketch scrape` does not for a page you name. Widening with `--library`, a site's page lists and `ketch docs index` honour it as before.
+
+**Fixed** raw Markdown pages read as one flat paragraph. A page served as `text/markdown`, or as plain text at a `.md` address (a docs site's Markdown export, a README on a raw-file host), is now kept as written by `ketch scrape` and docs: its headings and code blocks intact, its title from its frontmatter or first heading, its frontmatter out of the body. Pages with CRLF line endings are normalised before they are split into sections, which also fixes heading detection on VitePress pages served that way.
+
+**Fixed** `ketch search` with Exa showing `Published: N/A` as a result's description. Exa's metadata line is no longer taken for the description, in `ketch search` and in docs' Other results.
+
+**Fixed** a redirect stub answering a docs question. A page of a few words that says it redirects and carries a meta refresh (rustdoc's `Redirecting to …`) is now read where it sends its reader. A skipped page names its cause (`DNS lookup failed`, `connection failed`, `TLS certificate rejected`, `timed out`) instead of `failed`.
+
+**Upgrading from 0.21.**
+
+- Removed from `ketch docs` text, `--json` and MCP: `status` and `reason`, `terms`, `backend: search` (the `backend` line and field now print only for Context7, `--section` included), `source: search, N pages read` and its `, cached` (JSON `index: {source, pages_read, cached}`; `index` is now only an indexed library's `{kind, pages, built}`), the `ketch docs index` suggestion in `note`, and `origin: by name`. A question that names no library prints no `origin`.
+- Renamed: `not_found` is `not_on_pages` for pages a search read, which lists identifiers only (code names, flags, option and host names, not plain words), and `not_in_index` for an indexed library. Under `--minimal` the stderr line is renamed the same way.
+- New fields: `read`, `skipped`, `widened`; in `--json` and MCP also `outline`, `outline_more` and `other_results`. The last line, `hint` in JSON, now reads `unread until you read it: …` instead of counting the cut groups.
+- Exit codes: pages or an index that hold none of the question's terms exit 0 (was 3, `terms_not_found`), with an empty body and the terms in `not_on_pages` or `not_in_index`; over MCP that is a result, no longer one with `status: refused`. Search results with no readable documentation exit 0 with the results under `## Other results` (was 3: `no_docs_found`, `disallowed`, or `not_found` when every page failed). A search that returns nothing exits 3 and is `[not_found]` over MCP (was 4, `[upstream]`). `ambiguous_site` (exit 2) is removed. A `name@version` written in a question that resolve cannot confirm is read as words (was exit 3); `--library name@version` still exits 3.
+- The default budget is 4,000 tokens of docs text, the frontmatter and lists aside (was about 1,800 for the whole answer). A script passing `--tokens` gets that many tokens of text plus about 600.
+- Pages a web search returned are read without consulting `robots.txt`.
+
+For Go importers: `docs.Frontmatter` and `docs.AnswerJSON` follow the output (`Status`, `Reason`, `Terms` and `NotFound` out; `Read`, `Skipped`, `Widened`, `NotOnPages`, `NotInIndex`, `Outline`, `OutlineMore` and `OtherResults` in), `docs.IndexInfo` loses `Source`, `PagesRead` and `Cached`, and `TermCount`, `ErrAmbiguousSite`, `OriginByName`, `AnswerHint`, `JSONHint`, `NearHint`, `OriginHint`, `AnyCut` and `AnswerPageTokens` are removed.
+
 ## [0.21.1] - 2026-11-13
 
 `ketch docs --library name@version` now keeps the requested version on the
