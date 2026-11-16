@@ -76,18 +76,20 @@ func TestConfigSetDocsBackendRetired(t *testing.T) {
 	}
 }
 
-// An answer from a site ketch could not verify prints its origin line
-// and ends with the clause telling the caller how to present it.
+// An answer from pages a search read prints what it read and its origin
+// only when it says something: verified, with its evidence. An unverified
+// origin on an outcome that names no library (the request named none) is
+// not printed, and nothing tells the caller how to present it: no hint
+// about the origin follows the body.
 func TestPrintDocsResultsOrigin(t *testing.T) {
-	o := docs.Outcome{Status: docs.Found, Index: &docs.IndexInfo{Source: docs.SearchBackend, PagesRead: 3},
+	o := docs.Outcome{Status: docs.Found, Read: []docs.PageRead{{URL: "https://tips.example.test/a", Rank: 1}},
 		Origin:  "unverified, ketch could not confirm tips.example.test as the official documentation of lib",
 		Results: []docs.Result{{Library: "https://tips.example.test/", PageTitle: "Tips", URL: "https://tips.example.test/a", Snippet: "Text."}}}
 	out := captureStdout(t, func() {
-		printDocsResults(os.Stdout, "pool", docs.SearchBackend, "lib", o, false, docs.HintCLI)
+		printDocsResults(os.Stdout, "pool", docs.SearchBackend, "", o, false, docs.HintCLI)
 	})
-	hint := "origin unverified: ketch could not confirm this site as the official documentation; name the site you cite, or pass the official docs with --library <docs URL>"
-	if !strings.Contains(out, "source: search, 3 pages read\norigin: unverified, ketch could not confirm tips.example.test as the official documentation of lib\nstatus: found\n") ||
-		!strings.HasSuffix(out, "source: https://tips.example.test/a\n\n"+hint+"\n") || strings.Contains(out, "third-party") {
+	if !strings.Contains(out, "\nread:\n  - https://tips.example.test/a (search rank 1)\nnot_on_pages: []\n---\n") || strings.Contains(out, "origin") ||
+		!strings.HasSuffix(out, "source: https://tips.example.test/a\n") || strings.Contains(out, "status") {
 		t.Errorf("output:\n%s", out)
 	}
 	o.Origin = "verified, npm lib lists it as Documentation (resolve, trust 8.0)"

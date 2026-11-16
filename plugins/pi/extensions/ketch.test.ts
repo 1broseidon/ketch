@@ -288,6 +288,36 @@ describe("argument construction", () => {
 		assert.ok(props.section, "section is a parameter");
 	});
 
+	test("docs: description states the exact-pages contract, no verdict", () => {
+		const { tools } = fakePi();
+		const docs = tools.get("ketch_docs");
+		assert.ok(docs);
+		for (const want of [
+			/top search hits there at their exact addresses \(up to 3, one release\)/,
+			/\(widened\)/,
+			/carries no verdict/,
+			/\bread lists the pages read with their search rank/,
+			/\bskipped\b/,
+			/\bnot_on_pages\b/,
+			/\bnot_in_index\b/,
+			/\boutline\b/,
+			/\bother_results\b/,
+			/about 4,000 tokens/,
+			/is unread/,
+			/ketch_scrape/,
+			/your own knowledge/,
+		]) {
+			assert.match(docs.description, want);
+		}
+		for (const gone of [/status found/, /\bnot_found names\b/, /1,800/, /by name \(only a name/, /\bverdict:/, /every not_found term/]) {
+			assert.doesNotMatch(docs.description, gone);
+		}
+		const props = docs.parameters.properties as Record<string, { description: string }>;
+		assert.match(props.tokens.description, /4,000 tokens of docs text/);
+		assert.doesNotMatch(props.tokens.description, /1,800/);
+		assert.match(docs.promptSnippet ?? "", /cut or outlined section/);
+	});
+
 	test("scrape: single url, then every option", async () => {
 		const { tools, calls } = fakePi();
 		await run(tools, "ketch_scrape", { url: "https://example.com" });

@@ -21,40 +21,37 @@ import (
 var docsCmd = &cobra.Command{
 	Use:   "docs <query>",
 	Short: "Answer a question from a library's documentation",
-	Long: `Answer a question from a library's documentation.
+	Long: `Answer a question from documentation: the docs' own text, no model.
 
-A library indexed with ketch docs index answers from the local index.
-Otherwise ketch searches the web, picks the docs site the results agree
-on and reads up to 24 pages. No key needed.
+An indexed library answers from the index. Otherwise ketch searches the
+web, picks the docs site the results agree on and reads its top hits there
+(up to 3, one release); more pages of that release only when an
+identifier in the question is on none of them.
 
-The body is the docs' own text, grouped by section under each page's
-title, each group ending with its source url#anchor. The frontmatter
-lines to read:
+Frontmatter lines:
+  read          the pages read, with their search rank
+  skipped       hits that could not be read, and why
+  widened       more pages read, and for which terms
+  not_on_pages  your terms on none of the pages read (only those pages
+                were checked); not_in_index for an indexed library
+  origin        verified, or unverified for a library you named
+  defined_in    where a term is defined, when not printed
 
-  status      found, partial (see not_found) or refused, exit 3
-  index       an indexed answer: full or capped, its pages and build date
-  source      a live answer: search and the pages read
-  origin      live answers only: verified, by name or unverified
-  terms       your rare terms, with the sections holding each
-  not_found   your terms that no section holds
-  defined_in  the section defining a term, when no group shows it
+Then the docs' text by page and section, "Not printed" (other sections
+of those pages) and "Other results" (hits not read). Text cut "(cut, N
+of M tokens)" or only listed is unread: read it with ketch docs --section
+<url#anchor> before stating what it says; another result with ketch scrape.
 
-A group marked "(cut, N of M tokens)" shows part of its section. The
-rest is unread: run ketch docs --section <its source> before stating
-what it says.
+--tokens bounds the docs text (4,000 by default); the frontmatter and the
+two lists add at most about 600 tokens.
 
---library takes a name, name@version or docs URL. Version pins must match.
-A name several libraries share is refused with them listed, exit 2,
-unless the search results settle on one.
-
--b context7 answers from Context7's snippets instead, keyless on its
-anonymous quota. The docs_backend config key is retired.
+--library takes a name, name@version (the pin must match) or docs URL.
 
 Exit codes:
-  0  an answer: found or partial
+  0  an answer: docs text, or only the search results
   2  bad input, or a library name several libraries share
-  3  refused, or no docs site or section found
-  4  the web search, a page fetch or Context7 failed
+  3  nothing to print: no search results, or an offline miss
+  4  the web search, or Context7 (-b context7), failed
   5  a library indexed in an older format: index it again`,
 	Example: `  ketch docs "set the default context length in ollama"
   ketch docs --library fastapi "dependencies with yield"
@@ -70,7 +67,7 @@ func init() {
 	rootCmd.AddCommand(docsCmd)
 	docsCmd.Flags().StringP("backend", "b", docs.SearchBackend, "docs backend for this call: "+strings.Join(config.AvailableDocBackends(), " or "))
 	docsCmd.Flags().String("library", "", "the library: a name, name@version or docs URL; context7: a library ID from --resolve")
-	docsCmd.Flags().Int("tokens", 0, "token budget (search: 1,800 with the frontmatter; context7: 4000; --section: a page, 4000)")
+	docsCmd.Flags().Int("tokens", 0, "token budget of the docs text (search: 4000; context7: 4000; --section: a page, 4000)")
 	docsCmd.Flags().IntP("limit", "l", 0, "most groups (search: unset, the budget decides) or results (context7: the limit config key)")
 	docsCmd.Flags().Bool("resolve", false, "list the docs roots (indexed first) or Context7 IDs the query names, instead of answering")
 	docsCmd.Flags().String("tag", "", "record each result under this tag (see `ketch tag`)")
@@ -217,44 +214,20 @@ func runDocs(cmd *cobra.Command, args []string) error {
 	return finishDocs(cmd, fetcher, query, backend, "", o, asJSON, minimal, hint, "docs search failed")
 }
 
-// finishDocs prints an answer, or the refusal of a question none of whose
-// distinctive terms the docs hold (its frontmatter, whose not_found is the
-// answer, then the error: exit 3), and returns the error the command
-// exits with.
+// finishDocs prints an answer and returns the error the command exits
+// with: none for an answer, whatever it found (pages, or only search
+// results), the call's failure otherwise.
 func finishDocs(cmd *cobra.Command, fetcher *docsFetcher, query, backend, library string, o docs.Outcome, asJSON, minimal bool, hint docs.HintStyle, failMsg string) error {
-	err := fetcher.classify(o.Err(), failMsg)
-	if err != nil && !termsRefusal(o) {
+	if err := fetcher.classify(o.Err(), failMsg); err != nil {
 		return err
 	}
-	if err == nil {
-		tagResults(cmd, docsTaggable(o.Results))
-	}
+	tagResults(cmd, docsTaggable(o.Results))
 	w := docsStdout(cmd)
-	switch {
-	case asJSON:
-		a := docs.AnswerJSON{Frontmatter: docs.NewFrontmatter(query, backend, library, o), Results: o.Results}
-		if o.Index != nil {
-			a.Hint = docs.JSONHint(docs.CutCount(o.Results))
-			if h := docs.OriginHint(docs.HintCLI, o); h != "" && len(o.Results) > 0 {
-				a.Hint = strings.TrimPrefix(a.Hint+"; "+h, "; ")
-			}
-			if len(o.IndexedNear) > 0 {
-				a.Hint = strings.TrimPrefix(a.Hint+"; "+docs.NearHint(docs.HintCLI), "; ")
-			}
-		}
-		if jerr := json.NewEncoder(w).Encode(a); jerr != nil {
-			return jerr
-		}
-	default:
-		printDocsResults(w, query, backend, library, o, minimal, hint)
+	if asJSON {
+		return json.NewEncoder(w).Encode(docs.NewAnswerJSON(query, backend, library, o))
 	}
-	return err
-}
-
-// termsRefusal reports the local index's refusal of a question none of
-// whose distinctive terms the docs hold: it still prints its frontmatter.
-func termsRefusal(o docs.Outcome) bool {
-	return o.Status == docs.Refused && o.Index != nil
+	printDocsResults(w, query, backend, library, o, minimal, hint)
+	return nil
 }
 
 // docsHint is how a text answer points to the full section of a result
@@ -490,7 +463,11 @@ func noteOnStderr(o docs.Outcome) {
 		fmt.Fprintf(os.Stderr, "stale: %s\n", o.Stale)
 	}
 	if len(o.NotFound) > 0 {
-		fmt.Fprintf(os.Stderr, "not_found: %s\n", strings.Join(o.NotFound, ", "))
+		key := "not_on_pages"
+		if o.Index != nil {
+			key = "not_in_index"
+		}
+		fmt.Fprintf(os.Stderr, "%s: %s\n", key, strings.Join(o.NotFound, ", "))
 	}
 }
 
@@ -510,25 +487,12 @@ func printDocsResults(w io.Writer, query, backend, library string, o docs.Outcom
 		return
 	}
 
-	if o.Index != nil {
-		// An answer from the local index: the frontmatter carries the
-		// verdict, the body the evidence, a page's groups under its title.
+	if o.Evidence() {
+		// An answer from the local index or a search: the frontmatter says
+		// what was read, the body is the docs' text, a page's groups under
+		// its title, then what was not printed and the other results.
 		p("%s", docs.NewFrontmatter(query, backend, library, o).Render())
-		p("%s", docs.RenderAnswer(results, hint))
-		blank := !docs.AnyCut(results)
-		line := func(h string) {
-			if blank {
-				p("\n")
-				blank = false
-			}
-			p("%s\n", h)
-		}
-		if h := docs.OriginHint(hint, o); h != "" && len(results) > 0 {
-			line(h)
-		}
-		if h := docs.NearHint(hint); h != "" && len(o.IndexedNear) > 0 {
-			line(h)
-		}
+		p("%s", docs.RenderAnswer(o, hint))
 		return
 	}
 	printDocsHeader(w, query, backend, library, o)
@@ -581,9 +545,6 @@ func printDocsHeader(w io.Writer, query, backend, library string, o docs.Outcome
 	}
 	if o.Stale != "" {
 		p("stale: %s\n", o.Stale)
-	}
-	if o.Status == docs.Partial {
-		p("status: partial (%s)\n", o.Reason)
 	}
 	if o.Note != "" {
 		p("note: %s\n", o.Note)

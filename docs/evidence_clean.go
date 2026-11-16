@@ -23,6 +23,9 @@ import (
 //     (a capitalised name: <Sandpack>, </DeepDive>, <Intro />), and MDX
 //     comments ({/* … */}, on one line or across lines). Code blocks and
 //     inline code keep theirs.
+//   - Markdoc residue in prose goes: a line that is only Markdoc tags
+//     ({% tab title="…" %}, {% /tab %}), and a tag that spans lines
+//     ({% image … /%}), as raw Markdown exports carry them.
 
 // cleanText is text with the cleaning rules applied: a pure function.
 func cleanText(s string) string {
@@ -33,8 +36,13 @@ func cleanText(s string) string {
 	out := make([]string, 0, len(lines))
 	var fence fenceState
 	inComment := false // inside an MDX comment that spans lines
+	inTag := false     // inside a Markdoc tag that spans lines
 	for _, line := range lines {
 		inFence := fence.n > 0
+		if !inFence && (inTag || markdocOpen(line)) {
+			inTag = !strings.Contains(line, "%}")
+			continue
+		}
 		if !inFence && (inComment || strings.Contains(line, "{/*")) {
 			var empty bool
 			if line, inComment, empty = cutMDXComments(line, inComment); empty {
@@ -44,12 +52,28 @@ func cleanText(s string) string {
 		switch isFence := fence.step(line); {
 		case isFence: // a code block, its fences included, is code: it stays as it is
 			out = append(out, line)
-		case badgeLine(line), jsxTagLine(line):
+		case badgeLine(line), jsxTagLine(line), markdocTagLine(line):
 		default:
 			out = append(out, cleanLine(line))
 		}
 	}
 	return strings.Join(out, "\n")
+}
+
+// markdocTagRe matches one Markdoc tag: {% name … %}, {% /name %}, {% … /%}.
+var markdocTagRe = regexp.MustCompile(`\{%[^%]*%\}`)
+
+// markdocTagLine reports a line that is only Markdoc tags.
+func markdocTagLine(line string) bool {
+	t := strings.TrimSpace(line)
+	return strings.HasPrefix(t, "{%") && strings.TrimSpace(markdocTagRe.ReplaceAllString(t, "")) == ""
+}
+
+// markdocOpen reports a line that opens a Markdoc tag it does not close:
+// the tag spans lines.
+func markdocOpen(line string) bool {
+	t := strings.TrimSpace(line)
+	return strings.HasPrefix(t, "{%") && !strings.Contains(t, "%}")
 }
 
 // cleanLine is one line of prose, a heading or a table row cleaned: its

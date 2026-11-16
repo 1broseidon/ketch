@@ -522,7 +522,7 @@ func sectionCheck(fr *factResult, t *trace) {
 // two "---" fences at the top) lists term under not_found, spelled
 // exactly as the question writes it.
 func statesNotFound(output, term string) bool {
-	return slices.Contains(frontmatterList(output, "not_found"), term)
+	return slices.Contains(frontmatterList(output, "not_on_pages"), term) || slices.Contains(frontmatterList(output, "not_in_index"), term)
 }
 
 // frontmatterList is the YAML flow sequence ([a, "b, c"]) the output's

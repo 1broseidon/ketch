@@ -56,6 +56,7 @@ type sfHit struct {
 	desc   string
 	weight float64
 	docs   bool // a docs signal: host, path or title
+	rank   int  // its place among the fused search results, 1 the first
 }
 
 // sfSite is the hits of one site (registrable domain) and the docs tree
@@ -72,8 +73,12 @@ type sfSite struct {
 	alts  []sfSite // the domain's other docs trees, best first
 	retry bool     // an alternative tree of a site read before
 	// page is a page to read before any other: the page a library URL
-	// names, or a verified root's own page.
-	page *url.URL
+	// names, or the module's page resolve verified (pageVia says which);
+	// fallback a page read only when no search hit on the site is: the
+	// docs root resolve verified.
+	page     *url.URL
+	pageVia  string
+	fallback *url.URL
 }
 
 // fuseWeighted is fuseHits with each list's weights scaled (1 when scale

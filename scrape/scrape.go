@@ -353,6 +353,14 @@ func (s *Scraper) Scrape(ctx context.Context, rawURL string) (*Page, Source, err
 		}
 		return page, SourceHTTP, nil
 	}
+	if isMarkdownResponse(contentType, fetchURL) {
+		title, md := markdownPage(content.Body)
+		page := &Page{URL: rawURL, Title: title, Markdown: md, FinalURL: content.URL, Anchors: []Anchor{}, Source: SourceHTTP}
+		if fetchURL != rawURL {
+			page.FetchedURL = fetchURL
+		}
+		return page, SourceHTTP, nil
+	}
 
 	html, source, rendered := s.maybeBrowserFetch(ctx, fetchURL, content.HTML())
 	return s.extractPage(rawURL, fetchURL, html, source, finalURL(source, rendered, content.URL))
@@ -401,28 +409,8 @@ func (s *Scraper) scrapeConditional(ctx context.Context, rawURL, etag, lastModif
 	}
 
 	contentType := effectiveContentType(content.ContentType, content.Body)
-	if contentType == "application/pdf" {
-		if pdfUnsupported != nil {
-			return nil, pdfUnsupported
-		}
-		markdown, err := s.pdfExtractor.Extract(ctx, content.Body)
-		if err != nil {
-			return nil, fmt.Errorf("PDF extraction failed for %s: %w", fetchURL, err)
-		}
-		page := &Page{
-			URL:          rawURL,
-			Markdown:     markdown,
-			ETag:         headers.Get("ETag"),
-			LastModified: headers.Get("Last-Modified"),
-			ContentHash:  ContentHash(markdown),
-			FinalURL:     content.URL,
-			Anchors:      []Anchor{},
-			Source:       SourceHTTP,
-		}
-		if fetchURL != rawURL {
-			page.FetchedURL = fetchURL
-		}
-		return &FetchResult{Page: page, ContentType: contentType, Source: SourceHTTP}, nil
+	if contentType == "application/pdf" || isMarkdownResponse(contentType, fetchURL) {
+		return s.textResult(ctx, rawURL, fetchURL, contentType, content, headers, pdfUnsupported)
 	}
 
 	html := content.HTML()
@@ -476,6 +464,39 @@ func (s *Scraper) scrapeConditional(ctx context.Context, rawURL, etag, lastModif
 		JSDetection: detection,
 		Source:      source,
 	}, nil
+}
+
+// textResult builds the FetchResult of a response that is no HTML page: a
+// PDF, its text extracted (pdfUnsupported, when not nil, refuses it), or a
+// raw Markdown file, kept as written (markdownPage).
+func (s *Scraper) textResult(ctx context.Context, rawURL, fetchURL, contentType string, content *FetchedContent, headers http.Header, pdfUnsupported error) (*FetchResult, error) {
+	var title, markdown string
+	if contentType == "application/pdf" {
+		if pdfUnsupported != nil {
+			return nil, pdfUnsupported
+		}
+		var err error
+		if markdown, err = s.pdfExtractor.Extract(ctx, content.Body); err != nil {
+			return nil, fmt.Errorf("PDF extraction failed for %s: %w", fetchURL, err)
+		}
+	} else {
+		title, markdown = markdownPage(content.Body)
+	}
+	page := &Page{
+		URL:          rawURL,
+		Title:        title,
+		Markdown:     markdown,
+		ETag:         headers.Get("ETag"),
+		LastModified: headers.Get("Last-Modified"),
+		ContentHash:  ContentHash(markdown),
+		FinalURL:     content.URL,
+		Anchors:      []Anchor{},
+		Source:       SourceHTTP,
+	}
+	if fetchURL != rawURL {
+		page.FetchedURL = fetchURL
+	}
+	return &FetchResult{Page: page, ContentType: contentType, Source: SourceHTTP}, nil
 }
 
 // renderedResult builds the FetchResult for a page the browser rendered after

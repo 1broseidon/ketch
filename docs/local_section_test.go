@@ -372,7 +372,7 @@ func TestCompactAnswerPointsToFullSection(t *testing.T) {
 	if len(cut) == 0 || !cut[0].Truncated {
 		t.Fatalf("the fixture's first result should be cut at 300 tokens: %+v", cut)
 	}
-	text := RenderAnswer(cut, HintCLI)
+	text := RenderAnswer(Outcome{Results: cut}, HintCLI)
 	for _, r := range cut {
 		if r.Section != r.URL || r.Section == "" {
 			t.Errorf("section = %q, url %q", r.Section, r.URL)
@@ -384,7 +384,8 @@ func TestCompactAnswerPointsToFullSection(t *testing.T) {
 			t.Errorf("truncated=%v, snippet:\n%s", r.Truncated, r.Snippet)
 		}
 	}
-	if hint := AnswerHint(HintCLI, CutCount(cut)); strings.Count(text, hint) != 1 || !strings.HasSuffix(text, "\n"+hint+"\n") {
+	hint := Hint(HintCLI, Outcome{Results: cut})
+	if !strings.Contains(hint, "ketch docs --section <url#anchor>") || strings.Count(text, hint) != 1 || !strings.HasSuffix(text, "\n"+hint+"\n") {
 		t.Errorf("hint line:\n%s", text)
 	}
 }
@@ -402,7 +403,7 @@ func TestCompactAnswerPointerAbsent(t *testing.T) {
 	if r := o.Results[at]; r.Truncated || r.Snippet != "Async rules return a promise." || strings.Contains(RenderGroup(r, true), "(cut") {
 		t.Errorf("a whole result is marked cut:\n%s", RenderGroup(r, true))
 	}
-	if text := RenderAnswer(o.Results[at:at+1], HintCLI); strings.Contains(text, "hidden text is unread") {
+	if text := RenderAnswer(Outcome{Results: o.Results[at : at+1]}, HintCLI); strings.Contains(text, "unread") {
 		t.Errorf("a hint with nothing cut:\n%s", text)
 	}
 	for _, opts := range []LocalOptions{{Tokens: 300}, {Hint: HintCLI}} {
@@ -414,31 +415,31 @@ func TestCompactAnswerPointerAbsent(t *testing.T) {
 	}
 	// An answer with a group cut, but no style, has no hint line.
 	small := askCompact(t, l, LocalOptions{Tokens: 300})
-	if !small[0].Truncated || strings.Contains(RenderAnswer(small, HintNone), "full text") {
+	if !small[0].Truncated || strings.Contains(RenderAnswer(Outcome{Results: small}, HintNone), "unread") {
 		t.Errorf("small budget result: truncated=%v", small[0].Truncated)
 	}
 }
 
-// Everything printed is counted: at every budget the frontmatter and the
-// body, hint line included, stay within it by the estimate, unless the
-// budget is too small for any group (the first still prints, alone).
+// The budget covers the passages: at every budget the groups under their
+// page headings, source and cut lines included, stay within it by the
+// estimate, whatever the hint style, unless the budget is too small for
+// any group (the first still prints, alone).
 func TestCompactBudgetCountsPointer(t *testing.T) {
 	l := sectionLocal(t, "")
 	const query = "default form action POST validation rules"
 	for tokens := 150; tokens <= 1200; tokens += 75 {
 		for _, style := range []HintStyle{HintCLI, HintMCP, HintNone} {
 			o := l.GetDocsSelect(WithLocalOptions(context.Background(), LocalOptions{Tokens: tokens, Hint: style}), secRoot, query, 0)
-			total := estimateTokens(NewFrontmatter(query, SearchBackend, secRoot, o).Render() + RenderAnswer(o.Results, style))
+			total := estimateTokens(renderPassages(o.Results))
 			if total > tokens && len(o.Results) > 1 {
-				t.Errorf("style %d at %d tokens: answer estimates %d", style, tokens, total)
+				t.Errorf("style %d at %d tokens: passages estimate %d", style, tokens, total)
 			}
 		}
 	}
 }
 
-// Over MCP the pointer is the docs call, said once for the answer
-// (AnswerHint), never in a result's text; the section field names what
-// it takes.
+// Over MCP the pointer is the docs call, said once for the answer (Hint),
+// never in a result's text; the section field names what it takes.
 func TestCompactAnswerMCPPointer(t *testing.T) {
 	l := sectionLocal(t, "")
 	o := l.GetDocsSelect(WithLocalOptions(context.Background(), LocalOptions{Tokens: 300, Hint: HintMCP}), secRoot, "default form action POST", 0)
@@ -446,7 +447,7 @@ func TestCompactAnswerMCPPointer(t *testing.T) {
 	if !r.Truncated || r.Section != r.URL || strings.Contains(r.Snippet, "full section") || strings.Contains(r.Snippet, elidedMarker) {
 		t.Errorf("MCP snippet:\n%s", r.Snippet)
 	}
-	if body := RenderAnswer(o.Results, HintMCP); strings.Count(body, `docs(section="<its section>")`) != 1 || !strings.HasSuffix(body, AnswerHint(HintMCP, CutCount(o.Results))+"\n") {
+	if body := RenderAnswer(o, HintMCP); strings.Count(body, `docs(section="<url#anchor>")`) != 1 || !strings.HasSuffix(body, "\n"+Hint(HintMCP, o)+"\n") || strings.Contains(body, "ketch docs") {
 		t.Errorf("MCP answer:\n%s", body)
 	}
 	// The call it names fetches that section.

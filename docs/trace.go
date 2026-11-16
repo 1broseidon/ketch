@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 //
 //	query, library, backend   the question, the library root answered from, the backend named in the output
 //	path                      how search answered: "local" (the index) or "search" (pages a web search read)
+//	fallbacks                 the fallbacks the call took: widened, fell_over, resolved_first, favoured_first
 //	status, reason, note      the outcome, as printed; error, the error a refused or failed call exits with
 //	index                     the library: root, resolved (how it was built), built, pages, sections
 //	terms                     sections (the library's count) and list: each term of the question's one
@@ -38,8 +40,7 @@ import (
 //	sort                      pieces: id, section (url#anchor), kind, role (its page's), text (cleaned,
 //	                          verbatim), tokens (estimated, separator included), folded (the ids folded
 //	                          into it) or folded_into (the id it was folded into)
-//	rank                      budget (the tokens planned, frontmatter and margin out), page_tokens (the
-//	                          page size: a longer section is never printed whole; 0 for none), used, stop
+//	rank                      budget (the tokens planned for the passages, margin out), used, stop
 //	                          (reason "budget" when a piece was passed over for room, else "end"),
 //	                          sections (index for index with gather's pool: section, order (its rank
 //	                          in Gather, as fusion uses it), best_piece and best_rank (its best piece
@@ -71,20 +72,24 @@ import (
 // When a call answers more than once (a remembered question that no longer
 // answers, a second site), the stages hold the last answer.
 type Trace struct {
-	Query   string       `json:"query"`
-	Library string       `json:"library,omitempty"`
-	Backend string       `json:"backend,omitempty"`
-	Path    string       `json:"path,omitempty"`
-	Status  Status       `json:"status,omitempty"`
-	Reason  string       `json:"reason,omitempty"`
-	Note    string       `json:"note,omitempty"`
-	Error   string       `json:"error,omitempty"`
-	Index   *traceIndex  `json:"index,omitempty"`
-	Terms   *traceTerms  `json:"terms,omitempty"`
-	Gather  *traceGather `json:"gather,omitempty"`
-	Sort    *traceSort   `json:"sort,omitempty"`
-	Rank    *traceRank   `json:"rank,omitempty"`
-	Output  traceOutput  `json:"output"`
+	Query   string `json:"query"`
+	Library string `json:"library,omitempty"`
+	Backend string `json:"backend,omitempty"`
+	Path    string `json:"path,omitempty"`
+	// Fallbacks are the fallbacks the call took: widened (past the exact
+	// pages), fell_over (to a second site), resolved_first (the resolved
+	// root read before the favoured site), favoured_first.
+	Fallbacks []string     `json:"fallbacks,omitempty"`
+	Status    Status       `json:"status,omitempty"`
+	Reason    string       `json:"reason,omitempty"`
+	Note      string       `json:"note,omitempty"`
+	Error     string       `json:"error,omitempty"`
+	Index     *traceIndex  `json:"index,omitempty"`
+	Terms     *traceTerms  `json:"terms,omitempty"`
+	Gather    *traceGather `json:"gather,omitempty"`
+	Sort      *traceSort   `json:"sort,omitempty"`
+	Rank      *traceRank   `json:"rank,omitempty"`
+	Output    traceOutput  `json:"output"`
 
 	printed bytes.Buffer
 }
@@ -161,14 +166,11 @@ type tracePiece struct {
 }
 
 type traceRank struct {
-	Budget int `json:"budget"`
-	// PageTokens is the page size: a section longer is never printed
-	// whole (0: none).
-	PageTokens int                `json:"page_tokens"`
-	Used       int                `json:"used"`
-	Stop       traceStop          `json:"stop"`
-	Sections   []traceSectionRank `json:"sections"`
-	Pieces     []traceChoice      `json:"pieces"`
+	Budget   int                `json:"budget"`
+	Used     int                `json:"used"`
+	Stop     traceStop          `json:"stop"`
+	Sections []traceSectionRank `json:"sections"`
+	Pieces   []traceChoice      `json:"pieces"`
 }
 
 type traceStop struct {
@@ -219,7 +221,6 @@ type traceOutput struct {
 	BodyTokens int          `json:"body_tokens"`
 	Budget     int          `json:"budget"`
 	Index      *IndexInfo   `json:"index,omitempty"`
-	Terms      []TermCount  `json:"terms,omitempty"`
 	DefinedIn  []DefinedIn  `json:"defined_in,omitempty"`
 	NotFound   []string     `json:"not_found,omitempty"`
 	Groups     []traceGroup `json:"groups,omitempty"`
@@ -273,7 +274,7 @@ func (t *Trace) SetOutcome(backend string, o Outcome) {
 	if err := o.Err(); err != nil {
 		t.Error = err.Error()
 	}
-	t.Output.Index, t.Output.Terms, t.Output.NotFound, t.Output.Groups = o.Index, o.Terms, o.NotFound, nil
+	t.Output.Index, t.Output.NotFound, t.Output.Groups = o.Index, o.NotFound, nil
 	t.Output.DefinedIn = o.DefinedIn
 	for _, r := range o.Results {
 		t.Output.Groups = append(t.Output.Groups, traceGroup{Section: r.URL, PageTitle: r.PageTitle, HeadingPath: r.HeadingPath, Cut: r.Truncated,
@@ -309,6 +310,13 @@ func (t *Trace) Write(path string, runErr error) error {
 func (t *Trace) setPath(path string) {
 	if t != nil {
 		t.Path = path
+	}
+}
+
+// fallback records a fallback the call took.
+func (t *Trace) fallback(name string) {
+	if t != nil && !slices.Contains(t.Fallbacks, name) {
+		t.Fallbacks = append(t.Fallbacks, name)
 	}
 }
 
@@ -410,7 +418,7 @@ func (t *Trace) ranked(s *sorted, g *gathered, r *ranked) {
 	for i := range t.Terms.List {
 		t.Terms.List[i].Weight, t.Terms.List[i].Distinctive = r.weights[i], r.distinct[i]
 	}
-	t.Rank = &traceRank{Budget: r.budget, PageTokens: answerPageTokens, Used: r.used, Stop: traceStop{Reason: r.stop},
+	t.Rank = &traceRank{Budget: r.budget, Used: r.used, Stop: traceStop{Reason: r.stop},
 		Sections: make([]traceSectionRank, len(s.secs)), Pieces: make([]traceChoice, len(s.pieces))}
 	for id, sc := range r.scores {
 		t.Rank.Pieces[id] = traceScore(g, r, id, sc)

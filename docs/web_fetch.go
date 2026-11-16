@@ -134,6 +134,12 @@ func (w *Web) probe(ctx context.Context, root webRoot, loc string) ([]byte, *url
 // raw fetch that redirected away is not retried through the pipeline,
 // which would only follow the same redirect.
 func (w *Web) fetchOne(ctx context.Context, root webRoot, link webLink) (*webPage, error) {
+	return w.fetchIn(ctx, root.contains, link)
+}
+
+// fetchIn is fetchOne with the scope a response may be served from given
+// as inScope.
+func (w *Web) fetchIn(ctx context.Context, inScope func(*url.URL) bool, link webLink) (*webPage, error) {
 	u := link.url.String()
 	var from *url.URL
 	title, md := "", ""
@@ -142,7 +148,7 @@ func (w *Web) fetchOne(ctx context.Context, root webRoot, link webLink) (*webPag
 	if isMarkdownURL(link.url) {
 		raw, err := w.fetcher.FetchRaw(ctx, u)
 		if err == nil {
-			from, err = servedFrom(link.url, raw.URL, root.contains)
+			from, err = servedFrom(link.url, raw.URL, inScope)
 		}
 		if err != nil {
 			return nil, err
@@ -154,7 +160,7 @@ func (w *Web) fetchOne(ctx context.Context, root webRoot, link webLink) (*webPag
 	if md == "" {
 		page, err := w.fetcher.FetchPage(ctx, u)
 		if err == nil {
-			from, err = servedFrom(link.url, page.URL, root.contains)
+			from, err = servedFrom(link.url, page.URL, inScope)
 		}
 		if err != nil {
 			return nil, err

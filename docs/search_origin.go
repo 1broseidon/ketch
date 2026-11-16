@@ -48,8 +48,7 @@ func OriginByName(origin string) bool { return strings.HasPrefix(origin, originB
 // the caller can choose between (the resolved one, the one the search
 // results favour).
 type sfOrigin struct {
-	text  string
-	roots []string
+	text string
 }
 
 func verifiedOrigin(evidence string) sfOrigin {
@@ -77,10 +76,9 @@ func byNameOrigin(m *webMatch, lead *webRoot) sfOrigin {
 			break
 		}
 	}
-	o := sfOrigin{text: fmt.Sprintf("%s, %s documents %s", originByName, scopeHost(m.root.u), what), roots: []string{m.root.String()}}
+	o := sfOrigin{text: fmt.Sprintf("%s, %s documents %s", originByName, scopeHost(m.root.u), what)}
 	if lead != nil {
 		o.text += "; the search results favour " + lead.String()
-		o.roots = append(o.roots, lead.String())
 	}
 	return o
 }
@@ -948,8 +946,9 @@ func titlesCarry(hits []sfHit, key string) bool {
 
 // readFail is one planned page that gave no text, and why.
 type readFail struct {
-	page  string
-	cause string // readNotFound, readBlocked, ...
+	page   string
+	cause  string // readNotFound, readBlocked, ...
+	detail string // an HTTP status, when the cause has one
 }
 
 // Causes of a page read that gave no text.

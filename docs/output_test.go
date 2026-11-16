@@ -12,37 +12,112 @@ import (
 	"github.com/1broseidon/ketch/internal/docsindex"
 )
 
-// The frontmatter's fields print in one order: query, backend, library,
-// version, index (or the pages a search read), status with its reason,
-// terms, not_found, note; result_count is gone. An answer from elsewhere
-// (Context7, a section fetch: no Index) keeps its old lines.
+// The frontmatter's fields print in one order: query, backend (only one
+// other than search), library, scope, version, index, read, skipped,
+// widened, not_on_pages, not_in_index, outside_scope, origin, stale,
+// defined_in, indexed_near, note. No status, reason, terms or source line
+// is printed: the frontmatter says what was read, never a verdict.
 func TestFrontmatterOrder(t *testing.T) {
-	f := Frontmatter{Query: "pam_duo failmode", Backend: SearchBackend, Library: "https://duo.com/docs/", Version: "2.1",
-		Index: &IndexInfo{Kind: IndexFull, Pages: 734, Built: "2026-11-10"}, Status: Partial, Reason: ReasonTermsNotFound,
-		Terms: []TermCount{{"pam_duo", 48}, {"failmode", 74}}, NotFound: []string{"pam_sss"}, Note: "a note"}
-	want := "---\nquery: pam_duo failmode\nbackend: search\nlibrary: https://duo.com/docs/\nversion: 2.1\n" +
-		"index: full, 734 pages, built 2026-11-10\nstatus: partial (terms_not_found)\n" +
-		"terms: {pam_duo: 48, failmode: 74}\nnot_found: [pam_sss]\nnote: a note\n---\n"
+	f := Frontmatter{Query: "pam_duo failmode", Backend: "context7", Library: "https://duo.com/docs/", Scope: "https://duo.com/docs/unix/", Version: "2.1",
+		Index:      &IndexInfo{Kind: IndexFull, Pages: 734, Built: "2026-11-10"},
+		Read:       []PageRead{{URL: "https://duo.com/docs/a", Rank: 1}, {URL: "https://duo.com/docs/b", Via: "the library URL"}, {URL: "https://duo.com/docs/c"}},
+		Skipped:    []PageSkipped{{URL: "https://duo.com/docs/d", Cause: "not found, HTTP 404"}},
+		Widened:    &Widening{Pages: 4, Root: "https://duo.com/docs/", Terms: []string{"pam_sss", "x:y"}},
+		NotOnPages: []string{"pam_sss"}, NotInIndex: []string{"x:y"}, OutsideScope: []string{"c.req"},
+		Origin: "verified, x", Stale: "unverified, built 2026-11-01", DefinedIn: []DefinedIn{{Term: "t", Section: "u#a"}},
+		IndexedNear: []NearLibrary{{Title: "Duo", Library: "https://duo.com/docs/"}}, Note: "a note"}
+	want := "---\nquery: pam_duo failmode\nbackend: context7\nlibrary: https://duo.com/docs/\nscope: https://duo.com/docs/unix/\nversion: 2.1\n" +
+		"index: full, 734 pages, built 2026-11-10\n" +
+		"read:\n  - https://duo.com/docs/a (search rank 1)\n  - https://duo.com/docs/b (the library URL)\n  - https://duo.com/docs/c\n" +
+		"skipped:\n  - https://duo.com/docs/d (not found, HTTP 404)\n" +
+		"widened: read 4 more pages of https://duo.com/docs/ for: pam_sss, x:y\n" +
+		"not_on_pages: [pam_sss]\nnot_in_index: [\"x:y\"]\noutside_scope: [c.req]\norigin: verified, x\nstale: unverified, built 2026-11-01\n" +
+		"defined_in: {t: u#a}\nindexed_near: {Duo: https://duo.com/docs/}\nnote: a note\n---\n"
 	if got := f.Render(); got != want {
 		t.Errorf("frontmatter:\n%s\nwant:\n%s", got, want)
 	}
-	answered := Frontmatter{Query: "q", Backend: SearchBackend, Library: "L", Index: searchRead(12, false), Status: Found, Terms: []TermCount{}, NotFound: []string{}}
-	if got := answered.Render(); got != "---\nquery: q\nbackend: search\nlibrary: L\nsource: search, 12 pages read\nstatus: found\nterms: {}\nnot_found: []\n---\n" {
-		t.Errorf("answered from pages read:\n%s", got)
+	for _, bad := range []string{"status", "reason", "terms", "not_found", "source"} {
+		if strings.Contains(f.Render(), "\n"+bad+":") {
+			t.Errorf("frontmatter prints %s:\n%s", bad, f.Render())
+		}
 	}
-	if got := searchRead(12, true).line(); got != "source: search, 12 pages read, cached" {
-		t.Errorf("a repeat from the question cache: %q", got)
+	// A widening with no exact page read stands in their place.
+	lists := Frontmatter{Widened: &Widening{Pages: 1, Root: "https://duo.com/docs/"}}
+	if got := lists.Render(); got != "---\nwidened: read 1 page of https://duo.com/docs/, as no search hit on it could be read\n---\n" {
+		t.Errorf("widened in place of the exact pages:\n%s", got)
+	}
+	// Empty lists print as [] when set; nil prints nothing.
+	if got := (Frontmatter{Query: "q", NotOnPages: []string{}}).Render(); got != "---\nquery: q\nnot_on_pages: []\n---\n" {
+		t.Errorf("an empty not_on_pages:\n%s", got)
+	}
+	if got := (Frontmatter{Query: "q"}).Render(); got != "---\nquery: q\n---\n" {
+		t.Errorf("nothing set:\n%s", got)
 	}
 	capped := indexInfo(docsindex.Library{Pages: 400, Capped: true})
-	if capped.line() != "index: capped, 400 pages" {
-		t.Errorf("index line %q", capped.line())
+	if capped.Summary() != "capped, 400 pages" {
+		t.Errorf("index summary %q", capped.Summary())
 	}
-	legacy := Frontmatter{Query: "q", Backend: "context7", Library: "/x/y", Status: Found}
+	legacy := Frontmatter{Query: "q", Backend: "context7", Library: "/x/y"}
 	if got := legacy.Render(); got != "---\nquery: q\nbackend: context7\nlibrary: /x/y\n---\n" {
 		t.Errorf("legacy:\n%s", got)
 	}
-	if got := termsFlow([]TermCount{{"a:b", 1}, {"x, y", 2}}); got != `{"a:b": 1, "x, y": 2}` {
-		t.Errorf("quoted terms %s", got)
+}
+
+// NewFrontmatter names what a source lacks by where it looked: an indexed
+// answer's not_in_index, an answer from pages read not_on_pages (always
+// set, [] for none); neither for a results-only answer. backend is printed
+// only for one other than search.
+func TestNewFrontmatterNotFoundKey(t *testing.T) {
+	for _, c := range []struct {
+		name            string
+		o               Outcome
+		onPages, inIdx  []string
+		backend, origin string
+	}{
+		{"indexed", Outcome{Index: &IndexInfo{Kind: IndexFull}, NotFound: []string{"a"}}, nil, []string{"a"}, "", ""},
+		{"indexed, all found", Outcome{Index: &IndexInfo{Kind: IndexFull}}, nil, []string{}, "", ""},
+		{"pages read", Outcome{Read: []PageRead{{URL: "https://x.test/a", Rank: 1}}, NotFound: []string{"b"}}, []string{"b"}, nil, "", ""},
+		{"pages read, all found", Outcome{Read: []PageRead{{URL: "https://x.test/a", Rank: 1}}}, []string{}, nil, "", ""},
+		{"widened only", Outcome{Widened: &Widening{Pages: 2, Root: "https://x.test/"}}, []string{}, nil, "", ""},
+		{"results only", Outcome{OtherResults: []OtherResult{{Title: "T", URL: "https://x.test/t", Rank: 1}}}, nil, nil, "", ""},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			f := NewFrontmatter("q", SearchBackend, "", c.o)
+			if !slices.Equal(f.NotOnPages, c.onPages) || (f.NotOnPages == nil) != (c.onPages == nil) ||
+				!slices.Equal(f.NotInIndex, c.inIdx) || (f.NotInIndex == nil) != (c.inIdx == nil) || f.Backend != "" {
+				t.Errorf("not_on_pages %#v not_in_index %#v backend %q", f.NotOnPages, f.NotInIndex, f.Backend)
+			}
+		})
+	}
+	if f := NewFrontmatter("q", "context7", "", Outcome{}); f.Backend != "context7" {
+		t.Errorf("context7 backend %q", f.Backend)
+	}
+}
+
+// The origin line prints only when it says something: verified, with its
+// evidence; unverified only for a request that named a library; never
+// "by name".
+func TestShownOrigin(t *testing.T) {
+	read := []PageRead{{URL: "https://x.test/a", Rank: 1}}
+	for _, c := range []struct {
+		origin, named, want string
+	}{
+		{"verified, the search results name it", "", "verified, the search results name it"},
+		{"verified, x", "lib", "verified, x"},
+		{"unverified, ketch could not confirm x.test", "", ""},
+		{"unverified, ketch could not confirm x.test", "lib", "unverified, ketch could not confirm x.test"},
+		{"by name, x.test documents the npm package x", "", ""},
+		{"by name, x.test documents the npm package x", "lib", ""},
+		{"", "lib", ""},
+	} {
+		o := Outcome{Origin: c.origin, named: c.named, Read: read}
+		if got := ShownOrigin(o); got != c.want {
+			t.Errorf("ShownOrigin(%q, named %q) = %q, want %q", c.origin, c.named, got, c.want)
+		}
+		fm := NewFrontmatter("q", SearchBackend, c.named, o).Render()
+		if strings.Contains(fm, "\norigin:") != (c.want != "") {
+			t.Errorf("origin %q, named %q: frontmatter\n%s", c.origin, c.named, fm)
+		}
 	}
 }
 
@@ -87,23 +162,22 @@ func TestTermVerdict(t *testing.T) {
 		markDistinctive(out, 1000)
 		return out
 	}
-	if v := verdict(terms(5, 900, 7), 1000); v.refused || v.partial || len(v.notFound) != 0 || !slices.Equal(v.found, []TermCount{{"a", 5}, {"c", 7}}) {
+	if v := verdict(terms(5, 900, 7), 1000); v.refused || v.partial || len(v.notFound) != 0 {
 		t.Errorf("found: %+v", v)
 	}
 	if v := verdict(terms(5, 0), 1000); v.refused || !v.partial || !slices.Equal(v.notFound, []string{"b"}) {
 		t.Errorf("partial: %+v", v)
 	}
-	if v := verdict(terms(0, 0, 900), 1000); !v.refused || !slices.Equal(v.notFound, []string{"a", "b"}) || len(v.found) != 0 {
+	if v := verdict(terms(0, 0, 900), 1000); !v.refused || !slices.Equal(v.notFound, []string{"a", "b"}) {
 		t.Errorf("refused: %+v", v)
 	}
-	if v := verdict(terms(900, 950), 1000); v.refused || len(v.found) != 0 {
-		t.Errorf("no distinctive term: every term is, none is listed: %+v", v)
+	if v := verdict(terms(900, 950), 1000); v.refused || v.partial {
+		t.Errorf("no distinctive term: every term is: %+v", v)
 	}
 }
 
-// The frontmatter's terms list only identifiers and words in under 1% of
-// the library's sections or in at most 25 of them: a distinctive word in
-// 26 of 1,000 sections is not listed, and the refusal still reads it.
+// A distinctive word in many sections (26 of 1,000) still answers: no
+// refusal for a word the docs hold.
 func TestTermsShown(t *testing.T) {
 	terms := func(counts ...int) []writtenTerm {
 		var out []writtenTerm
@@ -113,16 +187,11 @@ func TestTermsShown(t *testing.T) {
 		markDistinctive(out, 1000)
 		return out
 	}
-	if v := verdict(terms(9, 25, 26, 50), 1000); v.refused || !slices.Equal(v.found, []TermCount{{"a", 9}, {"b", 25}}) {
-		t.Errorf("words in 1%% or more and over 25 of the sections are not listed: %+v", v)
+	if v := verdict(terms(9, 25, 26, 50), 1000); v.refused || v.partial {
+		t.Errorf("every word held: %+v", v)
 	}
-	if v := verdict(terms(50), 1000); v.refused || len(v.found) != 0 {
-		t.Errorf("an unlisted distinctive word still answers: %+v", v)
-	}
-	small := []writtenTerm{{text: "a", sections: 3}, {text: "b", sections: 20}, {text: "c", ident: true, sections: 40}}
-	markDistinctive(small, 60)
-	if v := verdict(small, 60); !slices.Equal(v.found, []TermCount{{"a", 3}, {"c", 40}}) {
-		t.Errorf("small library: %+v", v)
+	if v := verdict(terms(50), 1000); v.refused {
+		t.Errorf("a distinctive word in 50 sections still answers: %+v", v)
 	}
 }
 
@@ -158,11 +227,9 @@ func TestEvidenceStatus(t *testing.T) {
 	}
 }
 
-// On an answer from pages a search read, terms lists no common word (a
-// handful of pages makes every word look rare there) and a common word
-// missing from the pages makes nothing partial; a rare word and an
-// identifier are listed, and a rare word missing still is partial. The
-// same library answered as an index is unchanged.
+// On an answer from pages a search read a common word missing from the
+// pages makes nothing partial (a handful of pages makes every word look
+// rare there); a rare word missing still is partial and named.
 func TestSearchReadTerms(t *testing.T) {
 	secs := []docsindex.Section{
 		evSection("lists", 0, "", []string{"Lists and non-null"}, "A list field whose items cannot be null wraps the item type in `NonNull`; the list itself can still be null."),
@@ -175,24 +242,13 @@ func TestSearchReadTerms(t *testing.T) {
 	l, lib := evLocal(t, secs)
 	ctx := context.Background()
 	q := "define a list field whose items cannot be null but the list itself can with NonNull"
-	read := l.answer(ctx, lib, q, LocalOptions{read: 3})
-	names := func(o Outcome) []string {
-		var out []string
-		for _, tc := range o.Terms {
-			out = append(out, tc.Term)
-		}
-		return out
+	if read := l.answer(ctx, lib, q, LocalOptions{live: true}); read.Status != Found || len(read.NotFound) != 0 || read.Index != nil {
+		t.Errorf("pages read: %s not_on_pages %v index %+v, want found with no index line", read.Status, read.NotFound, read.Index)
 	}
-	if got := names(read); !slices.Equal(got, []string{"NonNull"}) || read.Status != Found {
-		t.Errorf("pages read: terms %v status %s, want only the identifier", got, read.Status)
-	}
-	if got := names(l.answer(ctx, lib, q, LocalOptions{})); !slices.Contains(got, "whose") || !slices.Contains(got, "itself") {
-		t.Errorf("indexed: terms %v, want the index's rule unchanged", got)
-	}
-	if o := l.answer(ctx, lib, "list field whose items cannot be null at midnight with NonNull", LocalOptions{read: 3}); o.Status != Partial || !slices.Equal(o.NotFound, []string{"midnight"}) {
+	if o := l.answer(ctx, lib, "list field whose items cannot be null at midnight with NonNull", LocalOptions{live: true}); o.Status != Partial || !slices.Equal(o.NotFound, []string{"midnight"}) {
 		t.Errorf("a rare word missing: %s not_found %v", o.Status, o.NotFound)
 	}
-	if o := l.answer(ctx, lib, "list field items cannot be null anyway, NonNull", LocalOptions{read: 3}); o.Status != Found || len(o.NotFound) != 0 {
+	if o := l.answer(ctx, lib, "list field items cannot be null anyway, NonNull", LocalOptions{live: true}); o.Status != Found || len(o.NotFound) != 0 {
 		t.Errorf("a common word missing: %s not_found %v", o.Status, o.NotFound)
 	}
 	for w, want := range map[string]bool{"whose": true, "cannot": true, "itself": true, "add": true, "per": true, "message": true, "else": true,
@@ -223,7 +279,7 @@ func TestNumberTerms(t *testing.T) {
 		l, lib := evLocal(t, append([]docsindex.Section{evSection("limits", 0, "", []string{"Limits"}, c.docs)}, secs...))
 		o := l.answer(ctx, lib, c.query, LocalOptions{})
 		if o.Status != Found || len(o.NotFound) != 0 || len(o.Results) == 0 || !strings.Contains(o.Results[0].Snippet, "included") {
-			t.Errorf("%q over %q: %s not_found %v terms %v", c.query, c.docs, o.Status, o.NotFound, o.Terms)
+			t.Errorf("%q over %q: %s not_found %v", c.query, c.docs, o.Status, o.NotFound)
 		}
 		wts := writtenTerms(c.query, evidenceTerms(newRankQuery(c.query)))
 		i := slices.IndexFunc(wts, func(wt writtenTerm) bool { return strings.Contains(wt.text, "000") })
@@ -258,11 +314,12 @@ func TestNumberForms(t *testing.T) {
 	}
 }
 
-// An answer prints a page's groups together under its title, pages in
-// the order of their best group and groups in rank order within a page;
-// a group's heading is its path below the title; a cut group's source
-// says so; one hint line ends an answer with a cut group, in the
-// surface's words, and none ends one without.
+// An answer prints a page's groups together under its title and address,
+// pages in the order of their best group and groups in page order within
+// a page; a group's heading is its path below the title (a lead section
+// printed after another group of its page is "(top of page)"); a cut
+// group's source says so; one hint line ends an answer with a cut group,
+// in the surface's words, and none ends one without.
 func TestRenderAnswer(t *testing.T) {
 	secs := []docsindex.Section{
 		evSection("a", 0, "", []string{"Page A"}, "Lead of A."),
@@ -272,7 +329,7 @@ func TestRenderAnswer(t *testing.T) {
 	s := sortPool(secs, evRoot)
 	r := &ranked{plans: []plan{{sec: 2, pieces: []int{s.secs[2].pieces[0]}}, {sec: 1, whole: true}, {sec: 0, whole: true}}}
 	gs := groupsOf(s, r)
-	if len(gs) != 3 || gs[0].sec != 2 || gs[1].sec != 0 || gs[2].sec != 1 {
+	if len(gs) != 3 || gs[0].sec != 0 || gs[1].sec != 2 || gs[2].sec != 1 {
 		t.Fatalf("printed order %+v", gs)
 	}
 	lib := docsindex.Library{Root: evRoot}
@@ -281,88 +338,185 @@ func TestRenderAnswer(t *testing.T) {
 		results = append(results, renderGroup(lib, s, g))
 	}
 	cut := fmt.Sprintf(" (cut, %d of %d tokens)", estimateTokens("A's Y."), estimateTokens("A's Y.\n\nMore of Y, left out."))
-	want := "## Page A\n\n### Part > Y\n\nA's Y.\n\nsource: " + evRoot + "a#y" + cut + "\n\n" +
-		"### " + topOfPage + "\n\nLead of A.\n\nsource: " + evRoot + "a\n\n" +
-		"## Page B\n\n### X\n\nB's X.\n\nsource: " + evRoot + "b#x\n"
-	if got := RenderAnswer(results, HintNone); got != want {
+	want := "## Page A\n" + evRoot + "a\n\nLead of A.\n\nsource: " + evRoot + "a\n\n" +
+		"### Part > Y\n\nA's Y.\n\nsource: " + evRoot + "a#y" + cut + "\n\n" +
+		"## Page B\n" + evRoot + "b\n\n### X\n\nB's X.\n\nsource: " + evRoot + "b#x\n"
+	if got := RenderAnswer(Outcome{Results: results}, HintNone); got != want {
 		t.Errorf("answer:\n%s\nwant:\n%s", got, want)
 	}
+	if got := renderPassages(results); got != want {
+		t.Errorf("passages:\n%s\nwant:\n%s", got, want)
+	}
 	for _, style := range []HintStyle{HintCLI, HintMCP} {
-		got := RenderAnswer(results, style)
-		if got != want+"\n"+AnswerHint(style, 1)+"\n" || strings.Count(got, "(cut") != 1 {
+		o := Outcome{Results: results}
+		got := RenderAnswer(o, style)
+		if got != want+"\n"+Hint(style, o)+"\n" || strings.Count(got, "(cut") != 1 {
 			t.Errorf("style %d:\n%s", style, got)
 		}
-		if whole := RenderAnswer(results[1:], style); strings.Contains(whole, "(cut") {
+		if whole := RenderAnswer(Outcome{Results: []Result{results[0], results[2]}}, style); strings.Contains(whole, "(cut") || strings.Contains(whole, "unread") {
 			t.Errorf("no cut group, style %d:\n%s", style, whole)
 		}
+	}
+	// A lead section printed after another group of its page.
+	lead := RenderGroup(results[0], false)
+	if !strings.HasPrefix(lead, "### "+topOfPage+"\n\nLead of A.") {
+		t.Errorf("a lead section not first of its page:\n%s", lead)
 	}
 	if got := headingBelow(evSection("m", 0, "d", []string{"Module m", "Module m", "Directives"}, "x")); !slices.Equal(got, []string{"Directives"}) {
 		t.Errorf("a heading repeating the title: %q", got)
 	}
 }
 
-// The hint line in each surface's words, by how many groups are cut; none
-// with nothing cut or no surface.
-func TestAnswerHint(t *testing.T) {
+// After the groups an answer prints "## Not printed" (the outline, then
+// a "+n more" line per page, as a --section call in the surface's words),
+// "## Other results", then the hint line; each part only when it has
+// something, a blank line between parts.
+func TestRenderAnswerLists(t *testing.T) {
+	page := "https://x.test/docs/a"
+	res := Result{URL: page + "#one", PageTitle: "A", HeadingPath: []string{"One"}, Snippet: "One's text."}
+	o := Outcome{
+		Results:      []Result{res},
+		Outline:      []OutlineEntry{{Heading: "Two > Deep", Section: page + "#deep", Tokens: 1640}, {Heading: "A", Section: page, Tokens: 12}},
+		OutlineMore:  []OutlineMore{{Page: page, Count: 7}},
+		OtherResults: []OtherResult{{Title: "B", URL: "https://x.test/docs/b", Snippet: "About b.", Rank: 2}, {URL: "https://x.test/docs/c", Rank: 3}},
+	}
+	body := "## A\n" + page + "\n\n### One\n\nOne's text.\n\nsource: " + page + "#one\n"
+	outline := "\n## Not printed\n- Two > Deep — " + page + "#deep (1,640 tokens)\n- A — " + page + " (12 tokens)\n"
+	others := "\n## Other results\n- B — https://x.test/docs/b — About b.\n- https://x.test/docs/c — https://x.test/docs/c\n"
 	for _, c := range []struct {
 		style HintStyle
-		cut   int
-		want  string
+		more  string
+		hint  string
 	}{
-		{HintCLI, 1, "1 group above is cut and its hidden text is unread: run ketch docs --section <its source> before stating what it says"},
-		{HintCLI, 3, "3 groups above are cut and their hidden text is unread: run ketch docs --section <its source> before stating what it says"},
-		{HintMCP, 1, `1 result is truncated and its hidden text is unread: read docs(section="<its section>") before stating what it says`},
-		{HintMCP, 2, `2 results are truncated and their hidden text is unread: read docs(section="<its section>") before stating what it says`},
-		{HintCLI, 0, ""},
-		{HintNone, 2, ""},
+		{HintNone, "(+7 more: " + page + ")\n", ""},
+		{HintCLI, "(+7 more: ketch docs --section " + page + ")\n",
+			"\nunread until you read it: a cut or unprinted section with ketch docs --section <url#anchor>; another result with ketch scrape <url>\n"},
+		{HintMCP, "(+7 more: docs(section=\"" + page + "\"))\n",
+			"\nunread until you read it: a cut or unprinted section with docs(section=\"<url#anchor>\"); another result with scrape(url=\"<url>\")\n"},
 	} {
-		if got := AnswerHint(c.style, c.cut); got != c.want {
-			t.Errorf("AnswerHint(%d, %d) = %q, want %q", c.style, c.cut, got, c.want)
+		want := body + outline + c.more + others + c.hint
+		if got := RenderAnswer(o, c.style); got != want {
+			t.Errorf("style %d:\n%s\nwant:\n%s", c.style, got, want)
 		}
 	}
-	if got := JSONHint(2); got != "2 results are truncated and their hidden text is unread: run ketch docs --section <its section> before stating what it says" || JSONHint(0) != "" {
-		t.Errorf("JSONHint = %q", got)
+	// Results only: no passages, the other results first, no leading blank line.
+	only := Outcome{OtherResults: o.OtherResults[:1]}
+	if got := RenderAnswer(only, HintCLI); got != "## Other results\n- B — https://x.test/docs/b — About b.\n\nunread until you read it: another result with ketch scrape <url>\n" {
+		t.Errorf("results only:\n%s", got)
+	}
+	if got := RenderAnswer(Outcome{}, HintCLI); got != "" {
+		t.Errorf("nothing: %q", got)
 	}
 }
 
-// --json carries the frontmatter's fields at the top and each group's
-// parts as fields: page title, heading path, rows, same text, contents,
-// section and the cut flag.
+// The hint line in each surface's words: what is unread (a cut group, an
+// outline entry, another result) and how to read it, and the indexed_near
+// roots to pass; none with nothing to say or no surface.
+func TestAnswerHint(t *testing.T) {
+	cut := []Result{{Truncated: true}}
+	outline := []OutlineEntry{{Heading: "H", Section: "u#a"}}
+	more := []OutlineMore{{Page: "u", Count: 2}}
+	others := []OtherResult{{Title: "T", URL: "https://x.test/t"}}
+	near := []NearLibrary{{Library: "https://x.test/"}}
+	const (
+		cliSec = "a cut or unprinted section with ketch docs --section <url#anchor>"
+		cliOth = "another result with ketch scrape <url>"
+		mcpSec = `a cut or unprinted section with docs(section="<url#anchor>")`
+		mcpOth = `another result with scrape(url="<url>")`
+	)
+	for _, c := range []struct {
+		name  string
+		style HintStyle
+		o     Outcome
+		want  string
+	}{
+		{"cut", HintCLI, Outcome{Results: cut}, "unread until you read it: " + cliSec},
+		{"outline", HintCLI, Outcome{Outline: outline}, "unread until you read it: " + cliSec},
+		{"outline more", HintCLI, Outcome{OutlineMore: more}, "unread until you read it: " + cliSec},
+		{"others", HintCLI, Outcome{OtherResults: others}, "unread until you read it: " + cliOth},
+		{"all", HintCLI, Outcome{Results: cut, OtherResults: others, IndexedNear: near},
+			"unread until you read it: " + cliSec + "; " + cliOth + "; library not indexed under that name: pass one of the indexed_near roots as --library"},
+		{"mcp", HintMCP, Outcome{Results: cut, OtherResults: others}, "unread until you read it: " + mcpSec + "; " + mcpOth},
+		{"mcp near", HintMCP, Outcome{IndexedNear: near}, "library not indexed under that name: pass one of the indexed_near roots as library"},
+		{"nothing unread", HintCLI, Outcome{Results: []Result{{}}}, ""},
+		{"no surface", HintNone, Outcome{Results: cut, OtherResults: others, IndexedNear: near}, ""},
+	} {
+		if got := Hint(c.style, c.o); got != c.want {
+			t.Errorf("%s: Hint = %q, want %q", c.name, got, c.want)
+		}
+	}
+}
+
+// --json carries the frontmatter's fields at the top, each group's parts
+// as fields (page title, heading path, rows, same text, contents, section
+// and the cut flag), the outline, the other results and the hint: no
+// status, reason, terms, not_found or result_count.
 func TestAnswerJSONShape(t *testing.T) {
 	r := Result{Library: evRoot, Title: "Y", Breadcrumb: "Page A > Part > Y", Snippet: "A's Y.", URL: evRoot + "a#y", Source: SearchBackend,
 		Section: evRoot + "a#y", Truncated: true, PageTitle: "Page A", HeadingPath: []string{"Part", "Y"},
 		Rows: []RowCount{{Kind: "option row", Shown: 2, Of: 17}}, SameText: &SameText{Count: 1, Sections: []string{"Z"}}, Contents: "also in this section: Q"}
 	o := Outcome{Status: Partial, Reason: ReasonTermsNotFound, Results: []Result{r}, Index: &IndexInfo{Kind: IndexFull, Pages: 3, Built: "2026-11-10"},
-		Terms: []TermCount{{"y", 1}}, NotFound: []string{"pam_sss"}}
-	b, err := json.Marshal(AnswerJSON{Frontmatter: NewFrontmatter("q", SearchBackend, "", o), Results: o.Results})
+		NotFound: []string{"pam_sss"}, Outline: []OutlineEntry{{Heading: "Z", Section: evRoot + "a#z", Tokens: 9}},
+		OutlineMore: []OutlineMore{{Page: evRoot + "a", Count: 2}}, OtherResults: []OtherResult{{Title: "B", URL: evRoot + "b", Rank: 2}}}
+	b, err := json.Marshal(NewAnswerJSON("q", SearchBackend, "", o))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var top map[string]json.RawMessage
-	_ = json.Unmarshal(b, &top)
-	for _, k := range []string{"query", "backend", "library", "index", "status", "reason", "terms", "not_found", "results"} {
-		if _, ok := top[k]; !ok {
-			t.Errorf("no %q in %s", k, b)
-		}
-	}
-	if _, ok := top["result_count"]; ok {
-		t.Errorf("result_count in %s", b)
-	}
-	var res []map[string]json.RawMessage
+	top := checkKeys(t, b, []string{"query", "library", "index", "not_in_index", "results", "outline", "outline_more", "other_results", "hint"},
+		[]string{"result_count", "status", "reason", "terms", "not_found", "backend", "not_on_pages"})
+	var res []json.RawMessage
 	_ = json.Unmarshal(top["results"], &res)
-	for _, k := range []string{"page_title", "heading_path", "rows", "same_text", "contents", "section", "truncated", "snippet", "url"} {
-		if _, ok := res[0][k]; !ok {
-			t.Errorf("no %q in the result %s", k, top["results"])
-		}
+	checkKeys(t, res[0], []string{"page_title", "heading_path", "rows", "same_text", "contents", "section", "truncated", "snippet", "url"}, nil)
+	var entries []json.RawMessage
+	_ = json.Unmarshal(top["outline"], &entries)
+	checkKeys(t, entries[0], []string{"heading", "section", "tokens"}, nil)
+	if !strings.Contains(string(top["outline_more"]), `"page":`) || !strings.Contains(string(top["outline_more"]), `"count":2`) {
+		t.Errorf("outline_more %s", top["outline_more"])
+	}
+	if !strings.Contains(string(top["other_results"]), `"title":"B"`) || !strings.Contains(string(top["other_results"]), `"rank":2`) {
+		t.Errorf("other_results %s", top["other_results"])
 	}
 	if got := r.GroupLine(); got != "option rows, 2 of 17 · same text in 1 other section: Z" {
 		t.Errorf("group line %q", got)
 	}
-	// An answer with every term found still says not_found: [].
-	empty, _ := json.Marshal(NewFrontmatter("q", SearchBackend, "", Outcome{Status: Found, Index: &IndexInfo{Kind: IndexFull}}))
-	if !strings.Contains(string(empty), `"not_found":[]`) || !strings.Contains(string(empty), `"terms":[]`) {
+	// An indexed answer with every term found still says not_in_index: [];
+	// one from pages read not_on_pages: [], with its read list.
+	empty, _ := json.Marshal(NewAnswerJSON("q", SearchBackend, "", Outcome{Status: Found, Index: &IndexInfo{Kind: IndexFull}}))
+	if !strings.Contains(string(empty), `"not_in_index":[]`) || strings.Contains(string(empty), "not_on_pages") || !strings.Contains(string(empty), `"results":null`) && !strings.Contains(string(empty), `"results":[]`) {
 		t.Errorf("empty lists: %s", empty)
 	}
+	live, _ := json.Marshal(NewAnswerJSON("q", SearchBackend, "", Outcome{Status: Found, Results: []Result{}, Read: []PageRead{{URL: "https://x.test/a", Rank: 1}},
+		Skipped: []PageSkipped{{URL: "https://x.test/b", Cause: "not found"}}, Widened: &Widening{Pages: 2, Root: "https://x.test/", Terms: []string{"t"}}}))
+	for _, k := range []string{`"not_on_pages":[]`, `"read":[{"url":"https://x.test/a","rank":1}]`, `"skipped":[{"url":"https://x.test/b","cause":"not found"}]`,
+		`"widened":{"pages":2,"root":"https://x.test/","terms":["t"]}`} {
+		if !strings.Contains(string(live), k) {
+			t.Errorf("no %s in %s", k, live)
+		}
+	}
+	if strings.Contains(string(live), "not_in_index") || strings.Contains(string(live), `"index"`) {
+		t.Errorf("an answer from pages read with an index: %s", live)
+	}
+}
+
+// checkKeys decodes the JSON object b and fails unless it has every key
+// of has and none of lacks.
+func checkKeys(t *testing.T, b []byte, has, lacks []string) map[string]json.RawMessage {
+	t.Helper()
+	var top map[string]json.RawMessage
+	if err := json.Unmarshal(b, &top); err != nil {
+		t.Fatalf("%v: %s", err, b)
+	}
+	for _, k := range has {
+		if _, ok := top[k]; !ok {
+			t.Errorf("no %q in %s", k, b)
+		}
+	}
+	for _, k := range lacks {
+		if _, ok := top[k]; ok {
+			t.Errorf("%q in %s", k, b)
+		}
+	}
+	return top
 }
 
 // MDX residue goes from prose: a line of only JSX component tags and MDX

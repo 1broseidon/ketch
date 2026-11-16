@@ -30,105 +30,76 @@ type DocsInput struct {
 }
 
 // DocsOutput is the output schema for the "docs" tool. Results is populated
-// for a normal or library-scoped search; Matches is populated when Resolve
-// is set. The fields of an answer match the CLI's `ketch docs --json`
-// (docs.AnswerJSON) and the frontmatter of its text output.
-//
-// Status is where the call ended (found or partial; a refused or failed
-// call is a tool error, except a question none of whose distinctive terms
-// the docs hold: status refused, no results, not_found the answer),
-// Reason why, Note what it says in words (how much of a site search read,
-// and how to index the rest), and Backend the backend that answered. An
-// answer from the local index also says what it read (Library, Version,
-// Index), the question's rare terms as written with the sections holding
-// each (Terms) and the distinctive ones no section holds
-// (NotFound), and when a
-// result was cut, Hint: how to read a cut result in full. Stale says an
-// answer from the index could not read again a cited page older than
-// cache_ttl ("unverified, built <date>").
+// for an answer; Matches when Resolve is set. The fields of an answer match
+// the CLI's `ketch docs --json` (docs.AnswerJSON) and the frontmatter of
+// its text output: what was read (Read, Skipped, Widened, Index), the
+// question's terms the source lacks (NotOnPages: only the pages read were
+// checked; NotInIndex: the indexed library), the docs' text (Results), the
+// sections of those pages not printed (Outline, OutlineMore), the search
+// results not read (OtherResults), and Hint: how to read what is unread.
+// No answer carries a verdict.
 type DocsOutput struct {
 	Warnings []string `json:"warnings,omitempty"`
 	Library  string   `json:"library,omitempty"`
 	// Scope is the URL below the library's root an answer was limited to,
 	// and OutsideScope the distinctive terms the library holds that no
 	// section under it does.
-	Scope   string          `json:"scope,omitempty"`
-	Version string          `json:"version,omitempty"`
-	Index   *docs.IndexInfo `json:"index,omitempty"`
-	// Origin says whether an answer from pages a search read is from the
-	// documentation of what was asked: "verified, <evidence>" or
-	// "by name, <host> documents the <ecosystem> package <name>[; the search
-	// results favour <root>]" or "unverified, ketch could not confirm <host>
-	// as the official documentation of <what>" ("for this question" when
-	// nothing says the question names a thing).
-	Origin string           `json:"origin,omitempty"`
-	Stale  string           `json:"stale,omitempty"`
-	Status docs.Status      `json:"status,omitempty"`
-	Reason string           `json:"reason,omitempty"`
-	Terms  []docs.TermCount `json:"terms,omitzero"`
-	// DefinedIn names, for a listed term no result defines, a section
-	// that does.
-	DefinedIn    []docs.DefinedIn `json:"defined_in,omitempty"`
-	NotFound     []string         `json:"not_found,omitzero"`
-	OutsideScope []string         `json:"outside_scope,omitempty"`
+	Scope        string             `json:"scope,omitempty"`
+	Version      string             `json:"version,omitempty"`
+	Index        *docs.IndexInfo    `json:"index,omitempty"`
+	Read         []docs.PageRead    `json:"read,omitempty"`
+	Skipped      []docs.PageSkipped `json:"skipped,omitempty"`
+	Widened      *docs.Widening     `json:"widened,omitempty"`
+	NotOnPages   []string           `json:"not_on_pages,omitzero"`
+	NotInIndex   []string           `json:"not_in_index,omitzero"`
+	OutsideScope []string           `json:"outside_scope,omitempty"`
+	// Origin says where an answer from pages a search read comes from,
+	// when that says something: verified, with its evidence, or unverified
+	// for a named library.
+	Origin string `json:"origin,omitempty"`
+	Stale  string `json:"stale,omitempty"`
+	// DefinedIn names, for a rare term no result defines, a section that
+	// does.
+	DefinedIn []docs.DefinedIn `json:"defined_in,omitempty"`
 	// IndexedNear are the indexed libraries near a library value that
 	// named none, the roots to pass as library next.
-	IndexedNear []docs.NearLibrary  `json:"indexed_near,omitempty"`
-	Note        string              `json:"note,omitempty"`
-	Hint        string              `json:"hint,omitempty"`
-	Results     []docs.Result       `json:"results,omitempty"`
-	Matches     []docs.LibraryMatch `json:"matches,omitempty"`
-	Backend     string              `json:"backend,omitempty"`
+	IndexedNear  []docs.NearLibrary  `json:"indexed_near,omitempty"`
+	Note         string              `json:"note,omitempty"`
+	Results      []docs.Result       `json:"results,omitempty"`
+	Outline      []docs.OutlineEntry `json:"outline,omitempty"`
+	OutlineMore  []docs.OutlineMore  `json:"outline_more,omitempty"`
+	OtherResults []docs.OtherResult  `json:"other_results,omitempty"`
+	Hint         string              `json:"hint,omitempty"`
+	Matches      []docs.LibraryMatch `json:"matches,omitempty"`
+	// Backend names a backend other than search (Context7).
+	Backend string `json:"backend,omitempty"`
 }
 
-// fromOutcome renders a found or partial outcome, or the local
-// index's refusal for want of any of the question's terms.
+// fromOutcome renders an answer.
 func fromOutcome(o docs.Outcome) DocsOutput {
-	out := DocsOutput{Status: o.Status, Reason: o.Reason, Note: o.Note, Stale: o.Stale, Results: o.Results, Matches: o.Matches, Backend: o.Backend}
-	if o.Index != nil {
-		f := docs.NewFrontmatter("", docs.SearchBackend, "", o)
-		out.Library, out.Version, out.Index, out.Terms, out.NotFound = f.Library, f.Version, f.Index, f.Terms, f.NotFound
-		out.Scope, out.OutsideScope, out.DefinedIn = f.Scope, f.OutsideScope, f.DefinedIn
-		out.Backend = docs.SearchBackend
-		out.Hint = docs.AnswerHint(docs.HintMCP, docs.CutCount(o.Results))
-		out.Origin = o.Origin
-		if h := docs.OriginHint(docs.HintMCP, o); h != "" && len(o.Results) > 0 {
-			if out.Hint != "" {
-				out.Hint += "; "
-			}
-			out.Hint += h
-		}
+	backend := o.Backend
+	if backend == "" {
+		backend = docs.SearchBackend
 	}
-	if len(o.IndexedNear) > 0 {
-		out.IndexedNear = o.IndexedNear
-		if out.Hint != "" {
-			out.Hint += "; "
-		}
-		out.Hint += docs.NearHint(docs.HintMCP)
+	f := docs.NewFrontmatter("", backend, "", o)
+	return DocsOutput{
+		Library: f.Library, Scope: f.Scope, Version: f.Version, Index: f.Index, Read: f.Read, Skipped: f.Skipped, Widened: f.Widened,
+		NotOnPages: f.NotOnPages, NotInIndex: f.NotInIndex, OutsideScope: f.OutsideScope, Origin: f.Origin, Stale: f.Stale,
+		DefinedIn: f.DefinedIn, IndexedNear: f.IndexedNear, Note: f.Note, Results: o.Results, Outline: o.Outline,
+		OutlineMore: o.OutlineMore, OtherResults: o.OtherResults, Hint: docs.Hint(docs.HintMCP, o), Matches: o.Matches, Backend: f.Backend,
 	}
-	return out
-}
-
-// termsRefusal reports the local index's refusal of a question none of
-// whose distinctive terms the docs hold: a result whose not_found is the
-// answer, not a tool error.
-func termsRefusal(o docs.Outcome) bool {
-	return o.Status == docs.Refused && o.Index != nil
 }
 
 func (s *Server) registerDocsTool() {
 	mcpsdk.AddTool(s.mcp, &mcpsdk.Tool{
 		Name:        "docs",
 		InputSchema: docsInputSchema(),
-		Description: "Library documentation: evidence and a verdict, no model; you decide the next call. An indexed library answers from the local index; otherwise a web search picks a docs site and reads up to 24 of its pages, saving nothing." +
-			" library: a docs root as resolve lists it, or a name (read from the root resolve verifies; one several libraries share is refused, listing them); a deeper URL narrows the answer to the pages under it (scope; outside_scope: your terms only elsewhere in the library). indexed_near: your library named no indexed one; pass one of these as library." +
-			" Read the verdict first. status: found (evidence matching the question, not a promise that it answers); partial, reason terms_not_found (not_found: your terms nowhere in this source), or terms_outside_scope (outside_scope: your terms only outside the library URL, refused when all are; scope_empty, refused: no page under it); refused (nothing here matches: stop asking this source; not a tool error). origin (pages a search read): verified; by name (only a name: a package, a domain) or unverified: name the site you cite, or pass the official docs as library. terms: your rare terms, with the sections holding each. defined_in: [{term, section}], where a term is defined when that section is not shown. index: kind, pages, built; stale: cited pages could not be checked (offline uses only the local index and makes no network requests): say so if it matters." +
-			" results: verbatim pieces of sections, best first (page_title, heading_path, url, section), about 1,800 tokens: leave tokens unset unless one is too long to read. truncated (shown_tokens of section_tokens) marks a cut one, contents names what it left out, … marks text left out." +
-			" Two rules. Text behind … or in a truncated result is unread: read it with section before stating what it says, or say you did not read it. Whatever your answer says that no result prints is your own knowledge: label it so, never cite the docs for it." +
-			" Lookup: docs(query=\"<question>\", library=\"<docs root>\"). The fact is printed: answer, citing each result's url. The result you need is truncated, or defined_in names it: docs(section=\"<its section field>\"), then answer; a long section comes a page at a time (the hint gives the next call). Otherwise Follow." +
-			" Follow (the docs use other words): ask again in words the last call printed (a name in contents, a heading, a defined_in target), or read that section; never rephrase blind. After three calls to one source, stop: say what you tried and that it does not cover this." +
-			" Survey (the question spans products): docs(resolve=true) lists the indexed sources (query narrows it): ask it before calling a source unknown. Split the question by owner; for every not_found term, ask the indexed source that owns it before saying it is not covered. One Lookup or Follow per source, run together; combine, cite each claim, say what no source covered." +
-			" section: a url#anchor, or a page URL for its sections in order. backend context7 gives Context7's snippets instead, library a Context7 ID from resolve; its keyless quota is small." +
+		Description: "Documentation for a question: the docs' own text, no model. One call usually answers. An indexed library answers from the local index; otherwise a web search picks the docs site and reads its top search hits there at their exact addresses (up to 3, one release), and only when an identifier your question writes is on none of them reads more pages of that release (widened)." +
+			" Fields: read (pages read, with their search rank); skipped (hits that could not be read, and why); not_on_pages (your terms on none of the pages read: only those pages were checked, not the whole docs) or not_in_index (an indexed library); origin (verified, or unverified for a library you named); defined_in (where a term is defined when that section is not shown); index and stale (an indexed library's age)." +
+			" results: the docs' text verbatim, grouped by page in reading order (page_title, heading_path, url); truncated (shown_tokens of section_tokens) marks a cut section, … marks text left out. outline: the other sections of those pages, not printed. other_results: search hits not read." +
+			" Two rules. Text that is truncated, behind …, or only named in outline is unread: read it with docs(section=\"<url#anchor>\") before stating what it says; read an other result with the scrape tool. Whatever your answer says that no result prints is your own knowledge: label it so, never cite the docs for it." +
+			" library: a docs root, or a name or name@version (a pin must match; a name several libraries share is refused, listing them); a URL below an indexed root narrows the answer (scope, outside_scope). indexed_near: pass one as library. resolve=true lists the indexed sources (query narrows it) or resolves a name. A question spanning products: one call per source, run together; cite each claim's url." +
+			" tokens bounds the docs text, 4,000 by default: leave it unset. section: a url#anchor, or a page URL for its sections in order, a page at a time when long (the hint gives the next call). backend context7 gives Context7's snippets instead, library a Context7 ID from resolve." +
 			errTaxonomy,
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in DocsInput) (*mcpsdk.CallToolResult, DocsOutput, error) {
@@ -189,7 +160,7 @@ func (s *Server) registerDocsTool() {
 			results, err := searcher.Search(ctx, in.Query, limit)
 			o = docs.Answer(backend, results, err)
 		}
-		if err := o.Err(); err != nil && !termsRefusal(o) {
+		if err := o.Err(); err != nil {
 			return nil, DocsOutput{}, upstreamErrf(err, "docs search failed")
 		}
 
@@ -256,7 +227,7 @@ func (s *Server) docsSection(ctx context.Context, in DocsInput, diagnostics *tag
 // hint.
 func fromSection(o docs.Outcome) DocsOutput {
 	f := docs.SectionFrontmatter(docs.SearchBackend, "", o)
-	out := DocsOutput{Library: f.Library, Version: f.Version, Index: f.Index, Stale: f.Stale, Status: o.Status, Note: o.Note, Results: o.Results, Backend: f.Backend}
+	out := DocsOutput{Library: f.Library, Version: f.Version, Index: f.Index, Stale: f.Stale, Note: o.Note, Results: o.Results}
 	if len(o.Results) == 1 {
 		out.Hint = docs.NextPageLine(o.Results[0])
 	}
@@ -303,7 +274,7 @@ func (s *Server) docsForLibrary(ctx context.Context, backend, query, library str
 		results, err := resolver.GetDocs(ctx, library, query, tokens)
 		o = docs.Answer(backend, results, err)
 	}
-	if err := o.Err(); err != nil && !termsRefusal(o) {
+	if err := o.Err(); err != nil {
 		return nil, DocsOutput{}, upstreamErrf(err, "docs fetch failed")
 	}
 	o.Results = docs.Truncate(o.Results, limit)
@@ -352,8 +323,8 @@ func docsInputSchema() *jsonschema.Schema {
 		"query":   "the docs question (search picks the library and its docs site from it unless library is set); with resolve, the library name to resolve (search: optional, none lists every indexed library); not needed with section",
 		"backend": "docs backend for this call: " + configbase.JoinNames(backends) + " (default: search; context7 only when named here)",
 		"library": docs.WithLibraryHelp("the library to answer from: for context7 a library ID from resolve"),
-		"tokens":  "token budget for " + strings.Join(docs.LibraryProviderNames(), " and ") + ": search answers in 1,800 tokens unless set (leave it unset unless a result is too long to read); context7 defaults to 4000; with section, the page size of the section returned (default 4000)",
-		"section": "read one section in full instead of searching: the url#anchor of a result's section field or a defined_in entry (a page URL alone returns the page's sections in order: how to read one page), from the local index or, for a page a search read, the page through the page cache; whole when it fits tokens (default 4000), else a page of that size at a time (page); library is optional",
+		"tokens":  "token budget for " + strings.Join(docs.LibraryProviderNames(), " and ") + ": search prints 4,000 tokens of docs text unless set (the frontmatter fields, outline and other_results aside; leave it unset); context7 defaults to 4000; with section, the page size of the section returned (default 4000)",
+		"section": "read one section in full instead of searching: the url#anchor of a result, an outline entry or a defined_in entry (a page URL alone returns the page's sections in order: how to read one page), from the local index or, for a page a search read, the page through the page cache; whole when it fits tokens (default 4000), else a page of that size at a time (page); library is optional",
 		"offline": "use only the local index; make no network requests; a missing library is not_found; stale marks cited pages older than cache_ttl",
 		"page":    "with section: the page of a section longer than tokens to return (default 1); the hint gives the call for the next",
 		"resolve": "resolve the query as a library name instead of answering (" + libNames + "): search lists docs roots, the indexed libraries the query names first, with no network, and resolves a name none matches on the web; context7 lists its library IDs",

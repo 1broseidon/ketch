@@ -32,14 +32,15 @@ func TestNormalize(t *testing.T) {
 
 // A fact is graded at each stage from the trace: the section in the pool,
 // the quote in one piece, that piece chosen, the quote printed within the
-// budget; a not_found term only when the frontmatter names it.
+// budget; a term not found only when the frontmatter names it
+// (not_in_index or not_on_pages).
 func TestGrade(t *testing.T) {
 	raw := `{
 	  "status": "answered",
 	  "gather": {"pool": [{"page": "https://x.test/p", "anchor": "a", "via": "question", "text": "| ` + "`failmode`" + ` | fail \"safe\" or not |"}]},
 	  "sort": {"pieces": [{"id": 0, "section": "https://x.test/p#a", "kind": "option row", "role": "reference", "text": "| ` + "`failmode`" + ` | fail \"safe\" or not |", "tokens": 40}]},
 	  "rank": {"pieces": [{"score": 1.5, "chosen": false}]},
-	  "output": {"text": "---\nquery: q\nnot_found: [pam_sss]\n---\nnothing here", "tokens": 20, "budget": 1800}
+	  "output": {"text": "---\nquery: q\nnot_in_index: [pam_sss]\n---\nnothing here", "tokens": 20, "budget": 1800}
 	}`
 	var tr trace
 	if err := json.Unmarshal([]byte(raw), &tr); err != nil {
@@ -107,7 +108,7 @@ func TestLedByCutGroup(t *testing.T) {
 // from a cut group's lead; a case whose facts are led one each way is led
 // either way.
 func TestLedByDefinedIn(t *testing.T) {
-	raw := `{"status": "found", "output": {"text": "---\nquery: q\nnot_found: []\ndefined_in: {failmode: https://x.test/docs/o.html#options}\n---\nbody", "tokens": 20,
+	raw := `{"status": "found", "output": {"text": "---\nquery: q\nnot_in_index: []\ndefined_in: {failmode: https://x.test/docs/o.html#options}\n---\nbody", "tokens": 20,
 	  "groups": [{"section": "https://x.test/docs/p#a", "cut": true}]}}`
 	var tr trace
 	if err := json.Unmarshal([]byte(raw), &tr); err != nil {
@@ -266,16 +267,23 @@ func TestGatherByQuote(t *testing.T) {
 	}
 }
 
-// not_found is read from the printed frontmatter only, as a flow list,
-// and a term matches only as the question spells it.
+// A term not found is read from the printed frontmatter only (an indexed
+// answer's not_in_index, or not_on_pages of one from pages read), as a
+// flow list, and a term matches only as the question spells it; the old
+// not_found key states nothing.
 func TestStatesNotFound(t *testing.T) {
-	out := "---\nquery: q\nnot_found: [pam_sss, \"a, b\"]\n---\n## T\n\nnot_found: [PAM_SERVICE_ERR]\n"
-	for term, want := range map[string]bool{"pam_sss": true, "a, b": true, "PAM_SSS": false, "sss": false, "PAM_SERVICE_ERR": false} {
-		if got := statesNotFound(out, term); got != want {
-			t.Errorf("%q: %v, want %v", term, got, want)
+	for _, key := range []string{"not_in_index", "not_on_pages"} {
+		out := "---\nquery: q\n" + key + ": [pam_sss, \"a, b\"]\n---\n## T\n\n" + key + ": [PAM_SERVICE_ERR]\n"
+		for term, want := range map[string]bool{"pam_sss": true, "a, b": true, "PAM_SSS": false, "sss": false, "PAM_SERVICE_ERR": false} {
+			if got := statesNotFound(out, term); got != want {
+				t.Errorf("%s %q: %v, want %v", key, term, got, want)
+			}
 		}
 	}
-	if got := frontmatterList("---\nnot_found: []\n---\n", "not_found"); len(got) != 0 {
+	if statesNotFound("---\nnot_found: [pam_sss]\n---\n", "pam_sss") {
+		t.Error("the retired not_found key states a term")
+	}
+	if got := frontmatterList("---\nnot_on_pages: []\n---\n", "not_on_pages"); len(got) != 0 {
 		t.Errorf("empty list = %q", got)
 	}
 }

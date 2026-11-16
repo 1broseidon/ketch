@@ -896,6 +896,62 @@ Two faults blind users found on the release candidate, fixed by three more rules
 - **A site tried and unread is named.** When the favoured site (or, read second, the root) gives no text, the answer kept says so first in its note, or a refusal in its error: `could not read <root> (<causes, counted>), the site the search results favour` (or `, which resolve found for <name>`), with the read-failure causes above. Both reads stay within the 45 s budget and are the question's two sites (`sfMaxSites`); no third site is read after them, so `sfMaxReads` (the trees the search's own sites may take) is not reached.
 - **The unverified line names a thing only with reason.** `<what>` is the library value; else the question's first firm reading when something says the question names it: resolve found a project by that name, or the site read carries it in its host or docs directory, or as a word of the title of a search hit on its domain (`Amazon S3 multipart upload limits` carries `S3`; `opt-in` carries no `opt`). Else the line names nothing: `unverified, ketch could not confirm <host> as the official documentation for this question`, never a common word that happens to be a package (`opt`) nor the whole question in quotes. The `by name` lines already name only what a registry package, a domain or a package index's path carries. The hint line names no thing and is unchanged. The question cache went to `docs-question/v5`, so no read a v0.21.0 candidate cached (from a namesake's site, with the older wording) is repeated.
 
+### Final shape
+
+Built on 2026-11-15. Where it differs from the text above, this holds.
+
+**Invariant.** One `ketch docs` call is never less useful to an agent than `ketch search` on the same question followed by reading the top result. The answer always carries the docs' text from the pages search ranked best, at their exact addresses; what it did not print, as addresses to read next; and the rest of the search results. It carries no verdict.
+
+**Why.** A throwaway prototype that only searched, read the exact top page and printed whole sections at 4,000 tokens beat the pipeline above on 44 blind-graded questions (complete on the first call 31 against 22, facts 135 against 112 of 159, wrong-release answers 0 against 4). The pipeline lost answers after search: it generalised a hit to the site's root and read up to 24 pages (a Prisma 6 question was answered from Prisma 7), cut sections to 400-token pages inside 1,800 tokens, and printed `status: found` for answers that did not answer. The prototype lost where the pipeline is strong: a first hit that is no docs page, one huge section eating the budget in page order, a raw Markdown export read flat.
+
+**Design as built.**
+
+- **Exact pages first.** After the search and the site choice (unchanged), the site's search hits are read at their exact addresses in search rank order, at most 3, every one after the first of the first one's release tree (host, a leading locale and the version labels of its directories: `/v7/` is never read beside `/v6/`). A page may be served from another host of its registrable domain. Robots, the page cache, page identity, the JS-shell check and the read-failure causes apply; an unreadable hit is skipped with its cause and the next one read. No site root, sibling or discovered page at this stage; the root resolve found is read only when no hit is on its site.
+- **Best page first.** Pages keep search rank order. When everything read fits the budget it all prints; otherwise the best page's candidates are walked first (fused order, as above), then the next page's with what is left.
+- **Widen only for a missing identifier.** Only when an identifier the question writes is on none of the exact pages, or nothing on them matches, are more pages read: the old plan (hits, nav siblings, discovery, up to 24) in the first page's release tree. Their sections are walked after the exact pages', and the answer says `widened: read N more pages of <root> for: <terms>`. With no exact page readable, the site's lists are read in their place.
+- **Never refuse when the search returned results.** No docs hit, sites split, every page unreadable: the answer is the frontmatter (what was tried, why each read failed) and the results, exit 0. Non-docs hits are never read as docs. The ambiguous library name (exit 2) and version pins are unchanged. Pages that hold none of the question's terms are an answer too (`not_on_pages` names them all), and another release's tree is never read in their place.
+- **Words on a few pages.** On pages a search read every word but a common one is distinctive: a share of three pages' sections says nothing of rarity, and one rare word missing must not refuse the words the pages hold.
+- **Whole passages.** The budget is 4,000 tokens of docs text, live and indexed alike; the frontmatter and the two lists are outside it. There is no page size: a section prints whole when it fits the budget left; a longer one prints its best pieces by rank, in page order, with the cut rules above and `(cut, N of M tokens)`.
+- **Reading order.** Chosen by rank, printed in reading order: a page's groups together under `## <title>` and its address, pages best first (else by their first group), sections in page order.
+- **Output.** No `status`, `backend: search`, `terms` or index-suggestion note. New: `read` (with search ranks, or why a page that is no hit was read), `skipped`, `widened`, `not_on_pages` (only the pages read were checked) or `not_in_index` (an indexed library), `## Not printed` (the other sections of the pages read, or of the pages printed from, the question's first, about 200 tokens, then `(+n more: <the page's --section call>)`), `## Other results` (up to 5 hits not read, one line each) and one closing line of next steps. `origin` prints only when it says something: verified, or unverified for a named library. `--json` and MCP carry the same fields. Exit codes: 0 for any answer, 2 bad input or an ambiguous name, 3 nothing to print, 4 the search or Context7 failed, 5 as before.
+- **Repeat.** The question cache (`docs-question/v7`) keeps the pages with their ranks, what was skipped, the widening and the other results: a repeat within `cache_ttl` prints the same bytes with no network.
+- **Raw Markdown.** A `text/markdown` response (or plain text at a `.md` path) is Markdown: `ketch scrape` and the docs fetch keep it as written, title from its frontmatter, frontmatter out of the body. Markdoc heading ids (`{% #id %}`) are anchors, Markdoc tag lines are cleaned, and CRLF is normalised before sectioning (which also fixes VitePress heading detection on CRLF pages).
+
+**Measure.** The 44 questions of the prototype's run (159 facts), one call each at the default budget, a fresh state per call. Each question's web searches were run once and held fixed for every build; pages were read live. Facts were checked by substring markers derived from the official pages and the graders' quotes (97.9% agreement with the blind grades over 477 graded facts; it never credits a fact a grader refused). Tokens are characters over 4 of everything printed. Live site choice varies run to run: one case (Celery) switched sites between runs of the same build, worth 3 facts; differences of that kind are marked.
+
+| Build | Facts | Complete | Tokens, median / p90 | Seconds, median / max | Pages fetched, median / total | Widened |
+|---|---|---|---|---|---|---|
+| before (fdcd6fa) | 103 | 21 | 1,845 / 2,033 | 1.93 / 6.69 | 24 / 909 | |
+| prototype at 4,000 (its own searches, graded) | 135 | 31 | about 4,300 | 0.8 to 1.1 / 1.77 | | |
+| as built | 144 | 36 | 4,627 / 5,065 | 0.79 / 3.23 | 2 / 194 | 5 |
+
+Seconds are with the searches held fixed; the 39 calls that did not widen took a median 0.67 s (max 3.23), the 5 that did 1.36 s. Every case the old pipeline won where the prototype lost is kept (tokio `select!`, Django `atomic`, errgroup, ServeMux patterns, systemd start limits, Datadog auto resolve), and the four old-release questions (Prisma 6, React Router 6, Pydantic 1, Express 4) are now answered from the release asked for (0, 1, 0 and 0 of their facts before; all of them now).
+
+**Measured choices**, each against the build of its row's time:
+
+| Choice | Variants: facts / complete |
+|---|---|
+| a widened answer | ranked across all pages 134 / 30; exact pages first, widened after 139 / 34 |
+| walk over the exact pages | best page first 139 / 34; one fused walk 140 / 33; fused with the page's rank as a third ranking 141 / 34 (the Celery switch is +3 for the last two; page by page wins CSS layers and Terraform, and FastAPI against the single fused walk; the fused walks win pytest and Kubernetes) |
+| a page holding more terms goes first | on 139 / 34; off 144 / 36 (off: pytest +2, Celery +3) |
+| exact pages read | 1: 134 / 32; 2: 143 / 35; 3: 144 / 36; 4: 144 / 36 |
+| page size | 800: 141 / 33; 1,200: 142 / 34; 1,600: 144 / 36; 2,000: 141 / 35 (Celery −3); none: 144 / 36 |
+| widen for | any missing word: 144 / 36, 26 of 44 widened, 585 pages, 1.10 s median; a missing identifier: 144 / 36, 7 of 44, 202 pages, 0.93 s; never: 132 / 33 |
+| a page that fits what is left prints whole (the prototype's rule) | 144 / 36 either way |
+| outline | uncapped: median 673 tokens, p90 4,800, max 13,152; capped: about 236 median, 349 max |
+
+What the printed extras cost, as built: the frontmatter a median 115 tokens (261 at most: it echoes the question), Not printed 236, Other results and the closing line 268; together a median 617, p90 742, max 802.
+
+**Rejected.** The coverage exception (a page holding more of the question's terms goes ahead of the search's order): it lost pytest by putting a fixtures page ahead of the parametrize page, and won nothing. Ranking a widened answer across all its pages: it buried the exact pages under siblings that match common words (CSS layers, React state, Express 4). Widening for any missing word: the same facts for three times the pages and twice the time; question words such as `low-specificity` or `setN(n+1` are the asker's, not the docs'. The fused walks and the page-rank fusion: a tie, and best page first is the invariant's order. The prototype's whole-page rule and every page size: ties, so the rules go.
+
+**Removed.** The verdict (`status` in text, `--json` and MCP), `terms` and its counts, `backend: search`, `source: search, N pages read` (`IndexInfo` keeps only an indexed library's kind, pages and build date), the index suggestion (`searchNote`, `indexRoot`, `wideDirs`, `commonDir`, `siteRoot`, `readScope`), the origin hint line and its roots, the hint lines of the old shape (`AnswerHint`, `JSONHint`, `NearHint`, `OriginHint`) and their planning (`hintTokens`), the page size (`answerPageTokens`, `overPage`, `fill`, `pageTokens`), and the terms refusal's exit 3.
+
+**Fallbacks fired** over the 44 bare questions, from the trace (`fallbacks`, and the `KETCH_DOCS_TRACE` line): widened 5, fell over to a second site 0, the resolved root read first 0, the favoured site read first 0. The last three need a library name; the set names none in `--library`, so these counts say little and a removal pass needs questions that name libraries.
+
+**Indexed path.** The bench's pinned index (second pin, network denied): 232 of 291 answered and 237 answered or led, against 207 and 221; no case lost. The checker reads `not_found` and a `refused` status, so it reports 0 of 30 not-covered terms; read from `not_in_index`, 20 of 30, as before. The checker needs to read `not_in_index` (and `not_on_pages`) and to stop expecting a refusal.
+
+**Still open.** The search provider decides the first page: when its first docs hit is a sibling of the answer, the answer is that sibling's text and the Not printed list (Kubernetes' pod lifecycle page over its termination page). A version pin whose docs root the search did not hit reads the root and its lists, as before. Other results show what the provider gave as a title, `N/A` included.
+
 ## Storage
 
 Agreed on 2026-11-10, the check in point 4 included.

@@ -440,7 +440,7 @@ func (s *SearchFirst) readSection(ctx context.Context, library, ref string, toke
 	lib := docsindex.Library{Key: root.String(), Root: root.String()}
 	o := fetchSection(lib, secs, anchor, library, tokens, pageNo, opts.Hint)
 	if o.Err() == nil {
-		o.Library, o.Index = lib.Root, searchRead(1, false)
+		o.Library = lib.Root
 	}
 	return o
 }

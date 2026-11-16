@@ -8,27 +8,32 @@ import (
 	"github.com/1broseidon/ketch/internal/docsindex"
 )
 
-// Output (design/docs-evidence.md): the frontmatter carries the verdict,
-// the body the evidence, verbatim. An answer from the local index (an
-// indexed library, or the pages a search just read) prints:
+// Output (design/docs-evidence.md, Final shape): the frontmatter says
+// what was read and what is missing, never a verdict; the body is the
+// docs' own text, then what was not printed and the other search results,
+// then one line of next steps. An answer from the local index (an indexed
+// library, or the pages a search just read) prints:
 //
 //	---
 //	query: <the question>
-//	backend: search
-//	library: <root>
+//	library: <root>   (an indexed answer, or a library the request named)
 //	scope: <a URL below the root the answer is limited to, when library named one>
-//	version: <the indexed version, when the library has one>
-//	index: <full|capped>, <N> pages, built <date>   (or, for pages a search read: source: search, N pages read[, cached])
-//	origin: verified, <evidence> | by name, <host> documents the <ecosystem> package <name>[; the search results favour <root>] | unverified, ketch could not confirm <host> as the official documentation of <what was asked> (or: for this question)   (pages a search read only)
-//	stale: unverified, built <date>   (only when a cited page older than cache_ttl could not be read again)
-//	status: found | partial (<reason>) | refused (<reason>)
-//	terms: {<term as written>: <sections holding it>, ...}
-//	not_found: [<term as written>, ...]
-//	outside_scope: [<term as written>, ...]   (only with scope: terms the library holds, none of them under it)
-//	defined_in: {<term as written>: <url#anchor of a section defining it>, ...}   (only when there is one)
-//	note: <what a partial answer says in words, other indexed versions>
+//	version: <the version, when the library or release read has one>
+//	index: <full|capped>, <N> pages, built <date>   (indexed answers)
+//	read:   (pages a search read, best first)
+//	  - <url> (search rank <n>)
+//	skipped:   (search hits that could not be read)
+//	  - <url> (<cause>)
+//	widened: read <n> more pages of <root> for: <terms>   (only when it widened)
+//	not_on_pages: [<terms on none of the pages read>]   (not_in_index for an indexed library)
+//	outside_scope: [<term>, ...]   (only with scope: terms the library holds, none of them under it)
+//	origin: verified, <evidence> | unverified, …   (pages a search read; unverified only for a named library)
+//	stale: unverified, built <date>   (a cited page older than cache_ttl could not be read again)
+//	defined_in: {<term as written>: <url#anchor of a section defining it>, ...}
+//	note: <why only search results print; other indexed versions>
 //	---
 //	## <page title>
+//	<page url>
 //
 //	### <heading path below the page title>
 //	<group line: rows shown of a table, where else the same text sits>
@@ -38,15 +43,20 @@ import (
 //	<contents line: what a cut group left out>
 //	source: <url#anchor> (cut, <tokens shown> of <the section's> tokens)
 //
-//	N groups above are cut and their hidden text is unread: <the call that reads it> before stating what it says
+//	## Not printed
+//	- <heading path> — <url#anchor> (<N> tokens)
+//	(+<n> more: ketch docs --section <page url>)
 //
-// Groups of one page print together under its title, pages in the order
-// of their best group, a page's groups in rank order. The last line
-// is printed once, when a group was cut, in the surface's words
-// (HintStyle). defined_in names, for each listed term that no printed
-// section defines, a section that does (evidence_defined.go): a lead the
-// caller steers by, so it is in the frontmatter. The budget covers
-// everything printed.
+//	## Other results
+//	- <title> — <url> — <snippet>
+//
+//	<one line: how to read what is unread>
+//
+// Groups of one page print together under its title and address, pages
+// best first, a page's groups in page order. defined_in names, for each
+// rare term that no printed section defines, a section that does
+// (evidence_defined.go). The budget covers the passages; the rest is
+// bounded (about 600 tokens).
 
 // Index kinds, as the index line names them.
 const (
@@ -54,16 +64,11 @@ const (
 	IndexCapped = "capped" // indexed by ketch docs index, the page cap leaving some out
 )
 
-// IndexInfo is what an answer was answered from: an indexed library
-// (Kind, Pages, Built), or the pages a search read (Source "search",
-// PagesRead, and Cached for a repeat answered from the question cache).
+// IndexInfo is the indexed library an answer was answered from.
 type IndexInfo struct {
-	Kind      string `json:"kind,omitempty"`
-	Pages     int    `json:"pages,omitempty"`
-	Built     string `json:"built,omitempty"` // the build date, 2006-01-02
-	Source    string `json:"source,omitempty"`
-	PagesRead int    `json:"pages_read,omitempty"`
-	Cached    bool   `json:"cached,omitempty"`
+	Kind  string `json:"kind,omitempty"`
+	Pages int    `json:"pages,omitempty"`
+	Built string `json:"built,omitempty"` // the build date, 2006-01-02
 }
 
 // indexInfo is lib as the index line names it.
@@ -79,26 +84,6 @@ func indexInfo(lib docsindex.Library) *IndexInfo {
 	return info
 }
 
-// searchRead is the source of an answer from the pages a search read,
-// cached when a repeat read them from the question cache.
-func searchRead(pages int, cached bool) *IndexInfo {
-	return &IndexInfo{Source: SearchBackend, PagesRead: pages, Cached: cached}
-}
-
-// line is the frontmatter line naming what was read: "index: full, 734
-// pages, built 2026-11-10", "source: search, 12 pages read", or for a
-// repeat from the question cache "source: search, 12 pages read, cached".
-func (i *IndexInfo) line() string {
-	if i.Source != "" {
-		s := fmt.Sprintf("source: %s, %s read", i.Source, plural(i.PagesRead, "page"))
-		if i.Cached {
-			s += ", cached"
-		}
-		return s
-	}
-	return "index: " + i.Summary()
-}
-
 // Summary is what an indexed library holds, as its index line says it:
 // "full, 734 pages, built 2026-11-10".
 func (i *IndexInfo) Summary() string {
@@ -109,44 +94,94 @@ func (i *IndexInfo) Summary() string {
 	return s
 }
 
+// PageRead is a page an answer from a search read: its address and its
+// rank among the search results (1 the first), or, for a page that is no
+// search hit, why it was read (Via).
+type PageRead struct {
+	URL  string `json:"url"`
+	Rank int    `json:"rank,omitempty"`
+	Via  string `json:"via,omitempty"`
+}
+
+// line is the page as its read line names it.
+func (p PageRead) line() string {
+	switch {
+	case p.Rank > 0:
+		return fmt.Sprintf("%s (search rank %d)", p.URL, p.Rank)
+	case p.Via != "":
+		return p.URL + " (" + p.Via + ")"
+	}
+	return p.URL
+}
+
+// PageSkipped is a search hit an answer could not read, and why.
+type PageSkipped struct {
+	URL   string `json:"url"`
+	Cause string `json:"cause"`
+}
+
+// Widening is what an answer read beside the exact pages when they held
+// none of some of the question's terms: how many more pages, of which
+// docs root, for which terms.
+type Widening struct {
+	Pages int      `json:"pages"`
+	Root  string   `json:"root"`
+	Terms []string `json:"terms"`
+}
+
+// line is the widening as its frontmatter line says it: beside the exact
+// pages (exact), for the terms they lack; else in their place.
+func (w Widening) line(exact bool) string {
+	if !exact || len(w.Terms) == 0 {
+		return fmt.Sprintf("read %s of %s, as no search hit on it could be read", plural(w.Pages, "page"), w.Root)
+	}
+	return fmt.Sprintf("read %s of %s for: %s", plural(w.Pages, "more page"), w.Root, strings.Join(w.Terms, ", "))
+}
+
+// OtherResult is a search hit an answer did not read.
+type OtherResult struct {
+	Title   string `json:"title"`
+	URL     string `json:"url"`
+	Snippet string `json:"snippet,omitempty"`
+	Rank    int    `json:"rank"`
+}
+
 // Frontmatter is an answer's frontmatter: what the CLI prints before the
 // results and what --json and the docs tool carry as fields, in this
 // order.
 type Frontmatter struct {
-	Query   string `json:"query,omitempty"`
-	Backend string `json:"backend"`
+	Query string `json:"query,omitempty"`
+	// Backend is printed for a backend other than search (Context7).
+	Backend string `json:"backend,omitempty"`
 	Library string `json:"library,omitempty"`
 	// Scope is the URL below the library's root the answer was limited
 	// to: a library URL deeper than an indexed root.
-	Scope   string     `json:"scope,omitempty"`
-	Version string     `json:"version,omitempty"`
-	Index   *IndexInfo `json:"index,omitempty"`
-	// Origin says whether an answer from pages a search read is from the
-	// documentation of what was asked: "verified, <evidence>" or
-	// "by name, <host> documents the <ecosystem> package <name>[; the search
-	// results favour <root>]" or "unverified, ketch could not confirm <host>
-	// as the official documentation of <what>" ("for this question" when
-	// nothing says the question names a thing).
-	Origin string      `json:"origin,omitempty"`
-	Stale  string      `json:"stale,omitempty"`
-	Status Status      `json:"status,omitempty"`
-	Reason string      `json:"reason,omitempty"`
-	Terms  []TermCount `json:"terms,omitzero"`
-	// DefinedIn names, for a listed term that no printed section defines,
+	Scope   string        `json:"scope,omitempty"`
+	Version string        `json:"version,omitempty"`
+	Index   *IndexInfo    `json:"index,omitempty"`
+	Read    []PageRead    `json:"read,omitempty"`
+	Skipped []PageSkipped `json:"skipped,omitempty"`
+	Widened *Widening     `json:"widened,omitempty"`
+	// NotOnPages (pages a search read) and NotInIndex (an indexed
+	// library) are the question's distinctive terms the answer's source
+	// holds nowhere: only the pages read were checked for not_on_pages.
+	NotOnPages []string `json:"not_on_pages,omitzero"`
+	NotInIndex []string `json:"not_in_index,omitzero"`
+	// OutsideScope are the distinctive terms the library holds that no
+	// section under Scope does.
+	OutsideScope []string `json:"outside_scope,omitempty"`
+	// Origin is printed when it says something (ShownOrigin).
+	Origin string `json:"origin,omitempty"`
+	Stale  string `json:"stale,omitempty"`
+	// DefinedIn names, for a rare term that no printed section defines,
 	// a section that does (evidence_defined.go): the defined_in line.
 	DefinedIn []DefinedIn `json:"defined_in,omitempty"`
-	NotFound  []string    `json:"not_found,omitzero"`
-	// OutsideScope are the distinctive terms the library holds that no
-	// section under Scope does: not in not_found, which means nowhere in
-	// the library.
-	OutsideScope []string `json:"outside_scope,omitempty"`
 	// IndexedNear are the indexed libraries near a library value that
 	// named none: the indexed_near line.
 	IndexedNear []NearLibrary `json:"indexed_near,omitempty"`
 	Note        string        `json:"note,omitempty"`
 	// section marks a section fetch's frontmatter (SectionFrontmatter),
-	// which prints its page line ("page: 2 of 4", page) where an answer's
-	// prints its verdict.
+	// which prints its page line ("page: 2 of 4", page).
 	section bool
 	page    string
 }
@@ -155,36 +190,62 @@ type Frontmatter struct {
 // backend; library is the library the caller named, printed when no
 // result names the one answered from.
 func NewFrontmatter(query, backend, library string, o Outcome) Frontmatter {
-	f := Frontmatter{Query: query, Backend: backend, Library: library, Scope: o.Scope, Index: o.Index, Origin: o.Origin, Stale: o.Stale, Status: o.Status, Reason: o.Reason, Note: o.Note, IndexedNear: o.IndexedNear}
-	if len(o.Results) > 0 && o.Results[0].Library != "" {
+	f := Frontmatter{Query: query, Library: library, Scope: o.Scope, Index: o.Index, Stale: o.Stale, Note: o.Note, IndexedNear: o.IndexedNear}
+	if backend != SearchBackend {
+		f.Backend = backend
+	}
+	if len(o.Results) > 0 && o.Results[0].Library != "" && (o.Index != nil || library != "" || backend != SearchBackend) {
 		f.Library = o.Results[0].Library
 	}
-	if o.Library != "" && (f.Library == "" || o.Index != nil) {
-		f.Library = o.Library // the root an answer from the index was made from, not the value named
+	if o.Library != "" && (o.Index != nil || o.named != "") {
+		f.Library = o.Library // the root an answer was made from, not the value named
 	}
 	if backend == SearchBackend && len(o.Results) > 0 {
 		f.Version = o.Results[0].Version
 	}
-	if o.Index != nil {
-		f.Terms, f.NotFound, f.DefinedIn, f.OutsideScope = nonNil(o.Terms), o.NotFound, o.DefinedIn, o.OutsideScope
-		if f.NotFound == nil {
-			f.NotFound = []string{}
-		}
+	f.Read, f.Skipped, f.Widened, f.DefinedIn, f.OutsideScope = o.Read, o.Skipped, o.Widened, o.DefinedIn, o.OutsideScope
+	f.Origin = ShownOrigin(o)
+	switch {
+	case o.Index != nil:
+		f.NotInIndex = nonNil(o.NotFound)
+	case len(o.Read) > 0 || o.Widened != nil:
+		f.NotOnPages = nonNil(o.NotFound)
 	}
 	return f
 }
 
+// ShownOrigin is o's origin line when it says something: verified, with
+// its evidence, or unverified when the request named a library; "" when
+// only a name ties the site to the question, or nothing names one.
+func ShownOrigin(o Outcome) string {
+	switch {
+	case o.Origin == "", OriginByName(o.Origin):
+		return ""
+	case OriginUnverified(o.Origin) && o.named == "":
+		return ""
+	}
+	return o.Origin
+}
+
 // SectionFrontmatter is the frontmatter of o, a section fetch (--section,
 // the docs tool's section) from backend: what an answer's says of its
-// source (backend, library, version, index or source, stale) and, for a
-// section read a page at a time, its page line in place of the verdict;
-// library is the library the caller named, printed when no result names
-// the one read from. Its JSON fields are an answer's, without terms or
-// not_found.
+// source (library, version, index, stale) and, for a section read a page
+// at a time, its page line; library is the library the caller named,
+// printed when no result names the one read from.
 func SectionFrontmatter(backend, library string, o Outcome) Frontmatter {
-	f := NewFrontmatter("", backend, library, o)
-	f.Terms, f.NotFound, f.DefinedIn, f.OutsideScope, f.Reason = nil, nil, nil, nil, ""
-	f.section = true
+	f := Frontmatter{Library: library, Index: o.Index, Stale: o.Stale, Note: o.Note, section: true}
+	if backend != SearchBackend {
+		f.Backend = backend
+	}
+	if len(o.Results) > 0 && o.Results[0].Library != "" {
+		f.Library = o.Results[0].Library
+	}
+	if o.Library != "" {
+		f.Library = o.Library
+	}
+	if len(o.Results) > 0 {
+		f.Version = o.Results[0].Version
+	}
 	if len(o.Results) == 1 {
 		f.page = PageLine(o.Results[0])
 	}
@@ -192,94 +253,88 @@ func SectionFrontmatter(backend, library string, o Outcome) Frontmatter {
 }
 
 // AnswerJSON is an answer as ketch docs --json prints it: the
-// frontmatter's fields, the hint when a result was cut (JSONHint), then
-// the results in printed order.
+// frontmatter's fields, the results in printed order, the outline of what
+// was not printed, the other search results, and the hint: how to read
+// what is unread (Hint).
 type AnswerJSON struct {
 	Frontmatter
-	Hint    string   `json:"hint,omitempty"`
-	Results []Result `json:"results"`
+	Results      []Result       `json:"results"`
+	Outline      []OutlineEntry `json:"outline,omitempty"`
+	OutlineMore  []OutlineMore  `json:"outline_more,omitempty"`
+	OtherResults []OtherResult  `json:"other_results,omitempty"`
+	Hint         string         `json:"hint,omitempty"`
 }
 
-func nonNil(t []TermCount) []TermCount {
-	if t == nil {
-		return []TermCount{}
+// NewAnswerJSON is o as --json prints it.
+func NewAnswerJSON(query, backend, library string, o Outcome) AnswerJSON {
+	return AnswerJSON{Frontmatter: NewFrontmatter(query, backend, library, o), Results: o.Results, Outline: o.Outline,
+		OutlineMore: o.OutlineMore, OtherResults: o.OtherResults, Hint: Hint(HintCLI, o)}
+}
+
+func nonNil(s []string) []string {
+	if s == nil {
+		return []string{}
 	}
-	return t
+	return s
 }
 
-// Render is the frontmatter as printed, its two fences included. An
-// answer from the local index (one with Index) has every line; any other
-// has the lines it had before the evidence pipeline: no index, terms or
-// not_found, the status only when partial.
+// Render is the frontmatter as printed, its two fences included.
 func (f Frontmatter) Render() string {
 	var b strings.Builder
+	line := func(key, value string) {
+		if value != "" {
+			b.WriteString(key + ": " + value + "\n")
+		}
+	}
 	b.WriteString("---\n")
-	if f.Query != "" {
-		b.WriteString("query: " + f.Query + "\n")
-	}
-	b.WriteString("backend: " + f.Backend + "\n")
-	if f.Library != "" {
-		b.WriteString("library: " + f.Library + "\n")
-	}
-	if f.Scope != "" {
-		b.WriteString("scope: " + f.Scope + "\n")
-	}
-	if f.Version != "" {
-		b.WriteString("version: " + f.Version + "\n")
-	}
+	line("query", f.Query)
+	line("backend", f.Backend)
+	line("library", f.Library)
+	line("scope", f.Scope)
+	line("version", f.Version)
 	if f.Index != nil {
-		b.WriteString(f.Index.line() + "\n")
-	}
-	if f.Origin != "" {
-		b.WriteString("origin: " + f.Origin + "\n")
-	}
-	if f.Stale != "" {
-		b.WriteString("stale: " + f.Stale + "\n")
+		line("index", f.Index.Summary())
 	}
 	if f.section {
+		line("stale", f.Stale)
+		line("note", f.Note)
 		if f.page != "" {
 			b.WriteString(f.page + "\n")
 		}
-	} else {
-		f.writeVerdict(&b)
+		b.WriteString("---\n")
+		return b.String()
 	}
+	if len(f.Read) > 0 {
+		b.WriteString("read:\n")
+		for _, p := range f.Read {
+			b.WriteString("  - " + p.line() + "\n")
+		}
+	}
+	if len(f.Skipped) > 0 {
+		b.WriteString("skipped:\n")
+		for _, p := range f.Skipped {
+			b.WriteString("  - " + p.URL + " (" + p.Cause + ")\n")
+		}
+	}
+	if w := f.Widened; w != nil {
+		line("widened", w.line(len(f.Read) > 0))
+	}
+	if f.NotOnPages != nil {
+		line("not_on_pages", listFlow(f.NotOnPages))
+	}
+	if f.NotInIndex != nil {
+		line("not_in_index", listFlow(f.NotInIndex))
+	}
+	if len(f.OutsideScope) > 0 {
+		line("outside_scope", listFlow(f.OutsideScope))
+	}
+	line("origin", f.Origin)
+	line("stale", f.Stale)
+	b.WriteString(definedInLine(f.DefinedIn))
 	b.WriteString(nearLine(f.IndexedNear))
-	if f.Note != "" {
-		b.WriteString("note: " + f.Note + "\n")
-	}
+	line("note", f.Note)
 	b.WriteString("---\n")
 	return b.String()
-}
-
-// writeVerdict writes an answer's verdict lines: its status (an answer
-// from the local index, or a partial one), then for an answer from the
-// index its terms, not_found, outside_scope and defined_in.
-func (f Frontmatter) writeVerdict(b *strings.Builder) {
-	if f.Index != nil || f.Status == Partial {
-		b.WriteString("status: " + string(f.Status))
-		if f.Reason != "" {
-			b.WriteString(" (" + f.Reason + ")")
-		}
-		b.WriteString("\n")
-	}
-	if f.Index == nil {
-		return
-	}
-	b.WriteString("terms: " + termsFlow(f.Terms) + "\n")
-	b.WriteString("not_found: " + listFlow(f.NotFound) + "\n")
-	if len(f.OutsideScope) > 0 {
-		b.WriteString("outside_scope: " + listFlow(f.OutsideScope) + "\n")
-	}
-	b.WriteString(definedInLine(f.DefinedIn))
-}
-
-// termsFlow is terms as a YAML flow mapping: {failmode: 74, pam_duo: 48}.
-func termsFlow(terms []TermCount) string {
-	parts := make([]string, len(terms))
-	for i, t := range terms {
-		parts[i] = yamlScalar(t.Term) + ": " + strconv.Itoa(t.Sections)
-	}
-	return "{" + strings.Join(parts, ", ") + "}"
 }
 
 // listFlow is a YAML flow sequence: [pam_sss, PAM_SERVICE_ERR].
@@ -324,104 +379,34 @@ func nearLine(near []NearLibrary) string {
 	return "indexed_near: {" + strings.Join(parts, ", ") + "}\n"
 }
 
-// NearHint is the line an answer ends with when its library value named
-// no indexed library and some are near (indexed_near), in style's words;
-// "" for HintNone.
-func NearHint(style HintStyle) string {
-	switch style {
-	case HintCLI:
-		return "library not indexed under that name: pass one of the indexed_near roots as --library"
-	case HintMCP:
-		return "library not indexed under that name: pass one of the indexed_near roots as library"
+// Hint is the last line of an answer, in style's words: how to read what
+// it left unread (a cut or unprinted section, another search result), and
+// that it is unread until then; for an answer whose library value named no
+// indexed library while some are near, which to pass. "" when there is
+// nothing to say, or for HintNone.
+func Hint(style HintStyle, o Outcome) string {
+	if style == HintNone {
+		return ""
 	}
-	return ""
-}
-
-// OriginHint is the clause an answer ends with when its origin is not
-// verified, in style's words; "" for a verified one or HintNone. It says
-// only what ketch knows: it could not confirm the site as the official
-// docs (unverified), or only a package's name ties it to the library (by
-// name, with the roots to choose between). Either way the caller names
-// the site it cites, or passes the official docs as the library.
-func OriginHint(style HintStyle, o Outcome) string {
-	arg := "--library "
+	section, scrape, library := "ketch docs --section <url#anchor>", "ketch scrape <url>", "--library"
 	if style == HintMCP {
-		arg = "library="
+		section, scrape, library = `docs(section="<url#anchor>")`, `scrape(url="<url>")`, "library"
 	}
-	quote := func(s string) string {
-		if style == HintMCP {
-			return `"` + s + `"`
-		}
-		return s
+	var reads []string
+	if CutCount(o.Results) > 0 || len(o.Outline) > 0 || len(o.OutlineMore) > 0 {
+		reads = append(reads, "a cut or unprinted section with "+section)
 	}
-	switch {
-	case style == HintNone:
-		return ""
-	case OriginUnverified(o.Origin):
-		return "origin unverified: ketch could not confirm this site as the official documentation; name the site you cite, or pass the official docs with " + arg + quote("<docs URL>")
-	case OriginByName(o.Origin):
-		h := "origin by name: only a name ties this site to what you asked; name the site you cite, or pass the docs you mean with " + arg
-		if len(o.originRoots) < 2 {
-			return h + quote("<docs URL>")
-		}
-		parts := make([]string, len(o.originRoots))
-		for i, r := range o.originRoots {
-			parts[i] = arg + quote(r)
-		}
-		return h[:len(h)-len(arg)] + strings.Join(parts, " or ")
+	if len(o.OtherResults) > 0 {
+		reads = append(reads, "another result with "+scrape)
 	}
-	return ""
-}
-
-// AnswerHint is the last line of an answer with cut groups, cut of them,
-// in style's words: their hidden text is unread, and the call that reads
-// it comes before saying what it says (design/docs-evidence.md, Round
-// 12); "" for HintNone or none cut. It states a fact, not an option: a
-// caller offered the full text as an option filled the gap from memory.
-func AnswerHint(style HintStyle, cut int) string {
-	if cut <= 0 {
-		return ""
+	var parts []string
+	if len(reads) > 0 {
+		parts = append(parts, "unread until you read it: "+strings.Join(reads, "; "))
 	}
-	switch style {
-	case HintCLI:
-		return cutCount(cut, "group above is", "groups above are") + " cut and " + its(cut) + " hidden text is unread: run ketch docs --section <its source> before stating what it says"
-	case HintMCP:
-		return cutCount(cut, "result is", "results are") + ` truncated and ` + its(cut) + ` hidden text is unread: read docs(section="<its section>") before stating what it says`
+	if len(o.IndexedNear) > 0 {
+		parts = append(parts, "library not indexed under that name: pass one of the indexed_near roots as "+library)
 	}
-	return ""
-}
-
-// JSONHint is the hint of an answer printed by --json with cut results,
-// cut of them: AnswerHint's words for results that carry their section.
-func JSONHint(cut int) string {
-	if cut <= 0 {
-		return ""
-	}
-	return cutCount(cut, "result is", "results are") + " truncated and " + its(cut) + " hidden text is unread: run ketch docs --section <its section> before stating what it says"
-}
-
-func cutCount(n int, one, many string) string {
-	if n == 1 {
-		return "1 " + one
-	}
-	return strconv.Itoa(n) + " " + many
-}
-
-func its(n int) string {
-	if n == 1 {
-		return "its"
-	}
-	return "their"
-}
-
-// hintCutPlan is the count an answer's hint is planned with, before the
-// walk knows how many groups it cuts: the plural, the longer wording.
-const hintCutPlan = 2
-
-// AnyCut reports a result that was cut: an answer that ends with its
-// hint line (AnswerHint).
-func AnyCut(results []Result) bool {
-	return CutCount(results) > 0
+	return strings.Join(parts, "; ")
 }
 
 // CutCount is how many of results were cut.
@@ -436,9 +421,58 @@ func CutCount(results []Result) int {
 }
 
 // RenderAnswer is an answer's body as printed: its groups under their
-// pages' titles (results in printed order: a page's groups together),
-// then the hint line in style's words when a group was cut.
-func RenderAnswer(results []Result, style HintStyle) string {
+// pages' titles (results in printed order: a page's groups together), the
+// outline of what was not printed, the other search results, and the
+// hint line in style's words.
+func RenderAnswer(o Outcome, style HintStyle) string {
+	var b strings.Builder
+	b.WriteString(renderPassages(o.Results))
+	if len(o.Outline) > 0 || len(o.OutlineMore) > 0 {
+		b.WriteString(sep(b.Len()) + "## Not printed\n")
+		for _, e := range o.Outline {
+			b.WriteString(outlineLine(e))
+		}
+		for _, m := range o.OutlineMore {
+			call := SectionCall(m.Page, style)
+			if style == HintNone {
+				call = m.Page
+			}
+			fmt.Fprintf(&b, "(+%d more: %s)\n", m.Count, call)
+		}
+	}
+	if len(o.OtherResults) > 0 {
+		b.WriteString(sep(b.Len()) + "## Other results\n")
+		for _, r := range o.OtherResults {
+			b.WriteString(otherLine(r))
+		}
+	}
+	if h := Hint(style, o); h != "" {
+		b.WriteString(sep(b.Len()) + h + "\n")
+	}
+	return b.String()
+}
+
+// sep is the blank line between parts of the body, none before the first.
+func sep(n int) string {
+	if n == 0 {
+		return ""
+	}
+	return "\n"
+}
+
+// otherLine is another search result as printed.
+func otherLine(r OtherResult) string {
+	line := "- " + firstNonEmpty(r.Title, r.URL) + " — " + r.URL
+	if r.Snippet != "" {
+		line += " — " + r.Snippet
+	}
+	return line + "\n"
+}
+
+// renderPassages is the groups of an answer under their pages' titles and
+// addresses (results in printed order: a page's groups together): what
+// the budget covers.
+func renderPassages(results []Result) string {
 	var b strings.Builder
 	page := ""
 	for i, r := range results {
@@ -453,9 +487,6 @@ func RenderAnswer(results []Result, style HintStyle) string {
 			b.WriteString("\n")
 		}
 		b.WriteString(RenderGroup(r, first))
-	}
-	if h := AnswerHint(style, CutCount(results)); h != "" {
-		b.WriteString("\n" + h + "\n")
 	}
 	return b.String()
 }
@@ -491,14 +522,14 @@ func pageOf(r Result) string {
 	return page
 }
 
-// pageHeading is the line a page's groups print under, with the blank
-// line after it.
+// pageHeading is the lines a page's groups print under: its title and
+// its address, with the blank line after them.
 func pageHeading(r Result) string {
 	title := r.PageTitle
 	if title == "" {
 		title = pageOf(r)
 	}
-	return "## " + title + "\n\n"
+	return "## " + title + "\n" + pageOf(r) + "\n\n"
 }
 
 // topOfPage heads a page's lead section printed after another group of

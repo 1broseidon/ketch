@@ -149,8 +149,8 @@ func TestSearchBuiltLibrariesAreIgnored(t *testing.T) {
 		s.SearchSelect(ctx, "add middleware to a route", 0),
 		s.GetDocsSelect(ctx, idxRoot, "add middleware to a route with auth", 0),
 	} {
-		if o.Status != Found || o.Index == nil || o.Index.Source != SearchBackend {
-			t.Errorf("outcome %s index %+v (%v), want the pages a search read", o.Status, o.Index, o.Err())
+		if o.Status != Found || o.Index != nil || len(o.Read) == 0 {
+			t.Errorf("outcome %s index %+v read %+v (%v), want the pages a search read", o.Status, o.Index, o.Read, o.Err())
 		}
 		for _, r := range o.Results {
 			if strings.Contains(r.URL, "stale-copy") {

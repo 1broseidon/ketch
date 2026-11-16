@@ -71,14 +71,16 @@ func TestDocsToolLocalCompactPointer(t *testing.T) {
 		t.Fatalf("compact answer: %s", toolText(res))
 	}
 	r := out.Results[0]
-	if !r.Truncated || r.Section != r.URL || out.Hint != docs.AnswerHint(docs.HintMCP, docs.CutCount(out.Results)) {
+	if !r.Truncated || r.Section != r.URL || !strings.Contains(out.Hint, `docs(section="<url#anchor>")`) || strings.Contains(out.Hint, "ketch docs") {
 		t.Fatalf("cut result = %+v, hint %q", r, out.Hint)
 	}
 	checkAnswerFields(t, out)
-	// At the default budget, the hint is there only when a result is cut.
+	// At the default budget, the hint is there only when something is
+	// unread: a result cut, or a section listed in the outline.
 	_, plain := callDocsOutput(t, session, map[string]any{"query": "validate a form with a rules object", "library": sectionRoot})
-	if (plain.Hint != "") != docs.AnyCut(plain.Results) {
-		t.Errorf("default view: hint %q, results %+v", plain.Hint, plain.Results)
+	unread := docs.CutCount(plain.Results) > 0 || len(plain.Outline) > 0 || len(plain.OutlineMore) > 0
+	if (plain.Hint != "") != unread {
+		t.Errorf("default view: hint %q, results %+v, outline %+v", plain.Hint, plain.Results, plain.Outline)
 	}
 	for _, r := range plain.Results {
 		if strings.Contains(r.Snippet, "full section") || r.Section == "" {
@@ -88,12 +90,17 @@ func TestDocsToolLocalCompactPointer(t *testing.T) {
 }
 
 // A question none of whose terms the docs hold is answered by its
-// not_found: status refused, no results, not a tool error.
+// not_in_index: no results, not a tool error, and no verdict field.
 func TestDocsToolLocalTermsRefusal(t *testing.T) {
 	session := localSession(t)
 	res, none := callDocsOutput(t, session, map[string]any{"query": "zyzzyva quokka", "library": sectionRoot})
-	if res.IsError || none.Status != docs.Refused || none.Reason != docs.ReasonTermsNotFound || !slices.Equal(none.NotFound, []string{"zyzzyva", "quokka"}) || len(none.Results) != 0 {
-		t.Errorf("refusal: %s %+v", toolText(res), none)
+	if res.IsError || !slices.Equal(none.NotInIndex, []string{"zyzzyva", "quokka"}) || none.NotOnPages != nil || len(none.Results) != 0 || none.Index == nil {
+		t.Errorf("terms on no page: %s %+v", toolText(res), none)
+	}
+	for _, field := range []string{`"status"`, `"reason"`, `"not_found"`, `"terms"`} {
+		if strings.Contains(toolText(res), field) {
+			t.Errorf("the answer carries %s: %s", field, toolText(res))
+		}
 	}
 }
 
@@ -101,7 +108,7 @@ func TestDocsToolLocalTermsRefusal(t *testing.T) {
 // frontmatter's fields, and its results their page titles and no pointer.
 func checkAnswerFields(t *testing.T, out DocsOutput) {
 	t.Helper()
-	if out.Status != docs.Found || out.Library != sectionRoot || out.Index == nil || out.Index.Kind != docs.IndexFull || len(out.Terms) == 0 || out.NotFound == nil {
+	if out.Library != sectionRoot || out.Index == nil || out.Index.Kind != docs.IndexFull || out.NotInIndex == nil || out.NotOnPages != nil || out.Backend != "" || len(out.Read) != 0 {
 		t.Errorf("answer fields = %+v", out)
 	}
 	for _, r := range out.Results {
@@ -221,9 +228,15 @@ func TestDocsToolDescribesSection(t *testing.T) {
 		if !strings.Contains(schema.Properties["section"].Description, "page cache") {
 			t.Errorf("section property %q lacks the page cache", schema.Properties["section"].Description)
 		}
-		for _, want := range []string{"section field", "hint", "not_found", "[not_found]", "stale", "offline", "…", "scope", "resolve=true", "leave tokens unset", "is unread", "your own knowledge"} {
+		for _, want := range []string{"read (", "skipped (", "not_on_pages", "not_in_index", "origin", "defined_in", "outline", "other_results", "widened",
+			"stale", "…", "scope", "resolve=true", "leave it unset", "[not_found]", "is unread", "your own knowledge", `docs(section="<url#anchor>")`, "scrape tool"} {
 			if !strings.Contains(tool.Description, want) {
 				t.Errorf("description lacks %q", want)
+			}
+		}
+		for _, gone := range []string{"verdict first", "status:", "not_found:", "not_found (", "by name", "terms:", "24 of its pages", "1,800"} {
+			if strings.Contains(tool.Description, gone) {
+				t.Errorf("description still says %q", gone)
 			}
 		}
 		return
@@ -232,11 +245,12 @@ func TestDocsToolDescribesSection(t *testing.T) {
 }
 
 // checkSectionFields: a section fetch carries an answer's fields of its
-// source (library, index), no verdict, and its result names no backend.
+// source (library, index), no verdict, no backend (search's is not named),
+// and its result names no backend.
 func checkSectionFields(t *testing.T, res *mcpsdk.CallToolResult, full DocsOutput) {
 	t.Helper()
-	if res.IsError || len(full.Results) != 1 || full.Backend != docs.SearchBackend || full.Status != docs.Found ||
-		full.Library != sectionRoot || full.Index == nil || full.Index.Kind != docs.IndexFull || full.Terms != nil || full.NotFound != nil {
+	if res.IsError || len(full.Results) != 1 || full.Backend != "" ||
+		full.Library != sectionRoot || full.Index == nil || full.Index.Kind != docs.IndexFull || full.NotInIndex != nil || full.NotOnPages != nil {
 		t.Fatalf("section fetch: %s %+v", toolText(res), full)
 	}
 	if strings.Contains(toolText(res), `"source":`) {
@@ -271,7 +285,7 @@ func TestDocsToolScope(t *testing.T) {
 		t.Fatalf("scoped answer: %s %+v", toolText(res), out)
 	}
 	res, out = callDocsOutput(t, session, map[string]any{"query": "validate a form with rules", "library": sectionRoot + "guide/nothing"})
-	if res.IsError || out.Status != docs.Refused || out.Reason != docs.ReasonScopeEmpty || !strings.Contains(out.Note, "no indexed page of "+sectionRoot) {
+	if !res.IsError || !strings.Contains(toolText(res), "no indexed page of "+sectionRoot) {
 		t.Errorf("empty scope: %s %+v, want a refusal naming the root", toolText(res), out)
 	}
 }

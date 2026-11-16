@@ -107,11 +107,13 @@ func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string,
 	case a.status == Refused && a.reason == ReasonTermsOutsideScope:
 		o = Answer(SearchBackend, nil, fmt.Errorf("local: no page of %s under %s holds the question's distinctive terms (%s), which the library holds elsewhere: %w",
 			lib.Root, a.scope, strings.Join(a.outside, ", "), ErrTermsOutsideScope))
+	case a.status == Refused && opts.live:
+		o = Answer(SearchBackend, nil, fmt.Errorf("search: the pages read hold none of the question's distinctive terms (%s): %w", strings.Join(a.notFound, ", "), ErrTermsNotFound))
 	case a.status == Refused:
 		o = Answer(SearchBackend, nil, fmt.Errorf("local: the docs of %s hold none of the question's distinctive terms (%s): %w",
 			lib.Root, strings.Join(a.notFound, ", "), ErrTermsNotFound))
-	case len(a.results) == 0 && opts.read > 0:
-		return Answer(SearchBackend, nil, fmt.Errorf("search: nothing in the %d pages read of %s matched: %w", opts.read, lib.Root, ErrNoResults))
+	case len(a.results) == 0 && opts.live:
+		o = Answer(SearchBackend, nil, fmt.Errorf("search: nothing in the pages read matched: %w", ErrNoResults))
 	case len(a.results) == 0:
 		return Answer(SearchBackend, nil, fmt.Errorf("local: nothing in the index of %s matched: %w", lib.Root, ErrNoResults))
 	default:
@@ -125,8 +127,10 @@ func (l *Local) answer(ctx context.Context, lib docsindex.Library, query string,
 			}
 		}
 	}
-	o.Library, o.Index, o.Terms, o.NotFound = lib.Root, a.index, a.terms, a.notFound
+	o.Library, o.Index, o.NotFound = lib.Root, a.index, a.notFound
 	o.Scope, o.OutsideScope, o.DefinedIn = a.scope, a.outside, a.definedIn
+	o.Outline, o.OutlineMore = a.outline, a.more
+	o.Origin = opts.origin
 	return o
 }
 

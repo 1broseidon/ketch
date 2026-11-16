@@ -630,7 +630,9 @@ type docsResult struct {
 	Library   string           `json:"library"`
 	Status    string           `json:"status"`
 	Reason    string           `json:"reason"`
-	NotFound  []string         `json:"not_found"`
+	NotFound  []string         `json:"not_in_index"`
+	NotOnPage []string         `json:"not_on_pages"`
+	Read      []docs.PageRead  `json:"read"`
 	DefinedIn []docs.DefinedIn `json:"defined_in"`
 	Index     *docs.IndexInfo  `json:"index"`
 	Hint      string           `json:"hint"`
@@ -723,16 +725,14 @@ func gradeCall(g *flowGrade, calls []flowCall, i int, question string, libs []do
 	return text, urls
 }
 
-// webSearched reports a result read from a web search: an answer whose
-// index is source search (pages_read) or whose reason is partial_site. A
-// section read is not one: since round 10 it says what it was read from
-// as an answer does, and a page no index holds is read through the page
-// cache (source search, 1 page read), never by searching.
+// webSearched reports a result read from a web search: an answer that
+// lists the pages it read. A section read is not one: a page no index
+// holds is read through the page cache, never by searching.
 func webSearched(in callInput, res docsResult) bool {
 	if in.Section != "" {
 		return false
 	}
-	return res.Index != nil && (res.Index.Source == "search" || res.Index.PagesRead > 0) || res.Reason == "partial_site"
+	return len(res.Read) > 0
 }
 
 // jsonStrings is every string value in the JSON text s, in document
@@ -947,7 +947,7 @@ func priorLeads(before []flowCall) leads {
 			}
 			l.contents = append(l.contents, contentNames(r.Contents)...)
 		}
-		for _, t := range res.NotFound {
+		for _, t := range append(slices.Clone(res.NotFound), res.NotOnPage...) {
 			l.notFound[strings.ToLower(t)] = c.Source
 		}
 	}

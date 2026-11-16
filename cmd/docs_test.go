@@ -230,18 +230,18 @@ func TestPrintDocsResultsShowsResolvedLibrary(t *testing.T) {
 	}
 }
 
-// An answer's defined_in is a frontmatter line after not_found; nothing
-// follows the body.
+// An answer's defined_in is a frontmatter line after not_in_index;
+// nothing follows the body.
 func TestPrintDocsResultsDefinedInFrontmatter(t *testing.T) {
 	const ref = "https://duo.com/docs/duounix#duo-configuration-options"
 	o := docs.Outcome{Status: docs.Found, Index: &docs.IndexInfo{Kind: docs.IndexFull, Pages: 734, Built: "2026-11-10"},
-		Terms: []docs.TermCount{{Term: "failmode", Sections: 3}}, DefinedIn: []docs.DefinedIn{{Term: "failmode", Section: ref}},
-		Results: []docs.Result{{Library: "https://duo.com/docs/", PageTitle: "Duo Unix", HeadingPath: []string{"Fail mode"}, URL: "https://duo.com/docs/duounix#fail-mode", Snippet: "Fail safe or secure."}}}
+		DefinedIn: []docs.DefinedIn{{Term: "failmode", Section: ref}},
+		Results:   []docs.Result{{Library: "https://duo.com/docs/", PageTitle: "Duo Unix", HeadingPath: []string{"Fail mode"}, URL: "https://duo.com/docs/duounix#fail-mode", Snippet: "Fail safe or secure."}}}
 	out := captureStdout(t, func() {
 		printDocsResults(os.Stdout, "failmode", docs.SearchBackend, "", o, false, docs.HintCLI)
 	})
 	fm, body, ok := strings.Cut(strings.TrimPrefix(out, "---\n"), "\n---\n")
-	if !ok || !strings.HasSuffix(fm, "not_found: []\ndefined_in: {failmode: "+ref+"}") {
+	if !ok || !strings.HasSuffix(fm, "not_in_index: []\ndefined_in: {failmode: "+ref+"}") {
 		t.Errorf("frontmatter:\n%s", out)
 	}
 	if strings.Contains(body, "defined") || !strings.HasSuffix(body, "source: https://duo.com/docs/duounix#fail-mode\n") {
@@ -252,13 +252,14 @@ func TestPrintDocsResultsDefinedInFrontmatter(t *testing.T) {
 // An answer to a library value that named no indexed library prints the
 // libraries near it in the frontmatter and ends by saying to pass one.
 func TestPrintDocsResultsIndexedNear(t *testing.T) {
-	o := docs.Outcome{Status: docs.Found, Index: &docs.IndexInfo{Source: docs.SearchBackend, PagesRead: 3},
+	o := docs.Outcome{Status: docs.Found, Read: []docs.PageRead{{URL: "https://other.example.test/a", Rank: 1}},
 		IndexedNear: []docs.NearLibrary{{Title: "Cisco Duo", Library: "https://duo.com/docs/"}},
 		Results:     []docs.Result{{Library: "https://other.example.test/", PageTitle: "Other", URL: "https://other.example.test/a", Snippet: "Text."}}}
 	out := captureStdout(t, func() {
 		printDocsResults(os.Stdout, "failmode", docs.SearchBackend, "duo unix", o, false, docs.HintCLI)
 	})
-	if !strings.Contains(out, "\nindexed_near: {Cisco Duo: https://duo.com/docs/}\n") || !strings.HasSuffix(out, "source: https://other.example.test/a\n\n"+docs.NearHint(docs.HintCLI)+"\n") {
+	if !strings.Contains(out, "\nindexed_near: {Cisco Duo: https://duo.com/docs/}\n") || !strings.HasSuffix(out, "source: https://other.example.test/a\n\n"+docs.Hint(docs.HintCLI, o)+"\n") ||
+		!strings.Contains(docs.Hint(docs.HintCLI, o), "indexed_near roots as --library") {
 		t.Errorf("output:\n%s", out)
 	}
 }

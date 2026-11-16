@@ -45,12 +45,6 @@ type writtenTerm struct {
 	common bool
 }
 
-// TermCount is a written term and the library's sections holding it.
-type TermCount struct {
-	Term     string `json:"term"`
-	Sections int    `json:"sections"`
-}
-
 // writtenTerms are the question's written terms, in the order it writes
 // them, with the full-text query for each; terms is the question's one
 // term list, which a plain word's forms must be in.
@@ -139,20 +133,18 @@ func markDistinctive(wts []writtenTerm, n int) {
 	}
 }
 
-// Terms shown: the frontmatter's terms lists, of the distinctive terms
-// found, the identifiers the question writes and the words in under
-// 1/shownShare of the library's sections or in at most shownFew of them
-// (password in 3 of 292 sections is worth naming). A word every tenth
-// section holds tells the caller nothing; the refusal and not_found keep
-// reading every distinctive term, and a term with no hit is in not_found
-// only.
+// Rare terms: of the distinctive terms found, the identifiers the
+// question writes and the words in under 1/shownShare of the library's
+// sections or in at most shownFew of them (password in 3 of 292 sections
+// is worth naming): those defined_in may name a definition for. A word
+// every tenth section holds tells the caller nothing.
 const (
 	shownShare = 100
 	shownFew   = 25
 )
 
-// shownTerm reports a written term found in a library of n sections that
-// the frontmatter's terms lists.
+// shownTerm reports a rare written term found in a library of n
+// sections.
 func shownTerm(wt writtenTerm, n int) bool {
 	switch {
 	case wt.sections == 0 || wt.common:
@@ -167,16 +159,18 @@ func shownTerm(wt writtenTerm, n int) bool {
 // they are the few pages one search found, so nearly every word is in
 // under shownFew of their sections, and a word missing from them is
 // missing from those pages, not from the docs. On an answer from them a
-// common word (commonTerm) is never listed in terms or not_found, so it
-// neither shows as rare nor makes the answer partial; identifiers and
-// other words are judged as in a library, and the refusal and the ranking
-// read every term as before.
+// common word (commonTerm) is never listed in not_on_pages; every other
+// word is distinctive: a share of a few pages' sections says nothing of
+// how rare a word is, so a word the pages hold makes them answer however
+// many of their sections hold it, and one rare word they lack never
+// refuses the rest (Final shape).
 
 // markSearchRead marks the common words of an answer from pages a search
-// read.
+// read, and every other word distinctive.
 func markSearchRead(wts []writtenTerm) {
 	for i := range wts {
 		wts[i].common = !wts[i].ident && commonTerm(wts[i].text)
+		wts[i].distinctive = wts[i].distinctive || !wts[i].common
 	}
 }
 
@@ -209,11 +203,9 @@ whole entire
 `)
 
 // termVerdict is what the written terms say about an answer: the
-// distinctive terms found that the frontmatter lists (shownTerm) with
-// their counts, those with no section, and whether the answer is refused
-// (no distinctive term has a hit) or partial for them.
+// distinctive terms with no section, and whether the answer is refused (no
+// distinctive term has a hit) or partial for them.
 type termVerdict struct {
-	found    []TermCount
 	notFound []string
 	refused  bool
 	partial  bool
@@ -230,9 +222,6 @@ func verdict(wts []writtenTerm, n int) termVerdict {
 		case !wt.distinctive:
 		case wt.sections > 0:
 			hit = true
-			if shownTerm(wt, n) {
-				v.found = append(v.found, TermCount{Term: wt.text, Sections: wt.sections})
-			}
 		case wt.common: // missing from a few pages a search read says nothing
 		default:
 			v.notFound = append(v.notFound, wt.text)

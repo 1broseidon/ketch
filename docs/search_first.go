@@ -26,26 +26,26 @@ import (
 //
 //	the request names an indexed library? ──yes──▶ answer from the index (local)
 //	        │no
-//	the same question read within cache_ttl? ──yes──▶ the same site and pages, from the page cache
+//	the same question read within cache_ttl? ──yes──▶ the same pages, the same answer (no network)
 //	        │no
 //	web search (the question, and the question + "documentation"),
 //	beside it resolve of the library the request names (search_origin.go)
 //	        │       (several verified, none settled: ambiguous, refused)
 //	docs pages only; the site most of their weight agrees on, a host
 //	that serves many projects split by project path
-//	        │       (none: no_docs_found; split: ambiguous_site)
+//	        │       (none, or split: the search results alone)
 //	the root resolve verified first, unless that site is the project's own
 //	        │
 //	an indexed library holds the site? ──yes──▶ answer from the index
 //	        │no
-//	fetch the hit pages and close siblings from the site's own lists
-//	        │       (≤ sfMaxPages, through the page cache; a site that
-//	        │       gives no text says why and the next is read)
+//	read the site's search hits at their exact addresses, in rank order
+//	(up to sfExactPages, one release tree; an unreadable one skipped)
+//	        │       (an identifier the question writes on none of them:
+//	        │       more pages of that release, printed after them)
 //	section them into a library held in memory for this call
 //	        │
-//	answer through the local index's evidence pipeline
-//	        └──▶ found or partial (terms_not_found), its origin, N pages
-//	             read, and how to index the whole site
+//	answer through the local index's evidence pipeline, best page first
+//	        └──▶ the pages read, what is not printed, the other results
 //
 // A question saves nothing (search_read.go): the pages it read stay in the
 // page cache under cache_ttl, with what a repeat needs to skip the search,
@@ -56,8 +56,9 @@ import (
 // while the question is searched: one docs root verified is the site
 // read, unless the site the search agrees on is that project's own; else
 // the name is a preference among the hits' sites, and the version it
-// asks for picks the tree. Every answer from pages read says its origin:
-// verified with its evidence, or unverified.
+// asks for picks the tree. A call whose search returned results never
+// refuses for want of a readable page: it prints the results
+// (resultsOnly).
 
 // SearchBackend is the search backend's ID: the default docs backend.
 const SearchBackend = "search"
@@ -323,6 +324,7 @@ type sfRequest struct {
 	spec    libSpec      // the library as a spec (zero for a docs URL or none)
 	opts    LocalOptions // as the caller gave them
 	version string       // the release verified by resolution, including aliases
+	hits    []sfHit      // the question's search results, fused, best first
 }
 
 // pinnedSpec is the library a question pins with a spec of its own
@@ -350,7 +352,7 @@ func (s *SearchFirst) answer(ctx context.Context, req sfRequest) Outcome {
 	if o, ok := s.fromIndex(ctx, req, tr); ok {
 		tr.path = "local"
 		TraceFrom(ctx).setPath(tr.path)
-		return o
+		return dressed(o, req, nil)
 	}
 	if req.opts.Offline {
 		return Answer(SearchBackend, nil, offlineMiss(firstNonEmpty(req.library, req.query)))
@@ -361,7 +363,17 @@ func (s *SearchFirst) answer(ctx context.Context, req sfRequest) Outcome {
 	if o, ok := s.fromRead(ctx, req, tr); ok {
 		return withNear(o, req.library, near)
 	}
-	return withNear(s.fromSearch(ctx, req, tr), req.library, near)
+	o := s.fromSearch(ctx, req, tr)
+	tr.fellOver = tr.domains > 1
+	for _, f := range []struct {
+		on   bool
+		name string
+	}{{tr.fellOver, "fell_over"}, {tr.resolvedFirst, "resolved_first"}, {tr.favouredFirst, "favoured_first"}} {
+		if f.on {
+			TraceFrom(ctx).fallback(f.name)
+		}
+	}
+	return withNear(o, req.library, near)
 }
 
 // withNear gives o the indexed libraries near the library value: an
@@ -387,6 +399,16 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 	cctx, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
 	hits, prefs, err := s.searchHits(cctx, req)
+	req.hits = hits
+	o := s.readSearch(ctx, cctx, req, hits, prefs, err, tr)
+	if answered(o) || req.spec.version != "" || errors.Is(o.err, ErrAmbiguousLibrary) {
+		return o // a pin must match, and a name several libraries share is the caller's to settle
+	}
+	return resultsOnly(dressed(o, req, nil), hits)
+}
+
+// readSearch answers from the search's hits (fromSearch).
+func (s *SearchFirst) readSearch(ctx, cctx context.Context, req sfRequest, hits []sfHit, prefs sitePrefs, err error, tr *sfTrace) Outcome {
 	tr.hits = len(hits)
 	tr.resolveMs, tr.resolved = prefs.resolved.took.Milliseconds(), resolvedTrace(prefs.resolved)
 	if req.spec.version != "" {
@@ -423,6 +445,7 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 			// A name guessed from the question, tied to its root by a
 			// registry name alone, has earned nothing over the site the
 			// search results favour: that one first, the root after it.
+			tr.favouredFirst = true
 			return s.favouredFirst(ctx, cctx, sites, req, prefs, tr)
 		}
 		// The root resolve verified is the library, unless the site the
@@ -432,6 +455,7 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 		// text gives way to the search's sites, and the answer says so.
 		site := resolvedSite(m, sites)
 		tr.domains++
+		tr.resolvedFirst = true
 		o, read = s.readSite(ctx, cctx, site, s.hitProfile(cctx, site), req, resolvedOrigin(m, prefs.lead), tr)
 		if lead := prefs.lead; favoursOtherSite(cctx, o, lead, m) {
 			return s.fallOver(ctx, cctx, o, read, sites, req, prefs, tr)
@@ -474,13 +498,14 @@ func guessedByName(prefs sitePrefs) bool {
 	return named(lead.u, keys) && !named(m.root.u, keys)
 }
 
-// resolvedSite is the root resolve found for m as a site to read, its own
-// page first.
+// resolvedSite is the root resolve found for m as a site to read: the
+// module's page first when resolve found one, its search hits, and the
+// root's own page when no hit is under it.
 func resolvedSite(m *webMatch, sites []sfSite) sfSite {
 	site := givenSite(m.root, sites)
-	site.page, site.named = m.root.u, true
+	site.named, site.fallback = true, m.root.u
 	if m.page != nil {
-		site.page = m.page
+		site.page, site.pageVia = m.page, "the module page resolve found"
 	}
 	return site
 }
@@ -624,10 +649,11 @@ func (s *SearchFirst) readSites(ctx, cctx context.Context, sites []sfSite, req s
 		if o.unread != "" {
 			unread = append(unread, site.root.String()+" ("+o.unread+")")
 		}
-		if len(site.alts) > 0 {
+		if len(site.alts) > 0 && !printableRefusal(o) {
 			// Nothing readable in this docs tree (JS shells no browser
-			// rendered, robots-closed, nothing matching): the domain's next
-			// tree before another domain.
+			// rendered, robots-closed): the domain's next tree before
+			// another domain. Pages read that lack the question's terms are
+			// not that: never another release's tree in their place.
 			next := site.alts[0]
 			next.alts, next.retry = site.alts[1:], true
 			sites = append([]sfSite{next}, sites...)
@@ -644,8 +670,38 @@ func (s *SearchFirst) readSites(ctx, cctx context.Context, sites []sfSite, req s
 // for a repeat within cache_ttl when the outcome is one the evidence
 // pipeline decided (an answer, or a refusal for want of the terms).
 func (s *SearchFirst) keep(req sfRequest, read sfRead, o Outcome) Outcome {
+	if !answered(o) && !printableRefusal(o) {
+		return o
+	}
+	o = dressed(o, req, otherResults(req.hits, o.Read, read.widePages(), o.Skipped))
+	read.Others = o.OtherResults
 	if read.Root != "" && kept(o) {
 		s.saveRead(req, read)
+	}
+	return o
+}
+
+// printableRefusal reports the evidence pipeline's refusal for want of the
+// question's terms in pages it read or an indexed library: an answer that
+// says so (not_on_pages, not_in_index), with what it read.
+func printableRefusal(o Outcome) bool {
+	return termsRefused(o) && (len(o.Read) > 0 || o.Widened != nil || o.Index != nil)
+}
+
+// dressed is an outcome as the search backend returns it: the library
+// the request named, an answer from pages read (or an indexed library)
+// that hold none of the question's terms printed as an answer (what was
+// read, the outline, the other results; not_on_pages or not_in_index
+// names every term), and others, the search results it did not read.
+func dressed(o Outcome, req sfRequest, others []OtherResult) Outcome {
+	o.named = req.library
+	if printableRefusal(o) {
+		o.Status, o.Reason, o.err, o.Results = Partial, ReasonTermsNotFound, nil, []Result{}
+		o.Backend = SearchBackend
+		o.Attempts = []Attempt{{Backend: SearchBackend, Status: Partial, Reason: ReasonTermsNotFound}}
+	}
+	if answered(o) {
+		o.OtherResults = others
 	}
 	return o
 }
@@ -741,7 +797,8 @@ const (
 )
 
 // readSite answers from one site: from the indexed library that holds it,
-// else from its pages, read and held in memory. It returns the read a
+// else from its exact pages (search_exact.go), widened when they lack a
+// term of the question, read and held in memory. It returns the read a
 // repeat within cache_ttl would answer from (no Root when nothing was
 // read), which fromSearch keeps.
 func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *siteProfile, req sfRequest, origin sfOrigin, tr *sfTrace) (Outcome, sfRead) {
@@ -753,30 +810,33 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 		tr.local = lib.Root
 		return s.answerIndexed(ctx, lib, req.query, req.opts, ""), sfRead{Root: site.root.String()}
 	}
-	links, disallowed, wide := s.plan(cctx, site, prof, req.query)
-	if len(links) == 0 && disallowed > 0 {
-		return Answer(SearchBackend, nil, fmt.Errorf("search: %s's robots.txt disallows the %d pages found: %w", site.root, disallowed, errDisallowed)), sfRead{}
-	}
-	if len(links) == 0 {
-		why := "no search hit is under it, and its llms.txt, sitemap and links list none"
-		o := s.failed(ctx, cctx, fmt.Errorf("search: found no page of %s to read: %s; %s: %w", site.root, why, appendNext(nil, site.root)[0], ErrNotFound))
-		o.unread = "no page to read"
+	p, fails, disallowed, tree := s.readExact(cctx, site, tr)
+	tr.exact += len(p.exact)
+	p.title, p.name = readTitle(p.root, prof)
+	widen := s.widener(cctx, tree, prof, req, p, &fails, tr)
+	if len(p.exact) == 0 && !widen(nil) {
+		// No exact page could be read, nor any the site's own lists name.
+		if disallowed > 0 && fails.n() == 0 {
+			o := Answer(SearchBackend, nil, fmt.Errorf("search: %s's robots.txt disallows the %d pages found: %w", site.root, disallowed, errDisallowed))
+			o.Skipped = p.skipped
+			return o, sfRead{}
+		}
+		if fails.n() == 0 {
+			why := "no search hit is under it, and its llms.txt, sitemap and links list none"
+			o := s.failed(ctx, cctx, fmt.Errorf("search: found no page of %s to read: %s; %s: %w", site.root, why, appendNext(nil, site.root)[0], ErrNotFound))
+			o.unread, o.Skipped = "no page to read", p.skipped
+			return o, sfRead{}
+		}
+		o := s.failed(ctx, cctx, noPageErr(site.root, fails.n(), fails))
+		o.unread = strings.SplitN(readFailNote(site.root, fails.list, fails.details), "; ", 2)[0]
+		o.Skipped = p.skipped
 		return o, sfRead{}
 	}
-	pages, by, fails := s.fetch(cctx, site.root, links)
-	tr.planned, tr.fetched, tr.failed = tr.planned+len(links), tr.fetched+len(pages), tr.failed+fails.n()
-	if len(pages) == 0 {
-		why := readFailNote(site.root, fails.list, fails.details)
-		o := s.failed(ctx, cctx, fmt.Errorf("search: none of the %d pages of %s could be read: %s: %w", len(links), site.root, why, ErrNotFound))
-		o.unread = strings.SplitN(why, "; ", 2)[0]
-		return o, sfRead{}
-	}
-	title, name := readTitle(site.root, prof)
-	r := readOf(site.root, title, name, pages, by)
-	r.Version = req.version
-	r.Pin = req.spec.version
-	r.Origin, r.OriginRoots, r.Wide = origin.text, origin.roots, wide
-	return s.answerRead(ctx, site.root, title, name, pages, req, origin, wide), r
+	o := s.answerRead(ctx, p, req, origin, widen)
+	r := readOf(p)
+	r.Version, r.Pin = req.version, req.spec.version
+	r.Origin = origin.text
+	return o, r
 }
 
 // failed is a search-first call that ended before an answer, classified
@@ -786,44 +846,6 @@ func (s *SearchFirst) failed(parent, op context.Context, err error) Outcome {
 		err = fmt.Errorf("search: no answer within %s: %w", s.timeout, err)
 	}
 	return Answer(SearchBackend, nil, err)
-}
-
-// searchNote says how much of the site at root a search read and, when
-// ok, how to index the docs at idx (indexRoot): "the whole site" for a
-// host's root, "these docs" for a tree in it.
-func searchNote(root webRoot, read int, idx webRoot, ok bool) string {
-	note := fmt.Sprintf("read %s of %s found by web search", plural(read, "page"), root)
-	switch {
-	case !ok:
-		return note
-	case idx.prefix == "/":
-		return note + "; the whole site: ketch docs index " + idx.String()
-	}
-	return note + "; to index these docs: ketch docs index " + idx.String()
-}
-
-// searchAnswered is the local index's answer as the search-first
-// backend's, with note (searchNote) and its origin. Its status is the
-// evidence pipeline's: found when the question's distinctive terms are
-// in the pages read, partial only for terms really missing (Build 1: the
-// source line already says the pages came from a search).
-func searchAnswered(o Outcome, note string, origin sfOrigin) Outcome {
-	o.Origin, o.originRoots = origin.text, origin.roots
-	if o.Status != Found && o.Status != Partial {
-		for i := range o.Attempts {
-			o.Attempts[i].Backend = SearchBackend
-		}
-		return o
-	}
-	for i := range o.Results {
-		o.Results[i].Source = SearchBackend
-	}
-	o.Backend = SearchBackend
-	o.Note = joinNote(o.Note, note)
-	for i := range o.Attempts {
-		o.Attempts[i].Backend = SearchBackend
-	}
-	return o
 }
 
 // searchHits runs the question's searches concurrently (and, for a
@@ -852,6 +874,9 @@ func (s *SearchFirst) searchHits(ctx context.Context, req sfRequest) ([]sfHit, s
 		firstErr = firstNonNil(firstErr, errs[i])
 	}
 	hits := fuseWeighted(append(lists, citedLists(lists)...), []float64{1, 1, sfCitedWeight, sfCitedWeight})
+	for i := range hits {
+		hits[i].rank = i + 1
+	}
 	switch {
 	case !answered:
 		return nil, prefs, fmt.Errorf("search: web search failed: %w", firstErr)
@@ -869,8 +894,9 @@ var errDisallowed = failure.New(failure.NotFound, reasonDisallowed, "robots.txt 
 
 const reasonDisallowed = "disallowed"
 
-// errSearchEmpty is web searches that all answered with no results.
-var errSearchEmpty = failure.New(failure.Upstream, "search_empty", "the web search returned no results")
+// errSearchEmpty is web searches that all answered with no results:
+// nothing to print (exit 3).
+var errSearchEmpty = failure.New(failure.NotFound, "search_empty", "the web search returned no results")
 
 func firstNonNil(a, b error) error {
 	if a != nil {
@@ -962,7 +988,7 @@ func (s *SearchFirst) chooseSite(ctx context.Context, sites []sfSite, req sfRequ
 		site := givenSite(prefs.roots[0], sites)
 		if u, err := url.Parse(req.library); err == nil && isPageFile(path.Base(u.Path)) {
 			u.Fragment, u.RawQuery = "", ""
-			site.page = u // the page the library names is read first, hits or none
+			site.page, site.pageVia = u, "the library URL" // read first, hits or none
 		}
 		return site, s.hitProfile(ctx, site), nil, nil
 	}

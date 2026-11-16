@@ -219,14 +219,3 @@ func digitSplit(t string) []string {
 }
 
 func isDigitByte(b byte) bool { return b >= '0' && b <= '9' }
-
-// hintTokens is what a pointer line (SectionHint) costs, with its line
-// break: "" for none. A pointer is a long URL and a command line, which
-// the estimate undercounts by up to a quarter (o200k splits slugs and
-// flags finely), so it is charged a quarter more.
-func hintTokens(hint string) int {
-	if hint == "" {
-		return 0
-	}
-	return estimateTokens(hint)*5/4 + 1
-}

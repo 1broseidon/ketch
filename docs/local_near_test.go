@@ -105,12 +105,15 @@ func TestIndexedNear(t *testing.T) {
 
 	s, _ := nearSearchFirst(t, exampleHits())
 	o := s.GetDocsSelect(ctx, "duo unix", "add middleware to a route", 0)
-	if o.Status != Found || o.Index == nil || !slices.Equal(o.IndexedNear, []NearLibrary{duo}) {
+	if o.Status != Found || len(o.Read) == 0 || !slices.Equal(o.IndexedNear, []NearLibrary{duo}) {
 		t.Fatalf("answer from search = %s (%v), near %v; want found with Cisco Duo near", o.Status, o.Err(), o.IndexedNear)
 	}
 	fm := NewFrontmatter("add middleware to a route", SearchBackend, "duo unix", o).Render()
 	if !strings.Contains(fm, "indexed_near: {Cisco Duo: https://duo.test/docs/}\n") {
 		t.Errorf("frontmatter lacks the indexed_near line:\n%s", fm)
+	}
+	if h := Hint(HintCLI, o); !strings.Contains(h, "pass one of the indexed_near roots as --library") {
+		t.Errorf("hint %q, want it to say to pass a near root", h)
 	}
 
 	s, _ = nearSearchFirst(t, nil) // the search answers nothing
@@ -137,8 +140,12 @@ func TestNearLine(t *testing.T) {
 	if got := nearLine(near); got != want {
 		t.Errorf("nearLine = %q, want %q", got, want)
 	}
-	if nearLine(nil) != "" || NearHint(HintNone) != "" || !strings.Contains(NearHint(HintCLI), "--library") || !strings.Contains(NearHint(HintMCP), "as library") {
-		t.Error("near line or hint wrong")
+	o := Outcome{IndexedNear: near}
+	if nearLine(nil) != "" || Hint(HintNone, o) != "" || !strings.Contains(Hint(HintCLI, o), "roots as --library") || !strings.Contains(Hint(HintMCP, o), "roots as library") {
+		t.Errorf("near line or hint wrong: %q / %q", Hint(HintCLI, o), Hint(HintMCP, o))
+	}
+	if strings.Contains(Hint(HintCLI, Outcome{}), "library") {
+		t.Error("a hint about near libraries with none near")
 	}
 }
 

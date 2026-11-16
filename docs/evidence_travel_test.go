@@ -79,43 +79,41 @@ func TestDefinitionHeads(t *testing.T) {
 	}
 }
 
-// travelSection is a section longer than a page whose code block is the
+// travelSection is a section longer than the budget whose code block is the
 // best piece, introduced by a lead-in that names nothing of the question,
 // and a later sentence that points back at a long paragraph.
 func travelSection() docsindex.Section {
-	filler := strings.Repeat("Words of no interest at all here. ", 30)
-	text := filler + "\n\n" + strings.Repeat("More words that say nothing. ", 30) + "To do it for several platforms at once, run:\n\n```\nterraform providers lock -platform=linux_amd64\n```\n\n" +
+	const n = 110 // three blocks of n phrases: over the budget
+	filler := strings.Repeat("Words of no interest at all here. ", n)
+	text := filler + "\n\n" + strings.Repeat("More words that say nothing. ", n) + "To do it for several platforms at once, run:\n\n```\nterraform providers lock -platform=linux_amd64\n```\n\n" +
 		filler + "\n\nGamma words fill a paragraph here.\n\nThis gamma words line points back."
 	return evSection("t", 0, "t", []string{"T", "Lock"}, text)
 }
 
 // A cut group that prints a code block prints its lead-in with it, and a
-// piece that points back prints the piece before it; neither is charged
-// to the page a long section is cut to.
+// piece that points back prints the piece before it.
 func TestWalkBringsContext(t *testing.T) {
+	const budget = 400
 	s := sortPool([]docsindex.Section{travelSection()}, evRoot)
-	if !overPage(s.secs[0].tokens) {
+	if s.secs[0].tokens <= budget {
 		t.Fatalf("fixture: %d tokens", s.secs[0].tokens)
 	}
 	g := evGathered("terraform providers lock platform", 1000, map[string]int{"terraform": 50, "providers": 20, "lock": 5, "platform": 5})
 	lib := docsindex.Library{Root: evRoot}
-	r := evRanked(s, g, 1500, 0)
-	printSections(lib, s, r, HintNone)
+	r := evRanked(s, g, budget, 0)
+	printSections(lib, s, r)
 	if len(r.plans) != 1 {
 		t.Fatalf("plans = %+v", r.plans)
 	}
-	res, _ := fitResults(lib, s, r, HintNone, nil)
+	res, _ := fitResults(lib, s, r, nil)
 	if !strings.Contains(res[0].Snippet, "To do it for several platforms at once, run:\n\n```\nterraform providers lock") {
 		t.Errorf("the code's lead-in is not printed with it:\n%s", res[0].Snippet)
 	}
-	if len(r.plans[0].with) == 0 || pageTokens(s, s.secs[0], r.plans[0]) >= estimateTokens(joinPieces(s, s.secs[0], r.plans[0].pieces)) {
-		t.Errorf("the lead-in is charged to the page: %+v", r.plans[0])
-	}
 
 	g = evGathered("gamma points back", 1000, map[string]int{"gamma": 2, "points": 30, "back": 30})
-	r = evRanked(s, g, 1500, 0)
-	printSections(lib, s, r, HintNone)
-	res, _ = fitResults(lib, s, r, HintNone, nil)
+	r = evRanked(s, g, budget, 0)
+	printSections(lib, s, r)
+	res, _ = fitResults(lib, s, r, nil)
 	if !strings.Contains(res[0].Snippet, "Gamma words fill a paragraph here.\n\nThis gamma words line points back.") {
 		t.Errorf("the piece pointed back at is not printed:\n%s", res[0].Snippet)
 	}

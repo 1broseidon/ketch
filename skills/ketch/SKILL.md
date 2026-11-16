@@ -136,46 +136,46 @@ file; test labs must set `KETCH_TAGS_PATH` as well as isolating the page cache.
 
 ## Docs flows
 
-`ketch docs` prints evidence and a verdict. It has no model: you decide what to do next. Read the frontmatter first.
+`ketch docs` prints the docs' own text for a question, no verdict: one call is usually enough. Read the frontmatter first: it says what was read and what is missing.
 
 Two rules hold for every answer:
 
-1. Text behind `…`, or in a group marked `(cut)`, is unread. Read it with `--section` before stating what it says, or say you did not read it.
+1. Text in a group marked `(cut, N of M tokens)`, behind `…`, or only listed under `## Not printed` is unread. Read it with `--section` before stating what it says, or say you did not read it.
 2. Whatever your answer says that no group prints is your own knowledge. Label it so; never cite the docs for it.
 
 | You see | It means | Do |
 |---|---|---|
-| `status: found` | evidence matching the question is printed; not a promise that it answers | read the groups |
-| `terms_not_found` in `status: partial (…)` | some of your terms are nowhere in this source | read `not_found`; ask the indexed source that owns those terms (Survey) |
-| `origin: verified, <evidence>` | a search read these pages, and evidence beyond a name ties them to what you asked: registry evidence the search agrees with, the project's own site by its metadata, a standard-library page of the language's docs, or the library URL you passed | read the groups; the `note` names the command that indexes the site |
-| `origin: by name, …` | only a name ties the site to what you asked: a registry package of that name (`; the search results favour <root>` when the search agreed on another), or a domain carrying the name | name the site you cite; if it is not what you meant, ask again with the other root (the last line gives the roots) as `--library` |
-| `origin: unverified, ketch could not confirm <host> as the official documentation of <what>` (or `for this question`) | nothing ketch gathered confirms the site; it may still be the official docs | name the site you cite, or ask again with the official docs as `--library` |
-| `note: could not read <root> (…)` | a site ketch tried gave no text (blocked, needs JavaScript, not found, …): the one tried first, or the one the search results favour, which the note names; the answer is from the other | weigh the origin line; the error of such a site names the next step |
-| `status: refused` | nothing here matches (exit 3) | stop asking this source |
+| `read:` with `(search rank N)` | the pages the answer read: the search's top hits on the docs site, at their exact addresses, one release | cite each group's `source:` |
+| `skipped: <url> (<cause>)` | a hit that could not be read (blocked, needs JavaScript, not found, …) | if it matters, `ketch scrape <url>` or configure `browser` |
+| `widened: read N more pages of <root> for: <terms>` | the exact pages lacked those identifiers, so more pages of that release were read; their sections print after the exact pages' | read the groups as usual |
+| `not_on_pages: [terms]` | your terms on none of the pages read; only those pages were checked, not the whole docs | another call worded for those terms, or another source; never "the docs do not cover it" from this line alone |
+| `not_in_index: [terms]` | an indexed library holds those terms nowhere | ask the indexed source that owns them (Survey) |
+| `origin: verified, <evidence>` | evidence beyond a name ties the site to what you asked | cite it |
+| `origin: unverified, …` | you named a library and ketch could not confirm this site as its official docs; it may still be | name the site you cite, or ask again with the official docs as `--library` |
 | `defined_in: {term: ref}` | where a term is defined, when that section was not printed | `ketch docs --section <ref>` |
-| `(cut, N of M tokens)` on a `source:` line | the group shows part of its section; the rest is unread | `ketch docs --section <that source>` before stating what the rest says |
-| `…` in a group | text left out of a cut group, unread | read it with `--section`, or say you did not read it |
-| last line `N groups above are cut …` | how many groups hide unread text | the same: `--section` before stating what they hide |
+| `## Not printed` | the other sections of the pages read, with their size; `(+n more: …)` for the rest of a page | `ketch docs --section <url#anchor>` for the one you need |
+| `## Other results` | search hits not read: title, URL, snippet | `ketch scrape <url>` to read one |
+| `note: no page was printed: …` | the search returned results but no docs page could be read or chosen; the results are listed | pick one under Other results, or pass the docs you mean as `--library` |
 | `scope: <url>` | the answer is from the pages at or under that URL only; `library` is the root | `outside_scope` lists your terms the library holds elsewhere: ask the root for them |
-| `indexed_near: {title: root}` | your `--library` named no indexed library; these indexed ones are near it, and the answer came from elsewhere | if one is what you meant, ask again with its root as `--library` |
-| `also in this section: …` | what a cut group left out, by name | use one of those names in your next call |
-| `index: …, built <date>`, `source: search, N pages read`, or `stale: unverified, built <date>` | how old the evidence is: the index's build date; pages read now (`, cached`: read by the same question within `cache_ttl`); cited pages that could not be checked | say so if the answer depends on it being current |
+| `indexed_near: {title: root}` | your `--library` named no indexed library; these indexed ones are near it | if one is what you meant, ask again with its root as `--library` |
+| `also in this section: …` | what a cut group left out, by name | read it with `--section`, or use one of those names in your next call |
+| `index: …, built <date>` or `stale: unverified, built <date>` | how old an indexed answer is; cited pages that could not be checked | say so if the answer depends on it being current |
 
 ### Lookup
 
 One question about one library or product.
 
-1. `ketch docs "<question>" --library <docs root or name>`: a root as `ketch docs --resolve` lists it, or a package name (answered from the docs root resolve verifies for it; a name several libraries share exits 2 listing them: pass one). A deeper URL narrows the answer to the pages under it (`scope:`); to read one page, `ketch docs --section <page URL>`. Leave `--tokens` unset unless a result is too long to read.
-2. The fact is printed: answer, citing each `source:`. Anything you add that no group prints is your own knowledge: label it so.
-3. The group you need is cut, or `defined_in` names it: `ketch docs --section <ref>`, then answer. A section longer than a page prints `page: 1 of N` and ends with a `next page:` command; run it only if the fact is not on this page.
+1. `ketch docs "<question>"`, with `--library <docs root or name>` when you know it: a root as `ketch docs --resolve` lists it, or a package name or `name@version` (a pin must match; a name several libraries share exits 2 listing them: pass one). A deeper URL narrows an indexed answer to the pages under it (`scope:`); to read one page, `ketch docs --section <page URL>`. Leave `--tokens` unset.
+2. The fact is printed: answer, citing each `source:`.
+3. The section you need is cut, listed under Not printed, or named by `defined_in`: `ketch docs --section <ref>`, then answer. A section longer than a page prints `page: 1 of N` and ends with a `next page:` command; run it only if the fact is not on this page.
 4. Otherwise, Follow.
 
 ### Follow
 
 The docs use other words than the question.
 
-1. Take one thing the last call printed: a name from an `also in this section:` line, a heading, a `defined_in` target.
-2. Ask again in those words, or read that section with `--section`.
+1. Take one thing the last call printed: a heading under Not printed, a name from an `also in this section:` line, a `defined_in` target, another result.
+2. Read that section with `--section` (or that result with `ketch scrape`), or ask again in those words.
 3. After three calls to one source, stop. Say what you tried and that this source does not cover it.
 
 Every call after the first uses something the last one printed. Do not rephrase blind.
@@ -185,12 +185,12 @@ Every call after the first uses something the last one printed. Do not rephrase 
 The question spans products.
 
 1. Ask what is indexed before saying a source is unknown: `ketch docs --resolve` lists every indexed library, `--resolve <name>` those matching it (from the index, offline; a name none matches is looked up on the web).
-2. Split the question by owner. For every `not_found` term, ask the indexed source that owns it before saying it is not covered.
+2. Split the question by owner. For every `not_in_index` or `not_on_pages` term, ask the source that owns it before saying it is not covered.
 3. One Lookup or Follow per source. The calls are independent: run them together.
 4. Combine. Cite each claim's `source:`. Say what no source covered.
 5. A source you will ask again: propose `ketch docs index <site>` to the operator (CLI only; it writes the local index). It then answers from the index, offline too (`stale: unverified` when the cited pages cannot be checked).
 
-Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` with `page` for the next page, and `docs(resolve=true)` with an optional `query`; `defined_in` is a list of `{term, section}`, `indexed_near` a list of `{title, library}`, a cut result has `truncated` and `contents`, `hint` says how many are cut and that their text is unread (and, for an `origin` that is unverified, how to present it), an indexed match `indexed: true`. pi's `ketch_docs` takes the same, without `page` and `offline`.
+Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` with `page` for the next page, and `docs(resolve=true)` with an optional `query`; the fields are the frontmatter's (`read`, `skipped`, `widened`, `not_on_pages` or `not_in_index`, `origin`, `defined_in` as a list of `{term, section}`, `indexed_near` as `{title, library}`), `results` the groups (a cut one has `truncated` and `contents`), `outline` and `outline_more` the Not printed list, `other_results` the hits not read (read one with the `scrape` tool), and `hint` the line saying what is unread and how to read it. pi's `ketch_docs` takes the same, without `page` and `offline`.
 
 ## Token budgets
 
@@ -198,7 +198,7 @@ Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` 
 | --- | --- | --- |
 | `search`, limit 5 | `limit` | ~1.4 KB |
 | `code`, limit 3 | `limit` | ~0.7 KB |
-| `docs`, default budget | `tokens` (search: ~1,800 unless set; context7: 4000) | ~7 KB search, ~3.3 KB context7; `tokens: 880` ~3.5 KB |
+| `docs`, default budget | `tokens` (search: 4,000 of docs text unless set, frontmatter and lists ≤ ~600 more; context7: 4000) | ~16 KB search, ~3.3 KB context7 |
 | `scrape`, unknown page | `max_chars` 4000–8000 + `trim` | unguarded: up to ~100 KB (~25k tokens) |
 | `crawl` (MCP) | `max_pages` + per-page `max_chars` | 30 pages default, 100 cap, 3-min wall clock |
 | `tag show` / MCP `tag` show | `limit` (default 50; 0 all) | bounded source metadata; no page bodies |
@@ -214,7 +214,7 @@ Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` 
 | 5 | `[precondition]` | Operator config missing | Stop researching; enter `ketch setup` |
 | 6 | `[cancelled]` | Cancelled (a timeout is `[upstream]`) | Rerun with smaller scope |
 
-Situations → class: unknown backend, `regexp` on github → `[validation]`. Selector matched nothing, a `repo` the code backend does not have → `[not_found]` (for `repo`, change the backend). ddg rate limit (it rate-limits readily under fan-out), DNS failure, grepapp's intermittent 504 → `[upstream]`, rotate or retry once. A spent keyless Context7 quota (about 200 requests a month per IP) is `[upstream]` naming the reset — drop `backend: context7` (search is keyless) rather than retry. A docs search whose hits hold no docs is `[not_found]` (`no_docs_found`); hits split between docs sites is `[validation]` (`ambiguous_site`: pass a docs URL as `library`); throttled search providers (`search_empty`) are `[upstream]`. Missing API key, a docs library indexed in an older format (`index_outdated`), `force_browser` with no browser configured → `[precondition]`. A timeout inside a backend is `[upstream]`; `[cancelled]` means only that the call was cancelled. One asymmetry: a CLI `crawl` interrupted by SIGINT exits **0** with partial results, by design.
+Situations → class: unknown backend, `regexp` on github → `[validation]`. Selector matched nothing, a `repo` the code backend does not have → `[not_found]` (for `repo`, change the backend). ddg rate limit (it rate-limits readily under fan-out), DNS failure, grepapp's intermittent 504 → `[upstream]`, rotate or retry once. A spent keyless Context7 quota (about 200 requests a month per IP) is `[upstream]` naming the reset — drop `backend: context7` (search is keyless) rather than retry. A docs search whose results hold no readable docs page is still an answer: the results, under `## Other results`, exit 0; a search that returned nothing (`search_empty`) is `[not_found]`, and a failed one `[upstream]`. Missing API key, a docs library indexed in an older format (`index_outdated`), `force_browser` with no browser configured → `[precondition]`. A timeout inside a backend is `[upstream]`; `[cancelled]` means only that the call was cancelled. One asymmetry: a CLI `crawl` interrupted by SIGINT exits **0** with partial results, by design.
 
 ## Gotchas
 

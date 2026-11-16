@@ -30,14 +30,13 @@ type LocalOptions struct {
 	// Offline uses only the local index: no resolution, page-cache fetch
 	// or network access. An older cited page marks the answer stale.
 	Offline bool
-	// note is the note the caller adds to the answer's frontmatter (a
-	// partial answer's), which the budget covers; read, the pages a
-	// search just read when the answer is from them (0 for an indexed
-	// library), which its source line names, and cached that they are a
-	// repeat's, from the question cache.
-	note   string
-	read   int
-	cached bool
+	// live marks an answer from pages a search just read (no index line;
+	// a common word missing from a few pages says nothing), and pages are,
+	// for an answer from the exact pages a search ranked best, those
+	// pages, best first: the answer fills from the best page first and
+	// outlines every page read.
+	live  bool
+	pages []string
 	// origin is the origin line of an answer from pages a search read
 	// (search_origin.go).
 	origin string

@@ -2,8 +2,8 @@ package docs
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
-	"fmt"
 	"net/url"
 	"slices"
 	"strings"
@@ -71,11 +71,12 @@ func TestSearchFirstAnswersFromTheSite(t *testing.T) {
 	if len(o.Results) == 0 || !strings.HasPrefix(o.Results[0].URL, idxRoot+"guide/middleware") {
 		t.Fatalf("top result = %+v, want the middleware page", o.Results)
 	}
-	if o.Note != "read 3 pages of "+idxRoot+" found by web search; to index these docs: ketch docs index "+idxRoot {
-		t.Errorf("note = %q, want the pages read and the command that indexes the docs tree", o.Note)
+	if o.Note != "" || o.Index != nil {
+		t.Errorf("note = %q, index %+v: want neither on an answer from pages read", o.Note, o.Index)
 	}
-	if o.Index == nil || o.Index.Source != SearchBackend || o.Index.PagesRead != 3 {
-		t.Errorf("index = %+v, want source: search, 3 pages read", o.Index)
+	want := []PageRead{{URL: idxRoot + "guide/middleware", Rank: 2}, {URL: idxRoot + "guide/routing", Rank: 5}}
+	if !slices.Equal(o.Read, want) || o.Widened != nil || len(o.Skipped) != 0 {
+		t.Errorf("read %+v widened %+v skipped %+v, want the two hits at their exact addresses, in rank order", o.Read, o.Widened, o.Skipped)
 	}
 	checkNeverRead(t, f)
 	checkNothingStored(t, store)
@@ -117,7 +118,7 @@ func TestSearchFirstRepeatWithinTTL(t *testing.T) {
 	if searches.Load() != searched || len(f.called()) != fetched {
 		t.Errorf("asked again: %d searches and %d fetches; want none", searches.Load()-searched, len(f.called())-fetched)
 	}
-	if again.Status != Found || again.Origin != first.Origin || again.Note != first.Note || !sameURLs(again.Results, first.Results) || again.Index.PagesRead != first.Index.PagesRead {
+	if again.Status != Found || again.Origin != first.Origin || again.Note != first.Note || !sameURLs(again.Results, first.Results) || !slices.Equal(again.Read, first.Read) {
 		t.Errorf("again = %s %q %v, want the first answer", again.Status, again.Note, resultURLs(again.Results))
 	}
 	checkCached(t, first, again)
@@ -136,40 +137,47 @@ func TestSearchFirstRepeatWithinTTL(t *testing.T) {
 	checkNothingStored(t, store)
 }
 
-// A question the pages it read refuse (none of its distinctive terms in
-// them) is kept like an answered one: asked again within cache_ttl it is
-// refused again without a search or a fetch, its source line saying
-// cached.
-func TestSearchFirstRefusalWithinTTL(t *testing.T) {
+// A question none of whose distinctive terms is on the pages it read is
+// answered all the same (what was read, not_on_pages naming every term,
+// the other results), and kept like an answered one: asked again within
+// cache_ttl it prints the same without a search or a fetch.
+func TestSearchFirstTermsMissingWithinTTL(t *testing.T) {
 	f := exampleSite()
 	s, c, store, searches := searchFirstCached(t, f, exampleHits())
 	ctx := context.Background()
 	const q = "zookeeper quorum"
 	first := s.SearchSelect(ctx, q, 0)
-	if first.Status != Refused || !errors.Is(first.Err(), ErrTermsNotFound) || first.Index == nil || first.Index.Cached {
-		t.Fatalf("first = %s (%v) index %+v, want refused for want of the terms", first.Status, first.Err(), first.Index)
+	if first.Err() != nil || first.Status != Partial || len(first.Results) != 0 || len(first.Read) == 0 || !slices.Equal(first.NotFound, []string{"zookeeper", "quorum"}) {
+		t.Fatalf("first = %s (%v) read %+v not_found %v, want an answer naming the terms", first.Status, first.Err(), first.Read, first.NotFound)
 	}
 	searched, fetched := searches.Load(), len(f.called())
 	again := s.SearchSelect(ctx, q, 0)
 	if searches.Load() != searched || len(f.called()) != fetched {
 		t.Errorf("asked again: %d searches and %d fetches; want none", searches.Load()-searched, len(f.called())-fetched)
 	}
-	if again.Status != Refused || !slices.Equal(again.NotFound, first.NotFound) || again.Index == nil || !again.Index.Cached {
-		t.Errorf("again = %s not_found %v index %+v, want the same refusal, cached", again.Status, again.NotFound, again.Index)
-	}
+	checkCached(t, first, again)
 	c.advance(time.Hour + time.Minute)
 	if s.SearchSelect(ctx, q, 0); searches.Load() == searched {
-		t.Error("after the TTL the refusal was repeated without searching")
+		t.Error("after the TTL the answer was repeated without searching")
 	}
 	checkNothingStored(t, store)
 }
 
-// checkCached fails unless only the repeat says it was answered from the
-// question cache: its source line ends with cached.
+// checkCached fails unless the repeat prints what the first printed, in
+// each surface's words and as --json.
 func checkCached(t *testing.T, first, again Outcome) {
 	t.Helper()
-	if first.Index.Cached || !again.Index.Cached || !strings.Contains(NewFrontmatter("q", SearchBackend, "", again).Render(), "\nsource: search, 3 pages read, cached\n") {
-		t.Errorf("index %+v then %+v: want only the repeat to say cached", first.Index, again.Index)
+	for _, style := range []HintStyle{HintCLI, HintMCP} {
+		a := NewFrontmatter("q", SearchBackend, "", first).Render() + RenderAnswer(first, style)
+		b := NewFrontmatter("q", SearchBackend, "", again).Render() + RenderAnswer(again, style)
+		if a != b {
+			t.Errorf("the repeat prints otherwise (style %d):\n%s\nfirst:\n%s", style, b, a)
+		}
+	}
+	ja, _ := json.Marshal(NewAnswerJSON("q", SearchBackend, "", first))
+	jb, _ := json.Marshal(NewAnswerJSON("q", SearchBackend, "", again))
+	if string(ja) != string(jb) {
+		t.Errorf("the repeat's --json differs:\n%s\nfirst:\n%s", jb, ja)
 	}
 }
 
@@ -183,9 +191,10 @@ func resultURLs(rs []Result) []string {
 
 func sameURLs(a, b []Result) bool { return slices.Equal(resultURLs(a), resultURLs(b)) && len(a) > 0 }
 
-// Hits that are never docs (forges, Q&A, posts) are no site: refused as
-// no_docs_found. An empty search is the search failing, not the web
-// lacking docs.
+// A search that returned results never ends in a refusal: hits that are
+// never docs (forges, Q&A, posts), or split between sites, are an answer
+// of the search results alone (results_only, a note saying why no page
+// printed). An empty search has nothing to print: not_found, exit 3.
 func TestSearchFirstRefusals(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -193,18 +202,20 @@ func TestSearchFirstRefusals(t *testing.T) {
 		status Status
 		reason string
 		kind   failure.Kind
+		others int
+		note   string
 	}{
 		{"no docs", []search.Result{
 			hit("https://github.com/example/example/issues/12", "issue"),
 			hit("https://stackoverflow.com/questions/1/x", "question"),
 			hit("https://forum.example.test/t/middleware/123", "forum topic"),
-		}, Refused, "no_docs_found", failure.NotFound},
+		}, Partial, "results_only", 0, 3, "no page was printed: "},
 		{"split between sites", []search.Result{
 			hit("https://docs.one.test/guide/a", "A - One docs"),
 			hit("https://docs.two.test/guide/a", "A - Two docs"),
 			hit("https://docs.three.test/guide/a", "A - Three docs"),
-		}, Refused, "ambiguous_site", failure.Validation},
-		{"empty search", nil, Failed, "search_empty", failure.Upstream},
+		}, Partial, "results_only", 0, 3, "no page was printed: "},
+		{"empty search", nil, Refused, "search_empty", failure.NotFound, 0, ""},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -212,6 +223,14 @@ func TestSearchFirstRefusals(t *testing.T) {
 			o := s.SearchSelect(context.Background(), "add middleware", 0)
 			if o.Status != tc.status || o.Reason != tc.reason || o.Kind() != tc.kind {
 				t.Fatalf("outcome = %s/%s kind %v (%v), want %s/%s kind %v", o.Status, o.Reason, o.Kind(), o.Err(), tc.status, tc.reason, tc.kind)
+			}
+			if len(o.OtherResults) != tc.others || !strings.HasPrefix(o.Note, tc.note) || tc.others > 0 && (!o.Evidence() || len(o.Results) != 0) {
+				t.Errorf("other results %+v note %q evidence %v", o.OtherResults, o.Note, o.Evidence())
+			}
+			for i, r := range o.OtherResults {
+				if r.Rank != i+1 || r.URL != tc.hits[i].URL || r.Title != tc.hits[i].Title {
+					t.Errorf("other result %d = %+v, want hit %d", i, r, i+1)
+				}
 			}
 		})
 	}
@@ -386,72 +405,6 @@ func TestSearchRefusesContext7ID(t *testing.T) {
 		if isContext7ID(spec) {
 			t.Errorf("%s read as a Context7 ID", spec)
 		}
-	}
-}
-
-// The note's index suggestion: the root the search read is the library,
-// unless its site's lists name more pages under it than an index holds (or
-// it is a package index's host); then the deepest directory the cited
-// pages share, a project's root on a host serving many, when that is
-// narrower, no site's root and not too wide itself; else a docs tree stays
-// and a site's root (a host's or its locale's) gets no suggestion at all.
-func TestIndexRootSuggestion(t *testing.T) {
-	root := func(s string) webRoot {
-		r, err := parseWebRoot(s)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return r
-	}
-	learn := "https://learn.microsoft.com/en-us/"
-	wideLearn := []string{learn, learn + "azure/"} // what the site's lists name too many pages under
-	for _, c := range []struct {
-		root  string
-		cited []string
-		wide  []string
-		want  string // "" for no suggestion
-	}{
-		{idxRoot, []string{idxRoot + "guide/middleware#x"}, nil, idxRoot},
-		{learn, []string{learn + "azure/storage/blobs/soft-delete-blob-overview#how", learn + "azure/storage/blobs/soft-delete-blob-enable"}, wideLearn, learn + "azure/storage/blobs/"},
-		{learn, []string{learn + "azure/azure-functions/functions-bindings-error-pages", learn + "azure/azure-functions/functions-host-json#retry"}, wideLearn, learn + "azure/azure-functions/"},
-		{learn, []string{learn + "azure/azure-functions/a", learn + "azure/reliability/b"}, wideLearn, ""},
-		{learn, []string{learn + "azure/storage/blobs/a", learn + "cli/azure/storage/account"}, wideLearn, ""},
-		{learn, []string{learn + "azure/storage/blobs/"}, wideLearn, learn + "azure/storage/"},
-		{"https://docs.ollama.com/", []string{"https://docs.ollama.com/faq#x", "https://docs.ollama.com/api/generate"}, nil, "https://docs.ollama.com/"},
-		{"https://docs.ollama.com/", []string{"https://docs.ollama.com/faq#x", "https://docs.ollama.com/api/generate"}, []string{"https://docs.ollama.com/"}, ""},
-		{"https://fastapi.example/", []string{"https://fastapi.example/tutorial/dependencies/dependencies-with-yield/#x"}, nil, "https://fastapi.example/"},
-		{"https://big.example/docs/", []string{"https://big.example/docs/functions/a", "https://big.example/docs/plans/b"}, []string{"https://big.example/docs/"}, "https://big.example/docs/"},
-		{"https://pkg.go.dev/", []string{"https://pkg.go.dev/github.com/owner/repo/sub/pkg#Func"}, nil, "https://pkg.go.dev/github.com/owner/repo/"},
-		{"https://pkg.go.dev/", []string{"https://pkg.go.dev/github.com/owner/repo#F", "https://pkg.go.dev/net/http#Client"}, nil, ""},
-	} {
-		got, ok := indexRoot(root(c.root), c.cited, c.wide)
-		if ok != (c.want != "") || ok && got.String() != c.want {
-			t.Errorf("%s %v wide=%v: %v %v, want %q", c.root, c.cited, c.wide, got, ok, c.want)
-		}
-	}
-	links := func(n int, dir string) []webLink {
-		var out []webLink
-		for i := range n {
-			u, _ := url.Parse(fmt.Sprintf("%s%d", dir, i))
-			out = append(out, webLink{url: u})
-		}
-		return out
-	}
-	if got := wideDirs(root(learn), append(links(1400, learn+"azure/storage/"), links(400, learn+"dotnet/")...)); !slices.Equal(got, []string{learn}) {
-		t.Errorf("wideDirs = %v", got)
-	}
-	if got := wideDirs(root(learn), links(1600, learn+"azure/storage/")); !slices.Equal(got, []string{learn, learn + "azure/", learn + "azure/storage/"}) {
-		t.Errorf("wideDirs = %v", got)
-	}
-	r := root(learn)
-	if n := searchNote(r, 21, root(learn+"azure/storage/blobs/"), true); n != "read 21 pages of "+learn+" found by web search; to index these docs: ketch docs index "+learn+"azure/storage/blobs/" {
-		t.Errorf("note %q", n)
-	}
-	if n := searchNote(r, 21, webRoot{}, false); n != "read 21 pages of "+learn+" found by web search" {
-		t.Errorf("no suggestion: %q", n)
-	}
-	if n := searchNote(root("https://docs.ollama.com/"), 3, root("https://docs.ollama.com/"), true); !strings.HasSuffix(n, "; the whole site: ketch docs index https://docs.ollama.com/") {
-		t.Errorf("a host's root: %q", n)
 	}
 }
 
