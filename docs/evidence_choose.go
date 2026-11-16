@@ -14,6 +14,9 @@ type plan struct {
 	whole  bool
 	pieces []int
 	cost   int
+	// clip is the text printed in place of the pieces' when one of them
+	// is larger than what was left (clipped); "" for none.
+	clip string
 }
 
 // ranked is Rank's output: the terms' weights and which are distinctive,
@@ -21,6 +24,7 @@ type plan struct {
 // order, and the plans in the order their sections opened, with why
 // sections were passed over.
 type ranked struct {
+	terms    []evidenceTerm
 	weights  []float64
 	distinct []bool
 	scores   []scored  // by piece id
@@ -214,7 +218,8 @@ func (p *planner) walk(ids []int, at map[int]int) {
 
 // open is what section i prints when piece id opens it, within the
 // budget left: whole when it fits, else cut to the piece; false when that
-// does not fit either (unless it is the first section).
+// does not fit either. The first section always opens: when its piece does
+// not fit, cut inside the piece (clipped).
 func (p *planner) open(i, id int) (plan, bool) {
 	if t := p.s.secs[i].tokens; t <= p.left {
 		pl := plan{sec: i, whole: true}
@@ -224,7 +229,10 @@ func (p *planner) open(i, id int) (plan, bool) {
 	}
 	pl := plan{sec: i, pieces: unitOf(p.s, id)}
 	pl.cost = p.render(pl) + p.overhead(pl)
-	return pl, pl.cost <= p.left || len(p.r.plans) == 0
+	if pl.cost > p.left && len(p.r.plans) == 0 {
+		return p.clipped(pl), true // the first section prints something, within the budget
+	}
+	return pl, pl.cost <= p.left
 }
 
 // overhead is what opening a section as pl adds to the answer beyond its
@@ -246,8 +254,8 @@ func pageHeadingTokens(sec docsindex.Section) int {
 // grow adds piece id to pl, cut, when the answer stays within the budget
 // with it; false when it does not fit.
 func (p *planner) grow(pl *plan, id int) bool {
-	if pl.whole {
-		return true
+	if pl.whole || pl.clip != "" {
+		return pl.whole
 	}
 	add := []int{id}
 	for _, w := range unitOf(p.s, id) {
@@ -272,7 +280,7 @@ func (p *planner) grow(pl *plan, id int) bool {
 func (p *planner) render(pl plan) int {
 	printed := printedSections(p.r.plans)
 	printed[pl.sec] = true
-	res := renderGroup(p.lib, p.s, group{sec: pl.sec, pieces: pl.pieces, whole: pl.whole, printed: printed})
+	res := renderGroup(p.lib, p.s, group{sec: pl.sec, pieces: pl.pieces, whole: pl.whole, clip: pl.clip, printed: printed})
 	res.URL = shownURL(p.lib, res.URL)
 	return estimateTokens(RenderGroup(res, false)) + 1
 }

@@ -241,7 +241,7 @@ func sectionOrder(order, ordered int) int {
 // prints within budget tokens, at most limit groups when limit > 0; order
 // is the exact pages' places (pageOrder), nil to walk by rank alone.
 func rank(lib docsindex.Library, s *sorted, g *gathered, budget, limit int, order map[string]int) *ranked {
-	r := &ranked{budget: max(budget, 0), limit: limit, order: order}
+	r := &ranked{terms: g.terms, budget: max(budget, 0), limit: limit, order: order}
 	r.weights, r.distinct, r.scores = scorePieces(s, g.terms, g.sections, asksChange(g.query.query))
 	rankPieces(s, r)
 	printSections(lib, s, r)

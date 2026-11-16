@@ -24,6 +24,7 @@ type group struct {
 	sec    int
 	pieces []int // printed when cut: chosen and their context, in page order
 	whole  bool
+	clip   string // printed in place of the pieces' text when set (plan.clip)
 	// printed are the sections the answer prints: the group line names
 	// none of them.
 	printed map[int]bool
@@ -35,7 +36,7 @@ func groupsOf(s *sorted, r *ranked) []group {
 	first := map[string]int{} // page: its place
 	printed := printedSections(r.plans)
 	for i, pl := range r.plans {
-		out[i] = group{sec: pl.sec, pieces: pl.pieces, whole: pl.whole, printed: printed}
+		out[i] = group{sec: pl.sec, pieces: pl.pieces, whole: pl.whole, clip: pl.clip, printed: printed}
 		page := s.secs[pl.sec].Page
 		if _, ok := first[page]; ok {
 			continue
@@ -85,11 +86,16 @@ func renderGroup(lib docsindex.Library, s *sorted, g group) Result {
 		URL: webSectionOf(sec.Section, 0).URL(), Anchors: []string{sec.Anchor}, Source: SearchBackend,
 	}
 	r.PageTitle, r.HeadingPath = pageTitle(sec.Section), headingBelow(sec.Section)
-	if g.whole || len(g.pieces) == len(sec.pieces) {
-		// A group holding every piece of its section is the section: a
-		// section longer than a page that is one code block prints it whole.
+	switch {
+	case g.clip != "":
+		// A block larger than the budget left, cut inside (clipText).
+		r.Snippet, r.Truncated = g.clip, true
+		r.ShownTokens, r.SectionTokens = estimateTokens(r.Snippet), sec.tokens
+	case g.whole || len(g.pieces) == len(sec.pieces):
+		// A group holding every piece of its section is the section (one
+		// larger than the budget left is clipped instead, above).
 		r.Snippet = sec.Text
-	} else {
+	default:
 		r.Snippet = joinPieces(s, sec, g.pieces)
 		r.Truncated = true
 		r.ShownTokens, r.SectionTokens = estimateTokens(r.Snippet), sec.tokens

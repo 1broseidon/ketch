@@ -247,8 +247,9 @@ func sectionUnit(secs []docsindex.Section, anchor string) (unit []docsindex.Sect
 // fetchSection renders the unit anchor names as one result: whole when
 // it fits within tokens, else the page'th (from 1; 0 is the first) of the
 // pages it reads in at that size, in reading order, each ending at a block
-// boundary (never inside a code block or a table row; a table continued
-// from the page before repeats its header), with the call that reads the
+// boundary (never inside a table row; a table continued from the page
+// before repeats its header; a block longer than a page is cut at its
+// lines, a code block into fenced blocks of its lines, fitRuns), with the call that reads the
 // next one (Result.Next, in style's words; library and tokens as the
 // caller gave them). A page past the last is a validation error naming
 // how many there are.
@@ -410,7 +411,8 @@ func anchorList(secs []docsindex.Section) string {
 // chunk is a block of a unit's text a page can end after: a paragraph,
 // a list, a code block whole, or a part's heading with its first block;
 // a block longer than a page is cut into its lines (a table into its
-// rows, a list into its items), code blocks whole.
+// rows, a list into its items), a code block longer than a page into
+// fenced blocks of its lines, and a line longer than a page at words.
 type chunk struct {
 	part   int // the unit's section it belongs to
 	text   string
@@ -437,6 +439,11 @@ func sectionChunks(unit []docsindex.Section, title string, room int) []chunk {
 			parts, header := []string{b}, ""
 			if estimateTokens(b) > room {
 				parts, header = blockLines(b)
+				var fit []string
+				for _, t := range parts {
+					fit = append(fit, fitRuns(t, max(room, sectionMinRoom))...)
+				}
+				parts = fit
 			}
 			for k, t := range parts {
 				c := chunk{part: p, text: t, sep: "\n\n"}
@@ -482,6 +489,111 @@ func blockLines(b string) (runs []string, header string) {
 		runs = append(runs, line)
 	}
 	return runs, header
+}
+
+// sectionMinRoom is the smallest a page's room is when a block is cut to
+// fit it: below it (--tokens under about 200) a page may run over its
+// budget rather than print a few words a page.
+const sectionMinRoom = 100
+
+// fitRuns is run (a block's run of lines, blockLines) as runs of at most
+// room tokens each: whole when it fits; a fenced code block as fenced
+// blocks of its lines; other text as runs of its lines; a line over room
+// as runs of its words. Joined by line breaks they are the run's text
+// (a code block's runs each with its fences).
+func fitRuns(run string, room int) []string {
+	if estimateTokens(run) <= room {
+		return []string{run}
+	}
+	lines := strings.Split(run, "\n")
+	head, tail := 0, 0
+	if h, t := clipFrame(lines); t > 0 && h < len(lines)-t {
+		head, tail = h, t // a fenced code block: each part keeps its fences
+	}
+	open, close := strings.Join(lines[:head], "\n"), strings.Join(lines[len(lines)-tail:], "\n")
+	wrap := func(body []string) string {
+		parts := body
+		if head > 0 {
+			parts = append(append([]string{open}, body...), close)
+		}
+		return strings.Join(parts, "\n")
+	}
+	frame := 0
+	if head > 0 {
+		frame = estimateTokens(open+"\n"+close) + 1
+	}
+	var out []string
+	var cur []string
+	used := frame // a run's lines' estimates, each with its line break: about the run's
+	flush := func() {
+		if len(cur) > 0 {
+			out = append(out, wrap(cur))
+			cur, used = nil, frame
+		}
+	}
+	for _, line := range lines[head : len(lines)-tail] {
+		cost := estimateTokens(line) + 1
+		if used+cost <= room {
+			cur, used = append(cur, line), used+cost
+			continue
+		}
+		flush()
+		if used+cost <= room {
+			cur, used = []string{line}, used+cost
+			continue
+		}
+		for _, w := range wordRuns(line, max(room-frame, 1)) {
+			out = append(out, wrap([]string{w}))
+		}
+	}
+	flush()
+	return out
+}
+
+// wordRuns is line as runs of its words of at most room tokens each (a
+// word longer than room cut into runs of its characters).
+func wordRuns(line string, room int) []string {
+	var out []string
+	cur := ""
+	var words []string
+	for _, w := range strings.Fields(line) {
+		words = append(words, runeRuns(w, room)...)
+	}
+	used := 0 // the run's words' estimates, each with its space: about the run's
+	for _, w := range words {
+		cost := estimateTokens(w) + 1
+		if cur != "" && used+cost > room {
+			out = append(out, cur)
+			cur, used = "", 0
+		}
+		if cur != "" {
+			cur += " "
+		}
+		cur, used = cur+w, used+cost
+	}
+	if cur != "" {
+		out = append(out, cur)
+	}
+	return out
+}
+
+// runeRuns is w as runs of its characters of at most room tokens each;
+// w alone when it fits.
+func runeRuns(w string, room int) []string {
+	if estimateTokens(w) <= room {
+		return []string{w}
+	}
+	r := []rune(w)
+	var out []string
+	for len(r) > 0 {
+		n := min(len(r), max(len(r)*room/max(estimateTokens(string(r)), 1), 1))
+		for n > 1 && estimateTokens(string(r[:n])) > room {
+			n = n * 3 / 4
+		}
+		out = append(out, string(r[:n]))
+		r = r[n:]
+	}
+	return out
 }
 
 // pageBreaks parts the chunks into pages of at most room tokens each, in

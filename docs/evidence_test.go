@@ -501,9 +501,9 @@ func inPageOrder(t *testing.T, text string, n int) {
 	}
 }
 
-// A section longer than the budget that is one piece (a code block,
-// never cut) prints whole when it is the first, not marked cut: nothing of
-// it is left out, and an answer is never empty for want of room.
+// A section longer than the budget that is one piece (a code block) is
+// cut inside the block when it is the first: within the budget, marked
+// cut, its fences kept (evidence_clip.go). Before, it printed whole.
 func TestEvidenceOnePieceOverBudget(t *testing.T) {
 	code := "```go\n" + strings.Repeat("alpha := option() // a line of code\n", 200) + "```"
 	l, lib := evLocal(t, []docsindex.Section{evSection("code", 0, "code", []string{"Code", "Alpha"}, code)})
@@ -511,8 +511,12 @@ func TestEvidenceOnePieceOverBudget(t *testing.T) {
 	if err != nil || len(a.results) != 1 || estimateTokens(code) <= 400 {
 		t.Fatalf("results = %+v %v", a, err)
 	}
-	if r := a.results[0]; r.Truncated || r.Snippet != code || r.SectionTokens != 0 {
-		t.Errorf("one piece over the budget: truncated=%v, %d of %d", r.Truncated, r.ShownTokens, r.SectionTokens)
+	r := a.results[0]
+	if !r.Truncated || r.SectionTokens == 0 || !strings.HasPrefix(r.Snippet, "```go\nalpha := option()") || !strings.HasSuffix(r.Snippet, "\n```") {
+		t.Errorf("one piece over the budget: truncated=%v, %d of %d:\n%s", r.Truncated, r.ShownTokens, r.SectionTokens, r.Snippet)
+	}
+	if n := estimateTokens(renderPassages(a.results)); n > 400 {
+		t.Errorf("the passages estimate %d tokens, over 400", n)
 	}
 }
 
