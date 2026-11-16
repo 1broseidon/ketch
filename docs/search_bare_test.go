@@ -101,6 +101,18 @@ func TestNotDocument(t *testing.T) {
 		"https://www.rfc-editor.org/rfc/rfc9110.txt":                     false,
 		"https://docs.python.org/3.10/library/datetime.html":             false,
 		"https://learn.microsoft.com/en-us/answers/questions/1/how-to-x": true,
+		// A forge's files are documents by type only.
+		"https://github.com/envoyproxy/envoy/blob/main/api/envoy/config/cluster/v3/circuit_breaker.proto": true,
+		"https://raw.githubusercontent.com/ansible/ansible/stable-2.11/examples/ansible.cfg":              true,
+		"https://github.com/o/r/blob/main/Makefile":                                                       true,
+		"https://gitlab.com/o/r/-/blob/main/config/default.ini":                                           true,
+		"https://github.com/o/r/blob/main/docs/guide.rst":                                                 false,
+		"https://github.com/o/r/blob/main/docs/manual.adoc":                                               false,
+		"https://raw.githubusercontent.com/o/r/main/NOTES.txt":                                            false,
+		"https://github.com/o/r/blob/main/README":                                                         false,
+		"https://github.com/o/r/tree/main/docs":                                                           false,
+		"https://go.googlesource.com/wiki/+show/abc/Go123Timer":                                           false,
+		"https://github.com/open-telemetry/opentelemetry-collector/blob/main/processor/README.md":         false,
 	} {
 		u, _ := url.Parse(raw)
 		if got := notDocument(u); got != want {
@@ -263,7 +275,7 @@ func TestBareNoSecondSearchWhenOneReads(t *testing.T) {
 	f := exampleSite()
 	s, _, _ := searchFirstOver(t, f, nil)
 	asked := bySearch(s, map[string][]search.Result{
-		q: {hit("https://stackoverflow.com/questions/1/x", "thread"), hit(idxRoot+"guide/routing", "Routing")},
+		q: {hit("https://stackoverflow.com/questions/1/x", "thread"), hit(idxRoot+"guide/middleware", "Middleware")},
 	})
 	o := s.SearchSelect(context.Background(), q, 0)
 	if o.Err() != nil || len(o.Read) != 1 || len(*asked) != 1 || strings.Contains(o.Note, "second search") {
@@ -300,5 +312,56 @@ func TestBareBothSearchesGiveNothing(t *testing.T) {
 	if o.Err() != nil || o.Reason != "results_only" || len(o.OtherResults) != 1 || o.OtherResults[0].URL != issue.URL ||
 		!strings.Contains(o.Note, `the question's search returned no results; these are a second search, the question + "documentation"`) {
 		t.Errorf("first empty, second unreadable: %s %+v note %q (%v), want the second search's results", o.Reason, o.OtherResults, o.Note, o.Err())
+	}
+}
+
+// The two shapes a fresh run tripped on: a search's first result a forge
+// file that is no document (a .proto schema GitHub shows as chrome only, an
+// example config on the raw host) is passed over without a fetch, and the
+// docs page after it read.
+func TestBareSkipsForgeFilesThatAreNoDocument(t *testing.T) {
+	docs := "https://www.proxy.example.test/docs/circuit_breaking"
+	for _, first := range []string{
+		"https://github.com/envoyproxy/envoy/blob/main/api/envoy/config/cluster/v3/circuit_breaker.proto",
+		"https://raw.githubusercontent.com/ansible/ansible/stable-2.11/examples/ansible.cfg",
+	} {
+		f := &fakeFetcher{pages: map[string]fakePage{
+			first: {title: "file", markdown: "# file\n\n141 lines (119 loc) · 6.42 KB\n\nRaw\n"},
+			docs:  {title: "Circuit breaking", markdown: "# Circuit breaking\n\n## Defaults\n\nmax_connections defaults to 1024 and max_pending_requests to 1024.\n"},
+		}}
+		s, _, _ := searchFirstOver(t, f, []search.Result{hit(first, "file"), hit(docs, "Circuit breaking")})
+		o := s.SearchSelect(context.Background(), "default max_connections and max_pending_requests thresholds", 0)
+		if o.Err() != nil || len(o.Read) != 1 || o.Read[0].URL != docs || o.Read[0].Rank != 2 {
+			t.Errorf("%s first: read %+v (%v), want the docs page at rank 2", first, o.Read, o.Err())
+		}
+		assertNeverFetched(t, f, first)
+	}
+}
+
+// A result that reads but gives almost no text, and holds nothing the
+// question asks about, is no readable document: skipped with its cause,
+// the next result read. A short page that holds an identifier the question
+// writes is read.
+func TestBareSkipsAlmostEmptyPages(t *testing.T) {
+	stub := "https://files.example.test/view/circuit_breaker"
+	docs := "https://www.proxy.example.test/docs/circuit_breaking"
+	f := &fakeFetcher{pages: map[string]fakePage{
+		stub: {title: "circuit_breaker", markdown: "# circuit_breaker\n\n141 lines (119 loc) · 6.42 KB\n\nRaw\n"},
+		docs: {title: "Circuit breaking", markdown: "# Circuit breaking\n\n## Defaults\n\nmax_connections defaults to 1024 and max_pending_requests to 1024.\n"},
+	}}
+	q := "Envoy cluster circuit breakers: what are the default max_connections and max_pending_requests thresholds?"
+	s, _, _ := searchFirstOver(t, f, []search.Result{hit(stub, "circuit_breaker"), hit(docs, "Circuit breaking")})
+	o := s.SearchSelect(context.Background(), q, 0)
+	if o.Err() != nil || len(o.Read) != 1 || o.Read[0].URL != docs {
+		t.Fatalf("read %+v (%v), want the docs page", o.Read, o.Err())
+	}
+	if len(o.Skipped) != 1 || o.Skipped[0].URL != stub || o.Skipped[0].Cause != "almost no text" {
+		t.Errorf("skipped %+v, want the stub with cause almost no text", o.Skipped)
+	}
+	// The same short page holding an identifier asked about is read.
+	f.pages[stub] = fakePage{title: "circuit_breaker", markdown: "# circuit_breaker\n\nmax_connections: 1024 by default.\n"}
+	s, _, _ = searchFirstOver(t, f, []search.Result{hit(stub, "circuit_breaker"), hit(docs, "Circuit breaking")})
+	if o := s.SearchSelect(context.Background(), q, 0); len(o.Read) == 0 || o.Read[0].URL != stub {
+		t.Errorf("a short page holding max_connections: read %+v (%v), want it read", o.Read, o.Err())
 	}
 }

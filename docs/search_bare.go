@@ -240,6 +240,7 @@ type bareRead struct {
 	first   *url.URL // the first page read, as the search gave it
 	served  *url.URL // and where it was served from
 	skipped int      // candidates passed over before the first page
+	asked   string   // the question, for what an almost empty first page must hold (tinyPage)
 }
 
 // readBare reads the first readable document among hits, then up to
@@ -249,7 +250,7 @@ type bareRead struct {
 func (s *SearchFirst) readBare(ctx, cctx context.Context, req sfRequest, hits []sfHit, tr *sfTrace) (Outcome, sfRead, bool) {
 	cands := bareCandidates(hits)
 	x := &bareRead{s: s, cands: cands, tried: make([]bool, len(cands)),
-		seen: map[string]bool{}, texts: map[[32]byte]bool{}, p: &sfPages{}}
+		seen: map[string]bool{}, texts: map[[32]byte]bool{}, p: &sfPages{}, asked: req.query}
 	tr.docsHits += len(cands)
 	if lib, ok := x.readFirst(cctx, tr); ok {
 		// A site the caller indexed answers from the index.
@@ -341,6 +342,11 @@ func (x *bareRead) read(ctx context.Context, wave []int, tr *sfTrace) {
 	for k, pg := range pages {
 		h := x.cands[at[slices.IndexFunc(links, func(l webLink) bool { return l.url == by[k].url })]]
 		if t := contentKey(pg); x.texts[t] || x.first != nil && !sameRelease(x.first, h.u) {
+			continue
+		}
+		if x.first == nil && tinyPage(pg, x.asked) {
+			x.fails.add(h.u.String(), readTiny, "")
+			x.p.skipped = append(x.p.skipped, PageSkipped{URL: h.u.String(), Cause: readTiny})
 			continue
 		}
 		x.texts[contentKey(pg)] = true
@@ -472,9 +478,10 @@ var threadSegments = map[string]bool{
 
 // notDocument reports a search result that is no document by its address's
 // shape alone: a Q&A or forum thread, an issue, a pull request or commit, a
-// source file, a video or a social post. A Markdown document on a forge (a
-// README, a .md file, a wiki page) is a document; so is any page of any
-// other site, a blog or a tutorial included.
+// file of a repository that is no document (forgeSource), a video or a
+// social post. A document on a forge (a README, a Markdown,
+// reStructuredText, AsciiDoc or text file, a wiki page) is a document; so
+// is any page of any other site, a blog or a tutorial included.
 func notDocument(u *url.URL) bool {
 	host := strings.TrimSuffix(strings.ToLower(u.Hostname()), ".")
 	first, _, _ := strings.Cut(strings.TrimPrefix(host, "www."), ".")
@@ -495,7 +502,12 @@ func notDocument(u *url.URL) bool {
 }
 
 // forgeSource reports a source file on a code forge, or a docs.rs source
-// view.
+// view. On a forge, what is a document is decided by its type
+// (forgeDocument): any other file of a repository (under /blob/, /raw/,
+// /src/, Gitiles' /+/, or on a raw-file host) is a source file, a config
+// example or a schema, not documentation. Other forge pages (a
+// repository's home, a directory's view with its rendered README under
+// /tree/, a wiki) are documents.
 func forgeSource(u *url.URL) bool {
 	host := strings.TrimSuffix(strings.ToLower(u.Hostname()), ".")
 	segs := pathSegments(u.Path)
@@ -505,5 +517,93 @@ func forgeSource(u *url.URL) bool {
 	if !onDomains(host, forgeHosts) || len(segs) == 0 {
 		return false
 	}
-	return codeExts[strings.ToLower(path.Ext(segs[len(segs)-1]))]
+	last := segs[len(segs)-1]
+	if codeExts[strings.ToLower(path.Ext(last))] {
+		return true
+	}
+	return forgeFile(host, segs) && !forgeDocument(segs)
+}
+
+// forgeFileSegments are the path segments under which a forge addresses a
+// repository's files: GitHub's and GitLab's blob and raw, Bitbucket's and
+// Codeberg's src, Gitiles' + and +show. (A /tree/ address is a directory,
+// shown with its README.)
+var forgeFileSegments = map[string]bool{"blob": true, "raw": true, "src": true, "+": true, "+show": true}
+
+// forgeFile reports a forge address that names a file of a repository:
+// one under forgeFileSegments, or any on a raw-file host.
+func forgeFile(host string, segs []string) bool {
+	if onDomains(host, []string{"githubusercontent.com"}) {
+		return true
+	}
+	for _, seg := range segs {
+		if forgeFileSegments[seg] {
+			return true
+		}
+	}
+	return false
+}
+
+// docExts are the document types a forge file may be: Markdown,
+// reStructuredText, AsciiDoc and plain text.
+var docExts = map[string]bool{
+	".md": true, ".markdown": true, ".mdown": true, ".mkd": true, ".mdx": true,
+	".rst": true, ".adoc": true, ".asciidoc": true, ".txt": true,
+}
+
+// forgeDocument reports a forge file that is a document: one of docExts,
+// a README of any type, or a page of a wiki (a wiki segment, or a
+// repository named wiki).
+func forgeDocument(segs []string) bool {
+	last := strings.ToLower(segs[len(segs)-1])
+	if docExts[path.Ext(last)] || strings.HasPrefix(last, "readme") {
+		return true
+	}
+	for _, seg := range segs {
+		if strings.EqualFold(seg, "wiki") {
+			return true
+		}
+	}
+	return false
+}
+
+// sfTinyChars is the most text, in characters, a page read may have and
+// still be passed over as almost empty (tinyPage): a forge's chrome around
+// a file it does not render ("141 lines (119 loc) · 6.42 KB | Raw") is
+// about 200; the shortest documentation page on the recorded searches,
+// over 1,100.
+const sfTinyChars = 500
+
+// readTiny is the cause of a page passed over as almost empty.
+const readTiny = "almost no text"
+
+// tinyPage reports a page that reads but gives almost no text (under
+// sfTinyChars) and holds none of what question asks about: none of the
+// identifiers or flags it writes, and fewer than half of its terms. Such
+// a page is not a readable document; a short page that holds what was
+// asked about is one.
+func tinyPage(p webPage, question string) bool {
+	if len(strings.TrimSpace(p.Markdown)) >= sfTinyChars {
+		return false
+	}
+	toks := pieceTokens(p.Markdown)
+	for _, k := range queryIdents(question) {
+		if toks[k] {
+			return false
+		}
+	}
+	low := strings.ToLower(p.Markdown)
+	for _, w := range strings.Fields(question) {
+		if w = strings.Trim(w, "`'\",.;:!?()"); flagWord(w) && strings.Contains(low, strings.ToLower(w)) {
+			return false
+		}
+	}
+	terms := withoutFiller(queryTerms(question))
+	held := 0
+	for _, t := range terms {
+		if toks[t] {
+			held++
+		}
+	}
+	return held*2 < len(terms)
 }

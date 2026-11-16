@@ -146,7 +146,7 @@ Two rules hold for every answer:
 | You see | It means | Do |
 |---|---|---|
 | `read:` with `(search rank N)` | the pages the answer read: the search's first readable document and up to two more pages of the same site, in search order, at their exact addresses | cite each group's `source:` |
-| `skipped: <url> (<cause>)` | a result that could not be read (DNS lookup failed, HTTP status, timed out, needs JavaScript, …); the next result was read instead | if it matters, `ketch scrape <url>` or configure `browser` |
+| `skipped: <url> (<cause>)` | a result that could not be read (DNS lookup failed, HTTP status, timed out, needs JavaScript, almost no text, …); the next result was read instead | if it matters, `ketch scrape <url>` or configure `browser` |
 | `widened: read N more pages of <root> for: <terms>` | with `--library` only: the exact pages lacked those identifiers, so more pages of that release were read; their sections print after the exact pages' | read the groups as usual |
 | `not_on_pages: [terms]` | identifiers your question writes (code names, flags, options) on none of the pages read; only those pages were checked, not the whole docs | another call worded for those terms, or another source; never "the docs do not cover it" from this line alone |
 | `version: <release>` | a pin that matched, or the release your question names (`Vue 2`) on a page read | cite it with the answer |
