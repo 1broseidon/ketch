@@ -144,38 +144,7 @@ func linkTarget(u *url.URL) (key, root string) {
 // then a docs-looking one (a docs or developer(s) host, or a link under
 // /docs), then the one with the most links. false for none.
 func linkedCandidate(pages []*dPage) (linkedSite, bool) {
-	own := map[string]bool{}
-	for _, p := range pages {
-		if p.page != nil {
-			own[scopeHost(p.parsedURL())] = true
-			own[scopeHost(p.hit.u)] = true
-		}
-	}
-	type tally struct {
-		sources map[string]bool
-		links   []*url.URL
-		root    string
-	}
-	by := map[string]*tally{}
-	for _, p := range pages {
-		if p.page == nil {
-			continue
-		}
-		src := registrableDomain(p.parsedURL().Hostname())
-		for _, u := range pageLinks(p.page.Markdown) {
-			key, root := linkTarget(u)
-			if key == "" || own[scopeHost(u)] || neverLinked(u) {
-				continue
-			}
-			t := by[key]
-			if t == nil {
-				t = &tally{sources: map[string]bool{}, root: root}
-				by[key] = t
-			}
-			t.sources[src] = true
-			t.links = append(t.links, u)
-		}
-	}
+	by := linkTallies(pages)
 	var cands []linkedSite
 	for host, t := range by {
 		if len(t.sources) < followMinSources {
@@ -201,6 +170,49 @@ func linkedCandidate(pages []*dPage) (linkedSite, bool) {
 		return cmp.Or(cmp.Compare(b.sources, a.sources), docs, cmp.Compare(b.links, a.links), cmp.Compare(a.host, b.host))
 	})
 	return cands[0], true
+}
+
+// linkTally is what the pages read link to on one target (linkTarget):
+// the source sites, the links, and the root to read when the target names
+// one.
+type linkTally struct {
+	sources map[string]bool
+	links   []*url.URL
+	root    string
+}
+
+// linkTallies are the pages read's links to other sites by target, links
+// that can never lead to docs and links to a source page's own host left
+// out.
+func linkTallies(pages []*dPage) map[string]*linkTally {
+	own := map[string]bool{}
+	for _, p := range pages {
+		if p.page != nil {
+			own[scopeHost(p.parsedURL())] = true
+			own[scopeHost(p.hit.u)] = true
+		}
+	}
+	by := map[string]*linkTally{}
+	for _, p := range pages {
+		if p.page == nil {
+			continue
+		}
+		src := registrableDomain(p.parsedURL().Hostname())
+		for _, u := range pageLinks(p.page.Markdown) {
+			key, root := linkTarget(u)
+			if key == "" || own[scopeHost(u)] || neverLinked(u) {
+				continue
+			}
+			t := by[key]
+			if t == nil {
+				t = &linkTally{sources: map[string]bool{}, root: root}
+				by[key] = t
+			}
+			t.sources[src] = true
+			t.links = append(t.links, u)
+		}
+	}
+	return by
 }
 
 // docsLinked reports links to a docs-looking site: a docs, developer or
@@ -319,12 +331,7 @@ func (c *dCall) followRead(ctx context.Context, req sfRequest, pages []*dPage, t
 	if _, ok := c.s.indexedOver(site.root); ok {
 		return nil // an indexed answer is never sent to a provider
 	}
-	read := 0
-	for _, p := range pages {
-		if p.page != nil {
-			read++
-		}
-	}
+	read := pagesRead(pages)
 	fs := &followState{site: site, read: read, what: fmt.Sprintf("%s, which %d of the %d pages read link to", site.root, site.sources, read)}
 	if c.left() < cost(c.pageRequest(&dPage{page: &webPage{}})) {
 		c.budget.follows = true
@@ -337,6 +344,23 @@ func (c *dCall) followRead(ctx context.Context, req sfRequest, pages []*dPage, t
 	if why := unfollowed(o); why != "" {
 		return fs.reject(why)
 	}
+	return c.followLabel(ctx, req, fs, o)
+}
+
+// pagesRead is how many of pages were read.
+func pagesRead(pages []*dPage) int {
+	n := 0
+	for _, p := range pages {
+		if p.page != nil {
+			n++
+		}
+	}
+	return n
+}
+
+// followLabel is the page pass of the pages the linked site's read (o)
+// printed from, and those labelled official docs held as a library.
+func (c *dCall) followLabel(ctx context.Context, req sfRequest, fs *followState, o Outcome) *followState {
 	dctx, cancel := context.WithTimeout(ctx, decideTimeout)
 	defer cancel()
 	labelled, err := c.labelRead(dctx, o)

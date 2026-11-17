@@ -100,6 +100,14 @@ func TestDecidedBudgetCutsLongPage(t *testing.T) {
 	if j := o.Read[0].Judgments; j == nil || j.Passages != len(asked) || len(j.TopPassages) > len(asked) {
 		t.Errorf("judgments %+v: want %d passages judged, no probability for one not sent", j, len(asked))
 	}
+	checkBudgetReport(t, o, budget)
+}
+
+// checkBudgetReport checks that a call the budget cut passages of (every
+// page labelled, four of them) says so: in its decisions, its note, its
+// decisions line and its JSON; and that it printed the answer.
+func checkBudgetReport(t *testing.T, o Outcome, budget int) {
+	t.Helper()
 	b := o.Decisions.Budget
 	if b == nil || b.Tokens != budget || b.JudgedPassages >= b.Passages || b.LabelledPages != b.Pages {
 		t.Fatalf("budget %+v", b)
@@ -194,8 +202,9 @@ func TestDecidedBudgetUncutIsUnchanged(t *testing.T) {
 	}
 }
 
-// (d) Unlimited sends every passage, however long the page.
-func TestDecidedBudgetUnlimited(t *testing.T) {
+// docs_decisions_tokens: unlimited is 0, unset the default; 0, a negative
+// and a word are errors naming the accepted forms.
+func TestParseDecisionsTokens(t *testing.T) {
 	if n, err := ParseDecisionsTokens(DecisionsUnlimited); err != nil || n != 0 {
 		t.Fatalf("ParseDecisionsTokens(unlimited) = %d, %v", n, err)
 	}
@@ -207,6 +216,10 @@ func TestDecidedBudgetUnlimited(t *testing.T) {
 			t.Errorf("ParseDecisionsTokens(%q) = %v", bad, err)
 		}
 	}
+}
+
+// (d) Unlimited sends every passage, however long the page.
+func TestDecidedBudgetUnlimited(t *testing.T) {
 	d := decidedJudgments()
 	o := decidedBudget(t, 0, d, func(f *fakeFetcher) { f.pages[pgOfficial] = longTimeouts(400) })
 	if spentBy(d, "", "") <= DefaultDecisionsTokens {
@@ -272,63 +285,11 @@ func TestDecidedBudgetFollowFirst(t *testing.T) {
 	if follow == 0 || len(unlimited.Read) == 0 || unlimited.Read[0].URL != pgLinkDocs {
 		t.Fatalf("the uncapped call did not follow: %+v", unlimited.Read)
 	}
-
-	t.Run("accepted", func(t *testing.T) {
-		d := articleJudgments()
-		o, _ := followRun(t, main, d)
-		if len(o.Read) == 0 || o.Read[0].URL != pgLinkDocs || o.Read[0].Context != confHigh {
-			t.Fatalf("read %+v: want the makers' docs", o.Read)
-		}
-		if n := articleAsks(d); n != 0 || spentBy(d, "", "") > main {
-			t.Errorf("asked %d passage questions about the articles; spent %d of %d", n, spentBy(d, "", ""), main)
-		}
-		b := o.Decisions.Budget
-		if b == nil || b.JudgedPassages >= b.Passages || !strings.Contains(o.Note, fmt.Sprintf("decisions judged %d of %d passages (budget %d tokens", b.JudgedPassages, b.Passages, main)) {
-			t.Errorf("budget %+v, note %q", b, o.Note)
-		}
-		if len(o.PassedOver) != 5 || o.PassedOver[0].Reason != passedWeaker {
-			t.Errorf("passed_over %+v: want the five articles, weaker sources", o.PassedOver)
-		}
-	})
-
+	t.Run("accepted", func(t *testing.T) { followAccepted(t, main) })
 	t.Run("not read", func(t *testing.T) {
-		d := articleJudgments()
-		tokens := spentBy(free, "page", "") - spentBy(free, "page", pgLinkDocs) + spentBy(free, "others", "") + 100
-		o, f := followRun(t, tokens, d)
-		if !strings.Contains(o.Note, "; did not read "+linkedRootURL+": the decisions budget was spent; ") {
-			t.Errorf("note %q", o.Note)
-		}
-		if fetchedHost(f, "docs.widgetco.test") || spentBy(d, "", pgLinkDocs) != 0 || spentBy(d, "", "") > tokens {
-			t.Errorf("read the site (%v), asked %d tokens about it, spent %d of %d", fetchedHost(f, "docs.widgetco.test"), spentBy(d, "", pgLinkDocs), spentBy(d, "", ""), tokens)
-		}
+		followNotRead(t, spentBy(free, "page", "")-spentBy(free, "page", pgLinkDocs)+spentBy(free, "others", "")+100)
 	})
-
-	t.Run("rejected", func(t *testing.T) {
-		notDocs := func() *fakeDecider {
-			d := articleJudgments()
-			d.pages[pgLinkDocs] = PageJudgments{Documentation: 0.1, Makers: 0.1, Kind: "other"}
-			return d
-		}
-		freeRej := notDocs()
-		followRun(t, 0, freeRej)
-		d := notDocs()
-		tokens := spentBy(freeRej, "", "") // the articles' passages and the site's labels: room for no more
-		o, _ := followRun(t, tokens, d)
-		want := todayNote + "; tried " + linkedRootURL + ", which 2 of the 5 pages read link to: labelled other, not the makers' docs"
-		if o.Note != want {
-			t.Errorf("note %q\nwant %q", o.Note, want)
-		}
-		if site, art := firstAsk(d, "page", pgLinkDocs), firstAsk(d, "passage", ""); site < 0 || art < 0 || site > art {
-			t.Errorf("the site was labelled at request %d, the articles' passages asked at %d: want the site first", site, art)
-		}
-		if got, all := articleAsks(d), articleAsks(freeRej); got != all || all == 0 {
-			t.Errorf("asked %d passage questions about the articles, uncapped %d", got, all)
-		}
-		if o.Decisions.Budget != nil || renderAll(widgetQuestion, o) != renderAll(widgetQuestion, func() Outcome { o, _ := followRun(t, 0, notDocs()); return o }()) {
-			t.Errorf("a call that cut nothing changed: budget %+v", o.Decisions.Budget)
-		}
-	})
-
+	t.Run("rejected", followRejected)
 	t.Run("room for all", func(t *testing.T) {
 		d := articleJudgments()
 		o, _ := followRun(t, spentBy(free, "", ""), d)
@@ -336,6 +297,71 @@ func TestDecidedBudgetFollowFirst(t *testing.T) {
 			t.Errorf("room for everything changed the call:\n%s\n---\n%s", renderAll(widgetQuestion, o), renderAll(widgetQuestion, unlimited))
 		}
 	})
+}
+
+// followAccepted: within main, the uncapped call's spend without the
+// follow, the site answers and the articles are not asked about.
+func followAccepted(t *testing.T, main int) {
+	d := articleJudgments()
+	o, _ := followRun(t, main, d)
+	if len(o.Read) == 0 || o.Read[0].URL != pgLinkDocs || o.Read[0].Context != confHigh {
+		t.Fatalf("read %+v: want the makers' docs", o.Read)
+	}
+	if n := articleAsks(d); n != 0 || spentBy(d, "", "") > main {
+		t.Errorf("asked %d passage questions about the articles; spent %d of %d", n, spentBy(d, "", ""), main)
+	}
+	b := o.Decisions.Budget
+	if b == nil || b.JudgedPassages >= b.Passages || !strings.Contains(o.Note, fmt.Sprintf("decisions judged %d of %d passages (budget %d tokens", b.JudgedPassages, b.Passages, main)) {
+		t.Errorf("budget %+v, note %q", b, o.Note)
+	}
+	if len(o.PassedOver) != 5 || o.PassedOver[0].Reason != passedWeaker {
+		t.Errorf("passed_over %+v: want the five articles, weaker sources", o.PassedOver)
+	}
+}
+
+// followNotRead: within tokens, too few to label the site after the
+// articles' labels, the site is neither read nor asked about.
+func followNotRead(t *testing.T, tokens int) {
+	d := articleJudgments()
+	o, f := followRun(t, tokens, d)
+	if !strings.Contains(o.Note, "; did not read "+linkedRootURL+": the decisions budget was spent; ") {
+		t.Errorf("note %q", o.Note)
+	}
+	if fetchedHost(f, "docs.widgetco.test") || spentBy(d, "", pgLinkDocs) != 0 || spentBy(d, "", "") > tokens {
+		t.Errorf("read the site (%v), asked %d tokens about it, spent %d of %d", fetchedHost(f, "docs.widgetco.test"), spentBy(d, "", pgLinkDocs), spentBy(d, "", ""), tokens)
+	}
+}
+
+// notDocsJudgments are articleJudgments with the linked page labelled no
+// documentation.
+func notDocsJudgments() *fakeDecider {
+	d := articleJudgments()
+	d.pages[pgLinkDocs] = PageJudgments{Documentation: 0.1, Makers: 0.1, Kind: "other"}
+	return d
+}
+
+// followRejected: the site is labelled first and not used; the articles
+// are then judged in full from what is left, and the call is the
+// uncapped one.
+func followRejected(t *testing.T) {
+	freeRej := notDocsJudgments()
+	plain, _ := followRun(t, 0, freeRej)
+	d := notDocsJudgments()
+	tokens := spentBy(freeRej, "", "") // the articles' passages and the site's labels: room for no more
+	o, _ := followRun(t, tokens, d)
+	want := todayNote + "; tried " + linkedRootURL + ", which 2 of the 5 pages read link to: labelled other, not the makers' docs"
+	if o.Note != want {
+		t.Errorf("note %q\nwant %q", o.Note, want)
+	}
+	if site, art := firstAsk(d, "page", pgLinkDocs), firstAsk(d, "passage", ""); site < 0 || art < 0 || site > art {
+		t.Errorf("the site was labelled at request %d, the articles' passages asked at %d: want the site first", site, art)
+	}
+	if got, all := articleAsks(d), articleAsks(freeRej); got != all || all == 0 {
+		t.Errorf("asked %d passage questions about the articles, uncapped %d", got, all)
+	}
+	if o.Decisions.Budget != nil || renderAll(widgetQuestion, o) != renderAll(widgetQuestion, plain) {
+		t.Errorf("a call that cut nothing changed: budget %+v", o.Decisions.Budget)
+	}
 }
 
 // A budget too small for one page's labels answers without decisions,

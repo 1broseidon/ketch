@@ -66,39 +66,46 @@ func cookieScraper(t *testing.T, path string) *scrape.Scraper {
 // cookie matches, or any page without cookie_file, does not.
 func TestFetchPageReportsCookies(t *testing.T) {
 	site := newCookieSite(t)
-	ctx := context.Background()
-
-	f := New(cookieScraper(t, "/guide"), nil)
-	page, err := f.FetchPage(ctx, site.URL+"/guide/auth")
-	if err != nil || !page.Cookies || !site.got["/guide/auth"] {
-		t.Errorf("matching cookie: Cookies %v, sent %v, err %v", page.Cookies, site.got["/guide/auth"], err)
+	for _, tc := range []struct {
+		name, jarPath, path string
+		cached              bool // fetched, then served from the page cache
+		want                bool
+	}{
+		{"matching cookie", "/guide", "/guide/auth", false, true},
+		{"cached", "/guide", "/guide/auth", true, true},
+		// The cookie matches only the hop that redirects: the page is still
+		// one fetched with it.
+		{"cookie on a redirect hop", "/login", "/login", false, true},
+		{"no matching cookie", "/private", "/guide/auth", false, false},
+		{"no cookie_file", "", "/guide/auth", false, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := New(cookieScraper(t, tc.jarPath), nil)
+			fetches := 1
+			if tc.cached {
+				f, fetches = New(cookieScraper(t, tc.jarPath), newCache(t)), 2
+			}
+			for i := range fetches {
+				page, err := f.FetchPage(context.Background(), site.URL+tc.path)
+				if err != nil || page.Cookies != tc.want || !strings.HasSuffix(page.URL, "/guide/auth") {
+					t.Errorf("fetch %d: Cookies %v (want %v), URL %s, err %v", i, page.Cookies, tc.want, page.URL, err)
+				}
+			}
+		})
 	}
-	raw, err := f.FetchRaw(ctx, site.URL+"/guide/auth")
+	site.mu.Lock()
+	defer site.mu.Unlock()
+	if !site.got["/guide/auth"] {
+		t.Error("no request carried the cookie")
+	}
+}
+
+// A raw fetch with a matching cookie says so too.
+func TestFetchRawReportsCookies(t *testing.T) {
+	site := newCookieSite(t)
+	raw, err := New(cookieScraper(t, "/guide"), nil).FetchRaw(context.Background(), site.URL+"/guide/auth")
 	if err != nil || !raw.Cookies {
 		t.Errorf("raw with a matching cookie: Cookies %v, err %v", raw.Cookies, err)
-	}
-
-	cached := New(cookieScraper(t, "/guide"), newCache(t))
-	for i := range 2 { // a fetch, then a cache hit
-		if page, err := cached.FetchPage(ctx, site.URL+"/guide/auth"); err != nil || !page.Cookies {
-			t.Errorf("cached fetch %d: Cookies %v, err %v", i, page.Cookies, err)
-		}
-	}
-
-	// The cookie matches only the hop that redirects: the page is still
-	// one fetched with it.
-	hop := New(cookieScraper(t, "/login"), nil)
-	if page, err := hop.FetchPage(ctx, site.URL+"/login"); err != nil || !page.Cookies || !strings.HasSuffix(page.URL, "/guide/auth") {
-		t.Errorf("cookie on a redirect hop: Cookies %v, URL %s, err %v", page.Cookies, page.URL, err)
-	}
-
-	other := New(cookieScraper(t, "/private"), nil)
-	if page, err := other.FetchPage(ctx, site.URL+"/guide/auth"); err != nil || page.Cookies {
-		t.Errorf("no matching cookie: Cookies %v, err %v", page.Cookies, err)
-	}
-	none := New(cookieScraper(t, ""), nil)
-	if page, err := none.FetchPage(ctx, site.URL+"/guide/auth"); err != nil || page.Cookies {
-		t.Errorf("no cookie_file: Cookies %v, err %v", page.Cookies, err)
 	}
 }
 

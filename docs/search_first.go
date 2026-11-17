@@ -867,25 +867,7 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 		}
 	}
 	if !found {
-		// No exact page could be read, nor any the site's own lists name.
-		if disallowed > 0 && fails.n() == 0 {
-			o := Answer(SearchBackend, nil, fmt.Errorf("search: %s's robots.txt disallows the %d pages found: %w", site.root, disallowed, errDisallowed))
-			o.Skipped = p.skipped
-			return o, sfRead{}
-		}
-		if fails.n() == 0 {
-			why := "no search hit is under it, and its llms.txt, sitemap and links list none"
-			if selfFail != "" {
-				why += ", " + selfFail
-			}
-			o := s.failed(ctx, cctx, fmt.Errorf("search: found no page of %s to read: %s; %s: %w", site.root, why, appendNext(nil, site.root)[0], ErrNotFound))
-			o.unread, o.Skipped = "no page to read", p.skipped
-			return o, sfRead{}
-		}
-		o := s.failed(ctx, cctx, noPageErr(site.root, fails.n(), fails))
-		o.unread = strings.SplitN(readFailNote(site.root, fails.list, fails.details), "; ", 2)[0]
-		o.Skipped = p.skipped
-		return o, sfRead{}
+		return s.noPageRead(ctx, cctx, site, p, fails, disallowed, selfFail), sfRead{}
 	}
 	o := s.answerRead(ctx, p, req, origin, widen)
 	o.readPages = append(slices.Clone(p.exact), p.wide...)
@@ -893,6 +875,31 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 	r.Version, r.Pin = req.version, req.spec.version
 	r.Origin = origin.text
 	return o, r
+}
+
+// noPageRead is a site of which no exact page could be read, nor any the
+// site's own lists name: its robots.txt disallowed them, none was found
+// (selfFail saying why the library URL itself could not be read, if it
+// was tried), or every read failed.
+func (s *SearchFirst) noPageRead(ctx, cctx context.Context, site sfSite, p *sfPages, fails readFails, disallowed int, selfFail string) Outcome {
+	if disallowed > 0 && fails.n() == 0 {
+		o := Answer(SearchBackend, nil, fmt.Errorf("search: %s's robots.txt disallows the %d pages found: %w", site.root, disallowed, errDisallowed))
+		o.Skipped = p.skipped
+		return o
+	}
+	if fails.n() == 0 {
+		why := "no search hit is under it, and its llms.txt, sitemap and links list none"
+		if selfFail != "" {
+			why += ", " + selfFail
+		}
+		o := s.failed(ctx, cctx, fmt.Errorf("search: found no page of %s to read: %s; %s: %w", site.root, why, appendNext(nil, site.root)[0], ErrNotFound))
+		o.unread, o.Skipped = "no page to read", p.skipped
+		return o
+	}
+	o := s.failed(ctx, cctx, noPageErr(site.root, fails.n(), fails))
+	o.unread = strings.SplitN(readFailNote(site.root, fails.list, fails.details), "; ", 2)[0]
+	o.Skipped = p.skipped
+	return o
 }
 
 // failed is a search-first call that ended before an answer, classified

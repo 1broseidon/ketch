@@ -178,30 +178,56 @@ func (s *SearchFirst) answerDecided(ctx, cctx context.Context, req sfRequest, hi
 		return Outcome{}, err
 	}
 	defer dl.l.store.Close()
-	answer := func(fs *followState) (Outcome, error) {
-		labels := <-others
-		if labels.err != nil {
-			return Outcome{}, labels.err
-		}
-		tr.path = "decisions"
-		o := c.answer(ctx, req, dl, pages, cands, rest, labels.list)
-		switch {
-		case !c.noMakers:
-		case fs == nil:
-			o = c.follow(cctx, req, pages, o, tr)
-		default:
-			c.followJudge(cctx, fs)
-			o = c.followOutcome(req, pages, fs, o)
-		}
-		return c.budgeted(o), nil
-	}
+	r := &dRun{c: c, ctx: ctx, cctx: cctx, dctx: dctx, req: req, dl: dl, pages: pages, cands: cands, rest: rest, others: others, tr: tr}
 	if c.fitsAll(dl, sent) {
 		if err := c.judge(dctx, dl, sent); err != nil {
 			return Outcome{}, err
 		}
-		return answer(nil)
+		return r.answer(nil)
 	}
-	due, err := c.labelCapped(dctx, sent)
+	return r.capped(sent)
+}
+
+// dRun is one decided call past reading its pages: its contexts (the
+// answer's, the call's, the decisions'), the pages read and their library,
+// the results after the top five and their labels to come.
+type dRun struct {
+	c               *dCall
+	ctx, cctx, dctx context.Context
+	req             sfRequest
+	dl              *dLib
+	pages, cands    []*dPage
+	rest            []sfHit
+	others          <-chan otherLabels
+	tr              *sfTrace
+}
+
+// answer is the decided answer once the pages are judged: the follow when
+// no page read is the makers' docs (fs, when the site was read already).
+func (r *dRun) answer(fs *followState) (Outcome, error) {
+	c := r.c
+	labels := <-r.others
+	if labels.err != nil {
+		return Outcome{}, labels.err
+	}
+	r.tr.path = "decisions"
+	o := c.answer(r.ctx, r.req, r.dl, r.pages, r.cands, r.rest, labels.list)
+	switch {
+	case !c.noMakers:
+	case fs == nil:
+		o = c.follow(r.cctx, r.req, r.pages, o, r.tr)
+	default:
+		c.followJudge(r.cctx, fs)
+		o = c.followOutcome(r.req, r.pages, fs, o)
+	}
+	return c.budgeted(o), nil
+}
+
+// capped judges the pages that may be sent (sent) of a call that may not
+// fit the budget, and answers.
+func (r *dRun) capped(sent []*dPage) (Outcome, error) {
+	c := r.c
+	due, err := c.labelCapped(r.dctx, sent)
 	if err != nil {
 		return Outcome{}, err
 	}
@@ -209,20 +235,20 @@ func (s *SearchFirst) answerDecided(ctx, cctx context.Context, req sfRequest, hi
 	// come before the articles' passages when both would not fit.
 	var fs *followState
 	if !documented(sent) {
-		if fs = c.followRead(cctx, req, pages, tr); fs != nil {
+		if fs = c.followRead(r.cctx, r.req, r.pages, r.tr); fs != nil {
 			defer fs.close()
-			if fs.note == "" && c.passageCost(dl, due)+c.passageCost(fs.dl, fs.docs) > c.left() {
-				if o, ok := c.followFirst(cctx, req, pages, due, rest, others, fs, tr); ok {
+			if fs.note == "" && c.passageCost(r.dl, due)+c.passageCost(fs.dl, fs.docs) > c.left() {
+				if o, ok := c.followFirst(r.cctx, r.req, r.pages, due, r.rest, r.others, fs, r.tr); ok {
 					return o, nil
 				}
 			}
 		}
 	}
-	if err := c.passagePasses(dctx, dl, due); err != nil {
+	if err := c.passagePasses(r.dctx, r.dl, due); err != nil {
 		return Outcome{}, err
 	}
 	setPassageJudgments(sent)
-	return answer(fs)
+	return r.answer(fs)
 }
 
 // followFirst is a capped call whose pages read are not documentation,

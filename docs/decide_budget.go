@@ -292,18 +292,29 @@ func (c *dCall) share(dl *dLib, pages []*dPage) [][]int {
 			need[i] += n
 		}
 	}
-	open := func() int {
-		n := 0
-		for _, f := range full {
-			if !f {
-				n++
-			}
+	left = fillWhole(need, full, left)
+	n := openCount(full)
+	for i, p := range pages {
+		if full[i] {
+			continue
 		}
-		return n
+		quota := left / n
+		n--
+		sel, used := fitPassages(passageOrder(dl, p), each[i], base[i], quota)
+		if len(sel) > 0 {
+			left -= used
+		}
+		out[i] = sel
 	}
-	for n := open(); n > 0; n = open() {
+	return out
+}
+
+// fillWhole marks full every page whose need fits an equal share of left,
+// round after round as the shares grow, and returns what is left.
+func fillWhole(need []int, full []bool, left int) int {
+	for n := openCount(full); n > 0; n = openCount(full) {
 		quota, more := left/n, false
-		for i := range pages {
+		for i := range need {
 			if !full[i] && need[i] <= quota {
 				full[i], more, left = true, true, left-need[i]
 			}
@@ -312,27 +323,33 @@ func (c *dCall) share(dl *dLib, pages []*dPage) [][]int {
 			break
 		}
 	}
-	n := open()
-	for i, p := range pages {
-		if full[i] {
-			continue
+	return left
+}
+
+// openCount is how many pages are not full.
+func openCount(full []bool) int {
+	n := 0
+	for _, f := range full {
+		if !f {
+			n++
 		}
-		quota := left / n
-		n--
-		sel := []int{}
-		used := base[i]
-		for _, k := range passageOrder(dl, p) {
-			if used+each[i][k] <= quota {
-				sel, used = append(sel, k), used+each[i][k]
-			}
-		}
-		if len(sel) > 0 {
-			left -= used
-		}
-		slices.Sort(sel)
-		out[i] = sel
 	}
-	return out
+	return n
+}
+
+// fitPassages are the passages of order (by index into each, their
+// costs) that fit quota with base, taken in order, in page order; and
+// what they use with base.
+func fitPassages(order, each []int, base, quota int) ([]int, int) {
+	sel := []int{}
+	used := base
+	for _, k := range order {
+		if used+each[k] <= quota {
+			sel, used = append(sel, k), used+each[k]
+		}
+	}
+	slices.Sort(sel)
+	return sel, used
 }
 
 // passageOrder is p's passages, the best match for the question's words
