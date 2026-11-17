@@ -13,13 +13,19 @@ directly from your machine to third-party services. Nothing passes through
 ketch's maintainers.
 
 - **Web search** (`ketch search`): your query goes to the search provider you
-  configured. With no provider set, ketch uses its keyless default (DuckDuckGo).
+  choose. By default (`auto`), ketch tries any provider you have configured
+  first: your own SearXNG or Degoog instance, then any provider you gave an
+  API key. Then it tries the keyless hosted providers in turn: Parallel, Exa,
+  Keenable, You.com, Firecrawl, and DuckDuckGo. It stops at the first one that
+  answers, and the query goes only to the providers it tries. Set
+  `search_order` to choose the providers and their order yourself.
 - **Code search** (`ketch code`): your query goes to grep.app by default, or to
   Sourcegraph or GitHub if you choose them.
-- **Docs** (`ketch docs`): library names and queries go to Context7 by default.
-  To find documentation, ketch may also contact package registries (npm, PyPI,
-  crates.io, the Go module proxy, pkg.go.dev), GitHub, and the library's own
-  documentation site.
+- **Docs** (`ketch docs`): ketch answers from its local index when it can.
+  Otherwise it runs a web search (as above) to find the library's documentation
+  site and reads it. To resolve a library, it may also contact package
+  registries (npm, PyPI, crates.io, the Go module proxy, pkg.go.dev) and
+  GitHub. Context7 is used only when you ask for it (`-b context7`).
 - **Scrape and crawl** (`ketch scrape`, `ketch crawl`): ketch fetches the URLs
   you give it, like a browser would. If you configure a cookies file
   (`cookie_file`) or custom headers (`http_headers`), they are sent only to
