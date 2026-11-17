@@ -38,8 +38,9 @@ type configInfo struct {
 	ExtractMode                        string             `json:"extract_mode" order:"26"` // effective extraction mode: clean (default) or complete
 	CodeBackend                        string             `json:"code_backend" order:"21"`
 	DocsBackend                        string             `json:"docs_backend" order:"22"`
-	DocsBackendNote                    string             `json:"docs_backend_note" order:"22"` // the key is retired (docs.RetiredDocsBackend)
-	DocsDecisions                      string             `json:"docs_decisions" order:"22"`    // effective: auto (default), off, or a decision provider
+	DocsBackendNote                    string             `json:"docs_backend_note" order:"22"`     // the key is retired (docs.RetiredDocsBackend)
+	DocsDecisions                      string             `json:"docs_decisions" order:"22"`        // effective: auto (default), off, or a decision provider
+	DocsDecisionsTokens                string             `json:"docs_decisions_tokens" order:"22"` // effective decisions budget: input tokens per call (default docs.DefaultDecisionsTokens), or unlimited
 	URLRewrites                        []urlrewrite.Rule  `json:"url_rewrites,omitempty" order:"27"`
 	SPAMarkers                         []string           `json:"spa_markers,omitempty" order:"28"`
 	MCPTools                           []string           `json:"mcp_tools" order:"29"` // effective set `ketch mcp serve` will publish
@@ -118,6 +119,7 @@ func buildConfigInfo(c config.Config, path string) configInfo {
 		DocsBackend:                        docs.SearchBackend, // every call's; a stored value is ignored
 		DocsBackendNote:                    docs.RetiredDocsBackend,
 		DocsDecisions:                      effectiveDocsDecisions(c),
+		DocsDecisionsTokens:                config.EffectiveDocsDecisionsTokens(c),
 		URLRewrites:                        c.URLRewrites,
 		SPAMarkers:                         c.SPAMarkers,
 		MCPTools:                           effectiveMCPTools(c),
@@ -261,6 +263,8 @@ func applyConfigSet(c *config.Config, key, value string) error {
 		return setSearchOrder(c, value)
 	case "docs_decisions":
 		return setDocsDecisions(c, value)
+	case "docs_decisions_tokens":
+		return setDocsDecisionsTokens(c, value)
 	case "cookie_file":
 		return setCookieFile(c, value)
 	case "user_agent":
@@ -522,6 +526,19 @@ func setDocsDecisions(c *config.Config, value string) error {
 	return nil
 }
 
+// setDocsDecisionsTokens persists the decisions budget: a positive number
+// of input tokens per ketch docs call, or unlimited; empty clears it so
+// the default applies. There is no flag or MCP parameter for it: only the
+// operator lifts the cap.
+func setDocsDecisionsTokens(c *config.Config, value string) error {
+	v, err := config.NormalizeDocsDecisionsTokens(value)
+	if err != nil {
+		return exitErrf(ExitValidation, "invalid docs_decisions_tokens: %w", err)
+	}
+	c.DocsDecisionsTokens = v
+	return nil
+}
+
 // effectiveDocsDecisions is the docs_decisions setting in effect: auto when
 // unset; a value the normalizer rejects (a hand-edited file) as it is.
 func effectiveDocsDecisions(c config.Config) string {
@@ -560,7 +577,7 @@ func runConfigPath(_ *cobra.Command, _ []string) error {
 }
 
 func validConfigKeys() []string {
-	fields := []configbase.Field{{Name: "backend", Order: 0}, {Name: "limit", Order: 15}, {Name: "cache_ttl", Order: 16}, {Name: "browser", Order: 17}, {Name: "code_backend", Order: 18}, {Name: "docs_backend", Order: 19}, {Name: "url_rewrites", Order: 23}, {Name: "spa_markers", Order: 24}, {Name: "mcp_tools", Order: 25}, {Name: "cookie_file", Order: 26}, {Name: "user_agent", Order: 27}, {Name: "external_pdf_to_md_converter_command", Order: 28}, {Name: "external_pdf_to_md_converter_timeout_sec", Order: 29}, {Name: "extract_mode", Order: 30}, {Name: "http_headers", Order: 31}, {Name: "search_order", Order: 32}, {Name: "docs_decisions", Order: 33}}
+	fields := []configbase.Field{{Name: "backend", Order: 0}, {Name: "limit", Order: 15}, {Name: "cache_ttl", Order: 16}, {Name: "browser", Order: 17}, {Name: "code_backend", Order: 18}, {Name: "docs_backend", Order: 19}, {Name: "url_rewrites", Order: 23}, {Name: "spa_markers", Order: 24}, {Name: "mcp_tools", Order: 25}, {Name: "cookie_file", Order: 26}, {Name: "user_agent", Order: 27}, {Name: "external_pdf_to_md_converter_command", Order: 28}, {Name: "external_pdf_to_md_converter_timeout_sec", Order: 29}, {Name: "extract_mode", Order: 30}, {Name: "http_headers", Order: 31}, {Name: "search_order", Order: 32}, {Name: "docs_decisions", Order: 33}, {Name: "docs_decisions_tokens", Order: 34}}
 	for _, s := range config.ProviderSettings() {
 		fields = append(fields, configbase.Field{Name: s.Key, Order: s.ValidationOrder})
 		if s.Plural != "" {

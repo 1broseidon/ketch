@@ -27,9 +27,10 @@ type Config struct {
 	UserAgent                          string            `json:"user_agent,omitempty" order:"27"`  // HTTP User-Agent override; empty = built-in honest default
 	ExternalPDFToMDConverterCommand    string            `json:"external_pdf_to_md_converter_command,omitempty" order:"28"`
 	ExternalPDFToMDConverterTimeoutSec int               `json:"external_pdf_to_md_converter_timeout_sec" order:"29"`
-	ExtractMode                        string            `json:"extract_mode,omitempty" order:"30"`   // "clean" (default) or "complete": what extraction may drop; empty = clean
-	SearchOrder                        []string          `json:"search_order,omitempty" order:"32"`   // the auto chain, exactly: backend IDs tried in this order; empty = configured first, then AutoRank
-	DocsDecisions                      string            `json:"docs_decisions,omitempty" order:"33"` // auto (empty), off, or a decision provider ID: what ketch docs asks to label sources and choose passages
+	ExtractMode                        string            `json:"extract_mode,omitempty" order:"30"`          // "clean" (default) or "complete": what extraction may drop; empty = clean
+	SearchOrder                        []string          `json:"search_order,omitempty" order:"32"`          // the auto chain, exactly: backend IDs tried in this order; empty = configured first, then AutoRank
+	DocsDecisions                      string            `json:"docs_decisions,omitempty" order:"33"`        // auto (empty), off, or a decision provider ID: what ketch docs asks to label sources and choose passages
+	DocsDecisionsTokens                string            `json:"docs_decisions_tokens,omitempty" order:"34"` // the decisions budget: input tokens per ketch docs call, or "unlimited"; empty = the default
 	ProviderSettings                   map[string]any    `json:"-"`
 	providerSchema                     []Setting
 	providerOrder                      map[string]int

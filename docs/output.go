@@ -117,6 +117,8 @@ func (p PageRead) line() string {
 	switch {
 	case p.Label != "" && p.Rank == 0 && p.Via != "":
 		return fmt.Sprintf("%s (%s, confidence %s, %s)", p.URL, p.Label, p.Confidence, p.Via)
+	case p.Label != "" && p.Via != "":
+		return fmt.Sprintf("%s (%s, confidence %s, search rank %d, %s)", p.URL, p.Label, p.Confidence, p.Rank, p.Via)
 	case p.Label != "":
 		return fmt.Sprintf("%s (%s, confidence %s, search rank %d)", p.URL, p.Label, p.Confidence, p.Rank)
 	case p.Rank > 0:
@@ -344,7 +346,7 @@ func (f Frontmatter) Render() string {
 		line("index", f.Index.Summary())
 	}
 	if f.Decisions != nil {
-		line("decisions", f.Decisions.Provider)
+		line("decisions", f.Decisions.line())
 	}
 	if f.section {
 		line("stale", f.Stale)

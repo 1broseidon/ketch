@@ -31,6 +31,9 @@ type RawContent struct {
 	// rewrite's target. A fetcher that cannot tell leaves it empty, and the
 	// web backend then discards the response as unverifiable.
 	URL string
+	// Cookies marks a response fetched with a cookie from cookie_file:
+	// its text is never sent to a decision provider.
+	Cookies bool
 }
 
 // PageContent is a FetchPage response.
@@ -50,6 +53,10 @@ type PageContent struct {
 	// ran. Rendered is a page the browser rendered. Both false for a plain
 	// HTTP page and when the fetcher cannot tell.
 	Shell, Rendered bool
+	// Cookies marks a page fetched with a cookie from cookie_file (on any
+	// hop, or in the browser), or whose address the jar holds one for: its
+	// text is never sent to a decision provider.
+	Cookies bool
 }
 
 // PageAnchor is one fragment target on a page. Text is a heading's

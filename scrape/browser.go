@@ -389,6 +389,7 @@ func (r *rodConn) openPage(ctx context.Context, rawURL string) (*rod.Page, error
 			closePage(page)
 			return nil, fmt.Errorf("set cookies: %w", err)
 		}
+		markCookiesSent(ctx)
 	}
 	return page, nil
 }

@@ -180,7 +180,7 @@ const DocsParams = Type.Object({
 	decisions: Type.Optional(
 		Type.String({
 			description:
-				"decision provider for a question that names no library: a provider by name, auto or off (default: the operator's docs_decisions; auto uses a provider with a key set). With one, the top five results are read and labelled and their passages chosen by the provider; when none is the makers' docs, a docs site two or more of them link to may be read instead (its read lines say so); confidence says how far to trust each",
+				"decision provider for a question that names no library: a provider by name, auto or off (default: the operator's docs_decisions; auto uses a provider with a key set; when the operator set it off, decisions stay off and note says so). With one, the top five results are read and labelled and their passages chosen by the provider; when none is the makers' docs, a docs site two or more of them link to may be read instead (its read lines say so); confidence says how far to trust each",
 		}),
 	),
 });

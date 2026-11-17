@@ -116,25 +116,33 @@ func scorePieces(s *sorted, terms []evidenceTerm, sections int, change bool) ([]
 	out := make([]scored, len(s.pieces))
 	for id, p := range s.pieces {
 		sc := scored{role: roleFactor(s.secs[p.sec].role, change)}
-		toks := pieceTokens(p.text)
-		for ti, t := range terms {
-			h := termHit{term: ti, inText: toks[t.term], inPath: paths[p.sec][t.term]}
-			if h.inText {
-				h.count++
-			}
-			if h.inPath {
-				h.count++
-			}
-			if h.count == 0 {
-				continue
-			}
-			sc.hits = append(sc.hits, h)
-			sc.sum += weights[ti] * h.count // in term order: a float sum in map order differs run to run
-		}
+		sc.hits, sc.sum = termSum(pieceTokens(p.text), paths[p.sec], terms, weights)
 		sc.score = sc.role * sc.sum
 		out[id] = sc
 	}
 	return weights, distinct, out
+}
+
+// termSum is the terms a text's tokens (toks) or its heading path (path)
+// hold, and their weights summed, each by what it counts.
+func termSum(toks, path map[string]bool, terms []evidenceTerm, weights []float64) ([]termHit, float64) {
+	var hits []termHit
+	sum := 0.0
+	for ti, t := range terms {
+		h := termHit{term: ti, inText: toks[t.term], inPath: path[t.term]}
+		if h.inText {
+			h.count++
+		}
+		if h.inPath {
+			h.count++
+		}
+		if h.count == 0 {
+			continue
+		}
+		hits = append(hits, h)
+		sum += weights[ti] * h.count // in term order: a float sum in map order differs run to run
+	}
+	return hits, sum
 }
 
 // evidenceWeights is each term's weight (termWeight, an identifier the

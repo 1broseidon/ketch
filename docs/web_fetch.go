@@ -174,7 +174,7 @@ func (w *Web) fetchPageIn(ctx context.Context, inScope func(*url.URL) bool, link
 	var from *url.URL
 	title, md := "", ""
 	var anchors []PageAnchor
-	fromRaw, shell := false, false
+	fromRaw, shell, cookies := false, false, false
 	if isMarkdownURL(link.url) {
 		raw, err := w.fetcher.FetchRaw(ctx, u)
 		if err == nil {
@@ -184,7 +184,7 @@ func (w *Web) fetchPageIn(ctx context.Context, inScope func(*url.URL) bool, link
 			return nil, err
 		}
 		if !looksLikeHTML(raw.Body, raw.ContentType) {
-			md, fromRaw = string(raw.Body), true
+			md, fromRaw, cookies = string(raw.Body), true, raw.Cookies
 		}
 	}
 	if md == "" {
@@ -195,7 +195,7 @@ func (w *Web) fetchPageIn(ctx context.Context, inScope func(*url.URL) bool, link
 		if err != nil {
 			return nil, err
 		}
-		title, md, anchors, shell = page.Title, page.Markdown, page.Anchors, page.Shell
+		title, md, anchors, shell, cookies = page.Title, page.Markdown, page.Anchors, page.Shell, page.Cookies
 	}
 	md = capText(md, w.maxPageBytes)
 	fmTitle, md := stripFrontmatter(md)
@@ -211,6 +211,7 @@ func (w *Web) fetchPageIn(ctx context.Context, inScope func(*url.URL) bool, link
 		markdown: fromRaw,
 		shell:    shell,
 		via:      via,
+		cookies:  cookies,
 	}, nil
 }
 

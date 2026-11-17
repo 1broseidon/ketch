@@ -180,8 +180,12 @@ func (f *dFill) notFound(pages []string) []string {
 
 // readLine is page p's read entry.
 func (c *dCall) readLine(p *dPage) PageRead {
-	return PageRead{URL: p.page.URL, Rank: p.hit.rank, Label: p.label, Tier: p.tier, Context: p.context,
+	r := PageRead{URL: p.page.URL, Rank: p.hit.rank, Label: p.label, Tier: p.tier, Context: p.context,
 		Confidence: lower(tierBand[p.tier], cmp.Or(p.context, confLow)), Judgments: p.judged}
+	if p.page.cookies {
+		r.Via = readCookies
+	}
+	return r
 }
 
 // topProbs are the eight best of probs, best first.

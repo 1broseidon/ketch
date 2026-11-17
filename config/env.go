@@ -149,6 +149,18 @@ func coreEnvSpecs() []envSpec {
 			},
 		},
 		{
+			key:  "docs_decisions_tokens",
+			prev: func(c *Config) string { return c.DocsDecisionsTokens },
+			apply: func(c *Config, v string) error {
+				value, err := NormalizeDocsDecisionsTokens(v)
+				if err != nil {
+					return err
+				}
+				c.DocsDecisionsTokens = value
+				return nil
+			},
+		},
+		{
 			key:    "http_headers",
 			secret: true,
 			prev:   func(*Config) string { return "" },
@@ -239,7 +251,7 @@ func ScrubbedEnviron() []string {
 
 func envSpecs() []envSpec {
 	specs := coreEnvSpecs()
-	order := map[string]int{"backend": 0, "limit": 9, "cache_ttl": 10, "browser": 11, "code_backend": 12, "docs_backend": 13, "cookie_file": 16, "user_agent": 17, "mcp_tools": 18, "external_pdf_to_md_converter_command": 19, "external_pdf_to_md_converter_timeout_sec": 20, "extract_mode": 21, "http_headers": 22, "search_order": 23, "docs_decisions": 24}
+	order := map[string]int{"backend": 0, "limit": 9, "cache_ttl": 10, "browser": 11, "code_backend": 12, "docs_backend": 13, "cookie_file": 16, "user_agent": 17, "mcp_tools": 18, "external_pdf_to_md_converter_command": 19, "external_pdf_to_md_converter_timeout_sec": 20, "extract_mode": 21, "http_headers": 22, "search_order": 23, "docs_decisions": 24, "docs_decisions_tokens": 25}
 	for _, setting := range ProviderSettings() {
 		if setting.ManualEnv {
 			continue

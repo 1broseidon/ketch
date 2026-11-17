@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"math"
 	"regexp"
 	"slices"
 	"sort"
@@ -117,22 +118,26 @@ func passagesOf(s *sorted, secs []int) []dPassage {
 
 // judge asks the page pass of every candidate and the passage pass of the
 // first firstPassagePages together, labels the pages, then asks the
-// passage pass of the other tier A and B pages.
+// passage pass of the other tier A and B pages: a call all of which fits
+// the decisions budget (fitsAll).
 func (c *dCall) judge(ctx context.Context, dl *dLib, cands []*dPage) error {
 	first := cands[:min(len(cands), firstPassagePages)]
 	answers := make([]decide.Response, len(cands))
 	var wg sync.WaitGroup
 	errs := make([]error, len(cands)+len(first))
 	for i, p := range cands {
-		wg.Go(func() { answers[i], errs[i] = c.ask(ctx, c.pageRequest(p)) })
+		req := c.pageRequest(p)
+		c.charge(cost(req))
+		wg.Go(func() { answers[i], errs[i] = c.ask(ctx, req) })
 	}
 	for i, p := range first {
-		wg.Go(func() { errs[len(cands)+i] = c.passagePass(ctx, dl, p) })
+		wg.Go(func() { errs[len(cands)+i] = c.passagePass(ctx, dl, p, nil) })
 	}
 	wg.Wait()
 	if err := firstError(errs); err != nil {
 		return err
 	}
+	c.budget.pages, c.budget.labelled = len(cands), len(cands)
 	c.releaseNamed = c.cut.hi(median(releaseAnswers(answers)))
 	for i, p := range cands {
 		c.label(p, answers[i], c.releaseNamed)
@@ -145,15 +150,29 @@ func (c *dCall) judge(ctx context.Context, dl *dLib, cands []*dPage) error {
 	}
 	errs = make([]error, len(later))
 	for i, p := range later {
-		wg.Go(func() { errs[i] = c.passagePass(ctx, dl, p) })
+		wg.Go(func() { errs[i] = c.passagePass(ctx, dl, p, nil) })
 	}
 	wg.Wait()
+	setPassageJudgments(cands)
+	return firstError(errs)
+}
+
+// fitsAll reports that every page pass and the passage pass of every
+// candidate fit what the budget has left (always, unlimited).
+func (c *dCall) fitsAll(dl *dLib, cands []*dPage) bool {
+	left := c.left()
+	if left == math.MaxInt {
+		return true
+	}
+	need := 0
 	for _, p := range cands {
-		if p.judged != nil && p.probs != nil {
-			p.judged.Passages, p.judged.TopPassages = len(p.probs), topProbs(p.probs)
+		need += cost(c.pageRequest(p))
+		if len(p.passages) > 0 {
+			req, _, _ := c.passageRequest(dl, p, nil)
+			need += cost(req)
 		}
 	}
-	return firstError(errs)
+	return need <= left
 }
 
 func firstError(errs []error) error {
@@ -299,16 +318,15 @@ type passageItem struct {
 	Text    string `json:"text"`
 }
 
-// passagePass asks of every passage of p whether it helps answer the
-// question, and sets p's probabilities and context.
-func (c *dCall) passagePass(ctx context.Context, dl *dLib, p *dPage) error {
-	if len(p.passages) == 0 {
-		p.probs, p.context, p.unscored = []float64{}, c.cut.context(nil), "could not be scored: no passage to ask about"
-		return nil
-	}
-	req := decide.Request{Input: passageInput{DocsQuestion: c.query, Page: passagePage{Title: firstNonEmpty(p.page.Title, p.page.URL), URL: p.page.URL}}}
-	whole, unsent := 0, 0
+// passageRequest is the passage pass of p: a question about each of its
+// passages in send (all of them for nil), named by its place on the page;
+// and the length of the passages' text, and of what was cut from it.
+func (c *dCall) passageRequest(dl *dLib, p *dPage, send []int) (req decide.Request, whole, unsent int) {
+	req = decide.Request{Input: passageInput{DocsQuestion: c.query, Page: passagePage{Title: firstNonEmpty(p.page.Title, p.page.URL), URL: p.page.URL}}}
 	for k, ps := range p.passages {
+		if send != nil && !slices.Contains(send, k) {
+			continue
+		}
 		text := passageText(dl.s, ps)
 		whole += len(text)
 		if len(text) > passageSendChars {
@@ -319,12 +337,36 @@ func (c *dCall) passagePass(ctx context.Context, dl *dLib, p *dPage) error {
 		req.Questions = append(req.Questions, decide.Question{Name: fmt.Sprintf("p%d", k), Kind: decide.YesNo,
 			Instructions: helpsAsk, Item: item, TrueMeans: helpsTrue, FalseMeans: helpsFalse})
 	}
+	return req, whole, unsent
+}
+
+// passagePass asks of the passages of p in send (all of them for nil)
+// whether each helps answer the question, and sets p's probabilities (a
+// passage not sent unjudged) and context; with send empty it asks
+// nothing, and p could not be scored.
+func (c *dCall) passagePass(ctx context.Context, dl *dLib, p *dPage, send []int) error {
+	if len(p.passages) == 0 {
+		p.probs, p.context, p.unscored = []float64{}, c.cut.context(nil), "could not be scored: no passage to ask about"
+		return nil
+	}
+	if send != nil && len(send) == 0 {
+		c.counted(len(p.passages), 0)
+		p.context, p.unscored = c.cut.context(nil), unscoredBudget
+		return nil
+	}
+	req, whole, unsent := c.passageRequest(dl, p, send)
+	c.charge(cost(req))
 	resp, err := c.ask(ctx, req)
 	if err != nil {
 		return err
 	}
+	c.counted(len(p.passages), len(req.Questions))
 	probs := make([]float64, len(p.passages))
 	for k := range p.passages {
+		if send != nil && !slices.Contains(send, k) {
+			probs[k] = unjudged
+			continue
+		}
 		probs[k] = resp.Answers[fmt.Sprintf("p%d", k)].Probability
 	}
 	p.probs, p.context = probs, c.cut.context(probs)

@@ -25,6 +25,7 @@ type fakePage struct {
 	title, markdown string
 	anchors         []PageAnchor
 	shell           bool // an unrendered JS shell
+	cookies         bool // read with the user's cookies
 }
 
 // fakeFetcher serves fixed responses and records every call. Unknown URLs
@@ -102,7 +103,7 @@ func (f *fakeFetcher) FetchPage(ctx context.Context, url string) (PageContent, e
 	if !ok {
 		return PageContent{}, fmt.Errorf("fake: %s: status 404: %w", served, ErrNotFound)
 	}
-	return PageContent{Title: p.title, Markdown: p.markdown, URL: served, Anchors: p.anchors, Shell: p.shell}, nil
+	return PageContent{Title: p.title, Markdown: p.markdown, URL: served, Anchors: p.anchors, Shell: p.shell, Cookies: p.cookies}, nil
 }
 
 func (f *fakeFetcher) called() []string {

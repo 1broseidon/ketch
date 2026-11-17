@@ -137,6 +137,10 @@ type SearchFirst struct {
 	// configured docs_decisions; decide.Choose): nil asks none, as a
 	// backend built without a config does.
 	decisions func(setting string) (decide.Provider, decide.Decider, bool, error)
+	// decisionsTokens is the decisions budget in input tokens per call
+	// (docs_decisions_tokens; decide_budget.go): 0, as a backend built
+	// without a config has, for unlimited.
+	decisionsTokens int
 }
 
 // sfDefaultTTL is the page cache's TTL when cache_ttl does not parse, as
@@ -161,14 +165,27 @@ func newSearchFirstFromConfig(c *config.Config, deps Deps) *SearchFirst {
 	if os.Getenv("KETCH_DOCS_TRACE") != "" {
 		s.trace = os.Stderr
 	}
-	dc := *c
-	s.decisions = func(setting string) (decide.Provider, decide.Decider, bool, error) {
-		if setting == "" {
-			setting = dc.DocsDecisions
-		}
-		return decide.Choose(&dc, setting)
+	s.decisions = decisionsFrom(*c)
+	s.decisionsTokens = DefaultDecisionsTokens
+	if n, err := ParseDecisionsTokens(c.DocsDecisionsTokens); err == nil {
+		s.decisionsTokens = n
 	}
 	return s
+}
+
+// decisionsFrom is the decision provider a call's setting selects under
+// config c: the per-call setting, else docs_decisions. An operator's off is
+// final: a per-call value other than off is errDecisionsOff.
+func decisionsFrom(c config.Config) func(setting string) (decide.Provider, decide.Decider, bool, error) {
+	return func(setting string) (decide.Provider, decide.Decider, bool, error) {
+		if operator, err := decide.Normalize(c.DocsDecisions); err == nil && operator == decide.Off && setting != "" && setting != decide.Off {
+			return decide.Provider{}, nil, false, errDecisionsOff
+		}
+		if setting == "" {
+			setting = c.DocsDecisions
+		}
+		return decide.Choose(&c, setting)
+	}
 }
 
 var (

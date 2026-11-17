@@ -46,6 +46,10 @@ const decideTimeout = 25 * time.Second
 // with no note.
 var errNoDecision = errors.New("decisions do not apply")
 
+// errDecisionsOff is a call that asks for decisions when the operator
+// turned them off: the operator's setting is final, and the answer says so.
+var errDecisionsOff = errors.New("decisions are off in the operator's config (docs_decisions)")
+
 // decision is the provider a call asks, or why it cannot: err is set when
 // the setting names a provider that is not usable; failed when asking it
 // failed.
@@ -89,6 +93,9 @@ func (d *decision) note() string {
 	if err == nil || errors.Is(err, errNoDecision) {
 		return ""
 	}
+	if errors.Is(err, errDecisionsOff) {
+		return err.Error()
+	}
 	why := err.Error()
 	if !errors.Is(err, decide.ErrUnavailable) {
 		why = decide.ErrUnavailable.Error() + ": " + why
@@ -125,6 +132,9 @@ type dCall struct {
 	// makers' documentation (notMakers): a linked docs site may answer
 	// instead (decide_follow.go).
 	noMakers bool
+	// budget is the decisions budget and what it spent and cut
+	// (decide_budget.go).
+	budget dBudget
 }
 
 // ask sends one request and counts what it used.
@@ -144,7 +154,7 @@ func (c *dCall) ask(ctx context.Context, req decide.Request) (decide.Response, e
 // when decisions do not apply, any other error when asking failed.
 func (s *SearchFirst) answerDecided(ctx, cctx context.Context, req sfRequest, hits []sfHit, tr *sfTrace) (Outcome, error) {
 	dec := req.dec
-	c := &dCall{s: s, prov: dec.p, d: dec.d, cut: cutoffs(dec.p.Cutoffs), query: req.query}
+	c := &dCall{s: s, prov: dec.p, d: dec.d, cut: cutoffs(dec.p.Cutoffs), query: req.query, budget: dBudget{tokens: s.decisionsTokens}}
 	c.use = DecisionUse{Provider: dec.p.ID, Model: dec.p.Model, Cutoffs: CutoffsJSON(dec.p.Cutoffs)}
 	n := min(len(hits), decideReadTop)
 	top, rest := hits[:n], hits[n:]
@@ -159,25 +169,108 @@ func (s *SearchFirst) answerDecided(ctx, cctx context.Context, req sfRequest, hi
 	if len(cands) == 0 {
 		return Outcome{}, errNoDecision
 	}
+	sent := sendable(cands)
+	if len(sent) == 0 {
+		return Outcome{}, errAllCookies
+	}
 	dl, err := buildDecidedLib(req.query, cands)
 	if err != nil {
 		return Outcome{}, err
 	}
 	defer dl.l.store.Close()
-	if err := c.judge(dctx, dl, cands); err != nil {
+	answer := func(fs *followState) (Outcome, error) {
+		labels := <-others
+		if labels.err != nil {
+			return Outcome{}, labels.err
+		}
+		tr.path = "decisions"
+		o := c.answer(ctx, req, dl, pages, cands, rest, labels.list)
+		switch {
+		case !c.noMakers:
+		case fs == nil:
+			o = c.follow(cctx, req, pages, o, tr)
+		default:
+			c.followJudge(cctx, fs)
+			o = c.followOutcome(req, pages, fs, o)
+		}
+		return c.budgeted(o), nil
+	}
+	if c.fitsAll(dl, sent) {
+		if err := c.judge(dctx, dl, sent); err != nil {
+			return Outcome{}, err
+		}
+		return answer(nil)
+	}
+	due, err := c.labelCapped(dctx, sent)
+	if err != nil {
 		return Outcome{}, err
 	}
+	// No page read is documentation: the makers' docs the pages link to
+	// come before the articles' passages when both would not fit.
+	var fs *followState
+	if !documented(sent) {
+		if fs = c.followRead(cctx, req, pages, tr); fs != nil {
+			defer fs.close()
+			if fs.note == "" && c.passageCost(dl, due)+c.passageCost(fs.dl, fs.docs) > c.left() {
+				if o, ok := c.followFirst(cctx, req, pages, due, rest, others, fs, tr); ok {
+					return o, nil
+				}
+			}
+		}
+	}
+	if err := c.passagePasses(dctx, dl, due); err != nil {
+		return Outcome{}, err
+	}
+	setPassageJudgments(sent)
+	return answer(fs)
+}
+
+// followFirst is a capped call whose pages read are not documentation,
+// answered from the linked site (fs) asked before the pages' passages:
+// accepted, the pages due a passage pass are not asked and are passed
+// over; false when the site is not used, the pages then asked from what
+// is left.
+func (c *dCall) followFirst(ctx context.Context, req sfRequest, pages, due []*dPage, rest []sfHit, others <-chan otherLabels, fs *followState, tr *sfTrace) (Outcome, bool) {
+	c.followJudge(ctx, fs)
+	if fs.note != "" {
+		return Outcome{}, false
+	}
 	labels := <-others
-	if labels.err != nil {
-		return Outcome{}, labels.err
+	today := Outcome{}
+	if labels.err == nil {
+		today.OtherResults = labelledOthers(otherResults(rest, nil, nil, nil), rest, labels.list)
+	}
+	for _, p := range due {
+		c.counted(len(p.passages), 0)
 	}
 	tr.path = "decisions"
-	o := c.answer(ctx, req, dl, pages, cands, rest, labels.list)
-	if c.noMakers {
-		o = c.follow(cctx, req, pages, o, tr)
-	}
-	return o, nil
+	return c.budgeted(c.followOutcome(req, pages, fs, today)), true
 }
+
+// sendable are the candidates whose text may be sent to the provider:
+// those not read with the user's cookies. A page read with them is
+// unlabelled and says why.
+func sendable(cands []*dPage) []*dPage {
+	var out []*dPage
+	for _, p := range cands {
+		if p.page.cookies {
+			p.tier, p.label, p.unscored = tierC, labelUnlabelled, readCookies
+			continue
+		}
+		out = append(out, p)
+	}
+	return out
+}
+
+// readCookies is why a page read with the user's cookies (cookie_file) is
+// not labelled; errCookies a follow whose pages all were, errAllCookies a
+// call whose pages read all were: it is answered without decisions.
+const readCookies = "read with your cookies: not sent to the decision provider"
+
+var (
+	errCookies    = errors.New(readCookies)
+	errAllCookies = errors.New("every page read was read with your cookies, and none is sent to the decision provider")
+)
 
 // indexedAmong reports a result on a site the caller indexed: the index
 // answers for it, as today.
@@ -338,6 +431,11 @@ func (c *dCall) labelOthers(ctx context.Context, rest []sfHit) <-chan otherLabel
 		req.Questions = append(req.Questions,
 			decide.Question{Name: fmt.Sprintf("makers_%d", i), Kind: decide.YesNo, Instructions: otherMakersAsk, Item: item, TrueMeans: makersTrue, FalseMeans: makersFalse},
 			decide.Question{Name: fmt.Sprintf("kind_%d", i), Kind: decide.Choice, Instructions: otherKindAsk, Item: item, Options: kindOptions})
+	}
+	if !c.fits(cost(req)) {
+		c.budget.othersCut = true
+		out <- otherLabels{}
+		return out
 	}
 	go func() {
 		resp, err := c.ask(ctx, req)

@@ -179,6 +179,26 @@ func statusIn(statuses ...int) func(int) bool {
 // three and a half).
 func estimateTokens(n int) int { return (n + 2) / 3 }
 
+// Estimate is req's input tokens as the TypeSafe client measures them to
+// pack its requests (estimateTokens over the encoded state and each
+// encoded question): the shared input's, and each question's, in order.
+// It is one measure for every provider, for a caller to budget what it
+// sends; the shared input is counted once, though a request split into
+// parts sends it with each. 0 for a value that does not encode.
+func Estimate(req Request) (input int, questions []int) {
+	questions = make([]int, len(req.Questions))
+	state, err := value(req.Input)
+	if err != nil {
+		return 0, questions
+	}
+	for i, q := range req.Questions {
+		if body, err := typesafeQuestion(q); err == nil {
+			questions[i] = estimateTokens(len(body) + len(q.Name) + 4)
+		}
+	}
+	return estimateTokens(len(state) + len(typesafeModel) + 64), questions
+}
+
 // checkAnswered reports the first question of qs without an answer in
 // answers, or answered in the wrong shape.
 func checkAnswered(name string, qs []Question, answers map[string]Answer) error {

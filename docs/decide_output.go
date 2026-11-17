@@ -15,6 +15,17 @@ type DecisionUse struct {
 	Requests    int         `json:"requests"`
 	InputTokens int         `json:"input_tokens"`
 	Cutoffs     CutoffsJSON `json:"cutoffs"`
+	// Budget is what the decisions budget cut; nil when it cut nothing.
+	Budget *BudgetUse `json:"budget,omitempty"`
+}
+
+// line is the decisions as the frontmatter names them: the provider, and
+// what the budget cut.
+func (d DecisionUse) line() string {
+	if d.Budget == nil {
+		return d.Provider
+	}
+	return d.Provider + " (" + d.Budget.line() + ")"
 }
 
 // CutoffsJSON are a provider's cut-offs as --json names them.

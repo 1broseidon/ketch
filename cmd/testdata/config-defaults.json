@@ -24,6 +24,7 @@
   "docs_backend": "search",
   "docs_backend_note": "docs_backend is retired: every docs call uses search; ask for Context7 per call with -b context7 (MCP: backend \"context7\"); a stored value is left in the file and ignored",
   "docs_decisions": "auto",
+  "docs_decisions_tokens": "80000",
   "context7_api_key_set": false,
   "sourcegraph_url": "https://sourcegraph.com",
   "github_token_source": "none",

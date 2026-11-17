@@ -270,12 +270,54 @@ func linkDocsDir(seg string) bool {
 // question; otherwise today with a clause in its note saying what was
 // tried, or as it is when no site qualifies.
 func (c *dCall) follow(ctx context.Context, req sfRequest, pages []*dPage, today Outcome, tr *sfTrace) Outcome {
-	site, ok := linkedCandidate(pages)
-	if !ok {
+	fs := c.followRead(ctx, req, pages, tr)
+	if fs == nil {
 		return today
 	}
+	defer fs.close()
+	c.followJudge(ctx, fs)
+	return c.followOutcome(req, pages, fs, today)
+}
+
+// followState is a follow under way: the site, how many pages read link
+// to it, its pages labelled, those labelled official docs and their
+// library, those on the question; note is why it is not used (a note
+// clause), "" while it may be.
+type followState struct {
+	site     linkedSite
+	read     int
+	what     string
+	note     string
+	labelled []*dPage
+	docs     []*dPage
+	dl       *dLib
+	on       []*dPage
+}
+
+// reject sets why the site is not used.
+func (fs *followState) reject(why string) *followState {
+	fs.note = "tried " + fs.what + ": " + why
+	return fs
+}
+
+// close releases the site's library.
+func (fs *followState) close() {
+	if fs != nil && fs.dl != nil {
+		fs.dl.l.store.Close()
+	}
+}
+
+// followRead is the first half of a follow: the linked site read as
+// --library reads it and the page pass of the pages it printed from, then
+// those labelled official docs held as a library. nil when no site
+// qualifies; its note set when the site cannot be used.
+func (c *dCall) followRead(ctx context.Context, req sfRequest, pages []*dPage, tr *sfTrace) *followState {
+	site, ok := linkedCandidate(pages)
+	if !ok {
+		return nil
+	}
 	if _, ok := c.s.indexedOver(site.root); ok {
-		return today // an indexed answer is never sent to a provider
+		return nil // an indexed answer is never sent to a provider
 	}
 	read := 0
 	for _, p := range pages {
@@ -283,50 +325,82 @@ func (c *dCall) follow(ctx context.Context, req sfRequest, pages []*dPage, today
 			read++
 		}
 	}
-	what := fmt.Sprintf("%s, which %d of the %d pages read link to", site.root, site.sources, read)
+	fs := &followState{site: site, read: read, what: fmt.Sprintf("%s, which %d of the %d pages read link to", site.root, site.sources, read)}
+	if c.left() < cost(c.pageRequest(&dPage{page: &webPage{}})) {
+		c.budget.follows = true
+		fs.note = fmt.Sprintf("did not read %s: %s", site.root, budgetSpent)
+		return fs
+	}
 	str := &sfTrace{}
 	o := c.s.fromSearch(ctx, sfRequest{query: req.query, library: site.root.String(), opts: req.opts}, str)
 	tr.planned, tr.fetched, tr.failed = tr.planned+str.planned, tr.fetched+str.fetched, tr.failed+str.failed
 	if why := unfollowed(o); why != "" {
-		return c.tried(today, what, why)
+		return fs.reject(why)
 	}
 	dctx, cancel := context.WithTimeout(ctx, decideTimeout)
 	defer cancel()
 	labelled, err := c.labelRead(dctx, o)
-	if err != nil {
-		return c.tried(today, what, unavailable(err))
+	switch {
+	case errors.Is(err, errBudget):
+		c.budget.follows = true
+		return fs.reject(budgetSpent)
+	case errors.Is(err, errCookies):
+		return fs.reject(readCookies)
+	case err != nil:
+		return fs.reject(unavailable(err))
 	}
-	var docs []*dPage
+	fs.labelled = labelled
 	for _, p := range labelled {
 		if p != nil && p.tier == tierA {
-			docs = append(docs, p)
+			fs.docs = append(fs.docs, p)
 		}
 	}
-	if len(docs) == 0 {
+	if len(fs.docs) == 0 {
 		label := labelUnlabelled
 		if len(labelled) > 0 && labelled[0] != nil {
 			label = labelled[0].label
 		}
-		return c.tried(today, what, "labelled "+label+", not the makers' docs")
+		return fs.reject("labelled " + label + ", not the makers' docs")
 	}
-	dl, err := buildDecidedLib(req.query, docs)
-	if err != nil {
-		return c.tried(today, what, oneLine(err.Error(), 200))
+	if fs.dl, err = buildDecidedLib(req.query, fs.docs); err != nil {
+		return fs.reject(oneLine(err.Error(), 200))
 	}
-	defer dl.l.store.Close()
-	if err := c.judgeRead(dctx, dl, docs); err != nil {
-		return c.tried(today, what, unavailable(err))
+	return fs
+}
+
+// followJudge is the second half: the passage pass of the site's official
+// docs pages, within what the budget has left, and those on the question.
+func (c *dCall) followJudge(ctx context.Context, fs *followState) {
+	if fs.note != "" {
+		return
 	}
-	var on []*dPage
-	for _, p := range docs {
+	dctx, cancel := context.WithTimeout(ctx, decideTimeout)
+	defer cancel()
+	if err := c.judgeRead(dctx, fs.dl, fs.docs); errors.Is(err, errBudget) {
+		c.budget.follows = true
+		fs.reject(budgetSpent)
+		return
+	} else if err != nil {
+		fs.reject(unavailable(err))
+		return
+	}
+	for _, p := range fs.docs {
 		if p.context == confHigh {
-			on = append(on, p)
+			fs.on = append(fs.on, p)
 		}
 	}
-	if len(on) == 0 {
-		return c.tried(today, what, "documentation, but not on the question")
+	if len(fs.on) == 0 {
+		fs.reject("documentation, but not on the question")
 	}
-	return c.followed(req, site, read, pages, dl, on, labelled, today)
+}
+
+// followOutcome is the followed site's answer, or today with the note
+// saying why it was not used.
+func (c *dCall) followOutcome(req sfRequest, pages []*dPage, fs *followState, today Outcome) Outcome {
+	if fs.note != "" {
+		return c.noted(today, fs.note)
+	}
+	return c.followed(req, fs.site, fs.read, pages, fs.dl, fs.on, fs.labelled, today)
 }
 
 // unavailable is a provider error as a note says it.
@@ -352,11 +426,11 @@ func unfollowed(o Outcome) string {
 	return ""
 }
 
-// tried is today with a clause in its note saying the linked site (what)
-// was tried and why it was not used, and the decisions every request
-// counted.
-func (c *dCall) tried(today Outcome, what, why string) Outcome {
-	today.Note = joinNote(today.Note, "tried "+what+": "+why)
+// noted is today with a clause in its note saying the linked site was
+// tried or not read, and why it was not used, and the decisions every
+// request counted.
+func (c *dCall) noted(today Outcome, clause string) Outcome {
+	today.Note = joinNote(today.Note, clause)
 	use := c.use
 	today.Decisions = &use
 	return today
@@ -364,18 +438,38 @@ func (c *dCall) tried(today Outcome, what, why string) Outcome {
 
 // labelRead asks the page pass of the first sfExactPages pages o printed
 // from, at once: the pages labelled, by o.Read's order (nil past them or
-// for a page not in hand).
+// for a page not in hand or read with the user's cookies). errBudget, and
+// nothing asked, when they do not fit what the decisions budget has left;
+// errCookies when every one was read with the user's cookies.
 func (c *dCall) labelRead(ctx context.Context, o Outcome) ([]*dPage, error) {
 	out := make([]*dPage, len(o.Read))
-	errs := make([]error, len(o.Read))
-	var wg sync.WaitGroup
+	asked := make([]*dPage, len(o.Read))
+	need, cookies := 0, false
 	for i, r := range o.Read[:min(len(o.Read), sfExactPages)] {
 		k := slices.IndexFunc(o.readPages, func(pg webPage) bool { return pg.URL == r.URL })
 		u, err := url.Parse(r.URL)
 		if k < 0 || err != nil {
 			continue
 		}
-		p := &dPage{hit: sfHit{u: u}, page: &o.readPages[k]}
+		if o.readPages[k].cookies {
+			cookies = true
+			continue
+		}
+		asked[i] = &dPage{hit: sfHit{u: u}, page: &o.readPages[k]}
+		need += cost(c.pageRequest(asked[i]))
+	}
+	if need == 0 && cookies {
+		return nil, errCookies
+	}
+	if !c.fits(need) {
+		return nil, errBudget
+	}
+	errs := make([]error, len(o.Read))
+	var wg sync.WaitGroup
+	for i, p := range asked {
+		if p == nil {
+			continue
+		}
 		wg.Go(func() {
 			var resp decide.Response
 			if resp, errs[i] = c.ask(ctx, c.pageRequest(p)); errs[i] == nil {
@@ -389,20 +483,25 @@ func (c *dCall) labelRead(ctx context.Context, o Outcome) ([]*dPage, error) {
 }
 
 // judgeRead asks the passage pass of the pages labelled official docs, at
-// once: each page's passages' probabilities and its context, as a search
-// result's.
+// once, within shares of what the decisions budget has left: each page's
+// passages' probabilities and its context, as a search result's.
+// errBudget, and nothing asked, when no passage fits.
 func (c *dCall) judgeRead(ctx context.Context, dl *dLib, docs []*dPage) error {
+	send := c.share(dl, docs)
+	none := true
+	for i, p := range docs {
+		none = none && len(p.passages) > 0 && send[i] != nil && len(send[i]) == 0
+	}
+	if none {
+		return errBudget
+	}
 	errs := make([]error, len(docs))
 	var wg sync.WaitGroup
 	for i, p := range docs {
-		wg.Go(func() { errs[i] = c.passagePass(ctx, dl, p) })
+		wg.Go(func() { errs[i] = c.passagePass(ctx, dl, p, send[i]) })
 	}
 	wg.Wait()
-	for _, p := range docs {
-		if p.judged != nil && p.probs != nil {
-			p.judged.Passages, p.judged.TopPassages = len(p.probs), topProbs(p.probs)
-		}
-	}
+	setPassageJudgments(docs)
 	return firstError(errs)
 }
 

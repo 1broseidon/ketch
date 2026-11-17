@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/1broseidon/ketch/code"
@@ -41,6 +42,36 @@ func NormalizeSearchOrder(list []string) ([]string, error) { return search.Norma
 // NormalizeDocsDecisions validates a docs_decisions value against the
 // decision provider registry: auto (also for ""), off, or a provider ID.
 func NormalizeDocsDecisions(value string) (string, error) { return decide.Normalize(value) }
+
+// NormalizeDocsDecisionsTokens validates a docs_decisions_tokens value: a
+// positive number of input tokens (stored as written, without spaces or
+// leading zeros), unlimited, or "" for the default.
+func NormalizeDocsDecisionsTokens(value string) (string, error) {
+	n, err := docs.ParseDecisionsTokens(value)
+	switch {
+	case err != nil:
+		return "", err
+	case strings.TrimSpace(value) == "":
+		return "", nil
+	case n == 0:
+		return docs.DecisionsUnlimited, nil
+	}
+	return strconv.Itoa(n), nil
+}
+
+// EffectiveDocsDecisionsTokens is the docs_decisions_tokens setting in
+// effect: the default when unset; a value the normalizer rejects (a
+// hand-edited file, which ketch docs reads as the default) as it is.
+func EffectiveDocsDecisionsTokens(c Config) string {
+	v, err := NormalizeDocsDecisionsTokens(c.DocsDecisionsTokens)
+	switch {
+	case err != nil:
+		return c.DocsDecisionsTokens
+	case v == "":
+		return strconv.Itoa(docs.DefaultDecisionsTokens)
+	}
+	return v
+}
 
 // AvailableDecisionProviders returns the decision provider IDs in registry
 // order.

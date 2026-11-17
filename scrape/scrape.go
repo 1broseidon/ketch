@@ -777,7 +777,9 @@ type cookieRoundTripper struct {
 func (t *cookieRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	cloned := req.Clone(req.Context())
 	cloned.Header = req.Header.Clone()
-	setCookieHeader(cloned, t.jar)
+	if setCookieHeader(cloned, t.jar) {
+		markCookiesSent(req.Context())
+	}
 	return t.base.RoundTrip(cloned)
 }
 
@@ -791,7 +793,9 @@ func clientWithCookies(client *http.Client, jar *cookies.Jar) *http.Client {
 	return &cloned
 }
 
-func setCookieHeader(req *http.Request, jar *cookies.Jar) {
+// setCookieHeader sets req's Cookie header from the jar, and reports
+// whether any cookie matched.
+func setCookieHeader(req *http.Request, jar *cookies.Jar) bool {
 	// Header.Del canonicalizes its argument but would miss a non-canonical map
 	// key installed by another RoundTripper, so remove case-insensitively.
 	for key := range req.Header {
@@ -801,7 +805,7 @@ func setCookieHeader(req *http.Request, jar *cookies.Jar) {
 	}
 	matched := jar.For(req.URL)
 	if len(matched) == 0 {
-		return
+		return false
 	}
 
 	// Build the header verbatim rather than via req.AddCookie, which sanitizes
@@ -816,6 +820,7 @@ func setCookieHeader(req *http.Request, jar *cookies.Jar) {
 		b.WriteString(ck.Value)
 	}
 	req.Header.Set("Cookie", b.String())
+	return true
 }
 
 func (s *Scraper) fetchContent(ctx context.Context, rawURL, etag, lastModified string) (*FetchedContent, http.Header, bool, error) {

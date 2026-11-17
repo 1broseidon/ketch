@@ -473,6 +473,9 @@ type webPage struct {
 	// index records it (pageSource), and its check reads a page the same
 	// way (index_fresh.go).
 	via string
+	// cookies marks a page fetched with a cookie from cookie_file: its text
+	// is never sent to a decision provider (decide_flow.go).
+	cookies bool
 }
 
 // webLink is a candidate page found during discovery.
