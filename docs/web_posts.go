@@ -132,10 +132,14 @@ func movedEvidence(evs []evidence, home webRoot) []evidence {
 	return out
 }
 
-// pathBelow is u's path below root's prefix.
+// pathBelow is u's path below root's prefix: "" for the root's own page,
+// at its address with or without the trailing slash.
 func pathBelow(root webRoot, u *url.URL) string {
 	if root.prefix == "/" {
 		return u.Path
+	}
+	if u.Path == strings.TrimSuffix(root.prefix, "/") {
+		return ""
 	}
 	return strings.TrimPrefix(u.Path, root.prefix)
 }

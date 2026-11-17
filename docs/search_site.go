@@ -72,6 +72,10 @@ type sfSite struct {
 	page     *url.URL
 	pageVia  string
 	fallback *url.URL
+	// self is the library URL a request gives, read as the one page when
+	// nothing under it is found: a root names a directory (parseWebRoot),
+	// but an extensionless URL is as often a page with nothing below it.
+	self *url.URL
 }
 
 // fuseWeighted is fuseHits with each list's weights scaled (1 when scale

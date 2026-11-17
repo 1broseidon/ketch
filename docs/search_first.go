@@ -829,7 +829,27 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 	tr.exact += len(p.exact)
 	p.title, p.name = readTitle(p.root, prof)
 	widen := s.widener(cctx, tree, prof, req, p, &fails, tr)
-	if len(p.exact) == 0 && !widen(nil) {
+	found := len(p.exact) > 0 || widen(nil)
+	selfFail := ""
+	if !found && site.self != nil && disallowed == 0 && fails.n() == 0 {
+		// Nothing under the library URL: the URL itself is the one page.
+		one := sfSite{key: site.key, root: site.root, docs: site.docs, named: site.named, page: site.self, pageVia: "the library URL"}
+		sp, sfails, sdis, stree := s.readExact(cctx, one, tr)
+		tr.exact += len(sp.exact)
+		if len(sp.exact) > 0 {
+			p, fails, disallowed, tree = sp, sfails, sdis, stree
+			p.title, p.name = readTitle(p.root, prof)
+			widen = s.widener(cctx, tree, prof, req, p, &fails, tr)
+			found = true
+		} else {
+			selfFail = "nor could the library URL itself be read"
+			if len(sp.skipped) > 0 {
+				selfFail += " (" + sp.skipped[0].Cause + ")"
+			}
+			p.skipped = append(p.skipped, sp.skipped...)
+		}
+	}
+	if !found {
 		// No exact page could be read, nor any the site's own lists name.
 		if disallowed > 0 && fails.n() == 0 {
 			o := Answer(SearchBackend, nil, fmt.Errorf("search: %s's robots.txt disallows the %d pages found: %w", site.root, disallowed, errDisallowed))
@@ -838,6 +858,9 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 		}
 		if fails.n() == 0 {
 			why := "no search hit is under it, and its llms.txt, sitemap and links list none"
+			if selfFail != "" {
+				why += ", " + selfFail
+			}
 			o := s.failed(ctx, cctx, fmt.Errorf("search: found no page of %s to read: %s; %s: %w", site.root, why, appendNext(nil, site.root)[0], ErrNotFound))
 			o.unread, o.Skipped = "no page to read", p.skipped
 			return o, sfRead{}
@@ -1001,9 +1024,13 @@ func lastPart(name string) string {
 func (s *SearchFirst) chooseSite(ctx context.Context, sites []sfSite, req sfRequest, prefs sitePrefs) (sfSite, *siteProfile, []sfSite, error) {
 	if isHTTPURL(req.library) && len(prefs.roots) > 0 {
 		site := givenSite(prefs.roots[0], sites)
-		if u, err := url.Parse(req.library); err == nil && isPageFile(path.Base(u.Path)) {
+		if u, err := url.Parse(req.library); err == nil {
 			u.Fragment, u.RawQuery = "", ""
-			site.page, site.pageVia = u, "the library URL" // read first, hits or none
+			if isPageFile(path.Base(u.Path)) {
+				site.page, site.pageVia = u, "the library URL" // read first, hits or none
+			} else {
+				site.self = u // read when nothing under it is (readSite)
+			}
 		}
 		return site, s.hitProfile(ctx, site), nil, nil
 	}

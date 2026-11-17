@@ -296,6 +296,12 @@ func (s *SearchFirst) widener(ctx context.Context, tree sfSite, prof *siteProfil
 				read[pageIdentity(u, tree.root, true)] = true
 			}
 		}
+		if len(p.exact) == 0 && tree.self != nil {
+			// Nothing read yet: the pages below the library URL, never the
+			// URL's own page, which readSite reads as the one page when
+			// nothing is below it.
+			read[pageIdentity(tree.self, tree.root, true)] = true
+		}
 		links = slices.DeleteFunc(links, func(l webLink) bool { return read[pageIdentity(l.url, tree.root, true)] })
 		if len(links) == 0 {
 			return false

@@ -380,6 +380,47 @@ func TestPageLibraryReadsThePage(t *testing.T) {
 	}
 }
 
+// A library URL with no extension and nothing under it (a blog post: its
+// own search hit is no docs hit, and the sitemap lists only it) is read as
+// the one page, as any page read is; one that cannot be read still prints
+// the search results, its note saying the URL itself was tried.
+func TestPageLibraryWithNothingUnderIt(t *testing.T) {
+	const post = "https://posts.test/blog/system-one-models"
+	f := originSite()
+	f.raw["https://posts.test/sitemap.xml"] = xmlDoc(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>` + post + `</loc></url><url><loc>https://posts.test/blog/other-post</loc></url></urlset>`)
+	f.pages[post] = fakePage{title: "System One Models", markdown: "# System One Models\n\n## Orchestrator\n\nA system one model as the orchestrator decides which model handles a task, with a confidence score.\n"}
+	hits := append(fanHits(), hit(post, "System One Models"))
+	s := originSearch(t, f, hits, sfResolved{})
+
+	if u, _ := url.Parse(post); !rootOf(post).contains(u) {
+		t.Errorf("%s is not in scope of its own root %s", post, rootOf(post))
+	}
+	o := s.GetDocsSelect(context.Background(), post, "system one model orchestrator decides model task", 0)
+	if o.Status != Found || o.Err() != nil {
+		t.Fatalf("outcome = %s/%s note %q (%v); want the page the library URL names", o.Status, o.Reason, o.Note, o.Err())
+	}
+	if len(o.Read) != 1 || o.Read[0].URL != post || o.Read[0].Via != "the library URL" || o.Widened != nil {
+		t.Errorf("read %+v, widened %+v; want the library URL read as the one page", o.Read, o.Widened)
+	}
+	if o.Library != post+"/" || len(o.Results) == 0 || !strings.HasPrefix(o.Results[0].URL, post) {
+		t.Errorf("library %q, results %+v", o.Library, o.Results)
+	}
+	if h := Hint(HintCLI, o); !strings.Contains(h, `another result with ketch docs --library <url> "<your question>"`) {
+		t.Errorf("hint %q", h)
+	}
+
+	const gone = "https://posts.test/blog/no-such-post"
+	o = s.GetDocsSelect(context.Background(), gone, "system one model orchestrator decides model task", 0)
+	if o.Err() != nil || o.Reason != "results_only" || len(o.Read) != 0 ||
+		!strings.Contains(o.Note, "no page was printed: found no page of "+gone+"/ to read") ||
+		!strings.Contains(o.Note, "nor could the library URL itself be read (not found") {
+		t.Errorf("unreadable URL: %s %v note %q read %+v", o.Reason, o.Err(), o.Note, o.Read)
+	}
+	if len(o.Skipped) != 1 || o.Skipped[0].URL != gone {
+		t.Errorf("skipped %+v, want the library URL", o.Skipped)
+	}
+}
+
 // pkg.go.dev's own page for a path with no host first verifies a
 // standard-library package.
 func TestResolveGoStd(t *testing.T) {
