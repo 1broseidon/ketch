@@ -411,6 +411,10 @@ ketch is free and MIT-licensed. If it saves you or your team time, you can
 [sponsor its development](https://github.com/sponsors/1broseidon). Sponsors never
 get product changes, default settings, or vendor-specific code.
 
+## Privacy
+
+ketch collects no data and has no telemetry. Requests go straight from your machine to the providers you use. See [PRIVACY.md](./PRIVACY.md).
+
 ## License
 
 [MIT](./LICENSE)
