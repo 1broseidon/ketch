@@ -20,8 +20,9 @@ type fakeDecider struct {
 	others map[string]ResultJudgments
 	err    error
 	// failOn fails only requests whose input is of this kind ("page",
-	// "passage", "others").
-	failOn string
+	// "passage", "others"); failPage only the page pass of this address.
+	failOn   string
+	failPage string
 
 	mu   sync.Mutex
 	reqs []decide.Request
@@ -36,6 +37,9 @@ func (f *fakeDecider) Decide(_ context.Context, req decide.Request) (decide.Resp
 	switch in := req.Input.(type) {
 	case pageInput:
 		kind = "page"
+		if f.failPage != "" && in.Page.URL == f.failPage {
+			return decide.Response{}, f.err
+		}
 		j := f.pages[in.Page.URL]
 		resp.Answers[qDocumentation] = decide.Answer{Probability: j.Documentation}
 		resp.Answers[qMakers] = decide.Answer{Probability: j.Makers}
@@ -59,7 +63,7 @@ func (f *fakeDecider) Decide(_ context.Context, req decide.Request) (decide.Resp
 			}
 		}
 	}
-	if f.err != nil && (f.failOn == "" || f.failOn == kind) {
+	if f.err != nil && f.failPage == "" && (f.failOn == "" || f.failOn == kind) {
 		return decide.Response{}, f.err
 	}
 	return resp, nil

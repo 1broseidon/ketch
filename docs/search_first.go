@@ -871,6 +871,7 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 		return o, sfRead{}
 	}
 	o := s.answerRead(ctx, p, req, origin, widen)
+	o.readPages = append(slices.Clone(p.exact), p.wide...)
 	r := readOf(p)
 	r.Version, r.Pin = req.version, req.spec.version
 	r.Origin = origin.text

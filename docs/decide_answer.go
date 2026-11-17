@@ -46,7 +46,8 @@ func (c *dCall) answer(ctx context.Context, req sfRequest, dl *dLib, pages, cand
 	if primary.otherRel {
 		notes = append(notes, noteOtherRel)
 	}
-	if primary.tier == tierC && primary.label != labelUnlabelled {
+	if notMakers(primary) {
+		c.noMakers = true
 		notes = append(notes, noteNotOfficial+article(primary.label)+primary.label)
 	}
 	for _, n := range notes {
@@ -54,6 +55,11 @@ func (c *dCall) answer(ctx context.Context, req sfRequest, dl *dLib, pages, cand
 	}
 	return c.finish(o, req, primary, pages, rest, others, f)
 }
+
+// notMakers reports a primary page that is neither documentation nor
+// the makers' (tier C, labelled): the answer says no page read is the
+// makers' documentation (noteNotOfficial).
+func notMakers(primary *dPage) bool { return primary.tier == tierC && primary.label != labelUnlabelled }
 
 // unscoredBetter is the best documentation page (tier A or B) whose
 // passages could not be scored, when its tier is better than primary's

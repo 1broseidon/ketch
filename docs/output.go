@@ -115,6 +115,8 @@ type PageRead struct {
 // line is the page as its read line names it.
 func (p PageRead) line() string {
 	switch {
+	case p.Label != "" && p.Rank == 0 && p.Via != "":
+		return fmt.Sprintf("%s (%s, confidence %s, %s)", p.URL, p.Label, p.Confidence, p.Via)
 	case p.Label != "":
 		return fmt.Sprintf("%s (%s, confidence %s, search rank %d)", p.URL, p.Label, p.Confidence, p.Rank)
 	case p.Rank > 0:

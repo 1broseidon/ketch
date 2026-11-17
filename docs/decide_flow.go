@@ -31,6 +31,8 @@ import (
 //	probability within the budget, then strong passages of other pages
 //	        │
 //	read / passed_over / next, labels and confidence in words
+//	        │       (no page read the makers' docs: the docs site two or
+//	        │       more of them link to, read and labelled; decide_follow.go)
 //
 // Any provider error, refusal or timeout answers the whole call as today,
 // with a note saying why; with no provider configured nothing here runs.
@@ -116,6 +118,13 @@ type dCall struct {
 	query string
 	mu    sync.Mutex
 	use   DecisionUse
+	// releaseNamed is the page pass's reading of whether the question
+	// names a release (judge), for labelling a page read later (follow).
+	releaseNamed bool
+	// noMakers marks an answer whose note says no page read is the
+	// makers' documentation (notMakers): a linked docs site may answer
+	// instead (decide_follow.go).
+	noMakers bool
 }
 
 // ask sends one request and counts what it used.
@@ -163,7 +172,11 @@ func (s *SearchFirst) answerDecided(ctx, cctx context.Context, req sfRequest, hi
 		return Outcome{}, labels.err
 	}
 	tr.path = "decisions"
-	return c.answer(ctx, req, dl, pages, cands, rest, labels.list), nil
+	o := c.answer(ctx, req, dl, pages, cands, rest, labels.list)
+	if c.noMakers {
+		o = c.follow(cctx, req, pages, o, tr)
+	}
+	return o, nil
 }
 
 // indexedAmong reports a result on a site the caller indexed: the index

@@ -116,6 +116,9 @@ type Outcome struct {
 	// unread says why a site gave no text (its pages' causes, counted),
 	// when that is how the outcome ended: the next site's answer names it.
 	unread string
+	// readPages are the pages an answer from one site was made from
+	// (readSite), for a decided answer that labels them (follow).
+	readPages []webPage
 }
 
 // Err is the error behind a refused or failed outcome, classified by

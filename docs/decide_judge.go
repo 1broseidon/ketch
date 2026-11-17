@@ -133,9 +133,9 @@ func (c *dCall) judge(ctx context.Context, dl *dLib, cands []*dPage) error {
 	if err := firstError(errs); err != nil {
 		return err
 	}
-	releaseNamed := c.cut.hi(median(releaseAnswers(answers)))
+	c.releaseNamed = c.cut.hi(median(releaseAnswers(answers)))
 	for i, p := range cands {
-		c.label(p, answers[i], releaseNamed)
+		c.label(p, answers[i], c.releaseNamed)
 	}
 	var later []*dPage
 	for _, p := range cands[len(first):] {
