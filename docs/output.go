@@ -156,7 +156,9 @@ type OtherResult struct {
 	Title   string `json:"title"`
 	URL     string `json:"url"`
 	Snippet string `json:"snippet,omitempty"`
-	Rank    int    `json:"rank"`
+	// Rank is the result's search rank; none for a page of a followed
+	// site (decide_follow.go).
+	Rank int `json:"rank,omitempty"`
 	// Label is a decided answer's source label for the result, from
 	// Judgments.
 	Label     string           `json:"label,omitempty"`

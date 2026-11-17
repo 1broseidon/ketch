@@ -20,16 +20,21 @@ import (
 //
 //	the pages read, their links to other sites (links that are never to a
 //	library's docs dropped: neverLinked), each target host counted by the
-//	distinct source sites that link to it
+//	distinct source sites that link to it (on a host many owners publish
+//	on, each owner's repository: linkTarget)
 //	        │
 //	a host followMinSources or more sites link to: the most sites, then a
 //	docs-looking host or path, then the most links; ONE
 //	        │
 //	read as --library <root> reads it (its search, robots.txt, page
-//	limits); the pages printed labelled by the page pass
+//	limits); the pages printed labelled by the page pass, those labelled
+//	official docs asked the passage pass
 //	        │
-//	official docs: its answer, read lines "linked from N of the pages
-//	read", the search's pages passed over; otherwise the answer as it was,
+//	official docs on the question (context high: a site reached by links
+//	clears a higher bar than a search result): those pages filled as a
+//	decided answer, read lines "linked from N of the pages read", its other
+//	documentation pages read listed as other results, the search's pages
+//	passed over; otherwise the answer as it was,
 //	its note saying what was tried and why it was not used
 //
 // No candidate costs nothing: the links are in the pages already read.
@@ -95,9 +100,47 @@ func neverLinked(u *url.URL) bool {
 	return onDomains(host, neverLinkedHosts) || assetHostLabels[first]
 }
 
+// tenantHosts are hosts where many unrelated owners publish, as on a code
+// forge (which neverLinked drops): a link there counts toward its owner's
+// repository, never the host; the host's own /docs/ is a docs directory.
+var tenantHosts = []string{"huggingface.co", "hf.co"}
+
+// tenantPrefixes are the path segments before owner/repo on a tenant host.
+var tenantPrefixes = map[string]bool{"spaces": true, "datasets": true, "collections": true}
+
+// linkTarget is what a link counts toward: its host; on a tenant host, the
+// host's /docs/ or an owner's repository (/owner/repo, /spaces/owner/repo),
+// root that repository. "" for a tenant link never followed: an API or
+// paper address, a file (blob, raw, resolve), a page above a repository.
+func linkTarget(u *url.URL) (key, root string) {
+	host := scopeHost(u)
+	if !onDomains(host, tenantHosts) {
+		return host, ""
+	}
+	segs := pathSegments(u.Path)
+	if len(segs) > 0 && strings.EqualFold(segs[0], "docs") {
+		return host + "/docs", ""
+	}
+	n := 2
+	if len(segs) > 0 && tenantPrefixes[segs[0]] {
+		n = 3
+	}
+	if len(segs) < n || segs[0] == "api" || segs[0] == "papers" {
+		return "", ""
+	}
+	for _, seg := range segs {
+		if forgeFileSegments[seg] || seg == "resolve" {
+			return "", ""
+		}
+	}
+	repo := segmentsPath(segs[:n])
+	return host + strings.TrimSuffix(repo, "/"), u.Scheme + "://" + hostKey(u) + repo
+}
+
 // linkedCandidate is the site the pages read link to that a decided
-// answer reads: of the hosts followMinSources or more source sites link
-// to (never a source page's own host), the one the most sites link to,
+// answer reads: of the hosts (on a tenant host, the repositories:
+// linkTarget) followMinSources or more source sites link to (never a
+// source page's own host), the one the most sites link to,
 // then a docs-looking one (a docs or developer(s) host, or a link under
 // /docs), then the one with the most links. false for none.
 func linkedCandidate(pages []*dPage) (linkedSite, bool) {
@@ -111,6 +154,7 @@ func linkedCandidate(pages []*dPage) (linkedSite, bool) {
 	type tally struct {
 		sources map[string]bool
 		links   []*url.URL
+		root    string
 	}
 	by := map[string]*tally{}
 	for _, p := range pages {
@@ -119,14 +163,14 @@ func linkedCandidate(pages []*dPage) (linkedSite, bool) {
 		}
 		src := registrableDomain(p.parsedURL().Hostname())
 		for _, u := range pageLinks(p.page.Markdown) {
-			host := scopeHost(u)
-			if own[host] || neverLinked(u) {
+			key, root := linkTarget(u)
+			if key == "" || own[scopeHost(u)] || neverLinked(u) {
 				continue
 			}
-			t := by[host]
+			t := by[key]
 			if t == nil {
-				t = &tally{sources: map[string]bool{}}
-				by[host] = t
+				t = &tally{sources: map[string]bool{}, root: root}
+				by[key] = t
 			}
 			t.sources[src] = true
 			t.links = append(t.links, u)
@@ -138,6 +182,9 @@ func linkedCandidate(pages []*dPage) (linkedSite, bool) {
 			continue
 		}
 		root, err := linkedRoot(t.links)
+		if t.root != "" {
+			root, err = parseWebRoot(t.root)
+		}
 		if err != nil {
 			continue
 		}
@@ -219,9 +266,9 @@ func linkDocsDir(seg string) bool {
 
 // follow is a decided answer, today, whose pages read are not the makers'
 // docs, answered instead from the site most of them link to when the
-// provider labels a page of it official docs; otherwise today with a
-// clause in its note saying what was tried, or as it is when no site
-// qualifies.
+// provider labels a page of it official docs and judges it on the
+// question; otherwise today with a clause in its note saying what was
+// tried, or as it is when no site qualifies.
 func (c *dCall) follow(ctx context.Context, req sfRequest, pages []*dPage, today Outcome, tr *sfTrace) Outcome {
 	site, ok := linkedCandidate(pages)
 	if !ok {
@@ -243,29 +290,52 @@ func (c *dCall) follow(ctx context.Context, req sfRequest, pages []*dPage, today
 	if why := unfollowed(o); why != "" {
 		return c.tried(today, what, why)
 	}
-	labelled, err := c.labelRead(ctx, o)
+	dctx, cancel := context.WithTimeout(ctx, decideTimeout)
+	defer cancel()
+	labelled, err := c.labelRead(dctx, o)
 	if err != nil {
-		why := err.Error()
-		if !errors.Is(err, decide.ErrUnavailable) {
-			why = decide.ErrUnavailable.Error() + ": " + why
-		}
-		return c.tried(today, what, oneLine(why, 200))
+		return c.tried(today, what, unavailable(err))
 	}
-	var primary *dPage
+	var docs []*dPage
 	for _, p := range labelled {
 		if p != nil && p.tier == tierA {
-			primary = p
-			break
+			docs = append(docs, p)
 		}
 	}
-	if primary == nil {
+	if len(docs) == 0 {
 		label := labelUnlabelled
 		if len(labelled) > 0 && labelled[0] != nil {
 			label = labelled[0].label
 		}
 		return c.tried(today, what, "labelled "+label+", not the makers' docs")
 	}
-	return c.followed(o, req, site, read, pages, labelled, primary, today)
+	dl, err := buildDecidedLib(req.query, docs)
+	if err != nil {
+		return c.tried(today, what, oneLine(err.Error(), 200))
+	}
+	defer dl.l.store.Close()
+	if err := c.judgeRead(dctx, dl, docs); err != nil {
+		return c.tried(today, what, unavailable(err))
+	}
+	var on []*dPage
+	for _, p := range docs {
+		if p.context == confHigh {
+			on = append(on, p)
+		}
+	}
+	if len(on) == 0 {
+		return c.tried(today, what, "documentation, but not on the question")
+	}
+	return c.followed(req, site, read, pages, dl, on, labelled, today)
+}
+
+// unavailable is a provider error as a note says it.
+func unavailable(err error) string {
+	why := err.Error()
+	if !errors.Is(err, decide.ErrUnavailable) {
+		why = decide.ErrUnavailable.Error() + ": " + why
+	}
+	return oneLine(why, 200)
 }
 
 // unfollowed is why a linked site's read gives no answer to use: "" when
@@ -296,8 +366,6 @@ func (c *dCall) tried(today Outcome, what, why string) Outcome {
 // from, at once: the pages labelled, by o.Read's order (nil past them or
 // for a page not in hand).
 func (c *dCall) labelRead(ctx context.Context, o Outcome) ([]*dPage, error) {
-	dctx, cancel := context.WithTimeout(ctx, decideTimeout)
-	defer cancel()
 	out := make([]*dPage, len(o.Read))
 	errs := make([]error, len(o.Read))
 	var wg sync.WaitGroup
@@ -310,7 +378,7 @@ func (c *dCall) labelRead(ctx context.Context, o Outcome) ([]*dPage, error) {
 		p := &dPage{hit: sfHit{u: u}, page: &o.readPages[k]}
 		wg.Go(func() {
 			var resp decide.Response
-			if resp, errs[i] = c.ask(dctx, c.pageRequest(p)); errs[i] == nil {
+			if resp, errs[i] = c.ask(ctx, c.pageRequest(p)); errs[i] == nil {
 				c.label(p, resp, c.releaseNamed)
 				out[i] = p
 			}
@@ -320,30 +388,49 @@ func (c *dCall) labelRead(ctx context.Context, o Outcome) ([]*dPage, error) {
 	return out, firstError(errs)
 }
 
-// followed is the linked site's answer, o, as a decided answer: its read
-// lines say how the site was found, its pages' labels, and the confidence
-// of a page whose passages were matched by the question's words, not
-// judged (at most medium); the search's pages read are passed over, the
-// other results and the decisions are the call's, and no next step is
-// given (those were about the page the search read).
-func (c *dCall) followed(o Outcome, req sfRequest, site linkedSite, read int, pages, labelled []*dPage, primary *dPage, today Outcome) Outcome {
-	via := fmt.Sprintf("linked from %d of the pages read", site.sources)
-	conf := map[string]*dPage{}
-	for i := range o.Read {
-		o.Read[i].Rank, o.Read[i].Via = 0, via
-		if p := labelled[i]; p != nil {
-			o.Read[i].Label, o.Read[i].Tier, o.Read[i].Judgments = p.label, p.tier, p.judged
-			o.Read[i].Confidence = lower(tierBand[p.tier], confMedium)
-			conf[o.Read[i].URL] = p
+// judgeRead asks the passage pass of the pages labelled official docs, at
+// once: each page's passages' probabilities and its context, as a search
+// result's.
+func (c *dCall) judgeRead(ctx context.Context, dl *dLib, docs []*dPage) error {
+	errs := make([]error, len(docs))
+	var wg sync.WaitGroup
+	for i, p := range docs {
+		wg.Go(func() { errs[i] = c.passagePass(ctx, dl, p) })
+	}
+	wg.Wait()
+	for _, p := range docs {
+		if p.judged != nil && p.probs != nil {
+			p.judged.Passages, p.judged.TopPassages = len(p.probs), topProbs(p.probs)
 		}
 	}
-	for i := range o.Results {
-		if p := conf[pageOf(o.Results[i])]; p != nil {
-			o.Results[i].SourceLabel, o.Results[i].Confidence = p.label, lower(tierBand[p.tier], confMedium)
-		}
+	return firstError(errs)
+}
+
+// followed is the linked site's answer: its pages on the question (on),
+// filled as a decided answer fills the search's (the primary by context,
+// its passages by probability, then strong passages of the others), its
+// read lines saying how the site was found; the search's pages read are
+// passed over, the other results are the site's documentation pages read
+// and not printed (unprinted), then the call's not already listed or
+// printed; the decisions are the
+// call's, and no next step is given (those were about the page the search
+// read).
+func (c *dCall) followed(req sfRequest, site linkedSite, read int, pages []*dPage, dl *dLib, on, labelled []*dPage, today Outcome) Outcome {
+	primary := c.choose(on)
+	budget := req.opts.Tokens
+	if budget <= 0 {
+		budget = localTokens
+	}
+	f := newFill(c, dl, budget)
+	f.primary(primary)
+	f.extras(primary, on)
+	o := c.printed(f, req)
+	o.Library = site.root.String()
+	via := fmt.Sprintf("linked from %d of the pages read", site.sources)
+	for i := range o.Read {
+		o.Read[i].Via = via
 	}
 	o.Note = joinNote(fmt.Sprintf("no search result read is documentation from the makers; read %s instead, which %d of the %d pages read link to", site.root, site.sources, read), o.Note)
-	o.PassedOver = nil
 	for _, p := range pages {
 		entry := PagePassed{URL: p.pageURL(), Rank: p.hit.rank, Reason: passedReason(p, primary), Context: p.context, Judgments: p.judged}
 		if p.page != nil && !p.stub {
@@ -351,8 +438,13 @@ func (c *dCall) followed(o Outcome, req sfRequest, site linkedSite, read int, pa
 		}
 		o.PassedOver = append(o.PassedOver, entry)
 	}
-	// The caller named no library: no origin line says one names this site.
-	o.OtherResults, o.Next, o.Origin = today.OtherResults, nil, ""
+	o.OtherResults = unprinted(labelled, o.Read)
+	for _, r := range today.OtherResults {
+		listed := func(x OtherResult) bool { return x.URL == r.URL }
+		if !slices.ContainsFunc(o.OtherResults, listed) && !slices.ContainsFunc(o.Read, func(p PageRead) bool { return p.URL == r.URL }) {
+			o.OtherResults = append(o.OtherResults, r)
+		}
+	}
 	use := c.use
 	o.Decisions = &use
 	if r, ok := questionRelease(req.query); ok && answered(o) {
@@ -363,4 +455,23 @@ func (c *dCall) followed(o Outcome, req sfRequest, site linkedSite, read int, pa
 		}
 	}
 	return o
+}
+
+// followedUnprinted marks a page of the followed site read, labelled
+// documentation and not printed, among the other results.
+const followedUnprinted = "from the followed site, not printed"
+
+// unprinted are the pages of the followed site labelled documentation
+// (tier A or B) that the answer did not print (read), as other results
+// with no rank, so the hint's calls read them.
+func unprinted(labelled []*dPage, read []PageRead) []OtherResult {
+	var out []OtherResult
+	for _, p := range labelled {
+		if p == nil || p.tier != tierA && p.tier != tierB ||
+			slices.ContainsFunc(read, func(r PageRead) bool { return r.URL == p.page.URL }) {
+			continue
+		}
+		out = append(out, OtherResult{Title: firstNonEmpty(p.page.Title, p.page.URL), URL: p.page.URL, Label: p.label, Snippet: followedUnprinted})
+	}
+	return out
 }
