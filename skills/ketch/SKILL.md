@@ -158,7 +158,16 @@ Two rules hold for every answer:
 | `origin: unverified, …` | you named a library and ketch could not confirm this site as its official docs; it may still be | name the site you cite, or ask again with the official docs as `--library` |
 | `defined_in: {term: ref}` | where a term is defined, when that section was not printed | `ketch docs --section <ref>` |
 | `## Not printed` | the other sections of the pages read, with their size; `(+n more: …)` for the rest of a page | `ketch docs --section <url#anchor>` for the one you need |
-| `## Other results` | search hits not read: title, URL, snippet | `ketch scrape <url>` to read one |
+| `## Other results` | search hits not read: title, URL, snippet (with a decision provider, a label after the URL) | `ketch docs --library <url> "<your question>"` to ask one the question; a URL with nothing under it is read as that page |
+| `decisions: <provider>` | the operator set up a decision provider: the top five results were read and labelled, and the provider's ratings chose the passages | read the labels and confidence on `read` and `source:` lines |
+| `decisions: <provider> (budget N tokens, judged X of Y passages)` and `note: decisions judged X of Y passages (…)` | the operator's per-call token cap (`docs_decisions_tokens`) cut what the provider judged; unjudged passages are never printed. You cannot lift it | if the answer falls short, read the section you need with `--section` (Not printed lists them), or ask the operator to raise the cap |
+| `passed_over: <url> (unlabelled, …): read with your cookies: not sent to the decision provider` | the page was read with the operator's `cookie_file` cookies, so it was kept from the provider | ask it with `--library <url>` if you need it (that call never goes to a provider) |
+| `note: decisions are off in the operator's config (docs_decisions)` | the operator turned decisions off; no call can turn them on | read the plain answer; do not retry with `decisions` |
+| `read:` with `(official docs, confidence high, search rank 1)` | the page's label (`official docs`, `docs`, `third-party docs`, `article`, `forum thread`, `reference page`, …) and how strongly it bears on the question; each `source:` line carries the passage's confidence. Not a verdict on the answer. When the question names a release no page read is marked with, nothing is above `medium` | cite `official docs`; name the site when citing `docs` or `third-party docs`; say when a source is an `article` or `forum thread`; at `medium` or `low`, check `next` first |
+| `passed_over: <url> (<label>, search rank N): <reason>` | a top result not printed, and why (`also on the question, not printed`, `weaker source than the page read`, `nothing on the question`, `documents another release`, …) | `also on the question` is a second source: ask it with `--library <url>` if the printed one falls short |
+| `next: <command> (…)` | the call ketch suggests: a better kind of source, a page the search ranked above the one printed, or a cut section with more on the question | run it when the printed text does not settle the question |
+| `read:` with `(official docs, confidence …, linked from N of the pages read)` | no result was the makers' docs, so a docs site the pages read link to was read and printed instead; the search's pages are under `passed_over` | cite it as the makers' docs |
+| `note: … tried <site>, which N of the M pages read link to: <why>` | that linked site was read and not used: not labelled official docs, or not on the question | ask it with `--library <site>` if you need it |
 | `note: no page was printed: …` | the search returned results but no docs page among them, or none could be read (`skipped` says why); the results are listed | pick one under Other results, or pass the docs you mean as `--library` |
 | `scope: <url>` | the answer is from the pages at or under that URL only; `library` is the root | `outside_scope` lists your terms the library holds elsewhere: ask the root for them |
 | `indexed_near: {title: root}` | your `--library` named no indexed library; these indexed ones are near it | if one is what you meant, ask again with its root as `--library` |
@@ -179,7 +188,7 @@ One question about one library or product.
 The docs use other words than the question.
 
 1. Take one thing the last call printed: a heading under Not printed, a name from an `also in this section:` line, a `defined_in` target, another result.
-2. Read that section with `--section` (or that result with `ketch scrape`), or ask again in those words.
+2. Read that section with `--section` (ask that result with `ketch docs --library <url> "<your question>"`, or run a `next:` line), or ask again in those words.
 3. After three calls to one source, stop. Say what you tried and that this source does not cover it.
 
 Every call after the first uses something the last one printed. Do not rephrase blind.
@@ -194,7 +203,9 @@ The question spans products.
 4. Combine. Cite each claim's `source:`. Say what no source covered.
 5. A source you will ask again: propose `ketch docs index <site>` to the operator (CLI only; it writes the local index). It then answers from the index, offline too (`stale: unverified` when the cited pages cannot be checked).
 
-Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` with `page` for the next page, and `docs(resolve=true)` with an optional `query`; the fields are the frontmatter's (`read`, `skipped`, `widened`, `not_on_pages` or `not_in_index`, `origin`, `defined_in` as a list of `{term, section}`, `indexed_near` as `{title, library}`), `results` the groups (a cut one has `truncated` and `contents`), `outline` and `outline_more` the Not printed list, `other_results` the hits not read (read one with the `scrape` tool), and `hint` the line saying what is unread and how to read it. pi's `ketch_docs` takes the same, without `page` and `offline`.
+Over MCP the same calls are `docs(query=…, library=…)`, `docs(section=…)` with `page` for the next page, and `docs(resolve=true)` with an optional `query`; the fields are the frontmatter's (`read`, `skipped`, `widened`, `not_on_pages` or `not_in_index`, `origin`, `defined_in` as a list of `{term, section}`, `indexed_near` as `{title, library}`), `results` the groups (a cut one has `truncated` and `contents`), `outline` and `outline_more` the Not printed list, `other_results` the hits not read (ask one with `docs(library="<url>", query="<your question>")`), and `hint` the line saying what is unread and how to read it. With a decision provider, also `decisions`, `passed_over`, `next`, and on each page and result its label, confidence and the provider's probabilities. pi's `ketch_docs` takes the same, without `page` and `offline`.
+
+Leave `decisions` (CLI `--decisions`) unset: the operator's `docs_decisions` decides, with no key set nothing changes, and the operator's `off` holds whatever you pass. Pass `off` when the user does not want the question and the pages read sent to the provider. A call with `library`, an indexed library or `offline` never reaches a provider.
 
 ## Token budgets
 
@@ -225,7 +236,7 @@ Situations → class: unknown backend, `regexp` on github → `[validation]`. Se
 Detail for each lives in `references/surfaces.md`.
 
 - Scraping a **bare domain** auto-probes `/llms.txt` and may silently return that instead of the homepage — the `title` field reveals the swap; `no_llms_txt` opts out.
-- `docs` (default backend `search`) answers from the library's own docs: ask the question, naming the library (or pass `library`: a name, `name@version`, or a docs URL), and follow **Docs flows**. A question saves nothing: the pages a web search read stay in the page cache for `cache_ttl`, so the same question again prints the same answer with no search; only `ketch docs index <library>` (operator, CLI) adds a library to the local index. `backend: context7` is the curated alternative: resolve the name → **vet the matches** → fetch by `library` ID; Context7's resolve never returns empty, so check the name, not just the trust score, and its keyless quota is small.
+- `docs` (default backend `search`) answers from the library's own docs: ask the question, naming the library (or pass `library`: a name, `name@version`, or a docs URL), and follow **Docs flows**. A question saves nothing: the pages a web search read stay in the page cache for `cache_ttl`, so the same question again prints the same answer with no search (with a decision provider, each call asks it again); only `ketch docs index <library>` (operator, CLI) adds a library to the local index. `backend: context7` is the curated alternative: resolve the name → **vet the matches** → fetch by `library` ID; Context7's resolve never returns empty, so check the name, not just the trust score, and its keyless quota is small.
 - Batch scrape reports per-URL failures inside a successful call: `isError=false` with `results[].error` set. Check every entry.
 - `regexp` works on grepapp and sourcegraph only; github rejects it with a pointer to those backends.
 - Background crawls (`--background`, `status`, `stop`) are CLI-only; the MCP `crawl` is synchronous and capped.

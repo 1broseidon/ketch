@@ -259,6 +259,7 @@ $ ketch docs -b context7 --resolve "next.js"                         # a name �
 | `--section <url#anchor>` | Return one section, with no query and no ranking (see Full sections) |
 | `--page N` | With `--section`: the page of a long section to return (default 1) |
 | `--offline` | Use only the local index, with no network requests; a missing library exits 3 |
+| `--decisions` | `typesafe`, `openai`, `auto` or `off`: the decision provider for a question that names no library, for this call (default: `docs_decisions`; see Decision providers) |
 | `--minimal` | One result per line: URL, library, first line; `note`, `stale` and `not_on_pages` (or `not_in_index`) go to stderr |
 | `--tag <name>` | Bookmark every result URL under a tag |
 
@@ -267,19 +268,22 @@ paths. A question that names a library indexed with `ketch docs index`, in its
 words or with `--library`, answers from the index with no search, in tens of
 milliseconds. Any other question takes the live path: a web search, then the
 first result that is a readable document and up to two more pages of its site,
-within 45 seconds (see Live answers).
+within 45 seconds (see Live answers). With a decision provider's key set, a
+question that names no library reads the top five results instead, and the
+provider labels them and picks the passages (see Decision providers).
 
 A question saves nothing. The pages it read stay in the page cache for
 `cache_ttl` (72h by default). The same question again within that time, with
 the same terms after filler words and the same `--library`, prints the same
-answer with no search and no fetch. Only `ketch docs index` adds libraries or
-pages to the index.
+answer with no search and no fetch. An answer made with a decision provider is
+the exception: each call asks the provider again. Only `ketch docs index` adds
+libraries or pages to the index.
 
 ##### Answers
 
 An answer is a frontmatter that says what was read and what is missing, then
 the docs' own text, verbatim. It carries no verdict: whether the text answers
-the question is for the reader to judge.
+the question is for the reader to judge. With no decision provider configured:
 
 ```console
 $ ketch docs "httpx timeout configuration"
@@ -287,8 +291,7 @@ $ ketch docs "httpx timeout configuration"
 query: httpx timeout configuration
 read:
   - https://www.python-httpx.org/advanced/timeouts/ (search rank 1)
-  - https://www.python-httpx.org/api/ (search rank 2)
-  - https://www.python-httpx.org/quickstart/ (search rank 4)
+  - https://www.python-httpx.org/quickstart/ (search rank 6)
 not_on_pages: []
 ---
 ## Timeouts
@@ -306,27 +309,24 @@ source: https://www.python-httpx.org/advanced/timeouts/
 …
 source: https://www.python-httpx.org/advanced/timeouts/#fine-tuning-the-configuration
 
-## Developer Interface
-https://www.python-httpx.org/api/
-
-### Helper Functions
+## QuickStart
+https://www.python-httpx.org/quickstart/
 …
-### AsyncClient
+### Timeouts
 …
-source: https://www.python-httpx.org/api/#asyncclient (cut, 113 of 1,566 tokens)
+source: https://www.python-httpx.org/quickstart/#timeouts
+…
 
 ## Not printed
-- Proxy — https://www.python-httpx.org/api/#proxy (97 tokens)
-- Timeouts — https://www.python-httpx.org/quickstart/#timeouts (119 tokens)
+- Sending Binary Request Data — https://www.python-httpx.org/quickstart/#sending-binary-request-data (78 tokens)
+- Sending JSON Encoded Data — https://www.python-httpx.org/quickstart/#sending-json-encoded-data (139 tokens)
 …
-(+10 more: ketch docs --section https://www.python-httpx.org/quickstart/)
-(+3 more: ketch docs --section https://www.python-httpx.org/api/)
 
 ## Other results
-- Configure HTTP clients — https://docs.baseten.co/inference/http-client-configuration — Set timeouts By default, httpx raises a timeout after 5 seconds of network inactivity. Many inference requests need more time before the first response data…
+- How to Use httpx for Async HTTP Requests — https://oneuptime.com/blog/post/2026-02-03-python-httpx-async-requests/view — import httpx # Single timeout for everything client = httpx.AsyncClient(timeout=10.0) # Granular timeouts timeout_config = httpx.Timeout( connect=5.0, # Time…
 …
 
-unread until you read it: a cut or unprinted section with ketch docs --section <url#anchor>; another result with ketch scrape <url>
+unread until you read it: a cut or unprinted section with ketch docs --section <url#anchor>; another result with ketch docs --library <url> "<your question>"
 ```
 
 The frontmatter prints these lines, in this order, each only when it applies:
@@ -338,8 +338,10 @@ The frontmatter prints these lines, in this order, each only when it applies:
 | `scope` | The URL below that root the answer is limited to, when `--library` named one |
 | `version` | An indexed library's version. On a live answer, only a `--library` pin that matched, or a release the question names in words (`Vue 2`) that a page read is marked with |
 | `index` | `full, N pages, built <date>` for an indexed library (`capped` when `--max-pages` left pages out) |
-| `read` | The pages read, best first, each with its search rank, or why a page that is no search result was read |
+| `decisions` | The decision provider that labelled the sources, and what the token cap let it judge when the cap cut something (see Decision providers) |
+| `read` | The pages read, best first, each with its search rank, or why a page that is no search result was read. With a decision provider, each also has its label and confidence |
 | `skipped` | Results that could not be read, each with its cause: `not found, HTTP 404`, `blocked, HTTP 403`, `timed out`, `needs JavaScript`, `almost no text`, … |
+| `passed_over` | With a decision provider: the top five results not printed, each with its label and why |
 | `widened` | With `--library` only: `read N more pages of <root> for: <identifiers>` (see Live answers) |
 | `not_on_pages` | The identifiers the question writes (code names, flags, option and host names) on none of the pages read. Only those pages were checked, so it never says the docs lack them. Plain words are not listed: `[]` is the common case |
 | `not_in_index` | For an indexed library, the question's distinctive terms it holds nowhere |
@@ -348,7 +350,8 @@ The frontmatter prints these lines, in this order, each only when it applies:
 | `stale` | `unverified, built <date>` when a cited page could not be checked (see The index) |
 | `defined_in` | `{term: url#anchor}`: for a term that is the first cell of a table row in a section the answer does not print, that section; at most three |
 | `indexed_near` | `{title: root}`: when `--library` named no indexed library, the indexed ones near it; the answer ends with a line saying to pass one as `--library` |
-| `note` | What the fields do not say: that a second search ran, that no page was printed and why, that pages read hold none of the question's terms, a release the question names that no page read is marked with, other indexed versions of the library |
+| `note` | What the fields do not say: that a second search ran, that no page was printed and why, that pages read hold none of the question's terms, a release the question names that no page read is marked with, other indexed versions of the library; with a decision provider, that no page read is the makers' docs, a linked docs site tried, or why the answer was made without the provider |
+| `next` | With a decision provider: the call worth making next, with why |
 
 Distinctive terms are the identifiers the question writes and its rare words.
 On an indexed library a word is rare when it is in under 1% of the library's
@@ -379,8 +382,10 @@ library, of the pages printed from), those holding the question's terms first,
 with their size, in about 200 tokens; `(+n more: …)` gives the call that lists
 the rest of a page. `## Other results` lists up to five search results not
 read. The last line says what is unread and how to read it: text that is cut,
-behind `…` or only listed is unread until `--section` or `ketch scrape` reads
-it.
+behind `…` or only listed is unread until `--section` reads it, and another
+result until `ketch docs --library <url> "<your question>"` asks it the
+question. A `--library` URL with nothing under it, such as a blog post, is
+read as that one page.
 
 ##### Full sections
 
@@ -531,6 +536,187 @@ which says only that: the site may still be official. When only a name ties
 the site to the library, no origin line prints. A question that names no
 library has none; `read` says where its text is from.
 
+##### Decision providers
+
+A decision provider is a model API that labels the sources a search returns
+and picks the passages that answer the question. It is opt-in: with no key
+set, nothing above changes and no model is involved.
+
+```console
+$ ketch config set typesafe_api_key <key>        # or openai_api_key
+$ ketch docs "httpx timeout configuration"       # auto: the provider with a key
+$ ketch docs --decisions off "…"                 # this call without one
+$ ketch config set docs_decisions off            # every call without one
+```
+
+`docs_decisions` (`KETCH_DOCS_DECISIONS`) is `auto` (the default), `off`, or a
+provider: `typesafe` (TypeSafe's System One API, model `jev-1.14.0`) or
+`openai` (OpenAI's Decisions API, model `gpt-6-luna`). `auto` uses TypeSafe
+when its key is set, else OpenAI when its key is set, else none.
+`--decisions`, and `decisions` on the MCP and pi `docs` tools, choose for one
+call, except that the operator's `off` (in the file or `KETCH_DOCS_DECISIONS`)
+is final: a call asking for a provider then gets the plain answer and
+`note: decisions are off in the operator's config (docs_decisions)`. A
+per-call `off` always works. An unknown value exits 2. A provider named
+without its key answers without it, and the note says which key to set.
+
+Only a question that names no library goes to a provider. `--library`, an
+indexed library (named, or one of the top five results on an indexed site),
+`--offline`, and a `name@version` that resolve confirms are answered as
+described above, and nothing is sent. Nor is a page read with your
+`cookie_file` cookies: it gets no label, and its `passed_over` line says
+`(unlabelled, search rank N): read with your cookies: not sent to the decision provider`.
+When every page read was, the answer is the plain one with
+`note: decisions unavailable: every page read was read with your cookies, and none is sent to the decision provider; answered without them`.
+
+With a provider, the search runs as above, then its top five results are read
+at once (a result that is no document by its address is not read). Each page
+read goes to the provider with the question: its address, title, headings and
+up to about 8,000 tokens of its text. The provider gives probabilities: is the
+page documentation, is it from the makers of what the question asks about,
+does the question name a release, does the page document another one, and
+which kind of page it is. Then each passage of the first three readable pages,
+and of the other documentation pages, is asked whether it helps answer the
+question. The results after the top five are labelled from their title,
+address and snippet. ketch reads every probability against the provider's
+cut-offs (both providers: `low` 0.3, `high` 0.7, `official` 0.8, `very_high`
+0.9) and decides by its own rules:
+
+- **Labels.** Documentation is `official docs` (makers at or above `official`),
+  `third-party docs` (makers at or below `low`) or `docs`. Any other page is
+  its kind: `reference page`, `guide`, `article`, `forum thread`,
+  `discussion`, `source code`, `marketing page` or `other`, as
+  `official <kind>` when it is the makers'. `, other release` is added when
+  the question names a release and the page documents another.
+- **What prints.** The page printed first is one with a passage rated `high`
+  on the question, else `medium`. Among those, official docs come first
+  (unless they rank below third and other docs rank above them), then other
+  docs, then any other page, each by search rank. Its passages print best
+  first within `--tokens`, then strong passages of other pages while room is
+  left.
+- **Confidence.** On a `read` line, the lower of the label's band (official
+  docs `high`, docs and third-party docs `medium`, any other page `low`) and
+  the page's best passage; on a `source:` line, the lower of the label's band
+  and that passage's rating. When the question names a release that no page
+  read is marked with, nothing is above `medium`: that release check is
+  ketch's own, as above.
+- **`passed_over`.** `also on the question, not printed`, `weaker source than
+  the page read`, `nothing on the question`, `documents another release`,
+  `same page as the one read`, `not needed`, `almost empty`, `not a document
+  by its address`, `read with your cookies: not sent to the decision
+  provider`, `not labelled: the decisions budget was spent`, or why the page
+  could not be read.
+- **`next`.** `ketch docs --library <url> "<your question>"` for a better kind
+  of source (read and not printed, or a result not read labelled official
+  docs) or for a page on the question that the search ranked above the one
+  printed; `ketch docs --section <url#anchor>` for a cut section with more on
+  the question.
+- **Notes.** `no result read is documentation from the makers or a reference;
+  the page read is an article`; `the question names a release; the page read
+  documents another one`; `no page read has a passage on the question; printed
+  the first readable result, as the search ranks it`.
+
+```console
+$ ketch docs "sqlite WAL mode checkpoint starvation"
+---
+query: sqlite WAL mode checkpoint starvation
+decisions: typesafe
+read:
+  - https://sqlite.org/wal.html?trk=public_post_comment-text (official docs, confidence high, search rank 2)
+passed_over:
+  - https://motitory.com/blog/sqlite-wal-checkpoint (article, search rank 1): also on the question, not printed
+  - https://dev.to/nobody_4fb7fd10637d3b88a3/why-your-sqlite-wal-file-never-shrinks-304f (article, search rank 3): also on the question, not printed
+  - https://zylos.ai/research/2026-10-16-sqlite-wal-reader-lifetimes/ (article, search rank 4): weaker source than the page read
+  - https://sqlite.org/wal.html (official docs, search rank 5): same page as the one read
+not_on_pages: []
+next:
+  - ketch docs --library https://motitory.com/blog/sqlite-wal-checkpoint "<your question>" (article, search rank 1, ranked above the page read, also on the question)
+---
+## 1. Overview
+https://sqlite.org/wal.html?trk=public_post_comment-text (official docs)
+
+### 6. Avoiding Excessively Large WAL Files
+…
+source: https://sqlite.org/wal.html?trk=public_post_comment-text#avoiding_excessively_large_wal_files (confidence high)
+…
+## Other results
+- light/sqlite relay stalls under WAL checkpoint starvation (Socket… — https://github.com/happier-dev/happier/issues/189 (discussion) — …
+- Why a long reader keeps SQLite WAL files growing - mubibai.com — https://mubibai.com/sqlite-wal-long-readers/ (article) — …
+…
+```
+
+**A linked docs site.** When the page printed is not documentation, ketch
+looks at the links on the pages read. A docs site linked from pages of two or
+more of the sites read is read as `--library` reads a docs URL, and labelled.
+It answers only when the provider labels a page of it official docs with a
+passage rated `high` on the question: its `read` lines say
+`linked from N of the pages read`, the search's pages move to `passed_over`,
+and its other documentation pages read are listed under Other results as
+`from the followed site, not printed`. Otherwise the answer is unchanged and
+the note says `tried <site>, which N of the M pages read link to: <why>`. On
+Hugging Face a link counts toward its owner's repository, never the host; code
+forges, registries, social and video sites are never followed. This is new
+and narrow: in testing it changed the answer on a minority of questions.
+
+**Failures.** Any provider error, refusal or timeout (25 seconds for a call's
+decisions) gives the answer as it would be without a provider, with
+`note: decisions unavailable: <why>; answered without them`. Rate-limit and
+overload statuses are retried within that time.
+
+**Token cap.** One call sends the provider at most `docs_decisions_tokens`
+input tokens: 80,000 unless set, a positive integer, or `unlimited`
+(`KETCH_DOCS_DECISIONS_TOKENS`; `0` or a word exits 2). There is no flag or
+tool parameter for it, so an agent cannot lift it. ketch counts the cap with
+its own estimate before each request; `decisions.input_tokens` is the
+provider's count afterwards. When everything fits, the cap changes nothing.
+When it does not:
+
+1. The results after the top five are labelled first, if their one request
+   fits; otherwise they stay unlabelled.
+2. Pages are labelled in search order while they fit; a page that does not
+   fit, and every page after it, is `unlabelled`
+   (`not labelled: the decisions budget was spent`).
+3. The pages due a passage pass share what is left: each gets an equal share,
+   and a page that needs less gives the rest to the others. Within a page the
+   passages that best match the question's words go first, each whole or not
+   at all.
+4. When no page read is documentation and a linked docs site qualifies, that
+   site is judged before the articles' passages.
+
+A passage that was not judged is never printed; read its section with
+`--section`. A cut call says what it judged:
+
+```console
+$ ketch docs "how do I write a custom lint rule for biome"
+---
+query: how do I write a custom lint rule for biome
+decisions: typesafe (budget 80000 tokens, judged 179 of 232 passages)
+read:
+  - https://biomejs.dev/reference/configuration/ (official docs, confidence high, search rank 3)
+passed_over:
+  - https://github.com/biomejs/biome/blob/main/.claude/skills/lint-rule-development/SKILL.md (search rank 1): not found, HTTP 404
+  - https://github.com/biomejs/biome/blob/main/crates/biome_analyze/CONTRIBUTING.md (search rank 2): failed, HTTP 503
+  - https://biomejs.dev/linter/ (official docs, search rank 4): not needed
+  - https://deepwiki.com/biomejs/biome/3.2-rule-configuration-and-options (search rank 5): blocked, HTTP 429
+not_on_pages: []
+note: decisions judged 179 of 232 passages (budget 80000 tokens; ketch config set docs_decisions_tokens to raise it)
+---
+…
+```
+
+The `decisions` line also says `labelled N of M pages` when pages went
+unlabelled, and the note `did not label the other results` when those were
+cut. `--json` carries it as `decisions.budget`:
+
+```console
+$ ketch docs --json "how do I write a custom lint rule for biome" | jq -c '.decisions'
+{"provider":"typesafe","model":"jev-1.14.0","requests":6,"input_tokens":61337,"cutoffs":{"low":0.3,"high":0.7,"official":0.8,"very_high":0.9},"budget":{"tokens":80000,"judged_passages":179,"passages":232,"labelled_pages":2,"pages":2}}
+```
+
+A call the cap did not cut has no `budget`. A cap too small for one page's
+labels answers without decisions:
+`note: decisions unavailable: the decisions budget is smaller than one page's labels (1000 tokens); answered without them`.
+
 ##### The index
 
 ```console
@@ -678,7 +864,7 @@ names the cause.
 | 2 | `ambiguous` | A `--library` name several libraries share, or one resolve knows whose search found no docs site: each library is listed |
 | 2 | `context7_id` | `--library /org/repo` without `-b context7` |
 | 2 | `invalid_section`, `invalid_page` | A malformed `--section` reference, or `--page` past the last page |
-| 2 | | `--page` without `--section`; `--section` with `-b context7` or `--resolve`; `--tag` with `--resolve`; `--offline` with `-b context7` |
+| 2 | | `--page` without `--section`; `--section` with `-b context7` or `--resolve`; `--tag` with `--resolve`; `--offline` with `-b context7`; an unknown `--decisions` value |
 | 3 | `search_empty` | No search returned results: for a question that names no library, neither its own search nor the second |
 | 3 | `not_found` | A `--library` pin resolve cannot confirm, or whose docs cannot be read; an unknown `--section` page or anchor; `--resolve` or `docs index` with a name nothing verifies |
 | 3 | `not_indexed` | `--offline` with no indexed library for the question; `--resolve` with no name and nothing indexed, or a name of several words no indexed library matches |
@@ -713,11 +899,31 @@ and `same_text`, and a cut one `truncated`, `shown_tokens` and
 `section_tokens`. A section fetch's result adds `page`, `pages` and `next`.
 `backend` is present only for Context7.
 
+An answer made with a decision provider adds `decisions`, `passed_over` and
+`next`, and the probabilities behind every label:
+
+```console
+$ ketch docs --json "httpx timeout configuration" | jq -c '.decisions, .read[0]'
+{"provider":"typesafe","model":"jev-1.14.0","requests":11,"input_tokens":43045,"cutoffs":{"low":0.3,"high":0.7,"official":0.8,"very_high":0.9}}
+{"url":"https://www.python-httpx.org/advanced/timeouts/","rank":1,"label":"official docs","confidence":"high","tier":"A","context":"high","judgments":{"documentation":0.98,"makers":0.96,"names_release":0.05,"other_release":0.05,"kind":"reference_documentation","kind_probability":0.59,"passages":5,"top_passages":[0.97,0.97,0.96,0.95,0.95]}}
+```
+
+`decisions` gains `budget`, `{tokens, judged_passages, passages,
+labelled_pages, pages}`, when the token cap cut something. `read` entries add
+`label`, `confidence`, `tier` (`A` official docs, `B` docs
+and third-party docs, `C` the rest), `context` (the page's best passage:
+`high`, `medium`, `low`) and `judgments`; `passed_over` is a list of
+`{url, rank, label, tier, context, reason, judgments}`, `next` of
+`{command, why, library, section, label, rank, read}`. Each result adds
+`source_label`, `confidence` and `probability`; each other result `label` and
+`judgments` (`{makers, kind, kind_probability}`).
+
 The MCP `docs` tool takes `query`, `backend`, `library`, `tokens`, `limit`,
-`resolve`, `section`, `page`, `offline` and `tag`, and returns the same fields
-with `matches` for `resolve`, and `warnings`. Its `hint` gives the
-`docs(section="…")` and `scrape(url="…")` calls, and for a section fetch the
-call for the next page. Every answer is a result; every refusal or failure is a
+`resolve`, `section`, `page`, `offline`, `tag` and `decisions`, and returns the
+same fields with `matches` for `resolve`, and `warnings`. Its `hint` gives the
+`docs(section="…")` and `docs(library="<url>", query="<your question>")`
+calls, and for a section fetch the call for the next page. Every answer is a
+result; every refusal or failure is a
 tool error carrying its exit code's prefix.
 
 #### scrape — URL(s) → clean markdown
@@ -919,7 +1125,8 @@ reports the quota the last real Context7 response left (`~187 of 200 left as of
 …, resets …`, or `quota not yet seen`), kept in a small file in ketch's cache
 directory, so running doctor never spends the anonymous quota. A spent keyless
 quota is `no_key`, since a key is the fix. With a key, doctor probes Context7 as
-before.
+before. Each decision provider has a `decision` row, `no_key` until its key is
+set.
 Exits **0** when healthy and **5** when a configured surface is broken — so it
 works in CI.
 
@@ -1011,7 +1218,8 @@ $ ketch scrape <url> --cookie-file ""          # disable for one run
 
 Only cookies whose domain, path, and secure scope match are sent, re-evaluated
 on every redirect. Values are never printed — not in output, JSON, errors, or
-doctor. Respecting a site's terms and using only your own session cookies is
+doctor. A page `ketch docs` read with them is never sent to a decision
+provider. Respecting a site's terms and using only your own session cookies is
 the operator's responsibility.
 
 ### Exit-code branching in scripts
@@ -1184,6 +1392,25 @@ call that names it (`-b context7`, MCP `backend: "context7"`). The
 old default) is left in the file and ignored, and `ketch config set
 docs_backend` exits 2 saying so.
 
+#### Decision providers — typesafe, openai
+
+```console
+$ ketch config set typesafe_api_key <key>     # https://console.typesafe.ai
+$ ketch config set openai_api_key <key>       # https://platform.openai.com/api-keys
+$ ketch config set docs_decisions off         # keys kept, no call asks a provider
+$ ketch config set docs_decisions_tokens unlimited   # lift the per-call cap (80000)
+```
+
+Optional, and used only by `ketch docs` for a question that names no library
+(see Decision providers under docs). Setting a key turns it on:
+`docs_decisions` is `auto` by default, which uses TypeSafe when its key is set,
+else OpenAI. The keys can also come from `KETCH_TYPESAFE_API_KEY` and
+`KETCH_OPENAI_API_KEY`; `ketch config` shows `typesafe_api_key_set` and
+`openai_api_key_set`, never the key. `ketch doctor` gives each a `decision`
+row: `no_key` without its key, otherwise a check of the key against the
+provider's model list, which asks for no decision. A provider with a key set,
+or named by `docs_decisions`, fails doctor when broken.
+
 ## Configuration
 
 Defaults live in `~/.config/ketch/config.json`.
@@ -1251,6 +1478,8 @@ $ ketch browser status
 - `search_order` — the `auto` chain, exactly: backend IDs tried in this order; unset keeps the default (see Backends)
 - `external_pdf_to_md_converter_command` — external PDF-to-Markdown converter; must contain exactly one `{input}` placeholder. Once set it is authoritative, with no silent fallback
 - `http_headers` — headers for self-hosted SearXNG, Firecrawl, Degoog, and Sourcegraph instances, keyed by origin (see Self-hosted under Backends); values are secrets
+- `docs_decisions` — `auto` (default), `off`, `typesafe` or `openai`: the decision provider `ketch docs` asks; `off` holds against any per-call value (see Decision providers under Backends)
+- `docs_decisions_tokens` — the input tokens one `ketch docs` call may send to its decision provider: a positive integer, or `unlimited`; 80000 unless set (see Token cap under docs)
 
 ## Exit status
 

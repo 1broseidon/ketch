@@ -12,7 +12,7 @@ One `ketch docs` call at the default budget ends one of two ways:
 
 Anything else is a failure, however relevant the sections look. The measure is the path: calls to the answer.
 
-One call is the target, not a promise. The caller is the smart part: when the question's words are not the docs' words, the first call must give it what it needs to make the second call exact (the Contents line, `not_found`), and that counts as doing the job. No model is added to close that gap (decided 2026-11-10).
+One call is the target, not a promise. The caller is the smart part: when the question's words are not the docs' words, the first call must give it what it needs to make the second call exact (the Contents line, `not_found`), and that counts as doing the job. No model is added to close that gap (decided 2026-11-10; amended 2026-11-17, see Final shape, Decision providers).
 
 A call answers from one source. A caller who gets the right lines in one call can spend three calls on three sources (Duo's docs, linux-pam's, SSSD's) and combine them. So every call must be self-contained, cheap to read, and clear about what this source does not say.
 
@@ -51,7 +51,7 @@ Nothing told the caller that two of the question's terms appear nowhere in the s
 
 - Nothing ships until the gate passes (decided 2026-11-10).
 - Pieces are made in memory at query time. No schema change, no reindex.
-- No model. FTS5 and plain rules, as in ADR-0007 amendment 7.
+- No model. FTS5 and plain rules, as in ADR-0007 amendment 7. (Amended 2026-11-17: unless the operator sets a decision-provider key; see Final shape, Decision providers.)
 - One pipeline. A question answered from an index and one answered from pages just read differ only in Gather.
 - One view. The section view (no budget) and the compact view (a budget) become one output, at a default budget of 1,800 tokens. `--section` still returns a section whole.
 - Rules are general. No rule names a site, a product or a layout seen in one case.
@@ -1189,6 +1189,14 @@ The Markdown pages that won before are still read, including `MicrosoftDocs/*.md
 
 - **The shortened second query on Firecrawl.** (b1) and (b2) were never recorded there, because Firecrawl rate-limited every query.
 - **Release-note misfires on unmarked pages:** Next.js 16, TanStack Query v5, Polly v8 and GA4 (above).
+
+#### Decision providers
+
+Amended on 2026-11-17. ketch applies no model to search results unless the operator sets a decision-provider key (TypeSafe or OpenAI). With no key, or `docs_decisions` `off`, every answer is as this document describes.
+
+- **What the provider decides.** Nothing on its own: it returns probabilities for fixed questions, worded in `docs/decide_words.go`. For each page read: is it documentation, is it the makers' own, does the question name a release, does the page document another one, what kind of page is it. For each passage: does it help answer the question. For each result not read: is it the makers', what kind is it.
+- **What stays ketch's.** Every decision is code reading those probabilities against the provider's cut-offs: the labels and tiers, the page printed first, the passages that fit the budget, the confidence words, the `passed_over` reasons, `next`, whether a linked docs site is followed and printed, and under the token cap what is sent at all (page labels first, then each page's best word-matching passages). The release check (`markRelease`, its note, and confidence capped at `medium`) is ketch's own rule, as are the budget, the clip and the output.
+- **The boundary.** Opt-in by key, and only for a question that names no library. An operator's `docs_decisions off` holds against any per-call value. `--library`, an indexed library and `--offline` never reach a provider, so nothing in a private index is sent, and no page read with `cookie_file` cookies is sent either. One call sends at most `docs_decisions_tokens` input tokens (80,000 unless set; the operator's to raise). Any provider error answers as without it, with a note. No verdict is added: labels and confidence describe sources and passages, not whether the text answers the question.
 
 ## Storage
 

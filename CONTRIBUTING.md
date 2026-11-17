@@ -27,9 +27,12 @@ acceptance.
 
 ## Implementing a provider
 
-Follow the [provider guide](AGENTS.md#adding-a-provider). Keep the implementation,
-descriptor, and health probe together, add tests, and register the descriptor
-in `registry.go`.
+Follow the [provider guide](AGENTS.md#adding-a-provider). A decision provider
+(`decide/`) answers `ketch docs`' yes/no and multiple-choice questions with
+probabilities when the operator sets its key; its guide is
+[Decision providers](AGENTS.md#decision-providers). Keep the implementation,
+descriptor, and health probe together in one file, add tests, and register the
+descriptor in its package's `registry.go`.
 
 Shared production code must remain independent of provider names. Fixture
 updates should only add the provider's entries. Include its README and site

@@ -273,6 +273,33 @@ Every command supports `-h/--help` for its full flag list; `--json` is the only 
 | `code` | `grepapp` | `sourcegraph`, `github` | Grep and Sourcegraph need nothing; GitHub uses `gh auth login`, `$GITHUB_TOKEN`, or `ketch config set github_token <tok>` |
 | `docs` | `search` | `context7` | Nothing — `search` searches the web through the `search` surface's providers, and `ketch docs index <library\|url>` indexes a whole site for offline answers; resolving a library name asks GitHub about its repository, and the GitHub token above lifts the unauthenticated rate limit. Context7 works with no key on its anonymous quota, about 200 requests a month per IP (a search spends two; `ketch doctor` shows what was left at the last response without spending any), and a free key lifts it: `ketch config set context7_api_key <key>`; Context7 answers a call that names it (`-b context7`), and the `docs_backend` key is retired |
 
+### Decision providers
+
+`ketch docs` uses no model unless you set a decision provider's key. With a
+TypeSafe or OpenAI key, a question that names no library reads the search's
+top five results and sends each page's text, with the question, to that
+provider. The provider rates each page and passage; ketch labels each source
+(`official docs`, `docs`, `third-party docs`, `article`, …) with a confidence,
+and prints the passages rated on the question. `--library`, indexed and
+`--offline` answers never go to a provider, and neither does a page read with
+your `cookie_file` cookies. If the provider fails, the answer is made without
+it and the note says why.
+
+```sh
+ketch config set typesafe_api_key <key>            # or openai_api_key: on for every plain question
+ketch docs --decisions off "question"              # off for one call
+ketch config set docs_decisions off                # off for every call; no call turns it back on
+ketch config set docs_decisions_tokens unlimited   # lift the per-call cap
+```
+
+One call sends at most `docs_decisions_tokens` input tokens to the provider,
+80,000 unless set. Only the operator can raise it; a call it cut says how many
+passages were judged.
+
+Labels, confidence, `passed_over`, `next` and the JSON fields are in the
+[command reference](https://ketch.run/#commands). What is sent where is in
+[PRIVACY.md](./PRIVACY.md).
+
 ## Why it works well for agents
 
 - **Stateless, single binary.** No daemon, no server to keep alive — call, get a result, exit.
@@ -315,7 +342,7 @@ Precedence is **CLI flag > `KETCH_*` env > config file > built-in default**. Not
 - A config file that isn't valid JSON or has a wrong type for a key (e.g. `"limit": "5"`) fails the same way (exit 2), naming the key and the type it needs; `ketch config set` refuses to overwrite it, so fix it by hand. None of the file is applied until it decodes.
 - Secret `KETCH_*` vars are stripped from the environment of spawned subprocesses (headless browser, external PDF converter).
 
-Other configurable keys include per-backend API keys (`brave_api_key`, `brave_api_keys` for multi-key rotation, `exa_api_key`, `firecrawl_api_key`, `keenable_api_key`, `parallel_api_key`, `tavily_api_key`, `tinyfish_api_key`, `serpbase_api_key`, `serply_api_key`, `youcom_api_key`, `context7_api_key`, `github_token`), `firecrawl_url` / `sourcegraph_url` / `degoog_url` (self-hosted overrides), `http_headers` (per-origin headers, such as a Cloudflare Access service token, for self-hosted SearXNG, Firecrawl, Degoog, and Sourcegraph instances), `cache_ttl`, `url_rewrites` (regex rewrite rules applied before fetch), `spa_markers` (extra JS-shell detection tokens), `cookie_file` (see below), `user_agent` (User-Agent override for HTTP and browser fetches; setting one scopes cached pages to it, so entries cached under the default stay valid), `extract_mode` (`clean` by default, or `complete`; see [extraction](#extraction) — a non-default mode scopes cached pages the same way), and the optional external PDF converter command/timeout. Multiple keys per provider are picked randomly per request to spread rate limits. See the [config reference](https://ketch.run/) for the full list.
+Other configurable keys include per-backend API keys (`brave_api_key`, `brave_api_keys` for multi-key rotation, `exa_api_key`, `firecrawl_api_key`, `keenable_api_key`, `parallel_api_key`, `tavily_api_key`, `tinyfish_api_key`, `serpbase_api_key`, `serply_api_key`, `youcom_api_key`, `context7_api_key`, `github_token`), the docs decision providers' keys (`typesafe_api_key`, `openai_api_key`), `docs_decisions` (`auto`, `off`, or a provider) and `docs_decisions_tokens` (the per-call cap), `firecrawl_url` / `sourcegraph_url` / `degoog_url` (self-hosted overrides), `http_headers` (per-origin headers, such as a Cloudflare Access service token, for self-hosted SearXNG, Firecrawl, Degoog, and Sourcegraph instances), `cache_ttl`, `url_rewrites` (regex rewrite rules applied before fetch), `spa_markers` (extra JS-shell detection tokens), `cookie_file` (see below), `user_agent` (User-Agent override for HTTP and browser fetches; setting one scopes cached pages to it, so entries cached under the default stay valid), `extract_mode` (`clean` by default, or `complete`; see [extraction](#extraction) — a non-default mode scopes cached pages the same way), and the optional external PDF converter command/timeout. Multiple keys per provider are picked randomly per request to spread rate limits. See the [config reference](https://ketch.run/) for the full list.
 
 ### Cookies (BYO cookies.txt)
 

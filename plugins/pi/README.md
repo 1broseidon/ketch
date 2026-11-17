@@ -60,14 +60,18 @@ per-call options of the MCP tools in [`mcp/`](../../mcp/), except that
 | --- | --- | --- |
 | `ketch_search` | `ketch search` | `query`, `backend`, `multi`, `random`, `limit`, `searxng_url`, `scrape`, `trim`, `max_chars`, `tag` |
 | `ketch_code` | `ketch code` | `query`, `backend`, `lang`, `repo`, `regexp`, `limit`, `tag` |
-| `ketch_docs` | `ketch docs` | `query`, `backend`, `library`, `section`, `tokens`, `limit`, `resolve`, `tag` |
+| `ketch_docs` | `ketch docs` | `query`, `backend`, `library`, `section`, `tokens`, `limit`, `resolve`, `tag`, `decisions` |
 | `ketch_scrape` | `ketch scrape` | `url` or `urls`, `selector`, `raw`, `force_browser`, `no_llms_txt`, `trim`, `max_chars`, `no_cache`, `concurrency`, `tag` |
 | `ketch_crawl` | `ketch crawl` | `url`, `depth`, `sitemap`, `allow`, `deny`, `max_pages`, `max_chars`, `no_cache`, `tag` |
 | `ketch_tag` | `ketch tag …` | `operation` (add/show/list/remove), `tag`, `urls`, `limit` |
 
 Config-level settings — API keys, cache TTL, browser binary, cookies, User-Agent
 — are not tool params, exactly as over MCP. The operator sets them once with
-`ketch config set`; the agent consumes them.
+`ketch config set`; the agent consumes them. So it is with `ketch_docs`'
+decision provider: `decisions` picks one per call, but an operator's
+`docs_decisions off` holds against it, the per-call token cap
+(`docs_decisions_tokens`) has no parameter, and a page read with the
+operator's cookies is never sent to the provider.
 
 **Command** — `/ketch-doctor` runs `ketch doctor` and shows the report as a
 notification. Operator actions (`config`, `cache`, `browser install`,
@@ -77,7 +81,8 @@ background crawls) stay CLI-only, same as the MCP server.
 
 On pi 1.3.0, all six tools use compact call and result cards rather than a raw
 JSON dump. Search shows titles, domains and snippets; scrape shows page titles,
-URLs and a short content preview; code/docs retain repository or library context.
+URLs and a short content preview; code shows the repository, docs the page and
+section each result came from (a Context7 result its library ID).
 Crawl reports page counts, errors and stop reasons; tags show counts and write
 confirmations. Warnings and per-page failures remain visible. Previews show at
 most four entries, with bounded one-line snippets.

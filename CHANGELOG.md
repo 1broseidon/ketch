@@ -21,8 +21,7 @@ $ ketch docs "httpx timeout configuration"
 query: httpx timeout configuration
 read:
   - https://www.python-httpx.org/advanced/timeouts/ (search rank 1)
-  - https://www.python-httpx.org/api/ (search rank 2)
-  - https://www.python-httpx.org/quickstart/ (search rank 4)
+  - https://www.python-httpx.org/quickstart/ (search rank 6)
 not_on_pages: []
 ---
 ## Timeouts
@@ -31,16 +30,63 @@ https://www.python-httpx.org/advanced/timeouts/
 HTTPX is careful to enforce timeouts everywhere by default.
 …
 ## Not printed
-- Proxy — https://www.python-httpx.org/api/#proxy (97 tokens)
+- Sending Binary Request Data — https://www.python-httpx.org/quickstart/#sending-binary-request-data (78 tokens)
 …
 ## Other results
-- Configure HTTP clients — https://docs.baseten.co/inference/http-client-configuration — …
+- How to Use httpx for Async HTTP Requests — https://oneuptime.com/blog/post/2026-02-03-python-httpx-async-requests/view — …
 …
 
-unread until you read it: a cut or unprinted section with ketch docs --section <url#anchor>; another result with ketch scrape <url>
+unread until you read it: a cut or unprinted section with ketch docs --section <url#anchor>; another result with ketch docs --library <url> "<your question>"
 ````
 
-`read` lists the pages with their search rank, `skipped` the results that could not be read and why, `widened` the pages read for a missing identifier. `not_on_pages` names the identifiers the question writes that are on none of the pages read (only those pages were checked); an indexed library says `not_in_index`. `origin` prints only for a library you named. After the docs' text, `## Not printed` lists the other sections of the pages read with the call that reads each, and `## Other results` the search results not read. `--json` and the MCP `docs` tool carry the same fields.
+`read` lists the pages with their search rank, `skipped` the results that could not be read and why, `widened` the pages read for a missing identifier. `not_on_pages` names the identifiers the question writes that are on none of the pages read (only those pages were checked); an indexed library says `not_in_index`. `origin` prints only for a library you named. After the docs' text, `## Not printed` lists the other sections of the pages read with the call that reads each, and `## Other results` the search results not read. The last line gives the call for each: `ketch docs --section <url#anchor>` for a section, `ketch docs --library <url> "<your question>"` for another result. `--json` and the MCP `docs` tool carry the same fields.
+
+**Decision providers, opt-in by key.** Set a TypeSafe or OpenAI key (`ketch config set typesafe_api_key <key>`, or `openai_api_key`) and a question that names no library reads the search's top five results and sends each, with the question, to that provider. The provider returns probabilities for a fixed set of questions: whether a page is documentation, whether it comes from the makers of what the question asks about, whether it documents another release than the one the question names, what kind of page it is, and whether each passage helps answer the question. ketch's own rules turn those probabilities into the answer. Each page read gets a label (`official docs`, `docs`, `third-party docs`, `article`, `forum thread`, …) and a confidence (`high`, `medium`, `low`). The passages printed are the ones the provider rates highest on the question, the best page's first, within the same 4,000-token budget. `passed_over` lists the top results not printed, each with its reason (`also on the question, not printed`, `weaker source than the page read`, `nothing on the question`, `documents another release`, `not a document by its address`, …). `next` names a call worth making: a better kind of source, or a page the search ranked above the one read that is also on the question. Other results carry a label too. Labels and confidence say what each source is and how strongly its passages bear on the question. They are not a verdict: whether the text answers the question is still yours to judge.
+
+````console
+$ ketch docs "httpx timeout configuration"
+---
+query: httpx timeout configuration
+decisions: typesafe
+read:
+  - https://www.python-httpx.org/advanced/timeouts/ (official docs, confidence high, search rank 1)
+  - https://pydantic.dev/docs/httpx2/advanced/timeouts/ (docs, confidence medium, search rank 5)
+passed_over:
+  - https://github.com/encode/httpx/blob/master/docs/advanced/timeouts (official docs, search rank 2): also on the question, not printed
+  - https://oneuptime.com/blog/post/2026-02-03-python-httpx-async-requests/view (article, search rank 3): also on the question, not printed
+  - https://www.mkdocs.io/encode/httpx/advanced/timeouts/ (docs, search rank 4): also on the question, not printed
+not_on_pages: []
+---
+## Timeouts
+https://www.python-httpx.org/advanced/timeouts/ (official docs)
+
+### Setting a default timeout on a client
+…
+source: https://www.python-httpx.org/advanced/timeouts/#setting-a-default-timeout-on-a-client (confidence high)
+…
+## Other results
+- QuickStart - HTTPX — https://www.python-httpx.org/quickstart/ (official docs) — …
+- Configure HTTP clients - Baseten — https://docs.baseten.co/inference/http-client-configuration (third-party docs) — …
+…
+````
+
+`--decisions` chooses per call (`typesafe`, `openai`, `auto` or `off`), the `docs_decisions` config key for every call (`auto`, the default, uses a provider that has a key; `off` never asks one), and the MCP and pi `docs` tools take `decisions`. With no key set, `ketch docs` works exactly as described above. An operator's `docs_decisions off` is final: a call that asks for a provider gets the plain answer and the note `decisions are off in the operator's config (docs_decisions)`. `--library`, an indexed library, `--offline` and a `name@version` that resolve confirms never go to a provider. Nor does a page read with your `cookie_file` cookies: it stays `unlabelled` under `passed_over`, with the reason `read with your cookies: not sent to the decision provider`. Any provider error, refusal or timeout gives the answer without decisions, with a note such as `decisions unavailable: …; answered without them`. An answer made with a provider is never replayed from an earlier call: each call asks again. `--json` and MCP add the `decisions` block (`provider`, `model`, `requests`, `input_tokens`, `cutoffs`, and `budget` when the cap below cut something) and, for each page, passage and result, the probabilities behind its label. `ketch doctor` checks each provider's key against its model list.
+
+**A token cap per call.** One call sends the provider at most `docs_decisions_tokens` input tokens: 80,000 unless set, a positive integer, or `unlimited`. It is a config key (`KETCH_DOCS_DECISIONS_TOKENS`) with no flag or tool parameter, so only the operator can raise it. Under the cap the pages are labelled first, then their passages are judged, those that best match the question's words first, the pages sharing what is left; when no result is the makers' docs and a linked site qualifies, that site is judged before the articles' passages. A passage that was not judged is not printed. A call the cap cut says so:
+
+````console
+$ ketch docs "how do I write a custom lint rule for biome"
+---
+query: how do I write a custom lint rule for biome
+decisions: typesafe (budget 80000 tokens, judged 179 of 232 passages)
+…
+note: decisions judged 179 of 232 passages (budget 80000 tokens; ketch config set docs_decisions_tokens to raise it)
+---
+````
+
+`--json` carries the same as `decisions.budget` (`tokens`, `judged_passages`, `passages`, `labelled_pages`, `pages`); a call the cap did not cut prints none of it. On ten questions of ours, uncapped calls sent 24,000 to 201,000 input tokens, 68,000 at the median; at 80,000 the largest sent 71,000.
+
+**Following links to the makers' docs.** With a decision provider, when the page printed is not documentation (the note then says no result read is documentation from the makers), a docs site linked from pages of two or more of the sites read is read for the question. Its pages are printed only when the provider labels one official docs and rates it on the question at the high cut-off; their `read` lines say `linked from N of the pages read`. Otherwise the answer is unchanged and the note names the site tried and why it was not used. On Hugging Face a link counts toward one owner's repository, never the host, and code forges are not followed. This is new and narrow: in testing it changed the answer on a minority of questions.
 
 **Search results are read as `ketch scrape` reads them.** ketch no longer consults `robots.txt` for the pages a search returned, as `ketch scrape` does not for a page you name. Widening with `--library`, a site's page lists and `ketch docs index` honour it as before.
 
@@ -49,6 +95,8 @@ unread until you read it: a cut or unprinted section with ketch docs --section <
 **Fixed** `ketch search` with Exa showing `Published: N/A` as a result's description. Exa's metadata line is no longer taken for the description, in `ketch search` and in docs' Other results.
 
 **Fixed** a redirect stub answering a docs question. A page of a few words that says it redirects and carries a meta refresh (rustdoc's `Redirecting to …`) is now read where it sends its reader. A skipped page names its cause (`DNS lookup failed`, `connection failed`, `TLS certificate rejected`, `timed out`) instead of `failed`.
+
+**Fixed** `--library` with the address of a single page that has nothing under it, such as a blog post. 0.21.1 exited 3 (`found no page of … to read`); the page is now read, and `read` says `(the library URL)`.
 
 **Upgrading from 0.21.**
 
@@ -59,7 +107,7 @@ unread until you read it: a cut or unprinted section with ketch docs --section <
 - The default budget is 4,000 tokens of docs text, the frontmatter and lists aside (was about 1,800 for the whole answer). A script passing `--tokens` gets that many tokens of text plus about 600.
 - Pages a web search returned are read without consulting `robots.txt`.
 
-For Go importers: `docs.Frontmatter` and `docs.AnswerJSON` follow the output (`Status`, `Reason`, `Terms` and `NotFound` out; `Read`, `Skipped`, `Widened`, `NotOnPages`, `NotInIndex`, `Outline`, `OutlineMore` and `OtherResults` in), `docs.IndexInfo` loses `Source`, `PagesRead` and `Cached`, and `TermCount`, `ErrAmbiguousSite`, `OriginByName`, `AnswerHint`, `JSONHint`, `NearHint`, `OriginHint`, `AnyCut` and `AnswerPageTokens` are removed.
+For Go importers: `docs.Frontmatter` and `docs.AnswerJSON` follow the output (`Status`, `Reason`, `Terms` and `NotFound` out; `Read`, `Skipped`, `Widened`, `NotOnPages`, `NotInIndex`, `Outline`, `OutlineMore` and `OtherResults` in), `docs.IndexInfo` loses `Source`, `PagesRead` and `Cached`, and `TermCount`, `ErrAmbiguousSite`, `OriginByName`, `AnswerHint`, `JSONHint`, `NearHint`, `OriginHint`, `AnyCut` and `AnswerPageTokens` are removed. New: the `decide` package (the decision providers and their registry); in `docs`, `LocalOptions.Decisions`, `Frontmatter`'s `Decisions`, `PassedOver` and `Next` (`DecisionUse` with its `Budget`, `BudgetUse`, `PagePassed`, `NextStep`), `DefaultDecisionsTokens` and `ParseDecisionsTokens`, the labels, confidence and judgments on `PageRead`, `OtherResult` and `Result`, and `Cookies` on `RawContent` and `PageContent`, which a `Fetcher` sets for a response fetched with a `cookie_file` cookie; in `scrape`, `WithCookieTrace`, `CookiesSent`, `Scraper.HasCookies` and `Scraper.CookiesFor`.
 
 ## [0.21.1] - 2026-11-13
 
