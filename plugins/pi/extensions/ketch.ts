@@ -130,7 +130,7 @@ const DocsParams = Type.Object({
 	query: Type.Optional(
 		Type.String({
 			description:
-				"the docs question (search answers from an indexed library it names, else from the first readable documents a web search for it returns, unless library is set), or the library to resolve when resolve is true (search: optional; none lists every indexed library); not needed with section",
+				"the docs question (search answers from an indexed library it names, else from the first readable documents a web search for it returns, unless library is set), or with resolve a package name or docs URL, not a question (search: optional; none lists every indexed library); not needed with section",
 		}),
 	),
 	backend: Type.Optional(
@@ -169,7 +169,7 @@ const DocsParams = Type.Object({
 	resolve: Type.Optional(
 		Type.Boolean({
 			description:
-				"resolve the query as a library name instead of searching docs: Context7 library IDs; search answers from the local index first, with no network (the indexed libraries the query names, every one with no query, each marked indexed), else resolves the name to docs roots with their version, versions, package specs and evidence",
+				"resolve the query as a package name or docs URL instead of answering (a question goes in query without resolve): Context7 library IDs; search answers from the local index first, with no network (the indexed libraries the query names, every one with no query, each marked indexed), else resolves the name to docs roots with their version, versions, package specs and evidence",
 		}),
 	),
 	tag: Type.Optional(
@@ -180,7 +180,7 @@ const DocsParams = Type.Object({
 	decisions: Type.Optional(
 		Type.String({
 			description:
-				"decision provider for a question that names no library: typesafe, openai, auto or off (default: the operator's docs_decisions; auto uses a provider with a key set). With one, the top five results are read and labelled and their passages chosen by the provider; confidence says how far to trust each",
+				"decision provider for a question that names no library: a provider by name, auto or off (default: the operator's docs_decisions; auto uses a provider with a key set). With one, the top five results are read and labelled and their passages chosen by the provider; confidence says how far to trust each",
 		}),
 	),
 });
@@ -693,12 +693,12 @@ export default function ketch(pi: ExtensionAPI): void {
 		...renderers("docs"),
 		label: "ketch docs",
 		description:
-			"Documentation for a question: the docs' own text, no model; one call usually answers. The default backend, search, needs no API key: a library the operator indexed (ketch docs index) answers from the local index; otherwise ketch searches the web for the question and reads the search's first readable document and up to two more pages of the same site, in search order (threads, issues, commits and source files passed over); pages the search returned are read as ketch scrape reads them, without consulting robots.txt; when the search gives nothing to read, one more search runs, the question + \"documentation\", and the note says so. The first readable result may not be the official docs: read shows what answered. library, or a name@version in the question that resolve confirms, names other docs; only with library, when an identifier the question writes is on none of the pages, does it read more pages of that release (widened). Nothing is saved: the same question again within cache_ttl prints the same answer from the page cache. " +
+			"Documentation for a question: pass the question as query, no resolve, and get the docs' own text (no model unless a decision provider is set: see decisions); one call usually answers. The default backend, search, needs no API key: a library the operator indexed (ketch docs index) answers from the local index; otherwise ketch searches the web for the question and reads the search's first readable document and up to two more pages of the same site, in search order (threads, issues, commits and source files passed over); pages the search returned are read as ketch scrape reads them, without consulting robots.txt; when the search gives nothing to read, one more search runs, the question + \"documentation\", and the note says so. The first readable result may not be the official docs: read shows what answered. library, or a name@version in the question that resolve confirms, names other docs; only with library, when an identifier the question writes is on none of the pages, does it read more pages of that release (widened). Nothing is saved: the same question again within cache_ttl prints the same answer from the page cache. " +
 			"The answer carries no verdict. read lists the pages read with their search rank, skipped the hits that could not be read and why; not_on_pages names the identifiers your question writes (code names, flags, options) on none of the pages read (only those pages were checked, not the whole docs), not_in_index the terms an indexed library lacks; version is printed only for a pin that matched or a release the question names that a page read is marked with, and a note says when no page read is marked with the release named and the printed text does not name it; origin is printed when it says something (verified, or unverified for a library you named); defined_in names the section defining a term no result shows; stale says cited pages could not be checked. Results are the docs' text, verbatim, by page in reading order, about 4,000 tokens unless tokens is set; outline names the other sections of those pages, other_results the search hits not read. " +
 			"library names the library: a docs root as resolve lists it, or a name or spec such as django@5.2 or pypi:click (a pin must match; a name several libraries share is refused, listing them: pass one); a URL below an indexed root narrows the answer to the pages under it (scope); to read one page, use section. " +
-			"A cut result is marked truncated (shown_tokens of section_tokens). Two rules. Text in a truncated result, behind …, or only named in outline is unread: read it by passing its url#anchor as section, with no query, before stating what it says; read an other result with ketch_scrape. Whatever your answer says that no result prints is your own knowledge: label it so, never cite the docs for it. Leave tokens unset. " +
+			"A cut result is marked truncated (shown_tokens of section_tokens). Two rules. Text in a truncated result, behind …, or only named in outline is unread: read it by passing its url#anchor as section, with no query, before stating what it says; read an other result with ketch_docs, its url as library and your question as query. Whatever your answer says that no result prints is your own knowledge: label it so, never cite the docs for it. Leave tokens unset. " +
 			"backend=context7 returns Context7's curated snippets instead, for that call only; Context7 needs no key either, but keyless it runs on an anonymous quota of about 200 requests a month per IP, and a spent quota is an [upstream] error naming when it resets. " +
-			"resolve=true lists the indexed libraries (query narrows it; a name none matches is resolved on the web to docs roots, or Context7 library IDs): ask it before calling a source unknown." +
+			"resolve=true takes a package name or docs URL, never a question: it lists the indexed libraries (query narrows it; a name none matches is resolved on the web to docs roots, or Context7 library IDs)." +
 			ERR_TAXONOMY,
 		promptSnippet: "ketch_docs for documentation; ask the question, then read a cut or outlined section with section before stating what it says",
 		parameters: DocsParams,

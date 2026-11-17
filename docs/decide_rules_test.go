@@ -150,8 +150,11 @@ func TestDecidedNext(t *testing.T) {
 		t.Fatalf("read %+v, want the mirror first", o.Read)
 	}
 	out := renderAll(widgetQuestion, o)
+	// The article the search ranked above the mirror, on the question too,
+	// comes after the other two.
 	wantNext := "next:\n  - ketch docs --library " + pgOfficial + ` "<your question>" (official docs, search rank 5, read, not printed)` + "\n" +
-		"  - ketch docs --section " + pgMirror + "#read-timeout (cut, more on the question in this section)\n"
+		"  - ketch docs --section " + pgMirror + "#read-timeout (cut, more on the question in this section)\n" +
+		"  - ketch docs --library " + pgBlog + ` "<your question>" (article, search rank 1, ranked above the page read, also on the question)` + "\n"
 	if !strings.Contains(out, wantNext) {
 		t.Errorf("next lines missing:\n%s", out)
 	}
@@ -365,6 +368,72 @@ func TestDecidedBetterSource(t *testing.T) {
 	}
 	if got := betterSource(fresh, []*dPage{primary, fresh}, nil, nil, map[string]bool{}); got != nil {
 		t.Errorf("got %+v: nothing better than tier B among tier C", got)
+	}
+}
+
+// next names the page the primary displaced: the best-ranked page read,
+// not printed, on the question (context high) that the search ranked
+// above the primary. Not when the primary ranks best, not for the
+// primary under another address or a copy of its text, not for a page
+// that is not context high.
+func TestDecidedHigherRanked(t *testing.T) {
+	words := func(seed string) string {
+		var b strings.Builder
+		for i := range 60 {
+			b.WriteString(seed + " word" + string(rune('a'+i%26)) + " ")
+		}
+		return b.String()
+	}
+	mk := func(u string, rank int, tier, label, context, text string) *dPage {
+		p := choosePage(rank, tier, context, 0.5)
+		p.hit.u, _ = url.Parse(u)
+		p.page, p.label = &webPage{URL: u, Markdown: text}, label
+		return p
+	}
+	// reasons gives each page but the primary its passed_over reason, as
+	// finish does.
+	reasons := func(primary *dPage, pages ...*dPage) []*dPage {
+		for _, p := range pages {
+			p.reason = passedReason(p, primary)
+		}
+		return append([]*dPage{primary}, pages...)
+	}
+	printedOf := func(primary *dPage) map[string]bool {
+		return map[string]bool{urlKey(primary.parsedURL()): true}
+	}
+
+	official := mk("https://maker.test/docs/product", 3, tierA, labelOfficialDocs, confHigh, words("official"))
+	article := mk("https://blog.test/the-other-product", 1, tierC, "article", confHigh, words("article"))
+	guide := mk("https://guide.test/product", 2, tierB, labelDocs, confHigh, words("guide"))
+	got := higherRanked(official, reasons(official, article, guide), printedOf(official))
+	if got == nil || got.url != article.pageURL() || got.rank != 1 || got.read != "read, not printed" {
+		t.Errorf("rank 3 official over rank 1 article: got %+v, want the article", got)
+	}
+
+	first := mk("https://maker.test/docs/product", 1, tierA, labelOfficialDocs, confHigh, words("official"))
+	later := mk("https://blog.test/later", 2, tierC, "article", confHigh, words("article"))
+	if got := higherRanked(first, reasons(first, later), printedOf(first)); got != nil {
+		t.Errorf("primary ranked first: got %+v, want none", got)
+	}
+
+	twin := mk("https://www.maker.test/en-us/docs/product.html", 1, tierA, labelOfficialDocs, confHigh, words("official"))
+	if got := higherRanked(official, reasons(official, twin), printedOf(official)); got != nil || twin.reason != passedSame {
+		t.Errorf("the page read at another address (%q): got %+v, want none", twin.reason, got)
+	}
+	mirror := mk("https://mirror.test/product", 1, tierC, "article", confHigh, words("official"))
+	if got := higherRanked(official, reasons(official, mirror), printedOf(official)); got != nil {
+		t.Errorf("a copy of the page read's text: got %+v, want none", got)
+	}
+
+	medium := mk("https://blog.test/medium", 1, tierB, labelDocs, confMedium, words("medium"))
+	low := mk("https://blog.test/low", 2, tierC, "article", confLow, words("low"))
+	if got := higherRanked(official, reasons(official, medium, low), printedOf(official)); got != nil {
+		t.Errorf("better-ranked pages not context high: got %+v, want none", got)
+	}
+
+	step := libraryStep(nextCand{tierC, article.pageURL(), "article", "read, not printed", 1}, nextHigher)
+	if want := `ketch docs --library https://blog.test/the-other-product "<your question>" (article, search rank 1, ranked above the page read, also on the question)`; step.line() != want {
+		t.Errorf("next line %q, want %q", step.line(), want)
 	}
 }
 

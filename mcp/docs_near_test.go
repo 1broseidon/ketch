@@ -74,7 +74,7 @@ func TestDocsOutputFieldNames(t *testing.T) {
 			t.Errorf("%q in %s", k, b)
 		}
 	}
-	if h := fromOutcome(o).Hint; !strings.Contains(h, `docs(section="<url#anchor>")`) || !strings.Contains(h, `scrape(url="<url>")`) || strings.Contains(h, "ketch ") {
+	if h := fromOutcome(o).Hint; !strings.Contains(h, `docs(section="<url#anchor>")`) || !strings.Contains(h, `docs(library="<url>", query="<your question>")`) || strings.Contains(h, "ketch ") {
 		t.Errorf("hint %q, want the tool's words", h)
 	}
 	indexed := docs.Outcome{Status: docs.Found, Index: &docs.IndexInfo{Kind: docs.IndexFull, Pages: 3}}

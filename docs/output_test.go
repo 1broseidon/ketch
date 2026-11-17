@@ -387,9 +387,9 @@ func TestRenderAnswerLists(t *testing.T) {
 	}{
 		{HintNone, "(+7 more: " + page + ")\n", ""},
 		{HintCLI, "(+7 more: ketch docs --section " + page + ")\n",
-			"\nunread until you read it: a cut or unprinted section with ketch docs --section <url#anchor>; another result with ketch scrape <url>\n"},
+			"\nunread until you read it: a cut or unprinted section with ketch docs --section <url#anchor>; another result with ketch docs --library <url> \"<your question>\"\n"},
 		{HintMCP, "(+7 more: docs(section=\"" + page + "\"))\n",
-			"\nunread until you read it: a cut or unprinted section with docs(section=\"<url#anchor>\"); another result with scrape(url=\"<url>\")\n"},
+			"\nunread until you read it: a cut or unprinted section with docs(section=\"<url#anchor>\"); another result with docs(library=\"<url>\", query=\"<your question>\")\n"},
 	} {
 		want := body + outline + c.more + others + c.hint
 		if got := RenderAnswer(o, c.style); got != want {
@@ -398,7 +398,7 @@ func TestRenderAnswerLists(t *testing.T) {
 	}
 	// Results only: no passages, the other results first, no leading blank line.
 	only := Outcome{OtherResults: o.OtherResults[:1]}
-	if got := RenderAnswer(only, HintCLI); got != "## Other results\n- B — https://x.test/docs/b — About b.\n\nunread until you read it: another result with ketch scrape <url>\n" {
+	if got := RenderAnswer(only, HintCLI); got != "## Other results\n- B — https://x.test/docs/b — About b.\n\nunread until you read it: another result with ketch docs --library <url> \"<your question>\"\n" {
 		t.Errorf("results only:\n%s", got)
 	}
 	if got := RenderAnswer(Outcome{}, HintCLI); got != "" {
@@ -417,9 +417,9 @@ func TestAnswerHint(t *testing.T) {
 	near := []NearLibrary{{Library: "https://x.test/"}}
 	const (
 		cliSec = "a cut or unprinted section with ketch docs --section <url#anchor>"
-		cliOth = "another result with ketch scrape <url>"
+		cliOth = `another result with ketch docs --library <url> "<your question>"`
 		mcpSec = `a cut or unprinted section with docs(section="<url#anchor>")`
-		mcpOth = `another result with scrape(url="<url>")`
+		mcpOth = `another result with docs(library="<url>", query="<your question>")`
 	)
 	for _, c := range []struct {
 		name  string

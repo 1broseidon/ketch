@@ -447,16 +447,16 @@ func Hint(style HintStyle, o Outcome) string {
 	if style == HintNone {
 		return ""
 	}
-	section, scrape, library := "ketch docs --section <url#anchor>", "ketch scrape <url>", "--library"
+	section, other, library := "ketch docs --section <url#anchor>", `ketch docs --library <url> "<your question>"`, "--library"
 	if style == HintMCP {
-		section, scrape, library = `docs(section="<url#anchor>")`, `scrape(url="<url>")`, "library"
+		section, other, library = `docs(section="<url#anchor>")`, `docs(library="<url>", query="<your question>")`, "library"
 	}
 	var reads []string
 	if CutCount(o.Results) > 0 || len(o.Outline) > 0 || len(o.OutlineMore) > 0 {
 		reads = append(reads, "a cut or unprinted section with "+section)
 	}
 	if len(o.OtherResults) > 0 {
-		reads = append(reads, "another result with "+scrape)
+		reads = append(reads, "another result with "+other)
 	}
 	var parts []string
 	if len(reads) > 0 {

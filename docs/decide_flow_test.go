@@ -200,6 +200,8 @@ func TestDecidedPicksOfficialDocs(t *testing.T) {
 		"  - " + pgMirror + " (third-party docs, confidence medium, search rank 3)\n",
 		"  - " + pgBlog + " (article, search rank 1): also on the question, not printed\n",
 		"  - " + pgStub + " (search rank 5): almost empty\n",
+		// The article the official page displaced is named next.
+		"next:\n  - ketch docs --library " + pgBlog + ` "<your question>" (article, search rank 1, ranked above the page read, also on the question)` + "\n",
 		pgOfficial + " (official docs)\n",
 		"source: " + pgOfficial + "#read-timeout (confidence high)\n",
 		"OFFICIALFACT",

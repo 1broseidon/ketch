@@ -42,9 +42,10 @@ Frontmatter lines:
 
 Then the docs' text, "Not printed", "Other results". Cut or listed text
 is unread: read it with --section <url#anchor>, another result with
-ketch scrape. --tokens bounds the docs text (4,000); the rest adds about
-600 tokens, rarely 800. --library: a name, name@version (must match) or
-docs URL; name@version in the question only if resolve confirms it.
+--library <url> "<question>". --tokens bounds the docs text (4,000); the
+rest adds about 600 tokens, rarely 800. --library: a name, name@version
+(must match) or docs URL; name@version in the question only if resolve
+confirms it.
 
 Exit codes:
   0  an answer: docs text, or only the search results

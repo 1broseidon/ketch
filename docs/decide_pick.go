@@ -197,24 +197,55 @@ type nextCand struct {
 	rank                   int
 }
 
-// nextSteps are at most two calls: a better kind of source than the
+// nextSteps are at most three calls: a better kind of source than the
 // primary (a tier strictly better: a page read, not printed, with a
 // passage on the question and under dupShare of its text on the page read,
-// or a result not read labelled official docs), and the cut section of the
-// primary page holding its best strong passage not printed.
+// or a result not read labelled official docs), the cut section of the
+// primary page holding its best strong passage not printed, and the page
+// the primary displaced: one the search ranked higher, also on the
+// question (higherRanked).
 func (c *dCall) nextSteps(primary *dPage, pages []*dPage, rest []sfHit, others []otherLabel, printed map[string]bool, f *dFill) []NextStep {
 	if primary == nil {
 		return nil
 	}
 	var out []NextStep
-	if best := betterSource(primary, pages, rest, others, printed); best != nil {
-		out = append(out, NextStep{Command: `ketch docs --library ` + best.url + ` "<your question>"`, Why: nextBetter,
-			Library: best.url, Label: best.label, Rank: best.rank, Read: best.read})
+	best := betterSource(primary, pages, rest, others, printed)
+	if best != nil {
+		out = append(out, libraryStep(*best, nextBetter))
 	}
 	if sec := f.cutSection(primary); sec != "" {
 		out = append(out, NextStep{Command: "ketch docs --section " + sec, Why: nextSection, Section: sec})
 	}
+	if up := higherRanked(primary, pages, printed); up != nil && (best == nil || best.url != up.url) {
+		out = append(out, libraryStep(*up, nextHigher))
+	}
 	return out
+}
+
+// libraryStep is the call that asks the question of source n.
+func libraryStep(n nextCand, why string) NextStep {
+	return NextStep{Command: `ketch docs --library ` + n.url + ` "<your question>"`, Why: why,
+		Library: n.url, Label: n.label, Rank: n.rank, Read: n.read}
+}
+
+// higherRanked is the best-ranked page read and passed over as also on
+// the question (context high) that the search ranked above the primary:
+// the page the primary displaced, which may be the closer one when a name
+// is ambiguous. Never the primary under another address (passedSame) or
+// a copy of its text (dupShare or more on the page read), never a printed
+// address. nil when the primary is the best-ranked such page.
+func higherRanked(primary *dPage, pages []*dPage, printed map[string]bool) *nextCand {
+	var best *nextCand
+	for _, p := range pages {
+		if p.reason != passedAlso || p.context != confHigh || p.page == nil || p.hit.rank >= primary.hit.rank ||
+			printed[urlKey(p.parsedURL())] || textShare(p.page.Markdown, primary.page.Markdown) >= dupShare {
+			continue
+		}
+		if best == nil || p.hit.rank < best.rank {
+			best = &nextCand{p.tier, p.pageURL(), p.label, "read, not printed", p.hit.rank}
+		}
+	}
+	return best
 }
 
 // betterSource is the best source of a better tier than the primary's:

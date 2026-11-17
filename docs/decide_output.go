@@ -66,11 +66,12 @@ func (p PagePassed) line() string {
 }
 
 // NextStep is a call worth making next: a better kind of source than the
-// page read (Library set), or a cut section of it on the question
-// (Section set).
+// page read or a page the search ranked above it, also on the question
+// (Library set), or a cut section of it on the question (Section set).
 type NextStep struct {
 	Command string `json:"command"`
-	// Why is "better kind of source" or "cut section".
+	// Why is "better kind of source", "ranked higher in search" or "cut
+	// section".
 	Why     string `json:"why"`
 	Library string `json:"library,omitempty"`
 	Section string `json:"section,omitempty"`
@@ -84,11 +85,15 @@ type NextStep struct {
 // The kinds of next step.
 const (
 	nextBetter  = "better kind of source"
+	nextHigher  = "ranked higher in search"
 	nextSection = "cut section"
 )
 
 // line is the step as its next line says it.
 func (n NextStep) line() string {
+	if n.Why == nextHigher {
+		return fmt.Sprintf("%s (%s, search rank %d, ranked above the page read, also on the question)", n.Command, n.Label, n.Rank)
+	}
 	if n.Library != "" {
 		return fmt.Sprintf("%s (%s, search rank %d, %s)", n.Command, n.Label, n.Rank, n.Read)
 	}

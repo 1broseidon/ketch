@@ -221,8 +221,9 @@ func (s *SearchFirst) ResolveSelect(ctx context.Context, name string, limit int)
 	}
 	if strings.ContainsAny(strings.TrimSpace(name), " \t") {
 		// A name of several words is a product's name, not a package
-		// registries hold: the index is all that can answer it.
-		return Resolved(SearchBackend, nil, fmt.Errorf("search: no indexed library is named %q, and a name with spaces is not a package name to resolve: give a package name or a docs URL; resolve with no name lists every indexed library: %w", name, ErrNotIndexed))
+		// registries hold: the index is all that can answer it. It may be
+		// a question sent to resolve, so the refusal says how to ask one.
+		return Resolved(SearchBackend, nil, spacedNameMiss(ctx, name))
 	}
 	// The standard-library pages the name is, read beside the
 	// registries' resolution and listed ahead of it.
@@ -247,6 +248,20 @@ func (s *SearchFirst) ResolveSelect(ctx context.Context, name string, limit int)
 		matches, err = append(first, matches...), nil
 	}
 	return Resolved(SearchBackend, matches, err)
+}
+
+// spacedNameMiss refuses a resolve name with spaces that no indexed
+// library holds (not_found, not_indexed): resolve takes a package name or
+// docs URL, and a question is asked without it, in the caller's words (a
+// command line for the CLI, the query argument otherwise: MCP, and the CLI's
+// --json that the pi plugin calls).
+func spacedNameMiss(ctx context.Context, name string) error {
+	ask := "send it as query without resolve"
+	if opts, _ := localOptionsFrom(ctx); opts.Hint == HintCLI {
+		ask = `ketch docs "<question>"`
+	}
+	return failure.Wrap(failure.NotFound, "not_indexed", fmt.Errorf(
+		"search: no indexed library is named %q; resolve takes a package name or docs URL (no name lists the indexed libraries), not a question; to ask a question: %s", name, ask))
 }
 
 // startStdPages starts, on wg, the reads of the standard-library pages the

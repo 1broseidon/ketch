@@ -288,6 +288,12 @@ describe("argument construction", () => {
 			assert.ok(props.library.description.includes(form), `library description names ${form}`);
 		}
 		assert.ok(props.section, "section is a parameter");
+		// A question goes in query; resolve takes names, never a question.
+		assert.match(docs.description, /^Documentation for a question: pass the question as query, no resolve/);
+		assert.match(docs.description, /resolve=true takes a package name or docs URL, never a question/);
+		assert.match(props.resolve.description, /a question goes in query without resolve/);
+		// The decision providers are the binary's to list, not the plugin's.
+		assert.match(props.decisions.description, /a provider by name, auto or off/);
 	});
 
 	test("docs: description states the exact-pages contract, no verdict", () => {
@@ -309,7 +315,7 @@ describe("argument construction", () => {
 			/\bother_results\b/,
 			/about 4,000 tokens/,
 			/is unread/,
-			/ketch_scrape/,
+			/read an other result with ketch_docs, its url as library/,
 			/your own knowledge/,
 		]) {
 			assert.match(docs.description, want);

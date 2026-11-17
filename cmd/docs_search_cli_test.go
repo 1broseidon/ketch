@@ -114,7 +114,7 @@ func TestDocsSearchExitCodes(t *testing.T) {
 		{"terms on no page", &searchSite{hits: answer}, "sprocket_limit xylographic", 0,
 			[]string{"\nnot_on_pages: []\n---\n"}, ""},
 		{"results only", &searchSite{hits: otherHits()}, "sprocket_limit default", 0,
-			[]string{"\nnote: no page was printed: ", "---\n## Other results\n- sprocket_limit ignored — https://github.com/gizmo/gizmo/issues/4 — An issue.\n", "\nunread until you read it: another result with ketch scrape <url>\n"}, ""},
+			[]string{"\nnote: no page was printed: ", "---\n## Other results\n- sprocket_limit ignored — https://github.com/gizmo/gizmo/issues/4 — An issue.\n", "\nunread until you read it: another result with ketch docs --library <url> \"<your question>\"\n"}, ""},
 		{"search empty", &searchSite{}, "sprocket_limit default", 3, nil, "no results"},
 		{"search failed", &searchSite{status: http.StatusServiceUnavailable}, "sprocket_limit default", 4, nil, "search"},
 	}
