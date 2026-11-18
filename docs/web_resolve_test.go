@@ -629,6 +629,9 @@ func clickPkgs() *fakePkgs {
 
 // GitHub refusing for its rate limit while PyPI's metadata still verifies
 // the site: the match stands, with a note saying GitHub was not asked.
+// The registries' two repositories are looked up at once (enrich), so the
+// one whose lookup started before the other's refusal is asked too; after
+// that batch GitHub is asked nothing: no repository twice, no search.
 func TestResolveRateLimitedGitHubStillMatches(t *testing.T) {
 	repos := &fakeRepos{err: &ghRateLimitError{}}
 	w := resolverWeb(clickSite(), clickPkgs(), repos, nil)
@@ -643,8 +646,23 @@ func TestResolveRateLimitedGitHubStillMatches(t *testing.T) {
 	if m.TrustScore < minTrust || m.TrustScore >= 10 {
 		t.Errorf("trust %.1f: verified, but without GitHub's homepage", m.TrustScore)
 	}
-	if n := len(repos.calls); n != 1 {
-		t.Errorf("GitHub asked %d times after its first refusal: %v", n, repos.calls)
+	batch := []string{"repo pallets/click", "repo uggedal/click"}
+	calls := slices.Sorted(slices.Values(repos.calls))
+	if len(calls) == 0 || len(slices.Compact(slices.Clone(calls))) != len(calls) || slices.ContainsFunc(calls, func(c string) bool { return !slices.Contains(batch, c) }) {
+		t.Errorf("GitHub asked %v; want only the first batch %v, each once", repos.calls, batch)
+	}
+
+	// Once a refusal is in, no later lookup or search is sent.
+	log := &resolveLog{}
+	log.setLimited(&ghRateLimitError{})
+	before := len(repos.calls)
+	later := w.enrich(context.Background(), []*project{{key: repo("o", "x").spec(), repo: repo("o", "x")}}, log)
+	w.searchProjects(context.Background(), mustSpec(t, "click"), nil, log)
+	if asked := repos.calls[before:]; len(asked) != 0 {
+		t.Errorf("GitHub asked %v after its refusal", asked)
+	}
+	if len(later) != 1 || later[0].repoErr == nil || !strings.Contains(later[0].repoErr.Error(), "not asked") {
+		t.Errorf("later lookup = %+v; want it not asked", later)
 	}
 }
 
