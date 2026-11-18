@@ -1,6 +1,7 @@
 package docs
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"slices"
@@ -242,6 +243,87 @@ func TestSectionOfARedirectedPage(t *testing.T) {
 	before := len(f.called())
 	if sec := s.SectionSelect(ctx, "", ref, 0, 0); sec.Status != Found || len(f.called()) != before {
 		t.Errorf("section of the redirected page: %s (%v), %v fetched", sec.Status, sec.Err(), f.called()[before:])
+	}
+}
+
+// A section reference is read back verbatim once the cache entry
+// expired: the slashed address an answer cited is fetched as printed, not
+// with its slash dropped, on a site that answers 404 without it.
+func TestSectionOfASlashedPageAfterTheTTL(t *testing.T) {
+	f := exampleSite()
+	moved := idxRoot + "guide/middleware/"
+	f.pages[moved] = f.pages[idxRoot+"guide/middleware"]
+	delete(f.pages, idxRoot+"guide/middleware")
+	f.redirects = map[string]string{idxRoot + "guide/middleware": moved}
+	s, c, _, _ := searchFirstCached(t, f, exampleHits())
+	ctx := context.Background()
+	o := s.SearchSelect(ctx, "add middleware to a route", 0)
+	ref := moved + "#add-middleware-to-a-route"
+	if !slices.Contains(resultURLs(o.Results), ref) {
+		t.Fatalf("answer %s cites %v, want %s", o.Status, resultURLs(o.Results), ref)
+	}
+	f.redirects = nil // the unslashed address is a 404 from here on
+	c.advance(2 * time.Hour)
+	before := len(f.called())
+	sec := s.SectionSelect(ctx, "", ref, 0, 0)
+	if sec.Status != Found || len(sec.Results) != 1 || !strings.Contains(sec.Results[0].Snippet, "app.use") {
+		t.Fatalf("section %s after the TTL: %s (%v), %+v", ref, sec.Status, sec.Err(), sec.Results)
+	}
+	if got := pageCalls(f, before); !slices.Equal(got, []string{moved}) {
+		t.Errorf("fetched %v, want the cited address %s alone", got, moved)
+	}
+}
+
+// A page a question read outside any docs tree (a blog post, which a
+// host's docs tree leaves out) is read back by --section from its own
+// address, or after a redirect that only adds or drops its trailing
+// slash. A redirect to another page is still refused as outside the
+// root, and an anchor the page lacks is still not found.
+func TestSectionOfABlogPost(t *testing.T) {
+	const post = "https://docs.example.test/blog/importing-infrastructure"
+	page := fakePage{title: "Importing infrastructure", markdown: "# Importing infrastructure\n\nBring existing resources under management.\n\n## The import block\n\nWrite an import block with to and id, then run plan.\n"}
+	for _, tc := range []struct {
+		name      string
+		served    string // where the page is; "" for post itself
+		redirects map[string]string
+	}{
+		{"its own address", "", nil},
+		{"slash added", post + "/", map[string]string{post: post + "/"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := exampleSite()
+			f.pages[cmp.Or(tc.served, post)] = page
+			f.redirects = tc.redirects
+			s, _, _, _ := searchFirstCached(t, f, exampleHits())
+			sec := s.SectionSelect(context.Background(), "", post+"#the-import-block", 0, 0)
+			if sec.Status != Found || len(sec.Results) != 1 || !strings.Contains(sec.Results[0].Snippet, "import block with to and id") {
+				t.Fatalf("section of the post: %s (%v), %+v", sec.Status, sec.Err(), sec.Results)
+			}
+			if missing := s.SectionSelect(context.Background(), "", post+"#no-such-anchor", 0, 0); !errors.Is(missing.Err(), ErrSectionNotFound) {
+				t.Errorf("an anchor the post lacks: %s (%v), want not_found", missing.Status, missing.Err())
+			}
+		})
+	}
+	f := exampleSite()
+	f.pages["https://docs.example.test/blog/another-post"] = page
+	f.redirects = map[string]string{post: "https://docs.example.test/blog/another-post"}
+	s, _, _, _ := searchFirstCached(t, f, exampleHits())
+	sec := s.SectionSelect(context.Background(), "", post+"#the-import-block", 0, 0)
+	if sec.Err() == nil || !strings.Contains(sec.Err().Error(), "redirects to https://docs.example.test/blog/another-post, outside the docs root") {
+		t.Errorf("a redirect to another post: %s (%v), want refused as outside the root", sec.Status, sec.Err())
+	}
+}
+
+// A page refused where it was asked for is said to be outside the root,
+// not to redirect to itself.
+func TestScopeErrorWithoutARedirect(t *testing.T) {
+	same := &scopeError{requested: "https://a.test/blog/x", served: "https://a.test/blog/x"}
+	if got := same.Error(); got != "https://a.test/blog/x is outside the docs root" {
+		t.Errorf("same address: %q", got)
+	}
+	moved := &scopeError{requested: "https://a.test/x", served: "https://b.test/x"}
+	if got := moved.Error(); got != "https://a.test/x redirects to https://b.test/x, outside the docs root" {
+		t.Errorf("redirected: %q", got)
 	}
 }
 

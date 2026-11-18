@@ -534,6 +534,9 @@ func (e *scopeError) reason() string {
 	if e.served == "" {
 		return "came back without the URL it was served from"
 	}
+	if e.served == e.requested {
+		return "is outside the docs root"
+	}
 	return "redirects to " + e.served + ", outside the docs root"
 }
 

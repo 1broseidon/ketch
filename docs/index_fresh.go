@@ -410,8 +410,10 @@ func (s *SearchFirst) SectionSelect(ctx context.Context, library, ref string, to
 // readSection reads a section of a page no indexed library holds, as a
 // question read it (pageRead): the page through the page cache (read
 // again from the site when its entry expired), or the text the question
-// had in hand, sectioned on the fly. A page that cannot be read (no
-// network and no cache entry) fails with the reason.
+// had in hand, sectioned on the fly. The page itself is read wherever its
+// docs tree ends (askedPageOr): a question cites a blog post, which is no
+// page of its host's docs tree. A page that cannot be read (no network
+// and no cache entry) fails with the reason.
 func (s *SearchFirst) readSection(ctx context.Context, library, ref string, tokens, pageNo int) Outcome {
 	page, anchor, err := parseSectionRef(ref)
 	if err != nil {
@@ -427,7 +429,7 @@ func (s *SearchFirst) readSection(ctx context.Context, library, ref string, toke
 	if wp == nil {
 		cctx, cancel := context.WithTimeout(ctx, sfPageTimeout)
 		defer cancel()
-		if wp, err = s.web.fetchOne(cctx, root, link); err != nil {
+		if wp, err = s.web.fetchIn(cctx, askedPageOr(root.contains, link.url), link); err != nil {
 			return Answer(SearchBackend, nil, fmt.Errorf("search: %s is in no indexed library, and reading it failed: %w", page, err))
 		}
 	}
@@ -443,4 +445,13 @@ func (s *SearchFirst) readSection(ctx context.Context, library, ref string, toke
 		o.Library = lib.Root
 	}
 	return o
+}
+
+// askedPageOr is inScope widened to the page asked for, a trailing slash
+// or "www." aside (linkKey): the page a reference names is read from its
+// own address, or from where a redirect that only adds or drops the slash
+// sends it. A redirect to any other page is still held to inScope.
+func askedPageOr(inScope func(*url.URL) bool, asked *url.URL) func(*url.URL) bool {
+	key := linkKey(asked)
+	return func(v *url.URL) bool { return linkKey(v) == key || inScope(v) }
 }

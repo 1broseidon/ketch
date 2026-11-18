@@ -100,6 +100,8 @@ note: decisions judged 179 of 232 passages (budget 80000 tokens; ketch config se
 
 **Fixed** `--library` with the address of a single page that has nothing under it, such as a blog post. 0.21.1 exited 3 (`found no page of … to read`); the page is now read, and `read` says `(the library URL)`.
 
+**Fixed** `--section` on a blog post. A post a question had read and printed was refused when read back by its `url#anchor` (`… redirects to …, outside the docs root`, exit 3), as was a page whose address redirects only to add or drop a trailing slash. Both are now read.
+
 **Upgrading from 0.21.**
 
 - Removed from `ketch docs` text, `--json` and MCP: `status` and `reason`, `terms`, `backend: search` (the `backend` line and field now print only for Context7, `--section` included), `source: search, N pages read` and its `, cached` (JSON `index: {source, pages_read, cached}`; `index` is now only an indexed library's `{kind, pages, built}`), the `ketch docs index` suggestion in `note`, and `origin: by name`. A question that names no library prints no `origin`.
