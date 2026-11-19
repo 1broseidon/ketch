@@ -77,7 +77,7 @@ func TestKeylessPopularityPicks(t *testing.T) {
 	f, pkgs := widgetWorld()
 	pop := &fakePop{weekly_: map[string]int64{"npm:widget": 500_000}}
 	w, repos := keylessWeb(f, pkgs, nil, pop)
-	m, err := w.resolveOne(context.Background(), mustSpec(t, "widget"), false)
+	m, err := w.resolveOne(context.Background(), mustSpec(t, "widget"))
 	if err != nil {
 		t.Fatalf("resolveOne(widget) = %v", err)
 	}
@@ -107,7 +107,7 @@ func TestKeylessUnreadPopularityRefuses(t *testing.T) {
 		f, pkgs := widgetWorld()
 		pop := &fakePop{weekly_: map[string]int64{"npm:widget": 500_000}, errs: map[string]error{failing: errors.New("status 503")}}
 		w, _ := keylessWeb(f, pkgs, nil, pop)
-		_, err := w.resolveOne(context.Background(), mustSpec(t, "widget"), false)
+		_, err := w.resolveOne(context.Background(), mustSpec(t, "widget"))
 		var amb *AmbiguousLibraryError
 		var up *upstreamError
 		if err == nil || !errors.As(err, &amb) && !errors.As(err, &up) {
@@ -124,7 +124,7 @@ func TestKeylessUnverifiedRivalRefuses(t *testing.T) {
 	delete(f.raw, "https://docs.widget.dev/") // npm widget verifies nothing now
 	pop := &fakePop{weekly_: map[string]int64{"npm:widget": 500_000, "crates:widget": 10}}
 	w, _ := keylessWeb(f, pkgs, nil, pop)
-	_, err := w.resolveOne(context.Background(), mustSpec(t, "widget"), false)
+	_, err := w.resolveOne(context.Background(), mustSpec(t, "widget"))
 	var amb *AmbiguousLibraryError
 	if !errors.As(err, &amb) || len(amb.Matches) != 2 || amb.Matches[1].ID != "npm:widget" {
 		t.Fatalf("resolveOne = %v, want ambiguity naming npm:widget", err)
@@ -132,7 +132,7 @@ func TestKeylessUnverifiedRivalRefuses(t *testing.T) {
 	pop.weekly_["npm:widget"] = 100
 	pop.weekly_["crates:widget"] = 1_000_000
 	w, _ = keylessWeb(f, pkgs, nil, pop)
-	if m, err := w.resolveOne(context.Background(), mustSpec(t, "widget"), false); err != nil || m.root.String() != "https://docs.rs/widget/latest/widget/" {
+	if m, err := w.resolveOne(context.Background(), mustSpec(t, "widget")); err != nil || m.root.String() != "https://docs.rs/widget/latest/widget/" {
 		t.Errorf("negligible rival: resolveOne = %s, %v; want the crate's docs", m.root, err)
 	}
 }
@@ -231,7 +231,7 @@ func TestKeylessProjectFromHitLinks(t *testing.T) {
 	}}
 	sites := &fakeSites{hits: []search.Result{{URL: "https://docs.sprocketjs.dev/guide/start"}}}
 	w, _ := keylessWeb(f, pkgs, sites, nil)
-	m, err := w.resolveOne(context.Background(), mustSpec(t, "sprocket"), false)
+	m, err := w.resolveOne(context.Background(), mustSpec(t, "sprocket"))
 	if err != nil || m.root.String() != "https://docs.sprocketjs.dev/" || !slices.Contains(m.packages, "npm:sprocket-js") {
 		t.Fatalf("resolveOne(sprocket) = %s %v, %v", m.root, m.packages, err)
 	}
@@ -248,7 +248,7 @@ func TestKeylessRepoSpecPackages(t *testing.T) {
 		"npm:axle":    {eco: ecoNPM, name: "axle", repoURL: "https://github.com/other/axle", repo: repo("other", "axle")},
 	}}
 	w, _ := keylessWeb(f, pkgs, nil, nil)
-	m, err := w.resolveOne(context.Background(), mustSpec(t, "axle-rs/axle"), false)
+	m, err := w.resolveOne(context.Background(), mustSpec(t, "axle-rs/axle"))
 	if err != nil || m.root.String() != "https://docs.rs/axle/latest/axle/" {
 		t.Fatalf("resolveOne(axle-rs/axle) = %s, %v", m.root, err)
 	}
@@ -280,7 +280,7 @@ func TestResolutionCache(t *testing.T) {
 	f, pkgs := widgetWorld()
 	c := &memoCache{fakeFetcher: f, m: map[string]string{}}
 	w, _ := keylessWeb(c, pkgs, nil, &fakePop{weekly_: map[string]int64{"npm:widget": 500_000}})
-	first, err := w.resolveOne(context.Background(), mustSpec(t, "widget"), false)
+	first, err := w.resolveOne(context.Background(), mustSpec(t, "widget"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -288,14 +288,14 @@ func TestResolutionCache(t *testing.T) {
 		t.Fatalf("cache entries = %v", c.m)
 	}
 	before := len(f.called())
-	second, err := w.resolveOne(context.Background(), mustSpec(t, "widget"), false)
+	second, err := w.resolveOne(context.Background(), mustSpec(t, "widget"))
 	if err != nil || second.root.String() != first.root.String() || len(f.called()) != before {
 		t.Errorf("repeat = %s, %v with %d new fetches; want %s from the cache", second.root, err, len(f.called())-before, first.root)
 	}
 	// A hint is part of the key. (Here it does not change the pick: npm's
 	// widget outweighs the crate by far more than the dominance margin.)
 	w.workdirHint = func() []ecosystem { return []ecosystem{ecoCrates} }
-	if m, err := w.resolveOne(context.Background(), mustSpec(t, "widget"), false); err != nil || m.root.String() != "https://docs.widget.dev/" || len(c.m) != 2 {
+	if m, err := w.resolveOne(context.Background(), mustSpec(t, "widget")); err != nil || m.root.String() != "https://docs.widget.dev/" || len(c.m) != 2 {
 		t.Errorf("crates hint = %s, %v with %d entries; want docs.widget.dev resolved afresh", m.root, err, len(c.m))
 	}
 }
@@ -373,7 +373,7 @@ func TestKeylessFixtureWorld(t *testing.T) {
 			if err != nil || len(matches) == 0 || !strings.HasPrefix(matches[0].root.String(), tc.root) {
 				t.Fatalf("resolve %s = %v, %v; want %s (rejected %v)", tc.name, matchIDs(matches), err, tc.root, log.rejected)
 			}
-			m, err := w.resolveOne(context.Background(), mustSpec(t, tc.name), false)
+			m, err := w.resolveOne(context.Background(), mustSpec(t, tc.name))
 			if err != nil || !strings.HasPrefix(m.root.String(), tc.root) {
 				t.Errorf("resolveOne(%s) = %s, %v", tc.name, m.root, err)
 			}
@@ -440,13 +440,13 @@ func TestKeylessGoByName(t *testing.T) {
 	}}, mods: []goModule{{"github.com/spf13/cobra", 99_000}, {"github.com/few/cobra", 120}, {"github.com/muesli/mango-cobra", 169}, {"github.com/tj/cobra", 0}}}
 	w, _ := keylessWeb(f, nil, nil, &fakePop{weekly_: map[string]int64{"pypi:cobra": 19_000}})
 	w.pkgs = pkgs
-	m, err := w.resolveOne(context.Background(), mustSpec(t, "cobra"), false)
+	m, err := w.resolveOne(context.Background(), mustSpec(t, "cobra"))
 	if err != nil || !slices.Contains(m.packages, "go:github.com/spf13/cobra") {
 		t.Fatalf("resolveOne(cobra) = %s %v, %v; want spf13/cobra's docs", m.root, m.packages, err)
 	}
 	pkgs.err = errors.New("status 429")
 	var up *upstreamError
-	if _, err := w.resolveOne(context.Background(), mustSpec(t, "cobra"), false); !errors.As(err, &up) {
+	if _, err := w.resolveOne(context.Background(), mustSpec(t, "cobra")); !errors.As(err, &up) {
 		t.Errorf("pkg.go.dev down: resolveOne = %v, want an upstream error, not COBRApy", err)
 	}
 }
@@ -560,7 +560,7 @@ func TestKeylessRecordedRegressions(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.world, func(t *testing.T) {
 			w := recordedWorld(t, tc.world)
-			m, err := w.resolveOne(context.Background(), mustSpec(t, tc.spec), false)
+			m, err := w.resolveOne(context.Background(), mustSpec(t, tc.spec))
 			if err != nil || !strings.HasPrefix(m.root.String(), tc.root) {
 				t.Fatalf("resolveOne(%s) = %s, %v; want %s", tc.spec, m.root, err, tc.root)
 			}
@@ -605,7 +605,7 @@ func TestKeylessHitFailureIsNoSourceFailure(t *testing.T) {
 		t.Errorf("a hit's 403 counted as a failed source: %v", failed)
 	}
 	assertReasons(t, log, "search hit https://www.tutorials.example/ did not answer")
-	if m, err := w.resolveOne(context.Background(), mustSpec(t, "widget"), false); err != nil || m.root.String() != "https://docs.widget.dev/" {
+	if m, err := w.resolveOne(context.Background(), mustSpec(t, "widget")); err != nil || m.root.String() != "https://docs.widget.dev/" {
 		t.Errorf("resolveOne = %s, %v", m.root, err)
 	}
 }
@@ -621,7 +621,7 @@ func TestKeylessHintDoesNotOverruleDominance(t *testing.T) {
 	if _, err := w.resolveLogged(context.Background(), mustSpec(t, "widget"), 0, log); err != nil {
 		t.Fatal(err)
 	}
-	m, err := w.resolveOne(context.Background(), mustSpec(t, "widget"), false)
+	m, err := w.resolveOne(context.Background(), mustSpec(t, "widget"))
 	if err != nil || m.root.String() != "https://docs.widget.dev/" {
 		t.Fatalf("crates hint beside a dominant npm widget: resolveOne = %s, %v", m.root, err)
 	}

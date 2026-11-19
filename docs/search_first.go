@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/1broseidon/ketch/decide"
 	"github.com/1broseidon/ketch/health"
 	config "github.com/1broseidon/ketch/internal/configbase"
 	"github.com/1broseidon/ketch/internal/failure"
@@ -26,38 +27,44 @@ import (
 //
 //	the request names an indexed library? ──yes──▶ answer from the index (local)
 //	        │no
-//	the same question read within cache_ttl? ──yes──▶ the same site and pages, from the page cache
+//	the same question read within cache_ttl? ──yes──▶ the same pages, the same answer (no network)
+//	        │no
+//	the request names no library? ──yes──▶ the plain question's search, its
+//	        │                         first readable document and up to two
+//	        │                         more of its site (search_bare.go)
 //	        │no
 //	web search (the question, and the question + "documentation"),
 //	beside it resolve of the library the request names (search_origin.go)
 //	        │       (several verified, none settled: ambiguous, refused)
-//	docs pages only; the site most of their weight agrees on, a host
-//	that serves many projects split by project path
-//	        │       (none: no_docs_found; split: ambiguous_site)
-//	the root resolve verified first, unless that site is the project's own
+//	docs pages only; the site the first three of them weigh most for (a
+//	release the question names first); a host that serves many projects
+//	split by project path
+//	        │       (no docs hit, or none readable: the search results alone)
+//	the root resolve verified first, unless the first site is the project's own
 //	        │
 //	an indexed library holds the site? ──yes──▶ answer from the index
 //	        │no
-//	fetch the hit pages and close siblings from the site's own lists
-//	        │       (≤ sfMaxPages, through the page cache; a site that
-//	        │       gives no text says why and the next is read)
+//	read the site's search hits at their exact addresses, in rank order
+//	(up to sfExactPages, one release tree; an unreadable one skipped)
+//	        │       (an identifier the question writes on none of them:
+//	        │       more pages of that release, printed after them)
 //	section them into a library held in memory for this call
 //	        │
-//	answer through the local index's evidence pipeline
-//	        └──▶ found or partial (terms_not_found), its origin, N pages
-//	             read, and how to index the whole site
+//	answer through the local index's evidence pipeline, best page first
+//	        └──▶ the pages read, what is not printed, the other results
 //
 // A question saves nothing (search_read.go): the pages it read stay in the
 // page cache under cache_ttl, with what a repeat needs to skip the search,
 // and `ketch docs index` is the only command that writes the index. An
 // answer from the index checks the pages it cites first (index_fresh.go).
-// A library the request names (--library, or name@version in the
-// question; a bare question's first firm reading, strictly) is resolved
-// while the question is searched: one docs root verified is the site
-// read, unless the site the search agrees on is that project's own; else
-// the name is a preference among the hits' sites, and the version it
-// asks for picks the tree. Every answer from pages read says its origin:
-// verified with its evidence, or unverified.
+// A library the request names (--library, or a name@version the question
+// writes) is resolved while the question is searched: one docs root
+// verified is the site read, unless the first docs site of the search is
+// that project's own; else the name is a preference among the hits'
+// sites, and the version it asks for picks the tree. A name@version in a
+// bare question that resolve cannot confirm is ordinary words. A call
+// whose search returned results never refuses for want of a readable
+// page: it prints the results (resultsOnly).
 
 // SearchBackend is the search backend's ID: the default docs backend.
 const SearchBackend = "search"
@@ -126,6 +133,14 @@ type SearchFirst struct {
 	// resolveName resolves the library a request names (resolveNamed
 	// when nil); tests give a fixed answer.
 	resolveName func(ctx context.Context, req sfRequest) sfResolved
+	// decisions is the decision provider a setting selects ("" for the
+	// configured docs_decisions; decide.Choose): nil asks none, as a
+	// backend built without a config does.
+	decisions func(setting string) (decide.Provider, decide.Decider, bool, error)
+	// decisionsTokens is the decisions budget in input tokens per call
+	// (docs_decisions_tokens; decide_budget.go): 0, as a backend built
+	// without a config has, for unlimited.
+	decisionsTokens int
 }
 
 // sfDefaultTTL is the page cache's TTL when cache_ttl does not parse, as
@@ -150,7 +165,27 @@ func newSearchFirstFromConfig(c *config.Config, deps Deps) *SearchFirst {
 	if os.Getenv("KETCH_DOCS_TRACE") != "" {
 		s.trace = os.Stderr
 	}
+	s.decisions = decisionsFrom(*c)
+	s.decisionsTokens = DefaultDecisionsTokens
+	if n, err := ParseDecisionsTokens(c.DocsDecisionsTokens); err == nil {
+		s.decisionsTokens = n
+	}
 	return s
+}
+
+// decisionsFrom is the decision provider a call's setting selects under
+// config c: the per-call setting, else docs_decisions. An operator's off is
+// final: a per-call value other than off is errDecisionsOff.
+func decisionsFrom(c config.Config) func(setting string) (decide.Provider, decide.Decider, bool, error) {
+	return func(setting string) (decide.Provider, decide.Decider, bool, error) {
+		if operator, err := decide.Normalize(c.DocsDecisions); err == nil && operator == decide.Off && setting != "" && setting != decide.Off {
+			return decide.Provider{}, nil, false, errDecisionsOff
+		}
+		if setting == "" {
+			setting = c.DocsDecisions
+		}
+		return decide.Choose(&c, setting)
+	}
 }
 
 var (
@@ -203,8 +238,9 @@ func (s *SearchFirst) ResolveSelect(ctx context.Context, name string, limit int)
 	}
 	if strings.ContainsAny(strings.TrimSpace(name), " \t") {
 		// A name of several words is a product's name, not a package
-		// registries hold: the index is all that can answer it.
-		return Resolved(SearchBackend, nil, fmt.Errorf("search: no indexed library is named %q, and a name with spaces is not a package name to resolve: give a package name or a docs URL; resolve with no name lists every indexed library: %w", name, ErrNotIndexed))
+		// registries hold: the index is all that can answer it. It may be
+		// a question sent to resolve, so the refusal says how to ask one.
+		return Resolved(SearchBackend, nil, spacedNameMiss(ctx, name))
 	}
 	// The standard-library pages the name is, read beside the
 	// registries' resolution and listed ahead of it.
@@ -231,6 +267,20 @@ func (s *SearchFirst) ResolveSelect(ctx context.Context, name string, limit int)
 	return Resolved(SearchBackend, matches, err)
 }
 
+// spacedNameMiss refuses a resolve name with spaces that no indexed
+// library holds (not_found, not_indexed): resolve takes a package name or
+// docs URL, and a question is asked without it, in the caller's words (a
+// command line for the CLI, the query argument otherwise: MCP, and the CLI's
+// --json that the pi plugin calls).
+func spacedNameMiss(ctx context.Context, name string) error {
+	ask := "send it as query without resolve"
+	if opts, _ := localOptionsFrom(ctx); opts.Hint == HintCLI {
+		ask = `ketch docs "<question>"`
+	}
+	return failure.Wrap(failure.NotFound, "not_indexed", fmt.Errorf(
+		"search: no indexed library is named %q; resolve takes a package name or docs URL (no name lists the indexed libraries), not a question; to ask a question: %s", name, ask))
+}
+
 // startStdPages starts, on wg, the reads of the standard-library pages the
 // name is into std: Go's package at 0, Python's module at 1.
 func (s *SearchFirst) startStdPages(fctx context.Context, name string, wg *sync.WaitGroup, std []*webMatch) {
@@ -253,7 +303,7 @@ func (s *SearchFirst) startStdPages(fctx context.Context, name string, wg *sync.
 }
 
 // SearchSelect answers a question from the local index when it covers
-// it, else from the docs site its web search agrees on. A caller that
+// it, else from the docs its web search ranks first. A caller that
 // carries its options (WithLocalOptions: the CLI, MCP) caps the results
 // only by the limit they give, the budget deciding otherwise; any other
 // caller's limit caps them.
@@ -264,7 +314,7 @@ func (s *SearchFirst) SearchSelect(ctx context.Context, query string, limit int)
 	}
 	req := sfRequest{query: query, opts: opts}
 	if spec, ok := pinnedSpec(query); ok {
-		req.spec = spec
+		req.spec, req.guessed = spec, true
 	}
 	o := s.answer(ctx, req)
 	o.Results = Truncate(o.Results, opts.Limit)
@@ -323,6 +373,14 @@ type sfRequest struct {
 	spec    libSpec      // the library as a spec (zero for a docs URL or none)
 	opts    LocalOptions // as the caller gave them
 	version string       // the release verified by resolution, including aliases
+	hits    []sfHit      // the question's search results, fused, best first
+	// guessed marks a spec read from the question's words (name@version
+	// in a bare question): used when resolve confirms its version, read as
+	// ordinary words when it does not, never a refusal.
+	guessed bool
+	// dec is the decision provider a question that names no library asks
+	// (decide_flow.go); nil for none.
+	dec *decision
 }
 
 // pinnedSpec is the library a question pins with a spec of its own
@@ -350,7 +408,7 @@ func (s *SearchFirst) answer(ctx context.Context, req sfRequest) Outcome {
 	if o, ok := s.fromIndex(ctx, req, tr); ok {
 		tr.path = "local"
 		TraceFrom(ctx).setPath(tr.path)
-		return o
+		return dressed(o, req, nil)
 	}
 	if req.opts.Offline {
 		return Answer(SearchBackend, nil, offlineMiss(firstNonEmpty(req.library, req.query)))
@@ -358,10 +416,40 @@ func (s *SearchFirst) answer(ctx context.Context, req sfRequest) Outcome {
 	tr.path = "search"
 	TraceFrom(ctx).setPath(tr.path)
 	near := s.near(req)
-	if o, ok := s.fromRead(ctx, req, tr); ok {
-		return withNear(o, req.library, near)
+	req.dec = s.decisionFor(req)
+	if !req.dec.usable() {
+		// An answer with decisions is never kept: a repeat asks again.
+		if o, ok := s.fromRead(ctx, req, tr); ok {
+			return withNear(withDecisionNote(withRelease(o, req), req.dec.note()), req.library, near)
+		}
 	}
-	return withNear(s.fromSearch(ctx, req, tr), req.library, near)
+	o := withRelease(s.fromSearch(ctx, req, tr), req)
+	if req.dec != nil && o.Decisions == nil {
+		o = withDecisionNote(o, req.dec.note())
+	}
+	tr.fellOver = tr.domains > 1
+	for _, f := range []struct {
+		on   bool
+		name string
+	}{{tr.fellOver, "fell_over"}, {tr.resolvedFirst, "resolved_first"}} {
+		if f.on {
+			TraceFrom(ctx).fallback(f.name)
+		}
+	}
+	return withNear(o, req.library, near)
+}
+
+// withRelease is o marked with the release a bare question names in
+// words (markRelease); o as it is for a request that names a library or
+// pins a version.
+func withRelease(o Outcome, req sfRequest) Outcome {
+	if req.library != "" || req.spec.version != "" && !req.guessed || o.Decisions != nil {
+		return o
+	}
+	if r, ok := questionRelease(req.query); ok {
+		return markRelease(o, r)
+	}
+	return o
 }
 
 // withNear gives o the indexed libraries near the library value: an
@@ -378,7 +466,7 @@ func withNear(o Outcome, value string, near []NearLibrary) Outcome {
 	return o
 }
 
-// fromSearch answers from the site the question's search agrees on, or
+// fromSearch answers from the docs the question's search ranks first, or
 // from the docs root resolve verified for the library the request names
 // when that site is not the project's own (Build 1: right source or say
 // so). Every answer says its origin.
@@ -386,7 +474,20 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 	ctx = withProfileMemo(withFetchMemo(ctx))
 	cctx, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
+	if bareRequest(req) {
+		return s.answerBare(ctx, cctx, req, tr)
+	}
 	hits, prefs, err := s.searchHits(cctx, req)
+	req.hits = hits
+	o := s.readSearch(ctx, cctx, req, hits, prefs, err, tr)
+	if answered(o) || req.spec.version != "" || errors.Is(o.err, ErrAmbiguousLibrary) {
+		return o // a pin must match, and a name several libraries share is the caller's to settle
+	}
+	return resultsOnly(dressed(o, req, nil), hits)
+}
+
+// readSearch answers from the search's hits (fromSearch).
+func (s *SearchFirst) readSearch(ctx, cctx context.Context, req sfRequest, hits []sfHit, prefs sitePrefs, err error, tr *sfTrace) Outcome {
 	tr.hits = len(hits)
 	tr.resolveMs, tr.resolved = prefs.resolved.took.Milliseconds(), resolvedTrace(prefs.resolved)
 	if req.spec.version != "" {
@@ -397,7 +498,10 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 	}
 	docs := docsHits(hits)
 	tr.docsHits = len(docs)
-	sites := chooseSites(docs, prefs)
+	if r, ok := questionRelease(req.query); ok {
+		docs = releaseFirst(docs, r)
+	}
+	sites := rankSites(chooseSites(docs, prefs))
 	tr.cands = siteList(sites)
 	prefs.lead = searchLead(docs, prefs)
 	if amb := prefs.resolved.ambiguous; amb != nil {
@@ -419,12 +523,6 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 	// its note: an answer from the next site must say the first one failed.
 	var unread []string
 	if m := prefs.resolved.match; m != nil && !leadOwned(sites, m) {
-		if guessedByName(prefs) {
-			// A name guessed from the question, tied to its root by a
-			// registry name alone, has earned nothing over the site the
-			// search results favour: that one first, the root after it.
-			return s.favouredFirst(ctx, cctx, sites, req, prefs, tr)
-		}
 		// The root resolve verified is the library, unless the site the
 		// search agrees on is that project's own: read it first. Its
 		// docs not holding the terms gives way to the site the search
@@ -432,6 +530,7 @@ func (s *SearchFirst) fromSearch(ctx context.Context, req sfRequest, tr *sfTrace
 		// text gives way to the search's sites, and the answer says so.
 		site := resolvedSite(m, sites)
 		tr.domains++
+		tr.resolvedFirst = true
 		o, read = s.readSite(ctx, cctx, site, s.hitProfile(cctx, site), req, resolvedOrigin(m, prefs.lead), tr)
 		if lead := prefs.lead; favoursOtherSite(cctx, o, lead, m) {
 			return s.fallOver(ctx, cctx, o, read, sites, req, prefs, tr)
@@ -458,29 +557,14 @@ func leadElsewhere(lead *webRoot, m *webMatch) bool {
 	return lead != nil && !m.root.contains(lead.u) && !ownSiteStrong(*lead, m)
 }
 
-// guessedByName reports a resolved root that has earned no read ahead of
-// the site the search results favour: the name was read from the question
-// (not --library), only a registry package of the name ties the root to
-// it (resolvedOrigin's by name), and the search favours another site that
-// carries the name in its host or docs directory while the root does not
-// (named): nginx.org over an npm nginx package's author homepage, but not
-// a third-party host over zod.dev for zod.
-func guessedByName(prefs sitePrefs) bool {
-	m, lead := prefs.resolved.match, prefs.lead
-	if !prefs.resolved.bare || m == nil || !leadElsewhere(lead, m) || !OriginByName(resolvedOrigin(m, lead).text) {
-		return false
-	}
-	keys := []string{libraryKey(prefs.resolved.name)}
-	return named(lead.u, keys) && !named(m.root.u, keys)
-}
-
-// resolvedSite is the root resolve found for m as a site to read, its own
-// page first.
+// resolvedSite is the root resolve found for m as a site to read: the
+// module's page first when resolve found one, its search hits, and the
+// root's own page when no hit is under it.
 func resolvedSite(m *webMatch, sites []sfSite) sfSite {
 	site := givenSite(m.root, sites)
-	site.page, site.named = m.root.u, true
+	site.named, site.fallback = true, m.root.u
 	if m.page != nil {
-		site.page = m.page
+		site.page, site.pageVia = m.page, "the module page resolve found"
 	}
 	return site
 }
@@ -494,7 +578,7 @@ func (s *SearchFirst) fallOver(ctx, cctx context.Context, o Outcome, read sfRead
 	m, lead := prefs.resolved.match, *prefs.lead
 	fav := givenSite(lead, sites)
 	org := siteOrigin(fav, req, prefs)
-	org.text += fmt.Sprintf("; %s, which resolve found for %s, %s, so this answer is from the site the search results favour", m.root, prefs.resolved.name, lacking(o))
+	org.text = joinNote(org.text, fmt.Sprintf("%s, which resolve found for %s, %s, so this answer is from the site the search results favour", m.root, prefs.resolved.name, lacking(o)))
 	tr.domains++
 	o2, read2 := s.readSite(ctx, cctx, fav, s.hitProfile(cctx, fav), req, org, tr)
 	switch {
@@ -504,38 +588,6 @@ func (s *SearchFirst) fallOver(ctx, cctx context.Context, o Outcome, read sfRead
 		return s.keep(req, read2, o2)
 	case o.err != nil:
 		o.err = fmt.Errorf("%w; nor does %s, the site the search results favour", o.err, lead)
-	}
-	return s.keep(req, read, o)
-}
-
-// favouredFirst reads the site the search results favour ahead of the
-// root resolve found for a name guessed from the question (guessedByName),
-// each with its own origin, and the root after it unless the favoured
-// site's answer is found; the better answer is kept (betterRead; a tie
-// keeps the favoured site's), and a site that gave no text is named in the
-// answer kept. The two reads are the question's two sites (sfMaxSites).
-func (s *SearchFirst) favouredFirst(ctx, cctx context.Context, sites []sfSite, req sfRequest, prefs sitePrefs, tr *sfTrace) Outcome {
-	m, lead := prefs.resolved.match, *prefs.lead
-	fav := givenSite(lead, sites)
-	tr.domains++
-	o, read := s.readSite(ctx, cctx, fav, s.hitProfile(cctx, fav), req, siteOrigin(fav, req, prefs), tr)
-	if o.Status == Found || cctx.Err() != nil {
-		return s.keep(req, read, o)
-	}
-	root := resolvedSite(m, sites)
-	tr.domains++
-	o2, read2 := s.readSite(ctx, cctx, root, s.hitProfile(cctx, root), req, resolvedOrigin(m, &lead), tr)
-	switch {
-	case o.unread != "" && o2.unread != "":
-		return s.keepAfter(req, read2, []string{lead.String() + " (" + o.unread + ")", m.root.String() + " (" + o2.unread + ")"}, o2)
-	case o.unread != "":
-		return s.keepTried(req, read2, o2, lead, o.unread, "the site the search results favour")
-	case o2.unread != "":
-		return s.keepTried(req, read, o, m.root, o2.unread, "which resolve found for "+prefs.resolved.name)
-	case betterRead(o2, o):
-		return s.keep(req, read2, o2)
-	case o.err != nil:
-		o.err = fmt.Errorf("%w; nor does %s, which resolve found for %s", o.err, m.root, prefs.resolved.name)
 	}
 	return s.keep(req, read, o)
 }
@@ -604,6 +656,7 @@ func withTried(o Outcome, tried string) Outcome {
 // site read before, until one answers or the reads run out.
 func (s *SearchFirst) readSites(ctx, cctx context.Context, sites []sfSite, req sfRequest, prefs sitePrefs, o Outcome, read sfRead, unread []string, tr *sfTrace) Outcome {
 	var err error
+	skipped := o.Skipped // every page tried and unreadable, the earlier sites' too
 	for range sfMaxReads {
 		var site sfSite
 		var prof *siteProfile
@@ -618,16 +671,19 @@ func (s *SearchFirst) readSites(ctx, cctx context.Context, sites []sfSite, req s
 			tr.domains++
 		}
 		o, read = s.readSite(ctx, cctx, site, prof, req, siteOrigin(site, req, prefs), tr)
+		o.Skipped = append(slices.Clone(skipped), o.Skipped...)
+		skipped, read.Skipped = o.Skipped, o.Skipped // a repeat prints them too
 		if answered(o) || cctx.Err() != nil {
 			return s.keepAfter(req, read, unread, o)
 		}
 		if o.unread != "" {
 			unread = append(unread, site.root.String()+" ("+o.unread+")")
 		}
-		if len(site.alts) > 0 {
+		if len(site.alts) > 0 && !printableRefusal(o) {
 			// Nothing readable in this docs tree (JS shells no browser
-			// rendered, robots-closed, nothing matching): the domain's next
-			// tree before another domain.
+			// rendered, robots-closed): the domain's next tree before
+			// another domain. Pages read that lack the question's terms are
+			// not that: never another release's tree in their place.
 			next := site.alts[0]
 			next.alts, next.retry = site.alts[1:], true
 			sites = append([]sfSite{next}, sites...)
@@ -644,8 +700,41 @@ func (s *SearchFirst) readSites(ctx, cctx context.Context, sites []sfSite, req s
 // for a repeat within cache_ttl when the outcome is one the evidence
 // pipeline decided (an answer, or a refusal for want of the terms).
 func (s *SearchFirst) keep(req sfRequest, read sfRead, o Outcome) Outcome {
+	if !answered(o) && !printableRefusal(o) {
+		return o
+	}
+	o = dressed(o, req, otherResults(req.hits, o.Read, read.widePages(), o.Skipped))
+	read.Others = o.OtherResults
 	if read.Root != "" && kept(o) {
 		s.saveRead(req, read)
+	}
+	return o
+}
+
+// printableRefusal reports the evidence pipeline's refusal for want of the
+// question's terms in pages it read or an indexed library: an answer that
+// says so (not_on_pages, not_in_index), with what it read.
+func printableRefusal(o Outcome) bool {
+	return termsRefused(o) && (len(o.Read) > 0 || o.Widened != nil || o.Index != nil)
+}
+
+// dressed is an outcome as the search backend returns it: the library
+// the request named, an answer from pages read (or an indexed library)
+// that hold none of the question's terms printed as an answer (what was
+// read, the outline, the other results; not_on_pages or not_in_index
+// names every term), and others, the search results it did not read.
+func dressed(o Outcome, req sfRequest, others []OtherResult) Outcome {
+	o.named = req.library
+	if printableRefusal(o) {
+		if o.Index == nil {
+			o.Note = joinNote("no section of the pages read holds the question's terms ("+strings.Join(o.NotFound, ", ")+")", o.Note)
+		}
+		o.Status, o.Reason, o.err, o.Results = Partial, ReasonTermsNotFound, nil, []Result{}
+		o.Backend = SearchBackend
+		o.Attempts = []Attempt{{Backend: SearchBackend, Status: Partial, Reason: ReasonTermsNotFound}}
+	}
+	if answered(o) {
+		o.OtherResults = others
 	}
 	return o
 }
@@ -668,15 +757,14 @@ func (s *SearchFirst) keepAfter(req sfRequest, read sfRead, unread []string, o O
 	return s.keep(req, read, o)
 }
 
-// searchLead is the site the search results agree on with no resolved
-// root preferred: pickSite over the docs hits' sites, nil when they agree
-// on none.
+// searchLead is the first docs site of the search with no resolved root
+// preferred, nil when there is none.
 func searchLead(docs []sfHit, prefs sitePrefs) *webRoot {
 	plain := prefs
 	if m := prefs.resolved.match; m != nil {
 		plain.roots = slices.DeleteFunc(slices.Clone(prefs.roots), func(r webRoot) bool { return r.String() == m.root.String() })
 	}
-	site, err := pickSite(chooseSites(docs, plain))
+	site, err := pickSite(rankSites(chooseSites(docs, plain)))
 	if err != nil || site.root.prefix == "/" && indexHosted(site.root.u) {
 		return nil // a package index's whole host is no site to favour
 	}
@@ -690,20 +778,20 @@ func termsRefused(o Outcome) bool {
 	return o.Status == Refused && (errors.Is(err, ErrTermsNotFound) || errors.Is(err, ErrNoResults))
 }
 
-// namedRefusal is the refusal of a question whose search agrees on no
+// namedRefusal is the refusal of a question whose search found no docs
 // site, when the request names a library: the libraries resolve knows by
 // that name, with their ecosystems and titles, never the sites the search
 // happened to return; those only when resolve knows nothing of the name.
 func namedRefusal(err error, req sfRequest, prefs sitePrefs) error {
 	if req.library == "" || isHTTPURL(req.library) || len(prefs.resolved.candidates) == 0 ||
-		!errors.Is(err, ErrAmbiguousSite) && !errors.Is(err, ErrNoDocsFound) {
+		!errors.Is(err, ErrNoDocsFound) {
 		return err
 	}
-	return fmt.Errorf("search: the search results agree on no site for %q; resolve knows it as: %s; pass one as the library (--library): %w",
+	return fmt.Errorf("search: the search found no docs site for %q; resolve knows it as: %s; pass one as the library (--library): %w",
 		req.library, matchList(prefs.resolved.candidates), ErrAmbiguousLibrary)
 }
 
-// leadOwned reports a leading site the search agrees on that is the site
+// leadOwned reports a first docs site of the search that is the site
 // of the project resolve verified m for (siteOfProject): it then answers,
 // with that as its origin.
 func leadOwned(sites []sfSite, m *webMatch) bool {
@@ -741,7 +829,8 @@ const (
 )
 
 // readSite answers from one site: from the indexed library that holds it,
-// else from its pages, read and held in memory. It returns the read a
+// else from its exact pages (search_exact.go), widened when they lack a
+// term of the question, read and held in memory. It returns the read a
 // repeat within cache_ttl would answer from (no Root when nothing was
 // read), which fromSearch keeps.
 func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *siteProfile, req sfRequest, origin sfOrigin, tr *sfTrace) (Outcome, sfRead) {
@@ -753,30 +842,64 @@ func (s *SearchFirst) readSite(ctx, cctx context.Context, site sfSite, prof *sit
 		tr.local = lib.Root
 		return s.answerIndexed(ctx, lib, req.query, req.opts, ""), sfRead{Root: site.root.String()}
 	}
-	links, disallowed, wide := s.plan(cctx, site, prof, req.query)
-	if len(links) == 0 && disallowed > 0 {
-		return Answer(SearchBackend, nil, fmt.Errorf("search: %s's robots.txt disallows the %d pages found: %w", site.root, disallowed, errDisallowed)), sfRead{}
+	p, fails, disallowed, tree := s.readExact(cctx, site, tr)
+	tr.exact += len(p.exact)
+	p.title, p.name = readTitle(p.root, prof)
+	widen := s.widener(cctx, tree, prof, req, p, &fails, tr)
+	found := len(p.exact) > 0 || widen(nil)
+	selfFail := ""
+	if !found && site.self != nil && disallowed == 0 && fails.n() == 0 {
+		// Nothing under the library URL: the URL itself is the one page.
+		one := sfSite{key: site.key, root: site.root, docs: site.docs, named: site.named, page: site.self, pageVia: "the library URL"}
+		sp, sfails, sdis, stree := s.readExact(cctx, one, tr)
+		tr.exact += len(sp.exact)
+		if len(sp.exact) > 0 {
+			p, fails, disallowed, tree = sp, sfails, sdis, stree
+			p.title, p.name = readTitle(p.root, prof)
+			widen = s.widener(cctx, tree, prof, req, p, &fails, tr)
+			found = true
+		} else {
+			selfFail = "nor could the library URL itself be read"
+			if len(sp.skipped) > 0 {
+				selfFail += " (" + sp.skipped[0].Cause + ")"
+			}
+			p.skipped = append(p.skipped, sp.skipped...)
+		}
 	}
-	if len(links) == 0 {
+	if !found {
+		return s.noPageRead(ctx, cctx, site, p, fails, disallowed, selfFail), sfRead{}
+	}
+	o := s.answerRead(ctx, p, req, origin, widen)
+	o.readPages = append(slices.Clone(p.exact), p.wide...)
+	r := readOf(p)
+	r.Version, r.Pin = req.version, req.spec.version
+	r.Origin = origin.text
+	return o, r
+}
+
+// noPageRead is a site of which no exact page could be read, nor any the
+// site's own lists name: its robots.txt disallowed them, none was found
+// (selfFail saying why the library URL itself could not be read, if it
+// was tried), or every read failed.
+func (s *SearchFirst) noPageRead(ctx, cctx context.Context, site sfSite, p *sfPages, fails readFails, disallowed int, selfFail string) Outcome {
+	if disallowed > 0 && fails.n() == 0 {
+		o := Answer(SearchBackend, nil, fmt.Errorf("search: %s's robots.txt disallows the %d pages found: %w", site.root, disallowed, errDisallowed))
+		o.Skipped = p.skipped
+		return o
+	}
+	if fails.n() == 0 {
 		why := "no search hit is under it, and its llms.txt, sitemap and links list none"
+		if selfFail != "" {
+			why += ", " + selfFail
+		}
 		o := s.failed(ctx, cctx, fmt.Errorf("search: found no page of %s to read: %s; %s: %w", site.root, why, appendNext(nil, site.root)[0], ErrNotFound))
-		o.unread = "no page to read"
-		return o, sfRead{}
+		o.unread, o.Skipped = "no page to read", p.skipped
+		return o
 	}
-	pages, by, fails := s.fetch(cctx, site.root, links)
-	tr.planned, tr.fetched, tr.failed = tr.planned+len(links), tr.fetched+len(pages), tr.failed+fails.n()
-	if len(pages) == 0 {
-		why := readFailNote(site.root, fails.list, fails.details)
-		o := s.failed(ctx, cctx, fmt.Errorf("search: none of the %d pages of %s could be read: %s: %w", len(links), site.root, why, ErrNotFound))
-		o.unread = strings.SplitN(why, "; ", 2)[0]
-		return o, sfRead{}
-	}
-	title, name := readTitle(site.root, prof)
-	r := readOf(site.root, title, name, pages, by)
-	r.Version = req.version
-	r.Pin = req.spec.version
-	r.Origin, r.OriginRoots, r.Wide = origin.text, origin.roots, wide
-	return s.answerRead(ctx, site.root, title, name, pages, req, origin, wide), r
+	o := s.failed(ctx, cctx, noPageErr(site.root, fails.n(), fails))
+	o.unread = strings.SplitN(readFailNote(site.root, fails.list, fails.details), "; ", 2)[0]
+	o.Skipped = p.skipped
+	return o
 }
 
 // failed is a search-first call that ended before an answer, classified
@@ -786,44 +909,6 @@ func (s *SearchFirst) failed(parent, op context.Context, err error) Outcome {
 		err = fmt.Errorf("search: no answer within %s: %w", s.timeout, err)
 	}
 	return Answer(SearchBackend, nil, err)
-}
-
-// searchNote says how much of the site at root a search read and, when
-// ok, how to index the docs at idx (indexRoot): "the whole site" for a
-// host's root, "these docs" for a tree in it.
-func searchNote(root webRoot, read int, idx webRoot, ok bool) string {
-	note := fmt.Sprintf("read %s of %s found by web search", plural(read, "page"), root)
-	switch {
-	case !ok:
-		return note
-	case idx.prefix == "/":
-		return note + "; the whole site: ketch docs index " + idx.String()
-	}
-	return note + "; to index these docs: ketch docs index " + idx.String()
-}
-
-// searchAnswered is the local index's answer as the search-first
-// backend's, with note (searchNote) and its origin. Its status is the
-// evidence pipeline's: found when the question's distinctive terms are
-// in the pages read, partial only for terms really missing (Build 1: the
-// source line already says the pages came from a search).
-func searchAnswered(o Outcome, note string, origin sfOrigin) Outcome {
-	o.Origin, o.originRoots = origin.text, origin.roots
-	if o.Status != Found && o.Status != Partial {
-		for i := range o.Attempts {
-			o.Attempts[i].Backend = SearchBackend
-		}
-		return o
-	}
-	for i := range o.Results {
-		o.Results[i].Source = SearchBackend
-	}
-	o.Backend = SearchBackend
-	o.Note = joinNote(o.Note, note)
-	for i := range o.Attempts {
-		o.Attempts[i].Backend = SearchBackend
-	}
-	return o
 }
 
 // searchHits runs the question's searches concurrently (and, for a
@@ -852,6 +937,9 @@ func (s *SearchFirst) searchHits(ctx context.Context, req sfRequest) ([]sfHit, s
 		firstErr = firstNonNil(firstErr, errs[i])
 	}
 	hits := fuseWeighted(append(lists, citedLists(lists)...), []float64{1, 1, sfCitedWeight, sfCitedWeight})
+	for i := range hits {
+		hits[i].rank = i + 1
+	}
 	switch {
 	case !answered:
 		return nil, prefs, fmt.Errorf("search: web search failed: %w", firstErr)
@@ -869,8 +957,9 @@ var errDisallowed = failure.New(failure.NotFound, reasonDisallowed, "robots.txt 
 
 const reasonDisallowed = "disallowed"
 
-// errSearchEmpty is web searches that all answered with no results.
-var errSearchEmpty = failure.New(failure.Upstream, "search_empty", "the web search returned no results")
+// errSearchEmpty is web searches that all answered with no results:
+// nothing to print (exit 3).
+var errSearchEmpty = failure.New(failure.NotFound, "search_empty", "the web search returned no results")
 
 func firstNonNil(a, b error) error {
 	if a != nil {
@@ -906,8 +995,8 @@ func searchQueries(req sfRequest) []string {
 // library it names, sites its name labels, and what resolve makes of the
 // name within sfResolveTimeout (resolveNamed: one verified docs root, a
 // preference here and the site fromSearch reads first, or several, which
-// refuse the question). A bare question's first firm reading is resolved
-// the same way, strictly. Resolving runs beside the web search, so it
+// refuse the question). A name@version a bare question writes is resolved
+// the same way (answerBare). Resolving runs beside the web search, so it
 // costs only the time it takes past the search's.
 func (s *SearchFirst) prefs(ctx context.Context, req sfRequest) sitePrefs {
 	p := sitePrefs{words: questionWords(req.query)}
@@ -929,7 +1018,7 @@ func (s *SearchFirst) prefs(ctx context.Context, req sfRequest) sitePrefs {
 		return p
 	}
 	timeout := sfResolveTimeout
-	if req.spec.version != "" {
+	if req.spec.version != "" && !req.guessed {
 		timeout = s.timeout // an explicit pin must resolve, not degrade into a search preference
 	}
 	rctx, cancel := context.WithTimeout(ctx, timeout)
@@ -953,20 +1042,24 @@ func lastPart(name string) string {
 	return name
 }
 
-// chooseSite picks the site and reads its top hit's profile (its nav
-// lists the siblings): a site with no docs signal in its hits must look
-// like docs there (looksLikeDocs), or the next site is tried. A docs URL
-// the request gives is the site, whatever the hits say.
+// chooseSite takes the first of sites (rankSites: the search's order)
+// and reads its top hit's profile; a site whose top hit cannot be read
+// tries the domain's next tree first. A docs URL the request gives is the
+// site, whatever the hits say.
 func (s *SearchFirst) chooseSite(ctx context.Context, sites []sfSite, req sfRequest, prefs sitePrefs) (sfSite, *siteProfile, []sfSite, error) {
 	if isHTTPURL(req.library) && len(prefs.roots) > 0 {
 		site := givenSite(prefs.roots[0], sites)
-		if u, err := url.Parse(req.library); err == nil && isPageFile(path.Base(u.Path)) {
+		if u, err := url.Parse(req.library); err == nil {
 			u.Fragment, u.RawQuery = "", ""
-			site.page = u // the page the library names is read first, hits or none
+			if isPageFile(path.Base(u.Path)) {
+				site.page, site.pageVia = u, "the library URL" // read first, hits or none
+			} else {
+				site.self = u // read when nothing under it is (readSite)
+			}
 		}
 		return site, s.hitProfile(ctx, site), nil, nil
 	}
-	for tries := 0; tries < 3; tries++ {
+	for {
 		site, err := pickSite(sites)
 		if err != nil {
 			return sfSite{}, nil, nil, err
@@ -981,11 +1074,8 @@ func (s *SearchFirst) chooseSite(ctx context.Context, sites []sfSite, req sfRequ
 		}
 		prof = s.followMoved(ctx, prof)
 		site, sites = servedSite(site, prof, sites)
-		if site.docs || site.named || prof != nil && prof.served != nil && looksLikeDocs(prof.served, prof) {
-			return site, prof, sites, nil
-		}
+		return site, prof, sites, nil
 	}
-	return sfSite{}, nil, nil, fmt.Errorf("search: %w", ErrNoDocsFound)
 }
 
 // followMoved is prof, or where its site moved when its page says so.
@@ -1116,7 +1206,7 @@ func searchProvider() Provider {
 	return Provider{
 		ID:          SearchBackend,
 		Name:        "Search",
-		LibraryHelp: "a docs root as resolve lists it, or a library name or name@version (answered from the docs root resolve verifies for it; a name several libraries share is refused with them listed); a URL below an indexed root narrows the answer to the pages under it (scope), a docs URL not indexed is searched within; a library indexed with ketch docs index answers offline",
+		LibraryHelp: "docs URL, name, or name@version; sub-URL scopes an indexed root; indexed libraries answer offline",
 		Usable:      func(*config.Config) bool { return true },
 		New:         func(c *config.Config, deps Deps) (Searcher, error) { return newSearchFirstFromConfig(c, deps), nil },
 		Probe:       probeSearch,

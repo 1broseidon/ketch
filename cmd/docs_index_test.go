@@ -69,7 +69,8 @@ func TestDocsIndexResolvesLikeAQuery(t *testing.T) {
 	if err != nil {
 		t.Fatalf("--library pypi:widget: exit %d: %v", exitCode(err), err)
 	}
-	if !strings.Contains(text, "backend: search") || !strings.Contains(text, "source: https://widget.readthedocs.io/") {
+	if strings.Contains(text, "backend:") || !strings.Contains(text, "\nlibrary: https://widget.readthedocs.io/") || !strings.Contains(text, "\nindex: full, ") ||
+		!strings.Contains(text, "source: https://widget.readthedocs.io/") {
 		t.Errorf("local answer:\n%s", text)
 	}
 }

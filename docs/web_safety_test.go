@@ -150,7 +150,7 @@ func TestBlogSectionsAreNotDocs(t *testing.T) {
 // query never answers.
 func TestHomePageRootMovesToDocsSection(t *testing.T) {
 	w, _ := safetyWorld(t, "landing-docs-section")
-	m, err := w.resolveOne(context.Background(), mustSpec(t, "pypi:inkpot"), false)
+	m, err := w.resolveOne(context.Background(), mustSpec(t, "pypi:inkpot"))
 	if err != nil || m.root.String() != "https://inkpot.example/docs/" {
 		t.Fatalf("resolveOne = %s, %v; want the docs section", m.root, err)
 	}

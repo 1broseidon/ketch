@@ -14,7 +14,9 @@ type plan struct {
 	whole  bool
 	pieces []int
 	cost   int
-	with   []int // pieces printed only because a chosen piece brings them (unitOf): not charged to the page
+	// clip is the text printed in place of the pieces' when one of them
+	// is larger than what was left (clipped); "" for none.
+	clip string
 }
 
 // ranked is Rank's output: the terms' weights and which are distinctive,
@@ -22,6 +24,7 @@ type plan struct {
 // order, and the plans in the order their sections opened, with why
 // sections were passed over.
 type ranked struct {
+	terms    []evidenceTerm
 	weights  []float64
 	distinct []bool
 	scores   []scored  // by piece id
@@ -34,6 +37,9 @@ type ranked struct {
 	limit    int            // the most groups, 0 for no limit
 	used     int
 	stop     string // "budget" when a piece was passed over for room, else "end"
+	// order is the exact pages' places, best first (pageOrder): the walk
+	// takes every piece of one page before the next's; nil for none.
+	order map[string]int
 }
 
 // rankPieces ranks the candidates (pieces not folded into another, that
@@ -83,34 +89,108 @@ func sectionRank(s *sorted, id int) int {
 // planner is the state of the walk.
 type planner struct {
 	lib   docsindex.Library
-	hint  HintStyle
 	s     *sorted
 	r     *ranked
 	left  int
 	shown []bool          // by piece: printed, or a copy of a printed piece
 	pages map[string]bool // the pages a group is printed of
-	cut   bool            // a group is cut: the answer ends with the hint line
 }
 
 // printSections walks the candidates in fused order within the budget. A
 // piece whose section is not printed yet opens it: the section prints
-// whole when it fits the budget left and a page (answerPageTokens), else
-// cut to the piece. A section longer than a page then takes its best
-// pieces at once, in the walk's order, while its text stays within a
-// page and the answer within the budget: a page of it. A later piece of a
-// cut section joins it when it fits. A piece that does not fit, and one
-// that would open a group past --limit's, is passed over and the walk
-// goes on: a later, smaller one may fit. The first section always prints
-// something, so an answer is never empty for want of room.
-func printSections(lib docsindex.Library, s *sorted, r *ranked, hint HintStyle) {
-	p := &planner{lib: lib, hint: hint, s: s, r: r, left: r.budget, shown: make([]bool, len(s.pieces)), pages: map[string]bool{}}
+// whole when it fits the budget left, else cut to the piece, and a later
+// piece of a cut section joins it when it fits (a long section prints its
+// best pieces by rank). A piece that does not fit, and one that would
+// open a group past --limit's, is passed over and the walk goes on: a
+// later, smaller one may fit. The first section always prints something,
+// so an answer is never empty for want of room.
+//
+// With the exact pages' order (r.order), everything read of them prints
+// whole when it fits the budget; otherwise the pages are walked one at a
+// time, best first, each its candidates in fused order: the best page gets
+// the budget, the next what is left. The candidates of other pages (those
+// a widening read) are walked after them, in fused order.
+func printSections(lib docsindex.Library, s *sorted, r *ranked) {
+	p := &planner{lib: lib, s: s, r: r, left: r.budget, shown: make([]bool, len(s.pieces)), pages: map[string]bool{}}
 	r.passed, r.stop = map[int]string{}, "end"
-	at := map[int]int{}      // section: its plan
-	bySec := map[int][]int{} // section: its candidates in the walk's order
-	for _, id := range r.walk {
-		bySec[s.pieces[id].sec] = append(bySec[s.pieces[id].sec], id)
+	at := map[int]int{} // section: its plan
+	if r.order == nil {
+		p.walk(r.walk, at)
+		return
 	}
+	secs := exactPageSections(s, r.order)
+	walks := make([][]int, len(secs)+1) // the exact pages', then the rest's
 	for _, id := range r.walk {
+		k, ok := r.order[pageKeyOf(s.secs[s.pieces[id].sec].Page)]
+		if !ok || k >= len(secs) {
+			k = len(secs)
+		}
+		walks[k] = append(walks[k], id)
+	}
+	if p.wholeFits(secs, at) {
+		walks = walks[len(secs):]
+	}
+	for _, ids := range walks {
+		p.walk(ids, at)
+	}
+}
+
+// exactPageSections are the sections of each exact page (by its place in
+// order), in page order.
+func exactPageSections(s *sorted, order map[string]int) [][]int {
+	out := make([][]int, len(order))
+	for i, sec := range s.secs {
+		if k, ok := order[pageKeyOf(sec.Page)]; ok && k < len(out) {
+			out[k] = append(out[k], i)
+		}
+	}
+	for _, list := range out {
+		slices.SortStableFunc(list, func(a, b int) int { return cmp.Compare(s.secs[a].Order, s.secs[b].Order) })
+	}
+	return out
+}
+
+// wholeFits prints every section of pages whole when they all fit the
+// budget left, and reports whether it did.
+func (p *planner) wholeFits(pages [][]int, at map[int]int) bool {
+	total := 0
+	for _, secs := range pages {
+		for _, i := range secs {
+			total += p.s.secs[i].tokens
+		}
+	}
+	if total == 0 || total > p.left {
+		return false
+	}
+	var plans []plan
+	cost := 0
+	seen := map[string]bool{}
+	for _, secs := range pages {
+		for _, i := range secs {
+			pl := plan{sec: i, whole: true}
+			pl.cost = p.render(pl) + 1
+			if page := p.s.secs[i].Page; !seen[page] {
+				seen[page] = true
+				pl.cost += pageHeadingTokens(p.s.secs[i].Section)
+			}
+			plans, cost = append(plans, pl), cost+pl.cost
+		}
+	}
+	if cost > p.left {
+		return false
+	}
+	for _, pl := range plans {
+		at[pl.sec] = len(p.r.plans)
+		p.take(pl)
+	}
+	return true
+}
+
+// walk is the walk over ids (candidates, in the order taken), opening and
+// growing plans (at: section to its plan).
+func (p *planner) walk(ids []int, at map[int]int) {
+	s, r := p.s, p.r
+	for _, id := range ids {
 		i := s.pieces[id].sec
 		if p.shown[id] {
 			continue
@@ -132,64 +212,50 @@ func printSections(lib docsindex.Library, s *sorted, r *ranked, hint HintStyle) 
 			delete(r.passed, i)
 			at[i] = len(r.plans)
 			p.take(pl)
-			if !pl.whole && overPage(s.secs[i].tokens) {
-				p.fill(&r.plans[at[i]], bySec[i])
-			}
-		}
-	}
-}
-
-// fill grows pl, a section longer than a page just opened, with its
-// candidates (ids, in the walk's order) not shown yet, each that fits.
-func (p *planner) fill(pl *plan, ids []int) {
-	for _, id := range ids {
-		if !p.shown[id] {
-			p.grow(pl, id)
 		}
 	}
 }
 
 // open is what section i prints when piece id opens it, within the
-// budget left: whole when it fits and is no longer than a page
-// (answerPageTokens), else cut to the piece; false when that does not fit
-// either (unless it is the first section).
+// budget left: whole when it fits, else cut to the piece; false when that
+// does not fit either. The first section always opens: when its piece does
+// not fit, cut inside the piece (clipped).
 func (p *planner) open(i, id int) (plan, bool) {
-	if t := p.s.secs[i].tokens; t <= p.left && !overPage(t) {
+	if t := p.s.secs[i].tokens; t <= p.left {
 		pl := plan{sec: i, whole: true}
 		if pl.cost = p.render(pl) + p.overhead(pl); pl.cost <= p.left {
 			return pl, true
 		}
 	}
 	pl := plan{sec: i, pieces: unitOf(p.s, id)}
-	for _, w := range pl.pieces {
-		if w != id {
-			pl.with = append(pl.with, w)
-		}
-	}
 	pl.cost = p.render(pl) + p.overhead(pl)
-	return pl, pl.cost <= p.left || len(p.r.plans) == 0
+	if pl.cost > p.left && len(p.r.plans) == 0 {
+		return p.clipped(pl), true // the first section prints something, within the budget
+	}
+	return pl, pl.cost <= p.left
 }
 
 // overhead is what opening a section as pl adds to the answer beyond its
-// group: its page's title when no group of the page is printed yet, and
-// the answer's hint line when it is the first group cut.
+// group: its page's title and address when no group of the page is
+// printed yet.
 func (p *planner) overhead(pl plan) int {
-	n := 0
 	if sec := p.s.secs[pl.sec]; !p.pages[sec.Page] {
-		n += estimateTokens("## "+pageTitle(sec.Section)+"\n\n") + 1
+		return pageHeadingTokens(sec.Section)
 	}
-	if !pl.whole && !p.cut {
-		n += hintTokens(AnswerHint(p.hint, hintCutPlan))
-	}
-	return n
+	return 0
+}
+
+// pageHeadingTokens is what a page's heading costs: its title and its
+// address, with the blank line after them.
+func pageHeadingTokens(sec docsindex.Section) int {
+	return estimateTokens("## "+pageTitle(sec)+"\n"+sec.Page+"\n\n") + 1
 }
 
 // grow adds piece id to pl, cut, when the answer stays within the budget
-// with it and, for a section longer than a page, the group's text within
-// a page; false when it does not fit the budget.
+// with it; false when it does not fit.
 func (p *planner) grow(pl *plan, id int) bool {
-	if pl.whole {
-		return true
+	if pl.whole || pl.clip != "" {
+		return pl.whole
 	}
 	add := []int{id}
 	for _, w := range unitOf(p.s, id) {
@@ -197,12 +263,8 @@ func (p *planner) grow(pl *plan, id int) bool {
 			add = append(add, w)
 		}
 	}
-	grown := plan{sec: pl.sec, pieces: append(slices.Clone(pl.pieces), add...), with: append(slices.Clone(pl.with), add[1:]...)}
+	grown := plan{sec: pl.sec, pieces: append(slices.Clone(pl.pieces), add...)}
 	slices.Sort(grown.pieces)
-	sec := p.s.secs[pl.sec]
-	if overPage(sec.tokens) && pageTokens(p.s, sec, grown) > answerPageTokens {
-		return true // a page is full: the walk goes on, the budget is not what stopped it
-	}
 	grown.cost = pl.cost + p.render(grown) - p.render(*pl)
 	if grown.cost-pl.cost > p.left {
 		return false
@@ -213,28 +275,12 @@ func (p *planner) grow(pl *plan, id int) bool {
 	return true
 }
 
-// pageTokens is what pl's group of sec charges to a page: its text, less
-// the pieces printed only because a chosen piece brings them.
-func pageTokens(s *sorted, sec sortedSection, pl plan) int {
-	n := estimateTokens(joinPieces(s, sec, pl.pieces))
-	for _, w := range pl.with {
-		n -= s.pieces[w].tokens
-	}
-	return n
-}
-
-// overPage reports a section of tokens longer than a page: never printed
-// whole in an answer (answerPageTokens; 0 sets no page).
-func overPage(tokens int) bool {
-	return answerPageTokens > 0 && tokens > answerPageTokens
-}
-
 // render is what printing pl's group costs, as the answer shows it under
 // its page's title, with the blank line after it.
 func (p *planner) render(pl plan) int {
 	printed := printedSections(p.r.plans)
 	printed[pl.sec] = true
-	res := renderGroup(p.lib, p.s, group{sec: pl.sec, pieces: pl.pieces, whole: pl.whole, printed: printed})
+	res := renderGroup(p.lib, p.s, group{sec: pl.sec, pieces: pl.pieces, whole: pl.whole, clip: pl.clip, printed: printed})
 	res.URL = shownURL(p.lib, res.URL)
 	return estimateTokens(RenderGroup(res, false)) + 1
 }
@@ -250,7 +296,6 @@ func (p *planner) take(pl plan) {
 	p.spend(pl.cost)
 	p.r.plans = append(p.r.plans, pl)
 	p.pages[p.s.secs[pl.sec].Page] = true
-	p.cut = p.cut || !pl.whole
 }
 
 func (p *planner) spend(n int) {

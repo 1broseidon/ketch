@@ -63,8 +63,8 @@ func TestScopedAnswerPage(t *testing.T) {
 		t.Errorf("frontmatter, want library the root and scope the page:\n%s", f)
 	}
 	whole := s.GetDocsSelect(context.Background(), idxRoot, "register middleware with app.use", 0)
-	if !slices.Equal(whole.Terms, o.Terms) || whole.Scope != "" {
-		t.Errorf("terms %v scoped, %v whole; scope %q: want the library's counts and no scope", o.Terms, whole.Terms, whole.Scope)
+	if !slices.Equal(whole.NotFound, o.NotFound) || whole.Scope != "" {
+		t.Errorf("not_in_index %v scoped, %v whole; scope %q: want the library's terms and no scope", o.NotFound, whole.NotFound, whole.Scope)
 	}
 }
 
@@ -83,7 +83,7 @@ func TestScopedAnswerDirectory(t *testing.T) {
 }
 
 // A distinctive term the library holds only outside the scope is named
-// in outside_scope, not not_found (nowhere in the library); the answer is
+// in outside_scope, not not_in_index (nowhere in the library); the answer is
 // partial for it, refused when no distinctive term is under the scope.
 func TestScopedAnswerOutsideScope(t *testing.T) {
 	s := scopedSearchFirst(t)
@@ -94,7 +94,7 @@ func TestScopedAnswerOutsideScope(t *testing.T) {
 		t.Fatalf("outcome = %s (%s), outside %v, not_found %v", o.Status, o.Reason, o.OutsideScope, o.NotFound)
 	}
 	f := NewFrontmatter("q", SearchBackend, page, o).Render()
-	if !strings.Contains(f, "\nnot_found: [pam_sss]\noutside_scope: [c.req.param]\n") {
+	if !strings.Contains(f, "\nnot_in_index: [pam_sss]\noutside_scope: [c.req.param]\n") {
 		t.Errorf("frontmatter:\n%s", f)
 	}
 	r := s.GetDocsSelect(context.Background(), page, "c.req.param", 0)
@@ -112,26 +112,7 @@ func TestScopedAnswerEmpty(t *testing.T) {
 		!strings.Contains(o.Note, "no indexed page of "+idxRoot+" is at or under "+idxRoot+"no/such/page") {
 		t.Fatalf("outcome = %s %v library %q note %q", o.Status, o.Err(), o.Library, o.Note)
 	}
-	if f := NewFrontmatter("q", SearchBackend, idxRoot+"no/such/page", o).Render(); !strings.Contains(f, "status: refused (scope_empty)") || strings.Contains(f, "outside_scope") {
+	if f := NewFrontmatter("q", SearchBackend, idxRoot+"no/such/page", o).Render(); !strings.Contains(f, "\nnote: no indexed page of ") || strings.Contains(f, "outside_scope") || strings.Contains(f, "status") {
 		t.Errorf("frontmatter:\n%s", f)
-	}
-}
-
-// An answer from pages a search read under a library URL below its docs
-// tree is scoped to the root read; one for the tree itself, a name or no
-// library is not.
-func TestReadScope(t *testing.T) {
-	deep, _ := parseWebRoot("https://duo.example.test/docs/sso-oidc")
-	tree, _ := parseWebRoot("https://duo.example.test/docs/")
-	if got := readScope(deep, "https://duo.example.test/docs/sso-oidc"); got != "https://duo.example.test/docs/sso-oidc/" {
-		t.Errorf("deep: %q", got)
-	}
-	for _, c := range []struct {
-		root    webRoot
-		library string
-	}{{tree, "https://duo.example.test/docs/"}, {deep, "duo"}, {deep, ""}} {
-		if got := readScope(c.root, c.library); got != "" {
-			t.Errorf("readScope(%s, %q) = %q, want none", c.root, c.library, got)
-		}
 	}
 }

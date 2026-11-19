@@ -230,8 +230,8 @@ func TestFoldLineSkipsPrinted(t *testing.T) {
 	g := evGathered("alpha beta", 1000, map[string]int{"alpha": 2, "beta": 2})
 	lib := docsindex.Library{Root: evRoot}
 	r := evRanked(s, g, 600, 0)
-	printSections(lib, s, r, HintNone)
-	res, _ := fitResults(lib, s, r, HintNone, nil)
+	printSections(lib, s, r)
+	res, _ := fitResults(lib, s, r, nil)
 	if len(res) != 2 || !res[0].Truncated || res[1].Truncated {
 		t.Fatalf("want P cut and Q whole: %+v", res)
 	}
@@ -392,7 +392,8 @@ func compactSections() []docsindex.Section {
 
 // Within a small budget the answer holds the code block naming the
 // question whole, and not the large code block that names none of it; it
-// is within the budget by the estimate, frontmatter included, and no fence
+// is within the budget by the estimate (the passages: the frontmatter is
+// beside it), and no fence
 // is left open.
 func TestEvidenceAnswer(t *testing.T) {
 	secs := compactSections()
@@ -405,7 +406,7 @@ func TestEvidenceAnswer(t *testing.T) {
 	if err != nil || len(a.results) == 0 {
 		t.Fatalf("results = %v %v", a, err)
 	}
-	all, total := "", printedTokens(lib, query, a, LocalOptions{})
+	all, total := "", printedTokens(a)
 	for _, r := range a.results {
 		all += r.Snippet + "\n"
 	}
@@ -428,11 +429,10 @@ func TestEvidenceGenerousBudget(t *testing.T) {
 	if err != nil || len(a.results) != 2 || tr.Rank.Stop.Reason != "end" {
 		t.Fatalf("a generous budget: %+v %v stop %+v", a, err, tr.Rank.Stop)
 	}
-	// Every section prints whole but one longer than a page, which shows a
-	// page of its best pieces and says how much of it that is.
+	// Every section prints whole: there is no page size, only the budget.
 	for _, r := range a.results {
-		if r.Truncated != overPage(r.SectionTokens) || r.Truncated && (r.ShownTokens > answerPageTokens || r.ShownTokens <= 0) {
-			t.Errorf("a generous budget: truncated=%v, %d of %d tokens:\n%s", r.Truncated, r.ShownTokens, r.SectionTokens, r.Snippet)
+		if r.Truncated {
+			t.Errorf("a generous budget: cut, %d of %d tokens:\n%s", r.ShownTokens, r.SectionTokens, r.Snippet)
 		}
 	}
 	if !a.results[0].Truncated && tr.Rank.Sections[0].Printed != "whole" {
@@ -440,41 +440,37 @@ func TestEvidenceGenerousBudget(t *testing.T) {
 	}
 }
 
-// A section longer than a page is never printed whole, whatever the
-// budget: it opens cut and takes its best pieces at once up to a page,
-// in page order; one at or under a page prints whole when it fits. The
-// source line of a cut group says how much of its section it shows.
-func TestEvidencePageCap(t *testing.T) {
+// A section longer than the budget left prints its best pieces, by rank,
+// shown in page order; one that fits prints whole. The source line of a
+// cut group says how much of its section it shows.
+func TestEvidenceLongSectionCut(t *testing.T) {
 	long := []string{}
-	for i := range 40 {
+	const n = 200 // about 20 tokens a paragraph: far over the budget
+	for i := range n {
 		long = append(long, fmt.Sprintf("Paragraph %d says the alpha option matters, with more words around it to count.", i))
 	}
 	secs := []docsindex.Section{
 		evSection("long", 0, "long", []string{"Long", "Alpha"}, strings.Join(long, "\n\n")),
-		evSection("short", 0, "short", []string{"Short", "Alpha"}, "The alpha option, in short."),
+		evSection("short", 0, "short", []string{"Short", "Alpha"}, "The alpha option, in brief."),
 	}
 	l, lib := evLocal(t, secs)
-	tr := NewTrace("alpha option")
-	tr.ranking(lib, LocalOptions{Tokens: 100000})
-	a, err := l.evidence(lib, "alpha option", LocalOptions{Tokens: 100000}, tr)
+	const budget = 800
+	a, err := l.evidence(lib, "alpha option brief", LocalOptions{Tokens: budget}, nil)
 	if err != nil || len(a.results) != 2 {
 		t.Fatalf("results = %+v %v", a, err)
 	}
 	cut, whole := cutAndWhole(a.results)
-	if cut == nil || whole == nil || !strings.HasSuffix(cut.URL, "#long") || cut.SectionTokens <= answerPageTokens ||
-		cut.ShownTokens > answerPageTokens || cut.ShownTokens < answerPageTokens/2 || cut.ShownTokens != estimateTokens(cut.Snippet) {
+	if cut == nil || whole == nil || !strings.HasSuffix(cut.URL, "#long") || cut.SectionTokens <= budget ||
+		cut.ShownTokens > budget || cut.ShownTokens < budget/4 || cut.ShownTokens != estimateTokens(cut.Snippet) {
 		t.Fatalf("cut %+v whole %+v", cut, whole)
 	}
-	inPageOrder(t, cut.Snippet, 40)
+	inPageOrder(t, cut.Snippet, n)
 	want := fmt.Sprintf("source: %s (cut, %s of %s tokens)\n", cut.URL, groupDigits(cut.ShownTokens), groupDigits(cut.SectionTokens))
 	if g := RenderGroup(*cut, true); !strings.HasSuffix(g, want) {
 		t.Errorf("cut group's source line, want %q:\n%s", want, g)
 	}
 	if g := RenderGroup(*whole, true); !strings.HasSuffix(g, "source: "+whole.URL+"\n") {
 		t.Errorf("whole group's source line:\n%s", g)
-	}
-	if tr.Rank.PageTokens != answerPageTokens {
-		t.Errorf("trace page_tokens %d", tr.Rank.PageTokens)
 	}
 }
 
@@ -505,17 +501,22 @@ func inPageOrder(t *testing.T, text string, n int) {
 	}
 }
 
-// A section longer than a page that is one piece (a code block, never
-// cut) prints whole, not marked cut: nothing of it is left out.
-func TestEvidencePageOnePiece(t *testing.T) {
-	code := "```go\n" + strings.Repeat("alpha := option() // a line of code\n", 80) + "```"
+// A section longer than the budget that is one piece (a code block) is
+// cut inside the block when it is the first: within the budget, marked
+// cut, its fences kept (evidence_clip.go). Before, it printed whole.
+func TestEvidenceOnePieceOverBudget(t *testing.T) {
+	code := "```go\n" + strings.Repeat("alpha := option() // a line of code\n", 200) + "```"
 	l, lib := evLocal(t, []docsindex.Section{evSection("code", 0, "code", []string{"Code", "Alpha"}, code)})
-	a, err := l.evidence(lib, "alpha option", LocalOptions{Tokens: 100000}, nil)
-	if err != nil || len(a.results) != 1 || !overPage(estimateTokens(code)) {
+	a, err := l.evidence(lib, "alpha option", LocalOptions{Tokens: 400}, nil)
+	if err != nil || len(a.results) != 1 || estimateTokens(code) <= 400 {
 		t.Fatalf("results = %+v %v", a, err)
 	}
-	if r := a.results[0]; r.Truncated || r.Snippet != code || r.SectionTokens != 0 {
-		t.Errorf("one piece over a page: truncated=%v, %d of %d", r.Truncated, r.ShownTokens, r.SectionTokens)
+	r := a.results[0]
+	if !r.Truncated || r.SectionTokens == 0 || !strings.HasPrefix(r.Snippet, "```go\nalpha := option()") || !strings.HasSuffix(r.Snippet, "\n```") {
+		t.Errorf("one piece over the budget: truncated=%v, %d of %d:\n%s", r.Truncated, r.ShownTokens, r.SectionTokens, r.Snippet)
+	}
+	if n := estimateTokens(renderPassages(a.results)); n > 400 {
+		t.Errorf("the passages estimate %d tokens, over 400", n)
 	}
 }
 
@@ -545,7 +546,7 @@ func TestEvidenceDefaults(t *testing.T) {
 	if o.Status != Found || len(o.Results) == 0 {
 		t.Fatalf("outcome = %+v", o)
 	}
-	total := estimateTokens(NewFrontmatter("default form action POST", SearchBackend, "", o).Render() + RenderAnswer(o.Results, HintNone))
+	total := estimateTokens(renderPassages(o.Results))
 	if total > localTokens {
 		t.Errorf("default answer %d tokens", total)
 	}
@@ -833,7 +834,7 @@ func TestWalkWholeOrCut(t *testing.T) {
 	g := evGathered("alpha beta", 1000, map[string]int{"alpha": 3, "beta": 1})
 	lib := docsindex.Library{Root: evRoot}
 	r := evRanked(s, g, 400, 0)
-	printSections(lib, s, r, HintNone)
+	printSections(lib, s, r)
 	if len(r.plans) != 3 || !r.plans[0].whole || r.plans[1].whole || !r.plans[2].whole {
 		t.Fatalf("plans = %+v", r.plans)
 	}
@@ -855,7 +856,7 @@ func TestWalkPassesOver(t *testing.T) {
 	pp := &planner{lib: lib, s: s, r: r, pages: map[string]bool{}}
 	short := pp.render(plan{sec: 0, whole: true}) + pp.overhead(plan{sec: 0, whole: true})
 	r.budget = 2*short + 8 // the cut group's source line says its size
-	printSections(lib, s, r, HintNone)
+	printSections(lib, s, r)
 	if len(r.plans) != 2 || r.plans[1].sec != 1 || len(r.plans[1].pieces) != 1 || s.pieces[r.plans[1].pieces[0]].text != "Alpha once more." || r.stop != "budget" {
 		t.Errorf("tight budget: plans %+v passed %v stop %q", r.plans, r.passed, r.stop)
 	}
@@ -870,8 +871,8 @@ func checkRendered(t *testing.T, lib docsindex.Library, s *sorted, r *ranked) {
 	for _, pl := range r.plans {
 		used += pl.cost
 	}
-	res, _ := fitResults(lib, s, r, HintNone, nil)
-	total := estimateTokens(RenderAnswer(res, HintNone))
+	res, _ := fitResults(lib, s, r, nil)
+	total := estimateTokens(renderPassages(res))
 	if used != r.used || total > used || used-total > 4*len(r.plans) || used > r.budget || len(r.dropped) != 0 {
 		t.Errorf("used %d (%d), rendered %d, dropped %d", used, r.used, total, len(r.dropped))
 	}
@@ -884,12 +885,12 @@ func TestWalkFirstAndLimit(t *testing.T) {
 	g := evGathered("alpha beta", 1000, map[string]int{"alpha": 3, "beta": 1})
 	lib := docsindex.Library{Root: evRoot}
 	r := evRanked(s, g, 1, 0)
-	printSections(lib, s, r, HintNone)
+	printSections(lib, s, r)
 	if len(r.plans) != 1 || r.plans[0].sec != 0 {
 		t.Errorf("tiny budget: plans %+v", r.plans)
 	}
 	r = evRanked(s, g, 10000, 1)
-	printSections(lib, s, r, HintNone)
+	printSections(lib, s, r)
 	if len(r.plans) != 1 || r.passed[1] != "limit" || r.passed[2] != "limit" {
 		t.Errorf("limit 1: plans %+v passed %v", r.plans, r.passed)
 	}
@@ -906,7 +907,7 @@ func TestWalkFoldedOnce(t *testing.T) {
 	g := evGathered("alpha", 1000, map[string]int{"alpha": 2})
 	lib := docsindex.Library{Root: evRoot}
 	r := evRanked(s, g, 200, 0)
-	printSections(lib, s, r, HintNone)
+	printSections(lib, s, r)
 	if len(r.plans) != 2 || !r.plans[0].whole || len(r.plans[1].pieces) != 1 || s.pieces[r.plans[1].pieces[0]].text != "The alpha flag, again." {
 		t.Errorf("plans = %+v", r.plans)
 	}
@@ -950,10 +951,10 @@ func TestSplitEntryLines(t *testing.T) {
 	}
 }
 
-// printedTokens is what a's answer to query from lib prints within opts:
-// its frontmatter (its defined_in line included) and its body.
-func printedTokens(lib docsindex.Library, query string, a *evidenceAnswer, opts LocalOptions) int {
-	return estimateTokens(a.frontmatter(lib, query, opts.note).Render() + RenderAnswer(a.results, opts.Hint))
+// printedTokens is what the budget covers of a's answer: its passages,
+// grouped under their pages.
+func printedTokens(a *evidenceAnswer) int {
+	return estimateTokens(renderPassages(a.results))
 }
 
 // One page, one address, in the pool: a page the library stores at two
@@ -995,7 +996,7 @@ func TestGatherOneAddress(t *testing.T) {
 				t.Errorf("%s: printed at %s, not at the address listed first", second, r.URL)
 			}
 		}
-		for _, line := range strings.Split(RenderAnswer(a.results, HintNone), "\n") {
+		for _, line := range strings.Split(renderPassages(a.results), "\n") {
 			if line == "## Mocking Modules" {
 				titles++
 			}

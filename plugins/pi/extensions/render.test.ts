@@ -47,6 +47,27 @@ test("code and docs include repository/line, snippet and library identity", () =
 	assert.match(summary("docs", { results: [{ title: "Library", id: "/org/library", description: "Documentation" }] }), /Library\n   \/org\/library\n   Documentation/);
 });
 
+test("docs results from search show the page they came from, Context7's their library ID", () => {
+	const root = "https://docs.example.org/";
+	const text = summary("docs", { results: [
+		{ library: root, title: "Routing", url: `${root}guides/routing`, section: `${root}guides/routing#by-probability`, snippet: "Route by probability" },
+		{ library: root, title: "Confidence", url: `${root}confidence`, snippet: "Scores" },
+		{ library: "/org/library", title: "Install", url: "https://github.com/org/library/blob/main/README.md", snippet: "npm i" },
+	] });
+	assert.match(text, /1\. Routing · docs.example.org\n   https:\/\/docs.example.org\/guides\/routing#by-probability\n/);
+	assert.match(text, /2\. Confidence · docs.example.org\n   https:\/\/docs.example.org\/confidence\n/);
+	assert.match(text, /3\. Install · github.com\n   \/org\/library\n/);
+	assert.doesNotMatch(text, /\n   https:\/\/docs.example.org\/\n/);
+});
+
+test("a docs call that reads a section shows the section and decisions", () => {
+	const section = "https://docs.example.org/guides/routing#by-probability";
+	assert.equal(callSummary("docs", { section }), `section=${section}`);
+	assert.equal(callSummary("docs", { query: "routing", decisions: "off" }), "routing · decisions=off");
+	const theme = { fg: (_color: string, s: string) => s, bold: (s: string) => s };
+	assert.equal(renderers("docs").renderCall!({ section } as never, theme as never, {} as never).render(200).join("").trim(), `ketch docs section=${section}`);
+});
+
 test("warnings and federated backend errors are visible without raw JSON", () => {
 	const r = result({ results: [], errors: { brave: "rate limited" } }, ["bookmark write failed"]);
 	const text = resultSummary("search", r).join("\n");

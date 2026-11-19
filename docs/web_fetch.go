@@ -134,32 +134,68 @@ func (w *Web) probe(ctx context.Context, root webRoot, loc string) ([]byte, *url
 // raw fetch that redirected away is not retried through the pipeline,
 // which would only follow the same redirect.
 func (w *Web) fetchOne(ctx context.Context, root webRoot, link webLink) (*webPage, error) {
+	return w.fetchIn(ctx, root.contains, link)
+}
+
+// fetchIn is fetchOne with the scope a response may be served from given
+// as inScope. A page of a few words that says it redirects and refreshes
+// to another page in scope (rustdoc's "Redirecting to
+// ../../struct.Mutex.html...") is read where it sends its reader, once.
+func (w *Web) fetchIn(ctx context.Context, inScope func(*url.URL) bool, link webLink) (*webPage, error) {
+	p, err := w.fetchPageIn(ctx, inScope, link)
+	if err != nil || p.markdown || len(strings.Fields(p.Markdown)) > stubMaxWords || !strings.Contains(strings.ToLower(p.Markdown), "redirect") {
+		return p, err
+	}
+	raw, rerr := w.fetcher.FetchRaw(ctx, link.url.String())
+	if rerr != nil || !looksLikeHTML(raw.Body, raw.ContentType) {
+		return p, nil
+	}
+	served, serr := url.Parse(raw.URL)
+	if serr != nil || raw.URL == "" {
+		served = link.url
+	}
+	t := metaRefreshTarget(raw.Body, served)
+	if t == nil || !inScope(t) || linkKey(t) == linkKey(link.url) || linkKey(t) == linkKey(served) {
+		return p, nil
+	}
+	if moved, merr := w.fetchPageIn(ctx, inScope, webLink{url: t, title: link.title, description: link.description}); merr == nil {
+		return moved, nil
+	}
+	return p, nil
+}
+
+// stubMaxWords is the most words a page that only refreshes to another
+// holds once extracted.
+const stubMaxWords = 40
+
+// fetchPageIn reads one page for fetchIn.
+func (w *Web) fetchPageIn(ctx context.Context, inScope func(*url.URL) bool, link webLink) (*webPage, error) {
 	u := link.url.String()
 	var from *url.URL
 	title, md := "", ""
 	var anchors []PageAnchor
-	fromRaw, shell := false, false
+	fromRaw, shell, cookies := false, false, false
 	if isMarkdownURL(link.url) {
 		raw, err := w.fetcher.FetchRaw(ctx, u)
 		if err == nil {
-			from, err = servedFrom(link.url, raw.URL, root.contains)
+			from, err = servedFrom(link.url, raw.URL, inScope)
 		}
 		if err != nil {
 			return nil, err
 		}
 		if !looksLikeHTML(raw.Body, raw.ContentType) {
-			md, fromRaw = string(raw.Body), true
+			md, fromRaw, cookies = string(raw.Body), true, raw.Cookies
 		}
 	}
 	if md == "" {
 		page, err := w.fetcher.FetchPage(ctx, u)
 		if err == nil {
-			from, err = servedFrom(link.url, page.URL, root.contains)
+			from, err = servedFrom(link.url, page.URL, inScope)
 		}
 		if err != nil {
 			return nil, err
 		}
-		title, md, anchors, shell = page.Title, page.Markdown, page.Anchors, page.Shell
+		title, md, anchors, shell, cookies = page.Title, page.Markdown, page.Anchors, page.Shell, page.Cookies
 	}
 	md = capText(md, w.maxPageBytes)
 	fmTitle, md := stripFrontmatter(md)
@@ -175,6 +211,7 @@ func (w *Web) fetchOne(ctx context.Context, root webRoot, link webLink) (*webPag
 		markdown: fromRaw,
 		shell:    shell,
 		via:      via,
+		cookies:  cookies,
 	}, nil
 }
 

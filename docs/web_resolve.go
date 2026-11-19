@@ -670,10 +670,6 @@ type resolution struct {
 	spec  libSpec
 	log   *resolveLog
 	roots int // candidate roots verified so far
-	// strict resolves a bare query's guessed reading (resolveOne's
-	// strict): only an exact package's own site can answer it, so GitHub
-	// and the web are never searched for it.
-	strict bool
 	// lean resolves a common word's reading beside a reading that names a
 	// library outright (querySplit.lean): the registries only, tried once.
 	lean bool
@@ -688,16 +684,13 @@ type resolution struct {
 
 // resolveLogged is resolve recording into log.
 func (w *Web) resolveLogged(ctx context.Context, spec libSpec, limit int, log *resolveLog) ([]webMatch, error) {
-	return w.resolveRun(ctx, spec, limit, log, false, false)
+	return w.resolveRun(ctx, spec, limit, log, false)
 }
 
-// resolveRun is resolveLogged, strict for a bare query's guessed reading
-// (resolution.strict).
-//
-// pick marks a single-library context (resolveOne), where an ecosystem
+// resolveRun is resolveLogged; pick marks a single-library context (resolveOne), where an ecosystem
 // hint may narrow a same-name contest; a listing (--resolve) keeps every
 // project.
-func (w *Web) resolveRun(ctx context.Context, spec libSpec, limit int, log *resolveLog, strict, pick bool) ([]webMatch, error) {
+func (w *Web) resolveRun(ctx context.Context, spec libSpec, limit int, log *resolveLog, pick bool) ([]webMatch, error) {
 	if spec.url != "" {
 		m, err := w.resolveURL(ctx, spec.url)
 		if err != nil {
@@ -712,10 +705,10 @@ func (w *Web) resolveRun(ctx context.Context, spec libSpec, limit int, log *reso
 	defer cancel()
 	rctx = withProfileMemo(rctx)
 	lean := isLean(ctx)
-	if strict || lean {
+	if lean {
 		rctx = withSpeculative(rctx)
 	}
-	r := &resolution{w: w, spec: spec, log: log, strict: strict, lean: lean, keyless: w.gh() == nil}
+	r := &resolution{w: w, spec: spec, log: log, lean: lean, keyless: w.gh() == nil}
 	if pick {
 		r.hint = w.ecoHint(ctx)
 	}
@@ -734,9 +727,8 @@ func (w *Web) resolveRun(ctx context.Context, spec libSpec, limit int, log *reso
 }
 
 // searches reports a resolution that may search (the web, GitHub,
-// pkg.go.dev's names) beside asking the registries: not a guessed or a
-// lean reading's.
-func (r *resolution) searches() bool { return !r.strict && !r.lean }
+// pkg.go.dev's names) beside asking the registries: not a lean reading's.
+func (r *resolution) searches() bool { return !r.lean }
 
 type leanKey struct{}
 
@@ -850,28 +842,20 @@ func errNoNameSources(name string) error {
 }
 
 // resolveOne resolves spec where exactly one library is needed (GetDocs
-// with a name, Search): resolve, then pickUnique. strict applies a strict
-// query split's bar (an exact registry name and strictMinTrust).
+// with a name, Search): resolve, then pickUnique.
 //
 // A pick is kept in the resolution cache (web_rescache.go) when the
 // fetcher has one, and a repeat of the same spec, mode and hint answers
 // from it without resolving.
-func (w *Web) resolveOne(ctx context.Context, spec libSpec, strict bool) (webMatch, error) {
-	return w.resolveOneAs(ctx, spec, strict, false, false)
-}
-
-// resolveOneAs is resolveOne, or resolveReading when reading is set; weigh
-// asks for the pick's weight, and a cached pick without one is resolved
-// again.
-func (w *Web) resolveOneAs(ctx context.Context, spec libSpec, strict, reading, weigh bool) (webMatch, error) {
+func (w *Web) resolveOne(ctx context.Context, spec libSpec) (webMatch, error) {
 	var key string
 	if spec.url == "" && w.resolvesNames() {
-		key = resolutionKey(spec, strict, isLean(ctx), w.gh() == nil, w.ecoHint(ctx))
-		if m, ok := w.loadResolution(key); ok && (!weigh || m.stars >= 0) {
+		key = resolutionKey(spec, isLean(ctx), w.gh() == nil, w.ecoHint(ctx))
+		if m, ok := w.loadResolution(key); ok {
 			return m, nil
 		}
 	}
-	m, cacheable, err := w.resolveOnce(ctx, spec, strict, reading, weigh)
+	m, cacheable, err := w.resolveOnce(ctx, spec)
 	if err == nil && cacheable && key != "" {
 		w.storeResolution(key, m)
 	}
@@ -881,13 +865,10 @@ func (w *Web) resolveOneAs(ctx context.Context, spec libSpec, strict, reading, w
 // resolveOnce is resolveOne without the cache. cacheable reports a pick
 // made with every source answering: one that stood past a source that
 // failed (with a note) is not kept, so the next call asks again.
-func (w *Web) resolveOnce(ctx context.Context, spec libSpec, strict, reading, weigh bool) (m webMatch, cacheable bool, err error) {
+func (w *Web) resolveOnce(ctx context.Context, spec libSpec) (m webMatch, cacheable bool, err error) {
 	log := &resolveLog{}
-	matches, err := w.resolveRun(ctx, spec, 0, log, strict, true)
+	matches, err := w.resolveRun(ctx, spec, 0, log, true)
 	if err != nil {
-		if (strict || reading) && w.gh() == nil {
-			err = w.strictMiss(err, log)
-		}
 		return webMatch{}, false, err
 	}
 	m, err = pickUnique(spec.raw, matches)
@@ -902,35 +883,8 @@ func (w *Web) resolveOnce(ctx context.Context, spec libSpec, strict, reading, we
 			return webMatch{}, false, err
 		}
 	}
-	if strict && (m.proj == nil || !m.proj.exact || m.registry || m.trust < strictMinTrust) {
-		return webMatch{}, false, w.guessUnproven(ctx, spec, m, log)
-	}
-	if weigh {
-		w.weigh(ctx, &m)
-	}
 	_, failed := log.snapshot()
 	return m, len(failed) == 0, nil
-}
-
-// guessUnproven is the error for a guessed reading whose pick does not
-// prove it (an exact package name, its own docs site and strictMinTrust).
-func (w *Web) guessUnproven(ctx context.Context, spec libSpec, m webMatch, log *resolveLog) error {
-	err := fmt.Errorf("web: %q is a guess at a library name and %s (trust %.1f) does not prove it: a guess needs an exact package name, its own docs site and trust %.0f: %w",
-		spec.raw, m.root, m.trust, strictMinTrust, ErrNotFound)
-	if w.gh() == nil {
-		err = w.strictMiss(err, log)
-	}
-	return err
-}
-
-// weigh reads the pick's weight when it is not known yet: popularity
-// is read keyless only for a contest (readTieBreak), and a bare query's
-// readings compare it.
-func (w *Web) weigh(ctx context.Context, m *webMatch) {
-	if m.stars < 0 && m.proj != nil {
-		w.readPopularity(ctx, []*project{m.proj})
-		m.stars = m.proj.stars()
-	}
 }
 
 // answerPastFailures checks the one library picked for spec against the
@@ -1289,7 +1243,7 @@ func (w *Web) registryProjects(ctx context.Context, spec libSpec, log *resolveLo
 	return groupPackages(spec, pkgs)
 }
 
-// lookupRegistries is pkgSource.lookupAll, except that a guessed reading
+// lookupRegistries is pkgSource.lookupAll, except that a lean reading
 // (speculative) of a bare query with an ecosystem hint is looked up only
 // in the hinted registries: the hint settles the ecosystem, and probing
 // the others would only spend their rate limits on a guess.

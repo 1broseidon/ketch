@@ -107,8 +107,9 @@ type atxHeading struct {
 var (
 	// explicitIDRe matches a trailing {#id} (Docusaurus, MyST, Pandoc
 	// attributes; extra classes are ignored), or the MDX comment react.dev's
-	// Markdown pages carry as a heading's id, {/*id*/}.
-	explicitIDRe = regexp.MustCompile(`\s*\{(?:#([^\s}]+)[^}]*|/\*\s*([\w-]+)\s*\*/)\}\s*$`)
+	// Markdown pages carry as a heading's id, {/*id*/}, or a Markdoc
+	// annotation's, {% #id %} (Datadog's Markdown exports).
+	explicitIDRe = regexp.MustCompile(`\s*\{(?:#([^\s}]+)[^}]*|/\*\s*([\w-]+)\s*\*/|%\s*#([\w-]+)[^}]*%)\}\s*$`)
 	// fragmentLinkRe matches a link with a fragment, [text](#id) or
 	// [text](page#id), inside a heading: the permalink HTML-to-Markdown
 	// leaves behind (Docusaurus: a zero-width space linked to #x, titled
@@ -172,7 +173,7 @@ func parseHeadingLine(line string) (atxHeading, bool) {
 func headingAnchor(text string) atxHeading {
 	var h atxHeading
 	if m := explicitIDRe.FindStringSubmatch(text); m != nil {
-		h.id = firstNonEmpty(m[1], m[2])
+		h.id = firstNonEmpty(m[1], m[2], m[3])
 		text = strings.TrimSuffix(text, m[0])
 	}
 	text = fragmentLinkRe.ReplaceAllStringFunc(text, func(link string) string {
@@ -868,6 +869,9 @@ type headingBlock struct {
 // anchor in page order, so duplicates get the suffixes the site gives
 // them. Permalink and source-link decorations are stripped from the text.
 func splitSections(p webPage, pageIndex int) []webSection {
+	// One line ending for every rule that reads lines: a raw Markdown page
+	// served with CRLF must not lose the generator's heading style.
+	p.Markdown = strings.ReplaceAll(p.Markdown, "\r\n", "\n")
 	title, blocks := parseBlocks(p)
 	markSplits(blocks)
 	verifyAnchors(blocks, p.Anchors)

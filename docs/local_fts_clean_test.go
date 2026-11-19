@@ -38,8 +38,8 @@ func (oldTokens) Row(s docsindex.Section) [4]string {
 func TestEscapedTermFound(t *testing.T) {
 	l, lib := evLocal(t, pamSections())
 	o := l.answer(context.Background(), lib, "control value1=action1 service_err", LocalOptions{})
-	if o.Err() != nil || slices.Contains(o.NotFound, "service_err") || !slices.Contains(o.Terms, TermCount{Term: "service_err", Sections: 1}) {
-		t.Fatalf("outcome = %s %v, terms %v, not_found %v", o.Status, o.Err(), o.Terms, o.NotFound)
+	if o.Err() != nil || slices.Contains(o.NotFound, "service_err") || !resultsHold(o.Results, "service_err") {
+		t.Fatalf("outcome = %s %v, results %v, not_in_index %v", o.Status, o.Err(), resultURLs(o.Results), o.NotFound)
 	}
 }
 
@@ -68,16 +68,16 @@ func TestEscapedTermRetokenised(t *testing.T) {
 		t.Fatalf("rows current = %v (%v), want an older tokenizer's", ok, err)
 	}
 	o := NewLocal(store).answer(context.Background(), lib, "service_err", LocalOptions{})
-	if o.Err() != nil || len(o.NotFound) != 0 || !slices.Contains(o.Terms, TermCount{Term: "service_err", Sections: 1}) {
-		t.Fatalf("outcome = %s %v, terms %v, not_found %v", o.Status, o.Err(), o.Terms, o.NotFound)
+	if o.Err() != nil || len(o.NotFound) != 0 || !resultsHold(o.Results, "service_err") {
+		t.Fatalf("outcome = %s %v, results %v, not_in_index %v", o.Status, o.Err(), resultURLs(o.Results), o.NotFound)
 	}
 	if ok, err := store.FTSCurrent(evRoot); err != nil || !ok {
 		t.Errorf("rows current after the question = %v (%v)", ok, err)
 	}
 }
 
-// A section prints the frontmatter an answer says of its source (backend,
-// library, index; its page line when read a page at a time), no verdict
+// A section prints the frontmatter an answer says of its source (library,
+// index; a backend only when it is not search; its page line when read a page at a time), no verdict
 // and no result_count; its heading path does not repeat a heading, and
 // its text is cleaned as an answer's is.
 func TestSectionFrontmatterAndHeading(t *testing.T) {
@@ -95,14 +95,24 @@ func TestSectionFrontmatterAndHeading(t *testing.T) {
 		t.Errorf("section text not cleaned: %s", r.Snippet)
 	}
 	f := SectionFrontmatter(SearchBackend, "", o)
-	if got := f.Render(); got != "---\nbackend: search\nlibrary: "+evRoot+"\nindex: full, 0 pages\n---\n" {
+	if got := f.Render(); got != "---\nlibrary: "+evRoot+"\nindex: full, 0 pages\n---\n" {
 		t.Errorf("section frontmatter:\n%s", got)
 	}
-	if f.Terms != nil || f.NotFound != nil || f.Status != Found {
-		t.Errorf("section fields = %+v, want no terms or not_found", f)
+	if f.NotInIndex != nil || f.NotOnPages != nil || f.Backend != "" {
+		t.Errorf("section fields = %+v, want no not_in_index, not_on_pages or backend", f)
 	}
 	paged := l.SectionSelect(context.Background(), "", ref, 60, 2)
 	if got := SectionFrontmatter(SearchBackend, "", paged).Render(); !strings.HasSuffix(got, "\npage: 2 of "+strconv.Itoa(paged.Results[0].Pages)+"\n---\n") {
 		t.Errorf("paged section frontmatter:\n%s", got)
 	}
+}
+
+// resultsHold reports a result whose text holds s.
+func resultsHold(rs []Result, s string) bool {
+	for _, r := range rs {
+		if strings.Contains(r.Snippet, s) {
+			return true
+		}
+	}
+	return false
 }

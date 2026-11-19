@@ -12,7 +12,7 @@ One `ketch docs` call at the default budget ends one of two ways:
 
 Anything else is a failure, however relevant the sections look. The measure is the path: calls to the answer.
 
-One call is the target, not a promise. The caller is the smart part: when the question's words are not the docs' words, the first call must give it what it needs to make the second call exact (the Contents line, `not_found`), and that counts as doing the job. No model is added to close that gap (decided 2026-11-10).
+One call is the target, not a promise. The caller is the smart part: when the question's words are not the docs' words, the first call must give it what it needs to make the second call exact (the Contents line, `not_found`), and that counts as doing the job. No model is added to close that gap (decided 2026-11-10; amended 2026-11-17, see Final shape, Decision providers).
 
 A call answers from one source. A caller who gets the right lines in one call can spend three calls on three sources (Duo's docs, linux-pam's, SSSD's) and combine them. So every call must be self-contained, cheap to read, and clear about what this source does not say.
 
@@ -51,7 +51,7 @@ Nothing told the caller that two of the question's terms appear nowhere in the s
 
 - Nothing ships until the gate passes (decided 2026-11-10).
 - Pieces are made in memory at query time. No schema change, no reindex.
-- No model. FTS5 and plain rules, as in ADR-0007 amendment 7.
+- No model. FTS5 and plain rules, as in ADR-0007 amendment 7. (Amended 2026-11-17: unless the operator sets a decision-provider key; see Final shape, Decision providers.)
 - One pipeline. A question answered from an index and one answered from pages just read differ only in Gather.
 - One view. The section view (no budget) and the compact view (a budget) become one output, at a default budget of 1,800 tokens. `--section` still returns a section whole.
 - Rules are general. No rule names a site, a product or a layout seen in one case.
@@ -895,6 +895,308 @@ Two faults blind users found on the release candidate, fixed by three more rules
 - **A partial root falls over too.** A root read first (a `--library` name, or a guessed one the rule above leaves first) whose answer is refused or `partial` for want of the question's terms, while the search results favour another site, has that site read in the same call, and the better answer is kept: `found` over `partial` over a refusal; of two partials the one missing fewer terms; a tie keeps the root. The origin of an answer from the favoured site ends `; <root>, which resolve found for <name>, lacks the question's term(s) <t1, t2>, so this answer is from the site the search results favour` after a partial root (`holds none of the question's terms` after a refusal, as before).
 - **A site tried and unread is named.** When the favoured site (or, read second, the root) gives no text, the answer kept says so first in its note, or a refusal in its error: `could not read <root> (<causes, counted>), the site the search results favour` (or `, which resolve found for <name>`), with the read-failure causes above. Both reads stay within the 45 s budget and are the question's two sites (`sfMaxSites`); no third site is read after them, so `sfMaxReads` (the trees the search's own sites may take) is not reached.
 - **The unverified line names a thing only with reason.** `<what>` is the library value; else the question's first firm reading when something says the question names it: resolve found a project by that name, or the site read carries it in its host or docs directory, or as a word of the title of a search hit on its domain (`Amazon S3 multipart upload limits` carries `S3`; `opt-in` carries no `opt`). Else the line names nothing: `unverified, ketch could not confirm <host> as the official documentation for this question`, never a common word that happens to be a package (`opt`) nor the whole question in quotes. The `by name` lines already name only what a registry package, a domain or a package index's path carries. The hint line names no thing and is unchanged. The question cache went to `docs-question/v5`, so no read a v0.21.0 candidate cached (from a namesake's site, with the older wording) is repeated.
+
+### Final shape
+
+Built on 2026-11-15. Where it differs from the text above, this holds.
+
+**Invariant.** One `ketch docs` call is never less useful to an agent than `ketch search` on the same question followed by reading the top result. The answer always carries the docs' text from the pages search ranked best, at their exact addresses; what it did not print, as addresses to read next; and the rest of the search results. It carries no verdict.
+
+**Why.** A throwaway prototype that only searched, read the exact top page and printed whole sections at 4,000 tokens beat the pipeline above on 44 blind-graded questions (complete on the first call 31 against 22, facts 135 against 112 of 159, wrong-release answers 0 against 4). The pipeline lost answers after search: it generalised a hit to the site's root and read up to 24 pages (a Prisma 6 question was answered from Prisma 7), cut sections to 400-token pages inside 1,800 tokens, and printed `status: found` for answers that did not answer. The prototype lost where the pipeline is strong: a first hit that is no docs page, one huge section eating the budget in page order, a raw Markdown export read flat.
+
+**Design as built.**
+
+- **Exact pages first.** After the search and the site choice (the search's order since the second pass, below), the site's search hits are read at their exact addresses in search rank order, at most 3, every one after the first of the first one's release tree (host, a leading locale and the version labels of its directories: `/v7/` is never read beside `/v6/`). A page may be served from another host of its registrable domain. Robots, the page cache, page identity, the JS-shell check and the read-failure causes apply; an unreadable hit is skipped with its cause and the next one read. No site root, sibling or discovered page at this stage; the root resolve found is read only when no hit is on its site.
+- **Best page first.** Pages keep search rank order. When everything read fits the budget it all prints; otherwise the best page's candidates are walked first (fused order, as above), then the next page's with what is left.
+- **Widen only for a missing identifier.** Only when an identifier the question writes is on none of the exact pages, or nothing on them matches, are more pages read: the old plan (hits, nav siblings, discovery, up to 24) in the first page's release tree. Their sections are walked after the exact pages', and the answer says `widened: read N more pages of <root> for: <terms>`. With no exact page readable, the site's lists are read in their place.
+- **Never refuse when the search returned results.** No docs hit, or every docs page unreadable: the answer is the frontmatter (what was tried, why each read failed) and the results, exit 0. Non-docs hits are never read as docs. The ambiguous library name (exit 2) and version pins are unchanged. Pages that hold none of the question's terms are an answer too (`not_on_pages` names them all), and another release's tree is never read in their place.
+- **Words on a few pages.** On pages a search read every word but a common one is distinctive: a share of three pages' sections says nothing of rarity, and one rare word missing must not refuse the words the pages hold.
+- **Whole passages.** The budget is 4,000 tokens of docs text, live and indexed alike; the frontmatter and the two lists are outside it. There is no page size: a section prints whole when it fits the budget left; a longer one prints its best pieces by rank, in page order, with the cut rules above and `(cut, N of M tokens)`.
+- **Reading order.** Chosen by rank, printed in reading order: a page's groups together under `## <title>` and its address, pages best first (else by their first group), sections in page order.
+- **Output.** No `status`, `backend: search`, `terms` or index-suggestion note. New: `read` (with search ranks, or why a page that is no hit was read), `skipped`, `widened`, `not_on_pages` (only the pages read were checked) or `not_in_index` (an indexed library), `## Not printed` (the other sections of the pages read, or of the pages printed from, the question's first, about 200 tokens, then `(+n more: <the page's --section call>)`), `## Other results` (up to 5 hits not read, one line each, within 1,000 characters) and one closing line of next steps. `origin` prints only when it says something: verified, or unverified for a named library. `--json` and MCP carry the same fields. Exit codes: 0 for any answer, 2 bad input or an ambiguous name, 3 nothing to print, 4 the search or Context7 failed, 5 as before.
+- **Repeat.** The question cache (`docs-question/v7`) keeps the pages with their ranks, what was skipped, the widening and the other results: a repeat within `cache_ttl` prints the same bytes with no network.
+- **Raw Markdown.** A `text/markdown` response (or plain text at a `.md` path) is Markdown: `ketch scrape` and the docs fetch keep it as written, title from its frontmatter, frontmatter out of the body. Markdoc heading ids (`{% #id %}`) are anchors, Markdoc tag lines are cleaned, and CRLF is normalised before sectioning (which also fixes VitePress heading detection on CRLF pages).
+
+**Measure.** The 44 questions of the prototype's run (159 facts), one call each at the default budget, a fresh state per call. Each question's web searches were run once and held fixed for every build; pages were read live. Facts were checked by substring markers derived from the official pages and the graders' quotes (97.9% agreement with the blind grades over 477 graded facts; it never credits a fact a grader refused). Tokens are characters over 4 of everything printed. Live site choice varies run to run: one case (Celery) switched sites between runs of the same build, worth 3 facts; differences of that kind are marked.
+
+| Build | Facts | Complete | Tokens, median / p90 | Seconds, median / max | Pages fetched, median / total | Widened |
+|---|---|---|---|---|---|---|
+| before (fdcd6fa) | 103 | 21 | 1,845 / 2,033 | 1.93 / 6.69 | 24 / 909 | |
+| prototype at 4,000 (its own searches, graded) | 135 | 31 | about 4,300 | 0.8 to 1.1 / 1.77 | | |
+| as built | 144 | 36 | 4,627 / 5,065 | 0.79 / 3.23 | 2 / 194 | 5 |
+
+Seconds are with the searches held fixed; the 39 calls that did not widen took a median 0.67 s (max 3.23), the 5 that did 1.36 s. Every case the old pipeline won where the prototype lost is kept (tokio `select!`, Django `atomic`, errgroup, ServeMux patterns, systemd start limits, Datadog auto resolve), and the four old-release questions (Prisma 6, React Router 6, Pydantic 1, Express 4) are now answered from the release asked for (0, 1, 0 and 0 of their facts before; all of them now).
+
+**Measured choices**, each against the build of its row's time:
+
+| Choice | Variants: facts / complete |
+|---|---|
+| a widened answer | ranked across all pages 134 / 30; exact pages first, widened after 139 / 34 |
+| walk over the exact pages | best page first 139 / 34; one fused walk 140 / 33; fused with the page's rank as a third ranking 141 / 34 (the Celery switch is +3 for the last two; page by page wins CSS layers and Terraform, and FastAPI against the single fused walk; the fused walks win pytest and Kubernetes) |
+| a page holding more terms goes first | on 139 / 34; off 144 / 36 (off: pytest +2, Celery +3) |
+| exact pages read | 1: 134 / 32; 2: 143 / 35; 3: 144 / 36; 4: 144 / 36 |
+| page size | 800: 141 / 33; 1,200: 142 / 34; 1,600: 144 / 36; 2,000: 141 / 35 (Celery −3); none: 144 / 36 |
+| widen for | any missing word: 144 / 36, 26 of 44 widened, 585 pages, 1.10 s median; a missing identifier: 144 / 36, 7 of 44, 202 pages, 0.93 s; never: 132 / 33 |
+| a page that fits what is left prints whole (the prototype's rule) | 144 / 36 either way |
+| outline | uncapped: median 673 tokens, p90 4,800, max 13,152; capped: about 236 median, 349 max |
+
+What the printed extras cost, as built: the frontmatter a median 115 tokens (261 at most: it echoes the question), Not printed 236, Other results and the closing line 268; together a median 617, p90 742, max 802.
+
+**Rejected.** The coverage exception (a page holding more of the question's terms goes ahead of the search's order): it lost pytest by putting a fixtures page ahead of the parametrize page, and won nothing. Ranking a widened answer across all its pages: it buried the exact pages under siblings that match common words (CSS layers, React state, Express 4). Widening for any missing word: the same facts for three times the pages and twice the time; question words such as `low-specificity` or `setN(n+1` are the asker's, not the docs'. The fused walks and the page-rank fusion: a tie, and best page first is the invariant's order. The prototype's whole-page rule and every page size: ties, so the rules go.
+
+**Removed.** The verdict (`status` in text, `--json` and MCP), `terms` and its counts, `backend: search`, `source: search, N pages read` (`IndexInfo` keeps only an indexed library's kind, pages and build date), the index suggestion (`searchNote`, `indexRoot`, `wideDirs`, `commonDir`, `siteRoot`, `readScope`), the origin hint line and its roots, the hint lines of the old shape (`AnswerHint`, `JSONHint`, `NearHint`, `OriginHint`) and their planning (`hintTokens`), the page size (`answerPageTokens`, `overPage`, `fill`, `pageTokens`), and the terms refusal's exit 3.
+
+**Fallbacks fired** over the 44 bare questions, from the trace (`fallbacks`, and the `KETCH_DOCS_TRACE` line): widened 5, fell over to a second site 0, the resolved root read first 0, the favoured site read first 0. The last three need a library name; the set names none in `--library`, so these counts say little and a removal pass needs questions that name libraries.
+
+**Indexed path.** The bench's pinned index (second pin, network denied): 232 of 291 answered and 237 answered or led, against 207 and 221; no case lost. The checker reads `not_found` and a `refused` status, so it reports 0 of 30 not-covered terms; read from `not_in_index`, 20 of 30, as before. The checker needs to read `not_in_index` (and `not_on_pages`) and to stop expecting a refusal.
+
+**Still open** after the first pass, and what the second pass did with it: the search provider decides the first page (now the rule, below); a sibling ranked first eats the budget (still open, below); a version pin whose docs root the search did not hit reads the root and its lists, as before; Other results showed the provider's metadata as snippets and `N/A` as titles (fixed, below).
+
+#### Second pass
+
+Built on 2026-11-15, after the first pass was run blind on 32 unseen questions (129 facts): released docs 80 facts / 11 complete / 4 misleading, the first pass 103 / 22 / 2, and the floor (`ketch search`, then the top result read at 4,000 tokens) 106 / 24 / 0; against the floor 5 wins, 5 losses, 22 ties. Most losses had one cause: the old site choice (weight agreement over every hit, plus a boost for a site whose address carries a word of the question) still overrode the search's order. A word of the question in a domain is no evidence that the domain documents what was asked (`web.dev` for "web", `ssh.com` for "ssh", `devblogs.microsoft.com` for ".NET").
+
+What changed:
+
+1. **The search's first three docs hits choose the site.** Each of the first three docs hits (after the non-docs filter) weighs by its fused rank, half when its address and title carry no docs sign, as before; the site with the most of that weight is read first, from its best-ranked hit, then its next hits in rank order, one release, as before. So the top docs hit is read first unless two of the first three agree on another site, or it has no docs sign and a signed one close behind it does. `--library`, a version pin that resolve confirms, or a library name the question writes that resolve verifies (the strict bare reading, as before) can name other docs first. In one sentence, as the help says it: *ketch reads the site its top three docs hits weigh most for (by rank, half without a docs sign in address or title), from its best hit: up to 3 pages, one release; --library, a version pin or a name in the question that resolve verifies can override it.* Gone: the question-word boost, the site named by its domain going first, the standards body's site going first, the favoured site read ahead of a resolved root tied to its name only, and the "looks like docs" check that sent a site with no docs sign in its address to the next site (it rejected sqlite.org, sidekiq.org and reactrouter.com and passed blogs).
+2. **Split sites read.** There is no "split between several sites" any more: the sites are read in that order. A site whose pages are all unreadable gives way to the next (at most 2 sites, as before), and the answer says which failed and why. Results only is left for no docs hit, or none readable: then the note names each site tried with its causes, and `skipped` lists every page tried, the earlier sites' included.
+3. **A pin guessed from the question never refuses.** `name@version` (or an ecosystem-prefixed spec) inside a bare question is resolved within the usual 6 s, no longer leads the search query, and is used when resolve confirms its version; otherwise it is ordinary words and the question is answered as asked, exit 0. Only `--library name@version` keeps the strict refusal (exit 3). A word written as `name@version` is never a reason to widen.
+4. **A release named in words.** A release the question writes after a capitalised name (`Spring Boot 2.7`, `Vue 2`, `Laravel 9`, `TanStack Query v5`, `.NET 9`; not `500 URLs`, `ServerAliveInterval 15`, `exit code 137`) puts the docs hits whose address names that release (host label or directory: `v3.`, `/9.x/`, `/2.7.x/`, `/4x/`, `/20/` for 2.0) and the thing named (its name run together, or each of its words, in the address or the title: not `spring-data/redis/docs/2.7.0` for Spring Boot) ahead of the others, each group in the search's order. When no page read is marked with the release (address or title), the frontmatter says so in one line: `note: the question names Spring Boot 2.7 and no page read is marked 2.7: they may document another release; pass that release's docs URL as --library`.
+5. **`not_on_pages` lists identifiers only:** code-like names (snake_case, dotted, CamelCase, calls), flags and host names the question writes, on none of the pages read. A plain word (`bastion`, `hang`, `wrote`, `3`) is the asker's wording, not the docs'. `[]` is now the common case (73 of 76 answers on the tune sets, 29 before). Pages that hold none of the question's terms say so in `note`.
+6. **Other results worth choosing from.** The snippets read `Published: N/A` because the Exa provider's parser took its new `Published:` metadata line as the description; `ketch search` showed the same. The parser now skips it (the cause), and a result's snippet is the first lines of prose of its description, else its excerpts, without headings, code, tables, images or link syntax, up to 160 characters. A result with no usable title (`""`, `N/A`) shows its address's last part (`ssh_config`), and untitled results are no longer dropped. Addresses an excerpt cut short (`https://docs.npmjs.com/unpubl`, at the end of a text) are no longer taken as cited pages, which had cost a 404 fetch and a `skipped` line each.
+7. **`version:` only when known:** a pin that matched, or a release named in words that a page read is marked with. No version from an address's labels (`3` from `/Task/async_stream/3/`, `43` from Kafka's `/43/`, `nightly`).
+8. **A redirect stub is followed.** A page of 40 words or fewer that says it redirects and has a meta refresh in scope (rustdoc's `Redirecting to ../../../../std/sync/struct.Mutex.html...`) is read where it sends its reader, once. The first pass printed the stub as the answer to a Rust question.
+
+**Measure.** Three tune sets: A (20) and B (24) as before, and C, the 32 questions of the blind run, now open (129 facts; markers built from its quotes agree with the blind grades on all 387 graded facts of its three arms, in-sample). Each question's searches were run once and held fixed for every build (C's anew: they differ from the blind run's, so a case's rank 1 may differ from the table above); pages were read live, four calls at a time for the variants, one at a time for the first and last rows. Every variant row has items 2 to 8. Facts / complete:
+
+| Site order | A | B | C | A+B |
+|---|---|---|---|---|
+| first pass: the vote over every hit, question-word boosts | 63 / 16 | 81 / 20 | 97 / 20 | 144 / 36 |
+| (a) the top docs hit's site, docs-look check kept | 63 / 16 | 76 / 18 | 101 / 22 | 139 / 34 |
+| (a) the top docs hit's site | 63 / 16 | 82 / 20 | 106 / 22 | 145 / 36 |
+| (a) + a verified name in the question read first | 65 / 17 | 82 / 20 | 106 / 22 | 147 / 37 |
+| (a) + signed hits before plain ones | 63 / 16 | 73 / 17 | 105 / 23 | 136 / 33 |
+| (a) + cited pages after the pages returned | 63 / 16 | 82 / 20 | 106 / 21 | 145 / 36 |
+| (b) the vote over every hit, no word boost, check kept | 62 / 16 | 73 / 17 | 105 / 23 | 135 / 33 |
+| (b) the same, no check, a verified name first | 65 / 17 | 79 / 19 | 112 / 24 | 144 / 36 |
+| (c) the vote over the first three docs hits, check kept | 60 / 15 | 73 / 17 | 105 / 23 | 133 / 32 |
+| **(c), no check, a verified name first (as built)** | **65 / 17** | **82 / 20** | **112 / 24** | **147 / 37** |
+
+The first page read is the top docs hit in 63 of 76 answers (61 before). The 13 others: 4 a release named in words (Pydantic v2, Prisma 6, Tailwind 3, TanStack Query v5), 4 the vote (pytest's docs at rank 2 over a blog at 1, MDN at 3 over web.dev at 1, shopify.dev at 3 over a page the rank-1 forum thread cites, kotlinlang.org's API pages at 5 and 6 over the older kotlin.github.io copy at 4), 1 a pin the question writes that resolve confirmed (`django@5.2`), 4 the top hit unreadable (robots, HTTP 403, a `kafka-topics.sh` "host" cited in an excerpt, a duplicate by query string).
+
+As built against the first pass, same searches, one call at a time: tokens median 4,507 / p90 4,988 (4,471 / 5,050); seconds median 0.69 / max 5.28 (0.69 / 3.91; one 17.8 s outlier in an earlier run was a slow live fetch, 1.1 s on repeat); pages fetched median 2, total 255 (244); fallbacks: widened 5 (5), fell over to a second site 1 (0), resolved root first 0 (0), results only 0 (2); exit 0 on all 76 (one exit 3 before: the guessed pin). The extras (frontmatter, Not printed, Other results and the closing line) cost a median 584 tokens, p90 713, max 812 (570 / 745 / 802 before): the frontmatter up to about 250 (it echoes the question), Not printed up to about 350, Other results and the closing line up to about 280.
+
+Cases that moved against the first pass (C unless marked): npm unpublish 0 → 4 (the guessed pin), Rust `Mutex` poisoning 0 → 4 (the redirect stub followed), `ssh_config` keepalive 0 → 4 (results only before, sites split; now the man page at rank 5), storage quota eviction 2 → 4 (MDN at rank 3 over web.dev at 1, which the first pass read for the word "web"), Tailwind 3 dark mode 1 → 4 and TanStack Query v5 (A) 3 → 5 (release first), CSS `:has()` (B) 0 → 3 (MDN at rank 1, not the W3C draft at rank 3 that went first as a standards body's site). Lost: Postgres `idle_in_transaction_session_timeout` (B) 4 → 2 (a third-party GUC reference at rank 1, tied in weight with postgresql.org at 2, which the first pass read for the word "postgresql"), popover light dismiss 3 → 2 (MDN at 2 over the HTML standard at 3, which went first as a spec), Elixir `Task.async_stream` 4 → 3 (hexdocs' `Task.Supervisor` page at 1, with its `Task` page at 3, over a third-party reference at 2 that carried "elixir" in its path). The floor on these searches reads rank 1 as well, so none of the three is a loss against it.
+
+Objectives on C, on these searches: Go timer 4, npm unpublish 4, storage quota eviction 4, structured clone 4, .NET JSON 4 (the floor's 4 each); `ssh_config` answered from the man page; Kafka 3 and Rust 4 kept; nginx `proxy_next_upstream` 0, as the first pass on the same searches: the upstream module's page at rank 1 fills the budget before the proxy module's page at rank 9 (the sibling problem, still open).
+
+**Choices measured and rejected.**
+
+- *The top docs hit's site* (a): 2 facts and 2 complete fewer than (c) on C (Shopify −4: a forum thread at rank 1 links MDN's Keep-Alive page, which ranks 2 as a cited page ahead of shopify.dev at 3; storage quotas −2), the same on A and B. (c) is (a) whenever the top docs hit is signed and not outvoted by two of the next two.
+- *The vote over every hit* (b), no word boost: −3 on B (SQLite's docs lost to a tutorial site with three hits), the same on C as (c).
+- *Keeping the docs-look check*: under (a) −6 on B and −5 on C; under (c) −14 on A+B and −7 on C. It sent sqlite.org, reactrouter.com, sidekiq.org and Go's pages to other sites and `man.openbsd.org` to results only.
+- *Signed hits ahead of plain ones*: −9 on B (Serde, SQLite and React Router to signed third parties).
+- *Cited pages after the pages the search returned*: wins Shopify (+4) and popover (+1), loses the Go timer (−4: `pkg.go.dev/time` is only cited) and `ssh_config` (−1). Cited pages are the search's own evidence.
+- *A name in the question resolve verifies, read first*, is kept: under (a) +2 facts, +1 complete (pytest), nothing lost; under (c) it fired in none of the 76 calls (the vote reads pytest's docs anyway), and it is the last resort when the search's sites are all unreadable. It depends on resolve answering within 6 s.
+- *Release first* is kept: +3 (Tailwind 3) and +2 (TanStack Query v5), nothing lost; without its check of the thing named it read Spring Data Redis 2.7.0 for a Spring Boot 2.7 question.
+
+**Removed.** The question-word boost (`sfWordBoost`), the owner and standards-body sites first (`ownerFirst`, `sfOwnerShare`, `sfSite.owner`, `sfSite.spec`), the ambiguity refusal and its error (`ErrAmbiguousSite`, `sfLead`, `onlyNamed`, `sfNamedDepth`), the favoured site first (`guessedByName`, `favouredFirst`, its trace field), the "by name" origin (`originByName`, `OriginByName`, `byNameOrigin`, `byNameText`, `domainOrigin`, `domainWord`: a site only a name ties to what was asked has no origin line, as before), and the docs-look check and its retry loop in `chooseSite`. A version from an address's labels is no longer printed.
+
+**Fallbacks fired** over the 76 bare questions: widened 5, fell over to a second site 1, resolved root first 0, results only 0.
+
+**Still open.** A long sibling page chosen first fills the budget before the page that answers (nginx's upstream module over its proxy module; Elixir's `Task.Supervisor` over `Task`). Two hits tied in weight go by fused rank order, which may put a third-party reference first (Postgres). Page chrome (`← Event Handling Components Basics →`, course advertisements) still prints as text. The C markers were built on the very outputs they grade; the next sealed set checks them.
+
+#### Third pass
+
+Built on 2026-11-15, after the second pass was run blind on 32 more unseen questions (set D, 128 facts): released docs 71 facts / 8 complete, the first pass 94 / 20, the second 100 / 21, and the floor (`ketch search`, then the top result read at 4,000 tokens) 109 / 24; against the floor 2 wins, 6 losses, 24 ties. Twice the redesign trailed the floor on unseen questions, and every loss came from something done between "the search returned results" and "read the page": a site vote, docs-sign weights, name boosts, a second fused query, addresses mined from snippets, guessed pins, robots, widening after failed hits. Tuning those on open sets did not transfer (the second pass gained 15 facts on its tune set C and 6 on D). So this pass builds up from the floor instead of fixing the pipeline down: a question that names no library starts from exactly the floor's behaviour, and a step is kept only when it measurably beats it.
+
+**What a question that names no library does now** (`search_bare.go`):
+
+1. One search, the plain question, as `ketch search` runs it, in the search's order. No second query, no addresses taken from snippets, no name resolved from the question's words, no site vote, no docs-sign weight, no release reordering.
+2. Results that are no document by their address are passed over: Q&A and forum threads, issues, pull requests, commits, source files on a code forge, videos and social posts. A Markdown file on a forge, a README, a wiki page, a blog post or a tutorial is a document.
+3. The first result that reads is the first page. One that fails is skipped with its cause, and the next result is read, on any site.
+4. Then up to two more results of the same site and release (`releaseOf`), in search order.
+5. Pages the search returned are read as `ketch scrape` reads them: robots.txt is not consulted, and a page is read where it is served. With nothing readable, the answer is the search results alone.
+
+Its pages go through the same evidence pipeline, outline, Other results, 4,000-token budget and output contract as before. A `name@version` the question writes is resolved beside the search and, when resolve confirms it, answered as a pin. `--library`, the local index, `--section`, `--resolve`, `--offline`, version pins and Context7 keep their behaviour; the site and resolve machinery now serves only requests that name a library.
+
+**Measure.** Sets A (20), B (24), C (32) and D (32): 108 questions, 416 facts, all open. Each question's search was held fixed for every build two ways. **F** is the graded floor's own search, rebuilt from its record (the five results `ketch search --limit 5` gave it, in order). On F, a Go build and the floor see the same results, so a difference is the build's. **T** is a 10-result search of the plain question run once per question: the earlier passes' caches for A to C, and a new one for D. Pages were read live, a fresh state per call. Facts were checked by the substring markers. On D they agree with the blind grades on 506 of 512 graded facts (98.8%), and never credit a fact a grader refused. The six differences are facts the graders took from an Other results snippet, which the checker does not read. That is why the floor's D score reads 105 here against its graded 109. Facts / complete per set:
+
+| Build (F: the floor's own search) | A | B | C | D | All |
+|---|---|---|---|---|---|
+| floor (proto.py over the same search) | 59 / 14 | 70 / 16 | 106 / 24 | 105 / 22 | 340 / 76 |
+| second pass | 57 / 14 | 81 / 19 | 111 / 25 | 101 / 21 | 350 / 79 |
+| baseline: the floor in Go (first readable result, 1 page) | 58 / 12 | 81 / 18 | 109 / 25 | 103 / 21 | 351 / 76 |
+| S1 skip non-documents (structural) | 58 / 12 | 81 / 18 | 112 / 25 | 102 / 21 | 353 / 76 |
+| S1 instead: the old `notDocsHit` list | 55 / 12 | 81 / 18 | 108 / 24 | 97 / 22 | 341 / 76 |
+| + S2 up to 3 pages of the first page's site and release | 58 / 12 | 82 / 19 | 118 / 27 | 102 / 21 | 360 / 79 |
+| + S3 instead: a site's lists read when its hits failed | 58 / 12 | 82 / 19 | 118 / 27 | 102 / 21 | 360 / 79 |
+| + S4 widen for a missing identifier | 58 / 12 | 82 / 19 | 118 / 27 | 102 / 21 | 360 / 79 |
+| + S5 a named release first within its site | 55 / 11 | 82 / 19 | 118 / 27 | 102 / 21 | 357 / 78 |
+| + S6 the second query when nothing is readable | 58 / 12 | 82 / 19 | 118 / 27 | 102 / 21 | 360 / 79 |
+| **as built: S1 + S2, search results read without robots.txt** | **58 / 12** | **82 / 19** | **118 / 27** | **104 / 22** | **362 / 80** |
+
+| Build (T: a 10-result search) | A | B | C | D | All |
+|---|---|---|---|---|---|
+| floor | 49 / 13 | 73 / 17 | 92 / 17 | 77 / 15 | 291 / 62 |
+| second pass | 65 / 17 | 82 / 20 | 112 / 24 | 86 / 17 | 345 / 78 |
+| baseline | 47 / 12 | 81 / 19 | 93 / 18 | 77 / 15 | 298 / 64 |
+| S1 structural | 48 / 12 | 81 / 19 | 99 / 19 | 78 / 15 | 306 / 65 |
+| S1 instead: `notDocsHit` | 48 / 12 | 81 / 19 | 98 / 19 | 84 / 18 | 311 / 68 |
+| + S2 | 53 / 13 | 82 / 20 | 99 / 19 | 78 / 15 | 312 / 67 |
+| + S3 instead (lists) | 53 / 13 | 82 / 20 | 95 / 18 | 78 / 15 | 308 / 66 |
+| + S4 | 53 / 13 | 82 / 20 | 99 / 19 | 78 / 15 | 312 / 67 |
+| + S5 | 53 / 13 | 82 / 20 | 99 / 19 | 77 / 15 | 311 / 67 |
+| + S6 | 53 / 13 | 82 / 20 | 99 / 19 | 78 / 15 | 312 / 67 |
+| **as built** | **59 / 14** | **82 / 20** | **99 / 19** | **78 / 15** | **318 / 68** |
+
+The S2 to S6 rows add one step each to the row "+ S2"; the robots change is the difference between "+ S2" (robots.txt honoured) and "as built".
+
+- **Baseline.** Its first page equals the floor's on 106 of 108 questions. The two exceptions are `django@5.2`, a pin the question writes that resolve confirms and that is answered as a pin by design, and Python 3.10's `datetime` page, which robots.txt closes. The robots change removes the second.
+- **S1, kept.** The structural skip gains 2 on F and 8 on T. It wins Spring Boot (+3, a `.java` file at rank 1), Kotlin (+2, a `.kt` file), Shopify (+4, a forum thread), `rust_overflow` (+2, an issue) and tokio (+1, a `.rs` file). It loses `resize_observer_loop` (−1 on both searches): the issue thread at rank 1 held one fact and the result after it held none. A first version also skipped Sphinx `_modules` pages and lost SQLAlchemy's 3 facts, so that rule went. The `notDocsHit` list is −12 on F and +5 on T against the structural skip. It drops blogs, tutorials and Markdown on forges, and loses the .NET, OpenTelemetry, Prometheus, Python 3.10 and `rust_overflow` answers.
+- **S2, kept.** Gains 7 on F and 6 on T. It wins SQS (+4), Kotlin (+2), AbortSignal and S3 (+1 each) on F, and TanStack, `rust_pin` and pytest on T. It loses Intersection Observer (−1 on F): a third page took budget from the first.
+- **S3, rejected.** Reading a site's lists when its hits failed never helped on F, and loses 4 on T: Cloud Run and `java_threadpool` were answered by the next result. A failed read falls through to the next result.
+- **S4, rejected.** Widening fired on 5 questions on F and 7 on T, read 87 and 113 more pages, and changed no fact. A question that names no library never widens; `not_on_pages` names the identifier instead. Widening stays for `--library`.
+- **S5, rejected.** It loses Pydantic v2 (−3 on F: a 2.9 models page at rank 3 over the current fields page at rank 1) and Symfony 5.4 (−1 on T), and wins nothing. `questionRelease` and its `releaseUnits` list stay only for `--library` ordering and for the note that says no page read is marked with the release asked for, which changes no fact.
+- **S6, rejected.** The second query, used only when the first query's results hold no readable document, never fired once the structural skip let blog posts through.
+- **Robots, kept.** Search results read without robots.txt gain 2 on F (Python 3.10 `datetime`, +2) and 6 on T (Prisma 6, +6), and lose nothing. Widening, a site's lists, discovery, `ketch docs index`, and the page a library value or resolve names keep honouring robots.txt (`robotsApply`, `search_robots.go`).
+
+As built, against the floor on the floor's own searches: 362 facts against 340, 80 complete against 76; 10 questions above it and 5 below. On the 10-result searches: 318 against 291; 13 above and 2 below. The first page equals the floor's on 102 of 108: the structural skip moves five and the confirmed pin one. Per set against the floor's graded facts: A+B 140 against 135 (the checker gives the floor 129 on the same outputs), C 118 against 106, D 104 against 109. On D, checker against checker, the score is 104 against 105.
+
+**Below the floor**, on the floor's own searches:
+
+- `resize_observer_loop` (D, 0 against 1): S1 skips the issue thread at rank 1, which held one fact.
+- `array_map`, `react_queue` (A, −1 each), `fastapi_yield` (A, −1) and `intersection_observer_options` (B, −1): the same pages were read, and the evidence pipeline's choice of sections under 4,000 tokens left out a fact the floor's term-count choice printed. For `react_queue` and Intersection Observer, a third page took some of that budget.
+
+On the 10-result searches, `resize_observer_loop` is below for the same reason, and so is `mongodb_ttl` (C, 1 against 2): the same page, a section choice.
+
+**Cost**, as built, on the floor's own searches (on the 10-result searches in brackets):
+
+- Tokens: median 4,215, p90 4,870 (4,138 and 4,897). The floor printed 4,368 and 4,914.
+- Seconds: median 0.27, max 2.53 (0.29 and 1.73), searches held fixed.
+- Pages fetched: median 1, 194 in all (206). The second pass fetched 339 in all on F (median 2).
+- Extras: the frontmatter, Not printed, and Other results with the closing line take a median 446 tokens, p90 584, max 686 (428, 662 and 786).
+
+**Fallbacks fired** over the 108 questions, as built:
+
+- Fell through to a later result: 2 on F (`bash_set_e`, `webpack4_node`) and 3 on T (Cloud Run, httpx, `java_threadpool`).
+- Results only: 1, `rsync_delete` on F, where every result was a Q&A thread.
+- Widened: only the confirmed pin (`django@5.2`).
+- Site fall-over, resolved root first, second query and lists after failed hits no longer exist for a question that names no library.
+
+**Indexed path.** The bench's second pin, network denied, gives 232 of 291 answered and 237 answered or led, case for case the same as the second pass. Its three `not_covered` FAILs are the second pass's too: the checker reads a refusal (see above).
+
+**Also changed.**
+
+- A skipped page names its cause. A failed read now says `DNS lookup failed`, `connection failed`, `TLS certificate rejected` or `timed out`, and any other error gives its message as the detail; before, all of these were `failed`.
+- When the page read is the same page of another release as one skipped before it, the note says so: `<url> was skipped (<cause>); <url>, read instead, is the same page of another release`.
+- A result whose host has no known suffix (`https://docs.python.or/`, cut short in a result's text) is no result and never appears in Other results.
+
+**Removed.**
+
+- What the bare question no longer reaches: the resolve of a name guessed from a bare question (`bareReading`, `sfResolved.bare`, the strict resolve mode: `resolveOne`'s `strict`, `resolution.strict`, `guessUnproven`, `strictMiss`, `strictMissError`, `strictMinTrust`, and the strict slot of `resolutionKey`).
+- What only that mode used: the origin of a bare question (`askedAbout`, `firmReading`, `titlesCarry`, "for this question" in `unverifiedOrigin`).
+- The guessed-pin branch of the library path.
+- `resolveOne`'s `reading` and `weigh` parameters and `(*Web).weigh`, which were already dead.
+
+**Still open.**
+
+- **On the 10-result searches the second pass leads.** It scores 345 against 318. On A to C those searches are the ones its rules were tuned on. On D they are new, and it still leads by 8 (86 against 78). It reads the official docs ranked second or third where the first readable result is a third-party page: RabbitMQ, ResizeObserver and webpack 4 (+4 each). It loses Gmail (a third-party page first), `cpp_try_emplace` and Symfony. On the floor's own searches it trails by 12 (350 against 362).
+- **The sealed set decides.** Which order holds on an unseen draw of the search is for the next sealed set to show. The docs-sign weights cost the blind runs twice.
+- **Section choice.** Section choice on a page the floor also read costs five questions one fact each.
+- **Dead lean mode.** `leanKey` is never set, so `resolution.lean` and the speculative branches it guards are dead. They predate this pass and are left for a separate change.
+
+#### Fourth pass
+
+Built on 2026-11-16, after the third pass was run on a third unseen set (E, 32 questions) with each question's web searches recorded once and replayed to every build, graded blind. Facts covered:
+
+| Search recording | release | second pass | third pass | search then read the top result |
+|---|---|---|---|---|
+| default chain (Keenable 40 / Parallel 24 of the queries), 32 questions, 128 facts | 79 | 96 | **108** | 98 |
+| Firecrawl only, 29 questions, 116 facts | 44 | **76** | 65 | 66 |
+
+The third pass stays the shape. Set E is now open.
+
+**What changed.**
+
+1. **One more search when the first gives nothing to read** (`searchAgain`, `search_bare.go`). On the Firecrawl recording the question's search returned no results for 7 of 29 questions, all long questions in words. The third pass printed nothing there (exit 3); the second pass answered two of them (`axios_config`, `caddy_reverse_proxy`, 4 facts each) from its second query. Now, when the question's search returns no results, or no result that is a document that reads, ONE more search runs, the question + "documentation", and its results are read by the same rules: the search's order, the structural skip, up to 3 pages of one site and release. The answer says so in its note: `the question's search returned no results; this answer is from a second search, the question + "documentation"` (or `none of the question's search results is a document that reads; …`). A repeat within `cache_ttl` prints the same note. When the second search gives nothing to read either, the results print alone: the first search's, or the second's when the first had none. No results from either is nothing to print, exit 3. `search.Auto` still stops at a provider's empty answer. The trace line gains `second_query`.
+2. **The release note fires less often by mistake** (`markRelease`, `releaseLabel`, `search_release.go`). Two rules changed, and no word list grew:
+   - A page is marked with the release when the text printed names the thing with that release (`Go 1.23`, `Pydantic V2`, `.NET 9`, `RabbitMQ 4.3`, also `Go 1.23.1`; not `Go 1.230` or `ASP.NET 9`). Such text speaks of the release, so no note prints. No `version:` line prints either, because the page itself carries no release.
+   - A label with an x names every release under it: `/5.x/` is marked `5.4`, so a Symfony 5.4 question read from `symfony.com/doc/5.x/` gets `version: 5.4` and no note.
+3. **Same page, fewer facts than the floor: no change.** No one cause explains most of the six cases (below).
+
+**Measure.** Each question's search was replayed from a recording: E's two recordings (`KETCH_SEARCH_REPLAY`, the measurement hook, which is not in the tree), and for A to D the third pass's fixed searches F (the floor's own) and T (10 results). Pages were read once live with the third pass and recorded through the bench build's HTTP record/replay. Every build then read the same pages from that recording, so outputs are byte-comparable.
+
+*Which second query.* Three forms were measured: (a) the question + "documentation", (b1) the question's first clause (`Grafana Loki`, `Caddy reverse_proxy in front of a Rails app`), and (b2) its first word, identifiers and capitalised names, at most 8 (`Grafana Loki retention_stream`). Firecrawl, keyless, refused every query after the E recording (`rate limited`, five tries from 05:53 to 06:10 UTC). So (b1) and (b2) could not be recorded on Firecrawl. They were measured on the default chain instead, with the question's own results emptied for the seven questions Firecrawl returned none for, so that the second search runs. Facts are from substring markers built from E's quotes. On those seven questions the markers agree with the blind grades on 218 of 224 graded facts. Of the six differences, four are facts the graders took from Other results snippets, which the markers do not read. One is a paraphrase a grader credited to the released build. In the last, the markers credit a floor answer for wording a grader credited in another arm but not in that one.
+
+| Second query | E, Firecrawl: 7 questions with no results | E, default chain, first search emptied: 7 questions, 28 facts | A to D: `rsync_delete` on F (every result a Q&A thread) |
+|---|---|---|---|
+| none (third pass) | 0 (exit 3 on all 7) | | 0, results only |
+| **(a) question + "documentation"** | **8**: `axios_config` 4, `caddy_reverse_proxy` 4; for the other 5 Firecrawl returned none to this query either | **22** (the question's own search reads 22) | 0, results only |
+| (b1) first clause | not recorded | 7 | 3, from a 35,700-token answer (see Still open) |
+| (b2) names | not recorded | 6 | 0 |
+
+The shortened forms lose because they search for the topic, not the question: `Grafana Loki` reads Loki's overview, `Adyen payments API` a client library's README, and `DevTools` a glossary page. (a) is kept. Facts on each recording, against the third pass: E default chain 108, unchanged (the second search never runs). E Firecrawl: the 65 graded facts + 8 = 73 (second pass 76). A to D: unchanged on F and T (`rsync_delete` stays results only, its note now naming the second search).
+
+*Byte comparison.* All 277 calls ran with the third pass and with this pass before the note change: E default chain 32, E Firecrawl 29, F 108, T 108. 274 printed the same bytes with the same exit code. The 3 that differ are the 3 where the second search ran: `axios_config` and `caddy_reverse_proxy` on Firecrawl, and `rsync_delete` on F. In every other call the trace says `second_query=false` and the replay log shows no second search. Replay is close to exact. The third pass replayed against its own live run differs on 3 calls (`postgres_upsert`, `webpack4_node`, `httpx_timeouts`), each in one `skipped` line's cause: a recorded DNS failure or timeout comes back from the replay with other wording. Those 3 are identical across the two replayed builds. With the note change, 10 more calls differ, in their `note` line alone and, for Symfony on F, `version: 5.4`.
+
+*Release notes.* Over the 140 questions on the four recordings, the note printed 23 times before this pass and 14 times now. It no longer prints for `dotnet_json_web`, `go_timer_123`, `pydantic_defaults` and `rabbitmq_ack_timeout` (F and T: the text names `.NET 9`, `Go 1.23`, `Pydantic V2`, `RabbitMQ 4.3`), or for `symfony54_login_throttling` on F (`/5.x/`). All nine were misfires. Where it still prints:
+
+| Question | Recording | Pages read | Right? |
+|---|---|---|---|
+| `springboot27_redis` | F, T | current Spring Boot reference (`docs.spring.io/spring-boot/reference/…`) | right: not the 2.7 docs |
+| `rails61_retry_on` | T | `railsdoc.github.io`, current Rails | right |
+| `phpunit9_depends` | E Firecrawl | `docs.phpunit.de/en/12.5/…` | right |
+| `py310_fromisoformat` | T | two unrelated forge files | right, if beside the point: no Python docs were read |
+| `symfony54_login_throttling` | T | a third-party bundle's README | right |
+| `nextjs_tags` | F, T | `nextjs.org/docs/…`, current, which is 16 | misfire |
+| `tanstack_optimistic` | F, T | `tanstack.com/query/latest/…`, which is v5 | misfire |
+| `polly_circuit_breaker` | E both | `pollydocs.org`, which documents v8 only | misfire |
+| `ga4_retention` | E both | a GA4 blog post; Google's Analytics Help page | misfire: the 4 is part of the product's name |
+
+Six right, eight misfires. The eight read pages that carry no release at all, in address, title or printed text, as do the right Spring Boot and Rails answers. Telling them apart needs each product's current release, or a list of names that end in a number; neither was added.
+
+*Same page, fewer facts than the floor.* Each case, with where the missing fact was and why it did not print:
+
+| Question | Missing fact, and where | Why not printed |
+|---|---|---|
+| `array_map` (A, F) | "forEach() always returns undefined", in the forEach page's Description | the second page; the map page's examples took the budget first (best page first) |
+| `react_queue` (A, F) | "React stores 3", in the second page's "Updating the same state multiple times" | best page first: the snapshot page took most of the budget, and the section was cut to 120 of 656 tokens |
+| `fastapi_yield` (A, F) | "use yield one single time per dependency", in the page's 145-token lead section | section choice: the lead holds few of the question's terms and is listed under Not printed |
+| `intersection_observer_options` (B, F) | "a value of 0.5 … the default is 0", inside "Intersection observer options" | a cut: that section printed 416 of 670 tokens, without that piece |
+| `mongodb_ttl` (C, T) | "compound indexes do not support TTL", on `/docs/v6.0/core/index-ttl` | that page is in another release tree (`v6.0` beside `manual`), so it is never read beside the first; 3,315 tokens printed |
+| `optional_chaining` (E default chain, run 1) | the floor's second fact came from an Other results snippet; the page read was the same | the Optional chaining reference at rank 4 was MDN's German page: another locale, never read beside the first |
+
+That is four causes: best page first (2 cases), another release or locale not read (2), a cut (1) and section choice (1). No one of them is most, so nothing changed.
+
+**Guards.** `go build`, `go vet`, `go test ./...` and `golangci-lint` pass (0 issues), and so do the pi tests (64). The bench's second pin, network denied, gives 232 of 291 answered and 237 answered or led, case for case the same as the second and third passes, with the same three `not_covered` FAILs from the checker. The bench repository was not modified.
+
+**A hard bound on the docs text** (`evidence_clip.go`: `clipped`, `clipText`, `clipOrder`; `open` in `evidence_choose.go`; `renderGroup`; `fitRuns`, `wordRuns`, `runeRuns` in `local_section.go`). Callers are agents, and a 35,000-token answer to a 4,000-token call fails whatever it holds. The first section always prints something, and a block is never split into pieces, so one block larger than the budget (a man page served as one `<pre>`, one paragraph of tens of thousands of characters) printed whole. Now such a block is cut inside, at line boundaries. Lines holding the question's terms are kept, best first, each with two lines of context, until the room left is spent. A term weighs more the fewer of the block's lines hold it, and a line scoring under a quarter of the best one's is not kept. Kept runs print in order with `…` between them. A code block keeps its fences, and a table its header and delimiter rows. A line longer than what is left is cut at words around its first term. The group carries `(cut, N of M tokens)`, and `--section` reads the rest. `--section` pages the same way: a block longer than a page is cut at its lines, a code block into fenced blocks of its lines, and a line longer than a page at words. Below about 200 tokens a page (`sectionMinRoom`, 100 tokens of text) may run over rather than print a few words. The bound is the estimator's count: docs text at most `--tokens`, planned 1/32 under it. In o200k tokens the margin is the estimator's error, 4.3% on average per result and at worst 9% under on a five-result answer. Replayed searches and pages: all 277 recorded answers and all 269 recorded `--section` calls print the same bytes. The one call that changes is the rsync question read from `linux.org/docs/man1/rsync.html` (recorded for this). Its answer's docs text goes from 32,153 tokens to 3,865 (3 rsync facts to 2), and its `--section` page 1 from 32,140 to 3,865 (9 pages, each within the bound). Maxima over the recorded calls, before and after: answers' docs text 32,153 and 3,871; whole answer 32,405 and 4,541; `--section` output 32,153 and 3,886. The extras (frontmatter, Not printed, Other results, closing line) are bounded on their own: at most 701 tokens over every recorded answer.
+
+**Forge files and almost-empty pages** (`forgeSource`, `forgeFile`, `forgeDocument`, `docExts`, `tinyPage`, `sfTinyChars` in `search_bare.go`). Two fresh questions stopped at a first result that is no document. One was a `.proto` schema on GitHub that scrapes to its chrome ("141 lines (119 loc) · 6.42 KB | Raw"). The other was an example `ansible.cfg` on `raw.githubusercontent.com`. Two rules now apply:
+
+- On a code forge and its raw-file host, a file of a repository is a document only by its type: Markdown (`.md`, `.markdown`, `.mdown`, `.mkd`, `.mdx`), reStructuredText (`.rst`), AsciiDoc (`.adoc`, `.asciidoc`), plain text (`.txt`), a README of any type, or a wiki page. A file is anything under `/blob/`, `/raw/`, `/src/`, Gitiles' `/+/` and `/+show/`, or on the raw host. Any other file is passed over like the other non-documents. A repository's home, a `/tree/` directory view (shown with its README) and a wiki stay documents.
+- A first page that reads but has under 500 characters of text (`sfTinyChars`) is skipped with the cause `almost no text`, and the next result read, when it holds none of the identifiers or flags the question writes and fewer than half of its terms. On the recorded searches the only pages that short were forge chrome and a wiki stub: 102, 183 and 252 characters, against 1,139 for the shortest documentation page.
+
+On all four recordings, the forge rule changes one call, and the short-page rule changes one more. Every other call prints the same bytes:
+
+- **Forge rule:** `py310_fromisoformat` on T reads `cure-lang.org`'s stdlib page instead of a `.cure` source file. Facts stay 0 of 4.
+- **Short-page rule:** `go_timer_123` on T reads `go.dev/wiki/Go123Timer` instead of a 102-character Gitiles view. Facts stay 0 of 4 by the markers, which come from `pkg.go.dev`.
+
+The Markdown pages that won before are still read, including `MicrosoftDocs/*.md`, the collector `README.md`, and the Caddy, HikariCP and PHPUnit pages on E.
+
+**Still open.**
+
+- **The shortened second query on Firecrawl.** (b1) and (b2) were never recorded there, because Firecrawl rate-limited every query.
+- **Release-note misfires on unmarked pages:** Next.js 16, TanStack Query v5, Polly v8 and GA4 (above).
+
+#### Decision providers
+
+Amended on 2026-11-17. ketch applies no model to search results unless the operator sets a decision-provider key (TypeSafe or OpenAI). With no key, or `docs_decisions` `off`, every answer is as this document describes.
+
+- **What the provider decides.** Nothing on its own: it returns probabilities for fixed questions, worded in `docs/decide_words.go`. For each page read: is it documentation, is it the makers' own, does the question name a release, does the page document another one, what kind of page is it. For each passage: does it help answer the question. For each result not read: is it the makers', what kind is it.
+- **What stays ketch's.** Every decision is code reading those probabilities against the provider's cut-offs: the labels and tiers, the page printed first, the passages that fit the budget, the confidence words, the `passed_over` reasons, `next`, whether a linked docs site is followed and printed, and under the token cap what is sent at all (page labels first, then each page's best word-matching passages). The release check (`markRelease`, its note, and confidence capped at `medium`) is ketch's own rule, as are the budget, the clip and the output.
+- **The boundary.** Opt-in by key, and only for a question that names no library. An operator's `docs_decisions off` holds against any per-call value. `--library`, an indexed library and `--offline` never reach a provider, so nothing in a private index is sent, and no page read with `cookie_file` cookies is sent either. One call sends at most `docs_decisions_tokens` input tokens (80,000 unless set; the operator's to raise). Any provider error answers as without it, with a note. No verdict is added: labels and confidence describe sources and passages, not whether the text answers the question.
 
 ## Storage
 

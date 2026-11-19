@@ -629,6 +629,9 @@ func clickPkgs() *fakePkgs {
 
 // GitHub refusing for its rate limit while PyPI's metadata still verifies
 // the site: the match stands, with a note saying GitHub was not asked.
+// The registries' two repositories are looked up at once (enrich), so the
+// one whose lookup started before the other's refusal is asked too; after
+// that batch GitHub is asked nothing: no repository twice, no search.
 func TestResolveRateLimitedGitHubStillMatches(t *testing.T) {
 	repos := &fakeRepos{err: &ghRateLimitError{}}
 	w := resolverWeb(clickSite(), clickPkgs(), repos, nil)
@@ -643,8 +646,23 @@ func TestResolveRateLimitedGitHubStillMatches(t *testing.T) {
 	if m.TrustScore < minTrust || m.TrustScore >= 10 {
 		t.Errorf("trust %.1f: verified, but without GitHub's homepage", m.TrustScore)
 	}
-	if n := len(repos.calls); n != 1 {
-		t.Errorf("GitHub asked %d times after its first refusal: %v", n, repos.calls)
+	batch := []string{"repo pallets/click", "repo uggedal/click"}
+	calls := slices.Sorted(slices.Values(repos.calls))
+	if len(calls) == 0 || len(slices.Compact(slices.Clone(calls))) != len(calls) || slices.ContainsFunc(calls, func(c string) bool { return !slices.Contains(batch, c) }) {
+		t.Errorf("GitHub asked %v; want only the first batch %v, each once", repos.calls, batch)
+	}
+
+	// Once a refusal is in, no later lookup or search is sent.
+	log := &resolveLog{}
+	log.setLimited(&ghRateLimitError{})
+	before := len(repos.calls)
+	later := w.enrich(context.Background(), []*project{{key: repo("o", "x").spec(), repo: repo("o", "x")}}, log)
+	w.searchProjects(context.Background(), mustSpec(t, "click"), nil, log)
+	if asked := repos.calls[before:]; len(asked) != 0 {
+		t.Errorf("GitHub asked %v after its refusal", asked)
+	}
+	if len(later) != 1 || later[0].repoErr == nil || !strings.Contains(later[0].repoErr.Error(), "not asked") {
+		t.Errorf("later lookup = %+v; want it not asked", later)
 	}
 }
 
@@ -912,7 +930,7 @@ func TestResolveUncorroboratedRepositoryClaim(t *testing.T) {
 	assertReasons(t, log, "pypi gizmo: github.com/gizmo-org/gizmo does not name it back")
 	// Single-library contexts cannot pick the evil site: at worst the
 	// name is ambiguous.
-	if m, err := w.resolveOne(context.Background(), mustSpec(t, "gizmo"), false); err == nil && m.root.String() != "https://docs.gizmo.dev/" {
+	if m, err := w.resolveOne(context.Background(), mustSpec(t, "gizmo")); err == nil && m.root.String() != "https://docs.gizmo.dev/" {
 		t.Errorf("resolveOne(gizmo) = %s", m.root)
 	}
 }
@@ -929,7 +947,7 @@ func TestResolveBorrowedStars(t *testing.T) {
 	sites := widgetSites()
 	sites.raw["https://react.dev/"] = html(`<!doctype html><html><head><title>React</title></head><body><a href="/learn">Learn</a><a href="https://github.com/react/react">GitHub</a></body></html>`)
 	w := resolverWeb(sites, pkgs, repos, nil)
-	m, err := w.resolveOne(context.Background(), mustSpec(t, "widget"), false)
+	m, err := w.resolveOne(context.Background(), mustSpec(t, "widget"))
 	if err != nil || m.root.String() != "https://pywidget.readthedocs.io/" {
 		t.Fatalf("resolveOne(widget) = %s, %v; want PyPI's widget, its only verified match", m.libraryMatch().ID, err)
 	}
@@ -1083,7 +1101,7 @@ func TestResolveUnreadRepositoryIsNoAnswer(t *testing.T) {
 	pkgs.pkgs["crates:widget"] = pkgInfo{eco: ecoCrates, name: "widget", repoURL: "https://github.com/rusty/widget", repo: repo("rusty", "widget")}
 	w := resolverWeb(widgetSites(), pkgs, nil, nil)
 	w.repos = &failingRepo{fakeRepos: widgetRepos(900, 300), bad: repo("rusty", "widget")}
-	_, err := w.resolveOne(ctx, mustSpec(t, "widget"), false)
+	_, err := w.resolveOne(ctx, mustSpec(t, "widget"))
 	if err == nil || errors.Is(err, ErrNotFound) || errors.Is(err, ErrLibraryRequired) ||
 		!strings.Contains(err.Error(), "crates widget") || !strings.Contains(err.Error(), "status 502") {
 		t.Fatalf("resolveOne(widget), another repository unreadable = %v; want an upstream error naming it", err)
@@ -1132,7 +1150,7 @@ func TestResolveRateLimitedGitHubLetsNoSquatterWin(t *testing.T) {
 	w.pkgs = newPkgClient(&http.Client{Transport: notFoundFallback{ft}})
 	w.repos = newGHClient(&http.Client{Transport: notFoundFallback{ft}}, nil)
 	w.fetcher = &fixtureFetcher{client: &http.Client{Transport: notFoundFallback{ft}}}
-	m, err := w.resolveOne(context.Background(), mustSpec(t, "express"), false)
+	m, err := w.resolveOne(context.Background(), mustSpec(t, "express"))
 	if err != nil || m.root.String() != "https://expressjs.com/" || m.project != "github:expressjs/express" {
 		t.Errorf("resolveOne(express) with GitHub = %s (%s), %v; want expressjs.com", m.libraryMatch().ID, m.project, err)
 	}
@@ -1157,7 +1175,7 @@ func rateLimitedSquatters(t *testing.T, name string, search bool) {
 			}
 		}
 	}
-	m, err := w.resolveOne(ctx, mustSpec(t, name), false)
+	m, err := w.resolveOne(ctx, mustSpec(t, name))
 	if err == nil {
 		t.Fatalf("resolveOne(%s) picked %s with GitHub rate-limited", name, m.root)
 	}
@@ -1272,7 +1290,7 @@ func TestResolveHangingHomepageDoesNotSinkOthers(t *testing.T) {
 	// Where one library is needed, the pick stands, noting what was not
 	// checked: a dead junk homepage must not sink the name.
 	start := time.Now()
-	m, err := w.resolveOne(context.Background(), mustSpec(t, "gizmo"), false)
+	m, err := w.resolveOne(context.Background(), mustSpec(t, "gizmo"))
 	for _, c := range f.called() {
 		if c == "page https://junk.example/" {
 			t.Errorf("the hanging homepage was tried again through FetchPage after its probe budget ran out")
@@ -1324,7 +1342,7 @@ func TestResolveRepositoryHomepageOfReadmePackages(t *testing.T) {
 		w, ft := fixtureWeb(t)
 		w.pkgs = newPkgClient(&http.Client{Transport: notFoundFallback{ft}})
 		w.repos = newGHClient(&http.Client{Transport: notFoundFallback{ft}}, nil)
-		m, err := w.resolveOne(context.Background(), mustSpec(t, tc.spec), false)
+		m, err := w.resolveOne(context.Background(), mustSpec(t, tc.spec))
 		if err != nil || m.root.String() != tc.root || m.project != tc.project || m.stars < 1000 {
 			t.Errorf("resolveOne(%s) = %s (%s, %d stars), %v; want %s for %s", tc.spec, m.libraryMatch().ID, m.project, m.stars, err, tc.root, tc.project)
 		}
@@ -1339,7 +1357,7 @@ func TestResolveAnyhowKeepsItsStars(t *testing.T) {
 	w, ft := fixtureWeb(t)
 	w.pkgs = newPkgClient(&http.Client{Transport: notFoundFallback{ft}})
 	w.repos = newGHClient(&http.Client{Transport: notFoundFallback{ft}}, nil)
-	m, err := w.resolveOne(context.Background(), mustSpec(t, "crates:anyhow"), false)
+	m, err := w.resolveOne(context.Background(), mustSpec(t, "crates:anyhow"))
 	if err != nil || m.root.String() != "https://docs.rs/anyhow/latest/anyhow/" || m.project != "github:dtolnay/anyhow" || m.stars != 6685 {
 		t.Fatalf("resolveOne(crates:anyhow) = %s (%s, %d stars), %v", m.libraryMatch().ID, m.project, m.stars, err)
 	}
@@ -1355,7 +1373,7 @@ func TestResolveAnyhowKeepsItsStars(t *testing.T) {
 	ft.Handle(http.MethodGet, "https://anyhow.dev/docs/intro", testutil.Fixture{Header: http.Header{"Content-Type": {"text/html"}},
 		Body: `<!doctype html><html><head><title>Intro | Anyhow</title><meta name="generator" content="Docusaurus"></head><body><a href="/docs/intro">Intro</a><a href="/docs/api">API</a><a href="https://github.com/igoramadas/anyhow">GitHub</a></body></html>`})
 	w.fetcher = &fixtureFetcher{client: &http.Client{Transport: notFoundFallback{ft}}}
-	_, err = w.resolveOne(context.Background(), mustSpec(t, "anyhow"), false)
+	_, err = w.resolveOne(context.Background(), mustSpec(t, "anyhow"))
 	if !errors.Is(err, ErrAmbiguousLibrary) {
 		t.Errorf("resolveOne(anyhow) = %v; want the ambiguity between 6685 and 1500 stars", err)
 	}
@@ -1413,12 +1431,12 @@ func fixtureWeb404(t *testing.T) (*Web, *testutil.FixtureTransport) {
 func TestResolveVersionedRootIsTheOneSearched(t *testing.T) {
 	w, _ := fixtureWeb404(t)
 	for _, spec := range []string{"crates:tokio@1.38", "tokio@1.38"} {
-		m, err := w.resolveOne(context.Background(), mustSpec(t, spec), false)
+		m, err := w.resolveOne(context.Background(), mustSpec(t, spec))
 		if err != nil || m.root.String() != "https://docs.rs/tokio/1.38.2/tokio/" || m.version != "1.38.2" {
 			t.Errorf("resolveOne(%s) = %s %q, %v; want docs.rs's 1.38.2", spec, m.root, m.version, err)
 		}
 	}
-	m, err := w.resolveOne(context.Background(), mustSpec(t, "crates:tokio@1"), false)
+	m, err := w.resolveOne(context.Background(), mustSpec(t, "crates:tokio@1"))
 	if err != nil || m.root.String() != "https://tokio.rs/" || m.version != "1.54.1" {
 		t.Errorf("resolveOne(crates:tokio@1) = %s %q, %v; want tokio.rs as the latest, 1.54.1", m.root, m.version, err)
 	}
@@ -1439,7 +1457,7 @@ func TestResolveRootDepth(t *testing.T) {
 		{"npm:playwright", "https://playwright.dev/docs/"},
 	}
 	for _, tc := range cases {
-		m, err := w.resolveOne(context.Background(), mustSpec(t, tc.spec), false)
+		m, err := w.resolveOne(context.Background(), mustSpec(t, tc.spec))
 		if err != nil || m.root.String() != tc.root {
 			t.Errorf("resolveOne(%s) = %s, %v; want %s", tc.spec, m.root, err, tc.root)
 		}
@@ -1470,7 +1488,7 @@ func TestResolveRepositoryOwnPackage(t *testing.T) {
 		{"chi", "https://pkg.go.dev/github.com/go-chi/chi/v5/", "github:go-chi/chi"},
 	}
 	for _, tc := range cases {
-		m, err := w.resolveOne(context.Background(), mustSpec(t, tc.spec), false)
+		m, err := w.resolveOne(context.Background(), mustSpec(t, tc.spec))
 		if err != nil || m.root.String() != tc.root || m.project != tc.project {
 			t.Errorf("resolveOne(%s) = %s (%s), %v; want %s for %s", tc.spec, m.root, m.project, err, tc.root, tc.project)
 		}
@@ -1519,7 +1537,7 @@ func TestResolveUnsettledNameSearchesGitHub(t *testing.T) {
 		"https://cobra.example/":                     page("Cobra docs", "https://github.com/spf13/cobra"),
 		"https://pkg.go.dev/github.com/spf13/cobra/": page("cobra package", "https://github.com/spf13/cobra"),
 	}}
-	m, err := resolverWeb(f, pkgs, repos, nil).resolveOne(context.Background(), mustSpec(t, "cobra"), false)
+	m, err := resolverWeb(f, pkgs, repos, nil).resolveOne(context.Background(), mustSpec(t, "cobra"))
 	if err != nil || m.root.String() != "https://cobra.example/" || m.project != "github:spf13/cobra" {
 		t.Errorf("resolveOne(cobra) = %s (%s), %v; want cobra.example for spf13/cobra", m.root, m.project, err)
 	}
@@ -1569,7 +1587,7 @@ func TestDocsURLMovedToCorroboratedSite(t *testing.T) {
 // title names it ("Beautiful Soup"). Recorded live.
 func TestResolveHomepageOnAPath(t *testing.T) {
 	w, _ := fixtureWeb404(t)
-	m, err := w.resolveOne(context.Background(), mustSpec(t, "pypi:beautifulsoup4"), false)
+	m, err := w.resolveOne(context.Background(), mustSpec(t, "pypi:beautifulsoup4"))
 	if err != nil || m.root.String() != "https://www.crummy.com/software/BeautifulSoup/bs4/doc/" {
 		t.Fatalf("resolveOne(pypi:beautifulsoup4) = %s, %v; want crummy.com's bs4/doc/", m.root, err)
 	}
@@ -1634,7 +1652,7 @@ func TestResolveFailedRivalIsNoAnswer(t *testing.T) {
 			repo("small", "gizmo"): {homepage: "https://gizmo.dev", language: "TypeScript", stars: 1500},
 			repo("big", "gizmo"):   {homepage: "https://pygizmo.example", language: "Python", stars: bigStars},
 		}}
-		return resolverWeb(f, pkgs, repos, nil).resolveOne(ctx, mustSpec(t, "gizmo"), false)
+		return resolverWeb(f, pkgs, repos, nil).resolveOne(ctx, mustSpec(t, "gizmo"))
 	}
 
 	m, err := resolveWith(60000)

@@ -2,6 +2,7 @@ package docs
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"strings"
 	"testing"
@@ -105,12 +106,15 @@ func TestIndexedNear(t *testing.T) {
 
 	s, _ := nearSearchFirst(t, exampleHits())
 	o := s.GetDocsSelect(ctx, "duo unix", "add middleware to a route", 0)
-	if o.Status != Found || o.Index == nil || !slices.Equal(o.IndexedNear, []NearLibrary{duo}) {
+	if o.Status != Found || len(o.Read) == 0 || !slices.Equal(o.IndexedNear, []NearLibrary{duo}) {
 		t.Fatalf("answer from search = %s (%v), near %v; want found with Cisco Duo near", o.Status, o.Err(), o.IndexedNear)
 	}
 	fm := NewFrontmatter("add middleware to a route", SearchBackend, "duo unix", o).Render()
 	if !strings.Contains(fm, "indexed_near: {Cisco Duo: https://duo.test/docs/}\n") {
 		t.Errorf("frontmatter lacks the indexed_near line:\n%s", fm)
+	}
+	if h := Hint(HintCLI, o); !strings.Contains(h, "pass one of the indexed_near roots as --library") {
+		t.Errorf("hint %q, want it to say to pass a near root", h)
 	}
 
 	s, _ = nearSearchFirst(t, nil) // the search answers nothing
@@ -137,16 +141,20 @@ func TestNearLine(t *testing.T) {
 	if got := nearLine(near); got != want {
 		t.Errorf("nearLine = %q, want %q", got, want)
 	}
-	if nearLine(nil) != "" || NearHint(HintNone) != "" || !strings.Contains(NearHint(HintCLI), "--library") || !strings.Contains(NearHint(HintMCP), "as library") {
-		t.Error("near line or hint wrong")
+	o := Outcome{IndexedNear: near}
+	if nearLine(nil) != "" || Hint(HintNone, o) != "" || !strings.Contains(Hint(HintCLI, o), "roots as --library") || !strings.Contains(Hint(HintMCP, o), "roots as library") {
+		t.Errorf("near line or hint wrong: %q / %q", Hint(HintCLI, o), Hint(HintMCP, o))
+	}
+	if strings.Contains(Hint(HintCLI, Outcome{}), "library") {
+		t.Error("a hint about near libraries with none near")
 	}
 }
 
 // A resolve name with spaces is answered from the index, compared as a
 // key (vercel ai sdk holds AI SDK); when nothing indexed matches it, the
 // refusal says so without going to the registries, which take package
-// names only, and says that resolve with no name lists every indexed
-// library, which it does.
+// names only, says that resolve with no name lists every indexed library,
+// which it does, and says how to ask a question instead.
 func TestResolveNameWithSpaces(t *testing.T) {
 	s, searches := nearSearchFirst(t, exampleHits())
 	ctx := WithLocalOptions(context.Background(), LocalOptions{})
@@ -154,15 +162,41 @@ func TestResolveNameWithSpaces(t *testing.T) {
 		t.Errorf("vercel ai sdk = %v (%v)", indexedIDs(o.Matches), o.Err())
 	}
 	o := s.ResolveSelect(ctx, "zzz qqq", 5)
-	if o.Status != Refused || o.Kind().String() != "not_found" || !strings.Contains(o.Err().Error(), "not a package name") ||
-		!strings.Contains(o.Err().Error(), "resolve with no name lists every indexed library") {
-		t.Errorf("unindexed name with spaces = %s %v", o.Status, o.Err())
+	if o.Status != Refused || o.Kind().String() != "not_found" || o.Reason != "not_indexed" {
+		t.Errorf("unindexed name with spaces = %s %s %v", o.Status, o.Reason, o.Err())
 	}
+	checkSpacedNameMiss(t, s)
 	if o := s.ResolveSelect(ctx, "", 0); o.Err() != nil || len(o.Matches) == 0 {
 		t.Errorf("resolve with no name = %v (%v), want every indexed library", indexedIDs(o.Matches), o.Err())
 	}
 	if searches() != 0 {
 		t.Errorf("resolve searched %d times", searches())
+	}
+}
+
+// checkSpacedNameMiss: the refusal of a name with spaces is one line that
+// says what resolve takes and how to ask a question, in each surface's
+// words: the CLI a command line; MCP and the CLI's --json (the pi
+// plugin's) the query argument. It does not end in the generic advice to
+// index a library.
+func checkSpacedNameMiss(t *testing.T, s *SearchFirst) {
+	t.Helper()
+	ask := map[HintStyle]string{
+		HintCLI:  `to ask a question: ketch docs "<question>"`,
+		HintMCP:  "to ask a question: send it as query without resolve",
+		HintNone: "to ask a question: send it as query without resolve",
+	}
+	for style, want := range ask {
+		err := s.ResolveSelect(WithLocalOptions(context.Background(), LocalOptions{Hint: style}), "how do I set a timeout", 5).Err()
+		msg := fmt.Sprint(err)
+		for _, part := range []string{"resolve takes a package name or docs URL", "no name lists the indexed libraries", "not a question"} {
+			if !strings.Contains(msg, part) {
+				t.Errorf("style %d: %q lacks %q", style, msg, part)
+			}
+		}
+		if !strings.HasSuffix(msg, want) || strings.Contains(msg, "\n") || strings.Contains(msg, "library not indexed") {
+			t.Errorf("style %d: %q, want one line ending %q", style, msg, want)
+		}
 	}
 }
 

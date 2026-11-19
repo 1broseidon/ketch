@@ -18,10 +18,9 @@ import (
 // planner tells it (pageIdentity: x, x/, x.html, x.md, x/index and an llms/
 // mirror are one page), so it is read once, at the address listed first.
 
-// plan lists the pages to read, hits first.
-// It reports how many pages robots.txt kept it from, and the directories
-// the site's own lists name too many pages under for one index (wideDirs).
-func (s *SearchFirst) plan(ctx context.Context, site sfSite, prof *siteProfile, query string) ([]webLink, int, []string) {
+// plan lists the pages to read, hits first, and reports how many pages
+// robots.txt kept it from.
+func (s *SearchFirst) plan(ctx context.Context, site sfSite, prof *siteProfile, query string) ([]webLink, int) {
 	root := site.root
 	robots := s.web.robots(ctx, root)
 	rootLabel := rootVersionLabel(root)
@@ -69,7 +68,7 @@ func (s *SearchFirst) plan(ctx context.Context, site sfSite, prof *siteProfile, 
 			add(near[i])
 		}
 	}
-	return inHand(out, disc.pages, root), disallowed, wideDirs(root, disc.links)
+	return inHand(out, disc.pages, root), disallowed
 }
 
 // otherRelease reports u as another release's copy of a page under root,
@@ -77,34 +76,6 @@ func (s *SearchFirst) plan(ctx context.Context, site sfSite, prof *siteProfile, 
 func otherRelease(u *url.URL, root webRoot, rootLabel string) bool {
 	_, pref := variantKey(u, root, rootLabel)
 	return pref.class > 2 && rootLabel == ""
-}
-
-// wideDirs are root and the directories under it that the site's own lists
-// (discovery, within its budget: a lower bound) name more pages under than
-// an index holds (IndexDefaultMaxPages): too wide to suggest indexing whole
-// (indexRoot).
-func wideDirs(root webRoot, links []webLink) []string {
-	if len(links) <= IndexDefaultMaxPages {
-		return nil
-	}
-	count := map[string]int{}
-	for _, l := range links {
-		if !root.contains(l.url) {
-			continue
-		}
-		segs := pathSegments(l.url.Path)
-		for k := len(pathSegments(root.prefix)); k < len(segs); k++ {
-			count[segmentsPath(segs[:k])]++
-		}
-	}
-	var out []string
-	for dir, n := range count {
-		if r, err := parseWebRoot(root.origin() + dir); err == nil && n > IndexDefaultMaxPages {
-			out = append(out, r.String())
-		}
-	}
-	slices.Sort(out)
-	return out
 }
 
 // profileLinks are a page profile's links into root, as candidates.
@@ -167,6 +138,12 @@ func inHand(links []webLink, pages []webPage, root webRoot) []webLink {
 // the link it was read by, and the pages that gave no text, each with its
 // cause (readCause; an unrendered JS shell, a page with no words).
 func (s *SearchFirst) fetch(ctx context.Context, root webRoot, links []webLink) ([]webPage, []webLink, readFails) {
+	return s.fetchIn(ctx, root, root.contains, links)
+}
+
+// fetchIn is fetch with the scope a page may be served from given as
+// inScope (root still tells pages apart).
+func (s *SearchFirst) fetchIn(ctx context.Context, root webRoot, inScope func(*url.URL) bool, links []webLink) ([]webPage, []webLink, readFails) {
 	pages := make([]*webPage, len(links))
 	errs := make([]error, len(links))
 	sem := make(chan struct{}, sfConcurrency)
@@ -186,7 +163,7 @@ func (s *SearchFirst) fetch(ctx context.Context, root webRoot, links []webLink) 
 			defer func() { <-sem }()
 			pctx, cancel := context.WithTimeout(ctx, sfPageTimeout)
 			defer cancel()
-			pages[i], errs[i] = s.web.fetchOne(pctx, root, links[i])
+			pages[i], errs[i] = s.web.fetchIn(pctx, inScope, links[i])
 		})
 	}
 	wg.Wait()
@@ -240,7 +217,7 @@ type readFails struct {
 }
 
 func (f *readFails) add(page, cause, detail string) {
-	f.list = append(f.list, readFail{page: page, cause: cause})
+	f.list = append(f.list, readFail{page: page, cause: cause, detail: detail})
 	if detail != "" {
 		if f.details == nil {
 			f.details = map[string]string{}

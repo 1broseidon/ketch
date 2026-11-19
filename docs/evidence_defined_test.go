@@ -100,14 +100,13 @@ func TestPickDefined(t *testing.T) {
 	}
 }
 
-// defined_in is one frontmatter line after not_found, a flow mapping from
+// defined_in is one frontmatter line after not_in_index, a flow mapping from
 // each term to its section, and nothing follows the body; --json carries
 // it as defined_in, and nothing for none.
 func TestDefinedInOutput(t *testing.T) {
 	defs := []DefinedIn{{Term: "failmode", Section: "https://duo.com/docs/duounix#duo-configuration-options"}, {Term: "x", Section: "u#a"}}
-	f := Frontmatter{Query: "q", Backend: SearchBackend, Library: "L", Index: &IndexInfo{Kind: IndexFull, Pages: 2}, Status: Found,
-		Terms: []TermCount{{"failmode", 74}}, NotFound: []string{}, DefinedIn: defs}
-	want := "---\nquery: q\nbackend: search\nlibrary: L\nindex: full, 2 pages\nstatus: found\nterms: {failmode: 74}\nnot_found: []\n" +
+	f := Frontmatter{Query: "q", Library: "L", Index: &IndexInfo{Kind: IndexFull, Pages: 2}, NotInIndex: []string{}, DefinedIn: defs}
+	want := "---\nquery: q\nlibrary: L\nindex: full, 2 pages\nnot_in_index: []\n" +
 		"defined_in: {failmode: https://duo.com/docs/duounix#duo-configuration-options, x: u#a}\n---\n"
 	if got := f.Render(); got != want {
 		t.Errorf("frontmatter:\n%s\nwant:\n%s", got, want)
@@ -159,7 +158,8 @@ func TestEvidenceDefinedIn(t *testing.T) {
 	if len(a.definedIn) != 1 || a.definedIn[0] != (DefinedIn{Term: "quokka", Section: evRoot + "ref#options"}) {
 		t.Fatalf("defined_in %+v", a.definedIn)
 	}
-	total := estimateTokens(a.frontmatter(lib, "zebra quokka", "").Render() + RenderAnswer(a.results, HintNone))
+	// The budget covers the passages only (the frontmatter is beside it).
+	total := estimateTokens(renderPassages(a.results))
 	if total > 300 {
 		t.Errorf("printed %d tokens, budget 300", total)
 	}

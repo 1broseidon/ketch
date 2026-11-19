@@ -765,3 +765,55 @@ func TestBuildConfigInfoShowsEffectiveExtractMode(t *testing.T) {
 		t.Fatalf("ExtractMode = %q, want complete", info.ExtractMode)
 	}
 }
+
+func TestApplyConfigSetDocsDecisionsTokens(t *testing.T) {
+	for value, want := range map[string]string{"80000": "80000", " 40000 ": "40000", "unlimited": "unlimited", "Unlimited": "unlimited", "": ""} {
+		c := config.Defaults()
+		c.DocsDecisionsTokens = "123"
+		if err := applyConfigSet(&c, "docs_decisions_tokens", value); err != nil {
+			t.Fatalf("%q: unexpected err: %v", value, err)
+		}
+		if c.DocsDecisionsTokens != want {
+			t.Errorf("%q: DocsDecisionsTokens = %q, want %q", value, c.DocsDecisionsTokens, want)
+		}
+	}
+	for _, value := range []string{"0", "-5", "lots"} {
+		c := config.Defaults()
+		err := applyConfigSet(&c, "docs_decisions_tokens", value)
+		var exitErr *ExitError
+		if !errors.As(err, &exitErr) || exitErr.Code != ExitValidation || !strings.Contains(err.Error(), "positive number") || !strings.Contains(err.Error(), "unlimited") {
+			t.Errorf("%q: error = %v, want exit %d naming the accepted forms", value, err, ExitValidation)
+		}
+		if c.DocsDecisionsTokens != "" {
+			t.Errorf("%q: bad value changed config to %q", value, c.DocsDecisionsTokens)
+		}
+	}
+	c := config.Defaults()
+	if err := applyConfigSet(&c, "no_such_key", "x"); err == nil || !strings.Contains(err.Error(), "docs_decisions_tokens") {
+		t.Errorf("unknown-key error should list docs_decisions_tokens: %v", err)
+	}
+}
+
+func TestBuildConfigInfoShowsEffectiveDocsDecisionsTokens(t *testing.T) {
+	for stored, want := range map[string]string{"": "80000", "50000": "50000", "unlimited": "unlimited"} {
+		c := config.Defaults()
+		c.DocsDecisionsTokens = stored
+		if got := buildConfigInfo(c, "/tmp/config.json").DocsDecisionsTokens; got != want {
+			t.Errorf("stored %q: docs_decisions_tokens = %q, want %q", stored, got, want)
+		}
+	}
+}
+
+func TestDocsDecisionsFlagUnknownIsValidation(t *testing.T) {
+	f := docsCmd.Flags().Lookup("decisions")
+	old, changed := f.Value.String(), f.Changed
+	t.Cleanup(func() { _ = f.Value.Set(old); f.Changed = changed })
+	if err := docsCmd.Flags().Set("decisions", "bogus"); err != nil {
+		t.Fatal(err)
+	}
+	err := validateDocsFlags(docsCmd, []string{"question"})
+	var exitErr *ExitError
+	if !errors.As(err, &exitErr) || exitErr.Code != ExitValidation {
+		t.Fatalf("error = %v, want exit %d", err, ExitValidation)
+	}
+}

@@ -348,3 +348,20 @@ func TestLoadEnvExtractModeInvalidIsLoud(t *testing.T) {
 		t.Fatalf("expected loud unknown-mode error, got: %v", err)
 	}
 }
+
+func TestLoadEnvDocsDecisionsTokens(t *testing.T) {
+	clearKetchEnv(t)
+	testutil.SetIsolatedConfigHome(t)
+	t.Setenv("KETCH_DOCS_DECISIONS_TOKENS", "unlimited")
+	res, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Config.DocsDecisionsTokens != "unlimited" {
+		t.Fatalf("DocsDecisionsTokens = %q, want unlimited", res.Config.DocsDecisionsTokens)
+	}
+	t.Setenv("KETCH_DOCS_DECISIONS_TOKENS", "0")
+	if _, err := Load(); err == nil || !strings.Contains(err.Error(), "KETCH_DOCS_DECISIONS_TOKENS") {
+		t.Fatalf("expected a loud error for 0, got: %v", err)
+	}
+}

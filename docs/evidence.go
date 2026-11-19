@@ -1,6 +1,8 @@
 package docs
 
 import (
+	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/1broseidon/ketch/internal/docsindex"
@@ -16,39 +18,42 @@ import (
 //	rank    rank:              pieces, terms      → *ranked: scores, pieces in fused order, what each section prints
 //	merge   groupsOf:          plans              → groups, rendered as Results (renderGroup)
 //
-// One view: the answer is fitted to the budget, 1,800 tokens unless the
-// caller sets one, which covers everything printed, frontmatter
-// included. --limit, when given, caps the groups; otherwise the budget
-// decides.
+// One view: the passages are fitted to the budget, 4,000 tokens unless the
+// caller sets one; the frontmatter, the outline of what was not printed and
+// the other search results are printed beside them, about 600 tokens at
+// most. --limit, when given, caps the groups; otherwise the budget decides.
+//
+// There is no page size (design/docs-evidence.md, Final shape): a section
+// prints whole when it fits the budget left; a longer one prints its best
+// pieces by rank, shown in page order.
+//
+// Choose by rank, present in reading order: groups of one page print
+// together under its title, a page's sections in page order. An answer
+// from the exact pages a search ranked best (LocalOptions.pages) fills
+// from the best page first: every piece of it is walked before any of the
+// next page's, and when everything read fits the budget it all prints.
 
 const (
-	// localTokens is an answer's budget when the caller sets none.
-	localTokens = 1800
-	// localTokenMargin: an answer is planned to 1/localTokenMargin under
-	// its budget, about the estimate's error on a whole answer.
-	localTokenMargin = 32
-	// answerPageTokens is the page size (design/docs-evidence.md, Round
-	// 7, Pages): a section longer than this is never printed whole in an
-	// answer; its group shows its best pieces up to this many tokens, and
-	// --section reads the rest a page at a time.
-	answerPageTokens = 400
+	// localTokens is the passages' budget when the caller sets none.
+	localTokens = 4000
+	// outlineTokens is the most the outline of sections not printed
+	// takes; the rest is counted per page.
+	outlineTokens = 200
 )
 
-// AnswerPageTokens is the page size of an answer from the local index: a
-// section longer is never printed whole (the surfaces' help says it).
-const AnswerPageTokens = answerPageTokens
+// localTokenMargin: an answer is planned to 1/localTokenMargin under its
+// budget, about the estimate's error on a whole answer.
+const localTokenMargin = 32
 
-// evidenceAnswer is the pipeline's answer: the results in printed
-// order, the question's terms as written that the library holds and the
-// frontmatter lists (shownTerm, with their counts), the distinctive ones
-// it holds nowhere, and the status
-// and reason the terms decide (refused when no distinctive term has a
-// hit: no results; partial when one has none), and where the listed
-// terms are defined when the answer prints no section that defines them
-// (evidence_defined.go).
+// evidenceAnswer is the pipeline's answer: the results in printed order,
+// the distinctive terms of the question as written that the library holds
+// nowhere, the status and reason the terms decide (refused when no
+// distinctive term has a hit: no results; partial when one has none),
+// where the question's rare terms are defined when the answer prints no
+// section that defines them (evidence_defined.go), and the outline of the
+// sections of the pages it read (or printed from) that it does not print.
 type evidenceAnswer struct {
 	results   []Result
-	terms     []TermCount
 	notFound  []string
 	definedIn []DefinedIn
 	status    Status
@@ -58,9 +63,8 @@ type evidenceAnswer struct {
 	// outside the distinctive terms the library holds only outside it.
 	scope   string
 	outside []string
-	// origin is the origin line of an answer from pages a search read
-	// (search_origin.go), which the budget covers.
-	origin string
+	outline []OutlineEntry
+	more    []OutlineMore
 }
 
 // ReasonTermsNotFound is the reason of an answer that names terms of the
@@ -71,17 +75,6 @@ const ReasonTermsNotFound = "terms_not_found"
 // ErrTermsNotFound is a question none of whose distinctive terms is in the
 // library: a refusal whose not_found is the answer.
 var ErrTermsNotFound = failure.New(failure.NotFound, ReasonTermsNotFound, "none of the question's distinctive terms is in the docs")
-
-// frontmatter is the frontmatter a's answer to query from lib prints,
-// with note (a partial answer's): what the budget is planned under.
-func (a *evidenceAnswer) frontmatter(lib docsindex.Library, query, note string) Frontmatter {
-	nf := a.notFound
-	if nf == nil {
-		nf = []string{}
-	}
-	return Frontmatter{Query: query, Backend: SearchBackend, Library: lib.Root, Scope: a.scope, Version: lib.Version, Index: a.index, Origin: a.origin,
-		Status: a.status, Reason: a.reason, Terms: nonNil(a.terms), NotFound: nf, OutsideScope: a.outside, DefinedIn: a.definedIn, Note: note}
-}
 
 // evidence answers query from lib within opts, recording each stage in t
 // (nil: no trace).
@@ -98,27 +91,23 @@ func (l *Local) evidence(lib docsindex.Library, query string, opts LocalOptions,
 	if err != nil {
 		return nil, err
 	}
-	if opts.read > 0 {
+	if opts.live {
 		markSearchRead(g.written) // pages a search read are no library
 	}
 	t.gathered(g)
 	v := verdict(g.written, g.sections)
-	a := &evidenceAnswer{terms: v.found, notFound: v.notFound, status: Found, index: indexInfo(lib), scope: opts.scope, origin: opts.origin}
-	if opts.read > 0 {
-		a.index = searchRead(opts.read, opts.cached)
+	a := &evidenceAnswer{notFound: v.notFound, status: Found, scope: opts.scope}
+	if !opts.live {
+		a.index = indexInfo(lib)
 	}
 	if a.judge(v, scope, g.written); a.status == Refused {
-		return a, nil
+		if len(opts.pages) > 0 {
+			a.outline, a.more, err = l.outlineOf(lib, g, nil, opts.pages)
+		}
+		return a, err
 	}
-	pool := make([]docsindex.Section, len(g.pool))
-	for i, p := range g.pool {
-		pool[i] = p.Section
-	}
-	s := sortPool(pool, lib.Root)
-	for i, p := range g.pool {
-		s.secs[i].order = sectionOrder(p.order, g.ordered)
-	}
-	if err := l.outline(lib, s); err != nil {
+	s, err := l.sortedPool(lib, g, opts.pages)
+	if err != nil {
 		return nil, err
 	}
 	t.sorted(s)
@@ -126,17 +115,83 @@ func (l *Local) evidence(lib docsindex.Library, query string, opts LocalOptions,
 	if budget <= 0 {
 		budget = localTokens
 	}
-	plan := budget - budget/localTokenMargin - estimateTokens(a.frontmatter(lib, query, opts.note).Render())
-	r := rank(lib, s, g, plan, opts.Limit, opts.Hint)
+	r := rank(lib, s, g, budget-budget/localTokenMargin, opts.Limit, pageOrder(opts.pages))
 	var defs []definedTerm
-	a.results, defs = fitResults(lib, s, r, opts.Hint, definitions(s, g.written, g.sections))
+	a.results, defs = fitResults(lib, s, r, definitions(s, g.written, g.sections))
 	a.definedIn = definedLines(lib, s, defs)
 	t.ranked(s, g, r)
 	t.defined(s, defs)
 	if t != nil {
 		t.notShown(notShown(g.written, a.results))
 	}
-	return a, nil
+	printed := map[int64]bool{}
+	for _, pl := range r.plans {
+		printed[s.secs[pl.sec].ID] = true
+	}
+	pages := slices.Clone(opts.pages)
+	for _, page := range printedPages(s, r) {
+		if _, ok := r.order[pageKeyOf(page)]; !ok {
+			pages = append(pages, page)
+		}
+	}
+	a.outline, a.more, err = l.outlineOf(lib, g, printed, pages)
+	return a, err
+}
+
+// sortedPool is Sort over Gather's pool and, for an answer from the exact
+// pages a search ranked best (pages), every other section of those pages
+// after it: any of them can print, and the outline names the rest.
+func (l *Local) sortedPool(lib docsindex.Library, g *gathered, pages []string) (*sorted, error) {
+	pool := make([]docsindex.Section, len(g.pool))
+	order := make([]int, len(g.pool))
+	in := map[int64]bool{}
+	for i, p := range g.pool {
+		pool[i], order[i], in[p.ID] = p.Section, sectionOrder(p.order, g.ordered), true
+	}
+	if len(pages) > 0 && l.store != nil {
+		rest, err := l.store.SectionsOfPages(lib.Key, pages)
+		if err != nil {
+			return nil, err
+		}
+		for _, sec := range rest {
+			if !in[sec.ID] {
+				in[sec.ID] = true
+				pool, order = append(pool, cleanSection(sec)), append(order, g.ordered+1)
+			}
+		}
+	}
+	s := sortPool(pool, lib.Root)
+	for i := range s.secs {
+		s.secs[i].order = order[i]
+	}
+	if err := l.outline(lib, s); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+// pageOrder is each page's place among pages (the exact pages a search
+// ranked best, best first) by its address (pageKeyOf); nil for none.
+func pageOrder(pages []string) map[string]int {
+	if len(pages) == 0 {
+		return nil
+	}
+	out := make(map[string]int, len(pages))
+	for i, p := range pages {
+		if _, ok := out[pageKeyOf(p)]; !ok {
+			out[pageKeyOf(p)] = i
+		}
+	}
+	return out
+}
+
+// pageKeyOf is a page address as pageOrder keys it: a scheme, "www.", a
+// trailing slash or .html aside.
+func pageKeyOf(page string) string {
+	if u, err := url.Parse(page); err == nil {
+		return samePageKey(u)
+	}
+	return page
 }
 
 // judge sets a's status and reason from the terms' verdict v, the scope
@@ -183,21 +238,21 @@ func sectionOrder(order, ordered int) int {
 }
 
 // rank scores the pieces, puts the sections in order and plans what each
-// prints within budget tokens, at most limit groups when limit > 0.
-func rank(lib docsindex.Library, s *sorted, g *gathered, budget, limit int, hint HintStyle) *ranked {
-	r := &ranked{budget: max(budget, 0), limit: limit}
+// prints within budget tokens, at most limit groups when limit > 0; order
+// is the exact pages' places (pageOrder), nil to walk by rank alone.
+func rank(lib docsindex.Library, s *sorted, g *gathered, budget, limit int, order map[string]int) *ranked {
+	r := &ranked{terms: g.terms, budget: max(budget, 0), limit: limit, order: order}
 	r.weights, r.distinct, r.scores = scorePieces(s, g.terms, g.sections, asksChange(g.query.query))
 	rankPieces(s, r)
-	printSections(lib, s, r, hint)
+	printSections(lib, s, r)
 	return r
 }
 
 // fitResults renders the plans in printed order, with the defined_in
-// lines they leave (pickDefined of defs); while the printed answer's
-// estimate, those lines included, is over the planned budget (the
-// per-group sums run a little under the joined text's), the last plan
-// opened is dropped.
-func fitResults(lib docsindex.Library, s *sorted, r *ranked, hint HintStyle, defs []definedTerm) ([]Result, []definedTerm) {
+// lines they leave (pickDefined of defs); while the passages' estimate is
+// over the planned budget (the per-group sums run a little under the
+// joined text's), the last plan opened is dropped.
+func fitResults(lib docsindex.Library, s *sorted, r *ranked, defs []definedTerm) ([]Result, []definedTerm) {
 	for {
 		groups := groupsOf(s, r)
 		out := make([]Result, len(groups))
@@ -208,8 +263,7 @@ func fitResults(lib docsindex.Library, s *sorted, r *ranked, hint HintStyle, def
 			shown[i].URL = shownURL(lib, out[i].URL)
 		}
 		picked := pickDefined(s, defs, r.plans)
-		total := estimateTokens(RenderAnswer(shown, hint)) + estimateTokens(definedInLine(definedLines(lib, s, picked)))
-		if total <= r.budget || len(r.plans) <= 1 {
+		if estimateTokens(renderPassages(shown)) <= r.budget || len(r.plans) <= 1 {
 			return out, picked
 		}
 		n := len(r.plans) - 1

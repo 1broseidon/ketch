@@ -89,7 +89,7 @@ func TestKeylessWeakRivals(t *testing.T) {
 		rw := newReadingWorld()
 		root := rw.crate("herald", 20)
 		rw.readme(ecoNPM, "herald", tc.npm)
-		m, err := rw.web().resolveOne(context.Background(), mustSpec(t, "herald"), false)
+		m, err := rw.web().resolveOne(context.Background(), mustSpec(t, "herald"))
 		switch {
 		case tc.want && (err != nil || m.root.String() != root):
 			t.Errorf("npm herald at %d: resolveOne = %s, %v; want %s", tc.npm, m.root, err, root)
@@ -106,7 +106,7 @@ func TestKeylessWeakRivals(t *testing.T) {
 		rw := newReadingWorld()
 		root := rw.site(ecoPyPI, "arbor", 4_000_000)
 		rw.readme(ecoNPM, "arbor", tc.npm)
-		m, err := rw.web().resolveOne(context.Background(), mustSpec(t, "arbor"), false)
+		m, err := rw.web().resolveOne(context.Background(), mustSpec(t, "arbor"))
 		switch {
 		case tc.want && (err != nil || m.root.String() != root):
 			t.Errorf("npm arbor at %d: resolveOne = %s, %v; want %s", tc.npm, m.root, err, root)
@@ -128,7 +128,7 @@ func TestKeylessIndexOnlyNamesake(t *testing.T) {
 		rw := newReadingWorld()
 		root := rw.site(ecoPyPI, "arbor", 4_000_000)
 		crate := rw.crate("arbor", tc.crate)
-		m, err := rw.web().resolveOne(context.Background(), mustSpec(t, "arbor"), false)
+		m, err := rw.web().resolveOne(context.Background(), mustSpec(t, "arbor"))
 		switch {
 		case tc.want && (err != nil || m.root.String() != root):
 			t.Errorf("crate at %d: resolveOne = %s, %v; want %s", tc.crate, m.root, err, root)
@@ -156,7 +156,7 @@ func TestKeylessChangelogPageNamesRoot(t *testing.T) {
 <a href="quickstart.html">Quickstart</a><a href="` + gh + `">Source</a></body></html>`)
 		rw.pkgs.pkgs["pypi:sprocket"] = pkgInfo{eco: ecoPyPI, name: "sprocket", homepage: gh, repoURL: gh, repo: repo("sprocket-dev", "sprocket"), pageURL: tc.page}
 		rw.pop.weekly_["pypi:sprocket"] = 2_000_000
-		m, err := rw.web().resolveOne(context.Background(), mustSpec(t, "sprocket"), false)
+		m, err := rw.web().resolveOne(context.Background(), mustSpec(t, "sprocket"))
 		switch got := err == nil && m.root.String() == "https://sprocket.readthedocs.io/en/latest/"; {
 		case got != tc.want:
 			t.Errorf("changelog %s: resolveOne = %s, %v; want verified %v", tc.page, m.root, err, tc.want)

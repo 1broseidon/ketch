@@ -26,6 +26,26 @@ ketch's maintainers.
   site and reads it. To resolve a library, it may also contact package
   registries (npm, PyPI, crates.io, the Go module proxy, pkg.go.dev) and
   GitHub. Context7 is used only when you ask for it (`-b context7`).
+- **Docs decision providers** (`ketch docs`, only if you set one up): with a
+  TypeSafe (`typesafe_api_key`) or OpenAI (`openai_api_key`) key set and
+  `docs_decisions` not `off`, a question that names no library goes to that
+  provider (`api.typesafe.ai` or `api.openai.com`). So do the address, title,
+  headings and text of the public pages ketch reads for it (the search's top
+  five results, and a docs site those pages link to when ketch follows one),
+  and the title, address and snippet of the other search results. Nothing is
+  sent to a provider for a question with `--library`, one answered from your
+  local index, an `--offline` question, or a question with a `name@version`
+  that resolve confirms. A page read with a cookie from your `cookie_file` is
+  not sent either: ketch records whether any request of the fetch carried one,
+  and such a page gets no label. Two limits apply. A page replayed from the
+  page cache is checked only by the address asked for and the address it was
+  served from, so a cookie sent on a redirect hop between them when it was
+  first fetched is not known. And cookies ketch sets in its headless browser
+  (which starts from a fresh temporary profile) stay there until that ketch
+  process exits, so a later page rendered in it can send them, on a redirect
+  or a request the page makes, without being marked. `ketch config set docs_decisions off` turns all of this off,
+  and no call or agent can turn it back on; removing the key also turns it
+  off, and is the strongest off.
 - **Scrape and crawl** (`ketch scrape`, `ketch crawl`): ketch fetches the URLs
   you give it, like a browser would. If you configure a cookies file
   (`cookie_file`) or custom headers (`http_headers`), they are sent only to

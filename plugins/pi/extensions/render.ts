@@ -33,9 +33,11 @@ export function callSummary(surface: Surface, args: unknown): string {
 	const p = object(args);
 	const target = surface === "tag" ? [p.operation, p.tag].map(scalar).filter(Boolean).join(" ")
 		: first(p.query, p.url, array(p.urls).length ? `${array(p.urls).length} URLs` : "");
-	const options = ["backend", "repo", "lang", "library", "limit", "depth", "max_pages", "max_chars", "tag"]
+	// section is the whole target of a docs call that reads one section: shown
+	// at a URL's length, not an option's.
+	const options = ["section", "backend", "repo", "lang", "library", "limit", "depth", "max_pages", "max_chars", "tag", "decisions"]
 		.filter(key => p[key] !== undefined && !(surface === "tag" && key === "tag"))
-		.map(key => `${key}=${preview(p[key], 50)}`);
+		.map(key => `${key}=${preview(p[key], key === "section" ? 160 : 50)}`);
 	for (const key of ["multi", "random"]) if (Array.isArray(p[key])) options.push(`${key}=${array(p[key]).map(scalar).join(",")}`);
 	for (const key of ["scrape", "resolve", "raw", "sitemap"]) if (p[key] === true) options.push(key);
 	return preview([target, options.join(" · ")].filter(Boolean).join("  ·  "), 260);
@@ -65,7 +67,14 @@ function rowLines(value: unknown, index: number, surface: Surface): string[] {
 	const title = first(r.title, r.name, r.repo && `${scalar(r.repo)}/${scalar(r.path)}${r.line ? `:${scalar(r.line)}` : ""}`, r.id, r.library, r.url, "Untitled");
 	const host = domain(r.url);
 	const lines = [`${index + 1}. ${preview(title, 110)}${host && title !== r.url ? ` · ${preview(host, 65)}` : ""}`];
-	if (surface === "docs" && (r.id || r.library)) lines.push(`   ${preview(first(r.id, r.library), 140)}`);
+	if (surface === "docs") {
+		// A search-backend result names its docs root as library: the page it
+		// came from is its section (url#anchor) or url. Context7's library is
+		// an ID (/org/repo), and resolve's rows carry id: those stay.
+		const fromSearch = !r.id && !scalar(r.library).startsWith("/");
+		const where = fromSearch ? first(r.section, r.url, r.library) : first(r.id, r.library);
+		if (where) lines.push(`   ${preview(where, 140)}`);
+	}
 	if (r.url && (surface === "scrape" || surface === "crawl" || surface === "tag")) lines.push(`   ${preview(r.url, 160)}`);
 	const snippet = first(r.error, r.description, r.snippet, r.markdown, r.body, r.content, r.raw_html)
 		.replace(/^[\s\S]*?hide this help[\s\S]*?(?:\bAyu\b|\bCoal\b)\s*[*·-]*\s*/i, "");

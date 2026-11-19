@@ -77,14 +77,26 @@ type sfTrace struct {
 	cached                                                    bool  // the question's read came from the question cache
 	hits, docsHits, siteHits, sites, planned, fetched, failed int
 	domains                                                   int // the sites (domains) read; sites counts docs trees
+	// The fallbacks this call took (design/docs-evidence.md, Final shape):
+	// it widened past the exact pages, fell over to a second site, or read
+	// the resolved root first.
+	widened, fellOver, resolvedFirst bool
+	exact                            int // exact pages read
+	// fellThrough counts the results a question that names no library
+	// passed over before its first page.
+	fellThrough int
+	// secondQuery marks a question whose own search gave nothing to read,
+	// so one more search ran (searchAgain).
+	secondQuery bool
 }
 
 func (t *sfTrace) write(w io.Writer, req sfRequest, d time.Duration) {
 	if w == nil {
 		return
 	}
-	_, _ = fmt.Fprintf(w, "trace: search-first path=%s local=%s cached=%t hits=%d docs_hits=%d site=%s site_hits=%d sites=%d planned=%d fetched=%d failed=%d ms=%d resolve_ms=%d resolved=%q library=%q cands=%q\n",
+	_, _ = fmt.Fprintf(w, "trace: search-first path=%s local=%s cached=%t hits=%d docs_hits=%d site=%s site_hits=%d sites=%d planned=%d fetched=%d failed=%d exact=%d widened=%t fell_over=%t resolved_first=%t fell_through=%d second_query=%t ms=%d resolve_ms=%d resolved=%q library=%q cands=%q\n",
 		t.path, t.local, t.cached, t.hits, t.docsHits, t.site, t.siteHits, t.sites, t.planned, t.fetched, t.failed,
+		t.exact, t.widened, t.fellOver, t.resolvedFirst, t.fellThrough, t.secondQuery,
 		d.Milliseconds(), t.resolveMs, t.resolved, req.library, t.cands)
 }
 

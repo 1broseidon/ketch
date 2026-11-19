@@ -85,6 +85,7 @@ func (f *Fetcher) FetchRaw(ctx context.Context, url string) (docs.RawContent, er
 	if err := scrape.ValidateWebURL(fetchURL); err != nil {
 		return docs.RawContent{}, err
 	}
+	ctx = f.traced(ctx)
 	content, err := f.scraper.FetchContent(ctx, fetchURL)
 	if err != nil {
 		return docs.RawContent{}, notFound(err)
@@ -93,7 +94,35 @@ func (f *Fetcher) FetchRaw(ctx context.Context, url string) (docs.RawContent, er
 		Body:        content.Body,
 		ContentType: content.ContentType,
 		URL:         f.callerURL(url, fetchURL, content.URL),
+		Cookies:     f.cookies(ctx, fetchURL, content.URL),
 	}, nil
+}
+
+// traced is ctx with a cookie trace when the scraper has cookies to send;
+// ctx as it is otherwise, so a call without cookie_file does no more work.
+func (f *Fetcher) traced(ctx context.Context) context.Context {
+	if !f.scraper.HasCookies() {
+		return ctx
+	}
+	return scrape.WithCookieTrace(ctx)
+}
+
+// cookies reports a fetch under ctx that sent a cookie from cookie_file,
+// or addresses (requested, served from) the jar holds one for: a page from
+// the cache has no trace of the fetch that wrote it.
+func (f *Fetcher) cookies(ctx context.Context, urls ...string) bool {
+	if !f.scraper.HasCookies() {
+		return false
+	}
+	if scrape.CookiesSent(ctx) {
+		return true
+	}
+	for _, u := range urls {
+		if f.scraper.CookiesFor(u) {
+			return true
+		}
+	}
+	return false
 }
 
 // FetchPage scrapes url to Markdown through the cache-aware pipeline:
@@ -104,6 +133,7 @@ func (f *Fetcher) FetchRaw(ctx context.Context, url string) (docs.RawContent, er
 // recorded cannot say, so it is fetched again and replaced.
 // A 404 or 410 wraps docs.ErrNotFound.
 func (f *Fetcher) FetchPage(ctx context.Context, url string) (docs.PageContent, error) {
+	ctx = f.traced(ctx)
 	page, err := f.scraper.ScrapeMarkdown(ctx, f.pages, url, false)
 	// A cache entry from before final URLs and anchors were recorded is
 	// fetched again and replaced; a render whose browser could not say where
@@ -121,6 +151,7 @@ func (f *Fetcher) FetchPage(ctx context.Context, url string) (docs.PageContent, 
 		Anchors:  pageAnchors(page.Anchors),
 		Shell:    page.Source.Shell(),
 		Rendered: page.Source.Rendered(),
+		Cookies:  f.cookies(ctx, f.scraper.Rewrite(url), page.FinalURL),
 	}, nil
 }
 

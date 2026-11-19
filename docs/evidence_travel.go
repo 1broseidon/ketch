@@ -10,8 +10,7 @@ import (
 // printed text readable. Pieces are ranked alone, but some are never
 // printed without the piece before them; each names the pieces of its
 // section it brings (piece.with), and a cut group that takes it takes
-// them too. What it brings is context: it is charged to the budget but
-// not to the page (answerPageTokens) a long section is cut to.
+// them too. What it brings is context, charged to the budget.
 //
 //   - A code block brings the piece right before it when that piece
 //     introduces it, ending in a colon ("using the `terraform providers

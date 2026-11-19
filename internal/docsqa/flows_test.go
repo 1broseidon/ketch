@@ -87,9 +87,9 @@ func TestCallSource(t *testing.T) {
 
 func TestSignals(t *testing.T) {
 	first, _ := json.Marshal(map[string]any{
-		"library":    "https://duo.com/docs/",
-		"defined_in": []map[string]string{{"term": "failmode", "section": "https://duo.com/docs/duounix#duo-configuration-options"}},
-		"not_found":  []string{"pam_sss"},
+		"library":      "https://duo.com/docs/",
+		"defined_in":   []map[string]string{{"term": "failmode", "section": "https://duo.com/docs/duounix#duo-configuration-options"}},
+		"not_in_index": []string{"pam_sss"},
 		"results": []map[string]any{{
 			"section": "https://duo.com/docs/duounix#red-hat", "truncated": true,
 			"contents": "also in this section: https_timeout; Fedora 39",
@@ -180,19 +180,19 @@ func TestResultText(t *testing.T) {
 	}
 }
 
-// A result read from a web search stops a batch; a section read through
-// the page cache, which says source search as an answer would, does not.
+// A result read from a web search (its read list names pages) stops a
+// batch; an indexed answer, and a section read through the page cache,
+// do not.
 func TestWebSearched(t *testing.T) {
-	read := &docs.IndexInfo{Source: "search", PagesRead: 1}
+	read := []docs.PageRead{{URL: "https://x.test/a", Rank: 1}}
 	cases := []struct {
 		in   callInput
 		res  docsResult
 		want bool
 	}{
-		{callInput{Query: "q"}, docsResult{Index: read}, true},
-		{callInput{Query: "q"}, docsResult{Reason: "partial_site"}, true},
+		{callInput{Query: "q"}, docsResult{Read: read}, true},
 		{callInput{Query: "q"}, docsResult{Index: &docs.IndexInfo{Kind: "full", Pages: 3}}, false},
-		{callInput{Section: "https://x.test/a#b"}, docsResult{Index: read}, false},
+		{callInput{Section: "https://x.test/a#b"}, docsResult{Read: read}, false},
 	}
 	for _, c := range cases {
 		if got := webSearched(c.in, c.res); got != c.want {

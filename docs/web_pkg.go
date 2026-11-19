@@ -246,7 +246,7 @@ func (c *pkgClient) getPatient(ctx context.Context, slot *turns, what, u string,
 	wait := cmp.Or(c.retryWait, patientWait)
 	attempts := patientAttempts
 	if speculative(ctx) {
-		attempts = 1 // a guessed reading: its failure vetoes nothing, so it waits for nothing
+		attempts = 1 // a lean reading: its failure vetoes nothing, so it waits for nothing
 	}
 	for attempt := range attempts {
 		if attempt > 0 {
@@ -308,8 +308,8 @@ func (t *turns) take(ctx context.Context) (release func(), err error) {
 
 type speculativeKey struct{}
 
-// withSpeculative marks ctx as a bare query's guessed reading
-// (resolution.strict): its registry lookups are tried once, without
+// withSpeculative marks ctx as a bare query's lean reading
+// (resolution.lean): its registry lookups are tried once, without
 // retries, since nothing waits on or is vetoed by their failure (vetoes).
 func withSpeculative(ctx context.Context) context.Context {
 	return context.WithValue(ctx, speculativeKey{}, true)

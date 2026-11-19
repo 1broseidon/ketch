@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/1broseidon/ketch/code"
+	"github.com/1broseidon/ketch/decide"
 	"github.com/1broseidon/ketch/docs"
 	"github.com/1broseidon/ketch/internal/configbase"
 	"github.com/1broseidon/ketch/search"
@@ -10,7 +11,8 @@ import (
 // Setting is a provider-owned operator setting.
 type Setting = configbase.Setting
 
-// ProviderSettings returns a fresh schema assembled from the three registries.
+// ProviderSettings returns a fresh schema assembled from the three search
+// registries and the decision providers.
 func ProviderSettings() []Setting {
 	var settings []Setting
 	for _, p := range search.Providers() {
@@ -20,6 +22,9 @@ func ProviderSettings() []Setting {
 		settings = append(settings, p.Settings...)
 	}
 	for _, p := range docs.Providers() {
+		settings = append(settings, p.Settings...)
+	}
+	for _, p := range decide.Providers() {
 		settings = append(settings, p.Settings...)
 	}
 	return settings

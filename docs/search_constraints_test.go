@@ -45,28 +45,10 @@ func TestPinnedReadAndCache(t *testing.T) {
 func TestPinnedReadCannotFallBack(t *testing.T) {
 	for _, mode := range []string{"missing", "timeout", "unknown_version", "unreadable", "missing_terms"} {
 		t.Run(mode, func(t *testing.T) {
-			f := originSite()
-			m := verifiedMatch(ownRoot, "registry names the docs", nil)
-			m.version = "2.1"
-			r := sfResolved{match: m}
-			switch mode {
-			case "missing":
-				r.match, r.err = nil, ErrNotFound
-			case "timeout":
-				r.match, r.err = nil, context.DeadlineExceeded
-			case "unknown_version":
-				m.version = ""
-			case "unreadable":
-				delete(f.pages, ownRoot)
-				delete(f.pages, ownRoot+"guide/pool")
-			case "missing_terms":
-				f.pages[ownRoot+"guide/pool"] = fakePage{title: "Intro", markdown: "# Intro\n\nWelcome to the library."}
-			}
+			f, r := pinnedFixture(mode)
 			s := originSearch(t, f, []search.Result{hit(fanRoot+"lib/max-conns", "Lib docs")}, r)
 			o := s.GetDocsSelect(context.Background(), "lib@2", "max_connections", 0)
-			if answered(o) || strings.HasPrefix(o.Library, fanRoot) {
-				t.Fatalf("pin escaped: %+v", o)
-			}
+			checkPinned(t, mode, o)
 			if mode == "timeout" && !errors.Is(o.Err(), context.DeadlineExceeded) {
 				t.Fatalf("lost timeout: %v", o.Err())
 			}
@@ -76,6 +58,45 @@ func TestPinnedReadCannotFallBack(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// pinnedFixture is the site and resolution of a pinned request that
+// cannot be answered from another site, by mode.
+func pinnedFixture(mode string) (*fakeFetcher, sfResolved) {
+	f := originSite()
+	m := verifiedMatch(ownRoot, "registry names the docs", nil)
+	m.version = "2.1"
+	r := sfResolved{match: m}
+	switch mode {
+	case "missing":
+		r.match, r.err = nil, ErrNotFound
+	case "timeout":
+		r.match, r.err = nil, context.DeadlineExceeded
+	case "unknown_version":
+		m.version = ""
+	case "unreadable":
+		delete(f.pages, ownRoot)
+		delete(f.pages, ownRoot+"guide/pool")
+	case "missing_terms":
+		f.pages[ownRoot+"guide/pool"] = fakePage{title: "Intro", markdown: "# Intro\n\nWelcome to the library."}
+	}
+	return f, r
+}
+
+// checkPinned: a pin that cannot be confirmed or read is an error, never
+// the search results; the pinned release confirmed and read without the
+// terms is an answer from it, naming the terms, never another site's.
+func checkPinned(t *testing.T, mode string, o Outcome) {
+	t.Helper()
+	if mode == "missing_terms" {
+		if o.Err() != nil || o.Library != ownRoot || len(o.Results) != 0 || len(o.NotFound) != 1 || o.NotFound[0] != "max_connections" {
+			t.Fatalf("pinned pages without the terms: %+v", o)
+		}
+		return
+	}
+	if answered(o) || o.Err() == nil || strings.HasPrefix(o.Library, fanRoot) || len(o.OtherResults) != 0 {
+		t.Fatalf("pin escaped: %+v", o)
 	}
 }
 

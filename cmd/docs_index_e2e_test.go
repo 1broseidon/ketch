@@ -2,7 +2,6 @@ package cmd_test
 
 import (
 	"encoding/json"
-	"github.com/1broseidon/ketch/docs"
 	"maps"
 	"slices"
 	"strings"
@@ -51,14 +50,15 @@ func checkLocalTop(t *testing.T, site *fixtureSite, fx docsFixture, library stri
 		t.Fatalf("docs exited %d: %s", code, stderr)
 	}
 	var answer struct {
-		Status string `json:"status"`
+		Status *string `json:"status"`
 		Index  *struct {
 			Kind  string `json:"kind"`
 			Pages int    `json:"pages"`
 			Built string `json:"built"`
 		} `json:"index"`
-		Terms   []struct{ Term string } `json:"terms"`
-		Results []struct {
+		Terms      *[]any    `json:"terms"`
+		NotInIndex *[]string `json:"not_in_index"`
+		Results    []struct {
 			docsResult
 			Anchors   []string `json:"anchors"`
 			PageTitle string   `json:"page_title"`
@@ -68,7 +68,7 @@ func checkLocalTop(t *testing.T, site *fixtureSite, fx docsFixture, library stri
 		t.Fatalf("results %q: %v", out, err)
 	}
 	results := answer.Results
-	if !answerFieldsOK(answer.Status, answer.Index != nil && answer.Index.Kind == "full" && answer.Index.Pages > 0 && answer.Index.Built != "", len(answer.Terms), results[0].PageTitle) {
+	if !answerFieldsOK(answer.Status == nil && answer.Terms == nil, answer.Index != nil && answer.Index.Kind == "full" && answer.Index.Pages > 0 && answer.Index.Built != "", answer.NotInIndex != nil, results[0].PageTitle) {
 		t.Errorf("answer fields = %+v", answer)
 	}
 	// The best section's page prints first, its sections in page order:
@@ -93,12 +93,14 @@ func checkLocalTop(t *testing.T, site *fixtureSite, fx docsFixture, library stri
 }
 
 // checkLocalText: the text output renders the answer as Markdown, the
-// frontmatter, then the top result (url) under its page's title.
+// frontmatter (no verdict), then the top result (url) under its page's
+// title and address.
 func checkLocalText(t *testing.T, fx docsFixture, library, pageTitle, url string) {
 	t.Helper()
 	code, out, stderr := cli(t, "docs", "--library", library, fx.query)
-	if code != 0 || !strings.Contains(out, "\n---\n## "+pageTitle+"\n\n") || !strings.Contains(out, "\n\nsource: "+url) ||
-		!strings.Contains(out, "\nstatus: found\n") || strings.Contains(out, "result_count") {
+	page, _, _ := strings.Cut(url, "#")
+	if code != 0 || !strings.Contains(out, "\n---\n## "+pageTitle+"\n") || !strings.Contains(out, "\n\nsource: "+url) || !strings.Contains(out, "\n"+page+"\n") ||
+		strings.Contains(out, "\nstatus:") || strings.Contains(out, "\nterms:") || !strings.Contains(out, "\nnot_in_index: [") || strings.Contains(out, "result_count") {
 		t.Errorf("section output (exit %d):\n%s%s", code, out, stderr)
 	}
 	if code, _, stderr = cli(t, "docs", "--snippets", "--library", library, fx.query); code == 0 || !strings.Contains(stderr, "unknown flag") {
@@ -110,30 +112,31 @@ func checkLocalText(t *testing.T, fx docsFixture, library, pageTitle, url string
 	checkTermsRefusal(t, library)
 }
 
-// checkTermsRefusal: a question none of whose terms the docs hold exits 3
-// with its frontmatter printed, status refused, its not_found the answer,
+// checkTermsRefusal: a question none of whose terms the docs hold is an
+// answer, exit 0: its frontmatter printed, not_in_index naming every term,
 // and no body; --json says the same as fields.
 func checkTermsRefusal(t *testing.T, library string) {
 	t.Helper()
 	code, out, _ := cli(t, "docs", "--library", library, "zyzzyva quokka")
-	if code != 3 || !strings.Contains(out, "\nstatus: refused (terms_not_found)\nterms: {}\nnot_found: [zyzzyva, quokka]\n---\n") || !strings.HasSuffix(out, "---\n") {
-		t.Errorf("refusal (exit %d):\n%s", code, out)
+	if code != 0 || !strings.Contains(out, "\nnot_in_index: [zyzzyva, quokka]\n---\n") || !strings.HasSuffix(out, "---\n") || strings.Contains(out, "status") {
+		t.Errorf("terms in no section (exit %d):\n%s", code, out)
 	}
 	code, out, _ = cli(t, "--json", "docs", "--library", library, "zyzzyva quokka")
 	var answer struct {
-		Status   string   `json:"status"`
-		NotFound []string `json:"not_found"`
-		Results  []any    `json:"results"`
+		Status     *string  `json:"status"`
+		NotInIndex []string `json:"not_in_index"`
+		Results    []any    `json:"results"`
 	}
-	if err := json.Unmarshal([]byte(out), &answer); err != nil || code != 3 || answer.Status != "refused" || !slices.Equal(answer.NotFound, []string{"zyzzyva", "quokka"}) || len(answer.Results) != 0 {
-		t.Errorf("--json refusal (exit %d): %s %v", code, out, err)
+	if err := json.Unmarshal([]byte(out), &answer); err != nil || code != 0 || answer.Status != nil || !slices.Equal(answer.NotInIndex, []string{"zyzzyva", "quokka"}) || len(answer.Results) != 0 {
+		t.Errorf("--json terms in no section (exit %d): %s %v", code, out, err)
 	}
 }
 
 // answerFieldsOK reports an answer's JSON fields as an indexed library's
-// answer has them: found, its index, its terms, a page title.
-func answerFieldsOK(status string, index bool, terms int, pageTitle string) bool {
-	return status == "found" && index && terms > 0 && pageTitle != ""
+// answer has them: no verdict (status, terms), its index, not_in_index, a
+// page title.
+func answerFieldsOK(noVerdict, index, notInIndex bool, pageTitle string) bool {
+	return noVerdict && index && notInIndex && pageTitle != ""
 }
 
 // checkIndexLifecycle re-runs the build (nothing changed, nothing
@@ -265,16 +268,28 @@ func checkPointers(t *testing.T, fx docsFixture, library string) {
 				t.Errorf("--tokens %q: truncated=%v but the text output is:\n%s", tokens, r.Truncated, text)
 			}
 		}
-		hint := docs.AnswerHint(docs.HintCLI, cut)
-		if (cut > 0) != (hint != "" && strings.HasSuffix(text, "\n"+hint+"\n")) || hint != "" && strings.Count(text, hint) > 1 || strings.Contains(text, "full section:") {
-			t.Errorf("--tokens %q: cut=%v but the text output is:\n%s", tokens, cut, text)
-		}
-		var answer struct {
-			Hint string `json:"hint"`
-		}
-		if err := json.Unmarshal([]byte(jsonOut), &answer); err != nil || answer.Hint != docs.JSONHint(cut) {
-			t.Errorf("--tokens %q: --json hint %q (%v), want %q", tokens, answer.Hint, err, docs.JSONHint(cut))
-		}
+		checkHintLine(t, tokens, text, jsonOut, cut)
+	}
+}
+
+// checkHintLine: the hint is the same line in the text and in --json:
+// present when a group is cut or a section is listed unprinted, naming
+// --section, and the text's last line.
+func checkHintLine(t *testing.T, tokens, text, jsonOut string, cut int) {
+	t.Helper()
+	var answer struct {
+		Hint        string            `json:"hint"`
+		Outline     []json.RawMessage `json:"outline"`
+		OutlineMore []json.RawMessage `json:"outline_more"`
+	}
+	if err := json.Unmarshal([]byte(jsonOut), &answer); err != nil {
+		t.Fatalf("--tokens %q: --json: %v", tokens, err)
+	}
+	unread := cut > 0 || len(answer.Outline) > 0 || len(answer.OutlineMore) > 0
+	hint := answer.Hint
+	if unread != strings.Contains(hint, "ketch docs --section <url#anchor>") || hint != "" && (!strings.HasSuffix(text, "\n"+hint+"\n") || strings.Count(text, hint) > 1) ||
+		hint == "" && strings.Contains(text, "unread until") || strings.Contains(text, "full section:") {
+		t.Errorf("--tokens %q: cut=%d, hint %q, but the text output is:\n%s", tokens, cut, hint, text)
 	}
 }
 
@@ -303,12 +318,14 @@ func checkSectionFetch(t *testing.T, site *fixtureSite, fx docsFixture, library 
 func checkSectionJSON(t *testing.T, raw, library string) {
 	t.Helper()
 	var head struct {
-		Backend, Library string
-		Index            *struct{ Kind string }
-		Terms            *[]any `json:"terms"`
+		Backend *string
+		Library string
+		Index   *struct{ Kind string }
+		Terms   *[]any  `json:"terms"`
+		Status  *string `json:"status"`
 	}
-	if err := json.Unmarshal([]byte(raw), &head); err != nil || head.Backend != "search" || head.Library != library || head.Index == nil || head.Index.Kind != "full" || head.Terms != nil || strings.Contains(raw, `"source":"search"`) {
-		t.Errorf("--section --json = %s (%v)\nwant backend, library and index, no terms, no per-result source", raw, err)
+	if err := json.Unmarshal([]byte(raw), &head); err != nil || head.Backend != nil || head.Library != library || head.Index == nil || head.Index.Kind != "full" || head.Terms != nil || head.Status != nil || strings.Contains(raw, `"source":"search"`) {
+		t.Errorf("--section --json = %s (%v)\nwant library and index, no backend (search is not named), no verdict, no per-result source", raw, err)
 	}
 }
 
@@ -321,7 +338,7 @@ func checkSectionText(t *testing.T, top sectionResult, library string) {
 	if !strings.Contains(out, "### "+section.Breadcrumb+"\n\n"+section.Snippet) || !strings.Contains(out, "\n\nsource: "+top.URL+"\n") || strings.Contains(out, "query:") {
 		t.Errorf("--section text output:\n%s", out)
 	}
-	if !strings.HasPrefix(out, "---\nbackend: search\nlibrary: "+library+"\nindex: full, ") || strings.Contains(out, "result_count") || strings.Contains(out, "status:") {
+	if !strings.HasPrefix(out, "---\nlibrary: "+library+"\nindex: full, ") || strings.Contains(out, "result_count") || strings.Contains(out, "status:") {
 		t.Errorf("--section frontmatter, want an answer's source lines and no result_count:\n%s", out)
 	}
 }
@@ -376,7 +393,8 @@ func checkSectionPages(t *testing.T, top sectionResult) {
 // checkResolveAndScope: --resolve with no name lists the indexed library
 // from the index, marked indexed; a page URL as --library answers from
 // that page, printing the root as library and the page as scope; a URL
-// under the root that no indexed page is under is refused, exit 3.
+// under the root that no indexed page is under is refused, exit 3, the
+// error naming the root.
 func checkResolveAndScope(t *testing.T, site *fixtureSite, fx docsFixture, library string) {
 	t.Helper()
 	for _, args := range [][]string{{"docs", "--resolve"}, {"docs", "--resolve", ""}} {
@@ -389,7 +407,7 @@ func checkResolveAndScope(t *testing.T, site *fixtureSite, fx docsFixture, libra
 	if !strings.Contains(out, "\nlibrary: "+library+"\nscope: "+page+"\n") || strings.Contains(out, "source: "+site.URL+"/elsewhere") {
 		t.Errorf("--library %s:\n%s", page, out)
 	}
-	if code, out, _ := cli(t, "docs", "--library", library+"no/such/page", fx.query); code != 3 || !strings.Contains(out, "status: refused (scope_empty)") {
-		t.Errorf("empty scope: exit %d\n%s", code, out)
+	if code, out, stderr := cli(t, "docs", "--library", library+"no/such/page", fx.query); code != 3 || !strings.Contains(stderr, "no indexed page of "+library) {
+		t.Errorf("empty scope: exit %d\n%s%s", code, out, stderr)
 	}
 }

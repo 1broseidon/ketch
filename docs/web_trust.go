@@ -4,12 +4,10 @@ package docs
 
 import "math"
 
-// minTrust is the lowest trust a verified root is accepted with; strict
-// query splits ask for strictMinTrust.
+// minTrust is the lowest trust a verified root is accepted with.
 const (
-	minTrust       = 3.0
-	strictMinTrust = 5.0
-	maxTrust       = 10.0
+	minTrust = 3.0
+	maxTrust = 10.0
 )
 
 // trustPoints is plan §5's table: what each kind of evidence adds to a

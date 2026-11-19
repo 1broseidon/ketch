@@ -8,44 +8,64 @@ import (
 	"github.com/1broseidon/ketch/internal/docsindex"
 )
 
-// Merge (design/docs-evidence.md, Rank): each plan is printed as one group
-// under its section's heading path, a page's groups together in the
-// order they were taken, pages in the order their first section opened. A
-// whole section is its text. A cut one is its pieces in page order:
-// neighbours joined by the text between them, "…" where text was skipped,
-// rows of one table under its one header; it says how many rows of a
-// table it shows, and where else a folded piece's text sits, on one line
-// under the heading path (Result.GroupLine), and ends with its contents
-// line.
+// Merge (design/docs-evidence.md, Rank; Final shape): each plan is
+// printed as one group under its section's heading path. Plans are chosen
+// by rank and presented in reading order: a page's groups together, pages
+// in the exact pages' order (best first) or else in the order their first
+// section opened, and a page's groups in page order. A whole section is
+// its text. A cut one is its pieces in page order: neighbours joined by
+// the text between them, "…" where text was skipped, rows of one table
+// under its one header; it says how many rows of a table it shows, and
+// where else a folded piece's text sits, on one line under the heading
+// path (Result.GroupLine), and ends with its contents line.
 
 // group is one section's plan as printed.
 type group struct {
 	sec    int
 	pieces []int // printed when cut: chosen and their context, in page order
 	whole  bool
+	clip   string // printed in place of the pieces' text when set (plan.clip)
 	// printed are the sections the answer prints: the group line names
 	// none of them.
 	printed map[int]bool
 }
 
-// groupsOf are the plans as groups in printed order: the groups of one
-// page together, pages in the order of their first group taken, and
-// groups in the order they were taken within a page (rank order: page
-// order put the fact later on the confirm half, design/docs-evidence.md,
-// Round 7).
+// groupsOf are the plans as groups in printed order (see Merge).
 func groupsOf(s *sorted, r *ranked) []group {
 	out := make([]group, len(r.plans))
-	first := map[string]int{} // page: its first plan
+	first := map[string]int{} // page: its place
 	printed := printedSections(r.plans)
 	for i, pl := range r.plans {
-		out[i] = group{sec: pl.sec, pieces: pl.pieces, whole: pl.whole, printed: printed}
-		if _, ok := first[s.secs[pl.sec].Page]; !ok {
-			first[s.secs[pl.sec].Page] = i
+		out[i] = group{sec: pl.sec, pieces: pl.pieces, whole: pl.whole, clip: pl.clip, printed: printed}
+		page := s.secs[pl.sec].Page
+		if _, ok := first[page]; ok {
+			continue
+		}
+		first[page] = i
+		if k, ok := r.order[pageKeyOf(page)]; ok {
+			first[page] = k - len(r.order) - len(r.plans) // the exact pages' order, ahead of any other
 		}
 	}
 	slices.SortStableFunc(out, func(a, b group) int {
-		return cmp.Compare(first[s.secs[a.sec].Page], first[s.secs[b.sec].Page])
+		sa, sb := s.secs[a.sec], s.secs[b.sec]
+		if c := cmp.Compare(first[sa.Page], first[sb.Page]); c != 0 {
+			return c
+		}
+		return cmp.Compare(sa.Order, sb.Order)
 	})
+	return out
+}
+
+// printedPages are the pages plans print from, in printed order.
+func printedPages(s *sorted, r *ranked) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, g := range groupsOf(s, r) {
+		if page := s.secs[g.sec].Page; !seen[page] {
+			seen[page] = true
+			out = append(out, page)
+		}
+	}
 	return out
 }
 
@@ -66,11 +86,16 @@ func renderGroup(lib docsindex.Library, s *sorted, g group) Result {
 		URL: webSectionOf(sec.Section, 0).URL(), Anchors: []string{sec.Anchor}, Source: SearchBackend,
 	}
 	r.PageTitle, r.HeadingPath = pageTitle(sec.Section), headingBelow(sec.Section)
-	if g.whole || len(g.pieces) == len(sec.pieces) {
-		// A group holding every piece of its section is the section: a
-		// section longer than a page that is one code block prints it whole.
+	switch {
+	case g.clip != "":
+		// A block larger than the budget left, cut inside (clipText).
+		r.Snippet, r.Truncated = g.clip, true
+		r.ShownTokens, r.SectionTokens = estimateTokens(r.Snippet), sec.tokens
+	case g.whole || len(g.pieces) == len(sec.pieces):
+		// A group holding every piece of its section is the section (one
+		// larger than the budget left is clipped instead, above).
 		r.Snippet = sec.Text
-	} else {
+	default:
 		r.Snippet = joinPieces(s, sec, g.pieces)
 		r.Truncated = true
 		r.ShownTokens, r.SectionTokens = estimateTokens(r.Snippet), sec.tokens

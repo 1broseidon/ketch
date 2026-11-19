@@ -2,23 +2,25 @@ package docs
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
+	"os"
 	"regexp"
 	"slices"
 	"strings"
 	"sync"
 	"time"
-	"unicode"
 )
 
 // Right source or say so (design/docs-evidence.md, Build 1). A live
 // answer (pages a search read) that came from the wrong site looks exactly
 // like one from the right site. So the search backend:
 //
-//   - resolves the library a request names (--library, or a firm reading
-//     of a bare question) while it searches, and answers from the docs root
+//   - resolves the library a request names (--library, or a name@version
+//     a question writes) while it searches, and answers from the docs root
 //     resolve verifies, unless the site the search agrees on is that
 //     project's own (siteOfProject); several roots resolve verifies, none
 //     ahead, refuse the question with them listed;
@@ -29,10 +31,11 @@ import (
 //     evidence, or unverified, naming the host and what was asked.
 
 // Origin values: an answer from a site ketch has evidence for, and one
-// from a site it has none for.
+// from a site it has none for. A site only a name ties to what was asked
+// (a registry package of the name, a domain carrying it) has no origin
+// line: it says nothing a caller can act on.
 const (
 	originVerified   = "verified"
-	originByName     = "by name"
 	originUnverified = "unverified"
 )
 
@@ -40,16 +43,9 @@ const (
 // confirm the site as the official docs of what was asked.
 func OriginUnverified(origin string) bool { return strings.HasPrefix(origin, originUnverified) }
 
-// OriginByName reports an origin line whose only support is a registry
-// package of the name asked: no second signal ties the site to it.
-func OriginByName(origin string) bool { return strings.HasPrefix(origin, originByName) }
-
-// sfOrigin is an answer's origin line and, for one by name, the docs roots
-// the caller can choose between (the resolved one, the one the search
-// results favour).
+// sfOrigin is an answer's origin line, "" for none.
 type sfOrigin struct {
-	text  string
-	roots []string
+	text string
 }
 
 func verifiedOrigin(evidence string) sfOrigin {
@@ -57,40 +53,16 @@ func verifiedOrigin(evidence string) sfOrigin {
 }
 
 // unverifiedOrigin is the origin of an answer from host that nothing ties
-// to what was asked: what, or this question when what is "".
+// to what, the library the request names.
 func unverifiedOrigin(host, what string) sfOrigin {
-	if what == "" {
-		return sfOrigin{text: fmt.Sprintf("%s, ketch could not confirm %s as the official documentation for this question", originUnverified, host)}
-	}
 	return sfOrigin{text: fmt.Sprintf("%s, ketch could not confirm %s as the official documentation of %s", originUnverified, host, what)}
-}
-
-// byNameOrigin is the origin of an answer from the root resolve found for
-// m when only the registry name supports it: "<host> documents the
-// <ecosystem> package <name>", and the site the search results favour
-// when it is another (lead; nil for none).
-func byNameOrigin(m *webMatch, lead *webRoot) sfOrigin {
-	what := "the docs root resolve found"
-	for _, p := range m.packages {
-		if eco, name, ok := strings.Cut(p, ":"); ok && eco != string(ecoGitHub) {
-			what = fmt.Sprintf("the %s package %s", eco, name)
-			break
-		}
-	}
-	o := sfOrigin{text: fmt.Sprintf("%s, %s documents %s", originByName, scopeHost(m.root.u), what), roots: []string{m.root.String()}}
-	if lead != nil {
-		o.text += "; the search results favour " + lead.String()
-		o.roots = append(o.roots, lead.String())
-	}
-	return o
 }
 
 // resolvedOrigin is the origin of an answer read from the root resolve
 // verified for m: verified for a standard-library module the language's
 // own docs document, a pick the search's agreement made, or when the
 // site the search results agree on (lead, chosen without resolve's
-// preference) is the same project; else by name, naming lead when there
-// is one.
+// preference) is the same project; else none.
 func resolvedOrigin(m *webMatch, lead *webRoot) sfOrigin {
 	if m.std || m.agreed {
 		return verifiedOrigin(matchEvidence(m))
@@ -98,7 +70,7 @@ func resolvedOrigin(m *webMatch, lead *webRoot) sfOrigin {
 	if lead != nil && ownSiteStrong(*lead, m) {
 		return verifiedOrigin(matchEvidence(m) + ", and the search results agree")
 	}
-	return byNameOrigin(m, lead)
+	return sfOrigin{}
 }
 
 // sfResolved is what resolve made of the library a request names, found
@@ -114,7 +86,6 @@ type sfResolved struct {
 	// candidates are every library resolve knows by the name, verified or
 	// not: what a refusal lists when the search agrees on no site.
 	candidates []LibraryMatch
-	bare       bool // a reading of a bare question (resolved strictly)
 	took       time.Duration
 }
 
@@ -198,27 +169,21 @@ func onlyPyPI(packages []string) bool {
 }
 
 // resolveNamed resolves the library req names, for prefs: its --library
-// name or spec (resolve's own pick: one verified root, or an ambiguity),
-// else the first firm reading of a bare question (a name its syntax puts
-// there, not a guess from joined words, not a common word), which must
-// meet resolve's strict bar: an exact package name, its own docs site and
-// trust 5. A question's words that name a language pick among an
-// ambiguity's candidates.
+// name or spec, or a name@version a bare question writes (resolve's own
+// pick: one verified root, or an ambiguity). A question's words that name
+// a language pick among an ambiguity's candidates. A question that names
+// no library resolves nothing (search_bare.go).
 func (s *SearchFirst) resolveNamed(ctx context.Context, req sfRequest) (out sfResolved) {
 	start := time.Now()
-	spec, bare := req.spec, false
-	if firstNonEmpty(req.library, spec.raw) == "" {
-		var ok bool
-		if spec, ok = bareReading(req.query); !ok {
-			return sfResolved{}
-		}
-		bare = true
+	spec := req.spec
+	if spec.raw == "" {
+		return sfResolved{}
 	}
-	out = sfResolved{name: spec.raw, bare: bare}
+	out = sfResolved{name: spec.raw}
 	defer func() { out.took = time.Since(start) }()
 	var stds []*webMatch
 	var wg sync.WaitGroup
-	if !bare && spec.version == "" {
+	if spec.version == "" {
 		goName := goStdRe.MatchString(strings.TrimPrefix(spec.raw, "go:")) && (spec.eco == ecoAny || spec.eco == ecoGitHub || strings.HasPrefix(spec.raw, "go:"))
 		pyName := spec.eco == ecoAny && pyStdRe.MatchString(spec.raw)
 		found := make([]*webMatch, 2)
@@ -236,7 +201,7 @@ func (s *SearchFirst) resolveNamed(ctx context.Context, req sfRequest) (out sfRe
 				}
 			})
 		}
-		m, err := s.web.resolveOne(ctx, spec, bare)
+		m, err := s.web.resolveOne(ctx, spec)
 		wg.Wait()
 		for _, f := range found {
 			if f != nil {
@@ -245,7 +210,7 @@ func (s *SearchFirst) resolveNamed(ctx context.Context, req sfRequest) (out sfRe
 		}
 		return combineStd(out, stds, m, err, req.query)
 	}
-	m, err := s.web.resolveOne(ctx, spec, bare)
+	m, err := s.web.resolveOne(ctx, spec)
 	return combineStd(out, nil, m, err, req.query)
 }
 
@@ -283,8 +248,6 @@ func combineStd(out sfResolved, stds []*webMatch, m webMatch, err error, query s
 		out.match = stds[0] // the standard library's, whatever else goes by the name
 		return out
 	case len(stds) == 0 && amb == nil:
-		return out
-	case out.bare:
 		return out
 	}
 	if i, ok := languagePick(all, query); ok {
@@ -335,19 +298,6 @@ func stdNamesake(c LibraryMatch, stds []*webMatch) bool {
 		}
 	}
 	return false
-}
-
-// bareReading is the first firm reading of a bare question, as
-// splitLibraryQuery orders them: never a guess from joined words, a
-// common word or a docs URL.
-func bareReading(query string) (libSpec, bool) {
-	for _, sp := range splitLibraryQuery(query) {
-		if sp.strict || sp.common || sp.spec.url != "" || sp.spec.name == "" {
-			continue
-		}
-		return sp.spec, true
-	}
-	return libSpec{}, false
 }
 
 // languagePick is the one candidate whose ecosystem a language word of
@@ -777,13 +727,13 @@ func registryNames(root webRoot, name string) bool {
 //     agree on it (resolvedOrigin), or another site that is that
 //     project's own (siteOfProject: a domain its metadata, Go module path
 //     or repository owner names); when the search results agree on a
-//     package index's page for the very name asked (registryNames); or
-//     when the library name, or for a question with no library one of its
-//     words, is its domain and its address says it is docs (docsSite);
-//   - by name when only a registry package of the name ties the site to
-//     it (resolvedOrigin);
-//   - otherwise unverified, naming the host and, when something says the
-//     question names it, what was asked (askedAbout).
+//     package index's page for the very name asked (registryNames);
+//   - none when only a name ties the site to it (a registry package of
+//     the name, a domain carrying the library's name);
+//   - otherwise unverified, naming the host and the library asked for.
+//
+// Only a request that names a library has an origin: an answer to a
+// question that names none is the search's, and says so by its read line.
 //
 // prefs.lead is the site the search results agree on, chosen without
 // resolve's preference: agreement must not come from that preference.
@@ -801,53 +751,42 @@ func siteOrigin(site sfSite, req sfRequest, prefs sitePrefs) sfOrigin {
 			if ownSiteStrong(site.root, m) {
 				return verifiedOrigin(why)
 			}
-			return byNameText(why + "; nothing else confirms it as the official documentation")
+			return sfOrigin{} // the project's by its name alone
 		}
 	}
 	name := req.spec.name
-	if name == "" && prefs.resolved.bare {
-		name = prefs.resolved.name
-	}
 	if registryNames(site.root, name) {
 		return registryOrigin(site, name)
 	}
-	if org, ok := domainOrigin(site, req, prefs); ok {
-		return org
+	if nameOnDomain(site, req, prefs) {
+		return sfOrigin{}
 	}
-	return unverifiedOrigin(scopeHost(site.root.u), askedAbout(site, req, prefs))
+	return unverifiedOrigin(scopeHost(site.root.u), req.library)
 }
 
 // registryOrigin is the origin of a package index's page for the very
 // name asked (registryNames): verified for Go's standard library on
-// pkg.go.dev, by name otherwise.
+// pkg.go.dev, none otherwise.
 func registryOrigin(site sfSite, name string) sfOrigin {
 	if segs := pathSegments(site.root.prefix); scopeHost(site.root.u) == "pkg.go.dev" && len(segs) > 0 && !strings.Contains(segs[0], ".") && strings.Join(segs, "/") == strings.Trim(name, "/") {
 		// pkg.go.dev serves a path with no host first for the standard
 		// library only: resolveGoStd's evidence, from the search's hit.
 		return verifiedOrigin(fmt.Sprintf("pkg.go.dev documents %s in the Go standard library", name))
 	}
-	return byNameText(fmt.Sprintf("%s documents a package named %s at its own path; nothing else confirms it is the one meant", scopeHost(site.root.u), name))
+	return sfOrigin{}
 }
 
-// domainOrigin reports the by-name origin of a site on a domain of its own
-// that carries the name asked.
-func domainOrigin(site sfSite, req sfRequest, prefs sitePrefs) (sfOrigin, bool) {
-	if _, shared := sharedProjectRoot(site.root.u); !shared && !indexHosted(site.root.u) {
-		key := registrableDomain(site.root.u.Hostname())
-		var by string
-		switch {
-		case ownsDomain(key, prefs.names) || namedWithDescriptor(key, prefs.names):
-			by = req.spec.name
-		case hostValue(req.library) && registrableDomain(strings.ToLower(req.library)) == key:
-			by = req.library // a library value written as a host (fly.io)
-		case req.library == "" && ownsDomain(key, prefs.words):
-			by = domainWord(key, prefs.words)
-		}
-		if by != "" {
-			return byNameText(fmt.Sprintf("the domain %s carries the name %s; nothing else confirms it as the official documentation", scopeHost(site.root.u), by)), true
-		}
+// nameOnDomain reports a site on a domain of its own that carries the
+// library name the request gives (as a name, or a host value such as
+// fly.io): only the name ties it to what was asked, so it has no origin
+// line, not an unverified one.
+func nameOnDomain(site sfSite, req sfRequest, prefs sitePrefs) bool {
+	if _, shared := sharedProjectRoot(site.root.u); shared || indexHosted(site.root.u) {
+		return false
 	}
-	return sfOrigin{}, false
+	key := registrableDomain(site.root.u.Hostname())
+	return ownsDomain(key, prefs.names) || namedWithDescriptor(key, prefs.names) ||
+		hostValue(req.library) && registrableDomain(strings.ToLower(req.library)) == key
 }
 
 // hostValue reports a library value written as a bare host name: a dot,
@@ -855,20 +794,6 @@ func domainOrigin(site sfSite, req sfRequest, prefs sitePrefs) (sfOrigin, bool) 
 func hostValue(v string) bool {
 	v = strings.TrimSpace(v)
 	return strings.Contains(v, ".") && !strings.ContainsAny(v, " /:@") && hostLikeSegment(v)
-}
-
-func byNameText(why string) sfOrigin { return sfOrigin{text: originByName + ", " + why} }
-
-// domainWord is the question word a domain's first label is (ownsDomain's
-// match), for the origin line; the label itself when none is found.
-func domainWord(domain string, words []string) string {
-	label, _, _ := strings.Cut(strings.TrimPrefix(domain, "www."), ".")
-	for _, l := range []string{label, withoutLanguageWord(label)} {
-		if k := libraryKey(l); slices.Contains(words, k) {
-			return l
-		}
-	}
-	return label
 }
 
 // namedWithDescriptor reports a domain whose first label is a name with a
@@ -886,70 +811,11 @@ func namedWithDescriptor(domain string, names []string) bool {
 	return false
 }
 
-// askedAbout names what a request asks about, for an unverified origin
-// read from site: its library value; else the question's first firm
-// reading (a name its syntax puts there, not a guess or a common word)
-// when something says the question names it: resolve found a project by
-// it, or the site carries it in its host or docs directory (named) or in
-// the title of a search hit on it (its domain's other trees' hits too).
-// Else "": the line names nothing rather than a word of the question that
-// only looks like a name.
-func askedAbout(site sfSite, req sfRequest, prefs sitePrefs) string {
-	if req.library != "" {
-		return req.library
-	}
-	name := firmReading(req.query)
-	if name == "" {
-		return ""
-	}
-	key := libraryKey(name)
-	hits := site.hits
-	for _, a := range site.alts {
-		hits = slices.Concat(hits, a.hits)
-	}
-	resolved := prefs.resolved.match != nil && libraryKey(prefs.resolved.name) == key
-	if resolved || named(site.root.u, []string{key}) || titlesCarry(hits, key) {
-		return name
-	}
-	return ""
-}
-
-// firmReading is the question's first firm reading as written ("" for
-// none): a name its syntax puts there, not a guess or a common word.
-func firmReading(query string) string {
-	words := strings.Fields(query)
-	for _, sp := range splitLibraryQuery(query) {
-		if !sp.strict && !sp.common && sp.spec.url == "" && sp.from < sp.to && sp.to <= len(words) {
-			return strings.Trim(strings.Join(words[sp.from:sp.to], " "), ".,;:!?\"'()")
-		}
-	}
-	return ""
-}
-
-// titlesCarry reports a hit whose title has key (libraryKey) as a word of
-// its own, or two adjacent words run together: "Amazon S3 multipart upload
-// limits" carries s3, "Cross-document view transitions are opt-in" no opt.
-func titlesCarry(hits []sfHit, key string) bool {
-	if len(key) < 2 {
-		return false
-	}
-	for _, h := range hits {
-		words := strings.FieldsFunc(h.title, func(r rune) bool {
-			return !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '-' && r != '_' && r != '.'
-		})
-		for i, w := range words {
-			if libraryKey(w) == key || i+1 < len(words) && libraryKey(w+words[i+1]) == key {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // readFail is one planned page that gave no text, and why.
 type readFail struct {
-	page  string
-	cause string // readNotFound, readBlocked, ...
+	page   string
+	cause  string // readNotFound, readBlocked, ...
+	detail string // an HTTP status, when the cause has one
 }
 
 // Causes of a page read that gave no text.
@@ -960,6 +826,9 @@ const (
 	readEmpty      = "empty after extraction"
 	readTimeout    = "timed out"
 	readRedirected = "redirected outside the root"
+	readDNS        = "DNS lookup failed"
+	readRefused    = "connection failed"
+	readTLS        = "TLS certificate rejected"
 	readOther      = "failed"
 )
 
@@ -971,9 +840,21 @@ type httpStatuser interface{ HTTPStatus() int }
 func readCause(err error) (cause, detail string) {
 	var st httpStatuser
 	var se *scopeError
+	var dns *net.DNSError
+	var op *net.OpError
+	var cert *tls.CertificateVerificationError
 	switch {
-	case errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled):
+	case errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) || errors.Is(err, os.ErrDeadlineExceeded):
 		return readTimeout, ""
+	case errors.As(err, &dns):
+		if dns.IsTimeout {
+			return readTimeout, ""
+		}
+		return readDNS, ""
+	case errors.As(err, &cert):
+		return readTLS, ""
+	case errors.As(err, &op):
+		return readRefused, ""
 	case errors.As(err, &st):
 		switch code := st.HTTPStatus(); code {
 		case 404, 410:
@@ -987,6 +868,9 @@ func readCause(err error) (cause, detail string) {
 		return readRedirected, se.reason()
 	case errors.Is(err, ErrNotFound):
 		return readNotFound, ""
+	}
+	if err != nil {
+		return readOther, oneLine(err.Error(), 120)
 	}
 	return readOther, ""
 }
@@ -1027,6 +911,8 @@ func readFailNote(root webRoot, fails []readFail, details map[string]string) str
 			next = append(next, "the pages hold no text ketch can extract: pass another docs root as --library")
 		case readTimeout:
 			next = append(next, "the site did not answer in time: retry")
+		case readDNS:
+			next = append(next, "the host does not resolve: the address is wrong or the site is gone")
 		default:
 			next = append(next, "pass another docs root as --library")
 		}

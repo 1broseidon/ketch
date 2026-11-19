@@ -100,3 +100,16 @@ func TestDecodeEXAResultsRespectsLimit(t *testing.T) {
 		t.Fatalf("len(results) = %d, want 2", len(results))
 	}
 }
+
+// Exa's metadata lines ("Published: N/A", "Published date: …") are never
+// a result's description: the first line of its text is.
+func TestParseContentSkipsPublished(t *testing.T) {
+	raw := "Title: Task\nURL: https://hexdocs.test/Task.html\nPublished: N/A\nAuthor: N/A\nHighlights:\nConveniences for spawning and awaiting tasks.\n---\nTitle: Post\nURL: https://blog.test/p\nPublished date: 2024-01-02\nA post about tasks."
+	got := parseContent(raw, 5)
+	if len(got) != 2 || got[0].Description != "Conveniences for spawning and awaiting tasks." || got[1].Description != "A post about tasks." {
+		t.Fatalf("parseContent = %+v", got)
+	}
+	if strings.Contains(got[0].Content, "Published") {
+		t.Errorf("content keeps the metadata: %q", got[0].Content)
+	}
+}

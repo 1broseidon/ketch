@@ -225,9 +225,10 @@ func extractSSEPayload(raw []byte) (string, error) {
 }
 
 // knownEXAPrefix returns true for metadata lines that Exa emits as labels
-// rather than content (e.g. "Title:", "URL:", "Highlights:", "Published date:").
+// rather than content (e.g. "Title:", "URL:", "Highlights:", "Published:",
+// "Published date:"): a result's description is never its metadata.
 func knownEXAPrefix(line string) bool {
-	for _, prefix := range []string{"Title:", "URL:", "Highlights:", "Published date:", "Author:", "Score:"} {
+	for _, prefix := range []string{"Title:", "URL:", "Highlights:", "Published:", "Published date:", "Author:", "Score:"} {
 		if strings.HasPrefix(line, prefix) {
 			return true
 		}

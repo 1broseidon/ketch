@@ -1,0 +1,44 @@
+{
+ "model": "jev-1.14.0",
+ "state": {
+  "docs_question": "Prometheus Alertmanager route config: what are the defaults for group_wait, group_interval and repeat_interval, what happens if an alert resolves before group_wait has elapsed, and what happens if repeat_interval is not a multiple of group_interval?"
+ },
+ "questions": {
+  "makers_0": {
+   "type": "noul",
+   "instructions": {
+    "search_result": {
+     "title": "Alertmanager Routing · Kubernetes Notes",
+     "url": "https://k8s-notes.home.liskl.com/alertmanager",
+     "snippet": "Published: N/A"
+    },
+    "question": "Is `search_result` published by the makers of the software that `docs_question` asks about?"
+   },
+   "criteria": {
+    "true": "The page is on the project's or vendor's own documentation site, website or source repository.",
+    "false": "The page is written by someone else: a blog, tutorial site, Q&A answer, forum, news article or a copy of the documentation hosted elsewhere."
+   }
+  },
+  "kind_0": {
+   "type": "choice",
+   "instructions": {
+    "search_result": {
+     "title": "Alertmanager Routing · Kubernetes Notes",
+     "url": "https://k8s-notes.home.liskl.com/alertmanager",
+     "snippet": "Published: N/A"
+    },
+    "question": "What kind of page is `search_result`?"
+   },
+   "criteria": {
+    "reference_documentation": "Reference documentation: an API, command, configuration or language reference, a manual page or a specification.",
+    "guide_or_tutorial": "A guide or tutorial in a documentation set that walks through how to do something.",
+    "blog_post_or_article": "A blog post, news item or article written by a person or company.",
+    "forum_or_qa_thread": "A forum thread or a question-and-answer page such as Stack Overflow.",
+    "issue_or_discussion": "An issue, pull request or discussion thread in a code hosting site.",
+    "source_code": "A source code file or a repository file listing.",
+    "marketing_or_landing_page": "A marketing, product or landing page.",
+    "other": "Any other kind of page."
+   }
+  }
+ }
+}

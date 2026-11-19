@@ -52,9 +52,9 @@ type libSpec struct {
 type querySplit struct {
 	spec  libSpec
 	query string // the rest of the query, searched within the library
-	// strict asks for stronger proof before the candidate is accepted: an
-	// exact registry name, a verified site and trust >= 5. Set for
-	// candidates guessed by joining two query words ("react router").
+	// strict marks a candidate guessed by joining two query words ("react
+	// router"): not a firm reading, so a miss on it does not end the
+	// search for the library a query names (libraryInQuery).
 	strict bool
 	// from and to are the reading's words, query words [from, to): a
 	// reading spanning another's is the more specific one.

@@ -473,6 +473,9 @@ type webPage struct {
 	// index records it (pageSource), and its check reads a page the same
 	// way (index_fresh.go).
 	via string
+	// cookies marks a page fetched with a cookie from cookie_file: its text
+	// is never sent to a decision provider (decide_flow.go).
+	cookies bool
 }
 
 // webLink is a candidate page found during discovery.
@@ -530,6 +533,9 @@ func (e *scopeError) Error() string { return e.requested + " " + e.reason() }
 func (e *scopeError) reason() string {
 	if e.served == "" {
 		return "came back without the URL it was served from"
+	}
+	if e.served == e.requested {
+		return "is outside the docs root"
 	}
 	return "redirects to " + e.served + ", outside the docs root"
 }
