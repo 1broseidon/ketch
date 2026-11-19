@@ -63,7 +63,7 @@ func TestMCPServerSmoke(t *testing.T) {
 		}
 		// Pin the load-bearing content: tool routing, config-driven defaults,
 		// the error taxonomy, and the output-size advice.
-		for _, want := range []string{"search", "code", "docs", "scrape", "crawl", "ketch config", "[upstream]", "[precondition]", "max_chars"} {
+		for _, want := range []string{"search", "code", "docs", "scrape", "crawl", "ketch config", "[validation]", "[upstream]", "[precondition]", "max_chars"} {
 			if !strings.Contains(init.Instructions, want) {
 				t.Errorf("instructions missing %q", want)
 			}
@@ -92,8 +92,8 @@ func TestMCPServerSmoke(t *testing.T) {
 			if tool.Annotations == nil || tool.Annotations.OpenWorldHint == nil || !*tool.Annotations.OpenWorldHint {
 				t.Errorf("tool %q: expected OpenWorldHint=true annotation, got %+v", want, tool.Annotations)
 			}
-			if !strings.Contains(tool.Description, "[validation]") {
-				t.Errorf("tool %q: description does not mention the error taxonomy", want)
+			if tool.Description == "" {
+				t.Errorf("tool %q: empty description", want)
 			}
 		}
 		t.Logf("tools/list: %v (all with readOnlyHint + openWorldHint)", toolNames(toolsRes.Tools))

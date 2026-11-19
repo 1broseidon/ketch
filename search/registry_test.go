@@ -173,8 +173,12 @@ func assertRegistryMCP(t *testing.T, cfg *config.Config) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(list.Tools) != 1 || !strings.Contains(list.Tools[0].Description, "Registry Proof") {
-		t.Fatal("MCP search description omitted the registered provider")
+	if len(list.Tools) != 1 {
+		t.Fatalf("MCP tools count = %d, want 1", len(list.Tools))
+	}
+	schemaJSON, err := json.Marshal(list.Tools[0].InputSchema)
+	if err != nil || !strings.Contains(string(schemaJSON), "registryproof") {
+		t.Fatalf("MCP search schema omitted the registered provider: %s", schemaJSON)
 	}
 	result, err := session.CallTool(ctx, &mcpsdk.CallToolParams{Name: "search", Arguments: map[string]any{"query": "registry", "backend": "registryproof"}})
 	if err != nil {

@@ -16,12 +16,12 @@ import (
 // CodeInput is the input schema for the "code" tool.
 type CodeInput struct {
 	Query   string `json:"query" jsonschema:"the code search query"`
-	Backend string `json:"backend,omitempty" jsonschema:"code search backend (default: the configured backend)"`
-	Lang    string `json:"lang,omitempty" jsonschema:"language filter appended to the query"`
-	Repo    string `json:"repo,omitempty" jsonschema:"search one repository, owner/name (a github.com URL also works); matched exactly on every backend"`
-	Limit   int    `json:"limit,omitempty" jsonschema:"max number of results (default: the configured limit)"`
-	Tag     string `json:"tag,omitempty" jsonschema:"record each result under this tag, retrievable later with the tag tool"`
-	Regexp  bool   `json:"regexp,omitempty" jsonschema:"interpret query as a regular expression when supported by the backend"`
+	Backend string `json:"backend,omitempty" jsonschema:"code backend (default: configured)"`
+	Lang    string `json:"lang,omitempty" jsonschema:"language filter"`
+	Repo    string `json:"repo,omitempty" jsonschema:"search one repo as owner/name or github.com URL (matched exactly)"`
+	Limit   int    `json:"limit,omitempty" jsonschema:"max results (default: configured)"`
+	Tag     string `json:"tag,omitempty" jsonschema:"bookmark results under this tag"`
+	Regexp  bool   `json:"regexp,omitempty" jsonschema:"treat query as regex when supported"`
 }
 
 // CodeOutput is the output schema for the "code" tool. Results carries the
@@ -36,11 +36,10 @@ func (s *Server) registerCodeTool() {
 	mcpsdk.AddTool(s.mcp, &mcpsdk.Tool{
 		Name: "code",
 		InputSchema: inputSchema[CodeInput](map[string]string{
-			"backend": "code search backend: " + configbase.JoinNames(code.AvailableBackends()) + " (default: the configured backend)",
-			"regexp":  "interpret query as a regular expression (" + strings.Join(code.RegexpBackends(), ", ") + " only)",
+			"backend": "code backend: " + configbase.JoinNames(code.AvailableBackends()) + " (default: configured)",
+			"regexp":  "treat query as regex (" + strings.Join(code.RegexpBackends(), ", ") + " only)",
 		}),
-		Description: "Search code across open-source repositories using " + code.DescriptionNames(false) + " (default: the configured backend)." +
-			errTaxonomy,
+		Description: "Search code across open-source repositories using " + code.DescriptionNames(false) + " (default: configured). Returns file/line snippets.",
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in CodeInput) (*mcpsdk.CallToolResult, CodeOutput, error) {
 		if err := validResearchTag(in.Tag); err != nil {

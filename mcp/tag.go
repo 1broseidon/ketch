@@ -21,10 +21,10 @@ import (
 // mirroring the CLI's verbs — the CLI's grammar is its own concern, but the
 // four operations are the same four.
 type TagInput struct {
-	Operation string   `json:"operation" jsonschema:"one of: add, show, list, remove"`
-	Tag       string   `json:"tag,omitempty" jsonschema:"the tag to act on; required for every operation except list"`
-	Limit     *int     `json:"limit,omitempty" jsonschema:"show only: maximum entries (default 50; 0 = all)"`
-	URLs      []string `json:"urls,omitempty" jsonschema:"for add, the URLs to tag (a URL with no cached page is still indexed; its title and description fill in once fetched); for remove, the URLs to drop (omit to drop the whole tag)"`
+	Operation string   `json:"operation" jsonschema:"add, show, list, or remove"`
+	Tag       string   `json:"tag,omitempty" jsonschema:"tag name (required except for list)"`
+	Limit     *int     `json:"limit,omitempty" jsonschema:"max entries for show (default 50; 0 = all)"`
+	URLs      []string `json:"urls,omitempty" jsonschema:"URLs to add or remove (omit on remove to drop the whole tag)"`
 }
 
 // TagOutput is the output schema for the "tag" tool. Fields are populated per
@@ -48,12 +48,8 @@ type TagOutput struct {
 
 func (s *Server) registerTagTool() {
 	mcpsdk.AddTool(s.mcp, &mcpsdk.Tool{
-		Name: "tag",
-		Description: "Bookmark research sources under project or topic labels and revisit them across sessions. " +
-			"Use it to keep a working set for a project: tag the docs and write-ups that proved useful (or pass tag to search/scrape/crawl as you fetch), then later call operation=show to get an index of titles, URLs and descriptions instead of searching the web again. " +
-			"Operations: add (bookmark URLs, cached or not), show (newest 50 by default; limit=0 for all), list (all tags), remove (drop a tag, or the given URLs from it). " +
-			"The index lives in independent storage and remains available when the page cache is locked. cache_status reports unavailable when cached flags could not be checked. Makes no network requests. The index is durable and outlives the cached page bodies: entries whose body has expired come back with cached=false and must be re-fetched with scrape, which restores them." +
-			errTaxonomy,
+		Name:        "tag",
+		Description: "Bookmark research URLs under project or topic tags and revisit them across sessions (local only, no network). Operations: add, show (newest 50; limit=0 for all), list, remove. Expired entries return cached=false and can be re-fetched with scrape.",
 		Annotations: localMutating(),
 	}, func(_ context.Context, _ *mcpsdk.CallToolRequest, in TagInput) (*mcpsdk.CallToolResult, TagOutput, error) {
 		op := strings.ToLower(strings.TrimSpace(in.Operation))

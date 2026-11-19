@@ -1206,7 +1206,7 @@ func searchProvider() Provider {
 	return Provider{
 		ID:          SearchBackend,
 		Name:        "Search",
-		LibraryHelp: "a docs root as resolve lists it, or a library name or name@version (answered from the docs root resolve verifies for it; a name several libraries share is refused with them listed); a URL below an indexed root narrows the answer to the pages under it (scope), a docs URL not indexed is searched within; a library indexed with ketch docs index answers offline",
+		LibraryHelp: "docs URL, name, or name@version; sub-URL scopes an indexed root; indexed libraries answer offline",
 		Usable:      func(*config.Config) bool { return true },
 		New:         func(c *config.Config, deps Deps) (Searcher, error) { return newSearchFirstFromConfig(c, deps), nil },
 		Probe:       probeSearch,

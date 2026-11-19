@@ -32,15 +32,15 @@ const (
 
 // CrawlInput is the input schema for the "crawl" tool.
 type CrawlInput struct {
-	URL      string   `json:"url" jsonschema:"seed URL to crawl (BFS, same host only)"`
+	URL      string   `json:"url" jsonschema:"seed URL (same host only)"`
 	Depth    int      `json:"depth,omitempty" jsonschema:"max BFS depth (default 3)"`
-	Sitemap  bool     `json:"sitemap,omitempty" jsonschema:"treat the seed URL as a sitemap"`
-	MaxPages int      `json:"max_pages,omitempty" jsonschema:"stop after this many pages (default 30, capped at 100)"`
-	Allow    []string `json:"allow,omitempty" jsonschema:"path substring filters; a URL must contain at least one to be crawled"`
-	Deny     []string `json:"deny,omitempty" jsonschema:"regex patterns; matching URLs are skipped"`
-	MaxChars int      `json:"max_chars,omitempty" jsonschema:"truncate each page's markdown to N characters (0 = disabled)"`
-	NoCache  bool     `json:"no_cache,omitempty" jsonschema:"bypass the page cache"`
-	Tag      string   `json:"tag,omitempty" jsonschema:"record each crawled page under this tag, retrievable later with the tag tool"`
+	Sitemap  bool     `json:"sitemap,omitempty" jsonschema:"treat seed URL as a sitemap"`
+	MaxPages int      `json:"max_pages,omitempty" jsonschema:"page cap (default 30, max 100)"`
+	Allow    []string `json:"allow,omitempty" jsonschema:"path substring filters (URL must match at least one)"`
+	Deny     []string `json:"deny,omitempty" jsonschema:"regex patterns to skip"`
+	MaxChars int      `json:"max_chars,omitempty" jsonschema:"truncate each page to N chars (0 = off)"`
+	NoCache  bool     `json:"no_cache,omitempty" jsonschema:"bypass page cache"`
+	Tag      string   `json:"tag,omitempty" jsonschema:"bookmark crawled pages under this tag"`
 }
 
 // CrawlPage is one crawled page in the "crawl" tool output.
@@ -69,11 +69,8 @@ type CrawlOutput struct {
 
 func (s *Server) registerCrawlTool() {
 	mcpsdk.AddTool(s.mcp, &mcpsdk.Tool{
-		Name: "crawl",
-		Description: "BFS-crawl a site from a seed URL (same host only) and return extracted markdown for each page. " +
-			"Synchronous and bounded: at most max_pages pages (default 30, cap 100) within a 3-minute budget — large crawls belong to the CLI's background mode (ketch crawl --background), which is not exposed over MCP. " +
-			"After configured URL rewrites, only absolute HTTP(S) fetch URLs are accepted; other schemes such as file:// are rejected. Private or internal HTTP(S) addresses remain fetchable when reachable from where the server runs." +
-			errTaxonomy,
+		Name:        "crawl",
+		Description: "BFS-crawl an HTTP(S) site from a seed URL (same host only) and return extracted markdown per page. Bounded to max_pages (default 30, max 100) and a 3-minute budget; partial results set stopped. Set max_chars to bound each page.",
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in CrawlInput) (*mcpsdk.CallToolResult, CrawlOutput, error) {
 		if err := validResearchTag(in.Tag); err != nil {

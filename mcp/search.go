@@ -16,14 +16,14 @@ import (
 type SearchInput struct {
 	Query      string   `json:"query" jsonschema:"the search query"`
 	Backend    string   `json:"backend,omitempty" jsonschema:"search backend (default: the configured backend)"`
-	Multi      []string `json:"multi,omitempty" jsonschema:"federated search: backends to query and rank-fuse (reciprocal rank fusion), e.g. [\"brave\",\"ddg\"]; use [\"all\"] for every usable backend; mutually exclusive with backend and random; results gain a backends field showing which engines returned each"`
-	Random     []string `json:"random,omitempty" jsonschema:"random provider selection with sequential fallback on errors, e.g. [\"brave\",\"ddg\"]; use [\"all\"] for every usable backend; mutually exclusive with backend and multi"`
-	Limit      int      `json:"limit,omitempty" jsonschema:"max number of results (default: the configured limit)"`
-	SearxngURL string   `json:"searxng_url,omitempty" jsonschema:"override the configured SearXNG instance URL (searxng backend only)"`
-	Scrape     bool     `json:"scrape,omitempty" jsonschema:"also fetch each result URL and fill its content field with extracted markdown"`
-	Trim       bool     `json:"trim,omitempty" jsonschema:"strip markdown formatting from scraped content, keep text only (with scrape)"`
-	MaxChars   int      `json:"max_chars,omitempty" jsonschema:"truncate each result's scraped content to N characters (with scrape; 0 = disabled)"`
-	Tag        string   `json:"tag,omitempty" jsonschema:"record each result under this tag; with scrape the entry gets the fetched page's title and description"`
+	Multi      []string `json:"multi,omitempty" jsonschema:"backends to query and rank-fuse, e.g. [\"brave\",\"ddg\"] or [\"all\"]; exclusive with backend/random"`
+	Random     []string `json:"random,omitempty" jsonschema:"backends to shuffle with fallback, e.g. [\"brave\",\"ddg\"] or [\"all\"]; exclusive with backend/multi"`
+	Limit      int      `json:"limit,omitempty" jsonschema:"max results (default: configured)"`
+	SearxngURL string   `json:"searxng_url,omitempty" jsonschema:"override SearXNG instance URL (searxng only)"`
+	Scrape     bool     `json:"scrape,omitempty" jsonschema:"fetch each result URL as markdown"`
+	Trim       bool     `json:"trim,omitempty" jsonschema:"strip markdown formatting from scraped content (with scrape)"`
+	MaxChars   int      `json:"max_chars,omitempty" jsonschema:"truncate scraped content to N chars per result (with scrape; 0 = off)"`
+	Tag        string   `json:"tag,omitempty" jsonschema:"bookmark each result under this tag"`
 }
 
 // SearchOutput is the output schema for the "search" tool. Results carries
@@ -45,9 +45,7 @@ func (s *Server) registerSearchTool() {
 		InputSchema: inputSchema[SearchInput](map[string]string{
 			"backend": "search backend: " + configbase.JoinNames(search.SelectableBackends()) + " (default: the configured backend)",
 		}),
-		Description: "Search the web using " + search.DescriptionNames() + " (default: the configured backend) and return results (title, url, description). " +
-			"Set scrape=true to also fetch each result and include its content as markdown. " +
-			"Set multi to query several backends at once and rank-fuse the results, or random to shuffle providers and fall back sequentially on errors." + errTaxonomy,
+		Description: "Search the web and return results (title, url, description). Omit backend to use the configured default. Set scrape=true to fetch each result as markdown, multi to rank-fuse several backends, or random to shuffle with fallback.",
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in SearchInput) (*mcpsdk.CallToolResult, SearchOutput, error) {
 		ctx, diagnostics := withTagDiagnostics(ctx)

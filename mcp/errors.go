@@ -27,10 +27,6 @@ var (
 	kindPrecondition = failure.Precondition.String() // server-side config missing (API key, browser, ...)
 )
 
-// errTaxonomy is appended to every tool description so agents know how to
-// read failures.
-const errTaxonomy = " Errors carry a machine-readable prefix: [validation] fix the input; [not_found] no such resource/match; [upstream] backend or network failure or a timeout, retrying may help; [precondition] server-side configuration missing; [cancelled] the call was cancelled."
-
 // errf builds an error whose message starts with the "[kind] " prefix.
 // Supports %w wrapping like fmt.Errorf.
 func errf(kind, format string, args ...any) error {

@@ -147,7 +147,7 @@ describe("registration", () => {
 		assert.equal(calls.length, 0, "no exec at load time");
 		for (const t of tools.values()) {
 			assert.ok(t.label && t.description && t.promptSnippet, `${t.name} has label/description/promptSnippet`);
-			assert.match(t.description, /\[validation\].*\[not_found\].*\[upstream\].*\[precondition\].*\[cancelled\]/);
+			assert.doesNotMatch(t.description, /Errors carry a machine-readable prefix/);
 			assert.equal(typeof t.parameters.properties, "object");
 		}
 	});
@@ -272,50 +272,41 @@ describe("argument construction", () => {
 		assert.equal(calls.length, 5);
 	});
 
-	test("docs: descriptions cover search, Context7, section and library specs", () => {
+	test("docs: descriptions cover search, Context7, section and library specs concisely", () => {
 		const { tools } = fakePi();
 		const docs = tools.get("ketch_docs");
 		assert.ok(docs);
-		assert.match(docs.description, /default backend, search/);
-		assert.match(docs.description, /django@5\.2/);
+		assert.match(docs.description, /default search backend/);
+		assert.match(docs.description, /backend=context7/);
 		assert.match(docs.description, /section/);
 		const props = docs.parameters.properties as Record<string, { description: string }>;
 		assert.match(props.backend.description, /\bsearch\b/);
 		assert.match(props.backend.description, /\bcontext7\b/);
 		assert.doesNotMatch(props.backend.description, /\bauto\b|\bweb \(/);
-		assert.match(docs.description, /anonymous quota/);
 		for (const form of ["name@version", "npm:/pypi:/crates:/go:/github:", "owner/repo"]) {
 			assert.ok(props.library.description.includes(form), `library description names ${form}`);
 		}
 		assert.ok(props.section, "section is a parameter");
 		// A question goes in query; resolve takes names, never a question.
-		assert.match(docs.description, /^Documentation for a question: pass the question as query, no resolve/);
-		assert.match(docs.description, /resolve=true takes a package name or docs URL, never a question/);
-		assert.match(props.resolve.description, /a question goes in query without resolve/);
+		assert.match(docs.description, /pass the question as query \(no resolve, leave tokens unset\)/);
+		assert.match(docs.description, /resolve=true for a package name or docs URL \(never a question\)/);
+		assert.match(props.resolve.description, /never a question/);
 		// The decision providers are the binary's to list, not the plugin's.
 		assert.match(props.decisions.description, /a provider by name, auto or off/);
 	});
 
-	test("docs: description states the exact-pages contract, no verdict", () => {
+	test("docs: description states the grounding contract concisely, no verdict", () => {
 		const { tools } = fakePi();
 		const docs = tools.get("ketch_docs");
 		assert.ok(docs);
 		for (const want of [
-			/reads the search's first readable document and up to two more pages of the same site, in search order/,
-			/without consulting robots\.txt/,
-			/a name@version in the question that resolve confirms/,
-			/version is printed only for a pin that matched/,
-			/\(widened\)/,
-			/carries no verdict/,
-			/\bread lists the pages read with their search rank/,
-			/\bskipped\b/,
+			/check read for which site answered/,
 			/\bnot_on_pages\b/,
-			/\bnot_in_index\b/,
 			/\boutline\b/,
 			/\bother_results\b/,
-			/about 4,000 tokens/,
 			/is unread/,
-			/read an other result with ketch_docs, its url as library/,
+			/ketch_docs\(section="<url#anchor>"\)/,
+			/ketch_docs\(library="<url>", query="<your question>"\)/,
 			/your own knowledge/,
 		]) {
 			assert.match(docs.description, want);
@@ -324,7 +315,7 @@ describe("argument construction", () => {
 			assert.doesNotMatch(docs.description, gone);
 		}
 		const props = docs.parameters.properties as Record<string, { description: string }>;
-		assert.match(props.tokens.description, /4,000 tokens of docs text/);
+		assert.match(props.tokens.description, /default 4000/);
 		assert.doesNotMatch(props.tokens.description, /1,800/);
 		assert.match(docs.promptSnippet ?? "", /cut or outlined section/);
 	});

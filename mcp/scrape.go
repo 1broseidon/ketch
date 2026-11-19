@@ -21,17 +21,17 @@ const (
 // or urls must be provided. The options mirror the per-invocation flags of
 // `ketch scrape`; the CLI's file/stdin input modes don't apply here.
 type ScrapeInput struct {
-	URL          string   `json:"url,omitempty" jsonschema:"the URL to scrape (exactly one of url or urls)"`
-	URLs         []string `json:"urls,omitempty" jsonschema:"URLs to scrape concurrently; failures come back as per-URL error entries (exactly one of url or urls)"`
-	Selector     string   `json:"selector,omitempty" jsonschema:"CSS selector to extract specific elements, skips readability (incompatible with raw)"`
-	Trim         bool     `json:"trim,omitempty" jsonschema:"strip markdown formatting, keep content text only (incompatible with raw)"`
-	MaxChars     int      `json:"max_chars,omitempty" jsonschema:"truncate markdown (or raw HTML) output to N characters per page (0 = disabled)"`
-	NoCache      bool     `json:"no_cache,omitempty" jsonschema:"bypass the page cache"`
-	Raw          bool     `json:"raw,omitempty" jsonschema:"return raw HTML in raw_html instead of extracted markdown"`
-	ForceBrowser bool     `json:"force_browser,omitempty" jsonschema:"always render via the configured headless browser, skipping JS-shell auto-detection (requires a configured browser)"`
-	NoLLMSTxt    bool     `json:"no_llms_txt,omitempty" jsonschema:"disable automatic /llms.txt detection for bare domain URLs"`
-	Concurrency  int      `json:"concurrency,omitempty" jsonschema:"max concurrent fetches for multi-URL scrapes (default 5, capped at 16)"`
-	Tag          string   `json:"tag,omitempty" jsonschema:"record each fetched page under this tag, retrievable later with the tag tool"`
+	URL          string   `json:"url,omitempty" jsonschema:"single URL to fetch (exclusive with urls)"`
+	URLs         []string `json:"urls,omitempty" jsonschema:"URLs to fetch concurrently; per-URL errors return in the result (exclusive with url)"`
+	Selector     string   `json:"selector,omitempty" jsonschema:"CSS selector to extract, skips readability (not with raw)"`
+	Trim         bool     `json:"trim,omitempty" jsonschema:"strip markdown formatting, text only (not with raw)"`
+	MaxChars     int      `json:"max_chars,omitempty" jsonschema:"truncate output to N chars per page (0 = off)"`
+	NoCache      bool     `json:"no_cache,omitempty" jsonschema:"bypass page cache"`
+	Raw          bool     `json:"raw,omitempty" jsonschema:"return raw HTML in raw_html instead of markdown"`
+	ForceBrowser bool     `json:"force_browser,omitempty" jsonschema:"always render with configured headless browser"`
+	NoLLMSTxt    bool     `json:"no_llms_txt,omitempty" jsonschema:"skip /llms.txt probe on bare domains"`
+	Concurrency  int      `json:"concurrency,omitempty" jsonschema:"max concurrent fetches for urls (default 5, max 16)"`
+	Tag          string   `json:"tag,omitempty" jsonschema:"bookmark fetched pages under this tag"`
 }
 
 // ScrapeResult is one scraped page. It embeds scrape.Page — the same object
@@ -53,11 +53,8 @@ type ScrapeOutput struct {
 
 func (s *Server) registerScrapeTool() {
 	mcpsdk.AddTool(s.mcp, &mcpsdk.Tool{
-		Name: "scrape",
-		Description: "Fetch one or more URLs, extract the main content, and convert it to clean markdown (or raw HTML with raw=true). " +
-			"Bare domains are auto-probed for /llms.txt first unless no_llms_txt is set. " +
-			"After configured URL rewrites, only absolute HTTP(S) fetch URLs are accepted; other schemes such as file:// are rejected. Private or internal HTTP(S) addresses remain fetchable when reachable from where the server runs." +
-			errTaxonomy,
+		Name:        "scrape",
+		Description: "Fetch one or more HTTP(S) URLs and extract main content as markdown (or raw HTML with raw=true). Bare domains auto-probe /llms.txt unless no_llms_txt is set. Set max_chars on unknown pages; batch urls report per-URL errors in the result.",
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in ScrapeInput) (*mcpsdk.CallToolResult, ScrapeOutput, error) {
 		ctx, diagnostics := withTagDiagnostics(ctx)

@@ -32,10 +32,6 @@ const EXIT_PREFIX: Record<number, string> = {
 	6: "cancelled",
 };
 
-// Appended to every tool description, verbatim from mcp/errors.go.
-const ERR_TAXONOMY =
-	" Errors carry a machine-readable prefix: [validation] fix the input; [not_found] no such resource/match; [upstream] backend or network failure, retrying may help; [precondition] ketch is not installed or its configuration is missing; [cancelled] the call was cancelled or timed out.";
-
 // Per-tool wall-clock budgets (ms). Crawl matches the MCP server's 3-minute
 // cap; the fetching tools allow for a headless-browser render.
 const TIMEOUT = {
@@ -61,207 +57,149 @@ const STDERR_LIMIT = 2000;
 // where the CLI differs.
 
 const tagParam = (what: string) =>
-	Type.Optional(Type.String({ description: `record each ${what} under this tag, retrievable later with ketch_tag` }));
+	Type.Optional(Type.String({ description: `bookmark ${what} under this tag` }));
 
 const SearchParams = Type.Object({
 	query: Type.String({ description: "the search query" }),
 	backend: Type.Optional(
-		Type.String({
-			description:
-				"search backend (default: the configured backend; `ketch config` lists the available ones). auto is a keyless fallback chain, not a provider",
-		}),
+		Type.String({ description: "search backend (default: configured; auto is a keyless fallback chain)" }),
 	),
 	multi: Type.Optional(
 		Type.Array(Type.String(), {
-			description:
-				'federated search: backends to query and rank-fuse (reciprocal rank fusion), e.g. ["brave","ddg"]; use ["all"] for every usable backend; mutually exclusive with backend and random; results gain a backends field showing which engines returned each',
+			description: 'backends to query and rank-fuse, e.g. ["brave","ddg"] or ["all"]; exclusive with backend/random',
 		}),
 	),
 	random: Type.Optional(
 		Type.Array(Type.String(), {
-			description:
-				'random provider selection with sequential fallback on errors, e.g. ["brave","ddg"]; use ["all"] for every usable backend; mutually exclusive with backend and multi',
+			description: 'backends to shuffle with fallback, e.g. ["brave","ddg"] or ["all"]; exclusive with backend/multi',
 		}),
 	),
-	limit: Type.Optional(Type.Integer({ minimum: 1, description: "max number of results (default: the configured limit)" })),
+	limit: Type.Optional(Type.Integer({ minimum: 1, description: "max results (default: configured)" })),
 	searxng_url: Type.Optional(
-		Type.String({ description: "override the configured SearXNG instance URL (searxng backend only)" }),
+		Type.String({ description: "override SearXNG instance URL (searxng only)" }),
 	),
-	scrape: Type.Optional(
-		Type.Boolean({ description: "also fetch each result URL and fill its content field with extracted markdown" }),
-	),
-	trim: Type.Optional(
-		Type.Boolean({ description: "strip markdown formatting from scraped content, keep text only (with scrape)" }),
-	),
+	scrape: Type.Optional(Type.Boolean({ description: "fetch each result URL as markdown" })),
+	trim: Type.Optional(Type.Boolean({ description: "strip markdown formatting from scraped content (with scrape)" })),
 	max_chars: Type.Optional(
 		Type.Integer({
 			minimum: 0,
-			description: "truncate each result's scraped content to N characters (with scrape; 0 = disabled)",
+			description: "truncate scraped content to N chars per result (with scrape; 0 = off)",
 		}),
 	),
-	tag: Type.Optional(
-		Type.String({
-			description:
-				"record each result under this tag; with scrape the entry gets the fetched page's title and description",
-		}),
-	),
+	tag: tagParam("each result"),
 });
 
 const CodeParams = Type.Object({
 	query: Type.String({ description: "the code search query" }),
 	backend: Type.Optional(
-		Type.String({ description: "code search backend: grepapp, sourcegraph, github (default: the configured backend)" }),
+		Type.String({ description: "code backend: grepapp, sourcegraph, github (default: configured)" }),
 	),
-	lang: Type.Optional(Type.String({ description: "language filter appended to the query" })),
+	lang: Type.Optional(Type.String({ description: "language filter" })),
 	repo: Type.Optional(
-		Type.String({
-			description:
-				"search one repository, owner/name (a github.com URL also works); matched exactly on every backend",
-		}),
+		Type.String({ description: "search one repo as owner/name or github.com URL (matched exactly)" }),
 	),
-	regexp: Type.Optional(
-		Type.Boolean({ description: "interpret query as a regular expression (grepapp, sourcegraph only)" }),
-	),
-	limit: Type.Optional(Type.Integer({ minimum: 1, description: "max number of results (default: the configured limit)" })),
-	tag: tagParam("result"),
+	regexp: Type.Optional(Type.Boolean({ description: "treat query as regex (grepapp, sourcegraph only)" })),
+	limit: Type.Optional(Type.Integer({ minimum: 1, description: "max results (default: configured)" })),
+	tag: tagParam("results"),
 });
 
 const DocsParams = Type.Object({
 	query: Type.Optional(
 		Type.String({
-			description:
-				"the docs question (search answers from an indexed library it names, else from the first readable documents a web search for it returns, unless library is set), or with resolve a package name or docs URL, not a question (search: optional; none lists every indexed library); not needed with section",
+			description: "docs question, or with resolve a package name or docs URL (never a question); omitted with section",
 		}),
 	),
 	backend: Type.Optional(
-		Type.String({
-			description:
-				"docs backend: search (the default: the local index, else the first readable documents a web search returns, no key) or context7 (curated snippets; no key needed, but keyless use has a small anonymous quota, about 200 requests a month per IP) (default: search; context7 only when named here)",
-		}),
+		Type.String({ description: "docs backend: search (default, no key) or context7" }),
 	),
 	library: Type.Optional(
 		Type.String({
 			description:
-				"the library to answer from. search: a docs root as resolve lists it, or a library name or spec to prefer (name@version such as django@5.2, npm:/pypi:/crates:/go:/github: prefixes such as pypi:click, owner/repo); a library the operator indexed answers from the local index, and a URL below its root narrows the answer to the pages under it (scope); a docs URL not indexed is searched within. " +
-				"context7: a library ID from resolve, such as /vercel/next.js",
+				"target library. search: docs URL, name@version (e.g. django@5.2), npm:/pypi:/crates:/go:/github: spec, or owner/repo; sub-URL scopes an indexed root. context7: ID from resolve (e.g. /vercel/next.js)",
 		}),
 	),
 	section: Type.Optional(
 		Type.String({
-			description:
-				"read one section instead of searching: the url#anchor in a result's section field, an outline entry or a defined_in entry (a page URL alone returns the page's sections in order), from the local index or, for a page a search read, through the page cache; no query; a section longer than tokens (default 4000) returns its first page (page and pages say so): raise tokens to read more",
+			description: "read one section in full: url#anchor or page URL from the local index or page cache (no query)",
 		}),
 	),
 	tokens: Type.Optional(
-		Type.Integer({
-			minimum: 1,
-			description:
-				"token budget: search prints about 4,000 tokens of docs text unless set, its fields, outline and other results aside (leave it unset); context7 defaults to 4000; with section, the cap of the section returned (default 4000)",
-		}),
+		Type.Integer({ minimum: 1, description: "token budget (default 4000; leave unset for search)" }),
 	),
 	limit: Type.Optional(
 		Type.Integer({
 			minimum: 1,
-			description:
-				"max number of results: search caps the groups only when given (unset, the token budget decides); context7 defaults to the configured limit, unbounded with library unless given",
+			description: "max results (search: unset uses token budget; context7: configured limit)",
 		}),
 	),
 	resolve: Type.Optional(
 		Type.Boolean({
 			description:
-				"resolve the query as a package name or docs URL instead of answering (a question goes in query without resolve): Context7 library IDs; search answers from the local index first, with no network (the indexed libraries the query names, every one with no query, each marked indexed), else resolves the name to docs roots with their version, versions, package specs and evidence",
+				"resolve a package name or docs URL instead of answering (never a question); empty query lists indexed libraries",
 		}),
 	),
-	tag: Type.Optional(
-		Type.String({
-			description: "record each result under this tag, retrievable later with ketch_tag; not with resolve",
-		}),
-	),
+	tag: Type.Optional(Type.String({ description: "bookmark results under this tag (not with resolve)" })),
 	decisions: Type.Optional(
 		Type.String({
 			description:
-				"decision provider for a question that names no library: a provider by name, auto or off (default: the operator's docs_decisions; auto uses a provider with a key set; when the operator set it off, decisions stay off and note says so). With one, the top five results are read and labelled and their passages chosen by the provider; when none is the makers' docs, a docs site two or more of them link to may be read instead (its read lines say so); confidence says how far to trust each",
+				"decision provider when no library is named: a provider by name, auto or off (default: configured docs_decisions)",
 		}),
 	),
 });
 
 const ScrapeParams = Type.Object({
-	url: Type.Optional(Type.String({ description: "the URL to scrape (exactly one of url or urls)" })),
+	url: Type.Optional(Type.String({ description: "single URL to fetch (exclusive with urls)" })),
 	urls: Type.Optional(
 		Type.Array(Type.String(), {
-			description:
-				"URLs to scrape concurrently; failures come back as per-URL error entries (exactly one of url or urls)",
+			description: "URLs to fetch concurrently; per-URL errors return in the result (exclusive with url)",
 		}),
 	),
-	selector: Type.Optional(
-		Type.String({
-			description: "CSS selector to extract specific elements, skips readability (incompatible with raw)",
-		}),
-	),
-	trim: Type.Optional(
-		Type.Boolean({ description: "strip markdown formatting, keep content text only (incompatible with raw)" }),
-	),
+	selector: Type.Optional(Type.String({ description: "CSS selector to extract, skips readability (not with raw)" })),
+	trim: Type.Optional(Type.Boolean({ description: "strip markdown formatting, text only (not with raw)" })),
 	max_chars: Type.Optional(
-		Type.Integer({
-			minimum: 0,
-			description: "truncate markdown (or raw HTML) output to N characters per page (0 = disabled)",
-		}),
+		Type.Integer({ minimum: 0, description: "truncate output to N chars per page (0 = off)" }),
 	),
-	no_cache: Type.Optional(Type.Boolean({ description: "bypass the page cache" })),
-	raw: Type.Optional(Type.Boolean({ description: "return raw HTML instead of extracted markdown" })),
-	force_browser: Type.Optional(
-		Type.Boolean({
-			description:
-				"always render via the configured headless browser, skipping JS-shell auto-detection (requires a configured browser)",
-		}),
-	),
-	no_llms_txt: Type.Optional(
-		Type.Boolean({ description: "disable automatic /llms.txt detection for bare domain URLs" }),
-	),
+	no_cache: Type.Optional(Type.Boolean({ description: "bypass page cache" })),
+	raw: Type.Optional(Type.Boolean({ description: "return raw HTML instead of markdown" })),
+	force_browser: Type.Optional(Type.Boolean({ description: "always render with configured headless browser" })),
+	no_llms_txt: Type.Optional(Type.Boolean({ description: "skip /llms.txt probe on bare domains" })),
 	concurrency: Type.Optional(
-		Type.Integer({ minimum: 1, maximum: 16, description: "max concurrent fetches for multi-URL scrapes (default 5)" }),
+		Type.Integer({ minimum: 1, maximum: 16, description: "max concurrent fetches for urls (default 5, max 16)" }),
 	),
-	tag: tagParam("fetched page"),
+	tag: tagParam("fetched pages"),
 });
 
 const CrawlParams = Type.Object({
-	url: Type.String({ description: "seed URL to crawl (BFS, same host only)" }),
+	url: Type.String({ description: "seed URL (same host only)" }),
 	depth: Type.Optional(Type.Integer({ minimum: 1, description: "max BFS depth (default 3)" })),
-	sitemap: Type.Optional(Type.Boolean({ description: "treat the seed URL as a sitemap" })),
+	sitemap: Type.Optional(Type.Boolean({ description: "treat seed URL as a sitemap" })),
 	max_pages: Type.Optional(
 		Type.Integer({
 			minimum: 1,
-			description: `stop after this many pages (default ${CRAWL_DEFAULT_MAX_PAGES}, capped at ${CRAWL_MAX_PAGES})`,
+			description: `page cap (default ${CRAWL_DEFAULT_MAX_PAGES}, max ${CRAWL_MAX_PAGES})`,
 		}),
 	),
 	allow: Type.Optional(
-		Type.Array(Type.String(), {
-			description: "path substring filters; a URL must contain at least one to be crawled",
-		}),
+		Type.Array(Type.String(), { description: "path substring filters (URL must match at least one)" }),
 	),
-	deny: Type.Optional(Type.Array(Type.String(), { description: "regex patterns; matching URLs are skipped" })),
+	deny: Type.Optional(Type.Array(Type.String(), { description: "regex patterns to skip" })),
 	max_chars: Type.Optional(
-		Type.Integer({ minimum: 0, description: "truncate each page's markdown to N characters (0 = disabled)" }),
+		Type.Integer({ minimum: 0, description: "truncate each page to N chars (0 = off)" }),
 	),
-	no_cache: Type.Optional(Type.Boolean({ description: "bypass the page cache" })),
-	tag: tagParam("crawled page"),
+	no_cache: Type.Optional(Type.Boolean({ description: "bypass page cache" })),
+	tag: tagParam("crawled pages"),
 });
 
 const TagParams = Type.Object({
 	operation: Type.Union(
 		[Type.Literal("add"), Type.Literal("show"), Type.Literal("list"), Type.Literal("remove")],
-		{ description: "one of: add, show, list, remove" },
+		{ description: "add, show, list, or remove" },
 	),
-	tag: Type.Optional(
-		Type.String({ description: "the tag to act on; required for every operation except list" }),
-	),
-	limit: Type.Optional(
-		Type.Integer({ minimum: 0, description: "show only: maximum entries (default 50; 0 = all)" }),
-	),
+	tag: Type.Optional(Type.String({ description: "tag name (required except for list)" })),
+	limit: Type.Optional(Type.Integer({ minimum: 0, description: "max entries for show (default 50; 0 = all)" })),
 	urls: Type.Optional(
 		Type.Array(Type.String(), {
-			description:
-				"for add, the URLs to tag (a URL with no cached page is still indexed; its title and description fill in once fetched); for remove, the URLs to drop (omit to drop the whole tag)",
+			description: "URLs to add or remove (omit on remove to drop the whole tag)",
 		}),
 	),
 });
@@ -656,10 +594,7 @@ export default function ketch(pi: ExtensionAPI): void {
 		...renderers("search"),
 		label: "ketch search",
 		description:
-			"Search the web with the operator-configured ketch backend (brave, ddg, searxng, exa, firecrawl, keenable, tavily, tinyfish, parallel, serpbase, degoog, serply, youcom, or the keyless auto chain) and return results (title, url, description). " +
-			"Set scrape=true to also fetch each result and include its content as markdown. " +
-			"Set multi to query several backends at once and rank-fuse the results, or random to shuffle providers and fall back sequentially on errors." +
-			ERR_TAXONOMY,
+			"Search the web and return results (title, url, description). Omit backend to use the configured default. Set scrape=true to fetch each result as markdown, multi to rank-fuse several backends, or random to shuffle with fallback.",
 		promptSnippet: "ketch_search for the open web; omit backend to use the operator's default",
 		parameters: SearchParams,
 		async execute(_id, p, signal) {
@@ -677,9 +612,7 @@ export default function ketch(pi: ExtensionAPI): void {
 		...renderers("code"),
 		label: "ketch code",
 		description:
-			"Search code across open-source repositories using grep.app, Sourcegraph, or GitHub (default: the configured backend). Returns file/line-level snippets with repo context. " +
-			"Set lang to filter by language, repo to search one repository (exact on every backend), and regexp to treat the query as a regular expression (grepapp, sourcegraph only)." +
-			ERR_TAXONOMY,
+			"Search code across open-source repositories (grep.app, Sourcegraph, or GitHub; default: configured). Returns file/line snippets.",
 		promptSnippet: "ketch_code for how real OSS projects call an API",
 		parameters: CodeParams,
 		async execute(_id, p, signal) {
@@ -693,13 +626,11 @@ export default function ketch(pi: ExtensionAPI): void {
 		...renderers("docs"),
 		label: "ketch docs",
 		description:
-			"Documentation for a question: pass the question as query, no resolve, and get the docs' own text (no model unless a decision provider is set: see decisions); one call usually answers. The default backend, search, needs no API key: a library the operator indexed (ketch docs index) answers from the local index; otherwise ketch searches the web for the question and reads the search's first readable document and up to two more pages of the same site, in search order (threads, issues, commits and source files passed over); pages the search returned are read as ketch scrape reads them, without consulting robots.txt; when the search gives nothing to read, one more search runs, the question + \"documentation\", and the note says so. The first readable result may not be the official docs: read shows what answered. library, or a name@version in the question that resolve confirms, names other docs; only with library, when an identifier the question writes is on none of the pages, does it read more pages of that release (widened). Nothing is saved: the same question again within cache_ttl prints the same answer from the page cache. " +
-			"The answer carries no verdict. read lists the pages read with their search rank, skipped the hits that could not be read and why; not_on_pages names the identifiers your question writes (code names, flags, options) on none of the pages read (only those pages were checked, not the whole docs), not_in_index the terms an indexed library lacks; version is printed only for a pin that matched or a release the question names that a page read is marked with, and a note says when no page read is marked with the release named and the printed text does not name it; origin is printed when it says something (verified, or unverified for a library you named); defined_in names the section defining a term no result shows; stale says cited pages could not be checked. Results are the docs' text, verbatim, by page in reading order, about 4,000 tokens unless tokens is set; outline names the other sections of those pages, other_results the search hits not read. " +
-			"library names the library: a docs root as resolve lists it, or a name or spec such as django@5.2 or pypi:click (a pin must match; a name several libraries share is refused, listing them: pass one); a URL below an indexed root narrows the answer to the pages under it (scope); to read one page, use section. " +
-			"A cut result is marked truncated (shown_tokens of section_tokens). Two rules. Text in a truncated result, behind …, or only named in outline is unread: read it by passing its url#anchor as section, with no query, before stating what it says; read an other result with ketch_docs, its url as library and your question as query. Whatever your answer says that no result prints is your own knowledge: label it so, never cite the docs for it. Leave tokens unset. " +
-			"backend=context7 returns Context7's curated snippets instead, for that call only; Context7 needs no key either, but keyless it runs on an anonymous quota of about 200 requests a month per IP, and a spent quota is an [upstream] error naming when it resets. " +
-			"resolve=true takes a package name or docs URL, never a question: it lists the indexed libraries (query narrows it; a name none matches is resolved on the web to docs roots, or Context7 library IDs)." +
-			ERR_TAXONOMY,
+			"Answer a documentation question directly: pass the question as query (no resolve, leave tokens unset). " +
+			"The default search backend checks the local index first, else searches the web and reads the top matching pages (check read for which site answered; not_on_pages checks only the pages read). " +
+			"Pass library for a specific library, name@version, or docs URL, resolve=true for a package name or docs URL (never a question), or backend=context7 for Context7 snippets. " +
+			"Two rules: text that is truncated, behind …, or only in outline is unread — read it with ketch_docs(section=\"<url#anchor>\") (no query) before stating what it says, and read an other_results hit with ketch_docs(library=\"<url>\", query=\"<your question>\"). " +
+			"Whatever your answer states that no result prints is your own knowledge: label it so, never cite the docs for it.",
 		promptSnippet: "ketch_docs for documentation; ask the question, then read a cut or outlined section with section before stating what it says",
 		parameters: DocsParams,
 		async execute(_id, p, signal) {
@@ -717,11 +648,7 @@ export default function ketch(pi: ExtensionAPI): void {
 		...renderers("scrape"),
 		label: "ketch scrape",
 		description:
-			"Fetch one or more URLs, extract the main content, and convert it to clean markdown (or raw HTML with raw=true). " +
-			"Bare domains are auto-probed for /llms.txt first unless no_llms_txt is set. Set max_chars (and optionally trim) on unknown pages to bound the response size. " +
-			"Batch scrapes (urls) report per-URL failures inside a successful result; check every entry. " +
-			"After configured URL rewrites, only absolute HTTP(S) URLs are fetched; other schemes such as file:// are rejected." +
-			ERR_TAXONOMY,
+			"Fetch one or more HTTP(S) URLs and extract main content as markdown (or raw HTML with raw=true). Bare domains auto-probe /llms.txt unless no_llms_txt is set. Set max_chars on unknown pages; batch urls report per-URL errors in the result.",
 		promptSnippet: "ketch_scrape when you already have the URL; always set max_chars on pages you have not seen",
 		parameters: ScrapeParams,
 		async execute(_id, p, signal) {
@@ -740,11 +667,7 @@ export default function ketch(pi: ExtensionAPI): void {
 		...renderers("crawl"),
 		label: "ketch crawl",
 		description:
-			"BFS-crawl a site from a seed URL (same host only) and return extracted markdown for each page. " +
-			`Synchronous and bounded: at most max_pages pages (default ${CRAWL_DEFAULT_MAX_PAGES}, cap ${CRAWL_MAX_PAGES}) within a 3-minute budget; the CLI has no page cap, so the crawl runs to completion or the deadline and the first max_pages pages are returned, with stopped set to "max_pages" or "timeout". ` +
-			"Large crawls belong to the CLI's background mode (ketch crawl --background), which is not exposed here. Set max_chars to bound each page. " +
-			"After configured URL rewrites, only absolute HTTP(S) URLs are fetched; other schemes such as file:// are rejected." +
-			ERR_TAXONOMY,
+			`BFS-crawl an HTTP(S) site from a seed URL (same host only) and return extracted markdown per page. Bounded to max_pages (default ${CRAWL_DEFAULT_MAX_PAGES}, max ${CRAWL_MAX_PAGES}) and a 3-minute budget; partial results set stopped. Set max_chars to bound each page.`,
 		promptSnippet: "ketch_crawl only when one page is not enough; keep depth and max_pages small",
 		parameters: CrawlParams,
 		async execute(_id, p, signal) {
@@ -768,11 +691,7 @@ export default function ketch(pi: ExtensionAPI): void {
 		...renderers("tag"),
 		label: "ketch tag",
 		description:
-			"Bookmark research sources under project or topic labels and revisit them across sessions. " +
-			"Use it to keep a working set for a project: tag the docs and write-ups that proved useful (or pass tag to ketch_search/ketch_scrape/ketch_crawl as you fetch), then later call operation=show to get an index of titles, URLs and descriptions instead of searching the web again. " +
-			"Operations: add (bookmark URLs, cached or not), show (newest 50 by default; limit=0 for all), list (all tags), remove (drop a tag, or the given URLs from it). " +
-			"Makes no network requests. The index is durable and outlives the cached page bodies: entries whose body has expired come back with cached=false and can be re-fetched with ketch_scrape." +
-			ERR_TAXONOMY,
+			"Bookmark research URLs under project or topic tags and revisit them across sessions (local only, no network). Operations: add, show (newest 50; limit=0 for all), list, remove. Expired entries return cached=false and can be re-fetched with ketch_scrape.",
 		promptSnippet: "ketch_tag show <tag> before searching again for sources you already found",
 		parameters: TagParams,
 		async execute(_id, p, signal) {

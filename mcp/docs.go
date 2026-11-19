@@ -15,21 +15,21 @@ import (
 
 // DocsInput is the input schema for the "docs" tool.
 type DocsInput struct {
-	Query   string `json:"query,omitempty" jsonschema:"the docs question, or the package name or docs URL to resolve when resolve is true; not needed with section"`
+	Query   string `json:"query,omitempty" jsonschema:"docs question, or with resolve a package name or docs URL (never a question); omitted with section"`
 	Backend string `json:"backend,omitempty" jsonschema:"docs backend (default: search)"`
-	Library string `json:"library,omitempty" jsonschema:"the library to answer from"`
+	Library string `json:"library,omitempty" jsonschema:"library to answer from"`
 	Tokens  int    `json:"tokens,omitempty" jsonschema:"token budget"`
-	Limit   int    `json:"limit,omitempty" jsonschema:"max number of results: search caps the groups only when given (unset, the token budget decides); context7 defaults to the configured limit, unbounded with library unless given"`
-	Tag     string `json:"tag,omitempty" jsonschema:"record each result under this tag, retrievable later with the tag tool; not with resolve"`
-	Resolve bool   `json:"resolve,omitempty" jsonschema:"resolve a package name or docs URL to library IDs instead of answering; not for a question"`
+	Limit   int    `json:"limit,omitempty" jsonschema:"max number of results (search: unset uses token budget; context7: configured limit)"`
+	Tag     string `json:"tag,omitempty" jsonschema:"bookmark results under this tag (not with resolve)"`
+	Resolve bool   `json:"resolve,omitempty" jsonschema:"resolve a package name or docs URL instead of answering; never a question"`
 	// Section asks for one section of the local index in full.
-	Section string `json:"section,omitempty" jsonschema:"read one section in full from the local index"`
+	Section string `json:"section,omitempty" jsonschema:"read one section in full: url#anchor or page URL"`
 	// Page picks the page of a section longer than tokens.
-	Page int `json:"page,omitempty" jsonschema:"with section: the page to return"`
+	Page int `json:"page,omitempty" jsonschema:"with section: page number when longer than tokens (default 1; see hint)"`
 	// Offline uses only the local index and makes no network requests.
-	Offline bool `json:"offline,omitempty" jsonschema:"use only the local index; make no network requests; a missing library is not_found"`
+	Offline bool `json:"offline,omitempty" jsonschema:"use only the local index, no network (missing library is not_found)"`
 	// Decisions picks the decision provider for this call.
-	Decisions string `json:"decisions,omitempty" jsonschema:"decision provider for a question that names no library"`
+	Decisions string `json:"decisions,omitempty" jsonschema:"decision provider when no library is named"`
 }
 
 // DocsOutput is the output schema for the "docs" tool. Results is populated
@@ -103,13 +103,11 @@ func (s *Server) registerDocsTool() {
 	mcpsdk.AddTool(s.mcp, &mcpsdk.Tool{
 		Name:        "docs",
 		InputSchema: docsInputSchema(),
-		Description: "Documentation for a question: pass the question as query, no resolve, and get the docs' own text (no model, unless the operator set up a decision provider: see decisions). One call usually answers. An indexed library answers from the local index; otherwise the question is searched on the web and the search's first readable document is read, with up to two more pages of the same site, in search order (threads, issues, commits and source files passed over); when the search gives nothing to read, one more search runs, the question + \"documentation\", and the note says so. The first readable result may not be the official docs: read shows what answered. library, or a name@version in the question that resolve confirms, names other docs; only with library, when an identifier your question writes is on none of the pages, are more pages of that release read (widened)." +
-			" Fields: read (pages read, with their search rank); skipped (hits that could not be read, and why); not_on_pages (identifiers your question writes, such as code names, flags and options, on none of the pages read: only those pages were checked, not the whole docs) or not_in_index (an indexed library); version (only a pin that matched, or a release the question names that a page read is marked with; otherwise a note says so); origin (verified, or unverified for a library you named); defined_in (where a term is defined when that section is not shown); index and stale (an indexed library's age)." +
-			" results: the docs' text verbatim, grouped by page in reading order (page_title, heading_path, url); truncated (shown_tokens of section_tokens) marks a cut section, … marks text left out. outline: the other sections of those pages, not printed. other_results: search hits not read." +
-			" Two rules. Text that is truncated, behind …, or only named in outline is unread: read it with docs(section=\"<url#anchor>\") before stating what it says; read an other result with docs(library=\"<url>\", query=\"<your question>\"). Whatever your answer says that no result prints is your own knowledge: label it so, never cite the docs for it." +
-			" library: a docs root, or a name or name@version (a pin must match; a name several libraries share is refused, listing them; a name@version inside the query is used only when resolve confirms it); a URL below an indexed root narrows the answer (scope, outside_scope). indexed_near: pass one as library. resolve=true lists the indexed sources (query narrows it) or resolves a package name or docs URL, never a question. A question spanning products: one call per source, run together; cite each claim's url." +
-			" tokens bounds the docs text, 4,000 by default: leave it unset. section: a url#anchor, or a page URL for its sections in order, a page at a time when long (the hint gives the next call). backend context7 gives Context7's snippets instead, library a Context7 ID from resolve." +
-			errTaxonomy,
+		Description: "Answer a documentation question directly: pass the question as query (no resolve, leave tokens unset). " +
+			"The default search backend checks the local index first, else searches the web and reads the top matching pages (check read for which site answered; not_on_pages checks only the pages read). " +
+			"Pass library for a specific library, name@version, or docs URL, resolve=true for a package name or docs URL (never a question), or backend=context7 for Context7 snippets. " +
+			"Two rules: text that is truncated, behind …, or only in outline is unread — read it with docs(section=\"<url#anchor>\") (no query) before stating what it says, and read an other_results hit with docs(library=\"<url>\", query=\"<your question>\"). " +
+			"Whatever your answer states that no result prints is your own knowledge: label it so, never cite the docs for it.",
 		Annotations: readOnlyOpenWorld(),
 	}, func(ctx context.Context, _ *mcpsdk.CallToolRequest, in DocsInput) (*mcpsdk.CallToolResult, DocsOutput, error) {
 		if err := validResearchTag(in.Tag); err != nil {
@@ -346,15 +344,15 @@ func docsInputSchema() *jsonschema.Schema {
 	backends := docs.AvailableBackends()
 	libNames := strings.Join(docs.LibraryProviderNames(), ", ")
 	return inputSchema[DocsInput](map[string]string{
-		"query":     "the docs question (search answers from an indexed library it names, else from the first readable documents a web search for it returns, unless library is set); with resolve, a package name or docs URL to resolve, not a question (search: optional, none lists every indexed library); not needed with section",
-		"backend":   "docs backend for this call: " + configbase.JoinNames(backends) + " (default: search; context7 only when named here)",
-		"library":   docs.WithLibraryHelp("the library to answer from: for context7 a library ID from resolve"),
-		"tokens":    "token budget for " + strings.Join(docs.LibraryProviderNames(), " and ") + ": search prints 4,000 tokens of docs text unless set (the frontmatter fields, outline and other_results aside; leave it unset); context7 defaults to 4000; with section, the page size of the section returned (default 4000)",
-		"section":   "read one section in full instead of searching: the url#anchor of a result, an outline entry or a defined_in entry (a page URL alone returns the page's sections in order: how to read one page), from the local index or, for a page a search read, the page through the page cache; whole when it fits tokens (default 4000), else a page of that size at a time (page); library is optional",
-		"offline":   "use only the local index; make no network requests; a missing library is not_found; stale marks cited pages older than cache_ttl",
-		"decisions": "decision provider for a question that names no library: " + configbase.JoinNames(decide.Values()) + " (default: the operator's docs_decisions, auto: a provider with a key set; when the operator set it off, decisions stay off and note says so). With one, the top five results are read, labelled (read, passed_over, other_results) and their passages chosen by the provider; when none is the makers' docs, a docs site two or more of them link to may be read instead (its read lines say so); confidence says how far to trust each; on a provider failure the answer is made without it and note says why",
-		"page":      "with section: the page of a section longer than tokens to return (default 1); the hint gives the call for the next",
-		"resolve":   "resolve the query as a package name or docs URL instead of answering, never a question (" + libNames + "): search lists docs roots, the indexed libraries the query names first, with no network, and resolves a name none matches on the web; context7 lists its library IDs",
+		"query":     "docs question, or with resolve a package name or docs URL (never a question); omitted with section",
+		"backend":   "docs backend: " + configbase.JoinNames(backends) + " (default: search)",
+		"library":   docs.WithLibraryHelp("library to answer from (search/context7)"),
+		"tokens":    "token budget for " + strings.Join(docs.LibraryProviderNames(), " and ") + " (default 4000; leave unset for search)",
+		"section":   "read one section in full: url#anchor or page URL from the local index or page cache (no query; paged by tokens)",
+		"offline":   "use only the local index, no network (missing library is not_found)",
+		"decisions": "decision provider when no library is named: " + configbase.JoinNames(decide.Values()) + " (default: configured docs_decisions)",
+		"page":      "with section: page number when longer than tokens (default 1; see hint)",
+		"resolve":   "resolve a package name or docs URL instead of answering (" + libNames + "); never a question; empty query lists indexed libraries",
 	})
 }
 

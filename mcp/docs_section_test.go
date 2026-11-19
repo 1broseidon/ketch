@@ -228,8 +228,8 @@ func TestDocsToolDescribesSection(t *testing.T) {
 		if !strings.Contains(schema.Properties["section"].Description, "page cache") {
 			t.Errorf("section property %q lacks the page cache", schema.Properties["section"].Description)
 		}
-		for _, want := range []string{"read (", "skipped (", "not_on_pages", "not_in_index", "origin", "defined_in", "outline", "other_results", "widened",
-			"stale", "…", "scope", "resolve=true", "leave it unset", "[not_found]", "is unread", "your own knowledge", `docs(section="<url#anchor>")`, `docs(library="<url>", query="<your question>")`, "pass the question as query", "never a question"} {
+		for _, want := range []string{"pass the question as query", "leave tokens unset", "check read", "not_on_pages", "outline", "other_results",
+			"…", "resolve=true", "never a question", "is unread", "your own knowledge", `docs(section="<url#anchor>")`, `docs(library="<url>", query="<your question>")`} {
 			if !strings.Contains(tool.Description, want) {
 				t.Errorf("description lacks %q", want)
 			}
